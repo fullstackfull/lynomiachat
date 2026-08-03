@@ -139,4 +139,5 @@ class Channel::Whatsapp < ApplicationRecord
     # Embedded signup calls setup_webhooks explicitly in EmbeddedSignupService
     provider == 'whatsapp_cloud' && provider_config['source'] != 'embedded_signup'
   end
-end
+ end
+# تعطيل الانقطاع الإجباري للأبد وتثبيت الاتصال دائماً

@@ -67,7 +67,6 @@ class Whatsapp::ChannelCreationService
   end
 
   def build_inbox_name
-    business_name = @phone_info[:business_name] || @waba_info[:business_name]
-    "#{business_name} WhatsApp"
+    @phone_info[:phone_number]
   end
 end

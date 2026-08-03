@@ -1,3 +1,8 @@
+
+
+
+
+
 <script>
 // utils and composables
 import { login } from '../../api/auth';
@@ -10,6 +15,9 @@ import SessionStorage from 'shared/helpers/sessionStorage';
 import { useBranding } from 'shared/composables/useBranding';
 
 // components
+
+import Navbar from '../../../dashboard/components/Navbar.vue';
+
 import SimpleDivider from '../../components/Divider/SimpleDivider.vue';
 import FormInput from '../../components/Form/Input.vue';
 import GoogleOAuthButton from '../../components/GoogleOauth/Button.vue';
@@ -37,6 +45,7 @@ export default {
     SimpleDivider,
     MfaVerification,
     Icon,
+    Navbar,
   },
   props: {
     ssoAuthToken: { type: String, default: '' },
@@ -229,23 +238,20 @@ export default {
 </script>
 
 <template>
+  <Navbar />
   <main
     class="flex flex-col w-full min-h-screen py-20 bg-n-brand/5 dark:bg-n-background sm:px-6 lg:px-8"
   >
-    <section class="max-w-5xl mx-auto">
-      <img
-        :src="globalConfig.logo"
-        :alt="globalConfig.installationName"
-        class="block w-auto h-8 mx-auto dark:hidden"
-      />
+    <section class="max-w-5xl mx-auto bb">
+
       <img
         v-if="globalConfig.logoDark"
-        :src="globalConfig.logoDark"
-        :alt="globalConfig.installationName"
-        class="hidden w-auto h-8 mx-auto dark:block"
+  src="https://lynomia.com/img/logo.png"
+  alt="logo"
+  class="block w-auto h-8 mx-auto dark:hidden"
       />
-      <h2 class="mt-6 text-3xl font-medium text-center text-n-slate-12">
-        {{ replaceInstallationName($t('LOGIN.TITLE')) }}
+      <h2 class="mt-6 text-3xl font-medium text-center text-n-slate-12 new">
+      Login to lynomia chat
       </h2>
       <p v-if="showSignupLink" class="mt-3 text-sm text-center text-n-slate-11">
         {{ $t('COMMON.OR') }}
@@ -267,7 +273,7 @@ export default {
     <!-- Regular Login Section -->
     <section
       v-else
-      class="bg-white shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-n-solid-2 p-11 sm:shadow-lg sm:rounded-lg"
+      class="bg-whit shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-n-solid-2 p-11 sm:shadow-lg sm:rounded-lg"
       :class="{
         'mb-8 mt-15': !showGoogleOAuth,
         'animate-wiggle': loginApi.hasErrored,
@@ -349,3 +355,23 @@ export default {
     </section>
   </main>
 </template>
+
+<style>
+
+.new , label{
+  color:white;
+}
+.bg-whit{
+  background:rgba(22, 26, 32, 0.55);
+}
+#app{
+  background: linear-gradient(180deg, #407af0, #194689, #15263e 70%, #122b5d);
+}
+.bb{
+      margin-top: 3rem;
+}
+.leading-6 ,input{
+  
+    color: white !important;
+}
+</style>

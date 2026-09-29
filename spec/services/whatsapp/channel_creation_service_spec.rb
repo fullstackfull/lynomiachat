@@ -57,7 +57,7 @@ describe Whatsapp::ChannelCreationService do
         channel = service.perform
         inbox = channel.inbox
         expect(inbox).not_to be_nil
-        expect(inbox.name).to eq('Test Business WhatsApp')
+        expect(inbox.name).to eq('+1234567890')
         expect(inbox.account).to eq(account)
       end
     end
@@ -104,9 +104,9 @@ describe Whatsapp::ChannelCreationService do
       context 'when business_name is only in phone_info' do
         let(:waba_info) { { waba_id: 'test_waba_id' } }
 
-        it 'uses business_name from phone_info' do
+        it 'still names the inbox after the phone number' do
           channel = service.perform
-          expect(channel.inbox.name).to eq('Test Business WhatsApp')
+          expect(channel.inbox.name).to eq('+1234567890')
         end
       end
 
@@ -119,9 +119,9 @@ describe Whatsapp::ChannelCreationService do
           }
         end
 
-        it 'uses business_name from waba_info' do
+        it 'still names the inbox after the phone number' do
           channel = service.perform
-          expect(channel.inbox.name).to eq('Test Business WhatsApp')
+          expect(channel.inbox.name).to eq('+1234567890')
         end
       end
     end

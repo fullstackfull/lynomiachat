@@ -23,6 +23,21 @@
     "FORGOT_PASSWORD": "Forgot your password?",
     "CREATE_NEW_ACCOUNT": "Create a new account",
     "SUBMIT": "Login",
+    "SUBTITLE": "Sign in to continue to {name}.",
+    "MFA_TITLE": "Verify your account",
+    "MFA_SUBTITLE": "Complete the verification step to continue.",
+    "BRAND_PANEL": {
+      "BADGE": "Customer conversations, simplified",
+      "HEADLINE": "One place for",
+      "HEADLINE_HIGHLIGHT": "every conversation.",
+      "DESCRIPTION": "Keep your team connected with customers through one focused, secure and beautifully simple workspace.",
+      "POINT_FAST": "Fast, focused customer support",
+      "POINT_ONE_PLACE": "Everything your team needs in one place",
+      "POINT_MODERN": "Built for modern teams",
+      "COPYRIGHT": "© {year} {name}",
+      "PRIVACY": "Privacy",
+      "TERMS": "Terms"
+    },
     "SAML": {
       "LABEL": "Login via SSO",
       "TITLE": "Initiate Single Sign-on (SSO)",

@@ -18,6 +18,8 @@ export default {
         redirect_uri: redirectUri,
         response_type: responseType,
         scope: scope,
+        // Always let the user pick the Google account
+        prompt: 'select_account',
       }).toString();
 
       // Construct the full URL

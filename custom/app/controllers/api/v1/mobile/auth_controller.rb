@@ -10,6 +10,8 @@
 #   - data.pubsub_token : for the realtime (websocket) connection
 #   - auth / headers    : session credentials (access-token, client, uid), optional alternative
 class Api::V1::Mobile::AuthController < ActionController::API
+  MFA_MESSAGE = 'This user has two-factor authentication enabled. Sign in with email and password.'
+
   def google
     sign_in_with('google', params[:id_token])
   end
@@ -23,26 +25,9 @@ class Api::V1::Mobile::AuthController < ActionController::API
   def sign_in_with(provider, token, name: nil)
     claims = MobileAuth::TokenVerifier.new(provider).verify(token)
     result = MobileAuth::SignIn.new(provider: provider, claims: claims, name: name).perform
-    user = result.user
+    return render_error('mfa_required', MFA_MESSAGE, :forbidden) if mfa_enabled?(result.user)
 
-    return render_error('mfa_required', 'This user has two-factor authentication enabled. Sign in with email and password.', :forbidden) if mfa_enabled?(user)
-
-    auth = user.create_new_auth_token
-    response.headers.merge!(auth)
-    render json: {
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        access_token: user.access_token&.token,
-        pubsub_token: user.pubsub_token,
-        new_user: result.new_user,
-        accounts: user.account_users.includes(:account).map do |account_user|
-          { id: account_user.account_id, name: account_user.account.name, role: account_user.role }
-        end
-      },
-      auth: auth
-    }
+    render_signed_in(result)
   rescue MobileAuth::TokenVerifier::InvalidToken => e
     render_error('invalid_token', e.message, :unauthorized)
   rescue MobileAuth::TokenVerifier::NotConfigured => e
@@ -51,6 +36,27 @@ class Api::V1::Mobile::AuthController < ActionController::API
     render_error(e.code, e.message, :unprocessable_entity)
   rescue ActiveRecord::RecordInvalid => e
     render_error('invalid_record', e.record.errors.full_messages.to_sentence, :unprocessable_entity)
+  end
+
+  def render_signed_in(result)
+    user = result.user
+    auth = user.create_new_auth_token
+    response.headers.merge!(auth)
+    render json: { data: user_data(user, result.new_user), auth: auth }
+  end
+
+  def user_data(user, new_user)
+    {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      access_token: user.access_token&.token,
+      pubsub_token: user.pubsub_token,
+      new_user: new_user,
+      accounts: user.account_users.includes(:account).map do |account_user|
+        { id: account_user.account_id, name: account_user.account.name, role: account_user.role }
+      end
+    }
   end
 
   def mfa_enabled?(user)

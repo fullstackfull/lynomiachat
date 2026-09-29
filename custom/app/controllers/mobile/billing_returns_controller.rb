@@ -6,8 +6,13 @@
 # The page opens the app with the configured deep link, e.g.
 #   lynomia://billing?checkout=success&account_id=123
 # and shows a "Return to the app" button as a fallback.
-class Mobile::BillingReturnsController < ActionController::Base
+# Plain public page: no dashboard session, locale or error handling needed.
+class Mobile::BillingReturnsController < ActionController::Base # rubocop:disable Rails/ApplicationController
   RESULTS = %w[success canceled portal].freeze
+  STYLES = <<~CSS.squish.freeze
+    body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 48px 24px; color: #1f2937; }
+    .btn { display: inline-block; margin-top: 16px; padding: 12px 20px; border-radius: 10px; background: #2563eb; color: #fff; text-decoration: none; }
+  CSS
 
   def show
     base = Billing::Settings.mobile_return_url
@@ -33,10 +38,7 @@ class Mobile::BillingReturnsController < ActionController::Base
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Billing</title>
-          <style>
-            body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 48px 24px; color: #1f2937; }
-            .btn { display: inline-block; margin-top: 16px; padding: 12px 20px; border-radius: 10px; background: #2563eb; color: #fff; text-decoration: none; }
-          </style>
+          <style>#{STYLES}</style>
         </head>
         <body>
           <h2>شكراً لك / Thank you</h2>
@@ -48,4 +50,3 @@ class Mobile::BillingReturnsController < ActionController::Base
     HTML
   end
 end
-

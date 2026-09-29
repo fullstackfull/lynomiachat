@@ -58,7 +58,7 @@ class Platform::Api::V1::Billing::SubscriptionsController < Platform::Api::V1::B
 
   # POST .../:account_id/checkout_link  { plan_id, email (optional: a user of the account, default first admin) }
   def checkout_link
-    user = params[:email].present? ? @account.users.find_by(email: params[:email]) : @account.administrators.first
+    user = params[:email].present? ? @account.users.from_email(params[:email]) : @account.administrators.first
     return render_error('user_not_found', 'No matching user in this account', :unprocessable_entity) if user.nil?
 
     url = ::Billing::Checkout.new(account: @account, plan: requested_plan, user: user).perform

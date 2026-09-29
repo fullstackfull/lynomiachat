@@ -51,13 +51,17 @@ const TEXT = {
     CURRENT_PLAN: 'Current plan',
     CHANGE_PLAN: 'Change plan',
     ADMIN_ONLY: 'Only account administrators can manage the subscription.',
-    CHECKOUT_SUCCESS: 'Payment received. Your subscription will be active in a few seconds.',
+    CHECKOUT_SUCCESS:
+      'Payment received. Your subscription will be active in a few seconds.',
     CHECKOUT_CANCELED: 'Checkout was canceled. No payment was made.',
     ACTION_ERROR: 'Something went wrong, please try again.',
     CONFIRM_TITLE: 'Change plan to {plan}?',
-    CONFIRM_CHARGE: 'Your plan will change to {plan} immediately. You will be charged {amount} now for the remaining days of this billing period.',
-    CONFIRM_CREDIT: 'Your plan will change to {plan} immediately. {amount} will be added as credit to your next invoices.',
-    CONFIRM_FREE: 'Your plan will change to {plan} immediately. Nothing will be charged now.',
+    CONFIRM_CHARGE:
+      'Your plan will change to {plan} immediately. You will be charged {amount} now for the remaining days of this billing period.',
+    CONFIRM_CREDIT:
+      'Your plan will change to {plan} immediately. {amount} will be added as credit to your next invoices.',
+    CONFIRM_FREE:
+      'Your plan will change to {plan} immediately. Nothing will be charged now.',
     CONFIRM_BUTTON: 'Confirm change',
     CANCEL_BUTTON: 'Cancel',
     CHANGE_SUCCESS: 'Your plan was changed to {plan}.',
@@ -105,8 +109,10 @@ const TEXT = {
     CHECKOUT_CANCELED: 'تم إلغاء عملية الدفع. لم يتم خصم أي مبلغ.',
     ACTION_ERROR: 'حدث خطأ، حاول مرة أخرى.',
     CONFIRM_TITLE: 'تغيير الخطة إلى {plan}؟',
-    CONFIRM_CHARGE: 'ستتحوّل خطتك إلى {plan} فوراً، وسيتم خصم {amount} الآن مقابل الأيام المتبقية من الفترة الحالية.',
-    CONFIRM_CREDIT: 'ستتحوّل خطتك إلى {plan} فوراً، وسيُضاف {amount} كرصيد يُخصم من فواتيرك القادمة.',
+    CONFIRM_CHARGE:
+      'ستتحوّل خطتك إلى {plan} فوراً، وسيتم خصم {amount} الآن مقابل الأيام المتبقية من الفترة الحالية.',
+    CONFIRM_CREDIT:
+      'ستتحوّل خطتك إلى {plan} فوراً، وسيُضاف {amount} كرصيد يُخصم من فواتيرك القادمة.',
     CONFIRM_FREE: 'ستتحوّل خطتك إلى {plan} فوراً، ولن يتم خصم أي مبلغ الآن.',
     CONFIRM_BUTTON: 'تأكيد التغيير',
     CANCEL_BUTTON: 'إلغاء',
@@ -115,10 +121,15 @@ const TEXT = {
 };
 
 const { locale } = useI18n();
-const lang = computed(() => (String(locale.value).startsWith('ar') ? 'ar' : 'en'));
+const lang = computed(() =>
+  String(locale.value).startsWith('ar') ? 'ar' : 'en'
+);
 const t = (key, params = {}) => {
   const text = TEXT[lang.value][key] || TEXT.en[key] || key;
-  return Object.entries(params).reduce((result, [name, value]) => result.replace(`{${name}}`, value), text);
+  return Object.entries(params).reduce(
+    (result, [name, value]) => result.replace(`{${name}}`, value),
+    text
+  );
 };
 
 // ---------- state ----------
@@ -145,20 +156,29 @@ const currentPlan = computed(() =>
 
 const hasPaidSubscription = computed(() => {
   const sub = subscription.value;
-  return !!sub && sub.source === 'stripe' && ['active', 'past_due'].includes(sub.status);
+  return (
+    !!sub &&
+    sub.source === 'stripe' &&
+    ['active', 'past_due'].includes(sub.status)
+  );
 });
 
 // Plan changes are only possible on an active (not past due) Stripe subscription
 const canChangePlan = computed(
-  () => subscription.value?.source === 'stripe' && subscription.value?.status === 'active'
+  () =>
+    subscription.value?.source === 'stripe' &&
+    subscription.value?.status === 'active'
 );
 
 const isManual = computed(
-  () => subscription.value?.source === 'manual' && subscription.value?.status === 'active'
+  () =>
+    subscription.value?.source === 'manual' &&
+    subscription.value?.status === 'active'
 );
 
 // ---------- helpers ----------
-const formatDate = value => (value ? format(new Date(value), 'dd MMM, yyyy') : '');
+const formatDate = value =>
+  value ? format(new Date(value), 'dd MMM, yyyy') : '';
 
 const formatMoney = (amount, currency) => {
   try {
@@ -173,14 +193,17 @@ const formatMoney = (amount, currency) => {
 
 const formatPrice = plan => formatMoney(plan.price, plan.currency);
 
-const limitText = value => (value === undefined || value === null ? t('UNLIMITED') : value);
+const limitText = value =>
+  value === undefined || value === null ? t('UNLIMITED') : value;
 
 const confirmMessage = computed(() => {
   if (!pendingChange.value) return '';
   const { plan, preview } = pendingChange.value;
   const amount = formatMoney(Math.abs(preview.amount), preview.currency);
-  if (preview.amount > 0) return t('CONFIRM_CHARGE', { plan: plan.name, amount });
-  if (preview.amount < 0) return t('CONFIRM_CREDIT', { plan: plan.name, amount });
+  if (preview.amount > 0)
+    return t('CONFIRM_CHARGE', { plan: plan.name, amount });
+  if (preview.amount < 0)
+    return t('CONFIRM_CREDIT', { plan: plan.name, amount });
   return t('CONFIRM_FREE', { plan: plan.name });
 });
 
@@ -188,21 +211,41 @@ const statusInfo = computed(() => {
   const sub = subscription.value;
   if (!sub) return { label: t('STATUS_NONE'), dateLabel: '', date: '' };
   if (isManual.value) {
-    return { label: t('STATUS_MANUAL'), dateLabel: t('DATE_ENDS'), date: formatDate(sub.current_period_end) };
+    return {
+      label: t('STATUS_MANUAL'),
+      dateLabel: t('DATE_ENDS'),
+      date: formatDate(sub.current_period_end),
+    };
   }
 
   switch (sub.status) {
     case 'trialing':
       return sub.usable
-        ? { label: t('STATUS_TRIAL'), dateLabel: t('DATE_TRIAL'), date: formatDate(sub.trial_ends_at) }
+        ? {
+            label: t('STATUS_TRIAL'),
+            dateLabel: t('DATE_TRIAL'),
+            date: formatDate(sub.trial_ends_at),
+          }
         : { label: t('STATUS_TRIAL_ENDED'), dateLabel: '', date: '' };
     case 'active':
       return sub.cancel_at_period_end
-        ? { label: t('STATUS_ACTIVE_CANCELING'), dateLabel: t('DATE_ENDS'), date: formatDate(sub.current_period_end) }
-        : { label: t('STATUS_ACTIVE'), dateLabel: t('DATE_RENEWS'), date: formatDate(sub.current_period_end) };
+        ? {
+            label: t('STATUS_ACTIVE_CANCELING'),
+            dateLabel: t('DATE_ENDS'),
+            date: formatDate(sub.current_period_end),
+          }
+        : {
+            label: t('STATUS_ACTIVE'),
+            dateLabel: t('DATE_RENEWS'),
+            date: formatDate(sub.current_period_end),
+          };
     case 'past_due':
       return sub.usable
-        ? { label: t('STATUS_PAST_DUE'), dateLabel: t('DATE_GRACE'), date: formatDate(sub.grace_period_ends_at) }
+        ? {
+            label: t('STATUS_PAST_DUE'),
+            dateLabel: t('DATE_GRACE'),
+            date: formatDate(sub.grace_period_ends_at),
+          }
         : { label: t('STATUS_PAST_DUE_LOCKED'), dateLabel: '', date: '' };
     case 'canceled':
       return { label: t('STATUS_CANCELED'), dateLabel: '', date: '' };
@@ -351,17 +394,32 @@ onMounted(async () => {
           </h3>
           <p class="text-sm text-n-slate-11">{{ confirmMessage }}</p>
           <div class="flex gap-2">
-            <ButtonV4 sm solid blue :is-loading="isChangingPlan" @click="confirmPlanChange">
+            <ButtonV4
+              sm
+              solid
+              blue
+              :is-loading="isChangingPlan"
+              @click="confirmPlanChange"
+            >
               {{ t('CONFIRM_BUTTON') }}
             </ButtonV4>
-            <ButtonV4 sm faded slate :disabled="isChangingPlan" @click="cancelPlanChange">
+            <ButtonV4
+              sm
+              faded
+              slate
+              :disabled="isChangingPlan"
+              @click="cancelPlanChange"
+            >
               {{ t('CANCEL_BUTTON') }}
             </ButtonV4>
           </div>
         </div>
 
         <!-- current subscription -->
-        <BillingCard :title="t('CURRENT')" :description="t('MANAGE_BILLING_DESC')">
+        <BillingCard
+          :title="t('CURRENT')"
+          :description="t('MANAGE_BILLING_DESC')"
+        >
           <template #action>
             <ButtonV4
               v-if="isAdmin && subscription?.has_billing_account"
@@ -374,8 +432,13 @@ onMounted(async () => {
               {{ t('MANAGE_BILLING') }}
             </ButtonV4>
           </template>
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 divide-x divide-n-weak">
-            <DetailItem :label="t('PLAN')" :value="subscription?.plan_name || t('NO_PLAN')" />
+          <div
+            class="grid grid-cols-1 gap-2 sm:grid-cols-3 divide-x divide-n-weak"
+          >
+            <DetailItem
+              :label="t('PLAN')"
+              :value="subscription?.plan_name || t('NO_PLAN')"
+            />
             <DetailItem :label="t('STATUS')" :value="statusInfo.label" />
             <DetailItem
               v-if="statusInfo.date"
@@ -387,7 +450,9 @@ onMounted(async () => {
 
         <!-- usage -->
         <BillingCard :title="t('USAGE')" :description="t('USAGE_DESC')">
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 divide-x divide-n-weak">
+          <div
+            class="grid grid-cols-1 gap-2 sm:grid-cols-2 divide-x divide-n-weak"
+          >
             <DetailItem
               :label="t('AGENTS')"
               :value="`${usage.agents} / ${limitText(currentPlan?.limits?.agents)}`"
@@ -401,7 +466,9 @@ onMounted(async () => {
 
         <!-- plans -->
         <div class="flex flex-col gap-1 px-1 mt-4">
-          <h2 class="text-base font-medium text-n-slate-12">{{ t('PLANS') }}</h2>
+          <h2 class="text-base font-medium text-n-slate-12">
+            {{ t('PLANS') }}
+          </h2>
           <p class="text-sm text-n-slate-11">{{ t('PLANS_DESC') }}</p>
         </div>
 
@@ -414,27 +481,50 @@ onMounted(async () => {
             v-for="plan in plans"
             :key="plan.id"
             class="flex flex-col gap-4 p-5 rounded-xl outline outline-1 bg-n-solid-2"
-            :class="plan.id === subscription?.plan_id ? 'outline-n-brand' : 'outline-n-container'"
+            :class="
+              plan.id === subscription?.plan_id
+                ? 'outline-n-brand'
+                : 'outline-n-container'
+            "
           >
             <div class="flex flex-col gap-1">
-              <h3 class="text-base font-medium text-n-slate-12">{{ plan.name }}</h3>
+              <h3 class="text-base font-medium text-n-slate-12">
+                {{ plan.name }}
+              </h3>
               <p v-if="plan.description" class="text-sm text-n-slate-11">
                 {{ plan.description }}
               </p>
             </div>
 
             <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-semibold text-n-slate-12">{{ formatPrice(plan) }}</span>
+              <span class="text-2xl font-semibold text-n-slate-12">{{
+                formatPrice(plan)
+              }}</span>
               <span class="text-sm text-n-slate-11">
                 {{ plan.interval === 'year' ? t('PER_YEAR') : t('PER_MONTH') }}
-                <template v-if="plan.pricing_type === 'per_agent'"> · {{ t('PER_AGENT') }}</template>
+                <template v-if="plan.pricing_type === 'per_agent'">
+                  · {{ t('PER_AGENT') }}
+                </template>
               </span>
             </div>
 
             <ul class="flex flex-col gap-1 text-sm text-n-slate-11">
-              <li>✓ {{ t('AGENTS') }}: {{ limitText(plan.limits?.agents) }}</li>
-              <li>✓ {{ t('INBOXES') }}: {{ limitText(plan.limits?.inboxes) }}</li>
-              <li v-for="feature in plan.features" :key="feature">✓ {{ feature }}</li>
+              <li class="flex items-center gap-1.5">
+                <span class="i-lucide-check size-3.5 flex-shrink-0" />
+                {{ t('AGENTS') }}: {{ limitText(plan.limits?.agents) }}
+              </li>
+              <li class="flex items-center gap-1.5">
+                <span class="i-lucide-check size-3.5 flex-shrink-0" />
+                {{ t('INBOXES') }}: {{ limitText(plan.limits?.inboxes) }}
+              </li>
+              <li
+                v-for="feature in plan.features"
+                :key="feature"
+                class="flex items-center gap-1.5"
+              >
+                <span class="i-lucide-check size-3.5 flex-shrink-0" />
+                {{ feature }}
+              </li>
             </ul>
 
             <div v-if="isAdmin" class="mt-auto">
@@ -457,7 +547,9 @@ onMounted(async () => {
                 blue
                 class="w-full"
                 :is-loading="busyPlanId === plan.id"
-                :disabled="!canChangePlan || busyPlanId !== null || !!pendingChange"
+                :disabled="
+                  !canChangePlan || busyPlanId !== null || !!pendingChange
+                "
                 @click="startPlanChange(plan)"
               >
                 {{ t('CHANGE_PLAN') }}

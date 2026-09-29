@@ -104,3 +104,8 @@ CLAUDE.local.md
 .pnpm-store/*
 local/
 Procfile.worktree
+
+# Local backup copies
+*.bak
+*.backup-*
+New folder/

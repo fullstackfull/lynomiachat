@@ -233,7 +233,7 @@ export default {
 
 <style scoped>
 /* =========================================================
-   CHATWOOT CONVERSATION WORKSPACE — PREMIUM THEME v2
+   CHATWOOT CONVERSATION WORKSPACE - PREMIUM THEME v2
    Important: colours are inherited from Chatwoot semantic
    classes (bg-n-background / text-n-slate / border-n-weak),
    so the native Light/Dark switch remains authoritative.

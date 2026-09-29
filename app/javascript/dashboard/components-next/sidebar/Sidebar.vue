@@ -39,7 +39,7 @@ const emit = defineEmits([
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 const store = useStore();
 const searchShortcut = useKbd([`$mod`, 'k']);
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 const isACustomBrandedInstance = useMapGetter(
   'globalConfig/isACustomBrandedInstance'
@@ -110,8 +110,7 @@ const isEffectivelyCollapsed = computed(
   () => !isMobile.value && isCollapsed.value
 );
 
-// Toggle sidebar collapsed/expanded state
-// 1. ????? ???? ??????? ????? ????? 332px ??? ?????
+// Toggle sidebar collapsed/expanded state (expands to the preferred width)
 const toggleSidebar = () => {
   if (isCollapsed.value) {
     setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
@@ -122,7 +121,7 @@ const toggleSidebar = () => {
   }
 };
 
-// 2. ????? ????? ?????? ?? 332px ??? ??????? ?? ?? ???? (?? ?? ??? ?????)
+// Always use the preferred width when the sidebar expands, whatever triggered it
 watch(isCollapsed, (isNowCollapsed) => {
   if (!isNowCollapsed && !isMobile.value) {
     setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
@@ -722,7 +721,7 @@ const menuItems = computed(() => {
         },
         {
           name: 'Settings Subscription',
-          label: String(locale.value).startsWith('ar') ? '????????' : 'Subscription',
+          label: t('SIDEBAR.SUBSCRIPTION'),
           icon: 'i-lucide-wallet',
           to: accountScopedRoute('subscription_settings_index'),
         },
@@ -778,10 +777,9 @@ const menuItems = computed(() => {
   v-if="!isMobile"
   type="button"
   class="sidebar-toggle-btn hidden md:flex items-center justify-center size-8 rounded-xl"
-  :title="t('SIDEBAR.EXPAND') || '????? ???????'"
+  :title="t('SIDEBAR.EXPAND_SIDEBAR')"
   @click="toggleSidebar"
 >
-  <!-- ?????? FontAwesome ??????? -->
 <span class="i-lucide-chevron-right size-4 rtl:rotate-180" />
 </button>
           </div>
@@ -798,10 +796,9 @@ const menuItems = computed(() => {
   v-if="!isMobile"
   type="button"
   class="sidebar-toggle-btn hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-xl"
-  :title="t('SIDEBAR.COLLAPSE') || '?? ???????'"
+  :title="t('SIDEBAR.COLLAPSE_SIDEBAR')"
   @click="toggleSidebar"
 >
-  <!-- ?????? FontAwesome ???? -->
  <span class="i-lucide-chevron-left size-4 rtl:rotate-180" />
 </button>
         </template>
@@ -902,7 +899,7 @@ const menuItems = computed(() => {
 
     <div
       class="sidebar-resize hidden md:block absolute top-0 h-full w-1.5 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
-      title="???? ????? ???? ?? ???????"
+      :title="t('SIDEBAR.RESIZE_SIDEBAR')"
       @mousedown="onResizeStart"
       @touchstart="onResizeStart"
       @dblclick="onResizeHandleDoubleClick"
@@ -1425,7 +1422,7 @@ const menuItems = computed(() => {
   --sb-muted: #d6e3fb;
 
   isolation: isolate;
-  overflow: visible; /* <--- ?????? visible ?? ???? ???????/???? ?????????? */
+  overflow: visible; /* collapsed: let tooltips and popovers overflow the sidebar */
   color: var(--sb-text);
   border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
   background:
@@ -1438,7 +1435,7 @@ const menuItems = computed(() => {
     18px 0 48px rgba(2, 9, 22, 0.28);
 }
 
-/* <--- ??? ????? ??? hidden ??? ??? ?????/??????? ??? ??????? ???????? */
+/* expanded: clip the decorative background inside the sidebar */
 .sidebar-shell.sidebar-expanded {
   overflow: hidden;
 }

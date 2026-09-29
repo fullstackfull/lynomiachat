@@ -23,11 +23,10 @@ module Billing::AccessGuard
 
     account = Current.account
     return if account.nil?
-    # Billing not set up yet (right after deployment): don't lock anyone
-    return unless Billing::Settings.enforced?
 
-    subscription = account.billing_subscription || Billing::TrialStarter.new(account).perform
-    return if subscription.usable?
+    # No subscription and no trial configured yet (e.g. right after deployment): don't lock
+    subscription = Billing::TrialStarter.subscription_for(account)
+    return if subscription.nil? || subscription.accessible?
 
     render json: {
       error: 'subscription_required',

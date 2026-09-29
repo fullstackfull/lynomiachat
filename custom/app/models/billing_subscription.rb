@@ -42,6 +42,12 @@ class BillingSubscription < ApplicationRecord
     end
   end
 
+  # Is the dashboard open for the account? Same as usable?, except that an account
+  # that never subscribed is not locked while billing is not set up (it can't pay yet).
+  def accessible?
+    usable? || (status == 'inactive' && !Billing::Settings.enforced?)
+  end
+
   private
 
   # Stripe subscriptions are kept in sync by webhooks.

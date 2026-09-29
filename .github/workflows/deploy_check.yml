@@ -18,6 +18,7 @@ jobs:
   deployment_check:
     name: Check Deployment
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'chatwoot/chatwoot' }}
     steps:
       - name: Install jq
         run: sudo apt-get install -y jq

@@ -22,8 +22,9 @@ module Custom::Account
   private
 
   # Never let a billing problem break account creation.
-  # Before billing is set up, the subscription is created on first access instead
-  # (see Billing::AccessGuard), so the account still gets the trial once it exists.
+  # Before billing is set up (no Stripe keys, no trial plan) no subscription is created:
+  # the account stays open and gets the trial on first access once a trial plan is
+  # configured (see Billing::TrialStarter.subscription_for).
   def start_billing_trial
     return unless Billing::Settings.enforced?
 

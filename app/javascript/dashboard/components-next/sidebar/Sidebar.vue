@@ -101,7 +101,6 @@ const {
   setSidebarWidth,
   saveWidth,
   snapToCollapsed,
-  snapToExpanded,
   COLLAPSED_THRESHOLD,
   MAX_WIDTH,
 } = useSidebarResize();
@@ -118,7 +117,6 @@ const isEffectivelyCollapsed = computed(
 const toggleSidebar = () => {
   if (isCollapsed.value) {
     setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
-    snapToExpanded();
     saveWidth();
   } else {
     snapToCollapsed();

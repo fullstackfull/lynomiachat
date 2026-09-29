@@ -43,7 +43,7 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
 
   def entitlements
     account = Current.account
-    subscription = account.billing_subscription
+    subscription = Billing::TrialStarter.subscription_for(account)
     plan = subscription&.plan
 
     render json: {
@@ -111,9 +111,7 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
 
   # Same rule as Billing::AccessGuard
   def account_open?(subscription)
-    return true unless Billing::Settings.enforced?
-
-    subscription&.usable? || false
+    subscription.nil? || subscription.accessible?
   end
 
   def ends_at(subscription)

@@ -303,13 +303,6 @@ export default {
 
         <!-- MFA -->
         <div v-if="mfaRequired" class="auth-card">
-          <div class="auth-heading">
-            <h2>{{ $t('LOGIN.MFA_TITLE') }}</h2>
-            <p>
-              {{ $t('LOGIN.MFA_SUBTITLE') }}
-            </p>
-          </div>
-
           <MfaVerification
             :mfa-token="mfaToken"
             @verified="handleMfaVerified"
@@ -799,7 +792,8 @@ body {
   gap: 18px;
 }
 
-.auth-card label {
+/* Login form only: the MFA card has its own light/dark colours */
+.auth-form label {
   color: #344054 !important;
 
   font-size: 13px !important;

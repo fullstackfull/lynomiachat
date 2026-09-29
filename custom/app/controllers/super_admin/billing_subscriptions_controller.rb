@@ -61,6 +61,8 @@ class SuperAdmin::BillingSubscriptionsController < SuperAdmin::ApplicationContro
 
     ends_at = Time.zone.parse(params[:ends_at].to_s)&.end_of_day
     ends_at.nil? || ends_at.past? ? :invalid : ends_at
+  rescue ArgumentError # e.g. "2026-13-45"
+    :invalid
   end
 
   def manual_grant_attributes(plan, ends_at)

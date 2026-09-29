@@ -20,6 +20,12 @@ class Billing::TrialStarter
     Billing::Settings.trial_enabled? && Billing::Settings.trial_plan.present? && Billing::Settings.trial_days.positive?
   end
 
+  # The account's subscription. An account without one starts the trial on first
+  # access once a trial is configured; until then it has none and is not locked.
+  def self.subscription_for(account)
+    account.billing_subscription || (new(account).perform if configured?)
+  end
+
   def initialize(account, check_usage: true)
     @account = account
     @check_usage = check_usage
@@ -30,6 +36,9 @@ class Billing::TrialStarter
     return start_trial if trial_allowed?
 
     @account.create_billing_subscription!(status: 'inactive')
+  rescue ActiveRecord::RecordNotUnique
+    # A parallel request created it first
+    @account.reload.billing_subscription
   end
 
   private

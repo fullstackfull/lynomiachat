@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Billing customization (see BILLING_CHANGES.md)
+# Billing customization (code lives in custom/app)
 # Runs on boot and on every code reload in development.
 Rails.application.config.to_prepare do
   {

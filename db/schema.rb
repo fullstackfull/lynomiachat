@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_28_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -259,6 +259,59 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.datetime "updated_at", null: false
     t.boolean "active", default: true, null: false
     t.index ["account_id"], name: "index_automation_rules_on_account_id"
+  end
+
+  create_table "billing_plans", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.integer "price_cents", default: 0, null: false
+    t.string "currency", default: "usd", null: false
+    t.string "interval", default: "month", null: false
+    t.string "pricing_type", default: "flat", null: false
+    t.jsonb "limits", default: {}, null: false
+    t.jsonb "features", default: [], null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.string "stripe_product_id"
+    t.string "stripe_price_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_billing_plans_on_active"
+    t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id", unique: true
+  end
+
+  create_table "billing_subscriptions", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.bigint "plan_id"
+    t.bigint "scheduled_plan_id"
+    t.string "status", default: "inactive", null: false
+    t.string "source", default: "stripe", null: false
+    t.integer "quantity", default: 1, null: false
+    t.datetime "trial_ends_at"
+    t.datetime "current_period_end"
+    t.datetime "grace_period_ends_at"
+    t.boolean "cancel_at_period_end", default: false, null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
+    t.string "stripe_price_id"
+    t.string "stripe_schedule_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_billing_subscriptions_on_account_id", unique: true
+    t.index ["plan_id"], name: "index_billing_subscriptions_on_plan_id"
+    t.index ["scheduled_plan_id"], name: "index_billing_subscriptions_on_scheduled_plan_id"
+    t.index ["status"], name: "index_billing_subscriptions_on_status"
+    t.index ["stripe_customer_id"], name: "index_billing_subscriptions_on_stripe_customer_id"
+    t.index ["stripe_subscription_id"], name: "index_billing_subscriptions_on_stripe_subscription_id", unique: true
+  end
+
+  create_table "billing_trial_usages", force: :cascade do |t|
+    t.string "email", null: false
+    t.integer "account_id"
+    t.datetime "trial_ends_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_billing_trial_usages_on_email", unique: true
   end
 
   create_table "calls", force: :cascade do |t|
@@ -1020,6 +1073,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
     t.index ["source_id"], name: "index_messages_on_source_id"
   end
 
+  create_table "mobile_auth_identities", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "uid"], name: "index_mobile_auth_identities_on_provider_and_uid", unique: true
+    t.index ["user_id"], name: "index_mobile_auth_identities_on_user_id"
+  end
+
   create_table "notes", force: :cascade do |t|
     t.text "content", null: false
     t.bigint "account_id", null: false
@@ -1323,7 +1387,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_25_093000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
+  add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
+  add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).

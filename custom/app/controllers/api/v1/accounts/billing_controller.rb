@@ -64,9 +64,7 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
   end
 
   def checkout
-    if mobile_request? && !Billing::Settings.mobile_checkout_enabled?
-      return render json: { error: 'mobile_checkout_disabled' }, status: :forbidden
-    end
+    return render json: { error: 'mobile_checkout_disabled' }, status: :forbidden if mobile_request? && !Billing::Settings.mobile_checkout_enabled?
 
     url = Billing::Checkout.new(account: Current.account, plan: requested_plan, user: current_user, mobile: mobile_request?).perform
     render json: { url: url }
@@ -113,9 +111,9 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
 
   # Same rule as Billing::AccessGuard
   def account_open?(subscription)
-    return !Billing::TrialStarter.configured? if subscription.nil?
+    return true unless Billing::Settings.enforced?
 
-    subscription.usable?
+    subscription&.usable? || false
   end
 
   def ends_at(subscription)

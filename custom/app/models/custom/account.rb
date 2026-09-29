@@ -21,8 +21,12 @@ module Custom::Account
 
   private
 
-  # Never let a billing problem break account creation
+  # Never let a billing problem break account creation.
+  # Before billing is set up, the subscription is created on first access instead
+  # (see Billing::AccessGuard), so the account still gets the trial once it exists.
   def start_billing_trial
+    return unless Billing::Settings.enforced?
+
     Billing::TrialStarter.new(self).perform
   rescue StandardError => e
     Rails.logger.error("[Billing] Could not start trial for account #{id}: #{e.message}")

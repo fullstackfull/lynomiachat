@@ -35,23 +35,10 @@ class SuperAdmin::BillingSubscriptionsController < SuperAdmin::ApplicationContro
     return back_with(error: 'Choose a plan.') if plan.nil?
     return back_with(error: paid_error) if stripe_paid?(subscription)
 
-    ends_at = nil
-    if params[:ends_at].present?
-      ends_at = Time.zone.parse(params[:ends_at].to_s)&.end_of_day
-      return back_with(error: 'The end date is not valid.') if ends_at.nil? || ends_at.past?
-    end
+    ends_at = grant_end_date
+    return back_with(error: 'The end date is not valid.') if ends_at == :invalid
 
-    subscription.update!(
-      source: 'manual',
-      status: 'active',
-      plan: plan,
-      current_period_end: ends_at,
-      trial_ends_at: nil,
-      grace_period_ends_at: nil,
-      cancel_at_period_end: false,
-      stripe_subscription_id: nil,
-      stripe_price_id: nil
-    )
+    subscription.update!(manual_grant_attributes(plan, ends_at))
     until_text = ends_at ? "until #{ends_at.strftime('%d %b %Y')}" : 'with no end date'
     back_with(notice: "Plan #{plan.name} granted #{until_text}.")
   end
@@ -67,6 +54,28 @@ class SuperAdmin::BillingSubscriptionsController < SuperAdmin::ApplicationContro
   end
 
   private
+
+  # nil = no end date, :invalid = unreadable or in the past
+  def grant_end_date
+    return if params[:ends_at].blank?
+
+    ends_at = Time.zone.parse(params[:ends_at].to_s)&.end_of_day
+    ends_at.nil? || ends_at.past? ? :invalid : ends_at
+  end
+
+  def manual_grant_attributes(plan, ends_at)
+    {
+      source: 'manual',
+      status: 'active',
+      plan: plan,
+      current_period_end: ends_at,
+      trial_ends_at: nil,
+      grace_period_ends_at: nil,
+      cancel_at_period_end: false,
+      stripe_subscription_id: nil,
+      stripe_price_id: nil
+    }
+  end
 
   def stripe_paid?(subscription)
     subscription.source == 'stripe' &&

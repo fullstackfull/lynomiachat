@@ -23,6 +23,7 @@ Metrics/MethodLength:
   Max: 19
   Exclude:
     - 'enterprise/lib/captain/agent.rb'
+    - 'custom/db/migrate/20260926100100_create_billing_subscriptions.rb'
 
 RSpec/ExampleLength:
   Max: 50

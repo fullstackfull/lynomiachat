@@ -33,7 +33,14 @@ module Billing::ApiSerializer
     data = {
       id: subscription.id,
       account: account && { id: account.id, name: account.name, status: account.status },
-      plan: subscription.plan && { id: subscription.plan.id, name: subscription.plan.name },
+      plan: subscription.plan && { id: subscription.plan.id, name: subscription.plan.name }
+    }.merge(subscription_state(subscription), subscription_stripe_fields(subscription))
+    data[:usage] = usage(account) if with_usage && account
+    data
+  end
+
+  def subscription_state(subscription)
+    {
       status: subscription.status,
       usable: subscription.usable?,
       source: subscription.source,
@@ -41,15 +48,18 @@ module Billing::ApiSerializer
       trial_ends_at: subscription.trial_ends_at,
       current_period_end: subscription.current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
-      grace_period_ends_at: subscription.grace_period_ends_at,
+      grace_period_ends_at: subscription.grace_period_ends_at
+    }
+  end
+
+  def subscription_stripe_fields(subscription)
+    {
       stripe_customer_id: subscription.stripe_customer_id,
       stripe_subscription_id: subscription.stripe_subscription_id,
       stripe_price_id: subscription.stripe_price_id,
       created_at: subscription.created_at,
       updated_at: subscription.updated_at
     }
-    data[:usage] = usage(account) if with_usage && account
-    data
   end
 
   def usage(account)

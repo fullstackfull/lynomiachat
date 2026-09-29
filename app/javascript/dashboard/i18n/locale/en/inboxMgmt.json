@@ -253,7 +253,9 @@
           "WHATSAPP_CLOUD_DESC": "Quick setup through Meta",
           "WHATSAPP_CLOUD_MANUAL_SETUP_DESC": "Manual setup with Cloud API credentials",
           "TWILIO_DESC": "Connect via Twilio credentials",
-          "360_DIALOG": "360Dialog"
+          "360_DIALOG": "360Dialog",
+          "WHATSAPP_BUSINESS_APP": "WhatsApp Business",
+          "WHATSAPP_BUSINESS_APP_DESC": "Connect your existing WhatsApp Business App and continue using it on your phone with Chatwoot."
         },
         "SELECT_PROVIDER": {
           "TITLE": "Select your API provider",
@@ -435,7 +437,18 @@
           },
           "RESTRICTED_WARNING": "WhatsApp Embedded Signup is temporarily unavailable due to an API-level issue on Meta’s side, not a problem with Chatwoot. You can use manual setup for eligible Cloud API numbers. We’re working closely with Meta to resolve it as quickly as possible.",
           "STATUS_LINK": "View status updates",
-          "CALLING_ENABLE_FAILED": "Your WhatsApp inbox is ready, but voice calling couldn't be turned on — this number isn't enrolled in the WhatsApp Business Calling API yet. Reach out to Meta or your WhatsApp Business Solution Provider to onboard it, then turn calling on from the inbox's Calls settings."
+          "CALLING_ENABLE_FAILED": "Your WhatsApp inbox is ready, but voice calling couldn't be turned on — this number isn't enrolled in the WhatsApp Business Calling API yet. Reach out to Meta or your WhatsApp Business Solution Provider to onboard it, then turn calling on from the inbox's Calls settings.",
+          "BUSINESS_APP": {
+            "TITLE": "Connect your WhatsApp Business App",
+            "DESC": "Keep your number and keep using the WhatsApp Business App on your phone. Meta connects the same number to Chatwoot, so your team can reply from here too.",
+            "BENEFITS": {
+              "KEEP_APP": "Keep your number and keep using the app on your phone",
+              "SYNC": "Replies you send from the phone appear in the same Chatwoot conversation",
+              "OFFICIAL": "Official Meta connection (WhatsApp Business Platform)"
+            },
+            "NOTE": "Needs WhatsApp Business App 2.24.17 or later. Chats from before the connection are not imported, and linked devices (such as WhatsApp Web) are signed out during setup and can be linked again. In the Meta window, pick your existing WhatsApp Business App number and confirm the connection on your phone.",
+            "SUBMIT": "Connect WhatsApp Business"
+          }
         },
         "API": {
           "ERROR_MESSAGE": "We were not able to save the WhatsApp channel",

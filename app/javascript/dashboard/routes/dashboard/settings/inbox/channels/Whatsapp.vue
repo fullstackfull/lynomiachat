@@ -15,10 +15,12 @@ import Icon from 'dashboard/components-next/icon/Icon.vue';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { META_RESTRICTION_STATUS_URL } from 'dashboard/constants/globals';
+import { useBranding } from 'shared/composables/useBranding';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+const { replaceInstallationName } = useBranding();
 const accessRequestDialogRef = ref(null);
 const {
   isCloudFeatureEnabled,
@@ -33,6 +35,8 @@ const PROVIDER_TYPES = {
   WHATSAPP_EMBEDDED: 'whatsapp_embedded',
   WHATSAPP_MANUAL: 'whatsapp_manual',
   THREE_SIXTY_DIALOG: '360dialog',
+  // Lynomia: existing WhatsApp Business App number via Meta Embedded Signup (Coexistence)
+  WHATSAPP_BUSINESS_APP: 'whatsapp_business_app',
 };
 
 const hasWhatsappAppId = computed(() => {
@@ -65,6 +69,16 @@ const shouldShowWhatsappEmbeddedSignup = computed(() => {
   );
 });
 
+const canUseEmbeddedSignup = computed(
+  () => hasWhatsappAppId.value && isWhatsappEmbeddedSignupFeatureEnabled.value
+);
+
+const shouldShowWhatsappBusinessApp = computed(
+  () =>
+    selectedProvider.value === PROVIDER_TYPES.WHATSAPP_BUSINESS_APP &&
+    canUseEmbeddedSignup.value
+);
+
 const shouldShowEmbeddedSignupAccessRequest = computed(() => {
   return (
     selectedProvider.value === PROVIDER_TYPES.WHATSAPP &&
@@ -90,6 +104,18 @@ const availableProviders = computed(() => [
     description: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.TWILIO_DESC'),
     icon: 'i-woot-twilio',
   },
+  ...(canUseEmbeddedSignup.value
+    ? [
+        {
+          key: PROVIDER_TYPES.WHATSAPP_BUSINESS_APP,
+          title: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_BUSINESS_APP'),
+          description: replaceInstallationName(
+            t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_BUSINESS_APP_DESC')
+          ),
+          icon: 'i-woot-whatsapp',
+        },
+      ]
+    : []),
 ]);
 
 const providerSelectionDescription = computed(() =>
@@ -258,6 +284,14 @@ const requestEmbeddedSignupAccess = () => {
             </I18nT>
           </div>
         </div>
+
+        <WhatsappEmbeddedSignup
+          v-else-if="shouldShowWhatsappBusinessApp"
+          variant="business_app"
+          :is-disabled="isWhatsappEmbeddedSignupDisabled"
+          :show-restriction-alert="isWhatsappEmbeddedSignupDisabled"
+          :restriction-status-url="META_RESTRICTION_STATUS_URL"
+        />
 
         <!-- Other providers -->
         <Twilio

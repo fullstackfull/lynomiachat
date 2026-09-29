@@ -63,7 +63,7 @@ class Whatsapp::EmbeddedSignupService
       ).perform(access_token, phone_info)
     else
       waba_info = { waba_id: @waba_id, business_name: phone_info[:business_name] }
-      Whatsapp::ChannelCreationService.new(@account, waba_info, phone_info, access_token).perform
+      Whatsapp::ChannelCreationService.new(@account, waba_info, phone_info, access_token, is_coexistence: @is_coexistence).perform
     end
   end
 

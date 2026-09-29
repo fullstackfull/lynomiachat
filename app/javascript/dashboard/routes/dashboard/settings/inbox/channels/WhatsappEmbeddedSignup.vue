@@ -12,6 +12,7 @@ import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import InboxesAPI from 'dashboard/api/inboxes';
 import { parseAPIErrorResponse } from 'dashboard/store/utils/api';
 import globalConstants from 'dashboard/constants/globals.js';
+import { useBranding } from 'shared/composables/useBranding';
 
 const props = defineProps({
   enableCallingOnComplete: {
@@ -30,6 +31,13 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // Lynomia: 'business_app' shows the "WhatsApp Business" (existing WhatsApp Business App /
+  // Coexistence) copy. The Meta flow and the API call are identical for both variants.
+  variant: {
+    type: String,
+    default: 'default',
+    validator: value => ['default', 'business_app'].includes(value),
+  },
 });
 
 const store = useStore();
@@ -40,7 +48,10 @@ const { isAuthenticating, runEmbeddedSignup } = useWhatsappEmbeddedSignup();
 const isProcessing = ref(false);
 const processingMessage = ref('');
 
-const benefits = computed(() => [
+const { replaceInstallationName } = useBranding();
+const isBusinessApp = computed(() => props.variant === 'business_app');
+
+const defaultBenefits = computed(() => [
   {
     key: 'EASY_SETUP',
     text: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BENEFITS.EASY_SETUP'),
@@ -54,6 +65,52 @@ const benefits = computed(() => [
     text: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BENEFITS.AUTO_CONFIG'),
   },
 ]);
+
+const businessAppBenefits = computed(() => [
+  {
+    key: 'KEEP_APP',
+    text: replaceInstallationName(
+      t(
+        'INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.BENEFITS.KEEP_APP'
+      )
+    ),
+  },
+  {
+    key: 'SYNC',
+    text: replaceInstallationName(
+      t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.BENEFITS.SYNC')
+    ),
+  },
+  {
+    key: 'OFFICIAL',
+    text: replaceInstallationName(
+      t(
+        'INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.BENEFITS.OFFICIAL'
+      )
+    ),
+  },
+]);
+
+const benefits = computed(() =>
+  isBusinessApp.value ? businessAppBenefits.value : defaultBenefits.value
+);
+
+const copy = computed(() => {
+  if (!isBusinessApp.value) {
+    return {
+      title: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.TITLE'),
+      description: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.DESC'),
+      submit: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.SUBMIT_BUTTON'),
+    };
+  }
+  return {
+    title: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.TITLE'),
+    description: replaceInstallationName(
+      t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.DESC')
+    ),
+    submit: t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.SUBMIT'),
+  };
+});
 
 const showLoader = computed(() => isAuthenticating.value || isProcessing.value);
 
@@ -148,10 +205,10 @@ const launchEmbeddedSignup = async () => {
         </div>
 
         <h3 class="mb-2 text-base font-medium text-n-slate-12">
-          {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.TITLE') }}
+          {{ copy.title }}
         </h3>
         <p class="text-sm leading-[24px] text-n-slate-12">
-          {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.DESC') }}
+          {{ copy.description }}
         </p>
       </div>
 
@@ -165,6 +222,10 @@ const launchEmbeddedSignup = async () => {
           {{ benefit.text }}
         </div>
       </div>
+
+      <p v-if="isBusinessApp" class="mb-6 text-sm text-n-slate-11">
+        {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.BUSINESS_APP.NOTE') }}
+      </p>
 
       <div class="flex flex-col gap-2 mb-6">
         <I18nT
@@ -221,7 +282,7 @@ const launchEmbeddedSignup = async () => {
           class="w-full"
           @click="launchEmbeddedSignup"
         >
-          {{ $t('INBOX_MGMT.ADD.WHATSAPP.EMBEDDED_SIGNUP.SUBMIT_BUTTON') }}
+          {{ copy.submit }}
         </NextButton>
       </div>
     </div>

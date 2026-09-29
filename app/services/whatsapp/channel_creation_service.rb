@@ -1,9 +1,10 @@
 class Whatsapp::ChannelCreationService
-  def initialize(account, waba_info, phone_info, access_token)
+  def initialize(account, waba_info, phone_info, access_token, is_coexistence: false)
     @account = account
     @waba_info = waba_info
     @phone_info = phone_info
     @access_token = access_token
+    @is_coexistence = is_coexistence
   end
 
   def perform
@@ -48,12 +49,15 @@ class Whatsapp::ChannelCreationService
   end
 
   def build_provider_config
-    {
+    config = {
       api_key: @access_token,
       phone_number_id: @phone_info[:phone_number_id],
       business_account_id: @waba_info[:waba_id],
       source: 'embedded_signup'
     }
+    # Lynomia: remember numbers onboarded from the WhatsApp Business App (Coexistence) so they can be told apart
+    config[:is_coexistence] = true if @is_coexistence
+    config
   end
 
   def create_inbox(channel)

@@ -21,7 +21,7 @@ import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
-const PREFERRED_EXPANDED_WIDTH = 332;
+
 const props = defineProps({
   isMobileSidebarOpen: {
     type: Boolean,
@@ -103,7 +103,11 @@ const {
   snapToCollapsed,
   snapToExpanded,
   COLLAPSED_THRESHOLD,
+  MAX_WIDTH,
 } = useSidebarResize();
+
+// The expanded sidebar always uses the widest allowed width
+const PREFERRED_EXPANDED_WIDTH = MAX_WIDTH;
 
 // On mobile, sidebar is always expanded (flyout mode)
 const isEffectivelyCollapsed = computed(
@@ -122,7 +126,7 @@ const toggleSidebar = () => {
 };
 
 // Always use the preferred width when the sidebar expands, whatever triggered it
-watch(isCollapsed, (isNowCollapsed) => {
+watch(isCollapsed, isNowCollapsed => {
   if (!isNowCollapsed && !isMobile.value) {
     setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
     saveWidth();
@@ -207,8 +211,6 @@ const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
 const conversationCustomViews = useMapGetter(
   'customViews/getConversationCustomViews'
 );
-
-
 
 onMounted(() => {
   store.dispatch('labels/get');
@@ -714,7 +716,7 @@ const menuItems = computed(() => {
           to: accountScopedRoute('conversation_workflow_index'),
         },
         {
-           name: 'Settings Billing',
+          name: 'Settings Billing',
           label: t('SIDEBAR.BILLING'),
           icon: 'i-lucide-credit-card',
           to: accountScopedRoute('billing_settings_index'),
@@ -749,12 +751,17 @@ const menuItems = computed(() => {
         'shadow-2xl md:shadow-none': isMobileSidebarOpen,
         'ltr:-translate-x-full rtl:translate-x-full': !isMobileSidebarOpen,
         'transition-transform duration-300 ease-out md:transition-[width]':
-          !isResizing,'sidebar-expanded': !isCollapsed,
+          !isResizing,
+        'sidebar-expanded': !isCollapsed,
       },
     ]"
     :style="isMobile ? undefined : { width: `${sidebarWidth}px` }"
   >
-    <div class="sidebar-aurora" aria-hidden="true" :style="isEffectivelyCollapsed ? { display: 'none' } : undefined"/>
+    <div
+      class="sidebar-aurora"
+      aria-hidden="true"
+      :style="isEffectivelyCollapsed ? { display: 'none' } : undefined"
+    />
 
     <section
       class="sidebar-header grid relative z-10"
@@ -773,34 +780,36 @@ const menuItems = computed(() => {
               is-collapsed
               @show-create-account-modal="emit('showCreateAccountModal')"
             />
-        <button
-  v-if="!isMobile"
-  type="button"
-  class="sidebar-toggle-btn hidden md:flex items-center justify-center size-8 rounded-xl"
-  :title="t('SIDEBAR.EXPAND_SIDEBAR')"
-  @click="toggleSidebar"
->
-<span class="i-lucide-chevron-right size-4 rtl:rotate-180" />
-</button>
+            <button
+              v-if="!isMobile"
+              type="button"
+              class="sidebar-toggle-btn hidden md:flex items-center justify-center size-8 rounded-xl"
+              :title="t('SIDEBAR.EXPAND_SIDEBAR')"
+              @click="toggleSidebar"
+            >
+              <span class="i-lucide-chevron-right size-4 rtl:rotate-180" />
+            </button>
           </div>
         </template>
         <template v-else>
-          <div class="sidebar-logo grid flex-shrink-0 place-content-center size-10">
+          <div
+            class="sidebar-logo grid flex-shrink-0 place-content-center size-10"
+          >
             <Logo class="size-5" />
           </div>
           <SidebarAccountSwitcher
             class="sidebar-account-switcher flex-grow min-w-0"
             @show-create-account-modal="emit('showCreateAccountModal')"
           />
-        <button
-  v-if="!isMobile"
-  type="button"
-  class="sidebar-toggle-btn hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-xl"
-  :title="t('SIDEBAR.COLLAPSE_SIDEBAR')"
-  @click="toggleSidebar"
->
- <span class="i-lucide-chevron-left size-4 rtl:rotate-180" />
-</button>
+          <button
+            v-if="!isMobile"
+            type="button"
+            class="sidebar-toggle-btn hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-xl"
+            :title="t('SIDEBAR.COLLAPSE_SIDEBAR')"
+            @click="toggleSidebar"
+          >
+            <span class="i-lucide-chevron-left size-4 rtl:rotate-180" />
+          </button>
         </template>
       </div>
 
@@ -813,11 +822,15 @@ const menuItems = computed(() => {
           :to="{ name: 'search' }"
           class="sidebar-search group flex gap-2 items-center px-3 py-2 w-full h-9 rounded-xl transition-all duration-300 ease-out"
         >
-          <span class="sidebar-search-icon flex-shrink-0 i-lucide-search size-4" />
+          <span
+            class="sidebar-search-icon flex-shrink-0 i-lucide-search size-4"
+          />
           <span class="flex-grow text-start truncate">
             {{ t('COMBOBOX.SEARCH_PLACEHOLDER') }}
           </span>
-          <span class="sidebar-shortcut tracking-wide pointer-events-none select-none">
+          <span
+            class="sidebar-shortcut tracking-wide pointer-events-none select-none"
+          >
             {{ searchShortcut }}
           </span>
         </RouterLink>
@@ -928,9 +941,16 @@ const menuItems = computed(() => {
   overflow: hidden;
   color: var(--sb-text);
   border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
-  background:
-    radial-gradient(circle at 14% 5%, rgba(47, 111, 228, 0.34), transparent 34%),
-    radial-gradient(circle at 88% 24%, rgba(219, 39, 119, 0.16), transparent 30%),
+  background: radial-gradient(
+      circle at 14% 5%,
+      rgba(47, 111, 228, 0.34),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 24%,
+      rgba(219, 39, 119, 0.16),
+      transparent 30%
+    ),
     linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
   box-shadow:
     inset -1px 0 0 rgba(255, 255, 255, 0.035),
@@ -1015,8 +1035,11 @@ const menuItems = computed(() => {
   border: 1px solid rgba(111, 157, 248, 0.36);
   border-radius: 0.95rem;
   color: #fff;
-  background:
-    linear-gradient(145deg, rgba(47, 111, 228, 0.42), rgba(47, 111, 228, 0.18)),
+  background: linear-gradient(
+      145deg,
+      rgba(47, 111, 228, 0.42),
+      rgba(47, 111, 228, 0.18)
+    ),
     rgba(255, 255, 255, 0.05);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
@@ -1030,9 +1053,15 @@ const menuItems = computed(() => {
   z-index: -1;
   border-radius: 1.05rem;
   opacity: 0.32;
-  background: linear-gradient(135deg, rgba(47, 111, 228, 0.78), rgba(219, 39, 119, 0.32));
+  background: linear-gradient(
+    135deg,
+    rgba(47, 111, 228, 0.78),
+    rgba(219, 39, 119, 0.32)
+  );
   filter: blur(10px);
-  transition: opacity 220ms ease, transform 220ms ease;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
 }
 
 .sidebar-account:hover .sidebar-logo::after {
@@ -1079,7 +1108,12 @@ const menuItems = computed(() => {
   width: 34%;
   pointer-events: none;
   transform: skewX(-20deg);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
   transition: left 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -1125,7 +1159,11 @@ const menuItems = computed(() => {
   border: 1px solid rgba(47, 111, 228, 0.34) !important;
   border-radius: 0.8rem !important;
   outline: none !important;
-  background: linear-gradient(135deg, rgba(47, 111, 228, 0.78), rgba(47, 111, 228, 0.48)) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(47, 111, 228, 0.78),
+    rgba(47, 111, 228, 0.48)
+  ) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.13),
     0 10px 22px -8px rgba(64, 122, 240, 0.5) !important;
@@ -1182,7 +1220,11 @@ const menuItems = computed(() => {
   z-index: -1;
   inset: 0;
   opacity: 0;
-  background: linear-gradient(100deg, rgba(219, 39, 119, 0.16), rgba(47, 111, 228, 0.12));
+  background: linear-gradient(
+    100deg,
+    rgba(219, 39, 119, 0.16),
+    rgba(47, 111, 228, 0.12)
+  );
   transition: opacity 180ms ease;
 }
 
@@ -1235,7 +1277,11 @@ const menuItems = computed(() => {
 .sidebar-nav :deep(a[aria-current='page']) {
   color: #fff;
   border-color: rgba(89, 140, 240, 0.42);
-  background: linear-gradient(100deg, rgba(47, 111, 228, 0.25), rgba(219, 39, 119, 0.12));
+  background: linear-gradient(
+    100deg,
+    rgba(47, 111, 228, 0.25),
+    rgba(219, 39, 119, 0.12)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 10px 22px -8px rgba(64, 122, 240, 0.5);
@@ -1274,7 +1320,11 @@ const menuItems = computed(() => {
 
 .sidebar-profile {
   border-top: 1px solid rgba(87, 132, 220, 0.18);
-  background: linear-gradient(180deg, rgba(7, 18, 37, 0.74), rgba(5, 12, 25, 0.96));
+  background: linear-gradient(
+    180deg,
+    rgba(7, 18, 37, 0.74),
+    rgba(5, 12, 25, 0.96)
+  );
   box-shadow: 0 -10px 28px rgba(3, 10, 24, 0.2);
   backdrop-filter: blur(16px);
 }
@@ -1313,7 +1363,13 @@ const menuItems = computed(() => {
 .sidebar-resize:hover .sidebar-resize-line,
 .sidebar-resize-line.is-resizing {
   width: 2px;
-  background: linear-gradient(to bottom, transparent, #2f6fe4, #db2777, transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    #2f6fe4,
+    #db2777,
+    transparent
+  );
   box-shadow: 0 0 14px rgba(64, 122, 240, 0.7);
 }
 
@@ -1425,9 +1481,16 @@ const menuItems = computed(() => {
   overflow: visible; /* collapsed: let tooltips and popovers overflow the sidebar */
   color: var(--sb-text);
   border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
-  background:
-    radial-gradient(circle at 14% 5%, rgba(47, 111, 228, 0.34), transparent 34%),
-    radial-gradient(circle at 88% 24%, rgba(219, 39, 119, 0.16), transparent 30%),
+  background: radial-gradient(
+      circle at 14% 5%,
+      rgba(47, 111, 228, 0.34),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 24%,
+      rgba(219, 39, 119, 0.16),
+      transparent 30%
+    ),
     linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
   box-shadow:
     inset -1px 0 0 rgba(255, 255, 255, 0.035),
@@ -1439,5 +1502,4 @@ const menuItems = computed(() => {
 .sidebar-shell.sidebar-expanded {
   overflow: hidden;
 }
-
 </style>

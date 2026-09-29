@@ -193,8 +193,11 @@ export default {
   },
 };
 </script>
+
 <template>
-  <section class="cw-dashboard-shell flex w-full h-full min-w-0 bg-n-background text-n-slate-12">
+  <section
+    class="cw-dashboard-shell flex w-full h-full min-w-0 bg-n-background text-n-slate-12"
+  >
     <div class="cw-dashboard-glow cw-dashboard-glow--one" />
     <div class="cw-dashboard-glow cw-dashboard-glow--two" />
 
@@ -244,11 +247,9 @@ export default {
   --cw-accent-strong: #4f46e5;
   --cw-accent-soft: rgba(99, 102, 241, 0.1);
   --cw-border-hover: rgba(129, 140, 248, 0.38);
-  --cw-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.035),
+  --cw-shadow: 0 1px 2px rgba(15, 23, 42, 0.035),
     0 8px 24px rgba(15, 23, 42, 0.055);
-  --cw-shadow-hover:
-    0 10px 24px rgba(15, 23, 42, 0.08),
+  --cw-shadow-hover: 0 10px 24px rgba(15, 23, 42, 0.08),
     0 24px 50px rgba(15, 23, 42, 0.1);
 
   position: relative;
@@ -259,12 +260,11 @@ export default {
 
   /* Do not set background-color here. Chatwoot's bg-n-background
      class handles light/dark mode automatically. */
-  background-image:
-    radial-gradient(
-      circle at 78% -10%,
-      rgba(99, 102, 241, 0.07),
-      transparent 30rem
-    );
+  background-image: radial-gradient(
+    circle at 78% -10%,
+    rgba(99, 102, 241, 0.07),
+    transparent 30rem
+  );
 
   animation: cw-dashboard-enter 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -278,19 +278,15 @@ export default {
   --cw-accent-strong: #a5b4fc;
   --cw-accent-soft: rgba(99, 102, 241, 0.16);
   --cw-border-hover: rgba(129, 140, 248, 0.34);
-  --cw-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.22),
-    0 12px 28px rgba(0, 0, 0, 0.18);
-  --cw-shadow-hover:
-    0 14px 30px rgba(0, 0, 0, 0.28),
+  --cw-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 12px 28px rgba(0, 0, 0, 0.18);
+  --cw-shadow-hover: 0 14px 30px rgba(0, 0, 0, 0.28),
     0 30px 60px rgba(0, 0, 0, 0.22);
 
-  background-image:
-    radial-gradient(
-      circle at 78% -10%,
-      rgba(99, 102, 241, 0.11),
-      transparent 30rem
-    );
+  background-image: radial-gradient(
+    circle at 78% -10%,
+    rgba(99, 102, 241, 0.11),
+    transparent 30rem
+  );
 }
 
 /* =========================================================
@@ -524,7 +520,12 @@ export default {
   right: 18%;
   height: 2px;
   opacity: 0;
-  background: linear-gradient(90deg, transparent, var(--cw-accent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--cw-accent),
+    transparent
+  );
   transform: scaleX(0.55);
   transition:
     transform 260ms ease,
@@ -625,8 +626,12 @@ export default {
 ========================================================= */
 
 @keyframes cw-dashboard-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes cw-panel-left-enter {

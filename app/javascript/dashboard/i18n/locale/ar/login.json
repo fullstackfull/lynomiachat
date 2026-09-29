@@ -23,6 +23,21 @@
     "FORGOT_PASSWORD": "نسيت كلمة المرور؟",
     "CREATE_NEW_ACCOUNT": "إنشاء حساب جديد",
     "SUBMIT": "تسجيل الدخول",
+    "SUBTITLE": "سجّل الدخول للمتابعة إلى {name}.",
+    "MFA_TITLE": "تحقّق من حسابك",
+    "MFA_SUBTITLE": "أكمل خطوة التحقق للمتابعة.",
+    "BRAND_PANEL": {
+      "BADGE": "محادثات العملاء، بكل بساطة",
+      "HEADLINE": "مكان واحد",
+      "HEADLINE_HIGHLIGHT": "لكل المحادثات.",
+      "DESCRIPTION": "ابقَ على تواصل دائم مع عملائك من خلال مساحة عمل واحدة مركّزة وآمنة وسهلة الاستخدام.",
+      "POINT_FAST": "دعم عملاء سريع ومركّز",
+      "POINT_ONE_PLACE": "كل ما يحتاجه فريقك في مكان واحد",
+      "POINT_MODERN": "مصمَّم للفرق الحديثة",
+      "COPYRIGHT": "© {year} {name}",
+      "PRIVACY": "الخصوصية",
+      "TERMS": "الشروط"
+    },
     "SAML": {
       "LABEL": "Login via SSO",
       "TITLE": "Initiate Single Sign-on (SSO)",

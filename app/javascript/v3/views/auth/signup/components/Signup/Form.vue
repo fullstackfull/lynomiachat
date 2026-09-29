@@ -13,7 +13,6 @@ import PasswordRequirements from './PasswordRequirements.vue';
 import { isValidPassword } from 'shared/helpers/Validators';
 import GoogleOAuthButton from '../../../../../components/GoogleOauth/Button.vue';
 import { register } from '../../../../../api/auth';
-import * as CompanyEmailValidator from 'company-email-validator';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -51,9 +50,9 @@ const globalConfig = computed(() => store.getters['globalConfig/get']);
 
 const termsLink = computed(() =>
   t('REGISTER.TERMS_ACCEPT')
-    .replace('https://chat.lynomia.com/#terms', globalConfig.value.termsURL)
+    .replace('https://www.chatwoot.com/terms', globalConfig.value.termsURL)
     .replace(
-      'https://chat.lynomia.com/#privacy',
+      'https://www.chatwoot.com/privacy-policy',
       globalConfig.value.privacyURL
     )
 );

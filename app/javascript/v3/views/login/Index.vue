@@ -83,6 +83,9 @@ export default {
   },
   computed: {
     ...mapGetters({ globalConfig: 'globalConfig/get' }),
+    currentYear() {
+      return new Date().getFullYear();
+    },
     allowedLoginMethods() {
       return window.chatwootConfig.allowedLoginMethods || ['email'];
     },
@@ -214,55 +217,73 @@ export default {
 
 <template>
   <main class="auth-page">
-    <!-- Left branding panel (Design preserved, content restored to Chatwoot) -->
+    <!-- Left branding panel -->
     <section class="auth-visual">
-      <div class="auth-visual-grid"></div>
-      <div class="auth-glow auth-glow-one"></div>
-      <div class="auth-glow auth-glow-two"></div>
+      <div class="auth-visual-grid" />
+      <div class="auth-glow auth-glow-one" />
+      <div class="auth-glow auth-glow-two" />
 
       <div class="visual-top">
         <span class="visual-badge">
-          Customer conversations, simplified
+          {{ $t('LOGIN.BRAND_PANEL.BADGE') }}
         </span>
       </div>
 
       <div class="visual-content">
-        <p class="visual-eyebrow">{{ globalConfig.installationName || 'CHATWOOT' }}</p>
+        <p class="visual-eyebrow">{{ globalConfig.installationName }}</p>
 
         <h1>
-          One place for
-          <span>every conversation.</span>
+          {{ $t('LOGIN.BRAND_PANEL.HEADLINE') }}
+          <span>{{ $t('LOGIN.BRAND_PANEL.HEADLINE_HIGHLIGHT') }}</span>
         </h1>
 
         <p class="visual-description">
-          Keep your team connected with customers through one
-          focused, secure and beautifully simple workspace.
+          {{ $t('LOGIN.BRAND_PANEL.DESCRIPTION') }}
         </p>
 
         <div class="visual-points">
           <div class="visual-point">
-            <span class="point-dot"></span>
-            <span>Fast, focused customer support</span>
+            <span class="point-dot" />
+            <span>{{ $t('LOGIN.BRAND_PANEL.POINT_FAST') }}</span>
           </div>
 
           <div class="visual-point">
-            <span class="point-dot"></span>
-            <span>Everything your team needs in one place</span>
+            <span class="point-dot" />
+            <span>{{ $t('LOGIN.BRAND_PANEL.POINT_ONE_PLACE') }}</span>
           </div>
 
           <div class="visual-point">
-            <span class="point-dot"></span>
-            <span>Built for modern teams</span>
+            <span class="point-dot" />
+            <span>{{ $t('LOGIN.BRAND_PANEL.POINT_MODERN') }}</span>
           </div>
         </div>
       </div>
 
       <div class="visual-footer">
-        <span>&copy; {{ new Date().getFullYear() }} Chatwoot</span>
+        <span>
+          {{
+            $t('LOGIN.BRAND_PANEL.COPYRIGHT', {
+              year: currentYear,
+              name: globalConfig.installationName,
+            })
+          }}
+        </span>
 
         <div class="visual-footer-links">
-          <router-link to="https://chat.lynomia.com/#privacy">Privacy</router-link>
-          <router-link to="https://chat.lynomia.com/#terms">Terms</router-link>
+          <a
+            :href="globalConfig.privacyURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('LOGIN.BRAND_PANEL.PRIVACY') }}
+          </a>
+          <a
+            :href="globalConfig.termsURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('LOGIN.BRAND_PANEL.TERMS') }}
+          </a>
         </div>
       </div>
     </section>
@@ -275,20 +296,17 @@ export default {
             <img
               :src="globalConfig.logo"
               :alt="globalConfig.installationName"
-              class="auth-logo dark:hidden"
+              class="auth-logo"
             />
-                 </div>
+          </div>
         </div>
 
         <!-- MFA -->
-        <div
-          v-if="mfaRequired"
-          class="auth-card"
-        >
+        <div v-if="mfaRequired" class="auth-card">
           <div class="auth-heading">
-            <h2>Verify your account</h2>
+            <h2>{{ $t('LOGIN.MFA_TITLE') }}</h2>
             <p>
-              Complete the verification step to continue.
+              {{ $t('LOGIN.MFA_SUBTITLE') }}
             </p>
           </div>
 
@@ -310,7 +328,9 @@ export default {
           <div class="auth-heading">
             <h2>{{ replaceInstallationName($t('LOGIN.TITLE')) }}</h2>
             <p>
-              Sign in to continue to {{ globalConfig.installationName || 'Chatwoot' }}.
+              {{
+                $t('LOGIN.SUBTITLE', { name: globalConfig.installationName })
+              }}
             </p>
           </div>
 
@@ -338,10 +358,7 @@ export default {
               />
             </div>
 
-            <form
-              class="auth-form"
-              @submit.prevent="submitFormLogin"
-            >
+            <form class="auth-form" @submit.prevent="submitFormLogin">
               <FormInput
                 v-model="credentials.email"
                 name="email_address"
@@ -367,7 +384,10 @@ export default {
                 :has-error="v$.credentials.password.$error"
                 @input="v$.credentials.password.$touch"
               >
-                <p v-if="!globalConfig.disableUserProfileUpdate" class="forgot-row">
+                <p
+                  v-if="!globalConfig.disableUserProfileUpdate"
+                  class="forgot-row"
+                >
                   <router-link
                     to="auth/reset/password"
                     tabindex="4"
@@ -392,30 +412,33 @@ export default {
 
             <div v-if="showSignupLink" class="register-section">
               <span>{{ $t('COMMON.OR') }}</span>
-              <router-link
-                to="auth/signup"
-                class="register-link"
-              >
+              <router-link to="auth/signup" class="register-link">
                 {{ $t('LOGIN.CREATE_NEW_ACCOUNT') }}
               </router-link>
             </div>
           </div>
 
-          <div
-            v-else
-            class="loading-area"
-          >
-            <Spinner
-              color-scheme="primary"
-              size=""
-            />
+          <div v-else class="loading-area">
+            <Spinner color-scheme="primary" size="" />
           </div>
         </div>
 
         <div class="mobile-footer">
-          <router-link to="/privacy">Privacy</router-link>
+          <a
+            :href="globalConfig.privacyURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('LOGIN.BRAND_PANEL.PRIVACY') }}
+          </a>
           <span>&bull;</span>
-          <router-link to="/terms">Terms</router-link>
+          <a
+            :href="globalConfig.termsURL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ $t('LOGIN.BRAND_PANEL.TERMS') }}
+          </a>
         </div>
       </div>
     </section>
@@ -460,23 +483,13 @@ body {
 
   color: #ffffff;
 
-  background:
-    radial-gradient(
+  background: radial-gradient(
       circle at 10% 5%,
       rgba(69, 126, 255, 0.36),
       transparent 35%
     ),
-    radial-gradient(
-      circle at 95% 85%,
-      rgba(32, 87, 181, 0.42),
-      transparent 38%
-    ),
-    linear-gradient(
-      145deg,
-      #071322 0%,
-      #0a1e39 44%,
-      #103a6f 100%
-    );
+    radial-gradient(circle at 95% 85%, rgba(32, 87, 181, 0.42), transparent 38%),
+    linear-gradient(145deg, #071322 0%, #0a1e39 44%, #103a6f 100%);
 }
 
 .auth-visual-grid {
@@ -484,25 +497,19 @@ body {
   inset: 0;
   pointer-events: none;
 
-  background-image:
-    linear-gradient(
+  background-image: linear-gradient(
       rgba(255, 255, 255, 0.025) 1px,
       transparent 1px
     ),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px
-    );
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 
   background-size: 58px 58px;
 
-  mask-image:
-    linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.8),
-      rgba(0, 0, 0, 0.12)
-    );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.8),
+    rgba(0, 0, 0, 0.12)
+  );
 }
 
 .auth-glow {
@@ -520,8 +527,7 @@ body {
 
   border: 1px solid rgba(255, 255, 255, 0.08);
 
-  box-shadow:
-    0 0 120px rgba(68, 132, 255, 0.11);
+  box-shadow: 0 0 120px rgba(68, 132, 255, 0.11);
 }
 
 .auth-glow-two {
@@ -559,8 +565,7 @@ body {
 
   background: rgba(255, 255, 255, 0.055);
 
-  border:
-    1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   border-radius: 999px;
 
@@ -601,7 +606,7 @@ body {
 .visual-content h1 span {
   display: block;
 
-  color: #DB2777;
+  color: #db2777;
 }
 
 .visual-description {
@@ -645,8 +650,7 @@ body {
 
   background: #76a7ff;
 
-  box-shadow:
-    0 0 0 4px rgba(118, 167, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(118, 167, 255, 0.08);
 }
 
 .visual-footer {
@@ -677,7 +681,6 @@ body {
   color: rgba(255, 255, 255, 0.82);
 }
 
-
 /* =========================
    RIGHT LOGIN SIDE
    ========================= */
@@ -691,17 +694,12 @@ body {
 
   padding: 56px;
 
-  background:
-    radial-gradient(
+  background: radial-gradient(
       circle at 100% 0%,
       rgba(50, 113, 234, 0.055),
       transparent 31%
     ),
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #fbfcfe 100%
-    );
+    linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
 }
 
 .auth-container {
@@ -729,8 +727,7 @@ body {
 
   background: white;
 
-  border:
-    1px solid rgba(17, 24, 39, 0.08);
+  border: 1px solid rgba(17, 24, 39, 0.08);
 
   border-radius: 16px;
 
@@ -816,13 +813,11 @@ body {
 
   background: #ffffff !important;
 
-  border:
-    1px solid #d7dce5 !important;
+  border: 1px solid #d7dce5 !important;
 
   border-radius: 12px !important;
 
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.03) !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03) !important;
 
   transition:
     border-color 0.2s ease,
@@ -843,8 +838,7 @@ body {
 
   border-color: #397cf6 !important;
 
-  box-shadow:
-    0 0 0 4px rgba(57, 124, 246, 0.10) !important;
+  box-shadow: 0 0 0 4px rgba(57, 124, 246, 0.1) !important;
 }
 
 .forgot-row {
@@ -880,20 +874,23 @@ body {
   background: #db2777;
 }
 
-.auth-card [data-testid="submit_button"] {
+.auth-card [data-testid='submit_button'] {
   min-height: 50px;
 
   color: #ffffff !important;
 
-  background:
-    linear-gradient(135deg,#ef5da0 0%,#DB2777 55%,#9d1c57 100%) !important;
+  background: linear-gradient(
+    135deg,
+    #ef5da0 0%,
+    #db2777 55%,
+    #9d1c57 100%
+  ) !important;
 
   border: none !important;
 
   border-radius: 12px !important;
 
-  box-shadow:
-    0 8px 20px rgba(35, 95, 211, 0.20);
+  box-shadow: 0 8px 20px rgba(35, 95, 211, 0.2);
 
   transition:
     transform 0.2s ease,
@@ -901,13 +898,12 @@ body {
     filter 0.2s ease;
 }
 
-.auth-card [data-testid="submit_button"]:hover {
+.auth-card [data-testid='submit_button']:hover {
   transform: translateY(-1px);
 
   filter: brightness(1.03);
 
-  box-shadow:
-    0 12px 26px rgba(35, 95, 211, 0.27);
+  box-shadow: 0 12px 26px rgba(35, 95, 211, 0.27);
 }
 
 .register-section {
@@ -920,8 +916,7 @@ body {
   margin-top: 30px;
   padding-top: 25px;
 
-  border-top:
-    1px solid #eceff4;
+  border-top: 1px solid #eceff4;
 
   color: #7a8494;
 
@@ -954,15 +949,13 @@ body {
   display: none;
 }
 
-
 /* =========================
    RESPONSIVE
    ========================= */
 
 @media (max-width: 1100px) {
   .auth-visual {
-    padding:
-      48px 44px 42px;
+    padding: 48px 44px 42px;
   }
 
   .auth-panel {
@@ -970,8 +963,7 @@ body {
   }
 
   .visual-content h1 {
-    font-size:
-      clamp(3rem, 5.2vw, 4.5rem);
+    font-size: clamp(3rem, 5.2vw, 4.5rem);
   }
 }
 
@@ -987,8 +979,7 @@ body {
   .auth-panel {
     min-height: 100vh;
 
-    padding:
-      46px 24px 32px;
+    padding: 46px 24px 32px;
   }
 
   .auth-container {
@@ -1017,8 +1008,7 @@ body {
 
 @media (max-width: 480px) {
   .auth-panel {
-    padding:
-      30px 20px 28px;
+    padding: 30px 20px 28px;
   }
 
   .auth-logo-wrap {

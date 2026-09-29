@@ -1,0 +1,82 @@
+[
+  {
+    "name": "app boots with custom/ overlay (Billing, MobileAuth constants loaded)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "Account extended by Custom::Account",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "billing not set up: account stays open",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "billing enforced + no active subscription: API locked with 402 subscription_required",
+    "ok": true,
+    "detail": "http=402"
+  },
+  {
+    "name": "billing API stays reachable while locked",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "entitlements report the lock",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "active subscription: account unlocked",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "plan agent limit enforced (422 plan_limit_reached)",
+    "ok": true,
+    "detail": "http=422 {\"error\"=>\"plan_limit_reached\", \"message\"=>\"Your plan allows up to 2 agents. Upgrade your plan to add more.\"}"
+  },
+  {
+    "name": "first inbox within plan limit",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "plan inbox limit enforced",
+    "ok": true,
+    "detail": "http=422 {\"message\"=>\"Your plan allows up to 1 inboxes. Upgrade your plan to add more.\", \"attributes\"=>[\"base\"]}"
+  },
+  {
+    "name": "platform billing API works with a Platform App token",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "platform billing API rejects a user token",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "Stripe webhook rejects a bad signature (400, not 500)",
+    "ok": true,
+    "detail": "http=400"
+  },
+  {
+    "name": "mobile Google sign-in endpoint answers (invalid token -> 401)",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "mobile billing return page answers",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "profile API works for a user token",
+    "ok": true,
+    "detail": "http=200"
+  }
+]

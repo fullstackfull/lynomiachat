@@ -1,0 +1,12 @@
+[
+  {
+    "name": "seed: Tenant A manual WhatsApp Cloud API inbox created",
+    "ok": true,
+    "detail": "status=200 1"
+  },
+  {
+    "name": "seed: Tenant B embedded-signup WhatsApp inbox created",
+    "ok": true,
+    "detail": "status=200 {\"success\"=>true, \"id\"=>2, \"name\"=>\"+15550002001\", \"channel_type\"=>\"whatsapp\"}"
+  }
+]

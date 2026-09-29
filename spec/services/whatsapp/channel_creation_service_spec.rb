@@ -51,6 +51,13 @@ describe Whatsapp::ChannelCreationService do
         expect(channel.provider_config['phone_number_id']).to eq('test_phone_id')
         expect(channel.provider_config['business_account_id']).to eq('test_waba_id')
         expect(channel.provider_config['source']).to eq('embedded_signup')
+        expect(channel.provider_config).not_to have_key('is_coexistence')
+      end
+
+      it 'marks numbers onboarded from the WhatsApp Business App (Coexistence)' do
+        channel = described_class.new(account, waba_info, phone_info, access_token, is_coexistence: true).perform
+
+        expect(channel.provider_config).to include('source' => 'embedded_signup', 'is_coexistence' => true)
       end
 
       it 'creates an inbox for the channel' do

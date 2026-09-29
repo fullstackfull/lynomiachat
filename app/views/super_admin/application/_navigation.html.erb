@@ -17,6 +17,7 @@ as defined by the routes in the `admin/` namespace
     platform_apps: 'icon-apps-2-line',
     agent_bots: 'icon-robot-line',
     platform_banners: 'icon-megaphone-line',
+    billing_plans: 'icon-apps-2-line',
   }
 %>
 
@@ -43,6 +44,7 @@ as defined by the routes in the `admin/` namespace
         %>
 
       <% end %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: settings_super_admin_billing_plans_url, label: 'Billing Settings' } %>
       <%= render 'settings_menu', open: settings_open? %>
     </ul>
   </div>

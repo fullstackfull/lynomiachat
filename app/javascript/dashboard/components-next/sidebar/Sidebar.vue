@@ -21,7 +21,7 @@ import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
-
+const PREFERRED_EXPANDED_WIDTH = 332;
 const props = defineProps({
   isMobileSidebarOpen: {
     type: Boolean,
@@ -39,7 +39,7 @@ const emit = defineEmits([
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 const store = useStore();
 const searchShortcut = useKbd([`$mod`, 'k']);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const isACustomBrandedInstance = useMapGetter(
   'globalConfig/isACustomBrandedInstance'
@@ -110,6 +110,26 @@ const isEffectivelyCollapsed = computed(
   () => !isMobile.value && isCollapsed.value
 );
 
+// Toggle sidebar collapsed/expanded state
+// 1. ????? ???? ??????? ????? ????? 332px ??? ?????
+const toggleSidebar = () => {
+  if (isCollapsed.value) {
+    setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
+    snapToExpanded();
+    saveWidth();
+  } else {
+    snapToCollapsed();
+  }
+};
+
+// 2. ????? ????? ?????? ?? 332px ??? ??????? ?? ?? ???? (?? ?? ??? ?????)
+watch(isCollapsed, (isNowCollapsed) => {
+  if (!isNowCollapsed && !isMobile.value) {
+    setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
+    saveWidth();
+  }
+});
+
 // Resize handle logic
 const isResizing = ref(false);
 const startX = ref(0);
@@ -163,8 +183,7 @@ const onResizeEnd = () => {
 };
 
 const onResizeHandleDoubleClick = () => {
-  if (isCollapsed.value) snapToExpanded();
-  else snapToCollapsed();
+  toggleSidebar();
 };
 
 // Support both mouse and touch events
@@ -190,6 +209,8 @@ const conversationCustomViews = useMapGetter(
   'customViews/getConversationCustomViews'
 );
 
+
+
 onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('inboxes/get');
@@ -198,6 +219,16 @@ onMounted(() => {
   store.dispatch('attributes/get');
   store.dispatch('customViews/get', 'conversation');
   store.dispatch('customViews/get', 'contact');
+
+  // Keep the expanded sidebar comfortable and readable on desktop.
+  if (
+    !isMobile.value &&
+    !isCollapsed.value &&
+    sidebarWidth.value !== PREFERRED_EXPANDED_WIDTH
+  ) {
+    setSidebarWidth(PREFERRED_EXPANDED_WIDTH);
+    saveWidth();
+  }
 });
 
 watch([accountId, hasConversationUnreadCounts], fetchConversationUnreadCounts, {
@@ -378,77 +409,6 @@ const menuItems = computed(() => {
               label: label.title,
             }),
           })),
-        },
-      ],
-    },
-    {
-      name: 'Captain',
-      icon: 'i-woot-captain',
-      label: t('SIDEBAR.CAPTAIN'),
-      activeOn: ['captain_assistants_create_index'],
-      children: [
-        {
-          name: 'FAQs',
-          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
-          activeOn: [
-            'captain_assistants_responses_index',
-            'captain_assistants_responses_pending',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_responses_index',
-          }),
-        },
-        {
-          name: 'Documents',
-          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-          activeOn: ['captain_assistants_documents_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_documents_index',
-          }),
-        },
-        {
-          name: 'Scenarios',
-          label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
-          activeOn: ['captain_assistants_scenarios_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_scenarios_index',
-          }),
-        },
-        {
-          name: 'Playground',
-          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
-          activeOn: ['captain_assistants_playground_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_playground_index',
-          }),
-        },
-        {
-          name: 'Inboxes',
-          label: t('SIDEBAR.CAPTAIN_INBOXES'),
-          activeOn: ['captain_assistants_inboxes_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_inboxes_index',
-          }),
-        },
-        {
-          name: 'Tools',
-          label: t('SIDEBAR.CAPTAIN_TOOLS'),
-          activeOn: ['captain_tools_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_tools_index',
-          }),
-        },
-        {
-          name: 'Settings',
-          label: t('SIDEBAR.CAPTAIN_SETTINGS'),
-          activeOn: [
-            'captain_assistants_settings_index',
-            'captain_assistants_guidelines_index',
-            'captain_assistants_guardrails_index',
-          ],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_settings_index',
-          }),
         },
       ],
     },
@@ -645,12 +605,6 @@ const menuItems = computed(() => {
           icon: 'i-lucide-briefcase',
           to: accountScopedRoute('general_settings_index'),
         },
-        // {
-        //   name: 'Settings Captain',
-        //   label: t('SIDEBAR.CAPTAIN_AI'),
-        //   icon: 'i-woot-captain',
-        //   to: accountScopedRoute('captain_settings_index'),
-        // },
         {
           name: 'Settings Agents',
           label: t('SIDEBAR.AGENTS'),
@@ -755,34 +709,22 @@ const menuItems = computed(() => {
           to: accountScopedRoute('auditlogs_list'),
         },
         {
-          name: 'Settings Custom Roles',
-          label: t('SIDEBAR.CUSTOM_ROLES'),
-          icon: 'i-lucide-shield-plus',
-          to: accountScopedRoute('custom_roles_list'),
-        },
-        {
-          name: 'Settings Sla',
-          label: t('SIDEBAR.SLA'),
-          icon: 'i-lucide-clock-alert',
-          to: accountScopedRoute('sla_list'),
-        },
-        {
           name: 'Conversation Workflow',
           label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
           icon: 'i-lucide-workflow',
           to: accountScopedRoute('conversation_workflow_index'),
         },
         {
-          name: 'Settings Security',
-          label: t('SIDEBAR.SECURITY'),
-          icon: 'i-lucide-shield',
-          to: accountScopedRoute('security_settings_index'),
-        },
-        {
-          name: 'Settings Billing',
+           name: 'Settings Billing',
           label: t('SIDEBAR.BILLING'),
           icon: 'i-lucide-credit-card',
           to: accountScopedRoute('billing_settings_index'),
+        },
+        {
+          name: 'Settings Subscription',
+          label: String(locale.value).startsWith('ar') ? '????????' : 'Subscription',
+          icon: 'i-lucide-wallet',
+          to: accountScopedRoute('subscription_settings_index'),
         },
       ],
     },
@@ -802,96 +744,119 @@ const menuItems = computed(() => {
         ],
       },
     ]"
-    class="bg-n-background flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[200px] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0 ltr:border-r rtl:border-l border-n-weak"
+    class="sidebar-shell flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[332px] max-w-[92vw] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0"
     :class="[
       {
-        'shadow-lg md:shadow-none': isMobileSidebarOpen,
+        'shadow-2xl md:shadow-none': isMobileSidebarOpen,
         'ltr:-translate-x-full rtl:translate-x-full': !isMobileSidebarOpen,
-        'transition-transform duration-200 ease-out md:transition-[width]':
-          !isResizing,
+        'transition-transform duration-300 ease-out md:transition-[width]':
+          !isResizing,'sidebar-expanded': !isCollapsed,
       },
     ]"
     :style="isMobile ? undefined : { width: `${sidebarWidth}px` }"
   >
+    <div class="sidebar-aurora" aria-hidden="true" :style="isEffectivelyCollapsed ? { display: 'none' } : undefined"/>
+
     <section
-      class="grid"
-      :class="isEffectivelyCollapsed ? 'mt-3 mb-6 gap-4' : 'mt-1 mb-4 gap-2'"
+      class="sidebar-header grid relative z-10"
+      :class="isEffectivelyCollapsed ? 'mt-3 mb-6 gap-4' : 'mt-0 mb-4 gap-3'"
     >
       <div
-        class="flex gap-2 items-center min-w-0"
+        class="sidebar-account flex gap-2 items-center min-w-0"
         :class="{
-          'justify-center px-1': isEffectivelyCollapsed,
-          'px-2': !isEffectivelyCollapsed,
+          'justify-center px-1 pt-2': isEffectivelyCollapsed,
+          'px-3 pt-3': !isEffectivelyCollapsed,
         }"
       >
         <template v-if="isEffectivelyCollapsed">
-          <SidebarAccountSwitcher
-            is-collapsed
-            @show-create-account-modal="emit('showCreateAccountModal')"
-          />
+          <div class="flex flex-col items-center gap-2.5">
+            <SidebarAccountSwitcher
+              is-collapsed
+              @show-create-account-modal="emit('showCreateAccountModal')"
+            />
+        <button
+  v-if="!isMobile"
+  type="button"
+  class="sidebar-toggle-btn hidden md:flex items-center justify-center size-8 rounded-xl"
+  :title="t('SIDEBAR.EXPAND') || '????? ???????'"
+  @click="toggleSidebar"
+>
+  <!-- ?????? FontAwesome ??????? -->
+<span class="i-lucide-chevron-right size-4 rtl:rotate-180" />
+</button>
+          </div>
         </template>
         <template v-else>
-          <div class="grid flex-shrink-0 place-content-center size-6">
-            <Logo class="size-4" />
+          <div class="sidebar-logo grid flex-shrink-0 place-content-center size-10">
+            <Logo class="size-5" />
           </div>
-          <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
           <SidebarAccountSwitcher
-            class="flex-grow -mx-1 min-w-0"
+            class="sidebar-account-switcher flex-grow min-w-0"
             @show-create-account-modal="emit('showCreateAccountModal')"
           />
+        <button
+  v-if="!isMobile"
+  type="button"
+  class="sidebar-toggle-btn hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-xl"
+  :title="t('SIDEBAR.COLLAPSE') || '?? ???????'"
+  @click="toggleSidebar"
+>
+  <!-- ?????? FontAwesome ???? -->
+ <span class="i-lucide-chevron-left size-4 rtl:rotate-180" />
+</button>
         </template>
       </div>
+
       <div
-        class="flex gap-2"
-        :class="isEffectivelyCollapsed ? 'flex-col items-center' : 'px-2'"
+        class="sidebar-actions flex gap-2"
+        :class="isEffectivelyCollapsed ? 'flex-col items-center' : 'px-3'"
       >
         <RouterLink
           v-if="!isEffectivelyCollapsed"
           :to="{ name: 'search' }"
-          class="flex gap-2 items-center px-2 py-1 w-full h-7 rounded-lg outline outline-1 outline-n-weak bg-n-button-color transition-all duration-100 ease-out"
+          class="sidebar-search group flex gap-2 items-center px-3 py-2 w-full h-9 rounded-xl transition-all duration-300 ease-out"
         >
-          <span class="flex-shrink-0 i-lucide-search size-4 text-n-slate-10" />
-          <span class="flex-grow text-start text-n-slate-10">
+          <span class="sidebar-search-icon flex-shrink-0 i-lucide-search size-4" />
+          <span class="flex-grow text-start truncate">
             {{ t('COMBOBOX.SEARCH_PLACEHOLDER') }}
           </span>
-          <span
-            class="hidden tracking-wide pointer-events-none select-none text-n-slate-10"
-          >
+          <span class="sidebar-shortcut tracking-wide pointer-events-none select-none">
             {{ searchShortcut }}
           </span>
         </RouterLink>
+
         <RouterLink
           v-else
           :to="{ name: 'search' }"
-          class="flex items-center justify-center size-8 rounded-lg outline outline-1 outline-n-weak bg-n-button-color transition-all duration-100 ease-out hover:bg-n-alpha-2 dark:hover:bg-n-slate-9/30"
+          class="sidebar-search sidebar-icon-button flex items-center justify-center size-9 rounded-xl transition-all duration-300 ease-out"
           :title="t('COMBOBOX.SEARCH_PLACEHOLDER')"
         >
-          <span class="i-lucide-search size-4 text-n-slate-11" />
+          <span class="i-lucide-search size-4" />
         </RouterLink>
+
         <ComposeConversation align="start">
           <template #trigger="{ isOpen }">
             <Button
               icon="i-lucide-pen-line"
               color="slate"
               size="sm"
-              class="dark:hover:!bg-n-slate-9/30"
+              class="sidebar-compose"
               :class="[
-                isEffectivelyCollapsed
-                  ? '!size-8 !outline-n-weak !text-n-slate-11'
-                  : '!h-7 !outline-n-weak !text-n-slate-11',
-                { '!bg-n-alpha-2 dark:!bg-n-slate-9/30': isOpen },
+                isEffectivelyCollapsed ? '!size-9' : '!h-9 !px-3',
+                { 'sidebar-compose-active': isOpen },
               ]"
             />
           </template>
         </ComposeConversation>
       </div>
     </section>
+
     <nav
-      class="grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"
-      :class="isEffectivelyCollapsed ? 'px-1' : 'px-2'"
+      class="sidebar-nav relative z-10 grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"
+      :class="isEffectivelyCollapsed ? 'px-1.5' : 'px-3'"
     >
       <ul
-        class="flex flex-col gap-1 m-0 list-none min-w-0"
+        class="flex flex-col gap-1.5 m-0 list-none min-w-0"
         :class="{ 'items-center': isEffectivelyCollapsed }"
       >
         <SidebarGroup
@@ -901,12 +866,14 @@ const menuItems = computed(() => {
         />
       </ul>
     </nav>
+
     <section
-      class="flex relative flex-col flex-shrink-0 gap-1 justify-between items-center"
+      class="sidebar-footer flex relative flex-col flex-shrink-0 gap-1 justify-between items-center z-10"
     >
       <div
-        class="pointer-events-none absolute inset-x-0 -top-[1.938rem] h-8 bg-gradient-to-t from-n-background to-transparent"
+        class="sidebar-bottom-fade pointer-events-none absolute inset-x-0 -top-10 h-10"
       />
+
       <SidebarChangelogCard
         v-if="
           isOnChatwootCloud &&
@@ -921,8 +888,9 @@ const menuItems = computed(() => {
           isEffectivelyCollapsed
         "
       />
+
       <div
-        class="px-1 py-1.5 flex-shrink-0 flex w-full z-50 gap-2 items-center border-t border-n-weak shadow-[0px_-2px_4px_0px_rgba(27,28,29,0.02)]"
+        class="sidebar-profile px-1.5 py-2 flex-shrink-0 flex w-full z-50 gap-2 items-center"
         :class="isEffectivelyCollapsed ? 'justify-center' : 'justify-between'"
       >
         <SidebarProfileMenu
@@ -931,17 +899,548 @@ const menuItems = computed(() => {
         />
       </div>
     </section>
-    <!-- Resize Handle (desktop only) -->
+
     <div
-      class="hidden md:block absolute top-0 h-full w-1 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
+      class="sidebar-resize hidden md:block absolute top-0 h-full w-1.5 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
+      title="???? ????? ???? ?? ???????"
       @mousedown="onResizeStart"
       @touchstart="onResizeStart"
       @dblclick="onResizeHandleDoubleClick"
     >
       <div
-        class="absolute top-0 h-full w-px ltr:right-0 rtl:left-0 bg-transparent group-hover:bg-n-brand transition-colors"
-        :class="{ 'bg-n-brand': isResizing }"
+        class="sidebar-resize-line absolute top-0 h-full w-px ltr:right-0 rtl:left-0 transition-all duration-300"
+        :class="{ 'is-resizing': isResizing }"
       />
     </div>
   </aside>
 </template>
+
+<style scoped>
+.sidebar-shell {
+  --sb-bg: #071225;
+  --sb-blue: #2f6fe4;
+  --sb-blue-glow: rgba(64, 122, 240, 0.5);
+  --sb-pink: #db2777;
+  --sb-pink-soft: rgba(219, 39, 119, 0.16);
+  --sb-pink-border: rgba(219, 39, 119, 0.3);
+  --sb-pink-text: #f8b8d4;
+  --sb-text: #ffffff;
+  --sb-muted: #d6e3fb;
+
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--sb-text);
+  border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
+  background:
+    radial-gradient(circle at 14% 5%, rgba(47, 111, 228, 0.34), transparent 34%),
+    radial-gradient(circle at 88% 24%, rgba(219, 39, 119, 0.16), transparent 30%),
+    linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.035),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5),
+    18px 0 48px rgba(2, 9, 22, 0.28);
+}
+
+.sidebar-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image: linear-gradient(
+    112deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.045) 46%,
+    transparent 55%
+  );
+  background-size: 230% 100%;
+  animation: sidebar-shimmer 11s linear infinite;
+}
+
+.sidebar-aurora {
+  position: absolute;
+  z-index: 0;
+  top: -7rem;
+  left: -5rem;
+  width: 19rem;
+  height: 19rem;
+  pointer-events: none;
+  border-radius: 9999px;
+  opacity: 0.38;
+  filter: blur(70px);
+  background: conic-gradient(
+    from 115deg,
+    rgba(47, 111, 228, 0.95),
+    rgba(219, 39, 119, 0.68),
+    rgba(47, 111, 228, 0.9)
+  );
+  animation: sidebar-aurora 15s ease-in-out infinite alternate;
+}
+
+.sidebar-header {
+  padding-top: 0;
+}
+
+.sidebar-account {
+  min-height: 4rem;
+  gap: 0.75rem;
+}
+
+.sidebar-toggle-btn {
+  color: var(--sb-muted);
+  border: 1px solid rgba(93, 142, 239, 0.24);
+  background: rgba(47, 111, 228, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-toggle-btn:hover {
+  color: var(--sb-pink-text);
+  border-color: var(--sb-pink-border);
+  background: var(--sb-pink-soft);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px -4px rgba(219, 39, 119, 0.4);
+}
+
+.sidebar-toggle-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.sidebar-logo {
+  position: relative;
+  border: 1px solid rgba(111, 157, 248, 0.36);
+  border-radius: 0.95rem;
+  color: #fff;
+  background:
+    linear-gradient(145deg, rgba(47, 111, 228, 0.42), rgba(47, 111, 228, 0.18)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5);
+}
+
+.sidebar-logo::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: 1.05rem;
+  opacity: 0.32;
+  background: linear-gradient(135deg, rgba(47, 111, 228, 0.78), rgba(219, 39, 119, 0.32));
+  filter: blur(10px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.sidebar-account:hover .sidebar-logo::after {
+  opacity: 0.58;
+  transform: scale(1.04);
+}
+
+.sidebar-account-switcher {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.9rem;
+  color: #fff;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.sidebar-account-switcher:hover {
+  border-color: rgba(47, 111, 228, 0.2);
+  background: rgba(47, 111, 228, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-search {
+  position: relative;
+  overflow: hidden;
+  color: #f1f5ff;
+  border: 1px solid rgba(93, 142, 239, 0.24);
+  outline: none;
+  background: rgba(47, 111, 228, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(14px);
+}
+
+.sidebar-search::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 34%;
+  pointer-events: none;
+  transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-search:hover {
+  color: var(--sb-pink-text);
+  border-color: var(--sb-pink-border);
+  background: var(--sb-pink-soft);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5);
+}
+
+.sidebar-search:hover::before {
+  left: 125%;
+}
+
+.sidebar-search-icon {
+  color: #9fc0ff;
+  filter: drop-shadow(0 0 7px rgba(47, 111, 228, 0.32));
+  transition:
+    color 180ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-search:hover .sidebar-search-icon {
+  color: var(--sb-pink-text);
+  transform: rotate(-8deg) scale(1.08);
+}
+
+.sidebar-shortcut {
+  padding: 0.12rem 0.42rem;
+  border: 1px solid rgba(135, 166, 225, 0.2);
+  border-radius: 0.45rem;
+  color: #d4e1fb;
+  background: rgba(4, 12, 27, 0.32);
+  font-size: 0.65rem;
+  line-height: 1rem;
+}
+
+.sidebar-compose {
+  color: #fff !important;
+  border: 1px solid rgba(47, 111, 228, 0.34) !important;
+  border-radius: 0.8rem !important;
+  outline: none !important;
+  background: linear-gradient(135deg, rgba(47, 111, 228, 0.78), rgba(47, 111, 228, 0.48)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5) !important;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease !important;
+}
+
+.sidebar-compose:hover,
+.sidebar-compose-active {
+  color: var(--sb-pink-text) !important;
+  transform: translateY(-1px) scale(1.015);
+  border-color: var(--sb-pink-border) !important;
+  background: var(--sb-pink-soft) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5) !important;
+}
+
+.sidebar-nav {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+}
+
+.sidebar-nav :deep(a),
+.sidebar-nav :deep(button) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 0.82rem;
+  color: #eef4ff;
+  background: rgba(47, 111, 228, 0.035);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  transition:
+    color 180ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 240ms ease;
+}
+
+.sidebar-nav :deep(a::before),
+.sidebar-nav :deep(button::before) {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: 0;
+  background: linear-gradient(100deg, rgba(219, 39, 119, 0.16), rgba(47, 111, 228, 0.12));
+  transition: opacity 180ms ease;
+}
+
+.sidebar-nav :deep(a::after),
+.sidebar-nav :deep(button::after) {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 18%;
+  bottom: 18%;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 99px;
+  opacity: 0;
+  transform: scaleY(0.35);
+  background: linear-gradient(to bottom, #79a6ff, #db2777);
+  box-shadow: 0 0 14px rgba(64, 122, 240, 0.58);
+  transition:
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-nav :deep(a:hover),
+.sidebar-nav :deep(button:hover) {
+  color: var(--sb-pink-text);
+  border-color: var(--sb-pink-border);
+  background: var(--sb-pink-soft);
+  transform: translateX(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5);
+}
+
+.sidebar-nav :deep(a:hover::before),
+.sidebar-nav :deep(button:hover::before) {
+  opacity: 1;
+}
+
+.sidebar-nav :deep(a:hover::after),
+.sidebar-nav :deep(button:hover::after),
+.sidebar-nav :deep(a.router-link-active::after),
+.sidebar-nav :deep(a.router-link-exact-active::after),
+.sidebar-nav :deep(a[aria-current='page']::after) {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.sidebar-nav :deep(a.router-link-active),
+.sidebar-nav :deep(a.router-link-exact-active),
+.sidebar-nav :deep(a[aria-current='page']) {
+  color: #fff;
+  border-color: rgba(89, 140, 240, 0.42);
+  background: linear-gradient(100deg, rgba(47, 111, 228, 0.25), rgba(219, 39, 119, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5);
+}
+
+.sidebar-nav :deep([class*='i-lucide-']),
+.sidebar-nav :deep([class*='i-woot-']) {
+  color: #b9d0ff;
+  filter: drop-shadow(0 0 5px rgba(47, 111, 228, 0.18));
+  transition:
+    color 180ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 180ms ease;
+}
+
+.sidebar-nav :deep(a:hover [class*='i-lucide-']),
+.sidebar-nav :deep(button:hover [class*='i-lucide-']),
+.sidebar-nav :deep(a:hover [class*='i-woot-']),
+.sidebar-nav :deep(button:hover [class*='i-woot-']) {
+  color: var(--sb-pink-text);
+  transform: scale(1.08) rotate(-3deg);
+  filter: drop-shadow(0 0 7px rgba(219, 39, 119, 0.34));
+}
+
+.sidebar-nav :deep([class*='badge']),
+.sidebar-nav :deep([data-badge]) {
+  border: 1px solid var(--sb-pink-border);
+  background: var(--sb-pink-soft);
+  color: var(--sb-pink-text);
+  box-shadow: 0 5px 14px -8px rgba(219, 39, 119, 0.8);
+}
+
+.sidebar-bottom-fade {
+  background: linear-gradient(to top, var(--sb-bg) 8%, transparent);
+}
+
+.sidebar-profile {
+  border-top: 1px solid rgba(87, 132, 220, 0.18);
+  background: linear-gradient(180deg, rgba(7, 18, 37, 0.74), rgba(5, 12, 25, 0.96));
+  box-shadow: 0 -10px 28px rgba(3, 10, 24, 0.2);
+  backdrop-filter: blur(16px);
+}
+
+/* Only style the profile TRIGGER */
+.sidebar-profile :deep(.relative.min-w-0 > button) {
+  color: #f5f8ff;
+  border-radius: 0.78rem;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease;
+}
+
+.sidebar-profile :deep(.relative.min-w-0 > button:hover) {
+  color: var(--sb-pink-text);
+  background: var(--sb-pink-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -8px rgba(64, 122, 240, 0.5);
+}
+
+/* Profile trigger text only */
+.sidebar-profile :deep(.relative.min-w-0 > button .text-n-slate-12) {
+  color: rgb(255 119 224) !important;
+}
+
+.sidebar-profile :deep(.relative.min-w-0 > button .text-n-slate-11) {
+  color: #ffffff !important;
+}
+
+.sidebar-resize-line {
+  background: transparent;
+}
+
+.sidebar-resize:hover .sidebar-resize-line,
+.sidebar-resize-line.is-resizing {
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, #2f6fe4, #db2777, transparent);
+  box-shadow: 0 0 14px rgba(64, 122, 240, 0.7);
+}
+
+:global([dir='rtl']) .sidebar-nav :deep(a:hover),
+:global([dir='rtl']) .sidebar-nav :deep(button:hover) {
+  transform: translateX(-3px);
+}
+
+@keyframes sidebar-aurora {
+  0% {
+    transform: translate3d(-6%, -8%, 0) rotate(0deg) scale(0.94);
+  }
+  55% {
+    transform: translate3d(42%, 18%, 0) rotate(100deg) scale(1.04);
+  }
+  100% {
+    transform: translate3d(18%, 58%, 0) rotate(205deg) scale(0.96);
+  }
+}
+
+@keyframes sidebar-shimmer {
+  to {
+    background-position: -230% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-shell::after,
+  .sidebar-aurora {
+    animation: none;
+  }
+
+  .sidebar-search,
+  .sidebar-compose,
+  .sidebar-toggle-btn,
+  .sidebar-nav :deep(a),
+  .sidebar-nav :deep(button),
+  .sidebar-nav :deep([class*='i-lucide-']),
+  .sidebar-nav :deep([class*='i-woot-']) {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Custom font overrides */
+.sidebar-shell.text-sm {
+  font-size: 1.1rem !important;
+}
+
+.sidebar-shell :deep(.text-sm) {
+  font-size: 1.1rem !important;
+}
+
+.sidebar-shell .sidebar-logo {
+  background: #ffffff9c !important;
+  width: 3.5rem !important;
+  height: 3.5rem !important;
+  padding: 2px !important;
+}
+
+.sidebar-shell .sidebar-logo :deep(svg),
+.sidebar-shell .sidebar-logo :deep(img),
+.sidebar-shell .sidebar-logo img {
+  width: 99% !important;
+  height: 99% !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.sidebar-nav :deep(.text-n-slate-9),
+.sidebar-nav :deep(.text-n-slate-10),
+.sidebar-nav :deep(.text-n-slate-11) {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.sidebar-nav :deep(.text-n-slate-12) {
+  color: rgb(255 119 224) !important;
+}
+
+.sidebar-nav :deep(a:hover .text-n-slate-9),
+.sidebar-nav :deep(a:hover .text-n-slate-10),
+.sidebar-nav :deep(a:hover .text-n-slate-11),
+.sidebar-nav :deep(button:hover .text-n-slate-9),
+.sidebar-nav :deep(button:hover .text-n-slate-10),
+.sidebar-nav :deep(button:hover .text-n-slate-11) {
+  color: #ffffff !important;
+}
+
+.sidebar-nav :deep(li .text-n-slate-12) {
+  color: rgb(255 119 224) !important;
+}
+
+.sidebar-shell :deep(#sidebar-account-switcher span) {
+  color: #f2478d !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+}
+.sidebar-shell {
+  --sb-bg: #071225;
+  --sb-blue: #2f6fe4;
+  --sb-blue-glow: rgba(64, 122, 240, 0.5);
+  --sb-pink: #db2777;
+  --sb-pink-soft: rgba(219, 39, 119, 0.16);
+  --sb-pink-border: rgba(219, 39, 119, 0.3);
+  --sb-pink-text: #f8b8d4;
+  --sb-text: #ffffff;
+  --sb-muted: #d6e3fb;
+
+  isolation: isolate;
+  overflow: visible; /* <--- ?????? visible ?? ???? ???????/???? ?????????? */
+  color: var(--sb-text);
+  border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
+  background:
+    radial-gradient(circle at 14% 5%, rgba(47, 111, 228, 0.34), transparent 34%),
+    radial-gradient(circle at 88% 24%, rgba(219, 39, 119, 0.16), transparent 30%),
+    linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.035),
+    0 10px 22px -8px rgba(64, 122, 240, 0.5),
+    18px 0 48px rgba(2, 9, 22, 0.28);
+}
+
+/* <--- ??? ????? ??? hidden ??? ??? ?????/??????? ??? ??????? ???????? */
+.sidebar-shell.sidebar-expanded {
+  overflow: hidden;
+}
+
+</style>

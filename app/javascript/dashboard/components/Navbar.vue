@@ -34,10 +34,10 @@ onMounted(() => {
     <!-- Brand -->
     <a href="#" class="nav-brand">
       <img
-        src="https://lynomia.com/img/logo.png"
+        src="https://chat.lynomia.com/brand-assets/lynomia-logo-dark.svg"
         style="width:9rem;display:inline-block"
       />
-      <span class="brand-text">Chat</span>
+      <span class="brand-text"></span>
     </a>
 
     <!-- Links -->
@@ -47,7 +47,7 @@ onMounted(() => {
       <li><a href="https://lynomia.com/privacy">Privacy</a></li>
       <li><a href="https://lynomia.com/contact">Contact Us</a></li>
       <li><a href="https://lynomia.com/about_us">About Us</a></li>
-
+   <li><a href="https://lynomia.com/register">Register</a></li>
       <!-- PHP logic replaced -->
   
     </ul>
@@ -77,8 +77,7 @@ onMounted(() => {
         <a class="mobile-menu-link" @click="closeMenu" href="/privacy">Privacy</a>
         <a class="mobile-menu-link" @click="closeMenu" href="/contact">Contact Us</a>
         <a class="mobile-menu-link" @click="closeMenu" href="/about_us">About Us</a>
-
-     
+        <a class="mobile-menu-link" @click="closeMenu" href="/register">Register</a>     
       </div>
     </div>
   </div>
@@ -125,7 +124,7 @@ onMounted(() => {
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--slate-warm);
+  color:white;
   text-decoration: none;
   position: relative;
   padding: 14px 0 6px;

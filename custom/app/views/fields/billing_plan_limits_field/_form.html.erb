@@ -1,0 +1,16 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'Limits' %>
+</div>
+<div class="field-unit__field">
+  <% BillingPlan::LIMIT_KEYS.each do |key| %>
+    <div style="margin-bottom: 8px;">
+      <label for="billing_plan_limits_<%= key %>"><%= key.humanize %></label>
+      <input type="number" min="0" step="1"
+             id="billing_plan_limits_<%= key %>"
+             name="<%= f.object_name %>[<%= field.attribute %>][<%= key %>]"
+             value="<%= field.limits[key] %>"
+             placeholder="Unlimited">
+    </div>
+  <% end %>
+  <p style="font-size: 12px; opacity: .7;">Leave empty for unlimited. 0 = not allowed.</p>
+</div>

@@ -1,7 +1,10 @@
 import Auth from '../api/auth';
+import { handleBillingLock } from './billingGuard';
 
-const parseErrorCode = error => Promise.reject(error);
-
+const parseErrorCode = error => {
+  handleBillingLock(error);
+  return Promise.reject(error);
+};
 export default axios => {
   const { apiHost = '' } = window.chatwootConfig || {};
   const wootApi = axios.create({ baseURL: `${apiHost}/` });

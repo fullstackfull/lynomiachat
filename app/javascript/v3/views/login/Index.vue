@@ -1,8 +1,3 @@
-
-
-
-
-
 <script>
 // utils and composables
 import { login } from '../../api/auth';
@@ -15,9 +10,6 @@ import SessionStorage from 'shared/helpers/sessionStorage';
 import { useBranding } from 'shared/composables/useBranding';
 
 // components
-
-import Navbar from '../../../dashboard/components/Navbar.vue';
-
 import SimpleDivider from '../../components/Divider/SimpleDivider.vue';
 import FormInput from '../../components/Form/Input.vue';
 import GoogleOAuthButton from '../../components/GoogleOauth/Button.vue';
@@ -45,7 +37,6 @@ export default {
     SimpleDivider,
     MfaVerification,
     Icon,
-    Navbar,
   },
   props: {
     ssoAuthToken: { type: String, default: '' },
@@ -63,8 +54,6 @@ export default {
   },
   data() {
     return {
-      // We need to initialize the component with any
-      // properties that will be used in it
       credentials: {
         email: '',
         password: '',
@@ -116,12 +105,9 @@ export default {
     }
     if (this.authError) {
       const messageKey = ERROR_MESSAGES[this.authError] ?? 'LOGIN.API.UNAUTH';
-      // Use a method to get the translated text to avoid dynamic key warning
       const translatedMessage = this.getTranslatedMessage(messageKey);
       useAlert(translatedMessage);
-      // wait for idle state
       this.requestIdleCallbackPolyfill(() => {
-        // Remove the error query param from the url
         const { query } = this.$route;
         this.$router.replace({ query: { ...query, error: undefined } });
       });
@@ -129,38 +115,31 @@ export default {
   },
   methods: {
     getTranslatedMessage(key) {
-      // Avoid dynamic key warning by handling each case explicitly
       switch (key) {
         case 'LOGIN.OAUTH.NO_ACCOUNT_FOUND':
           return this.$t('LOGIN.OAUTH.NO_ACCOUNT_FOUND');
         case 'LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY':
           return this.$t('LOGIN.OAUTH.BUSINESS_ACCOUNTS_ONLY');
+        case 'LOGIN.SAML.API.ERROR_MESSAGE':
+          return this.$t('LOGIN.SAML.API.ERROR_MESSAGE');
         case 'LOGIN.API.UNAUTH':
         default:
           return this.$t('LOGIN.API.UNAUTH');
       }
     },
-    // TODO: Remove this when Safari gets wider support
-    // Ref: https://caniuse.com/requestidlecallback
-    //
     requestIdleCallbackPolyfill(callback) {
       if (window.requestIdleCallback) {
         window.requestIdleCallback(callback);
       } else {
-        // Fallback for safari
-        // Using a delay of 0 allows the callback to be executed asynchronously
-        // in the next available event loop iteration, similar to requestIdleCallback
         setTimeout(callback, 0);
       }
     },
     showAlertMessage(message) {
-      // Reset loading, current selected agent
       this.loginApi.showLoading = false;
       this.loginApi.message = message;
       useAlert(this.loginApi.message);
     },
     handleImpersonation() {
-      // Detects impersonation mode via URL and sets a session flag to prevent user settings changes during impersonation.
       const urlParams = new URLSearchParams(window.location.search);
       const impersonation = urlParams.get(IMPERSONATION_URL_SEARCH_KEY);
       if (impersonation) {
@@ -183,7 +162,6 @@ export default {
 
       login(credentials)
         .then(result => {
-          // Check if MFA is required
           if (result?.mfaRequired) {
             this.loginApi.showLoading = false;
             this.mfaRequired = true;
@@ -204,7 +182,6 @@ export default {
             return;
           }
 
-          // Reset URL Params if the authentication is invalid
           if (this.email) {
             window.location = '/app/login';
           }
@@ -223,12 +200,10 @@ export default {
       this.submitLogin();
     },
     handleMfaVerified() {
-      // MFA verification successful, continue with login
       this.handleImpersonation();
       window.location = '/app';
     },
     handleMfaCancel() {
-      // User cancelled MFA, reset state
       this.mfaRequired = false;
       this.mfaToken = null;
       this.credentials.password = '';
@@ -238,140 +213,841 @@ export default {
 </script>
 
 <template>
-  <Navbar />
-  <main
-    class="flex flex-col w-full min-h-screen py-20 bg-n-brand/5 dark:bg-n-background sm:px-6 lg:px-8"
-  >
-    <section class="max-w-5xl mx-auto bb">
+  <main class="auth-page">
+    <!-- Left branding panel (Design preserved, content restored to Chatwoot) -->
+    <section class="auth-visual">
+      <div class="auth-visual-grid"></div>
+      <div class="auth-glow auth-glow-one"></div>
+      <div class="auth-glow auth-glow-two"></div>
 
-      <img
-        v-if="globalConfig.logoDark"
-  src="https://lynomia.com/img/logo.png"
-  alt="logo"
-  class="block w-auto h-8 mx-auto dark:hidden"
-      />
-      <h2 class="mt-6 text-3xl font-medium text-center text-n-slate-12 new">
-      Login to lynomia chat
-      </h2>
-      <p v-if="showSignupLink" class="mt-3 text-sm text-center text-n-slate-11">
-        {{ $t('COMMON.OR') }}
-        <router-link to="auth/signup" class="lowercase text-link text-n-brand">
-          {{ $t('LOGIN.CREATE_NEW_ACCOUNT') }}
-        </router-link>
-      </p>
-    </section>
+      <div class="visual-top">
+        <span class="visual-badge">
+          Customer conversations, simplified
+        </span>
+      </div>
 
-    <!-- MFA Verification Section -->
-    <section v-if="mfaRequired" class="mt-11">
-      <MfaVerification
-        :mfa-token="mfaToken"
-        @verified="handleMfaVerified"
-        @cancel="handleMfaCancel"
-      />
-    </section>
+      <div class="visual-content">
+        <p class="visual-eyebrow">{{ globalConfig.installationName || 'CHATWOOT' }}</p>
 
-    <!-- Regular Login Section -->
-    <section
-      v-else
-      class="bg-whit shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-n-solid-2 p-11 sm:shadow-lg sm:rounded-lg"
-      :class="{
-        'mb-8 mt-15': !showGoogleOAuth,
-        'animate-wiggle': loginApi.hasErrored,
-      }"
-    >
-      <div v-if="!email">
-        <div class="flex flex-col gap-4">
-          <GoogleOAuthButton v-if="showGoogleOAuth" />
-          <div v-if="showSamlLogin" class="text-center">
-            <router-link
-              to="/app/login/sso"
-              class="inline-flex justify-center w-full px-4 py-3 items-center bg-n-background dark:bg-n-solid-3 rounded-md shadow-sm ring-1 ring-inset ring-n-container dark:ring-n-container focus:outline-offset-0 hover:bg-n-alpha-2 dark:hover:bg-n-alpha-2"
-            >
-              <Icon
-                icon="i-lucide-lock-keyhole"
-                class="size-5 text-n-slate-11"
-              />
-              <span class="ml-2 text-base font-medium text-n-slate-12">
-                {{ $t('LOGIN.SAML.LABEL') }}
-              </span>
-            </router-link>
+        <h1>
+          One place for
+          <span>every conversation.</span>
+        </h1>
+
+        <p class="visual-description">
+          Keep your team connected with customers through one
+          focused, secure and beautifully simple workspace.
+        </p>
+
+        <div class="visual-points">
+          <div class="visual-point">
+            <span class="point-dot"></span>
+            <span>Fast, focused customer support</span>
           </div>
-          <SimpleDivider
-            v-if="showGoogleOAuth || showSamlLogin"
-            :label="$t('COMMON.OR')"
-            class="uppercase"
+
+          <div class="visual-point">
+            <span class="point-dot"></span>
+            <span>Everything your team needs in one place</span>
+          </div>
+
+          <div class="visual-point">
+            <span class="point-dot"></span>
+            <span>Built for modern teams</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="visual-footer">
+        <span>&copy; {{ new Date().getFullYear() }} Chatwoot</span>
+
+        <div class="visual-footer-links">
+          <router-link to="https://chat.lynomia.com/#privacy">Privacy</router-link>
+          <router-link to="https://chat.lynomia.com/#terms">Terms</router-link>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right login panel -->
+    <section class="auth-panel">
+      <div class="auth-container">
+        <div class="auth-logo-wrap">
+          <div class="auth-logo-box">
+            <img
+              :src="globalConfig.logo"
+              :alt="globalConfig.installationName"
+              class="auth-logo dark:hidden"
+            />
+                 </div>
+        </div>
+
+        <!-- MFA -->
+        <div
+          v-if="mfaRequired"
+          class="auth-card"
+        >
+          <div class="auth-heading">
+            <h2>Verify your account</h2>
+            <p>
+              Complete the verification step to continue.
+            </p>
+          </div>
+
+          <MfaVerification
+            :mfa-token="mfaToken"
+            @verified="handleMfaVerified"
+            @cancel="handleMfaCancel"
           />
         </div>
-        <form class="space-y-5" @submit.prevent="submitFormLogin">
-          <FormInput
-            v-model="credentials.email"
-            name="email_address"
-            type="text"
-            data-testid="email_input"
-            :tabindex="1"
-            required
-            :label="$t('LOGIN.EMAIL.LABEL')"
-            :placeholder="$t('LOGIN.EMAIL.PLACEHOLDER')"
-            :has-error="v$.credentials.email.$error"
-            @input="v$.credentials.email.$touch"
-          />
-          <FormInput
-            v-model="credentials.password"
-            type="password"
-            name="password"
-            data-testid="password_input"
-            required
-            :tabindex="2"
-            :label="$t('LOGIN.PASSWORD.LABEL')"
-            :placeholder="$t('LOGIN.PASSWORD.PLACEHOLDER')"
-            :has-error="v$.credentials.password.$error"
-            @input="v$.credentials.password.$touch"
-          >
-            <p v-if="!globalConfig.disableUserProfileUpdate">
-              <router-link
-                to="auth/reset/password"
-                class="text-sm text-link"
-                tabindex="4"
-              >
-                {{ $t('LOGIN.FORGOT_PASSWORD') }}
-              </router-link>
+
+        <!-- Login -->
+        <div
+          v-else
+          class="auth-card"
+          :class="{
+            'auth-card-error': loginApi.hasErrored,
+          }"
+        >
+          <div class="auth-heading">
+            <h2>{{ replaceInstallationName($t('LOGIN.TITLE')) }}</h2>
+            <p>
+              Sign in to continue to {{ globalConfig.installationName || 'Chatwoot' }}.
             </p>
-          </FormInput>
-          <NextButton
-            lg
-            type="submit"
-            data-testid="submit_button"
-            class="w-full"
-            :tabindex="3"
-            :label="$t('LOGIN.SUBMIT')"
-            :disabled="loginApi.showLoading"
-            :is-loading="loginApi.showLoading"
-          />
-        </form>
-      </div>
-      <div v-else class="flex items-center justify-center">
-        <Spinner color-scheme="primary" size="" />
+          </div>
+
+          <div v-if="!email">
+            <div class="flex flex-col gap-4 mb-4">
+              <GoogleOAuthButton v-if="showGoogleOAuth" />
+              <div v-if="showSamlLogin" class="text-center">
+                <router-link
+                  to="/app/login/sso"
+                  class="inline-flex justify-center w-full px-4 py-3 items-center bg-n-background dark:bg-n-solid-3 rounded-md shadow-sm ring-1 ring-inset ring-n-container dark:ring-n-container focus:outline-offset-0 hover:bg-n-alpha-2 dark:hover:bg-n-alpha-2"
+                >
+                  <Icon
+                    icon="i-lucide-lock-keyhole"
+                    class="size-5 text-n-slate-11"
+                  />
+                  <span class="ml-2 text-base font-medium text-n-slate-12">
+                    {{ $t('LOGIN.SAML.LABEL') }}
+                  </span>
+                </router-link>
+              </div>
+              <SimpleDivider
+                v-if="showGoogleOAuth || showSamlLogin"
+                :label="$t('COMMON.OR')"
+                class="uppercase"
+              />
+            </div>
+
+            <form
+              class="auth-form"
+              @submit.prevent="submitFormLogin"
+            >
+              <FormInput
+                v-model="credentials.email"
+                name="email_address"
+                type="text"
+                data-testid="email_input"
+                :tabindex="1"
+                required
+                :label="$t('LOGIN.EMAIL.LABEL')"
+                :placeholder="$t('LOGIN.EMAIL.PLACEHOLDER')"
+                :has-error="v$.credentials.email.$error"
+                @input="v$.credentials.email.$touch"
+              />
+
+              <FormInput
+                v-model="credentials.password"
+                type="password"
+                name="password"
+                data-testid="password_input"
+                required
+                :tabindex="2"
+                :label="$t('LOGIN.PASSWORD.LABEL')"
+                :placeholder="$t('LOGIN.PASSWORD.PLACEHOLDER')"
+                :has-error="v$.credentials.password.$error"
+                @input="v$.credentials.password.$touch"
+              >
+                <p v-if="!globalConfig.disableUserProfileUpdate" class="forgot-row">
+                  <router-link
+                    to="auth/reset/password"
+                    tabindex="4"
+                    class="forgot-link"
+                  >
+                    {{ $t('LOGIN.FORGOT_PASSWORD') }}
+                  </router-link>
+                </p>
+              </FormInput>
+
+              <NextButton
+                lg
+                type="submit"
+                data-testid="submit_button"
+                class="login-button"
+                :tabindex="3"
+                :label="$t('LOGIN.SUBMIT')"
+                :disabled="loginApi.showLoading"
+                :is-loading="loginApi.showLoading"
+              />
+            </form>
+
+            <div v-if="showSignupLink" class="register-section">
+              <span>{{ $t('COMMON.OR') }}</span>
+              <router-link
+                to="auth/signup"
+                class="register-link"
+              >
+                {{ $t('LOGIN.CREATE_NEW_ACCOUNT') }}
+              </router-link>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="loading-area"
+          >
+            <Spinner
+              color-scheme="primary"
+              size=""
+            />
+          </div>
+        </div>
+
+        <div class="mobile-footer">
+          <router-link to="/privacy">Privacy</router-link>
+          <span>&bull;</span>
+          <router-link to="/terms">Terms</router-link>
+        </div>
       </div>
     </section>
   </main>
 </template>
 
 <style>
+/* ??? ????????? ???????? ?????? ???? ????? ?????? */
+html,
+body,
+#app {
+  min-height: 100%;
+}
 
-.new , label{
-  color:white;
+body {
+  margin: 0;
+  background: #08111f;
 }
-.bg-whit{
-  background:rgba(22, 26, 32, 0.55);
+
+.auth-page {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: #ffffff;
 }
-#app{
-  background: linear-gradient(180deg, #407af0, #194689, #15263e 70%, #122b5d);
+
+/* =========================
+   LEFT BRANDING SIDE
+   ========================= */
+
+.auth-visual {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 56px 64px 48px;
+
+  color: #ffffff;
+
+  background:
+    radial-gradient(
+      circle at 10% 5%,
+      rgba(69, 126, 255, 0.36),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 95% 85%,
+      rgba(32, 87, 181, 0.42),
+      transparent 38%
+    ),
+    linear-gradient(
+      145deg,
+      #071322 0%,
+      #0a1e39 44%,
+      #103a6f 100%
+    );
 }
-.bb{
-      margin-top: 3rem;
+
+.auth-visual-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    );
+
+  background-size: 58px 58px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.8),
+      rgba(0, 0, 0, 0.12)
+    );
 }
-.leading-6 ,input{
-  
-    color: white !important;
+
+.auth-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(2px);
+}
+
+.auth-glow-one {
+  width: 420px;
+  height: 420px;
+  top: 14%;
+  right: -230px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 0 120px rgba(68, 132, 255, 0.11);
+}
+
+.auth-glow-two {
+  width: 220px;
+  height: 220px;
+  left: -100px;
+  bottom: 15%;
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.visual-top,
+.visual-content,
+.visual-footer {
+  position: relative;
+  z-index: 2;
+}
+
+.visual-top {
+  display: flex;
+  align-items: center;
+}
+
+.visual-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 8px 14px;
+
+  color: rgba(255, 255, 255, 0.72);
+
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+
+  background: rgba(255, 255, 255, 0.055);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.10);
+
+  border-radius: 999px;
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.visual-content {
+  max-width: 560px;
+  margin: auto 0;
+}
+
+.visual-eyebrow {
+  margin: 0 0 22px;
+
+  color: #84adff;
+
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+}
+
+.visual-content h1 {
+  max-width: 620px;
+
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(3.1rem, 5.1vw, 5.8rem);
+  line-height: 0.99;
+
+  font-weight: 500;
+  letter-spacing: -0.06em;
+}
+
+.visual-content h1 span {
+  display: block;
+
+  color: #DB2777;
+}
+
+.visual-description {
+  max-width: 480px;
+
+  margin: 30px 0 0;
+
+  color: rgba(255, 255, 255, 0.58);
+
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.visual-points {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-top: 34px;
+}
+
+.visual-point {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  color: rgba(255, 255, 255, 0.72);
+
+  font-size: 13px;
+}
+
+.point-dot {
+  width: 6px;
+  height: 6px;
+
+  flex: 0 0 6px;
+
+  border-radius: 50%;
+
+  background: #76a7ff;
+
+  box-shadow:
+    0 0 0 4px rgba(118, 167, 255, 0.08);
+}
+
+.visual-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  color: rgba(255, 255, 255, 0.33);
+
+  font-size: 11px;
+}
+
+.visual-footer-links {
+  display: flex;
+  align-items: center;
+
+  gap: 20px;
+}
+
+.visual-footer a {
+  color: rgba(255, 255, 255, 0.38);
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.visual-footer a:hover {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+
+/* =========================
+   RIGHT LOGIN SIDE
+   ========================= */
+
+.auth-panel {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 56px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(50, 113, 234, 0.055),
+      transparent 31%
+    ),
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #fbfcfe 100%
+    );
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 430px;
+}
+
+.auth-logo-wrap {
+  display: flex;
+  justify-content: center;
+
+  margin-bottom: 36px;
+}
+
+.auth-logo-box {
+  min-width: 210px;
+  min-height: 66px;
+  border-radius: 7px;
+  transform: skewX(-5deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 24px;
+
+  background: white;
+
+  border:
+    1px solid rgba(17, 24, 39, 0.08);
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 10px 30px rgba(15, 31, 57, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.auth-logo {
+  display: block;
+  width: 265px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
+.auth-card {
+  width: 100%;
+}
+
+.auth-card-error {
+  animation: auth-shake 0.38s ease;
+}
+
+@keyframes auth-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.auth-heading {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.auth-heading h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 31px;
+  line-height: 1.18;
+
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.auth-heading p {
+  margin: 10px 0 0;
+
+  color: #7a8494;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+}
+
+.auth-card label {
+  color: #344054 !important;
+
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.auth-card input {
+  min-height: 50px;
+
+  color: #101828 !important;
+
+  background: #ffffff !important;
+
+  border:
+    1px solid #d7dce5 !important;
+
+  border-radius: 12px !important;
+
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.03) !important;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease !important;
+}
+
+.auth-card input::placeholder {
+  color: #a1a8b4 !important;
+}
+
+.auth-card input:hover {
+  border-color: #c1c8d3 !important;
+}
+
+.auth-card input:focus {
+  background: #ffffff !important;
+
+  border-color: #397cf6 !important;
+
+  box-shadow:
+    0 0 0 4px rgba(57, 124, 246, 0.10) !important;
+}
+
+.forgot-row {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: -7px;
+}
+
+.forgot-link {
+  color: #397cf6 !important;
+
+  font-size: 13px;
+  font-weight: 550;
+
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.forgot-link:hover {
+  color: #1e5ed4 !important;
+}
+
+.login-button {
+  width: 100%;
+
+  min-height: 50px;
+
+  margin-top: 3px;
+
+  border-radius: 12px !important;
+  background: #db2777;
+}
+
+.auth-card [data-testid="submit_button"] {
+  min-height: 50px;
+
+  color: #ffffff !important;
+
+  background:
+    linear-gradient(135deg,#ef5da0 0%,#DB2777 55%,#9d1c57 100%) !important;
+
+  border: none !important;
+
+  border-radius: 12px !important;
+
+  box-shadow:
+    0 8px 20px rgba(35, 95, 211, 0.20);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.auth-card [data-testid="submit_button"]:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.03);
+
+  box-shadow:
+    0 12px 26px rgba(35, 95, 211, 0.27);
+}
+
+.register-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  margin-top: 30px;
+  padding-top: 25px;
+
+  border-top:
+    1px solid #eceff4;
+
+  color: #7a8494;
+
+  font-size: 13px;
+}
+
+.register-link {
+  color: #397cf6 !important;
+
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: #1e5ed4 !important;
+}
+
+.loading-area {
+  min-height: 220px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-footer {
+  display: none;
+}
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1100px) {
+  .auth-visual {
+    padding:
+      48px 44px 42px;
+  }
+
+  .auth-panel {
+    padding: 48px 38px;
+  }
+
+  .visual-content h1 {
+    font-size:
+      clamp(3rem, 5.2vw, 4.5rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .auth-page {
+    display: block;
+  }
+
+  .auth-visual {
+    display: none;
+  }
+
+  .auth-panel {
+    min-height: 100vh;
+
+    padding:
+      46px 24px 32px;
+  }
+
+  .auth-container {
+    max-width: 440px;
+  }
+
+  .mobile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    margin-top: 38px;
+
+    color: #c2c7d0;
+
+    font-size: 11px;
+  }
+
+  .mobile-footer a {
+    color: #929baa !important;
+    text-decoration: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-panel {
+    padding:
+      30px 20px 28px;
+  }
+
+  .auth-logo-wrap {
+    margin-bottom: 30px;
+  }
+
+  .auth-logo-box {
+    min-width: 190px;
+    min-height: 60px;
+
+    padding: 11px 20px;
+
+    border-radius: 14px;
+  }
+
+  .auth-logo {
+    width: 150px;
+  }
+
+  .auth-heading {
+    margin-bottom: 27px;
+  }
+
+  .auth-heading h2 {
+    font-size: 27px;
+  }
+
+  .register-section {
+    flex-wrap: wrap;
+  }
 }
 </style>

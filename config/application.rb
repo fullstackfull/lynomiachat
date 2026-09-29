@@ -48,6 +48,16 @@ module Chatwoot
     # Add enterprise views to the view paths
     config.paths['app/views'].unshift('enterprise/app/views')
 
+
+
+    
+    # --- Billing customization (see BILLING_CHANGES.md) ---
+    # rubocop:disable Rails/FilePath
+    config.eager_load_paths += Dir["#{Rails.root}/custom/app/**"]
+    # rubocop:enable Rails/FilePath
+    config.paths['app/views'].unshift('custom/app/views')
+    config.paths['db/migrate'] << 'custom/db/migrate'
+    # --- end billing customization ---
     # Load enterprise initializers alongside standard initializers
     enterprise_initializers = Rails.root.join('enterprise/config/initializers')
     Dir[enterprise_initializers.join('**/*.rb')].each { |f| require f } if enterprise_initializers.exist?

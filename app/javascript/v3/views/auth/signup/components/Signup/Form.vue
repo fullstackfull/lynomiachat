@@ -36,9 +36,6 @@ const rules = {
     email: {
       required,
       email,
-      businessEmailValidator(value) {
-        return CompanyEmailValidator.isCompanyEmail(value);
-      },
     },
     password: {
       required,
@@ -54,9 +51,9 @@ const globalConfig = computed(() => store.getters['globalConfig/get']);
 
 const termsLink = computed(() =>
   t('REGISTER.TERMS_ACCEPT')
-    .replace('https://www.chatwoot.com/terms', globalConfig.value.termsURL)
+    .replace('https://chat.lynomia.com/#terms', globalConfig.value.termsURL)
     .replace(
-      'https://www.chatwoot.com/privacy-policy',
+      'https://chat.lynomia.com/#privacy',
       globalConfig.value.privacyURL
     )
 );

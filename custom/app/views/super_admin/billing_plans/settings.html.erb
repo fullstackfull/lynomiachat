@@ -1,0 +1,113 @@
+<% content_for(:title) { 'Billing Settings' } %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title">Billing Settings</h1>
+  <div>
+    <%= link_to 'Manage plans', super_admin_billing_plans_path, class: 'button' %>
+  </div>
+</header>
+
+<section class="main-content__body">
+  <%= form_with scope: :billing_settings, url: settings_super_admin_billing_plans_path,
+                method: :patch, local: true, class: 'form' do |f| %>
+
+    <h2 style="font-weight: 600; margin: 8px 0 16px;">Stripe</h2>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :stripe_secret_key, 'Secret key' %></div>
+      <div class="field-unit__field">
+        <%= f.password_field :stripe_secret_key, autocomplete: 'off',
+                             placeholder: Billing::Settings.masked(:stripe_secret_key) || 'sk_test_...' %>
+        <p style="font-size: 12px; opacity: .7;">Leave empty to keep the current value.</p>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :stripe_webhook_secret, 'Webhook secret' %></div>
+      <div class="field-unit__field">
+        <%= f.password_field :stripe_webhook_secret, autocomplete: 'off',
+                             placeholder: Billing::Settings.masked(:stripe_webhook_secret) || 'whsec_...' %>
+        <p style="font-size: 12px; opacity: .7;">
+          Webhook URL: <code><%= "#{ENV.fetch('FRONTEND_URL', '')}/billing/webhooks/stripe" %></code>
+        </p>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :stripe_tax_enabled, 'Stripe Tax' %></div>
+      <div class="field-unit__field">
+        <%= f.check_box :stripe_tax_enabled, checked: @settings[:stripe_tax_enabled] %>
+        <span style="font-size: 12px; opacity: .7;">Must also be activated in the Stripe dashboard.</span>
+      </div>
+    </div>
+
+    <h2 style="font-weight: 600; margin: 24px 0 16px;">Trial</h2>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :trial_enabled, 'Enable trial for new accounts' %></div>
+      <div class="field-unit__field">
+        <%= f.check_box :trial_enabled, checked: @settings[:trial_enabled] %>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :trial_days, 'Trial days' %></div>
+      <div class="field-unit__field">
+        <%= f.number_field :trial_days, value: @settings[:trial_days], min: 1 %>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :trial_plan_id, 'Trial uses features of' %></div>
+      <div class="field-unit__field">
+        <%= f.select :trial_plan_id,
+                     options_from_collection_for_select(@plans, :id, :name, @settings[:trial_plan_id]),
+                     include_blank: '- select a plan -' %>
+        <% if @settings[:trial_enabled] && @settings[:trial_plan_id].blank? %>
+          <p style="font-size: 12px; color: #b45309;">Trial is enabled but no plan is selected.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :trial_once_per_user, 'One trial per user' %></div>
+      <div class="field-unit__field">
+        <%= f.check_box :trial_once_per_user, checked: @settings[:trial_once_per_user] %>
+      </div>
+    </div>
+
+    <h2 style="font-weight: 600; margin: 24px 0 16px;">Failed payments</h2>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :grace_period_days, 'Grace period (days)' %></div>
+      <div class="field-unit__field">
+        <%= f.number_field :grace_period_days, value: @settings[:grace_period_days], min: 0 %>
+      </div>
+    </div>
+
+    <h2 style="font-weight: 600; margin: 24px 0 16px;">Mobile app</h2>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :mobile_checkout_enabled, 'Allow payment from the mobile app' %></div>
+      <div class="field-unit__field">
+        <%= f.check_box :mobile_checkout_enabled, checked: @settings[:mobile_checkout_enabled] %>
+        <span style="font-size: 12px; opacity: .7;">Turn off to hide the pay button in the app immediately.</span>
+      </div>
+    </div>
+
+    <div class="field-unit">
+      <div class="field-unit__label"><%= f.label :mobile_return_url, 'Mobile return URL (deep link)' %></div>
+      <div class="field-unit__field">
+        <%= f.text_field :mobile_return_url, value: @settings[:mobile_return_url], placeholder: 'lynomia://billing' %>
+        <p style="font-size: 12px; opacity: .7;">
+          Opened after payment. Stripe redirects to
+          <code><%= "#{ENV.fetch('FRONTEND_URL', '')}/mobile/billing/return" %></code>, which opens this link.
+        </p>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <%= f.submit 'Save settings' %>
+    </div>
+  <% end %>
+</section>

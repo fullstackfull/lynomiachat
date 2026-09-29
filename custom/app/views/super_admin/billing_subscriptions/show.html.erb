@@ -1,0 +1,96 @@
+<% subscription = page.resource %>
+<% content_for(:title) { "Subscription ##{subscription.id}" } %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title">
+    Subscription #<%= subscription.id %> — <%= subscription.account&.name %>
+  </h1>
+  <div>
+    <%= link_to 'All subscriptions', super_admin_billing_subscriptions_path, class: 'button' %>
+  </div>
+</header>
+
+<section class="main-content__body">
+  <dl>
+    <dt class="attribute-label">Account</dt>
+    <dd class="attribute-data">
+      <% if subscription.account %>
+        <%= link_to "##{subscription.account.id} #{subscription.account.name}", super_admin_account_path(subscription.account) %>
+      <% else %>—<% end %>
+    </dd>
+
+    <dt class="attribute-label">Plan</dt>
+    <dd class="attribute-data"><%= subscription.plan&.name || '—' %></dd>
+
+    <dt class="attribute-label">Status</dt>
+    <dd class="attribute-data">
+      <strong><%= subscription.status %></strong>
+      <%= subscription.usable? ? '(account usable)' : '(account locked)' %>
+    </dd>
+
+    <dt class="attribute-label">Source</dt>
+    <dd class="attribute-data"><%= subscription.source %></dd>
+
+    <dt class="attribute-label">Trial ends</dt>
+    <dd class="attribute-data"><%= subscription.trial_ends_at&.strftime('%d %b %Y %H:%M') || '—' %></dd>
+
+    <dt class="attribute-label">Period ends</dt>
+    <dd class="attribute-data">
+      <%= subscription.current_period_end&.strftime('%d %b %Y %H:%M') || '—' %>
+      <%= '(cancels at period end)' if subscription.cancel_at_period_end %>
+    </dd>
+
+    <dt class="attribute-label">Grace period ends</dt>
+    <dd class="attribute-data"><%= subscription.grace_period_ends_at&.strftime('%d %b %Y %H:%M') || '—' %></dd>
+
+    <dt class="attribute-label">Stripe customer</dt>
+    <dd class="attribute-data"><%= subscription.stripe_customer_id || '—' %></dd>
+
+    <dt class="attribute-label">Stripe subscription</dt>
+    <dd class="attribute-data"><%= subscription.stripe_subscription_id || '—' %></dd>
+  </dl>
+
+  <h2 style="font-weight: 600; margin: 32px 0 8px;">Actions</h2>
+
+  <% if stripe_paid?(subscription) %>
+    <p style="font-size: 13px; color: #b45309; margin-bottom: 16px;">
+      This account pays through Stripe. To extend a trial or grant a plan manually, cancel the Stripe subscription first.
+    </p>
+  <% else %>
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-weight: 600; margin-bottom: 8px;">Extend trial</h3>
+      <%= form_with url: extend_trial_super_admin_billing_subscription_path(subscription), method: :post, local: true do |f| %>
+        <%= f.number_field :days, value: 7, min: 1, style: 'width: 120px; display: inline-block;' %>
+        <span>days</span>
+        <%= f.submit 'Extend trial', style: 'margin-left: 8px;' %>
+      <% end %>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-weight: 600; margin-bottom: 8px;">Activate / grant a plan manually (no payment)</h3>
+      <%= form_with url: grant_plan_super_admin_billing_subscription_path(subscription), method: :post, local: true do |f| %>
+        <%= f.select :plan_id,
+                     options_from_collection_for_select(BillingPlan.ordered, :id, :name, subscription.plan_id),
+                     {}, style: 'width: 200px; display: inline-block;' %>
+        <span style="margin: 0 8px;">until</span>
+        <%= f.date_field :ends_at, style: 'width: 180px; display: inline-block;' %>
+        <span style="font-size: 12px; opacity: .7;">(empty = no end date)</span>
+        <%= f.submit 'Grant plan', style: 'margin-left: 8px;' %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% unless subscription.status.in?(%w[canceled inactive]) %>
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-weight: 600; margin-bottom: 8px;">Cancel subscription</h3>
+      <p style="font-size: 13px; opacity: .8; margin-bottom: 8px;">
+        Stops the subscription immediately<%= ' and cancels it on Stripe' if stripe_paid?(subscription) %>. The account will be locked.
+      </p>
+      <%= button_to 'Cancel subscription now',
+                    cancel_subscription_super_admin_billing_subscription_path(subscription),
+                    method: :post,
+                    form: { onsubmit: "return confirm('Cancel this subscription now? The account will be locked.');" },
+                    style: 'background: #dc2626; color: #fff;' %>
+    </div>
+  <% end %>
+</section>

@@ -1,0 +1,18 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'Features' %>
+</div>
+<div class="field-unit__field">
+  <%# empty value so that unchecking everything still submits the field %>
+  <input type="hidden" name="<%= f.object_name %>[<%= field.attribute %>][]" value="">
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px;">
+    <% field.options.each do |feature| %>
+      <label style="display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox"
+               name="<%= f.object_name %>[<%= field.attribute %>][]"
+               value="<%= feature['name'] %>"
+               <%= 'checked' if field.selected.include?(feature['name']) %>>
+        <%= feature['display_name'] %>
+      </label>
+    <% end %>
+  </div>
+</div>

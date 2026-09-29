@@ -22,9 +22,8 @@ export default {
       return this.inbox.id;
     },
     facebookLoginScopes() {
-      return buildFacebookLoginScopes({
-        includeInstagramScopes: !!this.inbox.instagram_id,
-      });
+      // Lynomia: never request Instagram scopes, even for legacy inboxes with an Instagram account
+      return buildFacebookLoginScopes();
     },
   },
   mounted() {
@@ -83,8 +82,7 @@ export default {
           }
         },
         {
-          scope:
-            'pages_manage_metadata,business_management,pages_messaging,pages_show_list',
+          scope: this.facebookLoginScopes,
           auth_type: 'reauthorize',
         }
       );

@@ -530,6 +530,17 @@ const menuItems = computed(() => {
         },
       ],
     },
+    ...(isCallsAvailable.value
+      ? [
+          {
+            name: 'Calls',
+            label: t('SIDEBAR.CALLS'),
+            icon: 'i-lucide-phone',
+            to: accountScopedRoute('calls_dashboard_index'),
+            activeOn: ['calls_dashboard_index'],
+          },
+        ]
+      : []),
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),

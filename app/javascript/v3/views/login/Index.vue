@@ -116,12 +116,18 @@ export default {
   },
   mounted() {
     if (this.authError) {
-      const messageKey = ERROR_MESSAGES[this.authError] ?? 'LOGIN.API.UNAUTH';
-      const translatedMessage = this.getTranslatedMessage(messageKey);
-      useAlert(translatedMessage);
-      this.requestIdleCallbackPolyfill(() => {
-        const { query } = this.$route;
-        this.$router.replace({ query: { ...query, error: undefined } });
+      // Wait for the sibling snackbar to mount and subscribe to toast events.
+      this.$nextTick(() => {
+        const messageKey = ERROR_MESSAGES[this.authError] ?? 'LOGIN.API.UNAUTH';
+        // Use a method to get the translated text to avoid dynamic key warning
+        const translatedMessage = this.getTranslatedMessage(messageKey);
+        useAlert(translatedMessage, { duration: AUTH_ERROR_TOAST_DURATION });
+        // wait for idle state
+        this.requestIdleCallbackPolyfill(() => {
+          // Remove the error query param from the url
+          const { query } = this.$route;
+          this.$router.replace({ query: { ...query, error: undefined } });
+        });
       });
     }
   },
@@ -364,8 +370,18 @@ export default {
           </div>
         </div>
 
+        <!-- Session limit (Chatwoot 4.18 concurrent session limit) -->
+        <div v-if="sessionsLimitReached" class="auth-card">
+          <SessionLimitOverlay
+            :sessions="limitedSessions"
+            @revoke="handleSessionRevoke"
+            @revoke-all="handleSessionRevokeAll"
+            @cancel="handleSessionLimitCancel"
+          />
+        </div>
+
         <!-- MFA -->
-        <div v-if="mfaRequired" class="auth-card">
+        <div v-else-if="mfaRequired" class="auth-card">
           <MfaVerification
             :mfa-token="mfaToken"
             @verified="handleMfaVerified"

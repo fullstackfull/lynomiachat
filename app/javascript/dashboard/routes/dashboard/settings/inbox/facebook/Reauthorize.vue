@@ -4,6 +4,7 @@ import InboxReconnectionRequired from '../components/InboxReconnectionRequired.v
 import { useAlert } from 'dashboard/composables';
 
 import { loadScript } from 'dashboard/helper/DOMHelpers';
+import { buildFacebookLoginScopes } from 'dashboard/helper/facebookScopes';
 import * as Sentry from '@sentry/vue';
 
 export default {
@@ -19,6 +20,11 @@ export default {
   computed: {
     inboxId() {
       return this.inbox.id;
+    },
+    facebookLoginScopes() {
+      return buildFacebookLoginScopes({
+        includeInstagramScopes: !!this.inbox.instagram_id,
+      });
     },
   },
   mounted() {

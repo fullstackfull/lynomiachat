@@ -36,6 +36,9 @@ class Channel::Whatsapp < ApplicationRecord
 
   validates :provider, inclusion: { in: PROVIDERS }
   validates :phone_number, presence: true, uniqueness: true
+  # Lynomia: match the 500-char column (health sync stores up to 500 chars); without this the generic 255-char
+  # check in ApplicationRecord makes every later validated save of the channel fail after a long health error.
+  validates :phone_number_health_error, length: { maximum: 500 }
   validate :validate_provider_config
 
   after_create :sync_templates

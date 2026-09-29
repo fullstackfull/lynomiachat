@@ -87,6 +87,15 @@ RSpec.describe Channel::Whatsapp do
     end
   end
 
+  describe 'phone_number_health_error length' do
+    it 'accepts a stored health error up to the 500-character column limit' do
+      channel = create(:channel_whatsapp, provider: 'whatsapp_cloud', sync_templates: false, validate_provider_config: false)
+      channel.update_columns(phone_number_health_error: 'x' * 300) # rubocop:disable Rails/SkipsModelValidations
+
+      expect(channel.reload).to be_valid
+    end
+  end
+
   describe 'validate_provider_config' do
     let(:channel) { build(:channel_whatsapp, provider: 'whatsapp_cloud', account: create(:account)) }
 

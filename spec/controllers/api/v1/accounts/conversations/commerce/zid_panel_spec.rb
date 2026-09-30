@@ -4,6 +4,7 @@ require 'rails_helper'
 RSpec.describe 'Conversation commerce API with a Zid store', type: :request do
   include_context 'with commerce encryption'
   include_context 'with zid app'
+  include ActiveJob::TestHelper
 
   let(:account) { create(:account) }
   let(:agent) { create(:user, account: account, role: :agent) }
@@ -52,6 +53,22 @@ RSpec.describe 'Conversation commerce API with a Zid store', type: :request do
 
     expect(response.parsed_body).to include('state' => 'not_found', 'candidates' => [])
     expect(store.customer_links).to be_empty
+  end
+
+  it "reads a customer's orders again right after Zid reports an order event for them" do
+    store.update!(credentials: store.credentials.merge('webhook_username' => 'u' * 32, 'webhook_password' => 'p' * 64))
+    get path, headers: agent.create_new_auth_token, as: :json
+    changed = orders['orders'].first.merge('order_status' => { 'name' => 'Delivered', 'code' => 'delivered' })
+    customer_orders.to_return(respond([changed]))
+    auth = ActionController::HttpAuthentication::Basic.encode_credentials('u' * 32, 'p' * 64)
+
+    perform_enqueued_jobs do
+      post "/webhooks/zid/#{store.external_store_id}", params: changed.to_json,
+                                                       headers: { 'Authorization' => auth, 'Content-Type' => 'application/json' }
+    end
+    get path, headers: agent.create_new_auth_token, as: :json
+
+    expect(response.parsed_body['orders'].pluck('status')).to eq(['delivered'])
   end
 
   it 'serves cached orders marked stale while Zid is rate limiting the store' do

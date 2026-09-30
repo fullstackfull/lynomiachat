@@ -27,6 +27,9 @@ class Commerce::Providers::Base
   # Built from the store's validated base URL and a validated order id, never from a URL in a provider response.
   def admin_order_url(external_order_id) = raise(NotImplementedError)
 
+  # Removes what Lynomia set up in the store (webhook subscriptions) before a disconnect deletes the credentials.
+  def release = nil
+
   def normalize_customer(raw) = raise(NotImplementedError)
 
   def normalize_order(raw) = raise(NotImplementedError)

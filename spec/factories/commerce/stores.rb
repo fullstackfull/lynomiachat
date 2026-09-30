@@ -22,7 +22,7 @@ FactoryBot.define do
     # X-Manager-Token), the refresh token and the per-store webhook Basic Auth pair.
     trait :zid do
       provider { 'zid' }
-      sequence(:external_store_id) { |n| (318_000 + n).to_s }
+      sequence(:external_store_id) { |n| (419_000 + n).to_s }
       sequence(:base_url) { |n| "https://zid-store-#{n}.zid.store" }
       credentials do
         { 'authorization' => 'zid-authorization-factory', 'access_token' => 'zid-manager-factory', 'refresh_token' => 'zid-refresh-factory',

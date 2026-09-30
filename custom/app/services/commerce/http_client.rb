@@ -5,7 +5,7 @@
 #   refused and the connection is pinned to the checked IP (no DNS rebinding between check and connect).
 # - Redirects are never followed: a 3xx is an INVALID_STORE_URL error, so nothing can bounce us to another host.
 # - Bounded: connect 3 s, each read 8 s, whole body 10 s and 5 MB. One retry, GET only, for a dropped connection or a
-#   502/503/504; timeouts are not retried so a slow store costs at most one timeout. POST is never retried.
+#   502/503/504; timeouts are not retried so a slow store costs at most one timeout. POST and DELETE are never retried.
 # - Hosts listed in COMMERCE_TRUSTED_STORE_HOSTS (development/staging stores on internal addresses) skip the address
 #   check only; they get the same limits and no redirects either.
 # - Errors are Commerce::Error codes. Credentials, query strings and response bodies are never logged or raised.
@@ -46,12 +46,25 @@ class Commerce::HttpClient
   # transport failure raises Commerce::Error with reason 'not_sent' when the request provably never reached the server
   # (DNS, refused connection, connect timeout) and 'unknown_outcome' when the server may have processed it.
   def post_form(path, form)
-    response = perform(:post, build_uri(path), URI.encode_www_form(form))
+    response = perform(:post, build_uri(path), URI.encode_www_form(form), 'application/x-www-form-urlencoded')
     [response.code.to_i, parse_json(strict: false)]
   rescue *NOT_SENT_ERRORS
     raise Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent')
   rescue Commerce::Error, Net::ReadTimeout, Net::WriteTimeout, *CONNECTION_ERRORS
     raise Commerce::Error.new('TIMEOUT', reason: 'unknown_outcome')
+  end
+
+  # One JSON POST, never retried (a webhook subscription could be created twice). Returns the parsed body of a 2xx answer.
+  def post_json(path, body)
+    parse(transport_errors { perform(:post, build_uri(path), body.to_json, 'application/json') })
+  end
+
+  # One DELETE, never retried. Returns the HTTP status of a 2xx answer.
+  def delete(path, params = {})
+    status = transport_errors { perform(:delete, build_uri(path, params)) }.code.to_i
+    raise error_for(status) unless status.between?(200, 299)
+
+    status
   end
 
   private
@@ -92,34 +105,39 @@ class Commerce::HttpClient
     raise Commerce::Error, 'TIMEOUT'
   end
 
-  def perform(verb, uri, body = nil)
+  def perform(verb, uri, body = nil, content_type = nil)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     @body = +''
-    response = Commerce::StoreUrl.trusted_host?(uri.host) ? fetch_trusted(verb, uri, body) : fetch(verb, uri, body)
+    request_headers = headers(content_type)
+    response = if Commerce::StoreUrl.trusted_host?(uri.host)
+                 fetch_trusted(verb, uri, body, request_headers)
+               else
+                 fetch(verb, uri, body, request_headers)
+               end
     @rate_limit = RATE_LIMIT_HEADERS.transform_values { |name| Integer(response[name].to_s, 10, exception: false) }
     log(verb, uri, response.code, started)
     response
   end
 
-  def fetch(verb, uri, body)
+  def fetch(verb, uri, body, headers)
     SsrfFilter.public_send(verb, uri, max_redirects: 0, allow_unfollowed_redirects: true, http_options: HTTP_OPTIONS,
-                                      headers: headers(body), body: body) do |response|
+                                      headers: headers, body: body) do |response|
       read_body(response)
     end
   end
 
-  def fetch_trusted(verb, uri, body)
+  def fetch_trusted(verb, uri, body, headers)
     Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', **HTTP_OPTIONS) do |http|
-      req = (verb == :post ? Net::HTTP::Post : Net::HTTP::Get).new(uri)
-      headers(body).each { |name, value| req[name] = value }
+      req = Net::HTTP.const_get(verb.to_s.capitalize).new(uri)
+      headers.each { |name, value| req[name] = value }
       req.body = body if body
       http.request(req) { |response| read_body(response) }
     end
   end
 
-  def headers(body)
+  def headers(content_type)
     { 'Accept' => 'application/json', 'User-Agent' => USER_AGENT, 'Authorization' => @authorization,
-      'Content-Type' => ('application/x-www-form-urlencoded' if body) }.merge(@extra_headers).compact
+      'Content-Type' => content_type }.merge(@extra_headers).compact
   end
 
   def read_body(response)

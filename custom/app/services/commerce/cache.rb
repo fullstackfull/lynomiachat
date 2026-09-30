@@ -26,6 +26,11 @@ class Commerce::Cache
     Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: true, error: e.code)
   end
 
+  # Drops one entry, so its next read goes to the store (a Zid order webhook for the customer's cached orders).
+  def self.invalidate(store, kind, identifier)
+    Redis::Alfred.delete(key(store, kind, identifier))
+  end
+
   def self.purge(store)
     keys = []
     Redis::Alfred.scan_each(match: "#{prefix(store)}::*") { |key| keys << key }

@@ -2,6 +2,7 @@
 # (docs/commerce/14-zid-oauth-and-tokens.md). The code is exchanged server-side, the tokens are confirmed against Zid's
 # manager profile, and only then is anything saved: a new store through Commerce::StoreConnection's ownership rules (a
 # store connected to another account is never moved), or new tokens for this account's own store (re-authorization).
+# Either way the store's webhooks are then registered again, with new credentials (Commerce::Zid::Webhooks).
 class Commerce::Zid::Authorization
   def initialize(account:, user:)
     @account = account
@@ -14,7 +15,9 @@ class Commerce::Zid::Authorization
 
     credentials = Commerce::Zid::Tokens.credentials(body)
     identity = Commerce::Zid::Oauth.profile(credentials)
-    Commerce::StoreLock.with('zid', identity[:external_store_id]) { save(identity, credentials) }
+    store = Commerce::StoreLock.with('zid', identity[:external_store_id]) { save(identity, credentials) }
+    Commerce::Zid::WebhookRegistrationJob.perform_later(store.id)
+    store
   end
 
   private

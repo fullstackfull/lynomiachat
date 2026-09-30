@@ -37,6 +37,7 @@ RSpec.describe 'Zid OAuth callback', type: :request do
                                                     redirect_uri: 'https://app.lynomia.test/commerce/zid/callback' })).to have_been_made.once
     expect(a_request(:get, profile_url).with(headers: { 'Authorization' => 'Bearer zid-fixture-authorization-token',
                                                         'X-Manager-Token' => 'zid-fixture-manager-token' })).to have_been_made.once
+    expect(Commerce::Zid::WebhookRegistrationJob).to have_been_enqueued.with(store.id)
   end
 
   it 'stores the tokens only encrypted and never hands them, or the client secret, to the browser or the logs' do

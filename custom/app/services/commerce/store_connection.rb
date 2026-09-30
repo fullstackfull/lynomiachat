@@ -61,8 +61,9 @@ class Commerce::StoreConnection
   end
 
   # Credentials, customer links and cached store data are deleted; the row stays (status disconnected) so the store can be reconnected
-  # or connected by another account later.
+  # or connected by another account later. Contacts and conversations are kept.
   def disconnect(store, event: 'commerce.store_disconnected')
+    release(store)
     links = 0
     store.transaction do
       links = store.customer_links.delete_all
@@ -74,6 +75,14 @@ class Commerce::StoreConnection
   end
 
   private
+
+  # What the provider set up in the store for Lynomia is removed while the credentials still exist. Best effort: a store
+  # that cannot be reached is disconnected anyway.
+  def release(store)
+    Commerce::Providers.for(store).release if store.credentials.present?
+  rescue Commerce::Error => e
+    Rails.logger.warn("[Commerce:#{store.provider}] release failed store=#{store.id} code=#{e.code}")
+  end
 
   def ensure_encryption!
     raise Commerce::Error, 'ENCRYPTION_NOT_CONFIGURED' unless Chatwoot.encryption_configured?

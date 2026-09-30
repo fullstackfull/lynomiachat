@@ -223,6 +223,41 @@ RSpec.describe Commerce::HttpClient do
     expect(stub).to have_been_requested.once
   end
 
+  describe 'Zid requests' do
+    let(:zid) do
+      described_class.new(base_uri: URI('https://api.zid.sa/v1'), authorization: 'Bearer auth-1', headers: { 'X-Manager-Token' => 'manager-1' },
+                          log_tag: 'zid')
+    end
+    let(:webhooks) { 'https://api.zid.sa/v1/managers/webhooks' }
+
+    before { resolve('api.zid.sa', '93.184.216.51') }
+
+    it 'sends both of the store tokens with every request' do
+      stub = stub_request(:get, "#{webhooks}?page=1").with(headers: { 'Authorization' => 'Bearer auth-1', 'X-Manager-Token' => 'manager-1' })
+                                                     .to_return(status: 200, body: '{"data":[]}')
+
+      expect(zid.get_json('/managers/webhooks', page: 1)).to eq('data' => [])
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'posts JSON once, never retrying' do
+      stub = stub_request(:post, webhooks).with(body: { event: 'order.create' }.to_json, headers: { 'Content-Type' => 'application/json' })
+                                          .to_return(status: 503)
+
+      expect(error_for { zid.post_json('/managers/webhooks', event: 'order.create') }).to eq(code: 'STORE_UNAVAILABLE', reason: 'http_503')
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'deletes once and reports errors by code' do
+      stub = stub_request(:delete, "#{webhooks}?original_id=4821").to_return(status: 404)
+
+      expect(error_for { zid.delete('/managers/webhooks', original_id: '4821') }).to eq(code: 'NOT_FOUND')
+      stub_request(:delete, "#{webhooks}?original_id=4821").to_return(status: 204)
+      expect(zid.delete('/managers/webhooks', original_id: '4821')).to eq(204)
+      expect(stub).to have_been_requested.twice
+    end
+  end
+
   it 'logs the path and status only: no credentials, no query (it can carry an email or phone)' do
     stub_request(:get, 'https://shop.example.com/wp-json/wc/v3/orders?search=omar@example.com').to_return(status: 200, body: '[]')
     logged = []

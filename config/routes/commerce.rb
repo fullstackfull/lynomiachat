@@ -32,5 +32,6 @@ end
 # Salla app events (the webhook URL of the Lynomia Salla app)
 post 'webhooks/salla', to: 'webhooks/salla#create'
 
-# The OAuth callback URL of the Lynomia Zid app
+# The OAuth callback URL of the Lynomia Zid app, and the target URL of each connected Zid store's webhooks
 get 'commerce/zid/callback', to: 'commerce/zid/callbacks#show'
+post 'webhooks/zid/:store_id', to: 'webhooks/zid#create', constraints: { store_id: /\d+/ }

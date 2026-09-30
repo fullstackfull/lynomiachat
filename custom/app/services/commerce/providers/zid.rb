@@ -51,6 +51,11 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  # Zid stops sending the store's order events to Lynomia.
+  def release
+    Commerce::Zid::Webhooks.new(@store).unregister
+  end
+
   def normalize_customer(raw)
     normalizer.customer(raw)
   end

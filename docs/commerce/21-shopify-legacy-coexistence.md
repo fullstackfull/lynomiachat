@@ -41,7 +41,7 @@ So no account can hold the same shop through both paths. Two narrow cases remain
 
 ## 3. Evidence that legacy is unchanged
 
-- **No legacy file changed in Phase 5.** Phase 6 adds only the conflict guard above to the legacy connect start. `git diff --stat 59fd18357..HEAD` (the Phase 5 start) over `app/services/shopify`, `app/controllers/shopify`, `app/controllers/webhooks/shopify_controller.rb`, `app/controllers/api/v1/accounts/integrations/shopify_controller.rb`, `app/helpers/shopify`, `app/models/integrations`, `config/routes.rb` and `enterprise/` is empty.
+- **No legacy file changed in Phase 5.** Phase 6 adds only the conflict guard above to the legacy connect start. `git diff --stat 59fd18357..6903fde21` (Phase 5 start to end) over `app/services/shopify`, `app/controllers/shopify`, `app/controllers/webhooks/shopify_controller.rb`, `app/controllers/api/v1/accounts/integrations/shopify_controller.rb`, `app/helpers/shopify`, `app/models/integrations`, `config/routes.rb` and `enterprise/` is empty.
   - Phase 5 touched the shared Super Admin files (`installation_config.yml`, `features.yml`, `app_configs_controller.rb`) only by **adding** entries; the legacy `SHOPIFY_CONFIGS` entry is untouched.
 - **Legacy specs pass unchanged:**
   - `spec/controllers/shopify`, `spec/controllers/webhooks/shopify_controller_spec.rb`, `spec/services/shopify`, `spec/controllers/api/v1/accounts/integrations/shopify_controller_spec.rb`

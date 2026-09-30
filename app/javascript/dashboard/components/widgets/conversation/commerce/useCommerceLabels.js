@@ -1,6 +1,6 @@
 import { useI18n } from 'vue-i18n';
 
-// Maps the backend's Commerce codes (order/payment/store status, error codes, URL reasons, panel states) to their
+// Maps the backend's Commerce codes (order/payment/shipment/store status, error codes, URL reasons, panel states) to their
 // strings. Every key is written out so the i18n linter can check it; unknown codes fall back to a generic label.
 export function useCommerceLabels() {
   const { t } = useI18n();
@@ -10,6 +10,8 @@ export function useCommerceLabels() {
       pending: t('COMMERCE.ORDER_STATUS.PENDING'),
       processing: t('COMMERCE.ORDER_STATUS.PROCESSING'),
       on_hold: t('COMMERCE.ORDER_STATUS.ON_HOLD'),
+      shipped: t('COMMERCE.ORDER_STATUS.SHIPPED'),
+      delivered: t('COMMERCE.ORDER_STATUS.DELIVERED'),
       completed: t('COMMERCE.ORDER_STATUS.COMPLETED'),
       cancelled: t('COMMERCE.ORDER_STATUS.CANCELLED'),
       refunded: t('COMMERCE.ORDER_STATUS.REFUNDED'),
@@ -25,6 +27,17 @@ export function useCommerceLabels() {
       refunded: t('COMMERCE.PAYMENT_STATUS.REFUNDED'),
       partially_refunded: t('COMMERCE.PAYMENT_STATUS.PARTIALLY_REFUNDED'),
     })[status] || t('COMMERCE.PAYMENT_STATUS.UNKNOWN');
+
+  const shipmentStatus = status =>
+    ({
+      pending: t('COMMERCE.SHIPMENT_STATUS.PENDING'),
+      in_transit: t('COMMERCE.SHIPMENT_STATUS.IN_TRANSIT'),
+      out_for_delivery: t('COMMERCE.SHIPMENT_STATUS.OUT_FOR_DELIVERY'),
+      delivered: t('COMMERCE.SHIPMENT_STATUS.DELIVERED'),
+      failed: t('COMMERCE.SHIPMENT_STATUS.FAILED'),
+      cancelled: t('COMMERCE.SHIPMENT_STATUS.CANCELLED'),
+      returned: t('COMMERCE.SHIPMENT_STATUS.RETURNED'),
+    })[status] || t('COMMERCE.SHIPMENT_STATUS.OTHER');
 
   const errorMessage = code =>
     ({
@@ -84,6 +97,7 @@ export function useCommerceLabels() {
   return {
     orderStatus,
     paymentStatus,
+    shipmentStatus,
     errorMessage,
     apiErrorMessage,
     urlError,

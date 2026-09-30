@@ -32,7 +32,7 @@ class Commerce::Providers::Woocommerce::Normalizer
       provider: 'woocommerce', external_order_id: positive_id(raw.fetch('id')).to_s, order_number: raw.fetch('number').to_s,
       status: STATUSES.fetch(status, 'other'), provider_status: status, payment_status: payment_status(raw, status),
       currency: raw.fetch('currency').to_s, total: amount(raw.fetch('total')), items: items, item_count: items.sum { |item| item[:quantity] },
-      customer: order_customer(raw), shipping: shipping(raw), tracking: nil, customer_order_url: nil,
+      customer: order_customer(raw), shipping: shipping(raw), shipments: [], tracking: nil, customer_order_url: nil,
       admin_order_url: @provider.admin_order_url(raw.fetch('id')), **timestamps(raw)
     )
   rescue KeyError, TypeError, ArgumentError, NoMethodError

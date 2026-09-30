@@ -158,7 +158,7 @@ RSpec.describe Commerce::Providers::Woocommerce do
         'items' => [{ 'name' => 'سيروم الورد للوجه', 'quantity' => 1, 'total' => '120.00' },
                     { 'name' => 'Argan Hair Oil', 'quantity' => 2, 'total' => '171.00' }],
         'item_count' => 3, 'customer' => { 'external_id' => '2', 'name' => 'ليلى حداد' },
-        'shipping' => { 'method' => 'Aramex Express', 'total' => '25.00' }, 'tracking' => nil,
+        'shipping' => { 'method' => 'Aramex Express', 'total' => '25.00' }, 'shipments' => [], 'tracking' => nil,
         'admin_order_url' => 'https://shop.example.com/wp-admin/admin.php?action=edit&id=14&page=wc-orders', 'customer_order_url' => nil
       )
     end

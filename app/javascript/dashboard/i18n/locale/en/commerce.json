@@ -49,6 +49,8 @@
       "PENDING": "Pending payment",
       "PROCESSING": "Processing",
       "ON_HOLD": "On hold",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
       "COMPLETED": "Completed",
       "CANCELLED": "Cancelled",
       "REFUNDED": "Refunded",
@@ -63,6 +65,16 @@
       "REFUNDED": "Refunded",
       "PARTIALLY_REFUNDED": "Partially refunded",
       "UNKNOWN": "Payment not confirmed"
+    },
+    "SHIPMENT_STATUS": {
+      "PENDING": "Preparing shipment",
+      "IN_TRANSIT": "In transit",
+      "OUT_FOR_DELIVERY": "Out for delivery",
+      "DELIVERED": "Delivered",
+      "FAILED": "Delivery problem",
+      "CANCELLED": "Shipment cancelled",
+      "RETURNED": "Returned",
+      "OTHER": "Shipment update"
     },
     "ERRORS": {
       "STORE_UNAVAILABLE": "The store is not reachable right now.",

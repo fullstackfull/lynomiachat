@@ -1,0 +1,106 @@
+{
+  "status": 200,
+  "success": true,
+  "data": [
+    {
+      "id": 52001,
+      "order_id": 1861092002,
+      "order_reference_id": 30012,
+      "created_at": {
+        "date": "2026-09-11 09:00:00.000000",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "type": "shipment",
+      "courier_id": 1927161457,
+      "courier_name": "Aramex",
+      "courier_logo": "https://cdn.salla.sa/courier.png",
+      "shipping_number": "SH-52001",
+      "tracking_number": "AX123456789SA",
+      "pickup_id": null,
+      "trackable": true,
+      "tracking_link": "https://www.aramex.com/track/results?ShipmentNumber=AX123456789SA",
+      "label": {
+        "format": "pdf",
+        "url": "https://cdn.salla.sa/label.pdf"
+      },
+      "payment_method": "pre_paid",
+      "source": "api",
+      "status": "in_transit",
+      "total": {
+        "amount": 20,
+        "currency": "SAR"
+      },
+      "cash_on_delivery": {
+        "amount": 0,
+        "currency": "SAR"
+      },
+      "is_international": false,
+      "total_weight": {
+        "value": 1.2,
+        "units": "kg"
+      },
+      "packages": [],
+      "ship_from": {},
+      "ship_to": {},
+      "meta": {
+        "app_id": 1
+      },
+      "billing_account": "salla"
+    },
+    {
+      "id": 52002,
+      "order_id": 1861092002,
+      "order_reference_id": 30012,
+      "created_at": {
+        "date": "2026-09-11 09:00:00.000000",
+        "timezone_type": 3,
+        "timezone": "Asia/Riyadh"
+      },
+      "type": "shipment",
+      "courier_id": 1927161457,
+      "courier_name": "SMSA",
+      "courier_logo": "https://cdn.salla.sa/courier.png",
+      "shipping_number": "SH-52002",
+      "tracking_number": "SM000111",
+      "pickup_id": null,
+      "trackable": true,
+      "tracking_link": "https://www.smsaexpress.com/track?awb=SM000111",
+      "label": {
+        "format": "pdf",
+        "url": "https://cdn.salla.sa/label.pdf"
+      },
+      "payment_method": "pre_paid",
+      "source": "api",
+      "status": "delivering",
+      "total": {
+        "amount": 20,
+        "currency": "SAR"
+      },
+      "cash_on_delivery": {
+        "amount": 0,
+        "currency": "SAR"
+      },
+      "is_international": false,
+      "total_weight": {
+        "value": 1.2,
+        "units": "kg"
+      },
+      "packages": [],
+      "ship_from": {},
+      "ship_to": {},
+      "meta": {
+        "app_id": 1
+      },
+      "billing_account": "salla"
+    }
+  ],
+  "pagination": {
+    "count": 2,
+    "total": 2,
+    "perPage": 15,
+    "currentPage": 1,
+    "totalPages": 1,
+    "links": {}
+  }
+}

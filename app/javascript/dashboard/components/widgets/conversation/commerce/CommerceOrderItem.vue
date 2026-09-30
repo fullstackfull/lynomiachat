@@ -20,11 +20,13 @@ const props = defineProps({
 });
 
 const { t, locale } = useI18n();
-const { orderStatus, paymentStatus } = useCommerceLabels();
+const { orderStatus, paymentStatus, shipmentStatus } = useCommerceLabels();
 
 const STATUS_CLASSES = {
   completed: 'bg-n-teal-3 text-n-teal-11',
   processing: 'bg-n-blue-3 text-n-blue-11',
+  shipped: 'bg-n-blue-3 text-n-blue-11',
+  delivered: 'bg-n-teal-3 text-n-teal-11',
   pending: 'bg-n-amber-3 text-n-amber-11',
   on_hold: 'bg-n-amber-3 text-n-amber-11',
   cancelled: 'bg-n-slate-3 text-n-slate-11',
@@ -86,7 +88,7 @@ const sendTracking = () => {
       class="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-main text-n-slate-11"
     >
       <span>{{ createdAt }}</span>
-      <span>
+      <span v-if="order.item_count != null">
         {{
           t(
             'COMMERCE.PANEL.ITEMS',
@@ -96,6 +98,9 @@ const sendTracking = () => {
         }}
       </span>
       <span v-if="order.shipping?.method">{{ order.shipping.method }}</span>
+      <span v-if="order.shipping?.status" data-test-id="commerce-shipment">
+        {{ shipmentStatus(order.shipping.status) }}
+      </span>
     </div>
     <div
       v-if="adminUrl || trackingUrl || canSendTracking"

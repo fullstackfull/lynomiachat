@@ -49,6 +49,8 @@
       "PENDING": "بانتظار الدفع",
       "PROCESSING": "قيد التجهيز",
       "ON_HOLD": "معلّق",
+      "SHIPPED": "تم الشحن",
+      "DELIVERED": "تم التوصيل",
       "COMPLETED": "مكتمل",
       "CANCELLED": "ملغي",
       "REFUNDED": "مسترد",
@@ -63,6 +65,16 @@
       "REFUNDED": "مسترد",
       "PARTIALLY_REFUNDED": "مسترد جزئيًا",
       "UNKNOWN": "الدفع غير مؤكد"
+    },
+    "SHIPMENT_STATUS": {
+      "PENDING": "قيد تجهيز الشحنة",
+      "IN_TRANSIT": "في الطريق",
+      "OUT_FOR_DELIVERY": "خرجت للتوصيل",
+      "DELIVERED": "تم التوصيل",
+      "FAILED": "مشكلة في التوصيل",
+      "CANCELLED": "أُلغيت الشحنة",
+      "RETURNED": "مرتجعة",
+      "OTHER": "تحديث الشحنة"
     },
     "ERRORS": {
       "STORE_UNAVAILABLE": "لا يمكن الوصول إلى المتجر حاليًا.",

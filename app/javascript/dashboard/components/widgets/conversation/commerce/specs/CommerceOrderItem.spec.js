@@ -59,6 +59,41 @@ describe('CommerceOrderItem', () => {
     expect(wrapper.text()).not.toContain('Send tracking');
   });
 
+  it('shows a shipped order with its carrier and shipment status the same way for any provider', () => {
+    const wrapper = mountOrder({
+      provider: 'salla',
+      status: 'shipped',
+      payment_status: 'unknown',
+      item_count: 5,
+      shipping: {
+        method: 'Aramex, SMSA',
+        total: null,
+        provider: 'Aramex',
+        status: 'in_transit',
+      },
+      shipments: [
+        { provider: 'Aramex', status: 'in_transit', type: 'shipment' },
+        { provider: 'SMSA', status: 'out_for_delivery', type: 'shipment' },
+      ],
+      tracking: {
+        number: 'AX123456789SA',
+        url: 'https://www.aramex.com/track/results?ShipmentNumber=AX123456789SA',
+      },
+    });
+
+    expect(wrapper.text()).toContain('Shipped');
+    expect(wrapper.text()).toContain('Aramex, SMSA');
+    expect(wrapper.find('[data-test-id="commerce-shipment"]').text()).toBe(
+      'In transit'
+    );
+    expect(wrapper.text()).toContain('Track shipment');
+    expect(wrapper.text()).toContain('Send tracking');
+  });
+
+  it('leaves the item count out when the store did not send the items', () => {
+    expect(mountOrder({ item_count: null }).text()).not.toContain('items');
+  });
+
   it('never claims payment it cannot confirm', () => {
     expect(mountOrder({ payment_status: 'unknown' }).text()).toContain(
       'Payment not confirmed'

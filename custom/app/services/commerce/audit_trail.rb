@@ -5,7 +5,7 @@ module Commerce::AuditTrail
   # Events without an entry are recorded as 'update': store_enabled, store_disabled, store_needs_reauth,
   # credentials_rotated, customer_link_changed, salla.connect_started, salla.reauthorized, salla.token_refreshed,
   # salla.needs_reauth, zid.reauthorized, zid.token_refreshed, zid.needs_reauth, shopify.reauthorized,
-  # shopify.token_refreshed, shopify.needs_reauth.
+  # shopify.token_refreshed, shopify.needs_reauth, shopify.customer_redacted, shopify.customer_data_requested.
   ACTIONS = {
     'commerce.store_connected' => 'create',
     'commerce.store_disconnected' => 'destroy',
@@ -14,7 +14,9 @@ module Commerce::AuditTrail
     'commerce.salla.connected' => 'create',
     'commerce.salla.disconnected' => 'destroy',
     'commerce.zid.connected' => 'create',
-    'commerce.shopify.connected' => 'create'
+    'commerce.shopify.connected' => 'create',
+    'commerce.shopify.uninstalled' => 'destroy',
+    'commerce.shopify.shop_redacted' => 'destroy'
   }.freeze
 
   def self.record(event, auditable:, user: nil, changes: {})

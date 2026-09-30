@@ -6,7 +6,7 @@ class Commerce::Zid::WebhookJob < ApplicationJob
 
   def perform(store_id, sealed_body)
     store = Commerce::Store.find_by(id: store_id, provider: 'zid')
-    payload = Commerce::Zid::Webhook.unseal(sealed_body)
+    payload = Commerce::WebhookQueue.unseal('zid', sealed_body)
     return unless store && payload.is_a?(Hash) && [nil, store.external_store_id].include?(payload['store_id']&.to_s)
 
     customer_id = payload['customer'].is_a?(Hash) ? payload['customer']['id'] : nil

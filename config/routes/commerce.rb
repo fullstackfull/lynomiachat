@@ -37,5 +37,7 @@ post 'webhooks/salla', to: 'webhooks/salla#create'
 get 'commerce/zid/callback', to: 'commerce/zid/callbacks#show'
 post 'webhooks/zid/:store_id', to: 'webhooks/zid#create', constraints: { store_id: /\d+/ }
 
-# The OAuth redirect URL of the Lynomia Commerce Shopify app (not the legacy integration's /shopify/callback)
+# The OAuth redirect URL and the webhook URI of the Lynomia Commerce Shopify app (not the legacy integration's
+# /shopify/callback and /webhooks/shopify)
 get 'commerce/shopify/callback', to: 'commerce/shopify/callbacks#show'
+post 'webhooks/shopify_commerce', to: 'webhooks/shopify_commerce#create'

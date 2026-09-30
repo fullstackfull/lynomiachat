@@ -201,12 +201,12 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
       expect(response).to have_http_status(:success)
     end
 
-    it 'skips signature validation for manual whatsapp cloud channels without an app secret' do
+    # Lynomia: manual Cloud API numbers are Meta-signed too, so they are no longer exempt.
+    it 'rejects unsigned webhooks for manual whatsapp cloud channels without an app secret' do
       channel.update!(
         provider_config: channel.provider_config.except('app_secret', 'app_secret_key', 'api_secret', 'client_secret', 'source')
       )
       allow(Webhooks::WhatsappEventsJob).to receive(:perform_later)
-      expect(Webhooks::WhatsappEventsJob).to receive(:perform_later)
 
       channel_body = {
         object: 'whatsapp_business_account',
@@ -224,7 +224,8 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
 
       post_unsigned_whatsapp_webhook("/webhooks/whatsapp/#{channel.phone_number}", channel_body)
 
-      expect(response).to have_http_status(:success)
+      expect(response).to have_http_status(:unauthorized)
+      expect(Webhooks::WhatsappEventsJob).not_to have_received(:perform_later)
     end
 
     it 'returns unauthorized when signature is missing' do

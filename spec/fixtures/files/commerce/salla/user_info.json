@@ -1,0 +1,13 @@
+{
+  "id": 1771165749,
+  "name": "Test User",
+  "email": "testuser@email.partners",
+  "merchant": {
+    "id": 1234509876,
+    "username": "dev-store-name",
+    "name": "Syria Cosmetics",
+    "plan": "special",
+    "status": "active",
+    "domain": "https://salla.sa/dev-store-name"
+  }
+}

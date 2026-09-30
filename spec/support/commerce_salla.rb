@@ -1,14 +1,19 @@
-# The Salla app as a super admin sets it up (Super Admin → Settings → Salla). The global config cache is cleared around
-# the example so these values never reach other specs.
+# The Salla app as a super admin sets it up (Super Admin → Settings → Salla), with Salla's hosts resolving to public
+# addresses for the SSRF check. The global config cache and Salla's Redis keys are cleared around the example so nothing
+# reaches other specs.
 RSpec.shared_context 'with salla app' do
   let(:salla_client_secret) { 'salla-client-secret-for-specs' }
   let(:salla_webhook_secret) { 'salla-webhook-secret-for-specs' }
 
   around do |example|
-    GlobalConfig.clear_cache
+    clear = lambda do
+      GlobalConfig.clear_cache
+      Redis::Alfred.scan_each(match: 'COMMERCE::SALLA::*') { |key| Redis::Alfred.delete(key) }
+    end
+    clear.call
     example.run
   ensure
-    GlobalConfig.clear_cache
+    clear.call
   end
 
   before do
@@ -17,5 +22,7 @@ RSpec.shared_context 'with salla app' do
       InstallationConfig.where(name: name).first_or_initialize.update!(value: value, locked: false)
     end
     GlobalConfig.clear_cache
+    allow(Resolv).to receive(:getaddresses).with('accounts.salla.sa').and_return(['93.184.216.40'])
+    allow(Resolv).to receive(:getaddresses).with('api.salla.dev').and_return(['93.184.216.41'])
   end
 end

@@ -7,6 +7,7 @@ namespace :api, defaults: { format: 'json' } do
       scope module: :accounts do
         namespace :commerce do
           resources :stores, only: [:index, :create, :update, :destroy]
+          resource :salla_connection, only: [:show, :create]
         end
 
         resources :conversations, only: [] do
@@ -26,3 +27,6 @@ namespace :api, defaults: { format: 'json' } do
     end
   end
 end
+
+# Salla app events (the webhook URL of the Lynomia Salla app)
+post 'webhooks/salla', to: 'webhooks/salla#create'

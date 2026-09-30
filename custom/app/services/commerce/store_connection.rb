@@ -1,5 +1,6 @@
-# Store lifecycle for account administrators. Any path that stores credentials runs the provider health check with
-# them first, so a store is never saved as active with keys that do not work. Audit entries never carry credentials.
+# Store lifecycle, for account administrators and Salla installation events. Credentials are saved only once verified
+# (WooCommerce keys by the provider health check, Salla tokens by a signed installation confirmed with Salla), so a store
+# is never saved as active with credentials that do not work. Audit entries never carry credentials.
 class Commerce::StoreConnection
   def initialize(account:, user:)
     @account = account
@@ -11,15 +12,21 @@ class Commerce::StoreConnection
     store = @account.commerce_stores.new(provider: provider, base_url: Commerce::StoreUrl.parse(base_url).to_s, created_by: @user)
     adapter = Commerce::Providers.for(store, credentials: credentials)
     adapter.health
-    identity = adapter.store_identity
+    attach(store, adapter.store_identity, credentials, name: name)
+  end
 
+  # Saves a connection whose store identity and credentials are already verified: by the health check in #connect, or
+  # for Salla by a signed installation confirmed with Salla (Commerce::Salla::Installation). The new store's metadata is
+  # kept when an earlier row of the same store is reused.
+  def attach(store, identity, credentials, name: nil, event: 'commerce.store_connected')
+    ensure_encryption!
     store = Commerce::Store.transaction do
       claim(store, identity[:external_store_id]).tap do |row|
         row.update!(name: name.presence || row.name.presence || identity[:name], credentials: credentials, status: :active,
-                    metadata: row.metadata.merge('verified_at' => Time.current.iso8601))
+                    metadata: row.metadata.merge(store.metadata, 'verified_at' => Time.current.iso8601))
       end
     end
-    audit('commerce.store_connected', store, provider: store.provider, external_store_id: store.external_store_id)
+    audit(event, store, provider: store.provider, external_store_id: store.external_store_id)
     store
   rescue ActiveRecord::RecordNotUnique
     raise Commerce::Error, 'STORE_ALREADY_CONNECTED'
@@ -55,14 +62,14 @@ class Commerce::StoreConnection
 
   # Credentials, customer links and cached store data are deleted; the row stays (status disconnected) so the store can be reconnected
   # or connected by another account later.
-  def disconnect(store)
+  def disconnect(store, event: 'commerce.store_disconnected')
     links = 0
     store.transaction do
       links = store.customer_links.delete_all
       store.update!(status: :disconnected, credentials: nil)
     end
     Commerce::Cache.purge(store)
-    audit('commerce.store_disconnected', store, customer_links_removed: links)
+    audit(event, store, customer_links_removed: links)
     store
   end
 

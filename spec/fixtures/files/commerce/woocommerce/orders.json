@@ -1,0 +1,2021 @@
+[
+ {
+  "id": 22,
+  "parent_id": 0,
+  "status": "processing",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-29T08:36:55",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "284.75",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "cod",
+  "payment_method_title": "Cash on delivery",
+  "transaction_id": "",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": null,
+  "cart_hash": "",
+  "number": "22",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 15,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "85.50",
+    "subtotal_tax": "0.00",
+    "total": "85.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   },
+   {
+    "id": 16,
+    "name": "لوشن العود",
+    "product_id": 12,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "64.25",
+    "subtotal_tax": "0.00",
+    "total": "64.25",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "OUD-03",
+    "global_unique_id": "",
+    "price": 64.25,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   },
+   {
+    "id": 17,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "120.00",
+    "subtotal_tax": "0.00",
+    "total": "120.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 18,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/22/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-29T08:36:55",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": null,
+  "date_paid_gmt": null,
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/22",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/22/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 25,
+  "parent_id": 0,
+  "status": "failed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-28T08:36:55",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "100.50",
+  "total_tax": "0.00",
+  "customer_id": 0,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Omar",
+   "last_name": "Khalil",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "Omar.Khalil@Example.com",
+   "phone": "0551112233"
+  },
+  "shipping": {
+   "first_name": "Omar",
+   "last_name": "Khalil",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "0551112233"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": null,
+  "cart_hash": "",
+  "number": "25",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 22,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "85.50",
+    "subtotal_tax": "0.00",
+    "total": "85.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 23,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/25/",
+  "is_editable": false,
+  "needs_payment": true,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-28T08:36:55",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": null,
+  "date_paid_gmt": null,
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/25",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/25/actions/email_templates"
+    }
+   ]
+  }
+ },
+ {
+  "id": 24,
+  "parent_id": 0,
+  "status": "completed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-28T08:36:55",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "0.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "100.00",
+  "total_tax": "0.00",
+  "customer_id": 0,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Omar",
+   "last_name": "Khalil",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "Omar.Khalil@Example.com",
+   "phone": "0551112233"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "state": "",
+   "postcode": "",
+   "country": "",
+   "phone": ""
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_24",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": "2026-09-30T08:36:55",
+  "date_paid": "2026-09-30T08:36:55",
+  "cart_hash": "",
+  "number": "24",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 21,
+    "name": "Gift Card 100",
+    "product_id": 13,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "100.00",
+    "subtotal_tax": "0.00",
+    "total": "100.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "GIFT-100",
+    "global_unique_id": "",
+    "price": 100,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/24/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-28T08:36:55",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": "2026-09-30T08:36:55",
+  "date_paid_gmt": "2026-09-30T08:36:55",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/24",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/24/actions/email_templates"
+    }
+   ]
+  }
+ },
+ {
+  "id": 23,
+  "parent_id": 0,
+  "status": "pending",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-27T08:36:55",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "135.00",
+  "total_tax": "0.00",
+  "customer_id": 0,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Omar",
+   "last_name": "Khalil",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "Omar.Khalil@Example.com",
+   "phone": "0551112233"
+  },
+  "shipping": {
+   "first_name": "Omar",
+   "last_name": "Khalil",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "0551112233"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": null,
+  "cart_hash": "",
+  "number": "23",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 19,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "120.00",
+    "subtotal_tax": "0.00",
+    "total": "120.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 20,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/23/",
+  "is_editable": true,
+  "needs_payment": true,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-27T08:36:55",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": null,
+  "date_paid_gmt": null,
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/23",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/23/actions/email_templates"
+    }
+   ]
+  }
+ },
+ {
+  "id": 20,
+  "parent_id": 0,
+  "status": "completed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-26T08:36:54",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "25.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "209.25",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_20",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": "2026-09-30T08:36:54",
+  "date_paid": "2026-09-30T08:36:54",
+  "cart_hash": "",
+  "number": "20",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 12,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "120.00",
+    "subtotal_tax": "0.00",
+    "total": "120.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   },
+   {
+    "id": 13,
+    "name": "لوشن العود",
+    "product_id": 12,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "64.25",
+    "subtotal_tax": "0.00",
+    "total": "64.25",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "OUD-03",
+    "global_unique_id": "",
+    "price": 64.25,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 14,
+    "method_title": "Aramex Express",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "25.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [
+   {
+    "id": 21,
+    "reason": "One item",
+    "total": "-64.25",
+    "total_tax": "0.00"
+   }
+  ],
+  "payment_url": "https://localhost:8081/checkout/order-pay/20/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-26T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": "2026-09-30T08:36:54",
+  "date_paid_gmt": "2026-09-30T08:36:54",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/20",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/20/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 26,
+  "parent_id": 0,
+  "status": "processing",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-25T08:36:56",
+  "date_modified": "2026-09-30T08:36:56",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "100.50",
+  "total_tax": "0.00",
+  "customer_id": 3,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Sara",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "sara.ali@example.com",
+   "phone": "+966550000111"
+  },
+  "shipping": {
+   "first_name": "Sara",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966550000111"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_26",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": "2026-09-30T08:36:56",
+  "cart_hash": "",
+  "number": "26",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 24,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "85.50",
+    "subtotal_tax": "0.00",
+    "total": "85.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 25,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/26/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-25T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "date_completed_gmt": null,
+  "date_paid_gmt": "2026-09-30T08:36:56",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/26",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/26/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/3"
+    }
+   ]
+  }
+ },
+ {
+  "id": 27,
+  "parent_id": 0,
+  "status": "completed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-24T08:36:56",
+  "date_modified": "2026-09-30T08:36:56",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "79.25",
+  "total_tax": "0.00",
+  "customer_id": 4,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Noor",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "noor.ali@example.com",
+   "phone": "0550000111"
+  },
+  "shipping": {
+   "first_name": "Noor",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "0550000111"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_27",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": "2026-09-30T08:36:56",
+  "date_paid": "2026-09-30T08:36:56",
+  "cart_hash": "",
+  "number": "27",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 26,
+    "name": "لوشن العود",
+    "product_id": 12,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "64.25",
+    "subtotal_tax": "0.00",
+    "total": "64.25",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "OUD-03",
+    "global_unique_id": "",
+    "price": 64.25,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 27,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/27/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-24T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "date_completed_gmt": "2026-09-30T08:36:56",
+  "date_paid_gmt": "2026-09-30T08:36:56",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/27",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/27/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/4"
+    }
+   ]
+  }
+ },
+ {
+  "id": 18,
+  "parent_id": 0,
+  "status": "refunded",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-23T08:36:54",
+  "date_modified": "2026-09-30T08:36:54",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "143.50",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_18",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": "2026-09-30T08:36:54",
+  "cart_hash": "",
+  "number": "18",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 10,
+    "name": "لوشن العود",
+    "product_id": 12,
+    "variation_id": 0,
+    "quantity": 2,
+    "tax_class": "",
+    "subtotal": "128.50",
+    "subtotal_tax": "0.00",
+    "total": "128.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "OUD-03",
+    "global_unique_id": "",
+    "price": 64.25,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 11,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [
+   {
+    "id": 19,
+    "reason": "Damaged",
+    "total": "-143.50",
+    "total_tax": "0.00"
+   }
+  ],
+  "payment_url": "https://localhost:8081/checkout/order-pay/18/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-23T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:54",
+  "date_completed_gmt": null,
+  "date_paid_gmt": "2026-09-30T08:36:54",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/18",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/18/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 28,
+  "parent_id": 0,
+  "status": "processing",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-22T08:36:56",
+  "date_modified": "2026-09-30T08:36:56",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "135.00",
+  "total_tax": "0.00",
+  "customer_id": 5,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Hana",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "family@example.com",
+   "phone": "+966560000001"
+  },
+  "shipping": {
+   "first_name": "Hana",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966560000001"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_28",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": "2026-09-30T08:36:56",
+  "cart_hash": "",
+  "number": "28",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 28,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "120.00",
+    "subtotal_tax": "0.00",
+    "total": "120.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 29,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/28/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-22T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "date_completed_gmt": null,
+  "date_paid_gmt": "2026-09-30T08:36:56",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/28",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/28/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/5"
+    }
+   ]
+  }
+ },
+ {
+  "id": 29,
+  "parent_id": 0,
+  "status": "completed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-21T08:36:56",
+  "date_modified": "2026-09-30T08:36:56",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "100.50",
+  "total_tax": "0.00",
+  "customer_id": 6,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "Rami",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "family@example.com",
+   "phone": "+966560000002"
+  },
+  "shipping": {
+   "first_name": "Rami",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966560000002"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_29",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": "2026-09-30T08:36:56",
+  "date_paid": "2026-09-30T08:36:56",
+  "cart_hash": "",
+  "number": "29",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 30,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "85.50",
+    "subtotal_tax": "0.00",
+    "total": "85.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 31,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/29/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-21T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "date_completed_gmt": "2026-09-30T08:36:56",
+  "date_paid_gmt": "2026-09-30T08:36:56",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/29",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/29/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/6"
+    }
+   ]
+  }
+ },
+ {
+  "id": 17,
+  "parent_id": 0,
+  "status": "on-hold",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-20T08:36:54",
+  "date_modified": "2026-09-30T08:36:54",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "255.00",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "bacs",
+  "payment_method_title": "Direct bank transfer",
+  "transaction_id": "",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": null,
+  "cart_hash": "",
+  "number": "17",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 8,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 2,
+    "tax_class": "",
+    "subtotal": "240.00",
+    "subtotal_tax": "0.00",
+    "total": "240.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 9,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/17/",
+  "is_editable": true,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-20T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:54",
+  "date_completed_gmt": null,
+  "date_paid_gmt": null,
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/17",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/17/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 16,
+  "parent_id": 0,
+  "status": "cancelled",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-15T08:36:54",
+  "date_modified": "2026-09-30T08:36:54",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "100.50",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": null,
+  "cart_hash": "",
+  "number": "16",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 6,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "85.50",
+    "subtotal_tax": "0.00",
+    "total": "85.50",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 7,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/16/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-15T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:54",
+  "date_completed_gmt": null,
+  "date_paid_gmt": null,
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/16",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/16/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 15,
+  "parent_id": 0,
+  "status": "processing",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-09-10T08:36:54",
+  "date_modified": "2026-09-30T08:36:54",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "15.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "79.25",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_15",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": null,
+  "date_paid": "2026-09-30T08:36:54",
+  "cart_hash": "",
+  "number": "15",
+  "meta_data": [],
+  "line_items": [
+   {
+    "id": 4,
+    "name": "لوشن العود",
+    "product_id": 12,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "64.25",
+    "subtotal_tax": "0.00",
+    "total": "64.25",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "OUD-03",
+    "global_unique_id": "",
+    "price": 64.25,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 5,
+    "method_title": "Flat rate",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "15.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/15/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-09-10T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:54",
+  "date_completed_gmt": null,
+  "date_paid_gmt": "2026-09-30T08:36:54",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/15",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/15/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ },
+ {
+  "id": 14,
+  "parent_id": 0,
+  "status": "completed",
+  "currency": "SAR",
+  "version": "10.9.4",
+  "prices_include_tax": false,
+  "date_created": "2026-08-31T08:36:53",
+  "date_modified": "2026-09-30T08:36:55",
+  "discount_total": "0.00",
+  "discount_tax": "0.00",
+  "shipping_total": "25.00",
+  "shipping_tax": "0.00",
+  "cart_tax": "0.00",
+  "total": "316.00",
+  "total_tax": "0.00",
+  "customer_id": 2,
+  "order_key": "wc_order_redacted",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "King Fahd Road 12",
+   "address_2": "",
+   "city": "Riyadh",
+   "state": "",
+   "postcode": "12211",
+   "country": "SA",
+   "phone": "+966501234567"
+  },
+  "payment_method": "stripe",
+  "payment_method_title": "Credit card",
+  "transaction_id": "txn_14",
+  "customer_ip_address": "127.0.0.1",
+  "customer_user_agent": "WP CLI 2.12.0",
+  "created_via": "",
+  "customer_note": "",
+  "date_completed": "2026-09-30T08:36:54",
+  "date_paid": "2026-09-30T08:36:53",
+  "cart_hash": "",
+  "number": "14",
+  "meta_data": [
+   {
+    "id": 25,
+    "key": "_wc_shipment_tracking_items",
+    "value": [
+     {
+      "tracking_provider": "aramex",
+      "tracking_number": "ARX123456",
+      "custom_tracking_link": "https://evil.example/track"
+     }
+    ]
+   }
+  ],
+  "line_items": [
+   {
+    "id": 1,
+    "name": "سيروم الورد للوجه",
+    "product_id": 10,
+    "variation_id": 0,
+    "quantity": 1,
+    "tax_class": "",
+    "subtotal": "120.00",
+    "subtotal_tax": "0.00",
+    "total": "120.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "SERUM-01",
+    "global_unique_id": "",
+    "price": 120,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   },
+   {
+    "id": 2,
+    "name": "Argan Hair Oil",
+    "product_id": 11,
+    "variation_id": 0,
+    "quantity": 2,
+    "tax_class": "",
+    "subtotal": "171.00",
+    "subtotal_tax": "0.00",
+    "total": "171.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "meta_data": [],
+    "sku": "ARGAN-02",
+    "global_unique_id": "",
+    "price": 85.5,
+    "image": {
+     "id": "",
+     "src": ""
+    },
+    "parent_name": null
+   }
+  ],
+  "tax_lines": [],
+  "shipping_lines": [
+   {
+    "id": 3,
+    "method_title": "Aramex Express",
+    "method_id": "flat_rate",
+    "instance_id": "",
+    "total": "25.00",
+    "total_tax": "0.00",
+    "taxes": [],
+    "tax_status": "taxable",
+    "meta_data": []
+   }
+  ],
+  "fee_lines": [],
+  "coupon_lines": [],
+  "refunds": [],
+  "payment_url": "https://localhost:8081/checkout/order-pay/14/",
+  "is_editable": false,
+  "needs_payment": false,
+  "needs_processing": true,
+  "date_created_gmt": "2026-08-31T08:36:53",
+  "date_modified_gmt": "2026-09-30T08:36:55",
+  "date_completed_gmt": "2026-09-30T08:36:54",
+  "date_paid_gmt": "2026-09-30T08:36:53",
+  "currency_symbol": "ر.س",
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/14",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/orders"
+    }
+   ],
+   "email_templates": [
+    {
+     "embeddable": true,
+     "href": "https://localhost:8081/wp-json/wc/v3/orders/14/actions/email_templates"
+    }
+   ],
+   "customer": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2"
+    }
+   ]
+  }
+ }
+]

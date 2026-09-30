@@ -1,0 +1,5 @@
+schema_version=20260930100100 migrations=186
+invalid_indexes=0
+whatsapp_provider_config_md5=91543516fbd8603758e2cfa7d9b6c5ec,92378d5904e823fff79b295ca4bae86a
+commerce_tables=2
+accounts=2 conversations=2 messages=20

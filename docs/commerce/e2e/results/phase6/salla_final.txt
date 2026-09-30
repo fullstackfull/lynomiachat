@@ -1,0 +1,65 @@
+{ salla_enabled: true } { salla_stores: 0, purged_keys: 0 } { super_admin: true }
+ok
+PASS  Super Admin shows the Salla fields with the secrets masked and empty
+PASS  Add store offers WooCommerce and Salla
+PASS  one-time code shown with the official install link, nothing secret asked  -- B3PU-NFHZ-Y3AP-63AL
+PASS  unsigned, badly signed, wrong-secret, token-strategy and modified deliveries get 401  -- {"unsigned":401,"badSignature":401,"otherSecret":401,"tokenStrategy":401,"modifiedBody":401}
+PASS  nothing was queued for refused deliveries
+PASS  a signed authorization is accepted, and its redelivery is queued once
+{ processed: [ 'ok' ] }
+PASS  an authorization alone connects nothing (no account is ever guessed)
+PASS  signed app.settings.updated accepted
+{ processed: [ 'ok' ] }
+PASS  store connected to account A by the code: merchant id, Salla name, credentials stored  -- {"id":63,"account_id":1,"name":"متجر الورد","status":"active","external_store_id":"1234509876","credential_fields":["access_token","refresh_token","token_type","scope","access_token_expires_at","refresh_token_expires_at"],"links":0}
+PASS  settings list shows the Salla store as active, without key actions
+{ processed: [ 'ok' ] }
+PASS  a later authorization for the same merchant creates no second store
+{ processed: [ 'ok' ] }
+PASS  a code from account B for A's store is a conflict; the store stays with A
+{ warmed: [ 'linked', 'multiple', 'not_found', 'not_found' ] }
+PASS  the conversation lists WooCommerce and Salla stores  -- woocommerce:Syria Cosmetics, salla:متجر الورد
+PASS  Salla customer linked by the verified WhatsApp phone, latest orders newest first  -- Store Syria Cosmetics متجر الورد Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #30013 SAR 99.00 Pending payment Unpaid Sep 28, 2026 1 item View order #30
+PASS  shipped order: carriers, shipment status, Track shipment and Send tracking
+PASS  payment: unpaid only when Salla says so, otherwise "Payment not confirmed"
+PASS  an order whose shipment is not trackable shows no tracking actions  -- #30011 SAR 120.50 Completed Payment not confirmed Aug 2, 2026 1 item Salla Delivery Delivered View order
+PASS  tracking and admin links are Salla's https links  -- https://www.aramex.com/track/results?ShipmentNumber=AX123456789SA https://s.salla.sa/orders/order/Wq1861092002Zx
+PASS  Send tracking puts the tracking message in the reply box (nothing sent)  -- Your order #30012 is on its way. Tracking number: AX123456789SA. Track it here: https://www.aramex.com/track/results?Shi
+PASS  two Salla customers share the phone: both offered, nothing linked
+PASS  no Salla customer for the contact: not found + Link customer  -- Store Syria Cosmetics متجر الورد Customer not found in this store LINK CUSTOMER
+{ aged: 5 }
+PASS  Salla refuses access (sandbox 403): the error is shown and no orders are presented as current  -- Store Syria Cosmetics متجر الورد Couldn't refresh store data right now. The store refused access to its orders or customers. An administrator needs to check the store's permissions. Linked customer Ma
+{ warmed: [ 'linked' ] } { aged: 5 } { backoff: '1234509876' }
+PASS  rate limited by Salla: the last orders shown as stale with their age, no request  -- Store Syria Cosmetics متجر الورد Couldn't refresh store data right now. Last updated 5 minutes ago Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #30013 S
+PASS  refresh token rejected: needs re-authorization, refresh token removed, one token request  -- {"error":{"code":"AUTH_INVALID","reason":"refresh_token_rejected"},"status":"needs_reauth","refresh_token_kept":false,"token_requests":1}
+PASS  settings explain re-authorization in Salla  -- متجر الورد Needs re-authorization Salla https://salla.sa/rose-store Verified 2 minutes ago Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own. Disconnect
+PASS  a store needing re-authorization is not offered in conversations
+{ processed: [ 'ok' ] }
+PASS  Salla re-authorizes (app updated): same store active again
+PASS  10 concurrent readers of an expiring token: one refresh request, old refresh token sent once, new one saved  -- {"threads":10,"distinct_tokens":1,"token_requests":1,"old_refresh_token_sent_times":1,"new_refresh_token_saved":true}
+{ processed: [ 'ok', 'ok' ] }
+PASS  a second Salla store connects to the same account
+PASS  store selector lists WooCommerce and both Salla stores  -- Syria Cosmetics, متجر الورد, Salla Demo Two
+{ warmed: [ 'linked' ] }
+{"account":1,"locale":"ar","lynomia_commerce":true}
+PASS  Arabic panel: shipped status, shipment status and tracking actions  -- المتجر Syria Cosmetics متجر الورد Salla Demo Two العميل المربوط Omar Khalil تمت المطابقة برقم الهاتف الموثّق لهذه المحادثة تغيير إلغاء الربط #30013 ‏99.00 ر.س.‏
+PASS  Arabic Connect with Salla dialog
+PASS  mobile (Arabic): Salla orders render inside the viewport  -- elements outside=0
+{"account":1,"locale":"en","lynomia_commerce":true}
+PASS  mobile: the Connect with Salla dialog fits the screen
+{ salla_enabled: false }
+PASS  Salla off: stores kept and explained  -- متجر الورد Active Salla https://salla.sa/rose-store Verified 2 minutes ago Salla is turned off on this installation. The store is kept but not read. Disable Disconnect
+PASS  Salla off: Add store goes straight to WooCommerce keys (no Salla option)
+PASS  Salla off: Salla stores are not offered in conversations
+PASS  Salla off: no connection code can be created  -- {"error":{"code":"PROVIDER_DISABLED"}}
+{ salla_enabled: true }
+PASS  signed app.uninstalled accepted
+{ processed: [ 'ok' ] }
+PASS  uninstall disconnects the store: credentials and links removed, contacts kept
+PASS  settings show the uninstalled store as disconnected with Reconnect
+PASS  an agent cannot start a Salla connection  -- status=401
+PASS  audit trail: connect_started, connected, reauthorized, token_refreshed, needs_reauth, disconnected  -- commerce.salla.connect_started, commerce.salla.connected, commerce.salla.reauthorized, commerce.salla.needs_reauth, commerce.salla.token_refreshed, commerce.salla.disconnected
+PASS  audit entries carry no token or secret
+PASS  no Salla token, refresh token or secret in any browser response  -- responses=502 
+PASS  no token, secret or connection code in the server or job logs  -- log bytes=929752
+PASS  no uncaught page errors
+47/47 passed

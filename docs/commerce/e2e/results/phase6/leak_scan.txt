@@ -1,0 +1,18 @@
+# Phase 6 credential-leak scan (script: e2e/results/phase6/leak_scan.sh). Labels and counts only; no value is printed.
+# Secrets searched: 21 known test secrets (E2E and rehearsal SECRET_KEY_BASE and Active Record encryption keys; Salla client/webhook,
+# Zid and Shopify client secrets; the rehearsal's UI test secret; 4 WooCommerce key pairs) + every simulator-issued token pattern.
+
+TARGET                                       SECRET-HITS  TOKEN-HITS
+db_e2e.sql                                   0            0
+db_rehearsal.sql                             0            0
+redis_12.txt                                 0            0
+redis_13.txt                                 0            0
+logs                                         0            0
+image lynomia/staging:final-f842e12e: 0 files containing a test secret
+installation_configs (designated store for app secrets, write-only in Super Admin): 4 rows hold a test secret: SALLA_CLIENT_SECRET SALLA_WEBHOOK_SECRET ZID_CLIENT_SECRET SHOPIFY_COMMERCE_CLIENT_SECRET 
+
+# Coverage: db_e2e.sql 350810 B, db_rehearsal.sql 325353 B (installation_configs data checked separately); redis db 12: 158 lines, db 13: 102 lines
+#   (simulators' own E2E::* keys excluded); 145 log/result files, 34 MB (E2E servers, simulators, runners, rehearsal, harness, UI smoke).
+# Positive controls: commerce_stores.credentials is Active Record ciphertext in both databases (5 and 1 stores);
+#   the simulators' own state holds 23 values matching the token pattern, none of which appears on Lynomia's side.
+# installation_configs rows are the designated store of app secrets (typed secret: write-only, masked, filtered from logs).

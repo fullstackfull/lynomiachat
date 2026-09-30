@@ -145,20 +145,44 @@ No credentials appear in any payload.
 
 ## 6. Regression
 
-See the final checkpoint (commit message of this change and the checkpoint report). Suites run on Ruby 3.4.4 / Node 24:
+Final pass on the pushed code (`20cd47a91`, 2026-09-30), Ruby 3.4.4 / Node 24 (`lynomia/verify:base`).
 
-| Suite | Result |
-|---|---|
-| RSpec, Enterprise tree (4 shards) | running (see the follow-up commit) |
-| RSpec, Community tree (`enterprise/` and `spec/enterprise/` removed; 4 shards) | running (see the follow-up commit) |
-| Vitest | running (see the follow-up commit) |
-| ESLint | running (see the follow-up commit) |
-| RuboCop | running (see the follow-up commit) |
-| WhatsApp harness `check_existing_whatsapp.rb` (existing WhatsApp numbers) | running (see the follow-up commit) |
-| Lynomia harness `check_lynomia.rb` (custom/ overlay, billing lock and plan limits, platform billing API, Stripe webhook, mobile auth and billing return, dashboard title, profile API) | running (see the follow-up commit) |
-| واتساب بزنس harness `check_coexistence.rb` | running (see the follow-up commit) |
+| Suite | Result | Phase 4 baseline |
+|---|---|---|
+| RSpec, Enterprise tree (4 shards) | 9757 examples, **1 failure**, 67 pending (161 Commerce examples) | 9580 examples, 1 failure |
+| RSpec, Community tree (`enterprise/` and `spec/enterprise/` removed; 4 shards) | 7060 examples, **1 failure** (passes on re-run, see below), 69 pending (160 Commerce examples) | 6884 examples, 0 failures |
+| Vitest | 453 files, **4692 tests passed** | all passed |
+| ESLint | **0 errors**, 455 warnings | 0 errors, 444 warnings |
+| RuboCop (3135 files) | 54 offenses, **all in files this phase did not touch** (`script/`, `spec/support/opensearch_check.rb`, `spec/rails_helper.rb`, `docker/…`) | the same 54 |
+| WhatsApp harness `check_existing_whatsapp.rb` (existing WhatsApp numbers, fresh DB + `seed_pre_upgrade.rb` 2/2) | **41/41** | 41/41 |
+| Lynomia harness `check_lynomia.rb` (custom/ overlay, billing lock and plan limits, platform billing API, Stripe webhook, mobile auth and billing return, dashboard title, profile API) | **17/17** | 17/17 |
+| واتساب بزنس harness `check_coexistence.rb` | **54/54** | 54/54 |
 
-Shopify: the upstream Shopify specs (`spec/controllers/shopify`, `spec/services/shopify`, integration helper, hooks, webhooks) run inside both suites above.
+**The two remaining failures:**
+- **Enterprise:** `spec/enterprise/services/voice/call_transcription_service_spec.rb[1:1:7]`. It is the same example as in the Phase 4 baseline, is unrelated to Commerce, and passes in isolation.
+- **Community:** `spec/controllers/dashboard_controller_spec.rb[1:1:1]` answered 500 once, then passed on re-run (4/4).
+  - Cause: the refreshed Community tree had no Vite build digest.
+  - So `vite_ruby` auto-build rebuilt the test assets in the four parallel shards at the same time.
+  - One request hit the asset folder mid-rebuild. This is a runner race, not a product failure.
+
+**The ESLint warning delta (+11):**
+- All 11 are `@intlify/vue-i18n` warnings in the new Commerce components.
+- They come from dynamic keys for status and error codes, and the literal `#` before order numbers.
+- They are warnings in the repository configuration, not errors.
+
+**Found and fixed by the first pass** (commits after the Phase 2 feature commits):
+- `spec/support/commerce_encryption.rb` reset the Active Record keys to nil after each Commerce example.
+  - Channels that declare `encrypts … if Chatwoot.encryption_configured?` and were first loaded inside such an example then failed later.
+  - Result: 38 order-dependent Twilio/WhatsApp spec failures in one shard.
+  - Fix: the throwaway keys stay configured; ENV is still restored.
+- `spec/models/account_spec.rb` pins every `feature_flags_ext_1` flag. Added `lynomia_commerce` (bit 7, append-only; no existing bit moved).
+- The Commerce link audit spec now orders rows by id.
+
+**Shopify:** the upstream Shopify specs (`spec/controllers/shopify`, `spec/services/shopify`, integration helper, hooks, webhooks) run inside both suites.
+
+**With `lynomia_commerce` off:**
+- the full suites run against the unchanged core behaviour (the flag is off by default);
+- the E2E checks 31–32 prove nothing Commerce is shown.
 
 ## 7. Screenshots (`screenshots/`)
 

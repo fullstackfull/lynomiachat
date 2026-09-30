@@ -95,6 +95,8 @@ Contacts and conversations are kept. Deliveries to a disconnected store get 401.
 
 ## 8. VERIFY
 
+Phase 6 classification of every item: doc 23 §9 (Z-items).
+
 1. The create-webhook field for the Basic Auth pair (§1), and whether Zid echoes it in `GET /managers/webhooks`.
 2. Whether `order.payment_status.update` is a subscribable event name (Phase 1 marked it VERIFY; the SDK lists `order.create` and `order.status.update`). A subscription Zid refuses fails the registration job, which is reported; the other two still work after a fix.
 3. Whether deliveries carry a delivery id header usable for deduplication instead of the body hash.

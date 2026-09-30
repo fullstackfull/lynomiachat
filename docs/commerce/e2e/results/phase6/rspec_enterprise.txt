@@ -1,0 +1,7 @@
+# ee7: Enterprise RSpec, 4 shards, commit f842e12ec, lynomia/verify:base (Ruby 3.4.4)
+shard 0: 2413 examples, 0 failures, 8 pending
+shard 1: 2677 examples, 1 failure, 10 pending
+  failed: rspec ./spec/enterprise/services/voice/call_transcription_service_spec.rb:77 # Voice::CallTranscriptionService#perform reindexes before broadcasting so a retry after a reindex failure does not resend the update event
+shard 2: 2490 examples, 1 failure, 17 pending
+  failed: rspec ./spec/models/conversation_spec.rb:1144 # Conversation reply time calculation flows correctly tracks waiting_since and creates first response time events
+shard 3: 2517 examples, 0 failures, 32 pending

@@ -2,7 +2,7 @@
 
 - Nothing here is implemented yet.
 - Normalized objects are **plain Ruby value objects** (`Data.define`, Ruby 3.4), not database models. Only `Commerce::Store` and `Commerce::CustomerLink` are persisted (`01` §5).
-- `VERIFY` = confirm on the official page before coding (see `00` §0).
+- `VERIFY` = confirm on the official page before coding (see `00` §0). Every item's Phase 6 status is in doc 23 §9.
 
 ## 1. Normalized objects (serialized to the frontend as JSON)
 

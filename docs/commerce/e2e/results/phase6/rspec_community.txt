@@ -1,0 +1,5 @@
+# ce7: Community RSpec, 4 shards, commit f842e12ec, lynomia/verify:base (Ruby 3.4.4)
+shard 0: 1782 examples, 0 failures, 17 pending
+shard 1: 2045 examples, 0 failures, 42 pending
+shard 2: 1770 examples, 0 failures, 10 pending
+shard 3: 1799 examples, 0 failures

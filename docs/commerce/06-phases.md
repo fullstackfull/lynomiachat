@@ -99,6 +99,8 @@ Changes from the exit criteria above, all decided in that brief:
 - no webhooks;
 - Arabic strings are included.
 
+**Phase 6 gate (2026-09-30): PARTIAL GO** (doc 23). WooCommerce GO with a pilot; Salla, Zid and Shopify NO-GO with their switches off until their real UAT (and, for Shopify, the protected customer data approval).
+
 **Phases 3–5 status (2026-09-30): implemented, real UAT blocked.** Salla (docs 10–13), Zid (docs 14–17) and Shopify (docs 18–22) are built on the same core. Each passed a simulated-provider E2E; `REAL_*_UAT = BLOCKED` for all three, since provider hosts are unreachable here and no partner accounts exist.
 
 Shopify differs from the row above:

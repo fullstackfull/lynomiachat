@@ -188,6 +188,8 @@ Code exchange body: `{ client_id, client_secret, code, expiring: "1" }` (JSON, a
 
 ## 9. VERIFY (to close in the real UAT)
 
+Phase 6 classification of every item: doc 23 §9 (H-items).
+
 1. The exact error body of a refresh with a revoked or expired refresh token (handled: any 400/401 except `invalid_client` → needs_reauth).
 2. Whether re-running the authorization for a shop that already has the Commerce app installed invalidates the previous expiring token. It matters only when another Lynomia account tries a shop that is already connected; the attempt is refused and its token discarded.
 3. The `timestamp` tolerance Shopify's own servers apply (the official libraries use 90 s; Lynomia uses 90 s).

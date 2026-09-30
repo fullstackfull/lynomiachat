@@ -140,6 +140,8 @@ Token refresh used clock manipulation instead of waiting an hour:
 
 ## 6. `REAL_SHOPIFY_UAT = BLOCKED`: what the real UAT must confirm
 
+Still blocked in Phase 6 (doc 23 §4.4); every open item is classified in doc 23 §9.
+
 Blocked because:
 - this environment's egress proxy refuses every Shopify host;
 - there is no Shopify Partner account, Commerce app or development store here.
@@ -167,7 +169,7 @@ The real UAT must confirm:
 - **Tracking-only updates.** `fulfillments/*` topics need `read_fulfillments`, which is not requested. A tracking change that does not update the order shows after the 120 s cache.
 - **Order history.** Only the last 60 days of orders without `read_all_orders`. The architecture allows adding it later (scope + approval, no query change).
 - **Idle stores.** Refresh is lazy (on use). A store not read for longer than the refresh token's life (about 90 days) needs Reconnect.
-- **Legacy the other way round.** The legacy connect flow does not know about Commerce (doc 21 §2): connecting a shop through legacy after Commerce shows its orders in both sections. Legacy is protected, so this is documented, not changed.
+- **Legacy the other way round.** Closed in Phase 6: the legacy connect start refuses a shop this account already has in Commerce (doc 21 §2).
 - **Disconnect** removes Lynomia's access but leaves the app installed in Shopify (the connector is read-only and sends no mutation). The merchant uninstalls it in Shopify admin, which Lynomia then receives as `app/uninstalled`.
-- **Data requests** (`customers/data_request`) are recorded for the operator, not answered automatically (doc 20 §4).
+- **Data requests** (`customers/data_request`) are recorded for the operator, who exports the customer's links for the merchant within 30 days (doc 20 §4).
 - **One shop in two accounts.** Another account's authorization attempt for a shop already connected is refused, but Shopify may have issued it a token (discarded). Whether that affects the first account's token is VERIFY (doc 18 §9.2).

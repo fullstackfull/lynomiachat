@@ -165,6 +165,8 @@ Scopes are chosen per app in the Zid Partner Dashboard. The authorize request ca
 
 ## 8. VERIFY (to close in the real UAT)
 
+Phase 6 classification of every item: doc 23 §9 (Z-items).
+
 1. `oauth.zid.sa/oauth/authorize` returns `state` unchanged. This fails closed if not.
 2. The token response carries `expires_in` as an integer (the official example shows a placeholder string).
 3. Refresh-token rotation and single-use behaviour; the answer to reusing a spent refresh token.

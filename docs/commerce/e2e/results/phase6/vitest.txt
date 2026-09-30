@@ -1,0 +1,6 @@
+# Vitest, commit f842e12ec, Node 24.13.0
+ ✓ app/javascript/dashboard/components-next/input/specs/DurationInput.spec.js (3 tests) 131ms
+ ✓ app/javascript/dashboard/components-next/captain/pageComponents/assistant/settings/DurationSelect.spec.js (3 tests) 48ms
+ Test Files  457 passed (457)
+      Tests  4717 passed (4717)
+   Duration  255.78s (transform 28.73s, setup 119.93s, collect 148.61s, tests 31.82s, environment 288.46s, prepare 54.26s)

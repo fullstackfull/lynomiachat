@@ -144,6 +144,8 @@ hidden behind stale data.
 
 ## Not yet verified against a live Salla store
 
+Phase 6 classification of every item: doc 23 §9 (S-items).
+
 `REAL_SALLA_UAT = BLOCKED` (doc 13). These points follow Salla's documentation and official kit, but no live store has
 confirmed them:
 

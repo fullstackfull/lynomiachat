@@ -144,6 +144,8 @@ With Zid switched off, stores are kept, explained in settings, and not listed in
 
 ## 11. VERIFY
 
+Phase 6 classification of every item: doc 23 §9 (Z-items).
+
 1. `search_term` matches a customer's mobile by its national number (Lynomia sends `551112233`, Zid stores `966551112233`).
 2. The zone of `created_at` (store time zone assumed).
 3. `sort_by=desc` sorts by creation. The newest-first order is also applied locally within the page of 50.

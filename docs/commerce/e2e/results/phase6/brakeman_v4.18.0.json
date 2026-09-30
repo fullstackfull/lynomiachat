@@ -1,0 +1,258 @@
+{
+ "brakeman_version": "8.0.5",
+ "warnings": [
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/api/v1/integrations/webhooks_controller.rb",
+   "line": 46,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Dangerous Send",
+   "confidence": "High",
+   "file": "app/builders/v2/reports/outgoing_messages_count_builder.rb",
+   "line": 11,
+   "message": "User controlled method execution"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "enterprise/app/controllers/api/v1/accounts/captain/assistants_controller.rb",
+   "line": 158,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "app/controllers/api/v1/profiles_controller.rb",
+   "line": 57,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "High",
+   "file": "enterprise/app/services/sla/backfill_applied_sla_completed_at_service.rb",
+   "line": 97,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "app/controllers/platform/api/v1/agent_bots_controller.rb",
+   "line": 40,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "High",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 45,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "app/controllers/api/v1/profiles_controller.rb",
+   "line": 67,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/api/v1/accounts/contacts_controller.rb",
+   "line": 47,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/api/v1/accounts/conversations_controller.rb",
+   "line": 52,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/api/v1/accounts/agents_controller.rb",
+   "line": 71,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 116,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 135,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Weak",
+   "file": "app/services/search_service.rb",
+   "line": 188,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "app/controllers/api/v1/profiles_controller.rb",
+   "line": 53,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "enterprise/app/controllers/api/v1/accounts/captain/assistant_responses_controller.rb",
+   "line": 99,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 134,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "High",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 47,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 111,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 113,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 112,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Weak",
+   "file": "app/services/filter_service.rb",
+   "line": 198,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/api/v1/accounts/contacts_controller.rb",
+   "line": 63,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/builders/conversation_builder.rb",
+   "line": 22,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "enterprise/app/controllers/api/v1/accounts/captain/inboxes_controller.rb",
+   "line": 32,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 114,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Unmaintained Dependency",
+   "confidence": "High",
+   "file": "Gemfile.lock",
+   "line": 710,
+   "message": "Support for Rails 7.2.3.1 ended on 2026-08-09"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/controllers/platform/api/v1/account_users_controller.rb",
+   "line": 27,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "Dangerous Send",
+   "confidence": "High",
+   "file": "app/builders/v2/report_builder.rb",
+   "line": 19,
+   "message": "User controlled method execution"
+  },
+  {
+   "warning_type": "Cross-Site Scripting",
+   "confidence": "Medium",
+   "file": "app/views/layouts/_portal_scripts.html.erb",
+   "line": 101,
+   "message": "Unescaped model attribute"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 49,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "High",
+   "file": "enterprise/app/controllers/api/v1/accounts/captain/documents_controller.rb",
+   "line": 90,
+   "message": "Potentially dangerous key allowed for mass assignment"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Weak",
+   "file": "app/services/search_service.rb",
+   "line": 187,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "SQL Injection",
+   "confidence": "Medium",
+   "file": "enterprise/app/builders/captain/assistant_stats_builder.rb",
+   "line": 115,
+   "message": "Possible SQL injection"
+  },
+  {
+   "warning_type": "Cross-Site Scripting",
+   "confidence": "Weak",
+   "file": "app/views/super_admin/settings/show.html.erb",
+   "line": 52,
+   "message": "Unescaped model attribute"
+  },
+  {
+   "warning_type": "Mass Assignment",
+   "confidence": "Medium",
+   "file": "app/builders/conversation_builder.rb",
+   "line": 21,
+   "message": "Specify exact keys allowed for mass assignment instead of using `permit!` which allows any keys"
+  }
+ ],
+ "errors": []
+}

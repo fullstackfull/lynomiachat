@@ -1,0 +1,12 @@
+2026-09-30T21:54:33Z
+accounts.salla.sa            000 CONNECT tunnel failed, response 403
+api.salla.dev                000 CONNECT tunnel failed, response 403
+s.salla.sa                   000 CONNECT tunnel failed, response 403
+oauth.zid.sa                 000 CONNECT tunnel failed, response 403
+api.zid.sa                   000 CONNECT tunnel failed, response 403
+docs.zid.sa                  000 CONNECT tunnel failed, response 403
+lynomia-demo.myshopify.com   000 CONNECT tunnel failed, response 403
+admin.shopify.com            000 CONNECT tunnel failed, response 403
+shopify.dev                  000 CONNECT tunnel failed, response 403
+partners.shopify.com         000 CONNECT tunnel failed, response 403
+rubygems.org                 200

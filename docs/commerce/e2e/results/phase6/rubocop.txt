@@ -1,0 +1,65 @@
+== docker/entrypoints/helpers/pg_database_url.rb ==
+C:  7:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C:  9:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== script/backfill_applied_sla_completed_at.rb ==
+C: 29:  3: Rails/Exit: Do not use exit in Rails applications.
+== script/bulk_reindex_messages.rb ==
+C: 14:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 15:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 16:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 17:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 18:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 19:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 20:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 21:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 22:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 23:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 24:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 45:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 46:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 47:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 48:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 49:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 55:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 56:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 57:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 58:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== script/monitor_reindex.rb ==
+C:  4:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C:  5:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 12:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 13:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 14:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 15:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 16:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== script/rails_upgrade/active_storage_smoke.rb ==
+C:  8:  3: Rails/Exit: Do not use exit in Rails applications.
+C: 26:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== script/rails_upgrade/preflight.rb ==
+C: 27:  5: Rails/Exit: Do not use exit in Rails applications.
+C:201:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== script/reindex_single_account.rb ==
+C: 32:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 33:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 50:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 54:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 55:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 56:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 57:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 58:  1: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+== spec/rails_helper.rb ==
+C: 42:  3: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 43:  3: Rails/Exit: Do not use exit in Rails applications.
+== spec/support/opensearch_check.rb ==
+C: 13:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 14:  5: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 25:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 26:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 27:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 31:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 32:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 34:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 35:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+C: 36:  7: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+
+3218 files inspected, 54 offenses detected, 50 offenses autocorrectable

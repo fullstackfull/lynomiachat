@@ -1,6 +1,6 @@
 # Lynomia Commerce: provider capability matrix
 
-- **Sources:** official docs (see the per-provider URLs in `02-provider-contracts.md`) and this repository's code. `VERIFY` = not confirmed on the official page (`00` §0).
+- **Sources:** official docs (see the per-provider URLs in `02-provider-contracts.md`) and this repository's code. `VERIFY` = not confirmed on the official page (`00` §0). Every item's Phase 6 status is in doc 23 §9.
 - **"Existing code"** refers to Lynomia/Chatwoot 4.18 as it stands today.
 - **Updated for Phase 5.** WooCommerce (Phase 2), Salla (Phase 3), Zid (Phase 4) and Shopify (Phase 5) are implemented;
   the section "Implemented" below records what the connectors actually do. The table rows describe the platforms; the Zid

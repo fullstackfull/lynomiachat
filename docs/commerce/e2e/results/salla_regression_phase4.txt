@@ -1,8 +1,8 @@
-{ salla_enabled: true } { salla_stores: 0, purged_keys: 9 } { super_admin: true }
+{ salla_enabled: true } { salla_stores: 0, purged_keys: 0 } { super_admin: true }
 ok
 PASS  Super Admin shows the Salla fields with the secrets masked and empty
 PASS  Add store offers WooCommerce and Salla
-PASS  one-time code shown with the official install link, nothing secret asked  -- 3VY4-NZLZ-22KY-YZMQ
+PASS  one-time code shown with the official install link, nothing secret asked  -- FEU6-UBQX-9TBV-QKY4
 PASS  unsigned, badly signed, wrong-secret, token-strategy and modified deliveries get 401  -- {"unsigned":401,"badSignature":401,"otherSecret":401,"tokenStrategy":401,"modifiedBody":401}
 PASS  nothing was queued for refused deliveries
 PASS  a signed authorization is accepted, and its redelivery is queued once
@@ -10,7 +10,7 @@ PASS  a signed authorization is accepted, and its redelivery is queued once
 PASS  an authorization alone connects nothing (no account is ever guessed)
 PASS  signed app.settings.updated accepted
 { processed: [ 'ok' ] }
-PASS  store connected to account A by the code: merchant id, Salla name, credentials stored  -- {"id":33,"account_id":1,"name":"متجر الورد","status":"active","external_store_id":"1234509876","credential_fields":["access_token","refresh_token","token_type","scope","access_token_expires_at","refresh_token_expires_at"],"links":0}
+PASS  store connected to account A by the code: merchant id, Salla name, credentials stored  -- {"id":40,"account_id":1,"name":"متجر الورد","status":"active","external_store_id":"1234509876","credential_fields":["access_token","refresh_token","token_type","scope","access_token_expires_at","refresh_token_expires_at"],"links":0}
 PASS  settings list shows the Salla store as active, without key actions
 { processed: [ 'ok' ] }
 PASS  a later authorization for the same merchant creates no second store
@@ -59,7 +59,7 @@ PASS  settings show the uninstalled store as disconnected with Reconnect
 PASS  an agent cannot start a Salla connection  -- status=401
 PASS  audit trail: connect_started, connected, reauthorized, token_refreshed, needs_reauth, disconnected  -- commerce.salla.connect_started, commerce.salla.connected, commerce.salla.reauthorized, commerce.salla.needs_reauth, commerce.salla.token_refreshed, commerce.salla.disconnected
 PASS  audit entries carry no token or secret
-PASS  no Salla token, refresh token or secret in any browser response  -- responses=485 
-PASS  no token, secret or connection code in the server or job logs  -- log bytes=1247514
+PASS  no Salla token, refresh token or secret in any browser response  -- responses=480 
+PASS  no token, secret or connection code in the server or job logs  -- log bytes=935299
 PASS  no uncaught page errors
 47/47 passed

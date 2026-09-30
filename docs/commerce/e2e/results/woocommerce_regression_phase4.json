@@ -197,7 +197,7 @@
   {
     "name": "no consumer key/secret or credentials field in any API response",
     "ok": true,
-    "detail": "responses=694 leaked="
+    "detail": "responses=698 leaked="
   },
   {
     "name": "no uncaught page errors",

@@ -1,0 +1,20 @@
+A1=11 B1=13
+PASS  admin A lists stores (200)
+PASS  store list has no credentials (clean)
+PASS  agent cannot list/manage stores (401)
+PASS  agent cannot disconnect a store (401)
+PASS  agent cannot rotate keys (401)
+PASS  agent with inbox access reads the panel (200)
+PASS  agent without inbox access is refused (401)
+PASS  admin B cannot enter account A (401)
+PASS  admin B cannot read A1 through its own conversation (404)
+PASS  admin A cannot read B1 (404)
+PASS  admin A cannot modify B1 (404)
+PASS  forged link token refused (422)
+PASS  name search refused (422)
+PASS  SSRF: metadata IP refused at connect (422)
+{"error":{"code":"INVALID_STORE_URL","reason":"ip_address_not_allowed"}}
+PASS  SSRF: IPv6 loopback refused at connect (422)
+PASS  malformed consumer key refused (422)
+PASS  unsupported provider refused (422)
+api checks: 17 passed, 0 failed

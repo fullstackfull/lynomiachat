@@ -91,6 +91,14 @@ Scores are 1 (poor) to 5 (best), taken from the evidence in `02`/`05`:
 | **6. Real time + extras** | Order webhooks → cache invalidation + ActionCable refresh; Captain copilot tool `get_customer_orders` (template `search_linear_issues_service.rb`); abandoned carts (read); contact-page tab | Per feature |
 | **7. Write actions** | Cancel, refund, status and shipment edits: separate permission, confirmation and audit | Separate security review |
 
+**Phase 2 status (2026-09-30): implemented** per the approved Phase 2 brief. See `07-phase2-implementation.md`, `08-woocommerce-security.md` and `09-woocommerce-e2e.md`.
+
+Changes from the exit criteria above, all decided in that brief:
+- stores connect with manually entered **Read** keys, not `wc-auth`;
+- no plugin-specific tracking, because WooCommerce core has none;
+- no webhooks;
+- Arabic strings are included.
+
 ## 4. Files likely to change in Phase 2 (core + WooCommerce)
 
 **New (Lynomia-owned, `custom/`)**

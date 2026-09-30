@@ -75,10 +75,13 @@ class Commerce::ConversationPanel
 
   def save_link(external_customer_id)
     link = @store.customer_links.find_or_initialize_by(contact: @contact)
-    event = link.new_record? ? 'commerce.customer_link_created' : 'commerce.customer_link_changed'
-    previous_source = link.match_source
+    event, changes = if link.new_record?
+                       ['commerce.customer_link_created', { match_source: 'manual' }]
+                     else
+                       ['commerce.customer_link_changed', { match_source: [link.match_source, 'manual'] }]
+                     end
     link.update!(account: @store.account, external_customer_id: external_customer_id, match_source: :manual, confirmed_by: @user)
-    Commerce::AuditTrail.record(event, auditable: link, user: @user, changes: { match_source: [previous_source, 'manual'].compact })
+    Commerce::AuditTrail.record(event, auditable: link, user: @user, changes: changes)
   end
 
   # Email: exact after trim + downcase. Phone: international format only ("+966..." or "00966..."). Anything else,

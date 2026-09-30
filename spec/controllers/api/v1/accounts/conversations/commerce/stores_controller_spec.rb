@@ -142,8 +142,23 @@ RSpec.describe 'Conversation commerce API', type: :request do
       expect(store.customer_links.count).to eq(0)
 
       if defined?(Enterprise::AuditLog)
-        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').pluck(:comment))
-          .to eq(%w[commerce.customer_link_created commerce.customer_link_removed])
+        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').pluck(:comment, :audited_changes))
+          .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
+                  ['commerce.customer_link_removed', { 'match_source' => 'manual' }]])
+      end
+    end
+
+    it 'audits a changed link with the previous match source' do
+      create(:commerce_customer_link, store: store, contact: contact, external_customer_id: '2', match_source: :verified_phone)
+      get "#{path}/#{store.id}/customers", headers: agent.create_new_auth_token, params: { query: 'omar.khalil@example.com' }
+
+      post "#{path}/#{store.id}/link", headers: agent.create_new_auth_token, as: :json,
+                                       params: { token: response.parsed_body['candidates'].sole['token'] }
+
+      expect(store.customer_links.sole).to have_attributes(external_customer_id: 'guest:omar.khalil@example.com', match_source: 'manual')
+      if defined?(Enterprise::AuditLog)
+        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').last)
+          .to have_attributes(comment: 'commerce.customer_link_changed', audited_changes: { 'match_source' => %w[verified_phone manual] })
       end
     end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_28_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_30_100100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -804,6 +804,39 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_28_100000) do
     t.string "phone_number_health_error", limit: 500
     t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
+  end
+
+  create_table "commerce_customer_links", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "external_customer_id", null: false
+    t.integer "match_source", null: false
+    t.bigint "confirmed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_commerce_customer_links_on_account_id"
+    t.index ["commerce_store_id", "contact_id"], name: "index_commerce_customer_links_on_store_and_contact", unique: true
+    t.index ["confirmed_by_id"], name: "index_commerce_customer_links_on_confirmed_by_id"
+    t.index ["contact_id"], name: "index_commerce_customer_links_on_contact_id"
+  end
+
+  create_table "commerce_stores", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "provider", null: false
+    t.string "external_store_id", null: false
+    t.string "name", null: false
+    t.string "base_url", null: false
+    t.integer "status", default: 0, null: false
+    t.text "credentials"
+    t.jsonb "settings", default: {}, null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "provider"], name: "index_commerce_stores_on_account_id_and_provider"
+    t.index ["created_by_id"], name: "index_commerce_stores_on_created_by_id"
+    t.index ["provider", "external_store_id"], name: "index_commerce_stores_on_provider_and_external_store_id", unique: true
   end
 
   create_table "companies", force: :cascade do |t|
@@ -1669,6 +1702,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_28_100000) do
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "inboxes", on_delete: :cascade
+  add_foreign_key "commerce_customer_links", "accounts", on_delete: :cascade
+  add_foreign_key "commerce_customer_links", "commerce_stores", on_delete: :cascade
+  add_foreign_key "commerce_customer_links", "contacts", on_delete: :cascade
+  add_foreign_key "commerce_customer_links", "users", column: "confirmed_by_id", on_delete: :nullify
+  add_foreign_key "commerce_stores", "accounts", on_delete: :cascade
+  add_foreign_key "commerce_stores", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
   add_foreign_key "user_sessions", "users"

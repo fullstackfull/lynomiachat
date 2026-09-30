@@ -1,0 +1,55 @@
+docker/entrypoints/helpers/pg_database_url.rb:7:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+docker/entrypoints/helpers/pg_database_url.rb:9:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/backfill_applied_sla_completed_at.rb:29:3: C: Rails/Exit: Do not use exit in Rails applications.
+script/bulk_reindex_messages.rb:14:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:15:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:16:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:17:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:18:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:19:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:20:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:21:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:22:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:23:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:24:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:45:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:46:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:47:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:48:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:49:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:55:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:56:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:57:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/bulk_reindex_messages.rb:58:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:4:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:5:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:12:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:13:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:14:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:15:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/monitor_reindex.rb:16:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/rails_upgrade/active_storage_smoke.rb:8:3: C: Rails/Exit: Do not use exit in Rails applications.
+script/rails_upgrade/active_storage_smoke.rb:26:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/rails_upgrade/preflight.rb:27:5: C: Rails/Exit: Do not use exit in Rails applications.
+script/rails_upgrade/preflight.rb:201:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:32:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:33:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:50:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:54:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:55:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:56:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:57:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+script/reindex_single_account.rb:58:1: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/rails_helper.rb:42:3: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/rails_helper.rb:43:3: C: Rails/Exit: Do not use exit in Rails applications.
+spec/support/opensearch_check.rb:13:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:14:5: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:25:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:26:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:27:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:31:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:32:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:34:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:35:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+spec/support/opensearch_check.rb:36:7: C: [Correctable] Rails/Output: Do not write to stdout. Use Rails's logger if you want to log.
+3096 files inspected, 54 offenses detected, 50 offenses autocorrectable

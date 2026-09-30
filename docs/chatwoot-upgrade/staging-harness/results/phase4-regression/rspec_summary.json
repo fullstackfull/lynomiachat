@@ -1,0 +1,64 @@
+{
+  "ee": [
+    {
+      "shard": 0,
+      "examples": 2513,
+      "failures": 1,
+      "pending": 15,
+      "failed": [
+        "./spec/enterprise/services/voice/call_transcription_service_spec.rb:77"
+      ]
+    },
+    {
+      "shard": 1,
+      "examples": 2645,
+      "failures": 0,
+      "pending": 17,
+      "failed": []
+    },
+    {
+      "shard": 2,
+      "examples": 2283,
+      "failures": 0,
+      "pending": 27,
+      "failed": []
+    },
+    {
+      "shard": 3,
+      "examples": 2139,
+      "failures": 0,
+      "pending": 8,
+      "failed": []
+    }
+  ],
+  "ce": [
+    {
+      "shard": 0,
+      "examples": 1576,
+      "failures": 0,
+      "pending": 17,
+      "failed": []
+    },
+    {
+      "shard": 1,
+      "examples": 1616,
+      "failures": 0,
+      "pending": 10,
+      "failed": []
+    },
+    {
+      "shard": 2,
+      "examples": 1874,
+      "failures": 0,
+      "pending": 25,
+      "failed": []
+    },
+    {
+      "shard": 3,
+      "examples": 1818,
+      "failures": 0,
+      "pending": 17,
+      "failed": []
+    }
+  ]
+}

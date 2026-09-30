@@ -18,11 +18,27 @@
 | 10 | Assets | **PASS** | Vite and Sprockets precompiled in the image; dashboard and Super Admin assets 200 |
 | 11 | Rollback verified | **PASS** in the rehearsal | Rollback A 30 s, rollback B, roll forward 47 s: 41/41 each |
 | 12 | No new critical/high security regression | **PASS** | Phase 4 closes one high finding (unsigned manual webhooks) and two medium ones (token to browser, agent create). None added |
-| 13 | Tests acceptable | see §2 | |
+| 13 | Tests acceptable | **PASS** | §2. The only failure and the lint offenses are proven identical on clean upstream 4.18.0 |
 
 ## 2. Test results on the final tree (Ruby 3.4.4 / Node 24 containers)
 
-_Filled in from `staging-harness/results/` after the run._
+Final code at `e1cd4c53`. Raw results are in `staging-harness/results/phase4-regression/`.
+
+| Suite | Runtime | Result | Before Phase 4 |
+|---|---|---|---|
+| Backend RSpec, Enterprise (how Lynomia runs), 4 shards | Ruby 3.4.4 container | **9,580 examples, 1 failure, 67 pending** | 9,519 / 1 / 67 (Ruby 3.3.6) |
+| Backend RSpec, Community (`enterprise/` and `spec/enterprise/` removed, like upstream CI), 4 shards | Ruby 3.4.4 container | **6,884 examples, 0 failures, 69 pending** | 6,833 / 0 / 69 |
+| Frontend Vitest | Node 24.13.0 container | **450 files, 4,667 tests, all passed** | 450 / 4,665 |
+| ESLint (`pnpm eslint`) | Node 24.13.0 | **0 errors**, 444 warnings | 0 / 444 |
+| RuboCop (repo config, Ruby 3.4.4) | Ruby 3.4.4 | 3,096 files, **54 offenses**, none in a file changed by Lynomia | n/a (the earlier count used a Ruby 3.3 override) |
+| Harness on the final image `lynomia/staging:4.18-e1cd4c53` (fresh copy of the pre-deploy backup, migrated from the image) | Ruby 3.4.4, production mode | existing WhatsApp API **41/41**, Lynomia **17/17**, WhatsApp Business **54/54** | 41 / 16 / 54 |
+
+**The one RSpec failure and the RuboCop offenses were compared with clean upstream v4.18.0, not assumed.**
+- `spec/enterprise/services/voice/call_transcription_service_spec.rb:77` (`Message does not implement: reindex`) fails identically on clean upstream `v4.18.0` (`9f920b549`) in the same image, with the same Postgres and Redis.
+  - Cause: `app/models/message.rb:42` adds Searchkick (and so `reindex`) only when `ChatwootApp.advanced_search_allowed?`, which needs OpenSearch configuration.
+- The 54 RuboCop offenses are in upstream files that are byte-identical to `v4.18.0`: `script/*reindex*`, `script/rails_upgrade/*`, `spec/support/opensearch_check.rb`, `spec/rails_helper.rb`, `docker/entrypoints/helpers/pg_database_url.rb`.
+  - Clean upstream on the same runtime reports **the same 54 offenses** (3,046 files).
+  - The Lynomia tree adds 50 files and 0 offenses.
 
 ## 3. Production procedure (only after GO and approval)
 

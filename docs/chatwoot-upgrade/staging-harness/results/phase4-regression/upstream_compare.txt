@@ -1,0 +1,4 @@
+Failure: spec/enterprise/services/voice/call_transcription_service_spec.rb:77
+Lynomia final tree (Ruby 3.4.4 container, EE shard 0): 1 failure, "Message ... does not implement: reindex"
+Clean upstream v4.18.0 (9f920b549), same image lynomia/verify:base, same Postgres/Redis: 7 examples, 1 failure, same example, same message.
+Clean upstream v4.18.0 (9f920b549), same image: 3046 files inspected, 54 offenses detected (same files and counts as the Lynomia tree)

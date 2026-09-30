@@ -44,8 +44,8 @@ RSpec.describe Commerce::Shopify::TokenManager do
     freeze_time do
       expect(described_class.new(store).with_credentials(&access_token)).to eq('access-2')
       expect(store.reload.credentials).to eq('access_token' => 'access-2', 'refresh_token' => 'refresh-2', 'scope' => 'read_customers,read_orders',
-                                             'access_token_expires_at' => 1.hour.from_now.utc.iso8601,
-                                             'refresh_token_expires_at' => 90.days.from_now.utc.iso8601)
+                                             'access_token_expires_at' => 3600.seconds.from_now.utc.iso8601,
+                                             'refresh_token_expires_at' => 7_776_000.seconds.from_now.utc.iso8601)
     end
     expect(refresh_request).to have_been_made.once
     expect(store.metadata).to include('token_refreshed_at')

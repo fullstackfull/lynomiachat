@@ -75,7 +75,7 @@ whatsapp.call('emergency-off')
 H.check('emergency off: store and encrypted credentials kept', store.reload.active? && store.credentials['consumer_secret'] == ENV.fetch('COMMERCE_WOO_SECRET') &&
                                                                !Commerce::Store.where(id: store.id).pluck(Arel.sql('credentials::text')).first.include?(ENV.fetch('COMMERCE_WOO_SECRET')))
 
-account.enable_features!('lynomia_commerce')
+account.reload.enable_features!('lynomia_commerce')
 code, body = H.api(:get, "#{stores}/#{store.id}", agent)
 H.check('switched back on: the conversation reads the store again', code == 200 && body['error'].nil?, "http=#{code}")
 whatsapp.call('commerce-on-again')

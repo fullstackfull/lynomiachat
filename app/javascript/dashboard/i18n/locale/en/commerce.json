@@ -79,8 +79,8 @@
     },
     "ERRORS": {
       "STORE_UNAVAILABLE": "The store is not reachable right now.",
-      "AUTH_INVALID": "The store rejected the API keys. An administrator needs to replace them.",
-      "PERMISSION_DENIED": "The API keys cannot read orders and customers. Use keys with Read permission from an administrator account.",
+      "AUTH_INVALID": "The store rejected Lynomia's credentials. An administrator needs to reconnect the store.",
+      "PERMISSION_DENIED": "The store refused access to its orders or customers. An administrator needs to check the store's permissions.",
       "RATE_LIMITED": "The store is limiting requests. Try again in a moment.",
       "TIMEOUT": "The store took too long to answer.",
       "INVALID_RESPONSE": "The store sent a response Lynomia could not read.",

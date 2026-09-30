@@ -231,6 +231,8 @@ describe('CommercePanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('The store rejected the API keys.');
+    expect(wrapper.text()).toContain(
+      "The store rejected Lynomia's credentials."
+    );
   });
 });

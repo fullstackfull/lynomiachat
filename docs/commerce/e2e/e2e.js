@@ -70,7 +70,7 @@ const cancelDialog = async page => {
 
   await addStore(adminA, { url: 'http://localhost:8081', ck: keys.s1.ck, cs: 'cs_0000000000000000000000000000000000000000' });
   await shot(adminA, '02-connect-wrong-secret');
-  check('connect refused with a wrong secret (AUTH_INVALID)', (await dialogError(adminA)).includes('rejected the API keys'), await dialogError(adminA));
+  check('connect refused with a wrong secret (AUTH_INVALID)', (await dialogError(adminA)).includes("rejected Lynomia's credentials"), await dialogError(adminA));
   await cancelDialog(adminA);
 
   await addStore(adminA, { url: 'https://10.0.0.5', ck: keys.s1.ck, cs: keys.s1.cs });

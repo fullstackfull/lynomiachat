@@ -1,0 +1,143 @@
+{
+  "data": {
+    "orders": {
+      "nodes": [
+        {
+          "id": "gid://shopify/Order/6001010",
+          "legacyResourceId": "6001010",
+          "name": "#1010",
+          "createdAt": "2026-09-27T08:00:00Z",
+          "updatedAt": "2026-09-27T09:00:00Z",
+          "cancelledAt": null,
+          "email": "Guest.Buyer@Example.com",
+          "displayFinancialStatus": "PAID",
+          "displayFulfillmentStatus": "FULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "80.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": null,
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "80.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": [
+            {
+              "status": "CANCELLED",
+              "displayStatus": "CANCELED",
+              "trackingInfo": [
+                {
+                  "company": "Aramex",
+                  "number": "ARXOLD",
+                  "url": "https://www.aramex.com/track/ARXOLD"
+                }
+              ]
+            },
+            {
+              "status": "SUCCESS",
+              "displayStatus": "IN_TRANSIT",
+              "trackingInfo": [
+                {
+                  "company": "Aramex",
+                  "number": "ARX300",
+                  "url": "https://www.aramex.com/track/ARX300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/Order/6001008",
+          "legacyResourceId": "6001008",
+          "name": "#1008",
+          "createdAt": "2026-09-20T08:00:00Z",
+          "updatedAt": "2026-09-20T09:00:00Z",
+          "cancelledAt": null,
+          "email": "guest.buyer@example.com",
+          "displayFinancialStatus": "VOIDED",
+          "displayFulfillmentStatus": "UNFULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "45.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7009"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "45.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        },
+        {
+          "id": "gid://shopify/Order/6001007",
+          "legacyResourceId": "6001007",
+          "name": "#1007",
+          "createdAt": "2026-09-18T08:00:00Z",
+          "updatedAt": "2026-09-18T09:00:00Z",
+          "cancelledAt": null,
+          "email": "guest.buyer@example.co",
+          "displayFinancialStatus": "EXPIRED",
+          "displayFulfillmentStatus": "UNFULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "30.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": null,
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "30.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        }
+      ]
+    }
+  },
+  "extensions": {
+    "cost": {
+      "requestedQueryCost": 42,
+      "actualQueryCost": 18,
+      "throttleStatus": {
+        "maximumAvailable": 2000.0,
+        "currentlyAvailable": 1982,
+        "restoreRate": 100.0
+      }
+    }
+  }
+}

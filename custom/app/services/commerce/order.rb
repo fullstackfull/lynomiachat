@@ -2,7 +2,8 @@
 #
 # status          pending | processing | on_hold | shipped | delivered | completed | cancelled | refunded | failed | draft
 #                 | other
-# payment_status  paid | unpaid | failed | refunded | partially_refunded | unknown (see each provider's normalizer)
+# payment_status  paid | unpaid | partially_paid | failed | refunded | partially_refunded | unknown (see each provider's
+#                 normalizer)
 # total, amounts  decimal strings in `currency`
 # items           [{ name:, quantity:, total: }]; item_count is nil when the provider did not send the items
 # shipping        { method:, total:, provider:, status: } (keys a provider does not know are nil), or nil

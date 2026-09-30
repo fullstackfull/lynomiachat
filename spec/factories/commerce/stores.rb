@@ -34,7 +34,7 @@ FactoryBot.define do
     # expiring offline token pair with the expiry times Shopify returned.
     trait :shopify do
       provider { 'shopify' }
-      sequence(:external_store_id) { |n| (68_210_000 + n).to_s }
+      sequence(:external_store_id) { |n| (68_300_000 + n).to_s }
       sequence(:base_url) { |n| "https://lynomia-shop-#{n}.myshopify.com" }
       metadata { { 'shop_gid' => "gid://shopify/Shop/#{external_store_id}" } }
       credentials do

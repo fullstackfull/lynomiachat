@@ -73,17 +73,25 @@ const canReconnect = store =>
     (store.status === 'needs_reauth' &&
       REAUTHORIZED_HERE.includes(store.provider)));
 
-// Hints and texts of the app-authorized providers (COMMERCE.SETTINGS.SALLA / ZID).
-const providerText = (store, key) =>
-  t(`COMMERCE.SETTINGS.${store.provider.toUpperCase()}.${key}`);
+// Hints and texts of the app-authorized providers.
+const providerTexts = store =>
+  ({
+    salla: {
+      off: t('COMMERCE.SETTINGS.SALLA.PROVIDER_OFF'),
+      reauth: t('COMMERCE.SETTINGS.SALLA.REAUTH_HINT'),
+      disconnect: t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP'),
+    },
+    zid: {
+      off: t('COMMERCE.SETTINGS.ZID.PROVIDER_OFF'),
+      reauth: t('COMMERCE.SETTINGS.ZID.REAUTH_HINT'),
+      disconnect: t('COMMERCE.SETTINGS.ZID.DISCONNECT_DESCRIPTION'),
+    },
+  })[store.provider] || {};
 
-const disconnectDescription = store => {
-  if (usesKeys(store))
-    return t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION');
-  if (store.provider === 'salla')
-    return t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP');
-  return providerText(store, 'DISCONNECT_DESCRIPTION');
-};
+const disconnectDescription = store =>
+  usesKeys(store)
+    ? t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION')
+    : providerTexts(store).disconnect;
 
 const openKeysDialog = () => {
   rotatingStore.value = null;
@@ -265,14 +273,14 @@ onMounted(() => {
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"
               >
-                {{ providerText(store, 'PROVIDER_OFF') }}
+                {{ providerTexts(store).off }}
               </span>
               <span
                 v-else-if="!usesKeys(store) && store.status === 'needs_reauth'"
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"
               >
-                {{ providerText(store, 'REAUTH_HINT') }}
+                {{ providerTexts(store).reauth }}
               </span>
             </div>
           </div>

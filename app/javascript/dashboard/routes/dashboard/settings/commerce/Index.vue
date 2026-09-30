@@ -9,11 +9,17 @@ import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import StoreDialog from './StoreDialog.vue';
+import ProviderPicker from './ProviderPicker.vue';
+import SallaConnectDialog from './SallaConnectDialog.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 const { t, locale } = useI18n();
-const { apiErrorMessage, storeStatus } = useCommerceLabels();
+const { apiErrorMessage, providerName, storeStatus } = useCommerceLabels();
+
+// Providers whose credentials are API keys an administrator enters here. Salla stores get their tokens from the Salla
+// app installation instead, so they have no keys to replace.
+const KEY_PROVIDERS = ['woocommerce'];
 
 const STATUS_DOT = {
   active: 'bg-n-teal-9',
@@ -23,7 +29,10 @@ const STATUS_DOT = {
 };
 
 const stores = ref([]);
+const providers = ref([]);
 const isLoading = ref(true);
+const showPicker = ref(false);
+const showSallaDialog = ref(false);
 const showStoreDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
@@ -34,6 +43,7 @@ const fetchStores = async () => {
   try {
     const response = await CommerceAPI.get();
     stores.value = response.data.payload;
+    providers.value = response.data.providers;
   } finally {
     isLoading.value = false;
   }
@@ -45,9 +55,34 @@ const replaceStore = store => {
   );
 };
 
-const openAddStore = () => {
+const usesKeys = store => KEY_PROVIDERS.includes(store.provider);
+
+const openKeysDialog = () => {
   rotatingStore.value = null;
   showStoreDialog.value = true;
+};
+
+const openAddStore = () => {
+  if (providers.value.length > 1) {
+    showPicker.value = true;
+  } else {
+    openKeysDialog();
+  }
+};
+
+const onProviderSelected = provider => {
+  showPicker.value = false;
+  if (provider === 'salla') {
+    showSallaDialog.value = true;
+  } else {
+    openKeysDialog();
+  }
+};
+
+const onSallaConnected = async () => {
+  showSallaDialog.value = false;
+  useAlert(t('COMMERCE.SETTINGS.CONNECTED'));
+  await fetchStores();
 };
 
 const openReplaceKeys = store => {
@@ -170,7 +205,7 @@ onMounted(fetchStores);
                 class="flex min-w-0 gap-2 text-body-main text-n-slate-11"
                 dir="ltr"
               >
-                <span>{{ t('COMMERCE.PROVIDERS.WOOCOMMERCE') }}</span>
+                <span>{{ providerName(store.provider) }}</span>
                 <span class="truncate">{{ store.base_url }}</span>
               </span>
               <span
@@ -182,6 +217,20 @@ onMounted(fetchStores);
                     time: relativeTime(store.verified_at, locale),
                   })
                 }}
+              </span>
+              <span
+                v-if="!store.provider_enabled"
+                class="text-label-small text-n-amber-11"
+                data-test-id="commerce-store-hint"
+              >
+                {{ t('COMMERCE.SETTINGS.SALLA.PROVIDER_OFF') }}
+              </span>
+              <span
+                v-else-if="!usesKeys(store) && store.status === 'needs_reauth'"
+                class="text-label-small text-n-amber-11"
+                data-test-id="commerce-store-hint"
+              >
+                {{ t('COMMERCE.SETTINGS.SALLA.REAUTH_HINT') }}
               </span>
             </div>
           </div>
@@ -196,7 +245,7 @@ onMounted(fetchStores);
               @click="setStatus(store, 'disabled')"
             />
             <Button
-              v-if="store.status === 'disabled'"
+              v-if="store.status === 'disabled' && store.provider_enabled"
               :label="t('COMMERCE.SETTINGS.ACTIONS.ENABLE')"
               variant="faded"
               size="sm"
@@ -204,6 +253,7 @@ onMounted(fetchStores);
               @click="setStatus(store, 'active')"
             />
             <Button
+              v-if="usesKeys(store)"
               :label="
                 store.status === 'disconnected'
                   ? t('COMMERCE.SETTINGS.ACTIONS.RECONNECT')
@@ -213,6 +263,16 @@ onMounted(fetchStores);
               color="slate"
               size="sm"
               @click="openReplaceKeys(store)"
+            />
+            <Button
+              v-else-if="
+                store.status === 'disconnected' && store.provider_enabled
+              "
+              :label="t('COMMERCE.SETTINGS.ACTIONS.RECONNECT')"
+              variant="faded"
+              color="slate"
+              size="sm"
+              @click="showSallaDialog = true"
             />
             <Button
               v-if="store.status !== 'disconnected'"
@@ -226,6 +286,17 @@ onMounted(fetchStores);
         </div>
       </div>
 
+      <ProviderPicker
+        :show="showPicker"
+        :providers="providers"
+        @close="showPicker = false"
+        @select="onProviderSelected"
+      />
+      <SallaConnectDialog
+        :show="showSallaDialog"
+        @close="showSallaDialog = false"
+        @connected="onSallaConnected"
+      />
       <StoreDialog
         :show="showStoreDialog"
         :store="rotatingStore"
@@ -240,7 +311,11 @@ onMounted(fetchStores);
             name: disconnectingStore?.name,
           })
         "
-        :description="t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION')"
+        :description="
+          disconnectingStore && !usesKeys(disconnectingStore)
+            ? t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP')
+            : t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION')
+        "
         :confirm-button-label="
           t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.CONFIRM')
         "

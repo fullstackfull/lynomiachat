@@ -1,11 +1,12 @@
 # Lynomia Commerce store connections (administrators, `lynomia_commerce` accounts only).
 #
-#   GET    /api/v1/accounts/:account_id/commerce/stores       list
-#   POST   /api/v1/accounts/:account_id/commerce/stores       connect: provider, base_url, consumer_key, consumer_secret, name
-#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), consumer_key + consumer_secret
+#   GET    /api/v1/accounts/:account_id/commerce/stores       list, with the providers this installation offers
+#   POST   /api/v1/accounts/:account_id/commerce/stores       connect WooCommerce: provider, base_url, consumer_key, consumer_secret, name
+#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), consumer_key + consumer_secret (WooCommerce)
 #   DELETE /api/v1/accounts/:account_id/commerce/stores/:id   disconnect (credentials and customer links deleted)
 #
-# Credentials are write-only: they are accepted here and never rendered back.
+# Credentials are write-only: they are accepted here and never rendered back. Salla stores are connected through the Salla
+# app instead (Api::V1::Accounts::Commerce::SallaConnectionsController), so they never take keys here.
 class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseController
   WOOCOMMERCE_KEY_FORMATS = { consumer_key: /\Ack_[0-9a-f]{40}\z/, consumer_secret: /\Acs_[0-9a-f]{40}\z/ }.freeze
 
@@ -61,6 +62,8 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
   end
 
   def credentials_param
+    raise ActionController::ParameterMissing, :provider if @store && @store.provider != 'woocommerce'
+
     WOOCOMMERCE_KEY_FORMATS.to_h do |key, format|
       value = params[key].to_s.strip
       raise ActionController::ParameterMissing, key unless value.match?(format)

@@ -8,6 +8,19 @@ class CommerceAPI extends ApiClient {
     super('commerce/stores', { accountScoped: true });
   }
 
+  sallaConnectionUrl() {
+    return `${this.baseUrl()}/commerce/salla_connection`;
+  }
+
+  // A one-time code the merchant enters in the Lynomia app's settings in Salla, and the Salla install link.
+  createSallaConnection() {
+    return axios.post(this.sallaConnectionUrl());
+  }
+
+  getSallaConnection() {
+    return axios.get(this.sallaConnectionUrl());
+  }
+
   conversationStoresUrl(conversationId) {
     return `${this.baseUrl()}/conversations/${conversationId}/commerce/stores`;
   }

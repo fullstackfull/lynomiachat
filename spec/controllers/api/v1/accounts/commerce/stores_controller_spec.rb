@@ -89,6 +89,25 @@ RSpec.describe 'Commerce stores API', type: :request do
       expect(response.body).not_to include('ck_factory', 'cs_factory')
     end
 
+    it 'lists the providers the installation offers, and whether each store\'s provider is on' do
+      salla = create(:commerce_store, :salla, account: account)
+
+      get stores_path, headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['providers']).to eq(%w[woocommerce])
+      expect(response.parsed_body['payload'].to_h { |row| [row['id'], row['provider_enabled']] }).to eq(store.id => true, salla.id => false)
+      expect(response.body).not_to include('salla-access-factory', 'salla-refresh-factory')
+    end
+
+    it 'never takes API keys for a Salla store, whose tokens only come from Salla' do
+      salla = create(:commerce_store, :salla, account: account)
+
+      patch "#{stores_path}/#{salla.id}", headers: admin.create_new_auth_token, as: :json, params: keys
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(salla.reload.credentials).to include('access_token' => 'salla-access-factory')
+    end
+
     it 'renames, disables and re-enables a store' do
       patch "#{stores_path}/#{store.id}", headers: admin.create_new_auth_token, as: :json, params: { name: 'Main store', status: 'disabled' }
       expect(response.parsed_body).to include('name' => 'Main store', 'status' => 'disabled')

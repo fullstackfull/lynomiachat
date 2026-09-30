@@ -72,6 +72,12 @@ export function useCommerceLabels() {
     return errorMessage(code);
   };
 
+  const providerName = provider =>
+    ({
+      woocommerce: t('COMMERCE.PROVIDERS.WOOCOMMERCE'),
+      salla: t('COMMERCE.PROVIDERS.SALLA'),
+    })[provider] || provider;
+
   const storeStatus = status =>
     ({
       active: t('COMMERCE.SETTINGS.STATUS.ACTIVE'),
@@ -101,6 +107,7 @@ export function useCommerceLabels() {
     errorMessage,
     apiErrorMessage,
     urlError,
+    providerName,
     storeStatus,
     matchSource,
     matchState,

@@ -2,7 +2,8 @@
   "COMMERCE": {
     "TITLE": "Commerce",
     "PROVIDERS": {
-      "WOOCOMMERCE": "WooCommerce"
+      "WOOCOMMERCE": "WooCommerce",
+      "SALLA": "Salla"
     },
     "PANEL": {
       "NO_STORES": "No store is connected yet.",
@@ -109,7 +110,7 @@
       "STATUS": {
         "ACTIVE": "Active",
         "DISABLED": "Disabled",
-        "NEEDS_REAUTH": "Needs new keys",
+        "NEEDS_REAUTH": "Needs re-authorization",
         "DISCONNECTED": "Disconnected"
       },
       "ACTIONS": {
@@ -134,9 +135,40 @@
         "SAVE": "Test and save",
         "CANCEL": "Cancel"
       },
+      "PICKER": {
+        "TITLE": "Add a store",
+        "DESCRIPTION": "Choose the platform your store runs on.",
+        "WOOCOMMERCE_HINT": "Connect with a read-only REST API key.",
+        "SALLA_HINT": "Install the Lynomia app from the Salla App Store. No keys to copy."
+      },
+      "SALLA": {
+        "TITLE": "Connect with Salla",
+        "DESCRIPTION": "Lynomia only reads customers, orders and shipments. You never enter or see a Salla token here.",
+        "STEP_CODE": "Create a one-time connection code.",
+        "STEP_INSTALL": "Install the Lynomia app in Salla.",
+        "STEP_SETTINGS": "In your Salla dashboard, open the Lynomia app's settings, paste the code and save.",
+        "CREATE_CODE": "Create connection code",
+        "NEW_CODE": "Create a new code",
+        "CODE_LABEL": "Connection code",
+        "COPY": "Copy",
+        "COPIED": "Code copied.",
+        "EXPIRES": "Works once, until {time}.",
+        "OPEN_SALLA": "Install the app in Salla",
+        "CLOSE": "Close",
+        "STATUS": {
+          "WAITING": "Waiting for the code from Salla…",
+          "CLAIMED": "Code received. Waiting for Salla to authorize the app…",
+          "CONNECTED": "Your Salla store is connected.",
+          "CONFLICT": "This Salla store is connected to another Lynomia account. Disconnect it there first.",
+          "EXPIRED": "This code expired. Create a new one."
+        },
+        "REAUTH_HINT": "Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own.",
+        "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read."
+      },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",
-        "DESCRIPTION": "The API keys and every customer link of this store are deleted. Nothing changes in the store.",
+        "DESCRIPTION": "The store's credentials and every customer link of this store are deleted. Nothing changes in the store.",
+        "DESCRIPTION_APP": "The store's access and every customer link of this store are deleted. Nothing changes in the store. To connect it again, reinstall the Lynomia app in Salla and enter a new code.",
         "CONFIRM": "Disconnect"
       },
       "CONNECTED": "Store connected.",

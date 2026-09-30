@@ -10,19 +10,31 @@ Each item was checked on the upgraded code, not assumed.
 
 | # | Finding (4.14.1) | Status on 4.18 | Evidence |
 |---|---|---|---|
-| 1 | Agent can create or re-authorize a WhatsApp inbox through the API | **PARTIALLY FIXED BY 4.18** | See below |
+| 1 | Agent can create or re-authorize a WhatsApp inbox through the API | **FIXED** (re-authorize by 4.18, create in Phase 4 commit C) | See below |
 | 2 | WhatsApp token reaches the browser | **FIXED in Phase 4 (commit B)** for the browser. **Encryption at rest: OPEN, production blocker** | See below |
 | 3 | `WHATSAPP_APP_SECRET` not defined as a secret | **FIXED in Phase 4 (commit B)** | See below |
 | 4 | Deleting an inbox can unsubscribe the whole WABA's webhooks | **FIXED BY 4.18** | See below |
 
 ### 1. Agent can create or re-authorize a WhatsApp inbox
 
-- **Re-authorize / reconfigure is now admin-only.** `before_action :check_admin_authorization?, if: -> { params[:inbox_id].present? }` (`app/controllers/api/v1/accounts/whatsapp/authorizations_controller.rb:4`).
+- **Re-authorize / reconfigure is now admin-only.** `before_action :check_admin_authorization?, if: -> { params[:inbox_id].present? }` (`app/controllers/api/v1/accounts/whatsapp/authorizations_controller.rb`).
   - Verified: an agent gets 401 (`coexistence_onboarding_spec.rb` "does not let an agent reauthorize it", and the staging harness).
-- **Creating a new inbox is still allowed for any account member, including agents.**
-  - Upstream's own spec asserts it: `spec/controllers/api/v1/accounts/whatsapp/authorizations_controller_spec.rb` posts with `agent.create_new_auth_token` and expects success.
-  - The dashboard route to add inboxes is admin-only, so this is an API-level gap inside the agent's own account. It is not cross-tenant.
-- **Proposed fix:** in `AuthorizationsController`, `authorize ::Inbox, :create?` for creation, as upstream's manual setup v2 already does (`manual_setup_controller.rb:39-41`). Add a request spec where an agent gets 401. This changes an upstream spec expectation, so it belongs in its own reviewed change.
+- **Creating a new inbox now requires an administrator (Phase 4, commit C).**
+  - Before, any account member, including agents, could create one through `POST /whatsapp/authorization`. Upstream's own spec asserted that.
+  - Now `AuthorizationsController` runs `authorize ::Inbox, :create?` (the existing `InboxPolicy`, as `InboxesController#create` and manual setup v2 already do) when there is no `inbox_id`.
+  - This covers both Embedded Signup and WhatsApp Business (Coexistence), because they share the endpoint.
+  - Conversation permissions are untouched.
+- **Tests** (`spec/controllers/api/v1/accounts/whatsapp/`, 36 examples, 0 failures):
+
+  | Caller | Create (Embedded Signup) | Create (WhatsApp Business) | Re-authorize |
+  |---|---|---|---|
+  | administrator of the account | allowed | allowed | allowed |
+  | agent of the account | **401** (new) | **401** (new) | 401 |
+  | administrator of another account | 401 | 401 | 404 |
+  | unauthenticated | 401 | 401 | 401 |
+
+  - The two new agent examples fail on the previous code.
+  - Upstream's creation examples now run as an administrator.
 
 ### 2. WhatsApp token reaches the browser
 

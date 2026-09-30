@@ -1,5 +1,7 @@
 class Api::V1::Accounts::Whatsapp::AuthorizationsController < Api::V1::Accounts::BaseController
   before_action :ensure_embedded_signup_enabled
+  # Lynomia: creating a WhatsApp inbox is an admin action, as in InboxesController#create and manual setup v2.
+  before_action -> { authorize ::Inbox, :create? }, if: -> { params[:inbox_id].blank? }
   # Reconfiguring/reauthorizing a live inbox swaps its credentials, so restrict it to admins.
   before_action :check_admin_authorization?, if: -> { params[:inbox_id].present? }
   before_action :fetch_and_validate_inbox, if: -> { params[:inbox_id].present? }

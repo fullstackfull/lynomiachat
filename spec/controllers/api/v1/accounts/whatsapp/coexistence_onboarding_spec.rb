@@ -76,6 +76,20 @@ RSpec.describe 'WhatsApp Business (Coexistence) onboarding', type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
   end
 
+  it 'does not let an agent create a WhatsApp Business inbox' do
+    expect { authorize(agent, account.id, coexistence_params) }.not_to change(Inbox, :count)
+
+    expect(response).to have_http_status(:unauthorized)
+    expect(a_request(:get, "#{graph}/oauth/access_token")).not_to have_been_made
+  end
+
+  it 'does not let an unauthenticated request create a WhatsApp Business inbox' do
+    post "/api/v1/accounts/#{account.id}/whatsapp/authorization", params: coexistence_params, as: :json
+
+    expect(response).to have_http_status(:unauthorized)
+    expect(a_request(:get, "#{graph}/oauth/access_token")).not_to have_been_made
+  end
+
   context 'with an existing Coexistence inbox' do
     let!(:inbox) do
       authorize(administrator, account.id, coexistence_params)

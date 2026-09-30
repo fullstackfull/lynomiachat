@@ -1,5 +1,5 @@
-# JSON client for store APIs: merchant-hosted ones (WooCommerce) and fixed platform APIs (Salla). Every provider uses it,
-# so the limits below are the same everywhere (docs/commerce/08-woocommerce-security.md, 12-salla-security.md).
+# JSON client for store APIs: merchant-hosted ones (WooCommerce) and fixed platform APIs (Salla, Zid). Every provider uses
+# it, so the limits below are the same everywhere (docs/commerce/08-woocommerce-security.md, 12-salla-security.md).
 #
 # - Every request goes through SsrfFilter: the host is resolved, private/loopback/link-local/metadata addresses are
 #   refused and the connection is pinned to the checked IP (no DNS rebinding between check and connect).
@@ -27,10 +27,12 @@ class Commerce::HttpClient
   # Rate-limit headers of the last response ({ limit:, remaining:, reset:, retry_after: }, integers or nil).
   attr_reader :rate_limit
 
-  # `authorization` is the whole Authorization header value ("Basic …", "Bearer …"), or nil for none.
-  def initialize(base_uri:, log_tag:, authorization: nil)
+  # `authorization` is the whole Authorization header value ("Basic …", "Bearer …"), or nil for none. `headers` are further
+  # fixed request headers (Zid's X-Manager-Token).
+  def initialize(base_uri:, log_tag:, authorization: nil, headers: {})
     @base_uri = base_uri
     @authorization = authorization
+    @extra_headers = headers
     @log_tag = log_tag
   end
 
@@ -117,7 +119,7 @@ class Commerce::HttpClient
 
   def headers(body)
     { 'Accept' => 'application/json', 'User-Agent' => USER_AGENT, 'Authorization' => @authorization,
-      'Content-Type' => ('application/x-www-form-urlencoded' if body) }.compact
+      'Content-Type' => ('application/x-www-form-urlencoded' if body) }.merge(@extra_headers).compact
   end
 
   def read_body(response)

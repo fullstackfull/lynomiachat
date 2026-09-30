@@ -1,7 +1,7 @@
 # Keeps a Salla store's access token usable (docs/commerce/11-salla-auth-and-token-lifecycle.md).
 #
 # Salla refresh tokens are single-use: sending one twice revokes the whole token chain. So a refresh:
-#   1. runs only under the merchant's lock (Commerce::Salla::MerchantLock), after re-reading the store, since another
+#   1. runs only under the merchant's lock (Commerce::StoreLock), after re-reading the store, since another
 #      process may have just refreshed it;
 #   2. saves `refresh_started_at` on the store before the request, and sends the request once, without retries;
 #   3. saves both new tokens in one write, then releases the lock.
@@ -20,7 +20,7 @@ class Commerce::Salla::TokenManager
   def access_token
     return @store.credentials['access_token'] if usable?
 
-    Commerce::Salla::MerchantLock.with(@store.external_store_id) do
+    Commerce::StoreLock.with('salla', @store.external_store_id) do
       @store.reload
       usable? ? @store.credentials['access_token'] : refresh
     end

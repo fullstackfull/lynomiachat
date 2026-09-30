@@ -7,7 +7,7 @@
 # tokens encrypted), then the store is connected. A store that is already connected takes the tokens of any later
 # authorization (app update, reinstall); a store connected to another account is never moved.
 #
-# Everything for one merchant runs under Commerce::Salla::MerchantLock, as token refreshes do.
+# Everything for one merchant runs under Commerce::StoreLock, as token refreshes do.
 class Commerce::Salla::Installation
   PENDING_TTL = 7.days
   CODE_SETTING = 'lynomia_connection_code'.freeze
@@ -115,7 +115,7 @@ class Commerce::Salla::Installation
   end
 
   def lock(&)
-    Commerce::Salla::MerchantLock.with(@merchant_id, &)
+    Commerce::StoreLock.with('salla', @merchant_id, &)
   end
 
   def tokens_key = "COMMERCE::SALLA::MERCHANT::#{@merchant_id}::TOKENS"

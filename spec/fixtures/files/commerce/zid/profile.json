@@ -1,0 +1,21 @@
+{
+  "status": "object",
+  "user": {
+    "id": 90412,
+    "uuid": "5f0c7a52-4f5e-4a0b-9d8e-2c1b7e3a9f10",
+    "name": "Huda Manager",
+    "username": "huda.manager",
+    "email": "manager@jasmine-store.example",
+    "is_email_verified": true,
+    "mobile": "966500000100",
+    "store": {
+      "id": 318001,
+      "uuid": "b7d2c3e4-1a2b-4c5d-8e9f-0a1b2c3d4e5f",
+      "username": "jasmine",
+      "title": "متجر الياسمين",
+      "url": "https://jasmine.zid.store/",
+      "currency": { "id": 1, "name": "Saudi Riyal", "code": "SAR", "symbol": "ر.س" }
+    }
+  },
+  "message": { "type": "object", "code": null, "name": null, "description": null }
+}

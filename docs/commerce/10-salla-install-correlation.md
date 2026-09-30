@@ -59,7 +59,7 @@ This proves both sides:
 
 ### Event order and waiting state
 
-Both halves wait for each other under the merchant's lock (`Commerce::Salla::MerchantLock`, the same lock token
+Both halves wait for each other under the merchant's lock (`Commerce::StoreLock`, the same lock token
 refreshes use):
 
 | Arrives first | Kept until the other arrives | Where | TTL |

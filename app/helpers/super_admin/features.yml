@@ -156,3 +156,9 @@ salla:
   enabled: true
   icon: 'icon-apps-2-line'
   config_key: 'salla'
+zid:
+  name: 'Zid'
+  description: 'Configuration for the Lynomia Commerce Zid app'
+  enabled: true
+  icon: 'icon-apps-2-line'
+  config_key: 'zid'

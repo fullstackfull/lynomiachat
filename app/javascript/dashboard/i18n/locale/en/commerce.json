@@ -3,7 +3,8 @@
     "TITLE": "Commerce",
     "PROVIDERS": {
       "WOOCOMMERCE": "WooCommerce",
-      "SALLA": "Salla"
+      "SALLA": "Salla",
+      "ZID": "Zid"
     },
     "PANEL": {
       "NO_STORES": "No store is connected yet.",

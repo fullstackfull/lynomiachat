@@ -3,7 +3,8 @@
     "TITLE": "المتجر",
     "PROVIDERS": {
       "WOOCOMMERCE": "WooCommerce",
-      "SALLA": "سلة"
+      "SALLA": "سلة",
+      "ZID": "زد"
     },
     "PANEL": {
       "NO_STORES": "لا يوجد متجر مربوط بعد.",

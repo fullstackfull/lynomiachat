@@ -17,5 +17,17 @@ FactoryBot.define do
           'access_token_expires_at' => 14.days.from_now.utc.iso8601, 'refresh_token_expires_at' => nil }
       end
     end
+
+    # A Zid store is its Zid store id; its credentials are the app authorization's two tokens (Authorization and
+    # X-Manager-Token), the refresh token and the per-store webhook Basic Auth pair.
+    trait :zid do
+      provider { 'zid' }
+      sequence(:external_store_id) { |n| (318_000 + n).to_s }
+      sequence(:base_url) { |n| "https://zid-store-#{n}.zid.store" }
+      credentials do
+        { 'authorization' => 'zid-authorization-factory', 'access_token' => 'zid-manager-factory', 'refresh_token' => 'zid-refresh-factory',
+          'token_type' => 'Bearer', 'expires_at' => 300.days.from_now.utc.iso8601 }
+      end
+    end
   end
 end

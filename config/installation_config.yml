@@ -511,6 +511,24 @@
   type: secret
 # ------- End of Lynomia Commerce: Salla app ------- #
 
+# ------- Lynomia Commerce: Zid app ------- #
+- name: ZID_ENABLED
+  display_title: 'Enable Zid'
+  value: false
+  description: 'Offer "Connect with Zid" to Lynomia Commerce accounts and accept Zid webhooks. When off, connected Zid stores are kept but not read.'
+  locked: false
+  type: boolean
+- name: ZID_CLIENT_ID
+  display_title: 'Zid Client ID'
+  description: 'The OAuth Client ID of the Zid app (Zid Partner Dashboard). Register <your Lynomia URL>/commerce/zid/callback as its callback URL.'
+  locked: false
+- name: ZID_CLIENT_SECRET
+  display_title: 'Zid Client Secret'
+  description: 'The OAuth Client Secret of the Zid app, used server-side to exchange authorization codes and refresh merchant tokens'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Zid app ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

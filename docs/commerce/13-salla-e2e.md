@@ -210,3 +210,51 @@ cd docs/commerce/e2e/salla && ERUN=../erun.sh CHROMIUM_PATH=… E2E_SALLA_WEBHOO
 6. **Uninstall** the app and confirm the store is disconnected in Lynomia.
 7. **Re-check** every VERIFY item in docs 10 and 11, and record the results here.
 
+
+## 5. Full regression closure
+
+**Test assets.** They were built once per tree, sequentially, before any spec ran (`bin/vite build --force`):
+
+| Tree | Build | Digest |
+| --- | --- | --- |
+| Enterprise | 14:12:17 | `d9252bb5` |
+| Community | 14:13:54 | `d9252bb5` |
+
+Every shard then ran with `VITE_RUBY_AUTO_BUILD=false`, and both timestamps were unchanged afterwards. The first full
+run's 58 HTML-page failures (500s, 140–300 s each) came from all eight shards rebuilding stale assets at the same
+time.
+
+**Rerun of the first run's 59 failures:**
+
+- Community: 28/28 passed.
+- Enterprise: 30/31 passed. The one left is the voice spec below.
+
+**Final full RSpec** (4 shards per tree, HEAD `87923e3ee` code):
+
+| Suite | Examples | Failures | Pending |
+| --- | --- | --- | --- |
+| Enterprise | 9868 | 1 | 67 |
+| Community | 7167 | 2 | 69 |
+
+Vitest: 455 files, 4704 tests passed. ESLint on Commerce and Salla code: no warnings.
+
+**Remaining failures: none is caused by Commerce, Salla or Lynomia.**
+
+| Spec | Suite | Class | Evidence |
+| --- | --- | --- | --- |
+| `spec/enterprise/services/voice/call_transcription_service_spec.rb:77` | Enterprise | UPSTREAM | See below |
+| `spec/models/conversation_spec.rb:1144`, `:1172` | Community | UPSTREAM | See below |
+
+- **`call_transcription_service_spec.rb:77`.** It fails with `Message … does not implement: reindex`.
+  - The spec stubs `reindex`, which `Message` gains only when the process boots with `OPENSEARCH_URL` (the model
+    declares `searchkick … if ChatwootApp.advanced_search_allowed?`).
+  - Clean upstream `v4.18.0` fails identically.
+  - It passes on HEAD with `OPENSEARCH_URL` set.
+  - It also failed in the Phase 2 baseline.
+  - The spec, the service, `Message` and `ChatwootApp` are unchanged from `v4.18.0`.
+- **`conversation_spec.rb:1144`, `:1172`.** They fail with `expected 3602.0 to be within 1 of 1 hour`.
+  - The spec compares `N.hours.ago` values taken at different moments, with 1 second of tolerance. Here each example
+    takes about 3 s, because it runs jobs inline.
+  - Clean upstream `v4.18.0` fails the same way: 2 of 5 isolated runs failed, as on HEAD (2 of 5).
+  - The spec and `Conversation` are unchanged from `v4.18.0`, and both examples passed in the Phase 2 baseline and in
+    the first Phase 3 run.

@@ -4,7 +4,8 @@
     "PROVIDERS": {
       "WOOCOMMERCE": "WooCommerce",
       "SALLA": "سلة",
-      "ZID": "زد"
+      "ZID": "زد",
+      "SHOPIFY": "Shopify"
     },
     "PANEL": {
       "NO_STORES": "لا يوجد متجر مربوط بعد.",

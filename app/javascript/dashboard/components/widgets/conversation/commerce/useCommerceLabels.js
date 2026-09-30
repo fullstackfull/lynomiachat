@@ -77,6 +77,7 @@ export function useCommerceLabels() {
       woocommerce: t('COMMERCE.PROVIDERS.WOOCOMMERCE'),
       salla: t('COMMERCE.PROVIDERS.SALLA'),
       zid: t('COMMERCE.PROVIDERS.ZID'),
+      shopify: t('COMMERCE.PROVIDERS.SHOPIFY'),
     })[provider] || provider;
 
   const storeStatus = status =>

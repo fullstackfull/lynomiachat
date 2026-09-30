@@ -4,7 +4,8 @@
     "PROVIDERS": {
       "WOOCOMMERCE": "WooCommerce",
       "SALLA": "Salla",
-      "ZID": "Zid"
+      "ZID": "Zid",
+      "SHOPIFY": "Shopify"
     },
     "PANEL": {
       "NO_STORES": "No store is connected yet.",

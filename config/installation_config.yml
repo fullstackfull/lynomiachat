@@ -529,6 +529,26 @@
   type: secret
 # ------- End of Lynomia Commerce: Zid app ------- #
 
+# ------- Lynomia Commerce: Shopify app ------- #
+# A dedicated Shopify app for Lynomia Commerce, separate from the legacy Shopify integration above (SHOPIFY_*): its own
+# OAuth callback, webhook endpoint and expiring offline tokens (docs/commerce/21-shopify-legacy-coexistence.md).
+- name: SHOPIFY_COMMERCE_ENABLED
+  display_title: 'Enable Shopify Commerce'
+  value: false
+  description: 'Offer "Connect with Shopify" to Lynomia Commerce accounts and accept the Commerce app webhooks. When off, connected Shopify Commerce stores are kept but not read. The legacy Shopify integration is not affected.'
+  locked: false
+  type: boolean
+- name: SHOPIFY_COMMERCE_CLIENT_ID
+  display_title: 'Shopify Commerce Client ID'
+  description: 'The Client ID of the Lynomia Commerce Shopify app (not the legacy Shopify integration app). Allow <your Lynomia URL>/commerce/shopify/callback as its redirect URL.'
+  locked: false
+- name: SHOPIFY_COMMERCE_CLIENT_SECRET
+  display_title: 'Shopify Commerce Client Secret'
+  description: 'The Client Secret of the Lynomia Commerce Shopify app, used server-side to verify OAuth callbacks and webhooks, exchange authorization codes and refresh merchant tokens'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Shopify app ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

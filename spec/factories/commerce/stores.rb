@@ -29,5 +29,18 @@ FactoryBot.define do
           'token_type' => 'Bearer', 'expires_at' => 300.days.from_now.utc.iso8601 }
       end
     end
+
+    # A Shopify Commerce store is its numeric Shopify shop id on its myshopify.com domain; its credentials are the
+    # expiring offline token pair with the expiry times Shopify returned.
+    trait :shopify do
+      provider { 'shopify' }
+      sequence(:external_store_id) { |n| (68_210_000 + n).to_s }
+      sequence(:base_url) { |n| "https://lynomia-shop-#{n}.myshopify.com" }
+      metadata { { 'shop_gid' => "gid://shopify/Shop/#{external_store_id}" } }
+      credentials do
+        { 'access_token' => 'shopify-access-factory', 'refresh_token' => 'shopify-refresh-factory', 'scope' => 'read_customers,read_orders',
+          'access_token_expires_at' => 1.hour.from_now.utc.iso8601, 'refresh_token_expires_at' => 90.days.from_now.utc.iso8601 }
+      end
+    end
   end
 end

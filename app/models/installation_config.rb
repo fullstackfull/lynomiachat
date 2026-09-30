@@ -45,6 +45,11 @@ class InstallationConfig < ApplicationRecord
 
   after_commit :clear_cache
 
+  # Lynomia: configs typed `secret` in config/installation_config.yml are write-only in Super Admin.
+  def self.secret_names
+    ConfigLoader.new.general_configs.filter_map { |config| config['name'] if config['type'] == 'secret' }
+  end
+
   def value
     serialized_value[:value]
   end

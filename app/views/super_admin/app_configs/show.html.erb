@@ -37,9 +37,11 @@
             %>
           <% elsif @installation_configs[key]&.dig('type') == 'secret' %>
             <div class="relative">
+              <%# Lynomia: write-only, the stored secret is never sent back to the browser. %>
               <%= form.password_field "app_config[#{key}]",
                   id: "app_config_#{key}",
-                  value: @app_config[key],
+                  placeholder: ('••••••••' if @app_config[key].present?),
+                  autocomplete: 'new-password',
                   class: "mt-2 border border-slate-100 p-1.5 pr-8 rounded-md w-full"
               %>
               <button

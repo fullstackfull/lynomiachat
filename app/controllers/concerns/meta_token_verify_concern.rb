@@ -22,6 +22,8 @@ module MetaTokenVerifyConcern
     return unless meta_signature_verification_required?
     return if valid_meta_signature?
 
+    signature_state = request.headers[META_SIGNATURE_HEADER].present? ? 'invalid' : 'missing'
+    Rails.logger.warn("Rejected Meta webhook with #{signature_state} #{META_SIGNATURE_HEADER}: #{request.path}")
     head :unauthorized
   end
 

@@ -41,8 +41,17 @@ class Api::V1::Mobile::AuthController < ActionController::API
   def render_signed_in(result)
     user = result.user
     auth = user.create_new_auth_token
+    track_user_session(user, auth['client'])
     response.headers.merge!(auth)
     render json: { data: user_data(user, result.new_user), auth: auth }
+  end
+
+  # Same as the web sign-in (DeviseOverrides::SessionsController#track_user_session): the session shows up
+  # in Profile -> Active sessions and can be revoked there. A tracking failure must not block the sign-in.
+  def track_user_session(user, client_id)
+    UserSessionTrackingService.new(user: user, request: request, client_id: client_id).create_or_update!
+  rescue StandardError => e
+    Rails.logger.warn "[MobileAuth] Session tracking failed: #{e.message}"
   end
 
   def user_data(user, new_user)

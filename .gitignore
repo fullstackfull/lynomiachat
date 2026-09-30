@@ -104,6 +104,7 @@ CLAUDE.local.md
 .pnpm-store/*
 local/
 Procfile.worktree
+.nodeterm/project.json
 
 # Local backup copies
 *.bak

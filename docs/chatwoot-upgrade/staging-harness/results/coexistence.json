@@ -1,0 +1,272 @@
+[
+  {
+    "name": "onboarding: accepted with only code + waba_id (no business_id, no phone_number_id)",
+    "ok": true,
+    "detail": "http=200 {\"success\"=>true, \"id\"=>10, \"name\"=>\"+15550003001\", \"channel_type\"=>\"whatsapp\"}"
+  },
+  {
+    "name": "onboarding: one inbox + one channel created",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: same whatsapp_cloud provider and Embedded Signup source",
+    "ok": true,
+    "detail": "{\"source\"=>\"embedded_signup\", \"is_coexistence\"=>true, \"phone_number_id\"=>\"3330001\", \"business_account_id\"=>\"WABA-COEX-A\"}"
+  },
+  {
+    "name": "onboarding: Coexistence marker stored (is_coexistence: true)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: phone number resolved from the WABA",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: inbox named by phone number (Lynomia naming kept)",
+    "ok": true,
+    "detail": "+15550003001"
+  },
+  {
+    "name": "onboarding: /register NOT called for a Business App number",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: no post-signup health check / verification probe",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: app subscribed to WABA with messages + smb_message_echoes",
+    "ok": true,
+    "detail": "{\"subscribed_fields\":[\"messages\",\"smb_message_echoes\"]}"
+  },
+  {
+    "name": "onboarding: webhook routed to this number only (phone-level override)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: channel not flagged for reauthorization",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "onboarding: token kept server-side (token exchange done by backend with app secret)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "standard signup: still works",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "standard signup: no Coexistence marker",
+    "ok": true,
+    "detail": "[\"source\", \"api_key\", \"phone_number_id\", \"business_account_id\", \"webhook_verify_token\"]"
+  },
+  {
+    "name": "duplicate callback: rejected with a clear error",
+    "ok": true,
+    "detail": "{\"success\"=>false, \"error\"=>\"Channel already exists for this phone number: +15550003001, please contact support if the error persists\"}"
+  },
+  {
+    "name": "retry callback: rejected the same way",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "duplicate/retry: no duplicate inbox or channel",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "duplicate/retry: no duplicate webhook subscription",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "same number from another tenant: rejected (global phone uniqueness)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "failure: expired authorization code -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"Token exchange failed: {\\\"error\\\":{\\\"message\\\":\\\"Error validating verification code. Please make sure your redi"
+  },
+  {
+    "name": "failure: invalid WABA -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"WABA phone numbers fetch failed: {\\\"error\\\":{\\\"message\\\":\\\"Unsupported get request. Object with ID 'WABA-DOES-N"
+  },
+  {
+    "name": "failure: invalid phone number id -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"No matching phone number found for WABA WABA-STD\"}"
+  },
+  {
+    "name": "failure: ambiguous multi-number WABA without phone_number_id -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"Multiple phone numbers found for WABA WABA-MULTI; unable to determine the onboarded number\"}"
+  },
+  {
+    "name": "failure: missing waba_id -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"Required parameters are missing: waba_id\"}"
+  },
+  {
+    "name": "failure: missing code (user cancelled / no code) -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"Required parameters are missing: code\"}"
+  },
+  {
+    "name": "failure: Meta API error (500) -> 422, nothing created",
+    "ok": true,
+    "detail": "http=422 {\"success\"=>false, \"error\"=>\"Token exchange failed: {\\\"error\\\":{\\\"message\\\":\\\"An unexpected error has occurred. Please r"
+  },
+  {
+    "name": "failure: webhook subscription error -> inbox kept but flagged \"reconnect needed\" (upstream 4.18 behaviour)",
+    "ok": true,
+    "detail": "http=200 reauth=true"
+  },
+  {
+    "name": "customer -> WhatsApp: Arabic + emoji arrives in Lynomia",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "customer -> WhatsApp: image, document, audio, video stored with attachments",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "customer -> WhatsApp: quoted reply linked",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "Lynomia agent -> customer: sent through the Cloud API",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "Lynomia agent -> customer: uses this number's own token",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "owner -> customer from the phone app: appears in the SAME conversation as outgoing",
+    "ok": true,
+    "detail": "type=outgoing conv=6"
+  },
+  {
+    "name": "owner echo: marked as external echo, no Lynomia sender, not re-sent to Meta",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "owner echo delivered twice: no duplicate",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "echo of a message Lynomia itself sent: no duplicate",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "owner sends an image from the phone: synced with attachment",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "delivery/read statuses applied",
+    "ok": true,
+    "detail": "read"
+  },
+  {
+    "name": "no duplicate inbound messages in the conversation",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "revoked token: message marked failed with the Meta error (no silent loss)",
+    "ok": true,
+    "detail": "status=failed err=Error validating access token: The session has been invalidated."
+  },
+  {
+    "name": "tenant B cannot reauthorize tenant A inbox (inbox_id of A)",
+    "ok": true,
+    "detail": "http=404"
+  },
+  {
+    "name": "tenant B cannot create inboxes inside tenant A",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "tenant A agent cannot reauthorize/reconfigure (admin only)",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "tenant B cannot read tenant A inbox",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "tenant B cannot modify tenant A inbox",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "tenant B inbox list never contains tenant A inbox or token",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "tenant A agent does not receive the WhatsApp token",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "webhook with mismatched number/phone_number_id is not routed to any tenant",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "webhook with a forged signature is rejected",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "tenant B conversations untouched by tenant A traffic",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "existing A number: no marker, not flagged, same token",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "existing B number: no marker, not flagged, same token",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "admin can delete the Coexistence inbox",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "delete: other tenants' numbers and WABAs not unsubscribed",
+    "ok": true,
+    "detail": null
+  }
+]

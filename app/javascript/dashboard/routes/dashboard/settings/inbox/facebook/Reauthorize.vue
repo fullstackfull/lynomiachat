@@ -4,6 +4,7 @@ import InboxReconnectionRequired from '../components/InboxReconnectionRequired.v
 import { useAlert } from 'dashboard/composables';
 
 import { loadScript } from 'dashboard/helper/DOMHelpers';
+import { buildFacebookLoginScopes } from 'dashboard/helper/facebookScopes';
 import * as Sentry from '@sentry/vue';
 
 export default {
@@ -19,6 +20,10 @@ export default {
   computed: {
     inboxId() {
       return this.inbox.id;
+    },
+    facebookLoginScopes() {
+      // Lynomia: never request Instagram scopes, even for legacy inboxes with an Instagram account
+      return buildFacebookLoginScopes();
     },
   },
   mounted() {
@@ -77,8 +82,7 @@ export default {
           }
         },
         {
-          scope:
-            'pages_manage_metadata,business_management,pages_messaging,pages_show_list',
+          scope: this.facebookLoginScopes,
           auth_type: 'reauthorize',
         }
       );

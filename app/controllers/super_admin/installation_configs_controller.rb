@@ -22,7 +22,8 @@ class SuperAdmin::InstallationConfigsController < SuperAdmin::ApplicationControl
   # this will be used to set the records shown on the `index` action.
   #
   def scoped_resource
-    resource_class.editable
+    # Lynomia: secrets are managed write-only from Super Admin -> App configs, never listed here.
+    resource_class.editable.where.not(name: InstallationConfig.secret_names)
   end
 
   def create

@@ -3,6 +3,9 @@
   <head>
 <title>Lynomia Chat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=0"/>
+    <% unless ChatwootApp.chatwoot_cloud? %>
+      <meta name="robots" content="noindex">
+    <% end %>
     <% if @global_config['DISPLAY_MANIFEST'] %>
       <meta name="msapplication-TileColor" content="#2f6fe4">
       <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">

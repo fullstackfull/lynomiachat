@@ -30,6 +30,7 @@ class Commerce::StoreConnection
     Commerce::Providers.for(store, credentials: credentials).health
     previous_status = store.status
     store.update!(credentials: credentials, status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
+    Commerce::Cache.purge(store)
     audit('commerce.credentials_rotated', store, status: [previous_status, store.status])
     store
   end
@@ -46,11 +47,12 @@ class Commerce::StoreConnection
   def disable(store)
     previous_status = store.status
     store.update!(status: :disabled)
+    Commerce::Cache.purge(store)
     audit('commerce.store_disabled', store, status: [previous_status, 'disabled'])
     store
   end
 
-  # Credentials and customer links are deleted; the row stays (status disconnected) so the store can be reconnected
+  # Credentials, customer links and cached store data are deleted; the row stays (status disconnected) so the store can be reconnected
   # or connected by another account later.
   def disconnect(store)
     links = 0
@@ -58,6 +60,7 @@ class Commerce::StoreConnection
       links = store.customer_links.delete_all
       store.update!(status: :disconnected, credentials: nil)
     end
+    Commerce::Cache.purge(store)
     audit('commerce.store_disconnected', store, customer_links_removed: links)
     store
   end

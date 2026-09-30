@@ -29,6 +29,7 @@ import conversationWorkflow from './conversationWorkflow/conversationWorkflow.ro
 import captain from './captain/captain.routes';
 import data from './data/data.routes';
 import subscription from './subscription/subscription.routes';
+import commerce from './commerce/commerce.routes';
 
 export default {
   routes: [
@@ -73,5 +74,6 @@ export default {
     ...conversationWorkflow.routes,
     ...captain.routes,
     ...subscription.routes,
+    ...commerce.routes,
   ],
 };

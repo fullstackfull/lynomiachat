@@ -21,6 +21,7 @@ import SharedFiles from './SharedFiles.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
+import CommercePanel from 'dashboard/components/widgets/conversation/commerce/CommercePanel.vue';
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
@@ -60,6 +61,10 @@ const { isCloudFeatureEnabled } = useAccount();
 
 const isLinearFeatureEnabled = computed(() =>
   isCloudFeatureEnabled(FEATURE_FLAGS.LINEAR)
+);
+
+const isCommerceEnabled = computed(() =>
+  isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_COMMERCE)
 );
 
 const linearIntegration = useFunctionGetter(
@@ -297,6 +302,16 @@ onMounted(() => {
               "
             >
               <ShopifyOrdersList :contact-id="contactId" />
+            </AccordionItem>
+          </div>
+          <div v-else-if="element.name === 'commerce' && isCommerceEnabled">
+            <AccordionItem
+              :title="$t('COMMERCE.TITLE')"
+              :is-open="isContactSidebarItemOpen('is_commerce_open')"
+              compact
+              @toggle="value => toggleSidebarUIState('is_commerce_open', value)"
+            >
+              <CommercePanel :conversation-id="conversationId" />
             </AccordionItem>
           </div>
           <div v-else-if="element.name === 'contact_notes'">

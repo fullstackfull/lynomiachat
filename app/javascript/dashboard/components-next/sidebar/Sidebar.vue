@@ -823,6 +823,12 @@ const menuItems = computed(() => {
           icon: 'i-lucide-blocks',
           to: accountScopedRoute('settings_applications'),
         },
+        {
+          name: 'Settings Commerce',
+          label: t('SIDEBAR.COMMERCE'),
+          icon: 'i-lucide-store',
+          to: accountScopedRoute('settings_commerce_index'),
+        },
         ...(hasDataImport.value
           ? [
               {

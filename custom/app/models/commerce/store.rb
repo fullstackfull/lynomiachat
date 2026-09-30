@@ -27,7 +27,7 @@
 class Commerce::Store < ApplicationRecord
   self.table_name = 'commerce_stores'
 
-  PROVIDERS = %w[woocommerce].freeze
+  PROVIDERS = %w[woocommerce salla].freeze
 
   belongs_to :account
   belongs_to :created_by, class_name: 'User', optional: true

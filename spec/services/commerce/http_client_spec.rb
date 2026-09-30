@@ -2,7 +2,9 @@ require 'rails_helper'
 
 RSpec.describe Commerce::HttpClient do
   let(:base_uri) { URI('https://shop.example.com') }
-  let(:client) { described_class.new(base_uri: base_uri, username: 'ck_key', password: 'cs_secret', log_tag: 'woocommerce') }
+  let(:client) do
+    described_class.new(base_uri: base_uri, authorization: "Basic #{Base64.strict_encode64('ck_key:cs_secret')}", log_tag: 'woocommerce')
+  end
   let(:url) { 'https://shop.example.com/wp-json/wc/v3/orders?per_page=1' }
 
   def resolve(host, *ips)
@@ -63,7 +65,7 @@ RSpec.describe Commerce::HttpClient do
     end
 
     it 'lets an explicitly trusted internal host through the address check (development stores)' do
-      trusted = described_class.new(base_uri: URI('http://woo.internal:8081'), username: 'ck_key', password: 'cs_secret', log_tag: 'woocommerce')
+      trusted = described_class.new(base_uri: URI('http://woo.internal:8081'), log_tag: 'woocommerce')
       stub_request(:get, 'http://woo.internal:8081/wp-json/wc/v3').to_return(status: 200, body: '{"namespace":"wc/v3"}')
 
       with_modified_env(COMMERCE_TRUSTED_STORE_HOSTS: 'woo.internal') do
@@ -143,6 +145,82 @@ RSpec.describe Commerce::HttpClient do
       expect(error_for { client.get_json('/wp-json/wc/v3/orders', per_page: 1) }).to eq(code: 'STORE_UNAVAILABLE', reason: 'http_500')
       expect(stub).to have_been_requested.once
     end
+  end
+
+  it 'records the rate-limit headers of the last response, rate-limited ones included' do
+    stub_request(:get, url).to_return(status: 429, headers: { 'X-RateLimit-Limit' => '120', 'X-RateLimit-Remaining' => '0',
+                                                              'X-RateLimit-Reset' => '1790000000', 'Retry-After' => '30' })
+
+    expect(error_for { client.get_json('/wp-json/wc/v3/orders', per_page: 1) }).to eq(code: 'RATE_LIMITED')
+    expect(client.rate_limit).to eq(limit: 120, remaining: 0, reset: 1_790_000_000, retry_after: 30)
+  end
+
+  describe '#post_form' do
+    let(:token_client) { described_class.new(base_uri: URI('https://accounts.example.com'), log_tag: 'salla') }
+    let(:token_url) { 'https://accounts.example.com/oauth2/token' }
+    let(:form) { { grant_type: 'refresh_token', refresh_token: 'refresh-1' } }
+
+    before { resolve('accounts.example.com', '93.184.216.35') }
+
+    it 'sends one urlencoded POST without an Authorization header and returns the status and body, errors included' do
+      stub = stub_request(:post, token_url)
+             .with(body: { 'grant_type' => 'refresh_token', 'refresh_token' => 'refresh-1' },
+                   headers: { 'Content-Type' => 'application/x-www-form-urlencoded' })
+             .to_return(status: 400, body: '{"error":"invalid_grant"}')
+
+      expect(token_client.post_form('/oauth2/token', form)).to eq([400, { 'error' => 'invalid_grant' }])
+      expect(stub).to have_been_requested.once
+      expect(a_request(:post, token_url).with { |request| request.headers.key?('Authorization') }).not_to have_been_made
+    end
+
+    it 'never retries, not even a 503 or a reset connection' do
+      stub = stub_request(:post, token_url).to_return(status: 503, body: 'busy')
+
+      expect(token_client.post_form('/oauth2/token', form)).to eq([503, nil])
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'reports a failure after the request may have been sent as an unknown outcome' do
+      [Errno::ECONNRESET, Net::ReadTimeout, Net::WriteTimeout, EOFError].each do |failure|
+        stub = stub_request(:post, token_url).to_raise(failure)
+
+        expect(error_for { token_client.post_form('/oauth2/token', form) }).to eq(code: 'TIMEOUT', reason: 'unknown_outcome')
+        expect(stub).to have_been_requested.once
+        WebMock.reset!
+        resolve('accounts.example.com', '93.184.216.35')
+      end
+    end
+
+    it 'reports a request that never left as not sent' do
+      stub_request(:post, token_url).to_timeout
+      expect(error_for { token_client.post_form('/oauth2/token', form) }).to eq(code: 'STORE_UNAVAILABLE', reason: 'not_sent')
+
+      stub_request(:post, token_url).to_raise(Errno::ECONNREFUSED)
+      expect(error_for { token_client.post_form('/oauth2/token', form) }).to eq(code: 'STORE_UNAVAILABLE', reason: 'not_sent')
+
+      resolve('accounts.example.com', '10.0.0.8')
+      expect(error_for { token_client.post_form('/oauth2/token', form) }).to eq(code: 'STORE_UNAVAILABLE', reason: 'not_sent')
+    end
+
+    it 'logs the method and path only, never the form' do
+      stub_request(:post, token_url).to_return(status: 200, body: '{"access_token":"new-access"}')
+      logged = []
+      allow(Rails.logger).to receive(:info) { |message| logged << message }
+
+      token_client.post_form('/oauth2/token', form)
+
+      expect(logged.join).to include('[Commerce:salla] POST /oauth2/token status=200')
+      expect(logged.join).not_to include('refresh-1', 'new-access')
+    end
+  end
+
+  it 'sends a Bearer token as given' do
+    bearer = described_class.new(base_uri: URI('https://shop.example.com/admin/v2'), authorization: 'Bearer access-1', log_tag: 'salla')
+    stub = stub_request(:get, 'https://shop.example.com/admin/v2/orders').with(headers: { 'Authorization' => 'Bearer access-1' })
+                                                                         .to_return(status: 200, body: '{"data":[]}')
+
+    expect(bearer.get_json('/orders')).to eq('data' => [])
+    expect(stub).to have_been_requested.once
   end
 
   it 'logs the path and status only: no credentials, no query (it can carry an email or phone)' do

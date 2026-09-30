@@ -1,6 +1,6 @@
 # The conversation's Commerce section (`lynomia_commerce` accounts). Anyone who can view the conversation can see its
 # contact's store data and link or unlink the store customer (like editing the contact); only active stores of the
-# conversation's account are reachable.
+# conversation's account, of a provider the installation offers, are reachable.
 #
 #   GET    .../conversations/:conversation_id/commerce/stores                 active stores + whether the contact is linked
 #   GET    .../conversations/:conversation_id/commerce/stores/:id             panel: link, candidates, latest orders
@@ -47,8 +47,9 @@ class Api::V1::Accounts::Conversations::Commerce::StoresController < Api::V1::Ac
     raise Pundit::NotAuthorizedError unless Current.account.feature_enabled?('lynomia_commerce')
   end
 
+  # Stores of a provider the installation has switched off stay connected but are not read.
   def active_stores
-    Current.account.commerce_stores.active
+    Current.account.commerce_stores.active.where(provider: ::Commerce::Providers.enabled)
   end
 
   def fetch_store

@@ -484,6 +484,33 @@
   locked: false
 # ------- End of Shopify Related Config ------- #
 
+# ------- Lynomia Commerce: Salla app ------- #
+- name: SALLA_ENABLED
+  display_title: 'Enable Salla'
+  value: false
+  description: 'Offer "Connect with Salla" to Lynomia Commerce accounts and process Salla app events. When off, connected Salla stores are kept but not read; uninstall events are still processed.'
+  locked: false
+  type: boolean
+- name: SALLA_APP_ID
+  display_title: 'Salla App ID'
+  description: 'The App ID from the Salla Partners portal, used for the install link https://s.salla.sa/apps/install/<App ID>'
+  locked: false
+- name: SALLA_CLIENT_ID
+  display_title: 'Salla Client ID'
+  description: 'The OAuth Client ID of the Salla app'
+  locked: false
+- name: SALLA_CLIENT_SECRET
+  display_title: 'Salla Client Secret'
+  description: 'The OAuth Client Secret of the Salla app, used to refresh merchant tokens'
+  locked: false
+  type: secret
+- name: SALLA_WEBHOOK_SECRET
+  display_title: 'Salla Webhook Secret'
+  description: 'The Webhook Secret of the Salla app, used to verify the X-Salla-Signature of app events'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Salla app ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

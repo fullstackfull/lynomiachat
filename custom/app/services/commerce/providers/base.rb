@@ -2,6 +2,9 @@
 # nothing here writes to a store. Every method returns provider-neutral values (Commerce::Customer, Commerce::Order)
 # or raises Commerce::Error.
 class Commerce::Providers::Base
+  # Whether this installation offers the provider (see Commerce::Providers.enabled?).
+  def self.enabled? = true
+
   def initialize(store, credentials:)
     @store = store
     @credentials = credentials

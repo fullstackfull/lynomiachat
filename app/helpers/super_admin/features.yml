@@ -150,3 +150,9 @@ shopify:
   enabled: true
   icon: 'icon-shopify'
   config_key: 'shopify'
+salla:
+  name: 'Salla'
+  description: 'Configuration for the Lynomia Commerce Salla app'
+  enabled: true
+  icon: 'icon-apps-2-line'
+  config_key: 'salla'

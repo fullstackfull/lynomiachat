@@ -50,6 +50,33 @@ RSpec.describe 'Conversation commerce API', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it 'hides the stores of a provider the installation has switched off, without calling them' do
+      salla = create(:commerce_store, :salla, account: account)
+
+      get path, headers: agent.create_new_auth_token, as: :json
+      expect(response.parsed_body['payload'].pluck('provider')).to eq(%w[woocommerce])
+
+      get "#{path}/#{salla.id}", headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+      expect(a_request(:any, /salla/)).not_to have_been_made
+    end
+
+    context 'when the installation offers Salla' do
+      include_context 'with salla app'
+
+      it 'lists Salla stores next to WooCommerce ones' do
+        salla = create(:commerce_store, :salla, account: account, name: 'Salla Demo')
+
+        get path, headers: agent.create_new_auth_token, as: :json
+
+        expect(response.parsed_body['payload']).to eq([
+                                                        { 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
+                                                          'linked' => false },
+                                                        { 'id' => salla.id, 'name' => 'Salla Demo', 'provider' => 'salla', 'linked' => false }
+                                                      ])
+      end
+    end
+
     it 'never reaches another account\'s store or a disabled store' do
       other = create(:commerce_store)
       disabled = create(:commerce_store, account: account, status: :disabled)

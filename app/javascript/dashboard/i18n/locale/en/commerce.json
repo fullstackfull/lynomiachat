@@ -76,6 +76,7 @@
       "INVALID_QUERY": "Enter an exact email, or a phone number starting with + and the country code.",
       "ENCRYPTION_NOT_CONFIGURED": "Store credentials can't be saved: encryption is not configured on this installation.",
       "STORE_ALREADY_CONNECTED": "This store is already connected.",
+      "PROVIDER_DISABLED": "This store platform is turned off on this installation.",
       "GENERIC": "Something went wrong. Try again."
     },
     "URL_ERRORS": {

@@ -120,5 +120,12 @@ RSpec.describe Commerce::StoreConnection do
 
       expect { connection.enable(store) }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('AUTH_INVALID') }
     end
+
+    it 'refuses to enable a store of a provider the installation has switched off' do
+      salla = create(:commerce_store, :salla, account: account, status: :disabled)
+
+      expect { connection.enable(salla) }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('PROVIDER_DISABLED') }
+      expect(salla.reload).to be_disabled
+    end
   end
 end

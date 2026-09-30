@@ -36,6 +36,7 @@ class Commerce::StoreConnection
   end
 
   def enable(store)
+    raise Commerce::Error, 'PROVIDER_DISABLED' unless Commerce::Providers.enabled?(store.provider)
     raise Commerce::Error, 'AUTH_INVALID' if store.credentials.blank?
 
     Commerce::Providers.for(store).health

@@ -1,0 +1,247 @@
+[
+  {
+    "name": "Super Admin shows Enable Zid, Client ID and a masked, empty Client Secret; no merchant token field",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Add store offers WooCommerce, Salla and Zid",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Connect with Zid asks for nothing secret",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the browser is sent to Zid's authorization page with client_id, the registered callback, response_type=code and a state",
+    "ok": true,
+    "detail": "https://oauth.zid.sa"
+  },
+  {
+    "name": "back in Settings → Commerce: store connected to account A with Zid's store id, name, URL and time zone",
+    "ok": true,
+    "detail": "{\"id\":46,\"account_id\":1,\"name\":\"متجر الياسمين\",\"status\":\"active\",\"external_store_id\":\"318001\",\"base_url\":\"https://jasmine.zid.store\",\"credential_fields\":[\"authorization\",\"access_token\",\"refresh_token\",\"token_type\",\"expires_at\"],\"links\":0,\"webhook_ids\":null,\"time_zone\":\"Asia/Riyadh\"}"
+  },
+  {
+    "name": "one code exchange, done server-side",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "tokens stored as Zid sends them (encrypted): authorization, access_token, refresh_token, token_type, expires_at",
+    "ok": true,
+    "detail": "[\"authorization\",\"access_token\",\"refresh_token\",\"token_type\",\"expires_at\"]"
+  },
+  {
+    "name": "the settings list shows the store as Connected: name, Zid, Active",
+    "ok": true,
+    "detail": "متجر الياسمين Active Zid https://jasmine.zid.store Verified this minute Disable Disconnect"
+  },
+  {
+    "name": "webhook registration queued",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Zid holds three order subscriptions to this store's URL with a random Basic Auth pair",
+    "ok": true,
+    "detail": "order.create,order.status.update,order.payment_status.update http://localhost:3100/webhooks/zid/318001"
+  },
+  {
+    "name": "webhook credentials stored encrypted with the store, subscription ids in metadata",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a replayed callback (state already used) changes nothing and names no account",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/dashboard"
+  },
+  {
+    "name": "a forged state is refused before any code exchange",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a valid state used from another browser (an agent's) is refused: no exchange, no store",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an agent cannot start a Zid authorization",
+    "ok": true,
+    "detail": "status=401"
+  },
+  {
+    "name": "the merchant declining on Zid connects nothing and says why",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/settings/commerce?zid_error=AUTH_INVALID"
+  },
+  {
+    "name": "account B authorizing A's Zid store: refused as already connected; the store stays with A",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/2/settings/commerce?zid_error=STORE_ALREADY_CONNECTED"
+  },
+  {
+    "name": "a second Zid store connects to the same account",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "one conversation lists WooCommerce, Salla and both Zid stores",
+    "ok": true,
+    "detail": "woocommerce:Syria Cosmetics, salla:متجر الورد, shopify:Lynomia Demo, zid:متجر الياسمين, zid:Zid Demo Two"
+  },
+  {
+    "name": "Zid customer linked by the verified WhatsApp phone, latest orders newest first",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Lynomia Demo متجر الياسمين Zid Demo Two Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #41000102 SAR 223.56 Shipped Paid Sep 29, 2026 1 item "
+  },
+  {
+    "name": "order in delivery: Shipped, Paid, courier, In transit, Track shipment and Send tracking",
+    "ok": true,
+    "detail": "#41000102 SAR 223.56 Shipped Paid Sep 29, 2026 1 item kwickbox In transit Track shipment Send tracking"
+  },
+  {
+    "name": "status and payment only as Zid states them: new → Processing + Unpaid; reversed → Other + not confirmed",
+    "ok": true,
+    "detail": "#41000101 SAR 100.00 Processing Unpaid Sep 28, 2026 1 item Doesn't Require Shipping | #41000103 SAR 100.00 Other Payment not confirmed Sep 20, 2026 1 item Doesn't Require Shipping"
+  },
+  {
+    "name": "tracking link is the https link Zid gave",
+    "ok": true,
+    "detail": "https://track.kwickbox.example/KWB123456789SA"
+  },
+  {
+    "name": "Send tracking puts the tracking message in the reply box (nothing sent)",
+    "ok": true,
+    "detail": "Your order #41000102 is on its way. Tracking number: KWB123456789SA. Track it here: https://track.kwickbox.example/KWB12"
+  },
+  {
+    "name": "a marketplace order found by Layla's phone comes back masked: never matched, never linked",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Lynomia Demo متجر الياسمين Zid Demo Two Customer not found in this store LINK CUSTOMER"
+  },
+  {
+    "name": "deliveries without credentials, with a wrong username or password, another store's pair or a bearer token get 401",
+    "ok": true,
+    "detail": "{\"missing\":401,\"wrongUsername\":401,\"wrongPassword\":401,\"otherStore\":401,\"bearer\":401}"
+  },
+  {
+    "name": "nothing queued for refused deliveries",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the correct pair is accepted, and the replay is acknowledged but queued once",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the order event dropped the cached orders: the panel shows Zid's new status at once",
+    "ok": true,
+    "detail": "#41000101 SAR 100.00 Delivered Paid Sep 28, 2026 1 item Doesn't Require Shipping"
+  },
+  {
+    "name": "10 concurrent readers of expiring tokens: one refresh request, one set of new tokens saved",
+    "ok": true,
+    "detail": "{\"threads\":10,\"distinct_tokens\":1,\"token_requests\":1,\"saved\":true}"
+  },
+  {
+    "name": "Zid refuses the refresh token: the store needs re-authorization, its tokens are removed and nothing stale is shown",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Lynomia Demo متجر الياسمين Zid Demo Two Couldn't refresh store data right now. The store rejected Lynomia's credentials. An adm"
+  },
+  {
+    "name": "settings explain re-authorization and offer Reconnect",
+    "ok": true,
+    "detail": "متجر الياسمين Needs re-authorization Zid https://jasmine.zid.store Verified 4 minutes ago Zid needs you to authorize the Lynomia app again. Use Reconnect. Reconnect Disconnect"
+  },
+  {
+    "name": "a store needing re-authorization is not offered in conversations",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Reconnect re-authorizes the same store in place",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "re-registration rotates the webhook credentials without duplicating subscriptions: the old pair is refused",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an authorization revoked in Zid (uninstall): the store needs re-authorization, nothing stale is shown",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Lynomia Demo متجر الياسمين Zid Demo Two Couldn't refresh store data right now. The store rejected Lynomia's credentials. An adm"
+  },
+  {
+    "name": "disconnect deletes the Zid subscriptions, tokens, webhook credentials, links and cache; contacts and conversations stay",
+    "ok": true,
+    "detail": "{\"id\":46,\"account_id\":1,\"name\":\"متجر الياسمين\",\"status\":\"disconnected\",\"external_store_id\":\"318001\",\"base_url\":\"https://jasmine.zid.store\",\"credential_fields\":null,\"links\":0,\"webhook_ids\":3,\"time_zone\":\"Asia/Riyadh\"}"
+  },
+  {
+    "name": "deliveries for a disconnected store are refused",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Zid off: Zid stores kept and explained",
+    "ok": true,
+    "detail": "Zid Demo Two Needs re-authorization Zid https://zid-demo-two.zid.store Verified 4 minutes ago Zid is turned off on this installation. The store is kept but not read. Disconnect"
+  },
+  {
+    "name": "Zid off: no Zid in Add store",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Zid off: no authorization can start",
+    "ok": true,
+    "detail": "{\"error\":{\"code\":\"PROVIDER_DISABLED\"}}"
+  },
+  {
+    "name": "Commerce off for the account: no Commerce in settings and no Zid authorization",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Arabic: زد in the picker and الربط مع زد",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "mobile: the Connect with Zid dialog fits the screen",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "audit trail: connected, token_refreshed, needs_reauth, reauthorized, store_disconnected",
+    "ok": true,
+    "detail": "commerce.store_connected, commerce.store_disabled, commerce.store_enabled, commerce.store_disconnected, commerce.zid.connected, commerce.zid.token_refreshed, commerce.zid.needs_reauth, commerce.zid.reauthorized"
+  },
+  {
+    "name": "audit entries carry no token, code or secret",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no Zid token, code, client secret or webhook password in any browser response",
+    "ok": true,
+    "detail": "responses=654 "
+  },
+  {
+    "name": "no token, code, state, client secret or webhook password in the server or job logs",
+    "ok": true,
+    "detail": "log bytes=481843"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  }
+]

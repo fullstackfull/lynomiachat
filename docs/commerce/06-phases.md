@@ -99,6 +99,13 @@ Changes from the exit criteria above, all decided in that brief:
 - no webhooks;
 - Arabic strings are included.
 
+**Phases 3–5 status (2026-09-30): implemented, real UAT blocked.** Salla (docs 10–13), Zid (docs 14–17) and Shopify (docs 18–22) are built on the same core. Each passed a simulated-provider E2E; `REAL_*_UAT = BLOCKED` for all three, since provider hosts are unreachable here and no partner accounts exist.
+
+Shopify differs from the row above:
+- **A dedicated Shopify app** (`SHOPIFY_COMMERCE_*`). It does not reuse the upstream pieces beyond the hardened `Shopify::ShopDomain`. The legacy integration is left unchanged and nothing is migrated (doc 21).
+- **No `shopify_api` 16.x upgrade.** The connector talks to Shopify through `Commerce::HttpClient`, so the upstream gem and its billing code are untouched.
+- **Exit criteria still open:** the development-store run and Shopify's protected customer data approval (doc 22 §6).
+
 ## 4. Files likely to change in Phase 2 (core + WooCommerce)
 
 **New (Lynomia-owned, `custom/`)**

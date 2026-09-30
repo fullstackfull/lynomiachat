@@ -186,7 +186,7 @@
         "TITLE": "الربط مع Shopify",
         "DESCRIPTION": "يقرأ Lynomia العملاء والطلبات والشحنات فقط. لن تُدخل أو ترى أي رمز من Shopify هنا.",
         "SHOP_LABEL": "نطاق المتجر",
-        "SHOP_HINT": "عنوان متجرك على myshopify.com، مثل your-store.myshopify.com. تجده في لوحة Shopify ← الإعدادات ← النطاقات.",
+        "SHOP_HINT": "تجده في لوحة Shopify ← الإعدادات ← النطاقات.",
         "STEPS": "ستسجّل الدخول إلى Shopify وتوافق على تطبيق Lynomia Commerce لهذا المتجر، ثم تعود إلى هنا.",
         "CONNECT": "الربط مع Shopify",
         "REAUTH_HINT": "يحتاج Shopify إلى أن تمنح تطبيق Lynomia Commerce الصلاحية مجددًا. استخدم إعادة الربط.",

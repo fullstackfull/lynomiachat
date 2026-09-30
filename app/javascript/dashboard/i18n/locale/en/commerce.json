@@ -186,7 +186,7 @@
         "TITLE": "Connect with Shopify",
         "DESCRIPTION": "Lynomia only reads customers, orders and fulfillments. You never enter or see a Shopify token here.",
         "SHOP_LABEL": "Store domain",
-        "SHOP_HINT": "Your store's myshopify.com address, for example your-store.myshopify.com. You find it in Shopify admin → Settings → Domains.",
+        "SHOP_HINT": "Find it in Shopify admin → Settings → Domains.",
         "STEPS": "You will sign in to Shopify and approve the Lynomia Commerce app for this store, then come back here.",
         "CONNECT": "Connect with Shopify",
         "REAUTH_HINT": "Shopify needs you to authorize the Lynomia Commerce app again. Use Reconnect.",

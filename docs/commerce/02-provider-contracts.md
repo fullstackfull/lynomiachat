@@ -258,6 +258,17 @@ end
 
 ## 6. Shopify (GraphQL Admin API)
 
+> **Implemented in Phase 5** (docs 18–22). Where the implementation differs from the Phase 1 research below:
+> - The connector uses `Commerce::HttpClient`, not the `shopify_api` gem, whose version is unchanged.
+> - Customers are found with `customers(query:)` (quoted exact email or phone, re-checked locally), not `customerByIdentifier`.
+> - Names are not requested; the protected customer data needed is Level 1 + Email and Phone only.
+> - Status and payment follow doc 19 §7:
+>   - `closed` is not read;
+>   - PENDING → unpaid;
+>   - AUTHORIZED, VOIDED and EXPIRED → unknown, never "failed".
+> - Amounts use `currentTotalPriceSet.presentmentMoney`.
+> - The admin link is `https://<shop>.myshopify.com/admin/orders/<legacyResourceId>`; `statusPageUrl` is not requested.
+
 **Auth**
 - Non-embedded apps use the authorization-code grant.
 - **Expiring offline tokens**:

@@ -1,0 +1,34 @@
+# Lynomia Commerce Shopify app configuration (docs/commerce/18–20). A dedicated app, separate from the legacy Shopify
+# integration's app. Deploy with the Shopify CLI (`shopify app deploy`) after replacing the placeholders; the Client ID
+# and Client Secret of the deployed app go to Super Admin → Settings → Shopify Commerce.
+
+name = "Lynomia Commerce"
+client_id = "<SHOPIFY_COMMERCE_CLIENT_ID>"
+# Merchants who open the app from Shopify land in the Lynomia dashboard; stores are connected from Settings → Commerce.
+application_url = "https://<your Lynomia host>/app"
+embedded = false
+
+[access_scopes]
+# Read-only: every field the connector reads needs only these two (docs/commerce/18 §7). No read_all_orders.
+scopes = "read_customers,read_orders"
+# Authorization code grant started from Lynomia (non-embedded app); no Shopify-managed install.
+use_legacy_install_flow = true
+
+[auth]
+redirect_urls = [ "https://<your Lynomia host>/commerce/shopify/callback" ]
+
+[webhooks]
+api_version = "2026-07"
+
+  # App-specific subscriptions: declared once for every shop that installs the app, never created per shop.
+  [[webhooks.subscriptions]]
+  topics = [ "orders/create", "orders/updated", "app/uninstalled" ]
+  uri = "https://<your Lynomia host>/webhooks/shopify_commerce"
+
+  # Shopify's mandatory privacy topics (required for apps distributed through the Shopify App Store).
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "https://<your Lynomia host>/webhooks/shopify_commerce"
+
+[pos]
+embedded = false

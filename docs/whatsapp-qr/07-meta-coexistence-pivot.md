@@ -1,5 +1,7 @@
 # Pivot Review: WhatsApp Business App Coexistence via Meta Embedded Signup
 
+> **Superseded (2026-09-29).** Lynomia was upgraded to Chatwoot 4.18.0, which ships Coexistence support. The "WhatsApp Business / واتساب بزنس" option was built on that upstream implementation, not on the plan below. For example, the marker is `provider_config.is_coexistence`, not `onboarding_method`, and no Lynomia backport was needed. See `docs/whatsapp-business/README.md` and `docs/chatwoot-upgrade/`. This page is kept as architectural history.
+
 | | |
 |---|---|
 | Status | Review only. Nothing was implemented, nothing was deleted, and neither production nor the official WhatsApp code changed. Evolution work is **PAUSED / FALLBACK**. |

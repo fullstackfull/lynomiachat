@@ -1,5 +1,7 @@
 # WhatsApp QR (Evolution API): Phase A Discovery
 
+> **Status: PAUSED / FALLBACK ONLY (2026-09-29).** No Evolution API code was written or installed. Existing WhatsApp Business App numbers are now connected through Meta Embedded Signup (Coexistence); see `docs/whatsapp-business/README.md`. This discovery is kept as architectural history.
+
 | | |
 |---|---|
 | Phase | A: discovery only. No production code, Evolution install, Chatwoot change or WhatsApp change was made. |

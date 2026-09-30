@@ -84,7 +84,7 @@ RSpec.describe Commerce::Providers::Zid do
       )
       expect(order.shipments).to eq([{ provider: 'kwickbox', status: 'in_transit', provider_status: 'in_transit', type: 'shipment',
                                        tracking_number: 'KWB123456789SA', tracking_url: 'https://track.kwickbox.example/KWB123456789SA' }])
-      expect(order.shipping).to eq(method: 'Testing service level', total: nil, provider: 'kwickbox', status: 'in_transit')
+      expect(order.shipping).to eq(method: 'kwickbox', total: nil, provider: 'kwickbox', status: 'in_transit')
       product = orders['orders'].first['products'].first
       expect(order.items.first).to eq(name: product['name'], quantity: 1, total: BigDecimal(product['total'].to_s).to_s('F'))
       expect(order.item_count).to eq(order.items.sum { |item| item[:quantity] })

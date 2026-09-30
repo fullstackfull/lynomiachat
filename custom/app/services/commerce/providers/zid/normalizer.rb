@@ -55,13 +55,15 @@ class Commerce::Providers::Zid::Normalizer
 
   private
 
-  # { shipping:, shipments:, tracking: } from the order's shipping method, where Zid keeps its one shipment.
+  # { shipping:, shipments:, tracking: } from the order's shipping method, where Zid keeps its one shipment. As for Salla,
+  # the shipping line names the courier when there is one, else Zid's delivery option.
   def fulfilment(shipping, code)
     method = shipping['method'] if shipping.is_a?(Hash)
     return { shipping: nil, shipments: [], tracking: nil } unless method.is_a?(Hash)
 
     shipment = shipment(method, SHIPMENT_STATUSES.fetch(code, 'other'))
-    { shipping: { method: method['name'].to_s.strip.presence, total: nil, provider: shipment&.dig(:provider), status: shipment&.dig(:status) },
+    { shipping: { method: shipment&.dig(:provider) || method['name'].to_s.strip.presence, total: nil, provider: shipment&.dig(:provider),
+                  status: shipment&.dig(:status) },
       shipments: [shipment].compact, tracking: shipment && tracking(shipment) }
   end
 

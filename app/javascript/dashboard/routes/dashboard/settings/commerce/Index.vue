@@ -52,6 +52,8 @@ const fetchStores = async () => {
     const response = await CommerceAPI.get();
     stores.value = response.data.payload;
     providers.value = response.data.providers;
+  } catch (error) {
+    useAlert(apiErrorMessage(error));
   } finally {
     isLoading.value = false;
   }

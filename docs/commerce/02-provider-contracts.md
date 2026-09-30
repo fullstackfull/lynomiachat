@@ -145,8 +145,8 @@ end
     - `authorization`, sent as `Authorization: Bearer`: identifies the partner app.
     - `access_token`, sent as `X-Manager-Token`: store-scoped.
   - Both last **1 year**.
-  - **The refresh token is single-use** (https://help-partner.zid.sa/en/articles/8717984-the-refresh-token-is-invalid).
-  - Store identity: `GET /v1/managers/account/profile` (https://docs.zid.sa/get-manager-profile). The store-id JSON path is **VERIFY**.
+  - ~~The refresh token is single-use~~ (help-partner article). **Superseded in Phase 4:** Zid's official agent skill and SDK do not document single-use refresh tokens, so Lynomia does not assume it either way (doc 14 §5).
+  - Store identity: `GET /v1/managers/account/profile` (https://docs.zid.sa/get-manager-profile). The store is `user.store.{id, title, url, timezone}` (official SDK model, Phase 4).
 - Headers: `Authorization`, `X-Manager-Token`, `Accept-Language`. Whether `Store-Id` and `Role` are needed on manager endpoints is **VERIFY**.
 
 **Scopes:** `orders.read`, `customers.read` (or `third_customers_read`), `webhooks.read_write` (to subscribe), `abandoned_carts.read` (later). Scopes are chosen in the Partner Dashboard (**VERIFY**).
@@ -169,7 +169,7 @@ end
   - customer events (**VERIFY**);
   - abandoned cart phases;
   - app lifecycle `app.market.application.{install, uninstall, authorized}` (Partner Dashboard).
-- **Signature: none documented (VERIFY).**
+- **Authentication (closed in Phase 4):** HTTP Basic Authentication, mandatory for all Zid webhooks from 2026-09-30 (Zid Partner changelog 57336). Lynomia registers a per-store random username/password and refuses deliveries without it (doc 15). The earlier "Signature: none documented (VERIFY)" note is closed.
 - Retries: 3 attempts with exponential backoff. **Circuit breaker**: 10 failures in 60 min marks the endpoint degraded, and recovery requires a *new* `target_url` (https://docs.zid.sa/webhook-health-tracking-2197281m0).
 
 **Rate limits:** 60 requests/min per app per store (leaky bucket), enforced on product endpoints today (https://docs.zid.sa/rate-limiting-644369m0).

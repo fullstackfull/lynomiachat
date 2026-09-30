@@ -484,6 +484,71 @@
   locked: false
 # ------- End of Shopify Related Config ------- #
 
+# ------- Lynomia Commerce: Salla app ------- #
+- name: SALLA_ENABLED
+  display_title: 'Enable Salla'
+  value: false
+  description: 'Offer "Connect with Salla" to Lynomia Commerce accounts and process Salla app events. When off, connected Salla stores are kept but not read; uninstall events are still processed.'
+  locked: false
+  type: boolean
+- name: SALLA_APP_ID
+  display_title: 'Salla App ID'
+  description: 'The App ID from the Salla Partners portal, used for the install link https://s.salla.sa/apps/install/<App ID>'
+  locked: false
+- name: SALLA_CLIENT_ID
+  display_title: 'Salla Client ID'
+  description: 'The OAuth Client ID of the Salla app'
+  locked: false
+- name: SALLA_CLIENT_SECRET
+  display_title: 'Salla Client Secret'
+  description: 'The OAuth Client Secret of the Salla app, used to refresh merchant tokens'
+  locked: false
+  type: secret
+- name: SALLA_WEBHOOK_SECRET
+  display_title: 'Salla Webhook Secret'
+  description: 'The Webhook Secret of the Salla app, used to verify the X-Salla-Signature of app events'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Salla app ------- #
+
+# ------- Lynomia Commerce: Zid app ------- #
+- name: ZID_ENABLED
+  display_title: 'Enable Zid'
+  value: false
+  description: 'Offer "Connect with Zid" to Lynomia Commerce accounts and accept Zid webhooks. When off, connected Zid stores are kept but not read.'
+  locked: false
+  type: boolean
+- name: ZID_CLIENT_ID
+  display_title: 'Zid Client ID'
+  description: 'The OAuth Client ID of the Zid app (Zid Partner Dashboard). Register <your Lynomia URL>/commerce/zid/callback as its callback URL.'
+  locked: false
+- name: ZID_CLIENT_SECRET
+  display_title: 'Zid Client Secret'
+  description: 'The OAuth Client Secret of the Zid app, used server-side to exchange authorization codes and refresh merchant tokens'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Zid app ------- #
+
+# ------- Lynomia Commerce: Shopify app ------- #
+# A dedicated Shopify app for Lynomia Commerce, separate from the legacy Shopify integration above (SHOPIFY_*): its own
+# OAuth callback, webhook endpoint and expiring offline tokens (docs/commerce/21-shopify-legacy-coexistence.md).
+- name: SHOPIFY_COMMERCE_ENABLED
+  display_title: 'Enable Shopify Commerce'
+  value: false
+  description: 'Offer "Connect with Shopify" to Lynomia Commerce accounts and accept the Commerce app webhooks. When off, connected Shopify Commerce stores are kept but not read. The legacy Shopify integration is not affected.'
+  locked: false
+  type: boolean
+- name: SHOPIFY_COMMERCE_CLIENT_ID
+  display_title: 'Shopify Commerce Client ID'
+  description: 'The Client ID of the Lynomia Commerce Shopify app (not the legacy Shopify integration app). Allow <your Lynomia URL>/commerce/shopify/callback as its redirect URL.'
+  locked: false
+- name: SHOPIFY_COMMERCE_CLIENT_SECRET
+  display_title: 'Shopify Commerce Client Secret'
+  description: 'The Client Secret of the Lynomia Commerce Shopify app, used server-side to verify OAuth callbacks and webhooks, exchange authorization codes and refresh merchant tokens'
+  locked: false
+  type: secret
+# ------- End of Lynomia Commerce: Shopify app ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

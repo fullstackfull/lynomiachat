@@ -150,3 +150,21 @@ shopify:
   enabled: true
   icon: 'icon-shopify'
   config_key: 'shopify'
+salla:
+  name: 'Salla'
+  description: 'Configuration for the Lynomia Commerce Salla app'
+  enabled: true
+  icon: 'icon-apps-2-line'
+  config_key: 'salla'
+zid:
+  name: 'Zid'
+  description: 'Configuration for the Lynomia Commerce Zid app'
+  enabled: true
+  icon: 'icon-apps-2-line'
+  config_key: 'zid'
+shopify_commerce:
+  name: 'Shopify Commerce'
+  description: 'Configuration for the Lynomia Commerce Shopify app (separate from the Shopify integration)'
+  enabled: true
+  icon: 'icon-shopify'
+  config_key: 'shopify_commerce'

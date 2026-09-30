@@ -1,0 +1,207 @@
+[
+  {
+    "name": "settings: no stores state",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "connect refused with a wrong secret (AUTH_INVALID)",
+    "ok": true,
+    "detail": "The store rejected the API keys. An administrator needs to replace them."
+  },
+  {
+    "name": "connect refused for an IP address URL",
+    "ok": true,
+    "detail": "Use the store's domain name, not an IP address."
+  },
+  {
+    "name": "connect refused for plain http (untrusted host)",
+    "ok": true,
+    "detail": "The store must use https."
+  },
+  {
+    "name": "connect refused for a public name resolving to loopback (or unresolvable here)",
+    "ok": true,
+    "detail": "This address points to a private network and can't be used."
+  },
+  {
+    "name": "A1 and A2 connected and active",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "account B cannot connect store A1 (already connected)",
+    "ok": true,
+    "detail": "This store is already connected."
+  },
+  {
+    "name": "account B connected B1",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "WhatsApp phone auto-links the guest (0551112233 stored locally in Woo)",
+    "ok": true,
+    "detail": "Store Syria Cosmetics Damascus Perfumes Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #25 SAR 100.50 Failed Payment failed Sep 28, 2026 1 item Flat rate "
+  },
+  {
+    "name": "payment statuses: failed / paid (virtual, no shipping) / unpaid",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "registered customer: latest 5 of 7 orders, never \"paid\" without evidence",
+    "ok": true,
+    "detail": "orders=5"
+  },
+  {
+    "name": "store selector present with two stores",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "View order = trusted store URL + numeric id",
+    "ok": true,
+    "detail": "http://localhost:8081/wp-admin/admin.php?action=edit&id=22&page=wc-orders"
+  },
+  {
+    "name": "no tracking controls (WooCommerce core has no tracking; plugin meta ignored)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "switching to A2 shows only A2 orders",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "duplicate phone: both customers offered, masked, nothing linked",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "agent picks Sara: linked manually with her order",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "widget contact email only suggests (no auto-link)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "linked customer without orders",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "duplicate billing email: two candidates",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "not found state with link action",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "search by name refused",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "manual search by international phone finds the guest",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "store down: last fetched orders shown as stale with their age",
+    "ok": true,
+    "detail": "Store Syria Cosmetics Damascus Perfumes Couldn't refresh store data right now. Last updated 3 minutes ago Linked customer ليلى حداد Matched by the verified phon"
+  },
+  {
+    "name": "store down with nothing cached: safe message only",
+    "ok": true,
+    "detail": "Store Syria Cosmetics Damascus Perfumes Couldn't refresh store data right now. The store is not reachable right now."
+  },
+  {
+    "name": "Arabic: panel title and order labels",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Arabic: not found + link customer",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "mobile (Arabic): panel renders inside the viewport",
+    "ok": true,
+    "detail": "elements outside=0"
+  },
+  {
+    "name": "mobile (English): panel inside the viewport, no page overflow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "agent without inbox access sees no store data",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "feature off: no Commerce section",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "feature off: no Commerce in settings navigation",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "admin disables A2",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "disabled store leaves the agent store list",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "admin re-enables A2 after a fresh health check",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "admin replaces A2 keys (health-checked)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "admin disconnects A2",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "agent changes the link to Noor (her order shown)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "agent unlinks Mona: back to a suggestion",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no consumer key/secret or credentials field in any API response",
+    "ok": true,
+    "detail": "responses=697 leaked="
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  }
+]

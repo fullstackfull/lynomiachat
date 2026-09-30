@@ -1,0 +1,237 @@
+[
+  {
+    "name": "Super Admin shows the Salla fields with the secrets masked and empty",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Add store offers WooCommerce and Salla",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "one-time code shown with the official install link, nothing secret asked",
+    "ok": true,
+    "detail": "RAVK-WCLG-HBGZ-PJF4"
+  },
+  {
+    "name": "unsigned, badly signed, wrong-secret, token-strategy and modified deliveries get 401",
+    "ok": true,
+    "detail": "{\"unsigned\":401,\"badSignature\":401,\"otherSecret\":401,\"tokenStrategy\":401,\"modifiedBody\":401}"
+  },
+  {
+    "name": "nothing was queued for refused deliveries",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a signed authorization is accepted, and its redelivery is queued once",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an authorization alone connects nothing (no account is ever guessed)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "signed app.settings.updated accepted",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "store connected to account A by the code: merchant id, Salla name, credentials stored",
+    "ok": true,
+    "detail": "{\"id\":22,\"account_id\":1,\"name\":\"متجر الورد\",\"status\":\"active\",\"external_store_id\":\"1234509876\",\"credential_fields\":[\"access_token\",\"refresh_token\",\"token_type\",\"scope\",\"access_token_expires_at\",\"refresh_token_expires_at\"],\"links\":0}"
+  },
+  {
+    "name": "settings list shows the Salla store as active, without key actions",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a later authorization for the same merchant creates no second store",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a code from account B for A's store is a conflict; the store stays with A",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the conversation lists WooCommerce and Salla stores",
+    "ok": true,
+    "detail": "woocommerce:Syria Cosmetics, salla:متجر الورد"
+  },
+  {
+    "name": "Salla customer linked by the verified WhatsApp phone, latest orders newest first",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #30013 SAR 99.00 Pending payment Unpaid Sep 28, 2026 1 item View order #30"
+  },
+  {
+    "name": "shipped order: carriers, shipment status, Track shipment and Send tracking",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "payment: unpaid only when Salla says so, otherwise \"Payment not confirmed\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an order whose shipment is not trackable shows no tracking actions",
+    "ok": true,
+    "detail": "#30011 SAR 120.50 Completed Payment not confirmed Aug 2, 2026 1 item Salla Delivery Delivered View order"
+  },
+  {
+    "name": "tracking and admin links are Salla's https links",
+    "ok": true,
+    "detail": "https://www.aramex.com/track/results?ShipmentNumber=AX123456789SA https://s.salla.sa/orders/order/Wq1861092002Zx"
+  },
+  {
+    "name": "Send tracking puts the tracking message in the reply box (nothing sent)",
+    "ok": true,
+    "detail": "Your order #30012 is on its way. Tracking number: AX123456789SA. Track it here: https://www.aramex.com/track/results?Shi"
+  },
+  {
+    "name": "two Salla customers share the phone: both offered, nothing linked",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no Salla customer for the contact: not found + Link customer",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Customer not found in this store LINK CUSTOMER"
+  },
+  {
+    "name": "Salla refuses access (sandbox 403): the error is shown and no orders are presented as current",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Couldn't refresh store data right now. The store refused access to its orders or customers. An administrator needs to check the store's permissions. Linked customer Ma"
+  },
+  {
+    "name": "rate limited by Salla: the last orders shown as stale with their age, no request",
+    "ok": true,
+    "detail": "Store Syria Cosmetics متجر الورد Couldn't refresh store data right now. Last updated 5 minutes ago Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #30013 S"
+  },
+  {
+    "name": "refresh token rejected: needs re-authorization, refresh token removed, one token request",
+    "ok": true,
+    "detail": "{\"error\":{\"code\":\"AUTH_INVALID\",\"reason\":\"refresh_token_rejected\"},\"status\":\"needs_reauth\",\"refresh_token_kept\":false,\"token_requests\":1}"
+  },
+  {
+    "name": "settings explain re-authorization in Salla",
+    "ok": true,
+    "detail": "متجر الورد Needs re-authorization Salla https://salla.sa/rose-store Verified 2 minutes ago Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own. Disconnect"
+  },
+  {
+    "name": "a store needing re-authorization is not offered in conversations",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Salla re-authorizes (app updated): same store active again",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "10 concurrent readers of an expiring token: one refresh request, old refresh token sent once, new one saved",
+    "ok": true,
+    "detail": "{\"threads\":10,\"distinct_tokens\":1,\"token_requests\":1,\"old_refresh_token_sent_times\":1,\"new_refresh_token_saved\":true}"
+  },
+  {
+    "name": "a second Salla store connects to the same account",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "store selector lists WooCommerce and both Salla stores",
+    "ok": true,
+    "detail": "Syria Cosmetics, متجر الورد, Salla Demo Two"
+  },
+  {
+    "name": "Arabic panel: shipped status, shipment status and tracking actions",
+    "ok": true,
+    "detail": "المتجر Syria Cosmetics متجر الورد Salla Demo Two العميل المربوط Omar Khalil تمت المطابقة برقم الهاتف الموثّق لهذه المحادثة تغيير إلغاء الربط #30013 ‏99.00 ر.س.‏"
+  },
+  {
+    "name": "Arabic Connect with Salla dialog",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "mobile (Arabic): Salla orders render inside the viewport",
+    "ok": true,
+    "detail": "elements outside=0"
+  },
+  {
+    "name": "mobile: the Connect with Salla dialog fits the screen",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Salla off: stores kept and explained",
+    "ok": true,
+    "detail": "متجر الورد Active Salla https://salla.sa/rose-store Verified 2 minutes ago Salla is turned off on this installation. The store is kept but not read. Disable Disconnect"
+  },
+  {
+    "name": "Salla off: Add store goes straight to WooCommerce keys (no Salla option)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Salla off: Salla stores are not offered in conversations",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Salla off: no connection code can be created",
+    "ok": true,
+    "detail": "{\"error\":{\"code\":\"PROVIDER_DISABLED\"}}"
+  },
+  {
+    "name": "signed app.uninstalled accepted",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "uninstall disconnects the store: credentials and links removed, contacts kept",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "settings show the uninstalled store as disconnected with Reconnect",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an agent cannot start a Salla connection",
+    "ok": true,
+    "detail": "status=401"
+  },
+  {
+    "name": "audit trail: connect_started, connected, reauthorized, token_refreshed, needs_reauth, disconnected",
+    "ok": true,
+    "detail": "commerce.salla.connect_started, commerce.salla.connected, commerce.salla.reauthorized, commerce.salla.needs_reauth, commerce.salla.token_refreshed, commerce.salla.disconnected"
+  },
+  {
+    "name": "audit entries carry no token or secret",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no Salla token, refresh token or secret in any browser response",
+    "ok": true,
+    "detail": "responses=488 "
+  },
+  {
+    "name": "no token, secret or connection code in the server or job logs",
+    "ok": true,
+    "detail": "log bytes=946259"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  }
+]

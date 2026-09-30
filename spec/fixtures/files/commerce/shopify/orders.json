@@ -1,0 +1,328 @@
+{
+  "data": {
+    "orders": {
+      "nodes": [
+        {
+          "id": "gid://shopify/Order/6001006",
+          "legacyResourceId": "6001006",
+          "name": "#1006",
+          "createdAt": "2026-09-28T08:15:00Z",
+          "updatedAt": "2026-09-28T09:15:00Z",
+          "cancelledAt": null,
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "PAID",
+          "displayFulfillmentStatus": "FULFILLED",
+          "subtotalLineItemsQuantity": 3,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "520.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 2,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "400.00"
+                  }
+                }
+              },
+              {
+                "name": "Gift Box",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "120.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": [
+            {
+              "status": "SUCCESS",
+              "displayStatus": "DELIVERED",
+              "trackingInfo": [
+                {
+                  "company": "Aramex",
+                  "number": "ARX100",
+                  "url": "https://www.aramex.com/track/ARX100"
+                }
+              ]
+            },
+            {
+              "status": "SUCCESS",
+              "displayStatus": "DELIVERED",
+              "trackingInfo": [
+                {
+                  "company": "SMSA Express",
+                  "number": "SMSA200",
+                  "url": "https://www.smsaexpress.com/track/SMSA200"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/Order/6001005",
+          "legacyResourceId": "6001005",
+          "name": "#1005",
+          "createdAt": "2026-09-25T08:00:00Z",
+          "updatedAt": "2026-09-25T09:00:00Z",
+          "cancelledAt": null,
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "PENDING",
+          "displayFulfillmentStatus": "PARTIALLY_FULFILLED",
+          "subtotalLineItemsQuantity": 5,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "310.50",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Musk Oil",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "110.50"
+                  }
+                }
+              },
+              {
+                "name": "Bakhoor",
+                "quantity": 4,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "200.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": [
+            {
+              "status": "SUCCESS",
+              "displayStatus": "IN_TRANSIT",
+              "trackingInfo": [
+                {
+                  "company": "DHL Express",
+                  "number": "DHL1",
+                  "url": "https://www.dhl.com/track?id=DHL1"
+                },
+                {
+                  "company": "DHL Express",
+                  "number": "DHL2",
+                  "url": "http://insecure.example/DHL2"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/Order/6001004",
+          "legacyResourceId": "6001004",
+          "name": "#1004",
+          "createdAt": "2026-09-20T08:00:00Z",
+          "updatedAt": "2026-09-20T09:00:00Z",
+          "cancelledAt": null,
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "PARTIALLY_REFUNDED",
+          "displayFulfillmentStatus": "FULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "150.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "150.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": [
+            {
+              "status": "SUCCESS",
+              "displayStatus": "OUT_FOR_DELIVERY",
+              "trackingInfo": []
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/Order/6001003",
+          "legacyResourceId": "6001003",
+          "name": "#1003",
+          "createdAt": "2026-09-15T08:00:00Z",
+          "updatedAt": "2026-09-15T09:00:00Z",
+          "cancelledAt": "2026-09-15T10:00:00Z",
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "REFUNDED",
+          "displayFulfillmentStatus": "UNFULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "99.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "99.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        },
+        {
+          "id": "gid://shopify/Order/6001002",
+          "legacyResourceId": "6001002",
+          "name": "#1002",
+          "createdAt": "2026-09-10T08:00:00Z",
+          "updatedAt": "2026-09-10T09:00:00Z",
+          "cancelledAt": null,
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "PARTIALLY_PAID",
+          "displayFulfillmentStatus": "ON_HOLD",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "250.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "250.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        },
+        {
+          "id": "gid://shopify/Order/6001001",
+          "legacyResourceId": "6001001",
+          "name": "#1001",
+          "createdAt": "2026-09-05T08:00:00Z",
+          "updatedAt": "2026-09-05T09:00:00Z",
+          "cancelledAt": null,
+          "email": "sara.ali@example.com",
+          "displayFinancialStatus": "AUTHORIZED",
+          "displayFulfillmentStatus": "RESTOCKED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "75.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7001"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "75.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        },
+        {
+          "id": "gid://shopify/Order/6000999",
+          "legacyResourceId": "6000999",
+          "name": "#999",
+          "createdAt": "2026-09-29T08:00:00Z",
+          "updatedAt": "2026-09-29T09:00:00Z",
+          "cancelledAt": null,
+          "email": "someone.else@example.com",
+          "displayFinancialStatus": "PAID",
+          "displayFulfillmentStatus": "UNFULFILLED",
+          "subtotalLineItemsQuantity": 1,
+          "currentTotalPriceSet": {
+            "presentmentMoney": {
+              "amount": "10.00",
+              "currencyCode": "SAR"
+            }
+          },
+          "customer": {
+            "id": "gid://shopify/Customer/7002"
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "name": "Oud Perfume 50ml",
+                "quantity": 1,
+                "discountedTotalSet": {
+                  "presentmentMoney": {
+                    "amount": "10.00"
+                  }
+                }
+              }
+            ]
+          },
+          "fulfillments": []
+        }
+      ]
+    }
+  },
+  "extensions": {
+    "cost": {
+      "requestedQueryCost": 42,
+      "actualQueryCost": 18,
+      "throttleStatus": {
+        "maximumAvailable": 2000.0,
+        "currentlyAvailable": 1982,
+        "restoreRate": 100.0
+      }
+    }
+  }
+}

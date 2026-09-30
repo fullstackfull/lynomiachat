@@ -1,0 +1,45 @@
+{
+  "status": 200,
+  "success": true,
+  "data": [
+    {
+      "id": 1227534533,
+      "first_name": "Omar",
+      "last_name": "Khalil",
+      "mobile": 551112233,
+      "mobile_code": "+966",
+      "email": "Omar.Khalil@Example.com",
+      "urls": { "customer": "https://salla.sa/dev-store-name/profile", "admin": "https://s.salla.sa/customers/1227534533" },
+      "avatar": "https://cdn.salla.sa/avatar.png",
+      "gender": "male",
+      "birthday": { "date": "1990-01-01 00:00:00.000000", "timezone_type": 3, "timezone": "Asia/Riyadh" },
+      "city": "Riyadh",
+      "country": "Saudi Arabia",
+      "country_code": "SA",
+      "currency": "SAR",
+      "location": "",
+      "updated_at": { "date": "2026-09-20 10:00:00.000000", "timezone_type": 3, "timezone": "Asia/Riyadh" },
+      "groups": []
+    },
+    {
+      "id": 1227534599,
+      "first_name": "Omar",
+      "last_name": "Khalil",
+      "mobile": 5511122339,
+      "mobile_code": "+966",
+      "email": "omar.k@example.net",
+      "urls": { "customer": "https://salla.sa/dev-store-name/profile", "admin": "https://s.salla.sa/customers/1227534599" },
+      "avatar": "https://cdn.salla.sa/avatar.png",
+      "gender": "male",
+      "birthday": null,
+      "city": "Jeddah",
+      "country": "Saudi Arabia",
+      "country_code": "SA",
+      "currency": "SAR",
+      "location": "",
+      "updated_at": { "date": "2026-09-21 10:00:00.000000", "timezone_type": 3, "timezone": "Asia/Riyadh" },
+      "groups": []
+    }
+  ],
+  "pagination": { "count": 2, "total": 2, "perPage": 20, "currentPage": 1, "totalPages": 1, "links": {} }
+}

@@ -1,0 +1,42 @@
+{
+  "data": {
+    "customers": {
+      "nodes": [
+        {
+          "id": "gid://shopify/Customer/7001",
+          "defaultEmailAddress": {
+            "emailAddress": "Sara.Ali@Example.com"
+          },
+          "defaultPhoneNumber": {
+            "phoneNumber": "+966551112233"
+          }
+        },
+        {
+          "id": "gid://shopify/Customer/7002",
+          "defaultEmailAddress": {
+            "emailAddress": "sara.ali@example.com.sa"
+          },
+          "defaultPhoneNumber": {
+            "phoneNumber": "+966551112234"
+          }
+        },
+        {
+          "id": "gid://shopify/Customer/7003",
+          "defaultEmailAddress": null,
+          "defaultPhoneNumber": null
+        }
+      ]
+    }
+  },
+  "extensions": {
+    "cost": {
+      "requestedQueryCost": 42,
+      "actualQueryCost": 18,
+      "throttleStatus": {
+        "maximumAvailable": 2000.0,
+        "currentlyAvailable": 1982,
+        "restoreRate": 100.0
+      }
+    }
+  }
+}

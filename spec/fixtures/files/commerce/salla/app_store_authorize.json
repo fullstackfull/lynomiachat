@@ -1,0 +1,12 @@
+{
+  "event": "app.store.authorize",
+  "merchant": 1234509876,
+  "created_at": "2026-09-30 12:31:25",
+  "data": {
+    "access_token": "salla-access-token-fixture",
+    "expires": 1900000000,
+    "refresh_token": "salla-refresh-token-fixture",
+    "scope": "offline_access customers.read orders.read shipping.read",
+    "token_type": "bearer"
+  }
+}

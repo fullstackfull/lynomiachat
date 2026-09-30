@@ -279,3 +279,7 @@
   enabled: false
   premium: true
   column: feature_flags_ext_1
+- name: lynomia_commerce
+  display_name: Lynomia Commerce
+  enabled: false
+  column: feature_flags_ext_1

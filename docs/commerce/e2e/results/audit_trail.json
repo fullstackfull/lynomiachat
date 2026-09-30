@@ -1,0 +1,143 @@
+[
+ [
+  "commerce.store_connected",
+  "Commerce::Store",
+  11,
+  1,
+  {
+   "provider": "woocommerce",
+   "external_store_id": "localhost:8081"
+  }
+ ],
+ [
+  "commerce.store_connected",
+  "Commerce::Store",
+  12,
+  1,
+  {
+   "provider": "woocommerce",
+   "external_store_id": "localhost:8082"
+  }
+ ],
+ [
+  "commerce.store_connected",
+  "Commerce::Store",
+  13,
+  4,
+  {
+   "provider": "woocommerce",
+   "external_store_id": "localhost:8083"
+  }
+ ],
+ [
+  "commerce.customer_link_created",
+  "Commerce::CustomerLink",
+  16,
+  2,
+  {
+   "match_source": "verified_phone"
+  }
+ ],
+ [
+  "commerce.customer_link_created",
+  "Commerce::CustomerLink",
+  17,
+  2,
+  {
+   "match_source": "verified_phone"
+  }
+ ],
+ [
+  "commerce.customer_link_created",
+  "Commerce::CustomerLink",
+  18,
+  2,
+  {
+   "match_source": "verified_phone"
+  }
+ ],
+ [
+  "commerce.customer_link_created",
+  "Commerce::CustomerLink",
+  19,
+  2,
+  {
+   "match_source": "manual"
+  }
+ ],
+ [
+  "commerce.customer_link_created",
+  "Commerce::CustomerLink",
+  20,
+  2,
+  {
+   "match_source": "manual"
+  }
+ ],
+ [
+  "commerce.store_disabled",
+  "Commerce::Store",
+  12,
+  1,
+  {
+   "status": [
+    "active",
+    "disabled"
+   ]
+  }
+ ],
+ [
+  "commerce.store_enabled",
+  "Commerce::Store",
+  12,
+  1,
+  {
+   "status": [
+    "disabled",
+    "active"
+   ]
+  }
+ ],
+ [
+  "commerce.credentials_rotated",
+  "Commerce::Store",
+  12,
+  1,
+  {
+   "status": [
+    "active",
+    "active"
+   ]
+  }
+ ],
+ [
+  "commerce.store_disconnected",
+  "Commerce::Store",
+  12,
+  1,
+  {
+   "customer_links_removed": 1
+  }
+ ],
+ [
+  "commerce.customer_link_changed",
+  "Commerce::CustomerLink",
+  19,
+  2,
+  {
+   "match_source": [
+    "manual",
+    "manual"
+   ]
+  }
+ ],
+ [
+  "commerce.customer_link_removed",
+  "Commerce::CustomerLink",
+  20,
+  2,
+  {
+   "match_source": "manual"
+  }
+ ]
+]

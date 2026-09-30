@@ -1,0 +1,361 @@
+{
+  "status": "object",
+  "orders": [
+    {
+      "id": 41000102,
+      "invoice_number": 41000102,
+      "code": "ZdE5f6G7h8",
+      "store_id": 318001,
+      "order_url": "https://jasmine.zid.store/o/ZdE5f6G7h8/inv",
+      "store_name": "متجر الياسمين",
+      "shipping_method_code": "zid_zidship.testing2",
+      "store_url": "https://jasmine.zid.store/",
+      "currency_code": "SAR",
+      "order_status": {
+        "name": "In delivery",
+        "code": "indelivery"
+      },
+      "display_status": {
+        "id": 4,
+        "code": "indelivery",
+        "color": "#9b59b6",
+        "name": "In delivery"
+      },
+      "customer": {
+        "id": 90001,
+        "name": "Sara Ali",
+        "email": "Sara.Ali@example.com",
+        "mobile": "966551112233",
+        "note": "",
+        "verified": 1,
+        "type": "individual"
+      },
+      "is_guest_customer": 0,
+      "order_total": "223.56000086523000",
+      "order_total_string": "223.56 SAR",
+      "payment_status": "paid",
+      "created_at": "2026-09-29 10:15:00",
+      "updated_at": "2026-09-30 09:00:00",
+      "shipping": {
+        "method": {
+          "id": 5423,
+          "name": "Testing service level",
+          "code": "zid_zidship",
+          "estimated_delivery_time": "",
+          "icon": "https://testing-media-907587157081.zidship.com/thumbs/servicelevel/3413064d-d5af-4daf-88c3-abe900017075-thumbnail-370x370.png",
+          "is_system_option": true,
+          "waybill": null,
+          "had_errors_while_fetching_waybill": false,
+          "waybill_tracking_id": null,
+          "has_waybill_and_packing_list": false,
+          "tracking": {
+            "number": "KWB123456789SA",
+            "status": "in_transit",
+            "url": "https://track.kwickbox.example/KWB123456789SA"
+          },
+          "order_shipping_status": "Assigned",
+          "inventory_address": [],
+          "courier": {
+            "name": {
+              "ar": "كويكبوكس",
+              "en": "kwickbox"
+            },
+            "code": "kwickbox"
+          },
+          "return_shipment": null,
+          "packages_count": 1
+        },
+        "address": {
+          "formatted_address": "N/A",
+          "street": "Al Bahar Al Ahmar",
+          "district": "Al Wadi Dist."
+        }
+      },
+      "payment": {
+        "method": {
+          "name": "Bank Transfer",
+          "code": "zid_bank_transfer",
+          "type": "zid_bank_transfer"
+        }
+      },
+      "products": [
+        {
+          "id": "de410a62-31e5-48aa-b652-c52d38ca1930",
+          "name": "Z.17682096113168907",
+          "sku": "Z.17682096113168907",
+          "quantity": 1,
+          "price": 200.00000086523,
+          "price_string": "200.00 SAR",
+          "total": 200.00000086523,
+          "total_string": "200.00 SAR"
+        }
+      ],
+      "products_count": 1,
+      "is_marketplace_order": false,
+      "source": "Store"
+    },
+    {
+      "id": 41000101,
+      "invoice_number": 41000101,
+      "code": "ZdA1b2C3d4",
+      "store_id": 318001,
+      "order_url": "https://jasmine.zid.store/o/ZdA1b2C3d4/inv",
+      "store_name": "متجر الياسمين",
+      "shipping_method_code": null,
+      "store_url": "https://jasmine.zid.store/",
+      "currency_code": "SAR",
+      "order_status": {
+        "name": "New",
+        "code": "new"
+      },
+      "display_status": {
+        "id": 1,
+        "code": "new",
+        "color": "#3498db",
+        "name": "New"
+      },
+      "customer": {
+        "id": 90001,
+        "name": "Sara Ali",
+        "email": "Sara.Ali@example.com",
+        "mobile": "966551112233",
+        "note": "",
+        "verified": 1,
+        "type": "individual"
+      },
+      "is_guest_customer": 0,
+      "order_total": "100.00000000000000",
+      "order_total_string": "100.00 SAR",
+      "payment_status": "pending",
+      "created_at": "2026-09-28 14:05:00",
+      "updated_at": "2026-09-28 14:05:04",
+      "shipping": {
+        "method": {
+          "id": null,
+          "name": "Doesn't Require Shipping",
+          "code": null,
+          "estimated_delivery_time": null,
+          "icon": "https://zid-testing-907587157081.s3.eu-west-1.amazonaws.com/static/delivery.png",
+          "is_system_option": false,
+          "waybill": null,
+          "had_errors_while_fetching_waybill": false,
+          "waybill_tracking_id": null,
+          "has_waybill_and_packing_list": false,
+          "tracking": {
+            "number": null,
+            "status": null,
+            "url": null
+          },
+          "courier": null,
+          "return_shipment": null,
+          "packages_count": null
+        },
+        "address": {
+          "formatted_address": "N/A",
+          "street": "street",
+          "district": "disc"
+        }
+      },
+      "payment": {
+        "method": {
+          "name": "Bank Transfer",
+          "code": "zid_bank_transfer",
+          "type": "zid_bank_transfer"
+        }
+      },
+      "products": [
+        {
+          "id": "23edd6a6-3533-495d-8ffc-7f9e7c8c1f6a",
+          "name": "نسخة من TrialProduct",
+          "sku": "Z.1.1723970467001006",
+          "quantity": 1,
+          "price": 100,
+          "price_string": "100.00 SAR",
+          "total": 100,
+          "total_string": "100.00 SAR"
+        }
+      ],
+      "products_count": 1,
+      "is_marketplace_order": false,
+      "source": "Merchant Admin"
+    },
+    {
+      "id": 41000104,
+      "invoice_number": 41000104,
+      "code": "ZdM3n4O5p6",
+      "store_id": 318001,
+      "order_url": "https://jasmine.zid.store/o/ZdA1b2C3d4/inv",
+      "store_name": "متجر الياسمين",
+      "shipping_method_code": null,
+      "store_url": "https://jasmine.zid.store/",
+      "currency_code": "SAR",
+      "order_status": {
+        "name": "New",
+        "code": "new"
+      },
+      "display_status": {
+        "id": 1,
+        "code": "new",
+        "color": "#3498db",
+        "name": "New"
+      },
+      "customer": {
+        "id": 90077,
+        "name": "J*** D***",
+        "email": "t***@.",
+        "mobile": "***00",
+        "note": "",
+        "verified": 1,
+        "type": "individual"
+      },
+      "is_guest_customer": 0,
+      "order_total": "100.00000000000000",
+      "order_total_string": "100.00 SAR",
+      "payment_status": "paid",
+      "created_at": "2026-09-27 12:00:00",
+      "updated_at": "2026-09-28 14:05:04",
+      "shipping": {
+        "method": {
+          "id": null,
+          "name": "Doesn't Require Shipping",
+          "code": null,
+          "estimated_delivery_time": null,
+          "icon": "https://zid-testing-907587157081.s3.eu-west-1.amazonaws.com/static/delivery.png",
+          "is_system_option": false,
+          "waybill": null,
+          "had_errors_while_fetching_waybill": false,
+          "waybill_tracking_id": null,
+          "has_waybill_and_packing_list": false,
+          "tracking": {
+            "number": null,
+            "status": null,
+            "url": null
+          },
+          "courier": null,
+          "return_shipment": null,
+          "packages_count": null
+        },
+        "address": {
+          "formatted_address": "N/A",
+          "street": "street",
+          "district": "disc"
+        }
+      },
+      "payment": {
+        "method": {
+          "name": "Bank Transfer",
+          "code": "zid_bank_transfer",
+          "type": "zid_bank_transfer"
+        }
+      },
+      "products": [
+        {
+          "id": "23edd6a6-3533-495d-8ffc-7f9e7c8c1f6a",
+          "name": "نسخة من TrialProduct",
+          "sku": "Z.1.1723970467001006",
+          "quantity": 1,
+          "price": 100,
+          "price_string": "100.00 SAR",
+          "total": 100,
+          "total_string": "100.00 SAR"
+        }
+      ],
+      "products_count": 1,
+      "is_marketplace_order": true,
+      "source": "Marketplace"
+    },
+    {
+      "id": 41000103,
+      "invoice_number": 41000103,
+      "code": "ZdI9j0K1l2",
+      "store_id": 318001,
+      "order_url": "https://jasmine.zid.store/o/ZdA1b2C3d4/inv",
+      "store_name": "متجر الياسمين",
+      "shipping_method_code": null,
+      "store_url": "https://jasmine.zid.store/",
+      "currency_code": "SAR",
+      "order_status": {
+        "name": "Reversed",
+        "code": "reversed"
+      },
+      "display_status": {
+        "id": 7,
+        "code": "reversed",
+        "color": "#e74c3c",
+        "name": "Reversed"
+      },
+      "customer": {
+        "id": 90001,
+        "name": "Sara Ali",
+        "email": "Sara.Ali@example.com",
+        "mobile": "966551112233",
+        "note": "",
+        "verified": 1,
+        "type": "individual"
+      },
+      "is_guest_customer": 0,
+      "order_total": "100.00000000000000",
+      "order_total_string": "100.00 SAR",
+      "payment_status": "voided",
+      "created_at": "2026-09-20 08:00:00",
+      "updated_at": "2026-09-21 08:00:00",
+      "shipping": {
+        "method": {
+          "id": null,
+          "name": "Doesn't Require Shipping",
+          "code": null,
+          "estimated_delivery_time": null,
+          "icon": "https://zid-testing-907587157081.s3.eu-west-1.amazonaws.com/static/delivery.png",
+          "is_system_option": false,
+          "waybill": null,
+          "had_errors_while_fetching_waybill": false,
+          "waybill_tracking_id": null,
+          "has_waybill_and_packing_list": false,
+          "tracking": {
+            "number": null,
+            "status": null,
+            "url": null
+          },
+          "courier": null,
+          "return_shipment": null,
+          "packages_count": null
+        },
+        "address": {
+          "formatted_address": "N/A",
+          "street": "street",
+          "district": "disc"
+        }
+      },
+      "payment": {
+        "method": {
+          "name": "Bank Transfer",
+          "code": "zid_bank_transfer",
+          "type": "zid_bank_transfer"
+        }
+      },
+      "products": [
+        {
+          "id": "23edd6a6-3533-495d-8ffc-7f9e7c8c1f6a",
+          "name": "نسخة من TrialProduct",
+          "sku": "Z.1.1723970467001006",
+          "quantity": 1,
+          "price": 100,
+          "price_string": "100.00 SAR",
+          "total": 100,
+          "total_string": "100.00 SAR"
+        }
+      ],
+      "products_count": 1,
+      "is_marketplace_order": false,
+      "source": "Merchant Admin"
+    }
+  ],
+  "grand_total": 4,
+  "total_order_count": 4,
+  "message": {
+    "type": "object",
+    "code": null,
+    "name": null,
+    "description": null
+  }
+}

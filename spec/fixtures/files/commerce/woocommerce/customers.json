@@ -1,0 +1,537 @@
+[
+ {
+  "id": 1,
+  "date_created": "2026-09-30T08:31:58",
+  "date_created_gmt": "2026-09-30T08:31:58",
+  "date_modified": null,
+  "date_modified_gmt": null,
+  "email": "admin@example.com",
+  "first_name": "",
+  "last_name": "",
+  "role": "administrator",
+  "username": "admin",
+  "billing": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "email": "",
+   "phone": ""
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": false,
+  "avatar_url": "https://secure.gravatar.com/avatar/258d8dc916db8cea2cafb6c3cd0cb0246efe061421dbd83ec3a350428cabda4f?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 7,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/1",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 5,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "email": "hana@example.com",
+  "first_name": "Hana",
+  "last_name": "Saeed",
+  "role": "customer",
+  "username": "hana",
+  "billing": {
+   "first_name": "Hana",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "family@example.com",
+   "phone": "+966560000001"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": true,
+  "avatar_url": "https://secure.gravatar.com/avatar/ca70ecf5ca38f2c62ad714b7334004f3badeff5470a1a751dad87c78af6b32af?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 89,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/5",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 2,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:54",
+  "date_modified_gmt": "2026-09-30T08:36:54",
+  "email": "layla.haddad@example.com",
+  "first_name": "ليلى",
+  "last_name": "حداد",
+  "role": "customer",
+  "username": "layla.haddad",
+  "billing": {
+   "first_name": "ليلى",
+   "last_name": "حداد",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "layla.haddad@example.com",
+   "phone": "+966501234567"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": true,
+  "avatar_url": "https://secure.gravatar.com/avatar/23a78587c852ed5c30e054fb0042c696387ea4e610c38cb6b81f4eeafc497435?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 23,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/2",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 8,
+  "date_created": "2026-09-30T08:38:08",
+  "date_created_gmt": "2026-09-30T08:38:08",
+  "date_modified": null,
+  "date_modified_gmt": null,
+  "email": "lyn_subscriber@example.com",
+  "first_name": "",
+  "last_name": "",
+  "role": "subscriber",
+  "username": "lyn_subscriber",
+  "billing": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "email": "",
+   "phone": ""
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": false,
+  "avatar_url": "https://secure.gravatar.com/avatar/0d42a784a543ea2ffb9e874f41687a0f48ca997441271d8c7f23abd3ef88d4a0?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 160,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/8",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 7,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:53",
+  "date_modified_gmt": "2026-09-30T08:36:53",
+  "email": "mona.saleh@example.com",
+  "first_name": "منى",
+  "last_name": "صالح",
+  "role": "customer",
+  "username": "mona.saleh",
+  "billing": {
+   "first_name": "منى",
+   "last_name": "صالح",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "mona.saleh@example.com",
+   "phone": "+966509998877"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": false,
+  "avatar_url": "https://secure.gravatar.com/avatar/2461447e1c024b1eecf229d7ed86cd8e050fe20a2807934dff8949db428f5177?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 133,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/7",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 4,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "email": "noor.ali@example.com",
+  "first_name": "Noor",
+  "last_name": "Ali",
+  "role": "customer",
+  "username": "noor.ali",
+  "billing": {
+   "first_name": "Noor",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "noor.ali@example.com",
+   "phone": "0550000111"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": true,
+  "avatar_url": "https://secure.gravatar.com/avatar/6824e09ee460465599e97cacae11dd5099c76e86f565db34b8964bec271fa297?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 67,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/4",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 6,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "email": "rami@example.com",
+  "first_name": "Rami",
+  "last_name": "Saeed",
+  "role": "customer",
+  "username": "rami",
+  "billing": {
+   "first_name": "Rami",
+   "last_name": "Saeed",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "family@example.com",
+   "phone": "+966560000002"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": true,
+  "avatar_url": "https://secure.gravatar.com/avatar/b33f4f0e879d25860af89add0c53715b04d51874012327f1d6fef9032a4d5219?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 111,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/6",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ },
+ {
+  "id": 3,
+  "date_created": "2026-09-30T08:36:53",
+  "date_created_gmt": "2026-09-30T08:36:53",
+  "date_modified": "2026-09-30T08:36:56",
+  "date_modified_gmt": "2026-09-30T08:36:56",
+  "email": "sara.ali@example.com",
+  "first_name": "Sara",
+  "last_name": "Ali",
+  "role": "customer",
+  "username": "sara.ali",
+  "billing": {
+   "first_name": "Sara",
+   "last_name": "Ali",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "Riyadh",
+   "postcode": "",
+   "country": "SA",
+   "state": "",
+   "email": "sara.ali@example.com",
+   "phone": "+966550000111"
+  },
+  "shipping": {
+   "first_name": "",
+   "last_name": "",
+   "company": "",
+   "address_1": "",
+   "address_2": "",
+   "city": "",
+   "postcode": "",
+   "country": "",
+   "state": "",
+   "phone": ""
+  },
+  "is_paying_customer": true,
+  "avatar_url": "https://secure.gravatar.com/avatar/fc9c3801e9177fb623eb548d0cc8ce7efa0b7ac08ac4b906429e9bb90ca59a8d?s=96&d=mm&r=g",
+  "meta_data": [
+   {
+    "id": 45,
+    "key": "infinite_scrolling",
+    "value": "true"
+   }
+  ],
+  "_links": {
+   "self": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers/3",
+     "targetHints": {
+      "allow": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ]
+     }
+    }
+   ],
+   "collection": [
+    {
+     "href": "https://localhost:8081/wp-json/wc/v3/customers"
+    }
+   ]
+  }
+ }
+]

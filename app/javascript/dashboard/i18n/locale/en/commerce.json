@@ -1,0 +1,207 @@
+{
+  "COMMERCE": {
+    "TITLE": "Commerce",
+    "PROVIDERS": {
+      "WOOCOMMERCE": "WooCommerce",
+      "SALLA": "Salla",
+      "ZID": "Zid",
+      "SHOPIFY": "Shopify"
+    },
+    "PANEL": {
+      "NO_STORES": "No store is connected yet.",
+      "NO_STORES_ADMIN": "Connect a store in Settings → Commerce.",
+      "STORE": "Store",
+      "LINKED_CUSTOMER": "Linked customer",
+      "MATCH_SOURCE": {
+        "VERIFIED_PHONE": "Matched by the verified phone of this conversation",
+        "VERIFIED_EMAIL": "Matched by verified email",
+        "EXTERNAL_ID": "Matched by store customer ID",
+        "MANUAL": "Linked manually",
+        "MANUAL_BY": "Linked by {name}"
+      },
+      "NOT_FOUND": "Customer not found in this store",
+      "SUGGESTED": "Possible match. Confirm before linking.",
+      "MULTIPLE": "Several store customers match. Choose the right one.",
+      "LINK_CUSTOMER": "Link customer",
+      "LINK": "Link",
+      "CHANGE": "Change",
+      "UNLINK": "Unlink",
+      "SEARCH_PLACEHOLDER": "Email or phone with country code",
+      "SEARCH": "Search",
+      "SEARCH_HINT": "Exact email, or phone number in international format (+966…). Names are not searched.",
+      "NO_RESULTS": "No store customer matches.",
+      "GUEST": "Guest checkout",
+      "REGISTERED": "Registered customer",
+      "NO_ORDERS": "No orders yet.",
+      "UPDATE_FAILED": "Couldn't refresh store data right now.",
+      "LAST_UPDATED": "Last updated {time}",
+      "ITEMS": "{count} item | {count} items",
+      "VIEW_ORDER": "View order",
+      "TRACK_SHIPMENT": "Track shipment",
+      "SEND_TRACKING": "Send tracking",
+      "TRACKING_INSERTED": "Tracking details added to the reply box. Review and send it yourself.",
+      "TRACKING_MESSAGE": {
+        "FULL": "Your order #{orderNumber} is on its way. Tracking number: {number}. Track it here: {url}",
+        "URL": "Your order #{orderNumber} is on its way. Track it here: {url}",
+        "NUMBER": "Your order #{orderNumber} is on its way. Tracking number: {number}."
+      },
+      "CANCEL": "Cancel",
+      "ORDER_NUMBER": "#{number}"
+    },
+    "ORDER_STATUS": {
+      "PENDING": "Pending payment",
+      "PROCESSING": "Processing",
+      "ON_HOLD": "On hold",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded",
+      "FAILED": "Failed",
+      "DRAFT": "Draft",
+      "OTHER": "Other"
+    },
+    "PAYMENT_STATUS": {
+      "PAID": "Paid",
+      "UNPAID": "Unpaid",
+      "PARTIALLY_PAID": "Partially paid",
+      "FAILED": "Payment failed",
+      "REFUNDED": "Refunded",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "UNKNOWN": "Payment not confirmed"
+    },
+    "SHIPMENT_STATUS": {
+      "PENDING": "Preparing shipment",
+      "IN_TRANSIT": "In transit",
+      "OUT_FOR_DELIVERY": "Out for delivery",
+      "DELIVERED": "Delivered",
+      "FAILED": "Delivery problem",
+      "CANCELLED": "Shipment cancelled",
+      "RETURNED": "Returned",
+      "OTHER": "Shipment update"
+    },
+    "ERRORS": {
+      "STORE_UNAVAILABLE": "The store is not reachable right now.",
+      "AUTH_INVALID": "The store rejected Lynomia's credentials. An administrator needs to reconnect the store.",
+      "PERMISSION_DENIED": "The store refused access to its orders or customers. An administrator needs to check the store's permissions.",
+      "RATE_LIMITED": "The store is limiting requests. Try again in a moment.",
+      "TIMEOUT": "The store took too long to answer.",
+      "INVALID_RESPONSE": "The store sent a response Lynomia could not read.",
+      "NOT_FOUND": "This link request expired. Search again.",
+      "INVALID_STORE_URL": "This store URL can't be used.",
+      "INVALID_QUERY": "Enter an exact email, or a phone number starting with + and the country code.",
+      "ENCRYPTION_NOT_CONFIGURED": "Store credentials can't be saved: encryption is not configured on this installation.",
+      "STORE_ALREADY_CONNECTED": "This store is already connected.",
+      "PROVIDER_DISABLED": "This store platform is turned off on this installation.",
+      "PROTECTED_DATA_NOT_APPROVED": "Shopify has not approved Lynomia to read this store's customer data (email and phone) yet, so customers can't be matched.",
+      "LEGACY_SHOPIFY_CONNECTED": "This Shopify store is already connected through this account's Shopify integration. Disconnect it there first, then connect it here.",
+      "GENERIC": "Something went wrong. Try again."
+    },
+    "URL_ERRORS": {
+      "INVALID": "Enter the store address, for example https://shop.example.com.",
+      "HTTPS_REQUIRED": "The store must use https.",
+      "PORT_NOT_ALLOWED": "Custom ports are not supported.",
+      "IP_ADDRESS_NOT_ALLOWED": "Use the store's domain name, not an IP address.",
+      "PRIVATE_ADDRESS": "This address points to a private network and can't be used.",
+      "REDIRECT": "The store redirected to another address. Enter the final store URL.",
+      "SHOPIFY_DOMAIN": "Enter the store's myshopify.com domain, like your-store.myshopify.com."
+    },
+    "SETTINGS": {
+      "HEADER": "Commerce",
+      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Read-only: Lynomia never changes anything in your store.",
+      "LOADING": "Loading stores…",
+      "ADD_STORE": "Add store",
+      "EMPTY": "No store connected yet.",
+      "VERIFIED": "Verified {time}",
+      "STATUS": {
+        "ACTIVE": "Active",
+        "DISABLED": "Disabled",
+        "NEEDS_REAUTH": "Needs re-authorization",
+        "DISCONNECTED": "Disconnected"
+      },
+      "ACTIONS": {
+        "DISABLE": "Disable",
+        "ENABLE": "Enable",
+        "REPLACE_KEYS": "Replace keys",
+        "RECONNECT": "Reconnect",
+        "DISCONNECT": "Disconnect"
+      },
+      "FORM": {
+        "TITLE": "Add a WooCommerce store",
+        "ROTATE_TITLE": "Replace API keys",
+        "STORE_URL": "Store URL",
+        "STORE_URL_PLACEHOLDER": "https://shop.example.com",
+        "CONSUMER_KEY": "Consumer key",
+        "CONSUMER_SECRET": "Consumer secret",
+        "NAME": "Display name (optional)",
+        "NAME_PLACEHOLDER": "Main store",
+        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key with Read permission for an administrator, and paste it here.",
+        "KEYS_HINT": "Keys are encrypted and never shown again.",
+        "CONNECT": "Test and connect",
+        "SAVE": "Test and save",
+        "CANCEL": "Cancel"
+      },
+      "PICKER": {
+        "TITLE": "Add a store",
+        "DESCRIPTION": "Choose the platform your store runs on.",
+        "WOOCOMMERCE_HINT": "Connect with a read-only REST API key.",
+        "SALLA_HINT": "Install the Lynomia app from the Salla App Store. No keys to copy.",
+        "ZID_HINT": "Authorize the Lynomia app on Zid. No keys to copy.",
+        "SHOPIFY_HINT": "Authorize the Lynomia Commerce app on your Shopify store. No keys to copy."
+      },
+      "SALLA": {
+        "TITLE": "Connect with Salla",
+        "DESCRIPTION": "Lynomia only reads customers, orders and shipments. You never enter or see a Salla token here.",
+        "STEP_CODE": "Create a one-time connection code.",
+        "STEP_INSTALL": "Install the Lynomia app in Salla.",
+        "STEP_SETTINGS": "In your Salla dashboard, open the Lynomia app's settings, paste the code and save.",
+        "CREATE_CODE": "Create connection code",
+        "NEW_CODE": "Create a new code",
+        "CODE_LABEL": "Connection code",
+        "COPY": "Copy",
+        "COPIED": "Code copied.",
+        "EXPIRES": "Works once, until {time}.",
+        "OPEN_SALLA": "Install the app in Salla",
+        "CLOSE": "Close",
+        "STATUS": {
+          "WAITING": "Waiting for the code from Salla…",
+          "CLAIMED": "Code received. Waiting for Salla to authorize the app…",
+          "CONNECTED": "Your Salla store is connected.",
+          "CONFLICT": "This Salla store is connected to another Lynomia account. Disconnect it there first.",
+          "EXPIRED": "This code expired. Create a new one."
+        },
+        "REAUTH_HINT": "Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own.",
+        "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read."
+      },
+      "ZID": {
+        "TITLE": "Connect with Zid",
+        "DESCRIPTION": "Lynomia only reads customers, orders and shipments. You never enter or see a Zid token here.",
+        "STEPS": "You will sign in to Zid and approve the Lynomia app for your store, then come back here.",
+        "CONNECT": "Connect with Zid",
+        "REAUTH_HINT": "Zid needs you to authorize the Lynomia app again. Use Reconnect.",
+        "PROVIDER_OFF": "Zid is turned off on this installation. The store is kept but not read.",
+        "DISCONNECT_DESCRIPTION": "The store's access, its webhooks and every customer link of this store are deleted. Nothing changes in the store. You can connect it again with Zid."
+      },
+      "SHOPIFY": {
+        "TITLE": "Connect with Shopify",
+        "DESCRIPTION": "Lynomia only reads customers, orders and fulfillments. You never enter or see a Shopify token here.",
+        "SHOP_LABEL": "Store domain",
+        "SHOP_HINT": "Find it in Shopify admin → Settings → Domains.",
+        "STEPS": "You will sign in to Shopify and approve the Lynomia Commerce app for this store, then come back here.",
+        "CONNECT": "Connect with Shopify",
+        "REAUTH_HINT": "Shopify needs you to authorize the Lynomia Commerce app again. Use Reconnect.",
+        "PROVIDER_OFF": "Shopify is turned off on this installation. The store is kept but not read.",
+        "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify."
+      },
+      "DISCONNECT_CONFIRM": {
+        "TITLE": "Disconnect {name}?",
+        "DESCRIPTION": "The store's credentials and every customer link of this store are deleted. Nothing changes in the store.",
+        "DESCRIPTION_APP": "The store's access and every customer link of this store are deleted. Nothing changes in the store. To connect it again, reinstall the Lynomia app in Salla and enter a new code.",
+        "CONFIRM": "Disconnect"
+      },
+      "CONNECTED": "Store connected.",
+      "UPDATED": "Store updated.",
+      "DISCONNECTED": "Store disconnected."
+    }
+  }
+}

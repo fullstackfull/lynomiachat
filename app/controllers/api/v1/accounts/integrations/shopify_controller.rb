@@ -3,13 +3,15 @@ class Api::V1::Accounts::Integrations::ShopifyController < Api::V1::Accounts::In
   before_action :setup_shopify_context, only: [:orders]
   before_action :fetch_hook, except: [:auth]
   before_action :check_authorization, only: [:destroy]
+  before_action :check_admin_authorization?, only: [:auth]
   before_action :validate_contact, only: [:orders]
 
   def auth
-    shop_domain = params[:shop_domain]
+    shop_domain = Shopify::ShopDomain.normalize(params[:shop_domain])
     return render json: { error: 'Shop domain is required' }, status: :unprocessable_entity if shop_domain.blank?
+    return render json: { error: 'Invalid shop domain' }, status: :unprocessable_entity unless Shopify::ShopDomain.valid?(shop_domain)
 
-    state = generate_shopify_token(Current.account.id)
+    state = generate_shopify_token(Current.account.id, shop_domain)
 
     auth_url = "https://#{shop_domain}/admin/oauth/authorize?"
     auth_url += URI.encode_www_form(

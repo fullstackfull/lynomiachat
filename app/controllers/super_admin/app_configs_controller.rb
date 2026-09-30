@@ -15,6 +15,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
 
   before_action :set_config
   before_action :allowed_configs
+  before_action :keep_stored_secrets, only: :create
   def show
     # ref: https://github.com/rubocop/rubocop/issues/7767
     # rubocop:disable Style/HashTransformValues
@@ -50,6 +51,11 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
 
   def set_config
     @config = params[:config] || 'general'
+  end
+
+  # Lynomia: show.html.erb never renders a stored secret, so a blank secret field means "keep the stored value".
+  def keep_stored_secrets
+    params['app_config'].delete_if { |key, value| value.blank? && InstallationConfig.secret_names.include?(key) }
   end
 
   def allowed_configs

@@ -128,7 +128,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   end
 
   def reauthorize_and_update_channel(channel_attributes)
-    @inbox.channel.update!(permitted_params(channel_attributes)[:channel])
+    channel_params = permitted_params(channel_attributes)[:channel].to_h
+    channel_params = @inbox.channel.with_stored_credentials(channel_params) if @inbox.whatsapp?
+    @inbox.channel.update!(channel_params)
     @inbox.channel.reauthorized! if @inbox.channel.respond_to?(:reauthorized!)
   end
 

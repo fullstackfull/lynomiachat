@@ -84,4 +84,54 @@ describe('ConfigurationPage', () => {
 
     expect(wrapper.vm.showWhatsAppReconfigure).toBe(false);
   });
+
+  // Lynomia: the API no longer sends WhatsApp credentials to the browser.
+  it('does not display the WhatsApp access token for manual inboxes', () => {
+    const wrapper = mountComponent({
+      channel_type: 'Channel::Whatsapp',
+      provider: 'whatsapp_cloud',
+      provider_config: {
+        source: 'manual_setup_v2',
+        webhook_verify_token: 'verify-token',
+        api_key: 'stale-access-token',
+      },
+    });
+
+    const scripts = wrapper
+      .findAll('woot-code-stub')
+      .map(code => code.attributes('script'));
+    expect(scripts).toEqual(['verify-token']);
+    expect(wrapper.html()).not.toContain('stale-access-token');
+  });
+
+  it('still lets admins replace the WhatsApp access token', async () => {
+    const inbox = {
+      id: 7,
+      channel_type: 'Channel::Whatsapp',
+      provider: 'whatsapp_cloud',
+      provider_config: {
+        source: 'manual_setup_v2',
+        webhook_verify_token: 'verify-token',
+        phone_number_id: '123',
+      },
+    };
+    const wrapper = mountComponent(inbox);
+    const dispatch = vi
+      .spyOn(wrapper.vm.$store, 'dispatch')
+      .mockResolvedValue();
+
+    wrapper.vm.whatsAppInboxAPIKey = 'new-access-token';
+    await wrapper.vm.updateWhatsAppInboxAPIKey();
+
+    expect(dispatch).toHaveBeenCalledWith('inboxes/updateInbox', {
+      id: 7,
+      formData: false,
+      channel: {
+        provider_config: {
+          ...inbox.provider_config,
+          api_key: 'new-access-token',
+        },
+      },
+    });
+  });
 });

@@ -11,8 +11,8 @@ Each item was checked on the upgraded code, not assumed.
 | # | Finding (4.14.1) | Status on 4.18 | Evidence |
 |---|---|---|---|
 | 1 | Agent can create or re-authorize a WhatsApp inbox through the API | **PARTIALLY FIXED BY 4.18** | See below |
-| 2 | WhatsApp token reaches the browser | **STILL PRESENT** (admins only) | See below |
-| 3 | `WHATSAPP_APP_SECRET` not defined as a secret | **STILL PRESENT** | See below |
+| 2 | WhatsApp token reaches the browser | **FIXED in Phase 4 (commit B)** for the browser. **Encryption at rest: OPEN, production blocker** | See below |
+| 3 | `WHATSAPP_APP_SECRET` not defined as a secret | **FIXED in Phase 4 (commit B)** | See below |
 | 4 | Deleting an inbox can unsubscribe the whole WABA's webhooks | **FIXED BY 4.18** | See below |
 
 ### 1. Agent can create or re-authorize a WhatsApp inbox
@@ -26,18 +26,52 @@ Each item was checked on the upgraded code, not assumed.
 
 ### 2. WhatsApp token reaches the browser
 
-- **Administrators** still receive the full `provider_config`: `api_key`, `webhook_verify_token`, `verification_pin` (`app/views/api/v1/models/_inbox.json.jbuilder:147`).
-- **Agents do not** (verified: `coexistence_onboarding_spec.rb` "never returns the token to agents").
-- **At rest,** `provider_config.api_key` is still plain jsonb. 4.18 only adds `encrypts :business_management_token` (`app/models/channel/whatsapp.rb:31`, Chatwoot Cloud only).
-- **Proposed fix:**
-  1. Serialize `provider_config` without secrets (mask `api_key`, `verification_pin`) and adapt `ConfigurationPage.vue`, which shows the key for manual inboxes.
-  2. Separately, move the token to an encrypted attribute with a data migration and a rollback path. That touches every existing number, so it needs its own staging rehearsal.
+**Before:** administrators received the full `provider_config`, including `api_key` (the Meta access token), `verification_pin` and any app secret. The manual-inbox settings page displayed the token.
+
+**After (commit B):**
+- `_inbox.json.jbuilder` sends administrators `provider_config` without `Channel::Whatsapp::SECRET_PROVIDER_CONFIG_KEYS` (`api_key verification_pin app_secret app_secret_key client_secret api_secret`).
+  - `webhook_verify_token`, `phone_number_id`, `business_account_id`, `source` and the calling flags stay, because the settings screens use them.
+  - `webhook_verify_token` only authorizes Meta's GET handshake, and admins must paste it into their Meta app.
+- Agents still get no `provider_config` at all.
+- `PATCH /inboxes/:id` (the only write path the dashboard uses):
+  - a `provider_config` without a credential key keeps the stored value (`Channel::Whatsapp#with_stored_credentials`);
+  - sending the key replaces it.
+  - So these keep working: calling settings, "Update API Key", the embedded signup → manual transfer, and API clients that send the full config.
+- `ConfigurationPage.vue` no longer shows the key. The "Update API Key" field is unchanged.
+- **Tests:**
+  - `spec/controllers/api/v1/accounts/inboxes_whatsapp_credentials_spec.rb`: 6 examples. 3 of them fail on the previous code.
+  - `ConfigurationPage.spec.js`: 2 new tests.
+  - Upstream inbox specs, CE + EE: 143 examples, 0 failures.
+
+**Still open: encryption at rest (production blocker, needs a decision).**
+- `provider_config.api_key` is plain text inside a `jsonb` column.
+- Rails' existing `encrypts` (already used for `business_management_token`, Facebook/Line/Twitter tokens) cannot encrypt one key of a `jsonb` column.
+- Encrypting the whole column would break the SQL lookups on `provider_config->>'business_account_id'` and `phone_number_id` (WABA teardown, webhook routing).
+- The fix therefore needs all of the following, each rehearsed against the 41/41 regression:
+  1. a new `encrypts :access_token` text column;
+  2. a backfill job that reads the plain value and writes the encrypted one, without logging values;
+  3. switching the 19 `provider_config['api_key']` reads in `app/` and `enterprise/` to it;
+  4. removing the plain key only after verification (reversible until then).
+- That is wider than a hardening commit and changes the existing WhatsApp API code paths, so it is left for a dedicated change.
 
 ### 3. `WHATSAPP_APP_SECRET` not defined as a secret
 
-- `config/installation_config.yml:162-165` has no `type: secret`. Compare `FB_APP_SECRET` at `:131-134`.
-- As a result, Super Admin → App configs → WhatsApp Embedded shows the App Secret in clear text (`app/views/super_admin/app_configs/show.html.erb:38` masks only `type == 'secret'`).
-- **Proposed fix:** add `type: secret` (one line) and check the Super Admin form still saves the value.
+**Before:**
+- `config/installation_config.yml` had no `type: secret` for it.
+- Super Admin → App configs → WhatsApp Embedded showed it in clear text.
+- The generic Super Admin → Installation configs page (not in the menu, reachable by URL) listed its value.
+
+**After (commit B):**
+- It is `type: secret`, the existing mechanism (like `FB_APP_SECRET`).
+- **Every** `type: secret` config is now write-only in Super Admin:
+  - the App configs page renders an empty password field (placeholder `••••••••` when set) and never sends the stored value to the browser;
+  - a blank submission keeps the stored value, and a new value replaces it;
+  - the generic Installation configs list excludes secret configs. With the Enterprise overlay on a paid pricing plan, every one of them has an App configs page. On the community plan, the internal/Captain/Langfuse/Cloudflare secrets have none and are set through ENV or the console. They are not used by Lynomia today.
+- **Logs:** the existing `filter_parameters` (`:secret`, `_key`, `token`) already redact it in request logs.
+- **Frontend state:** it was never in `window.globalConfig`. `DashboardController` exposes `WHATSAPP_APP_ID` and `WHATSAPP_CONFIGURATION_ID` only.
+- **Runtime use unchanged:** token exchange and webhook signature still read `GlobalConfigService.load('WHATSAPP_APP_SECRET')`.
+- **Behaviour change for operators:** a stored secret or verify token can no longer be read back in Super Admin. To change one, enter a new value. To clear one, use the Rails console.
+- **Tests:** `spec/controllers/super_admin/whatsapp_app_secret_spec.rb` has 6 examples: masked, not rendered, blank keeps, new value replaces, not listed, filtered from logs. The existing Super Admin specs pass.
 
 ### 4. Deleting an inbox can unsubscribe the whole WABA
 

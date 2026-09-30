@@ -28,6 +28,8 @@ class Channel::Whatsapp < ApplicationRecord
 
   self.table_name = 'channel_whatsapp'
   EDITABLE_ATTRS = [:phone_number, :provider, { provider_config: {} }].freeze
+  # Lynomia: credentials in provider_config are never sent to the browser (see _inbox.json.jbuilder).
+  SECRET_PROVIDER_CONFIG_KEYS = %w[api_key verification_pin app_secret app_secret_key client_secret api_secret].freeze
   encrypts :business_management_token if Chatwoot.encryption_configured?
 
   # default at the moment is 360dialog lets change later.
@@ -87,6 +89,14 @@ class Channel::Whatsapp < ApplicationRecord
 
   def serializable_hash(options = nil)
     super.except('business_management_token')
+  end
+
+  # Lynomia: the dashboard never receives the credentials, so a provider_config it sends back keeps the stored ones
+  # unless it sets them explicitly.
+  def with_stored_credentials(channel_params)
+    return channel_params unless channel_params.key?(:provider_config)
+
+    channel_params.merge(provider_config: provider_config.slice(*SECRET_PROVIDER_CONFIG_KEYS).merge(channel_params[:provider_config]))
   end
 
   # Enables voice: turns calling on at Meta (idempotent), then re-registers webhooks

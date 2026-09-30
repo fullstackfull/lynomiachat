@@ -425,14 +425,6 @@ export default {
           <woot-code :script="inbox.provider_config.webhook_verify_token" />
         </SettingsFieldSection>
         <SettingsFieldSection
-          :label="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_SECTION_TITLE')"
-          :help-text="
-            $t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_SECTION_SUBHEADER')
-          "
-        >
-          <woot-code :script="inbox.provider_config.api_key" />
-        </SettingsFieldSection>
-        <SettingsFieldSection
           :label="$t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_SECTION_UPDATE_TITLE')"
           :help-text="
             $t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_SECTION_UPDATE_SUBHEADER')

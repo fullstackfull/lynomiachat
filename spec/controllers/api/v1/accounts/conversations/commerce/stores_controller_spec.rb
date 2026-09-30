@@ -142,7 +142,7 @@ RSpec.describe 'Conversation commerce API', type: :request do
       expect(store.customer_links.count).to eq(0)
 
       if defined?(Enterprise::AuditLog)
-        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').pluck(:comment, :audited_changes))
+        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').order(:id).pluck(:comment, :audited_changes))
           .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
                   ['commerce.customer_link_removed', { 'match_source' => 'manual' }]])
       end

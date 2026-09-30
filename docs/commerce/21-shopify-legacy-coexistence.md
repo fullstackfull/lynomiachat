@@ -26,11 +26,22 @@ Chatwoot 4.18 ships a Shopify integration, referred to here as **legacy**. It is
 | Sidebar / panel duplication | The Commerce panel lists only `commerce_stores`. The legacy sidebar section is unchanged and separate. Shopify Commerce adds no sidebar section. |
 | Feature switches | `SHOPIFY_COMMERCE_ENABLED` + `lynomia_commerce` for Commerce; `ENABLE_SHOPIFY_INTEGRATION` (+ the `shopify_integration` account feature) for legacy. Turning one on or off never affects the other (specs, E2E). |
 
-**Known gap (legacy is protected).** The legacy connect flow does not know about Commerce. If an administrator connects a shop through the legacy integration **after** connecting it through Commerce, both the legacy sidebar section and the Commerce section show that shop's orders. Preventing this needs a change in the legacy flow, which Phase 5 must not make. Guidance: use one path per shop.
+**The other direction (closed in Phase 6).** The legacy connect start (`POST /api/v1/accounts/:id/integrations/shopify/auth`) refuses a shop this account already has as a Lynomia Commerce store (any status but disconnected):
+- It answers 422 `This Shopify store is already connected through Commerce` and issues no state.
+- It is the only way into the legacy callback, which requires that state, so it is the earliest shared entry point.
+- The guard is the only legacy change: legacy tokens, hooks, webhooks, billing and the callback are untouched.
+
+Both directions are specs:
+- legacy → existing Commerce shop refused: `spec/controllers/api/v1/accounts/integrations/shopify_controller_spec.rb`;
+- Commerce → existing legacy shop refused: `spec/controllers/api/v1/accounts/commerce/shopify_connections_controller_spec.rb`.
+
+So no account can hold the same shop through both paths. Two narrow cases remain, both accepted:
+- The legacy settings page shows its generic request-failed message rather than this text. The legacy UI is not changed.
+- A legacy authorization already started before the Commerce store was connected can still complete within its 10-minute state. Both flows are administrator-initiated.
 
 ## 3. Evidence that legacy is unchanged
 
-- **No legacy file changed.** `git diff --stat 59fd18357..HEAD` (the Phase 5 start) over `app/services/shopify`, `app/controllers/shopify`, `app/controllers/webhooks/shopify_controller.rb`, `app/controllers/api/v1/accounts/integrations/shopify_controller.rb`, `app/helpers/shopify`, `app/models/integrations`, `config/routes.rb` and `enterprise/` is empty.
+- **No legacy file changed in Phase 5.** Phase 6 adds only the conflict guard above to the legacy connect start. `git diff --stat 59fd18357..HEAD` (the Phase 5 start) over `app/services/shopify`, `app/controllers/shopify`, `app/controllers/webhooks/shopify_controller.rb`, `app/controllers/api/v1/accounts/integrations/shopify_controller.rb`, `app/helpers/shopify`, `app/models/integrations`, `config/routes.rb` and `enterprise/` is empty.
   - Phase 5 touched the shared Super Admin files (`installation_config.yml`, `features.yml`, `app_configs_controller.rb`) only by **adding** entries; the legacy `SHOPIFY_CONFIGS` entry is untouched.
 - **Legacy specs pass unchanged:**
   - `spec/controllers/shopify`, `spec/controllers/webhooks/shopify_controller_spec.rb`, `spec/services/shopify`, `spec/controllers/api/v1/accounts/integrations/shopify_controller_spec.rb`

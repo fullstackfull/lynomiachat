@@ -48,6 +48,41 @@ RSpec.describe 'Shopify Integration API', type: :request do
         expect(response.parsed_body['error']).to eq('Shop domain is required')
       end
 
+      # Lynomia: one connection per shop and account (docs/commerce/21-shopify-legacy-coexistence.md).
+      context 'when the shop is a Lynomia Commerce store' do
+        include_context 'with commerce encryption'
+
+        it 'refuses a shop this account already connected through Lynomia Commerce, whatever its Commerce status' do
+          store = create(:commerce_store, :shopify, account: account, base_url: "https://#{shop_domain}")
+
+          %w[active needs_reauth disabled].each do |status|
+            store.update!(status: status)
+            post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
+                 params: { shop_domain: shop_domain.upcase },
+                 headers: administrator.create_new_auth_token,
+                 as: :json
+
+            expect(response).to have_http_status(:unprocessable_entity)
+            expect(response.parsed_body).to eq('error' => 'This Shopify store is already connected through Commerce')
+          end
+          expect(account.hooks.where(app_id: 'shopify')).to be_empty
+        end
+
+        it 'connects a shop whose Commerce store is disconnected, belongs to another account or is another shop' do
+          create(:commerce_store, :shopify, account: account, base_url: "https://#{shop_domain}", status: :disconnected, credentials: nil)
+          create(:commerce_store, :shopify, account: create(:account), base_url: 'https://other-account-shop.myshopify.com')
+          create(:commerce_store, :shopify, account: account, base_url: 'https://another-shop.myshopify.com')
+
+          post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
+               params: { shop_domain: shop_domain },
+               headers: administrator.create_new_auth_token,
+               as: :json
+
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['redirect_url']).to start_with("https://#{shop_domain}/admin/oauth/authorize?")
+        end
+      end
+
       it 'rejects a shop domain that is not a myshopify domain' do
         post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
              params: { shop_domain: 'attacker.example.com' },

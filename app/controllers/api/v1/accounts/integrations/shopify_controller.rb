@@ -10,6 +10,11 @@ class Api::V1::Accounts::Integrations::ShopifyController < Api::V1::Accounts::In
     shop_domain = Shopify::ShopDomain.normalize(params[:shop_domain])
     return render json: { error: 'Shop domain is required' }, status: :unprocessable_entity if shop_domain.blank?
     return render json: { error: 'Invalid shop domain' }, status: :unprocessable_entity unless Shopify::ShopDomain.valid?(shop_domain)
+    # Lynomia: one connection per shop and account. A shop this account connected through Lynomia Commerce is not
+    # connected here a second time (docs/commerce/21-shopify-legacy-coexistence.md).
+    if commerce_shop?(shop_domain)
+      return render json: { error: 'This Shopify store is already connected through Commerce' }, status: :unprocessable_entity
+    end
 
     state = generate_shopify_token(Current.account.id, shop_domain)
 
@@ -45,6 +50,10 @@ class Api::V1::Accounts::Integrations::ShopifyController < Api::V1::Accounts::In
 
   def redirect_uri
     "#{ENV.fetch('FRONTEND_URL', '')}/shopify/callback"
+  end
+
+  def commerce_shop?(shop_domain)
+    Current.account.commerce_stores.where(provider: 'shopify').where.not(status: :disconnected).exists?(base_url: "https://#{shop_domain}")
   end
 
   def contact

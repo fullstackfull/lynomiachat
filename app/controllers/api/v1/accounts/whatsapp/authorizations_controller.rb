@@ -12,14 +12,28 @@ class Api::V1::Accounts::Whatsapp::AuthorizationsController < Api::V1::Accounts:
   def create
     validate_embedded_signup_params!
     channel = process_embedded_signup
+    log_signup_completion('success')
     render_success_response(channel.inbox)
   rescue CustomExceptions::Inbox::LimitExceeded => e
+    log_signup_completion(e.class.name)
     render_error_response(e)
   rescue StandardError => e
+    log_signup_completion(e.class.name)
     render_embedded_signup_error(e)
   end
 
   private
+
+  # Lynomia: one sanitized line per Embedded Signup / WhatsApp Business completion, to compare Meta's real completion
+  # payload with our assumptions during UAT. Never logs the code, the access token or the app secret.
+  def log_signup_completion(result)
+    Rails.logger.info(
+      "[WHATSAPP SIGNUP COMPLETION] account_id=#{Current.account.id} flow=#{params[:inbox_id].present? ? 'reauthorize' : 'create'} " \
+      "is_coexistence=#{ActiveModel::Type::Boolean.new.cast(params[:is_coexistence]) || false} waba_id=#{params[:waba_id].presence || 'absent'} " \
+      "business_id_present=#{params[:business_id].present?} phone_number_id=#{params[:phone_number_id].presence || 'absent'} " \
+      "code_present=#{params[:code].present?} result=#{result}"
+    )
+  end
 
   def ensure_embedded_signup_enabled
     return if params[:inbox_id].present?

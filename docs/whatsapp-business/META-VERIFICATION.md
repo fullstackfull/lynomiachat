@@ -33,3 +33,5 @@
 | 15 | End-to-end with a real number | n/a | n/a | Only simulated | **OPEN:** needs one real WhatsApp Business App number on Lynomia's Meta app, in a staging deployment with a public HTTPS `FRONTEND_URL` |
 
 **Remaining VERIFY-META items:** #4 (real payload), #9 (countries), #10/#11 (effect of not syncing), #13, #14, #15.
+
+**Phase 4:** the real-number UAT that closes #4, #9, #13, #14 and #15 is scripted in `UAT-RUNBOOK.md`. The server now logs one sanitized `[WHATSAPP SIGNUP COMPLETION]` line per completion (WABA id, `business_id` presence, `phone_number_id`, Coexistence flag, result). It never logs the code, the token or the App Secret. The run itself is **BLOCKED** in this session: no staging server, no Meta credentials, no real number, and `graph.facebook.com` is denied.

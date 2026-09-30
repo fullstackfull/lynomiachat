@@ -76,6 +76,31 @@ RSpec.describe 'WhatsApp Business (Coexistence) onboarding', type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
   end
 
+  it 'logs one sanitized completion line without the code, token or app secret' do
+    log = StringIO.new
+    allow(Rails).to receive(:logger).and_return(ActiveSupport::Logger.new(log))
+
+    authorize(administrator, account.id, coexistence_params)
+
+    expect(response).to have_http_status(:success)
+    expect(log.string).to include("[WHATSAPP SIGNUP COMPLETION] account_id=#{account.id} flow=create is_coexistence=true " \
+                                  'waba_id=waba-coex business_id_present=false phone_number_id=absent code_present=true result=success')
+    expect(log.string).not_to include('coex-code', 'coex-token', 'meta-app-secret')
+  end
+
+  it 'logs the failure class of a completion without the code or app secret' do
+    stub_request(:get, "#{graph}/oauth/access_token").with(query: hash_including(code: 'coex-code'))
+                                                     .to_return(status: 400, body: { error: { message: 'Code expired' } }.to_json)
+    log = StringIO.new
+    allow(Rails).to receive(:logger).and_return(ActiveSupport::Logger.new(log))
+
+    authorize(administrator, account.id, coexistence_params)
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(log.string).to include('[WHATSAPP SIGNUP COMPLETION]').and include('result=RuntimeError')
+    expect(log.string).not_to include('coex-code', 'meta-app-secret')
+  end
+
   it 'does not let an agent create a WhatsApp Business inbox' do
     expect { authorize(agent, account.id, coexistence_params) }.not_to change(Inbox, :count)
 

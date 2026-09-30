@@ -42,7 +42,8 @@
         "URL": "طلبك رقم #{orderNumber} في الطريق إليك. يمكنك تتبعه من هنا: {url}",
         "NUMBER": "طلبك رقم #{orderNumber} في الطريق إليك. رقم التتبع: {number}."
       },
-      "CANCEL": "إلغاء"
+      "CANCEL": "إلغاء",
+      "ORDER_NUMBER": "#{number}"
     },
     "ORDER_STATUS": {
       "PENDING": "بانتظار الدفع",

@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import Button from 'dashboard/components-next/button/Button.vue';
+import { useCommerceLabels } from './useCommerceLabels';
 import {
   formatAmount,
   formatDate,
@@ -19,6 +20,7 @@ const props = defineProps({
 });
 
 const { t, locale } = useI18n();
+const { orderStatus, paymentStatus } = useCommerceLabels();
 
 const STATUS_CLASSES = {
   completed: 'bg-n-teal-3 text-n-teal-11',
@@ -62,7 +64,7 @@ const sendTracking = () => {
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
       <span class="text-heading-3 text-n-slate-12" dir="ltr">
-        #{{ order.order_number }}
+        {{ t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number }) }}
       </span>
       <span class="text-body-main text-n-slate-12">{{ total }}</span>
     </div>
@@ -71,13 +73,13 @@ const sendTracking = () => {
         class="px-1.5 py-0.5 rounded-md text-label-small"
         :class="STATUS_CLASSES[order.status] || NEUTRAL_BADGE"
       >
-        {{ t(`COMMERCE.ORDER_STATUS.${order.status.toUpperCase()}`) }}
+        {{ orderStatus(order.status) }}
       </span>
       <span
         class="px-1.5 py-0.5 rounded-md text-label-small"
         :class="PAYMENT_CLASSES[order.payment_status] || NEUTRAL_BADGE"
       >
-        {{ t(`COMMERCE.PAYMENT_STATUS.${order.payment_status.toUpperCase()}`) }}
+        {{ paymentStatus(order.payment_status) }}
       </span>
     </div>
     <div

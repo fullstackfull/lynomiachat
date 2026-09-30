@@ -1,0 +1,93 @@
+import { useI18n } from 'vue-i18n';
+
+// Maps the backend's Commerce codes (order/payment/store status, error codes, URL reasons, panel states) to their
+// strings. Every key is written out so the i18n linter can check it; unknown codes fall back to a generic label.
+export function useCommerceLabels() {
+  const { t } = useI18n();
+
+  const orderStatus = status =>
+    ({
+      pending: t('COMMERCE.ORDER_STATUS.PENDING'),
+      processing: t('COMMERCE.ORDER_STATUS.PROCESSING'),
+      on_hold: t('COMMERCE.ORDER_STATUS.ON_HOLD'),
+      completed: t('COMMERCE.ORDER_STATUS.COMPLETED'),
+      cancelled: t('COMMERCE.ORDER_STATUS.CANCELLED'),
+      refunded: t('COMMERCE.ORDER_STATUS.REFUNDED'),
+      failed: t('COMMERCE.ORDER_STATUS.FAILED'),
+      draft: t('COMMERCE.ORDER_STATUS.DRAFT'),
+    })[status] || t('COMMERCE.ORDER_STATUS.OTHER');
+
+  const paymentStatus = status =>
+    ({
+      paid: t('COMMERCE.PAYMENT_STATUS.PAID'),
+      unpaid: t('COMMERCE.PAYMENT_STATUS.UNPAID'),
+      failed: t('COMMERCE.PAYMENT_STATUS.FAILED'),
+      refunded: t('COMMERCE.PAYMENT_STATUS.REFUNDED'),
+      partially_refunded: t('COMMERCE.PAYMENT_STATUS.PARTIALLY_REFUNDED'),
+    })[status] || t('COMMERCE.PAYMENT_STATUS.UNKNOWN');
+
+  const errorMessage = code =>
+    ({
+      STORE_UNAVAILABLE: t('COMMERCE.ERRORS.STORE_UNAVAILABLE'),
+      AUTH_INVALID: t('COMMERCE.ERRORS.AUTH_INVALID'),
+      PERMISSION_DENIED: t('COMMERCE.ERRORS.PERMISSION_DENIED'),
+      RATE_LIMITED: t('COMMERCE.ERRORS.RATE_LIMITED'),
+      TIMEOUT: t('COMMERCE.ERRORS.TIMEOUT'),
+      INVALID_RESPONSE: t('COMMERCE.ERRORS.INVALID_RESPONSE'),
+      NOT_FOUND: t('COMMERCE.ERRORS.NOT_FOUND'),
+      INVALID_STORE_URL: t('COMMERCE.ERRORS.INVALID_STORE_URL'),
+      INVALID_QUERY: t('COMMERCE.ERRORS.INVALID_QUERY'),
+      ENCRYPTION_NOT_CONFIGURED: t('COMMERCE.ERRORS.ENCRYPTION_NOT_CONFIGURED'),
+      STORE_ALREADY_CONNECTED: t('COMMERCE.ERRORS.STORE_ALREADY_CONNECTED'),
+    })[code] || t('COMMERCE.ERRORS.GENERIC');
+
+  const urlError = reason =>
+    ({
+      invalid: t('COMMERCE.URL_ERRORS.INVALID'),
+      https_required: t('COMMERCE.URL_ERRORS.HTTPS_REQUIRED'),
+      port_not_allowed: t('COMMERCE.URL_ERRORS.PORT_NOT_ALLOWED'),
+      ip_address_not_allowed: t('COMMERCE.URL_ERRORS.IP_ADDRESS_NOT_ALLOWED'),
+      private_address: t('COMMERCE.URL_ERRORS.PRIVATE_ADDRESS'),
+      redirect: t('COMMERCE.URL_ERRORS.REDIRECT'),
+    })[reason] || t('COMMERCE.ERRORS.INVALID_STORE_URL');
+
+  // The message for a failed API call: `{ error: { code, reason } }` bodies from the Commerce API.
+  const apiErrorMessage = error => {
+    const { code, reason } = error?.response?.data?.error || {};
+    if (code === 'INVALID_STORE_URL' && reason) return urlError(reason);
+    return errorMessage(code);
+  };
+
+  const storeStatus = status =>
+    ({
+      active: t('COMMERCE.SETTINGS.STATUS.ACTIVE'),
+      disabled: t('COMMERCE.SETTINGS.STATUS.DISABLED'),
+      needs_reauth: t('COMMERCE.SETTINGS.STATUS.NEEDS_REAUTH'),
+      disconnected: t('COMMERCE.SETTINGS.STATUS.DISCONNECTED'),
+    })[status] || status;
+
+  const matchSource = source =>
+    ({
+      verified_phone: t('COMMERCE.PANEL.MATCH_SOURCE.VERIFIED_PHONE'),
+      verified_email: t('COMMERCE.PANEL.MATCH_SOURCE.VERIFIED_EMAIL'),
+      external_id: t('COMMERCE.PANEL.MATCH_SOURCE.EXTERNAL_ID'),
+    })[source] || t('COMMERCE.PANEL.MATCH_SOURCE.MANUAL');
+
+  const matchState = state =>
+    ({
+      not_found: t('COMMERCE.PANEL.NOT_FOUND'),
+      suggested: t('COMMERCE.PANEL.SUGGESTED'),
+      multiple: t('COMMERCE.PANEL.MULTIPLE'),
+    })[state] || '';
+
+  return {
+    orderStatus,
+    paymentStatus,
+    errorMessage,
+    apiErrorMessage,
+    urlError,
+    storeStatus,
+    matchSource,
+    matchState,
+  };
+}

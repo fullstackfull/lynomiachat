@@ -10,8 +10,10 @@ import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import StoreDialog from './StoreDialog.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
+import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 const { t, locale } = useI18n();
+const { apiErrorMessage, storeStatus } = useCommerceLabels();
 
 const STATUS_DOT = {
   active: 'bg-n-teal-9',
@@ -27,11 +29,6 @@ const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
 const disconnectDialogRef = ref(null);
 const busyStoreId = ref(null);
-
-const errorMessage = error => {
-  const code = error?.response?.data?.error?.code;
-  return code ? t(`COMMERCE.ERRORS.${code}`) : t('COMMERCE.ERRORS.GENERIC');
-};
 
 const fetchStores = async () => {
   try {
@@ -76,7 +73,7 @@ const setStatus = async (store, status) => {
     replaceStore(response.data);
     useAlert(t('COMMERCE.SETTINGS.UPDATED'));
   } catch (error) {
-    useAlert(errorMessage(error));
+    useAlert(apiErrorMessage(error));
   } finally {
     busyStoreId.value = null;
   }
@@ -95,7 +92,7 @@ const disconnect = async () => {
     replaceStore({ ...store, status: 'disconnected' });
     useAlert(t('COMMERCE.SETTINGS.DISCONNECTED'));
   } catch (error) {
-    useAlert(errorMessage(error));
+    useAlert(apiErrorMessage(error));
   } finally {
     busyStoreId.value = null;
     disconnectDialogRef.value?.close();
@@ -166,9 +163,7 @@ onMounted(fetchStores);
                     class="size-2 rounded-full"
                     :class="STATUS_DOT[store.status]"
                   />
-                  {{
-                    t(`COMMERCE.SETTINGS.STATUS.${store.status.toUpperCase()}`)
-                  }}
+                  {{ storeStatus(store.status) }}
                 </span>
               </div>
               <span

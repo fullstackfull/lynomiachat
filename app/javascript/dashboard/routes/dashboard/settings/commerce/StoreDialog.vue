@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import CommerceAPI from 'dashboard/api/commerce';
+import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 // Connects a WooCommerce store, or replaces the API keys of `store`. Keys are write-only: they are sent once and the
 // fields are cleared whenever the dialog closes.
@@ -15,6 +16,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'saved']);
 
 const { t } = useI18n();
+const { apiErrorMessage } = useCommerceLabels();
 const dialogRef = ref(null);
 const baseUrl = ref('');
 const name = ref('');
@@ -30,15 +32,6 @@ const canSave = computed(
     consumerSecret.value.trim() &&
     (isRotation.value || baseUrl.value.trim())
 );
-
-const messageFor = error => {
-  const { code, reason } = error?.response?.data?.error || {};
-  if (code === 'INVALID_STORE_URL' && reason) {
-    return t(`COMMERCE.URL_ERRORS.${reason.toUpperCase()}`);
-  }
-  if (code) return t(`COMMERCE.ERRORS.${code}`);
-  return error?.response?.data?.message || t('COMMERCE.ERRORS.GENERIC');
-};
 
 const save = async () => {
   isSaving.value = true;
@@ -58,7 +51,7 @@ const save = async () => {
         });
     emit('saved', response.data);
   } catch (error) {
-    errorMessage.value = messageFor(error);
+    errorMessage.value = apiErrorMessage(error);
   } finally {
     isSaving.value = false;
   }

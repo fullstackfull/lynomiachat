@@ -10,12 +10,15 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import CommerceOrderItem from './CommerceOrderItem.vue';
 import { relativeTime } from './commerceHelper';
+import { useCommerceLabels } from './useCommerceLabels';
 
 const props = defineProps({
   conversationId: { type: [Number, String], required: true },
 });
 
 const { t, locale } = useI18n();
+const { errorMessage, apiErrorMessage, matchSource, matchState } =
+  useCommerceLabels();
 const { isAdmin } = useAdmin();
 const { run } = useAbortableRequest();
 
@@ -30,11 +33,6 @@ const candidates = ref(null);
 const searchError = ref('');
 const isSearching = ref(false);
 const linkingToken = ref('');
-
-const errorMessage = error => {
-  const code = error?.response?.data?.error?.code;
-  return code ? t(`COMMERCE.ERRORS.${code}`) : t('COMMERCE.ERRORS.GENERIC');
-};
 
 const storeOptions = computed(() =>
   stores.value.map(store => ({ value: store.id, label: store.name }))
@@ -52,7 +50,7 @@ const matchLabel = computed(() => {
       name: link.confirmed_by.name,
     });
   }
-  return t(`COMMERCE.PANEL.MATCH_SOURCE.${link.match_source.toUpperCase()}`);
+  return matchSource(link.match_source);
 });
 
 const linkedName = computed(
@@ -85,7 +83,7 @@ const loadPanel = async () => {
     );
     if (response) panel.value = response.data;
   } catch (error) {
-    loadError.value = errorMessage(error);
+    loadError.value = apiErrorMessage(error);
   } finally {
     isLoading.value = false;
   }
@@ -106,7 +104,7 @@ const loadStores = async () => {
     storeId.value = preferred?.id ?? null;
     if (storeId.value) await loadPanel();
   } catch (error) {
-    loadError.value = errorMessage(error);
+    loadError.value = apiErrorMessage(error);
   } finally {
     isLoading.value = false;
   }
@@ -123,7 +121,7 @@ const search = async () => {
     );
     candidates.value = response.data.candidates;
   } catch (error) {
-    searchError.value = errorMessage(error);
+    searchError.value = apiErrorMessage(error);
   } finally {
     isSearching.value = false;
   }
@@ -140,7 +138,7 @@ const link = async candidate => {
     panel.value = response.data;
     resetSearch();
   } catch (error) {
-    searchError.value = errorMessage(error);
+    searchError.value = apiErrorMessage(error);
   } finally {
     linkingToken.value = '';
   }
@@ -151,7 +149,7 @@ const unlink = async () => {
     await CommerceAPI.unlinkCustomer(props.conversationId, storeId.value);
     await loadPanel();
   } catch (error) {
-    loadError.value = errorMessage(error);
+    loadError.value = apiErrorMessage(error);
   }
 };
 
@@ -206,9 +204,7 @@ watch(() => props.conversationId, loadStores, { immediate: true });
         >
           <span>{{ t('COMMERCE.PANEL.UPDATE_FAILED') }}</span>
           <span v-if="panel.stale && lastUpdated">{{ lastUpdated }}</span>
-          <span v-else-if="!panel.stale">{{
-            t(`COMMERCE.ERRORS.${panel.error}`)
-          }}</span>
+          <span v-else-if="!panel.stale">{{ errorMessage(panel.error) }}</span>
         </p>
 
         <template v-if="panel.state === 'linked'">
@@ -261,11 +257,7 @@ watch(() => props.conversationId, loadStores, { immediate: true });
             class="text-body-main text-n-slate-11"
             data-test-id="commerce-match-state"
           >
-            {{
-              panel.state === 'not_found'
-                ? t('COMMERCE.PANEL.NOT_FOUND')
-                : t(`COMMERCE.PANEL.${panel.state.toUpperCase()}`)
-            }}
+            {{ matchState(panel.state) }}
           </p>
           <Button
             v-if="!isSearchOpen"

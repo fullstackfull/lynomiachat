@@ -42,7 +42,8 @@
         "URL": "Your order #{orderNumber} is on its way. Track it here: {url}",
         "NUMBER": "Your order #{orderNumber} is on its way. Tracking number: {number}."
       },
-      "CANCEL": "Cancel"
+      "CANCEL": "Cancel",
+      "ORDER_NUMBER": "#{number}"
     },
     "ORDER_STATUS": {
       "PENDING": "Pending payment",

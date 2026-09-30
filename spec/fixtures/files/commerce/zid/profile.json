@@ -14,8 +14,19 @@
       "username": "jasmine",
       "title": "متجر الياسمين",
       "url": "https://jasmine.zid.store/",
-      "currency": { "id": 1, "name": "Saudi Riyal", "code": "SAR", "symbol": "ر.س" }
+      "timezone": "Asia/Riyadh",
+      "currency": {
+        "id": 1,
+        "name": "Saudi Riyal",
+        "code": "SAR",
+        "symbol": "ر.س"
+      }
     }
   },
-  "message": { "type": "object", "code": null, "name": null, "description": null }
+  "message": {
+    "type": "object",
+    "code": null,
+    "name": null,
+    "description": null
+  }
 }

@@ -14,7 +14,6 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
   SEARCH_LIMIT = 20
   # One page, the largest Salla allows, sorted here: the API's default order is not documented.
   ORDER_PAGE = 60
-  MAX_BACKOFF = 60
 
   def self.enabled? = Commerce::Salla::Config.enabled?
 
@@ -75,21 +74,13 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
   end
 
   def get(path, params = {})
-    raise Commerce::Error, 'RATE_LIMITED' if Redis::Alfred.exists?(backoff_key)
-
+    Commerce::Backoff.check!(backoff_key)
     body = http.get_json(path, params)
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless body.is_a?(Hash)
 
     body
   ensure
-    back_off(@http&.rate_limit)
-  end
-
-  def back_off(limits)
-    return if limits.nil? || !(limits[:retry_after] || limits[:remaining]&.zero?)
-
-    wait = limits[:retry_after] || (limits[:reset].to_i - Time.now.to_i)
-    Redis::Alfred.set(backoff_key, 1, ex: wait.clamp(1, MAX_BACKOFF))
+    Commerce::Backoff.record(backoff_key, @http&.rate_limit)
   end
 
   def backoff_key = "COMMERCE::SALLA::MERCHANT::#{@store.external_store_id}::BACKOFF"

@@ -21,17 +21,18 @@ class Commerce::Zid::Authorization
 
   def save(identity, credentials)
     existing = Commerce::Store.where.not(status: :disconnected).find_by(provider: 'zid', external_store_id: identity[:external_store_id])
-    return reauthorize(existing, credentials) if existing&.account_id == @account.id
+    return reauthorize(existing, credentials, identity) if existing&.account_id == @account.id
 
-    store = @account.commerce_stores.new(provider: 'zid', base_url: Commerce::StoreUrl.parse(identity[:base_url]).to_s, created_by: @user)
+    store = @account.commerce_stores.new(provider: 'zid', base_url: Commerce::StoreUrl.parse(identity[:base_url]).to_s, created_by: @user,
+                                         metadata: { 'time_zone' => identity[:time_zone] })
     Commerce::StoreConnection.new(account: @account, user: @user).attach(store, identity, credentials, event: 'commerce.zid.connected')
   end
 
   # A disabled store stays disabled; any other state becomes active with the new tokens.
-  def reauthorize(store, credentials)
+  def reauthorize(store, credentials, identity)
     previous = store.status
     store.update!(credentials: credentials, status: store.disabled? ? :disabled : :active,
-                  metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
+                  metadata: store.metadata.merge('verified_at' => Time.current.iso8601, 'time_zone' => identity[:time_zone]))
     Commerce::AuditTrail.record('commerce.zid.reauthorized', auditable: store, user: @user, changes: { status: [previous, store.status] })
     store
   end

@@ -41,3 +41,20 @@ Run a script with:
 ```bash
 bundle exec rails runner docs/chatwoot-upgrade/staging-harness/<script>.rb <label>
 ```
+
+## Phase 4: container rehearsal on the target runtime
+
+The same scripts were run with `rails runner` inside the staging image built from this repo, on Ruby 3.4.4 / Node 24 (`runtime/`):
+
+```bash
+docker run --rm --network host --env-file staging.env -v $PWD/docs/chatwoot-upgrade/staging-harness:/harness \
+  lynomia/staging:<sha> bundle exec rails runner /harness/check_existing_whatsapp.rb <label>
+```
+
+Results are in `results/rehearsal/`:
+- deploy: 41/41, 17/17, 54/54;
+- rollback A (restore): 41/41;
+- rollback B (code only): 41/41;
+- roll forward: 41/41.
+
+The steps are in `../06-target-runtime-and-staging-rehearsal.md`.

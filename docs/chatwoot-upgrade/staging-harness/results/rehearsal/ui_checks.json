@@ -1,0 +1,77 @@
+[
+  {
+    "name": "dashboard login",
+    "ok": true,
+    "detail": "account 1"
+  },
+  {
+    "name": "websocket welcome",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "websocket RoomChannel subscribed",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Calls hidden from sidebar",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "WhatsApp Business option listed",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no \"WhatsApp QR\" naming",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "inbox API responses have provider_config but no api_key",
+    "ok": true,
+    "detail": "responses=1"
+  },
+  {
+    "name": "Lynomia subscription page renders",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/settings/subscription"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "super admin /super_admin",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "super admin /super_admin/app_config?config=whatsapp_embedded",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "WHATSAPP_APP_SECRET field is a password field",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "stored WHATSAPP_APP_SECRET not in page",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "super admin /super_admin/billing_plans/settings",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "super admin /super_admin/billing_plans",
+    "ok": true,
+    "detail": "http=200"
+  }
+]

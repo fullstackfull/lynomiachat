@@ -54,7 +54,7 @@ H.check('onboarding: app subscribed to WABA with messages + smb_message_echoes',
         sub && (JSON.parse(sub[:body])['subscribed_fields'] & %w[messages smb_message_echoes]).size == 2, sub&.dig(:body))
 override = FakeGraph.calls('POST', %r{\A/3330001\z}).last
 H.check('onboarding: webhook routed to this number only (phone-level override)',
-        override && JSON.parse(override[:body]).dig('webhook_configuration', 'override_callback_uri') == 'https://staging.lynomia.local/webhooks/whatsapp/+15550003001')
+        override && JSON.parse(override[:body]).dig('webhook_configuration', 'override_callback_uri') == "#{ENV.fetch('FRONTEND_URL')}/webhooks/whatsapp/+15550003001")
 H.check('onboarding: channel not flagged for reauthorization', coex && !coex.reauthorization_required?)
 H.check('onboarding: token kept server-side (token exchange done by backend with app secret)',
         FakeGraph.calls('GET', %r{/oauth/access_token\z}).last&.dig(:query, 'client_secret') == H::APP_SECRET)

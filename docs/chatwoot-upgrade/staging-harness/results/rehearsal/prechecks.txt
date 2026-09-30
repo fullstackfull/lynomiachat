@@ -1,0 +1,4 @@
+dup_installation_email_templates=0
+pending_captain_responses=0
+schema_version=20260928100000 count=139
+whatsapp_provider_config_md5=91543516fbd8603758e2cfa7d9b6c5ec,92378d5904e823fff79b295ca4bae86a

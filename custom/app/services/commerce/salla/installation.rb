@@ -105,7 +105,8 @@ class Commerce::Salla::Installation
   def reauthorize(store, credentials, identity)
     previous = store.status
     store.update!(credentials: credentials, status: store.disabled? ? :disabled : :active,
-                  metadata: store.metadata.merge('verified_at' => Time.current.iso8601, 'authorized_by_salla_user_id' => identity[:user_id]))
+                  metadata: store.metadata.except('refresh_started_at')
+                                 .merge('verified_at' => Time.current.iso8601, 'authorized_by_salla_user_id' => identity[:user_id]))
     Commerce::AuditTrail.record('commerce.salla.reauthorized', auditable: store, changes: { status: [previous, store.status] })
   end
 

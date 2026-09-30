@@ -13,4 +13,12 @@ module Commerce::Salla::Oauth
 
     { external_store_id: merchant['id'].to_s, name: merchant['name'], domain: merchant['domain'], user_id: body['id'] }
   end
+
+  # One refresh-token grant: [HTTP status, parsed body]. Sent once and never retried (Commerce::HttpClient#post_form);
+  # only Commerce::Salla::TokenManager calls it, under the merchant's lock.
+  def self.refresh(refresh_token, client_id:, client_secret:)
+    Commerce::HttpClient.new(base_uri: BASE_URI, log_tag: 'salla')
+                        .post_form('/oauth2/token', grant_type: 'refresh_token', refresh_token: refresh_token, client_id: client_id,
+                                                    client_secret: client_secret)
+  end
 end

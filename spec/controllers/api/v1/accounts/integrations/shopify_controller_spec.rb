@@ -12,31 +12,61 @@ end
 RSpec.describe 'Shopify Integration API', type: :request do
   let(:account) { create(:account) }
   let(:agent) { create(:user, account: account, role: :agent) }
+  let(:administrator) { create(:user, account: account, role: :administrator) }
   let(:unauthorized_agent) { create(:user, account: account, role: :agent) }
   let(:contact) { create(:contact, account: account, email: 'test@example.com', phone_number: '+1234567890') }
 
   describe 'POST /api/v1/accounts/:account_id/integrations/shopify/auth' do
     let(:shop_domain) { 'test-store.myshopify.com' }
 
-    context 'when it is an authenticated user' do
-      it 'returns a redirect URL for Shopify OAuth' do
+    context 'when it is an administrator' do
+      before do
+        create(:installation_config, name: 'SHOPIFY_CLIENT_SECRET', value: 'shopify-client-secret')
+        GlobalConfig.clear_cache
+      end
+
+      it 'returns a redirect URL for Shopify OAuth with a state bound to the shop' do
+        post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
+             params: { shop_domain: shop_domain },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        redirect_url = URI.parse(response.parsed_body['redirect_url'])
+        expect(redirect_url.host).to eq(shop_domain)
+        state = Rack::Utils.parse_query(redirect_url.query)['state']
+        payload = JWT.decode(state, 'shopify-client-secret', true, algorithm: 'HS256').first
+        expect(payload).to include('sub' => account.id, 'shop' => shop_domain, 'exp' => be_present)
+      end
+
+      it 'returns error when shop domain is missing' do
+        post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq('Shop domain is required')
+      end
+
+      it 'rejects a shop domain that is not a myshopify domain' do
+        post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
+             params: { shop_domain: 'attacker.example.com' },
+             headers: administrator.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq('Invalid shop domain')
+      end
+    end
+
+    context 'when it is an agent' do
+      it 'does not issue an authorization state' do
         post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
              params: { shop_domain: shop_domain },
              headers: agent.create_new_auth_token,
              as: :json
 
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body).to have_key('redirect_url')
-        expect(response.parsed_body['redirect_url']).to include(shop_domain)
-      end
-
-      it 'returns error when shop domain is missing' do
-        post "/api/v1/accounts/#{account.id}/integrations/shopify/auth",
-             headers: agent.create_new_auth_token,
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.parsed_body['error']).to eq('Shop domain is required')
+        expect(response).to have_http_status(:unauthorized)
       end
     end
 

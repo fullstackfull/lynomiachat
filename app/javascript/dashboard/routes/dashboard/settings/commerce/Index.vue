@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
@@ -11,15 +12,21 @@ import CommerceAPI from 'dashboard/api/commerce';
 import StoreDialog from './StoreDialog.vue';
 import ProviderPicker from './ProviderPicker.vue';
 import SallaConnectDialog from './SallaConnectDialog.vue';
+import ZidConnectDialog from './ZidConnectDialog.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 const { t, locale } = useI18n();
-const { apiErrorMessage, providerName, storeStatus } = useCommerceLabels();
+const route = useRoute();
+const router = useRouter();
+const { apiErrorMessage, errorMessage, providerName, storeStatus } =
+  useCommerceLabels();
 
-// Providers whose credentials are API keys an administrator enters here. Salla stores get their tokens from the Salla
-// app installation instead, so they have no keys to replace.
+// Providers whose credentials are API keys an administrator enters here. Salla and Zid stores get their tokens from
+// the provider's app authorization instead, so they have no keys to replace.
 const KEY_PROVIDERS = ['woocommerce'];
+// Providers re-authorized from here (Zid's OAuth). A Salla store is re-authorized from the Salla dashboard.
+const REAUTHORIZED_HERE = ['zid'];
 
 const STATUS_DOT = {
   active: 'bg-n-teal-9',
@@ -33,6 +40,7 @@ const providers = ref([]);
 const isLoading = ref(true);
 const showPicker = ref(false);
 const showSallaDialog = ref(false);
+const showZidDialog = ref(false);
 const showStoreDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
@@ -57,6 +65,24 @@ const replaceStore = store => {
 
 const usesKeys = store => KEY_PROVIDERS.includes(store.provider);
 
+const canReconnect = store =>
+  store.provider_enabled &&
+  (store.status === 'disconnected' ||
+    (store.status === 'needs_reauth' &&
+      REAUTHORIZED_HERE.includes(store.provider)));
+
+// Hints and texts of the app-authorized providers (COMMERCE.SETTINGS.SALLA / ZID).
+const providerText = (store, key) =>
+  t(`COMMERCE.SETTINGS.${store.provider.toUpperCase()}.${key}`);
+
+const disconnectDescription = store => {
+  if (usesKeys(store))
+    return t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION');
+  if (store.provider === 'salla')
+    return t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP');
+  return providerText(store, 'DISCONNECT_DESCRIPTION');
+};
+
 const openKeysDialog = () => {
   rotatingStore.value = null;
   showStoreDialog.value = true;
@@ -70,13 +96,24 @@ const openAddStore = () => {
   }
 };
 
+const openConnect = provider => {
+  if (provider === 'salla') showSallaDialog.value = true;
+  else if (provider === 'zid') showZidDialog.value = true;
+  else openKeysDialog();
+};
+
 const onProviderSelected = provider => {
   showPicker.value = false;
-  if (provider === 'salla') {
-    showSallaDialog.value = true;
-  } else {
-    openKeysDialog();
-  }
+  openConnect(provider);
+};
+
+// Zid's authorization comes back here with `zid=connected` or `zid_error=<code>`.
+const showZidResult = () => {
+  const { zid, zid_error: code, ...query } = route.query;
+  if (!zid && !code) return;
+
+  useAlert(code ? errorMessage(code) : t('COMMERCE.SETTINGS.CONNECTED'));
+  router.replace({ query });
 };
 
 const onSallaConnected = async () => {
@@ -134,7 +171,10 @@ const disconnect = async () => {
   }
 };
 
-onMounted(fetchStores);
+onMounted(() => {
+  showZidResult();
+  fetchStores();
+});
 </script>
 
 <template>
@@ -223,14 +263,14 @@ onMounted(fetchStores);
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"
               >
-                {{ t('COMMERCE.SETTINGS.SALLA.PROVIDER_OFF') }}
+                {{ providerText(store, 'PROVIDER_OFF') }}
               </span>
               <span
                 v-else-if="!usesKeys(store) && store.status === 'needs_reauth'"
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"
               >
-                {{ t('COMMERCE.SETTINGS.SALLA.REAUTH_HINT') }}
+                {{ providerText(store, 'REAUTH_HINT') }}
               </span>
             </div>
           </div>
@@ -265,14 +305,12 @@ onMounted(fetchStores);
               @click="openReplaceKeys(store)"
             />
             <Button
-              v-else-if="
-                store.status === 'disconnected' && store.provider_enabled
-              "
+              v-else-if="canReconnect(store)"
               :label="t('COMMERCE.SETTINGS.ACTIONS.RECONNECT')"
               variant="faded"
               color="slate"
               size="sm"
-              @click="showSallaDialog = true"
+              @click="openConnect(store.provider)"
             />
             <Button
               v-if="store.status !== 'disconnected'"
@@ -297,6 +335,7 @@ onMounted(fetchStores);
         @close="showSallaDialog = false"
         @connected="onSallaConnected"
       />
+      <ZidConnectDialog :show="showZidDialog" @close="showZidDialog = false" />
       <StoreDialog
         :show="showStoreDialog"
         :store="rotatingStore"
@@ -312,9 +351,7 @@ onMounted(fetchStores);
           })
         "
         :description="
-          disconnectingStore && !usesKeys(disconnectingStore)
-            ? t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP')
-            : t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION')
+          disconnectingStore ? disconnectDescription(disconnectingStore) : ''
         "
         :confirm-button-label="
           t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.CONFIRM')

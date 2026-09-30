@@ -32,6 +32,18 @@ describe('ProviderPicker', () => {
     expect(wrapper.emitted('select')).toEqual([['salla']]);
   });
 
+  it('offers Zid next to WooCommerce and Salla', async () => {
+    const wrapper = mountPicker(['woocommerce', 'salla', 'zid']);
+
+    expect(wrapper.text()).toContain('Zid');
+    expect(wrapper.text()).toContain('Authorize the Lynomia app on Zid.');
+    await wrapper
+      .find('[data-test-id="commerce-provider-zid"]')
+      .trigger('click');
+
+    expect(wrapper.emitted('select')).toEqual([['zid']]);
+  });
+
   it('never offers a provider the installation switched off', () => {
     const wrapper = mountPicker(['woocommerce']);
 

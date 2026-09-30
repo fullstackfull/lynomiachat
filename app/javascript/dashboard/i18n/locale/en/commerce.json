@@ -140,7 +140,8 @@
         "TITLE": "Add a store",
         "DESCRIPTION": "Choose the platform your store runs on.",
         "WOOCOMMERCE_HINT": "Connect with a read-only REST API key.",
-        "SALLA_HINT": "Install the Lynomia app from the Salla App Store. No keys to copy."
+        "SALLA_HINT": "Install the Lynomia app from the Salla App Store. No keys to copy.",
+        "ZID_HINT": "Authorize the Lynomia app on Zid. No keys to copy."
       },
       "SALLA": {
         "TITLE": "Connect with Salla",
@@ -165,6 +166,15 @@
         },
         "REAUTH_HINT": "Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own.",
         "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read."
+      },
+      "ZID": {
+        "TITLE": "Connect with Zid",
+        "DESCRIPTION": "Lynomia only reads customers, orders and shipments. You never enter or see a Zid token here.",
+        "STEPS": "You will sign in to Zid and approve the Lynomia app for your store, then come back here.",
+        "CONNECT": "Connect with Zid",
+        "REAUTH_HINT": "Zid needs you to authorize the Lynomia app again. Use Reconnect.",
+        "PROVIDER_OFF": "Zid is turned off on this installation. The store is kept but not read.",
+        "DISCONNECT_DESCRIPTION": "The store's access, its webhooks and every customer link of this store are deleted. Nothing changes in the store. You can connect it again with Zid."
       },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",

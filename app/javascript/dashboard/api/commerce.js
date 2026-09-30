@@ -21,6 +21,11 @@ class CommerceAPI extends ApiClient {
     return axios.get(this.sallaConnectionUrl());
   }
 
+  // The Zid authorization link for "Connect with Zid" (the browser is sent there; Zid redirects back to Lynomia).
+  createZidConnection() {
+    return axios.post(`${this.baseUrl()}/commerce/zid_connection`);
+  }
+
   conversationStoresUrl(conversationId) {
     return `${this.baseUrl()}/conversations/${conversationId}/commerce/stores`;
   }

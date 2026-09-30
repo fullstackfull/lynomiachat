@@ -30,6 +30,11 @@ const options = computed(() =>
       icon: 'i-lucide-store',
       hint: t('COMMERCE.SETTINGS.PICKER.SALLA_HINT'),
     },
+    {
+      provider: 'zid',
+      icon: 'i-lucide-store',
+      hint: t('COMMERCE.SETTINGS.PICKER.ZID_HINT'),
+    },
   ].filter(option => props.providers.includes(option.provider))
 );
 

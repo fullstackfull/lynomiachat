@@ -81,13 +81,15 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     end
   end
 
-  it 'records a customer data request for the operator without removing anything' do
+  it 'records a customer data request for the operator, with the link ids to export and no personal data, removing nothing' do
     run('customers/data_request', { 'shop_id' => 68_210_001, 'shop_domain' => shop, 'customer' => customer, 'data_request' => { 'id' => 9999 } })
 
     expect(store.customer_links.count).to eq(3)
     if defined?(Enterprise::AuditLog)
       audit = Enterprise::AuditLog.find_by!(comment: 'commerce.shopify.customer_data_requested')
-      expect(audit.audited_changes).to eq('customer_links' => 2, 'data_request_id' => 9999)
+      expect(audit.audited_changes).to eq('customer_link_ids' => store.customer_links.where(contact: [sara, guest]).order(:id).pluck(:id),
+                                          'data_request_id' => 9999)
+      expect(audit.to_json).not_to include('sara.ali', '966551112233')
     end
   end
 

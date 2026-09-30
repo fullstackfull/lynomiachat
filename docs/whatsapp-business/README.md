@@ -90,3 +90,17 @@ Nothing new was created: no provider, channel type, conversation, contact, messa
 - Staging runtime harness: messaging, echoes, statuses, failures and multi-tenant checks (results in `../chatwoot-upgrade/04-regression-report.md`).
 
 See also `SECURITY-BACKLOG.md` and `META-VERIFICATION.md` in this folder.
+
+## Phase 4: security hardening and production gate
+
+| Document | Content |
+|---|---|
+| `WEBHOOK-SIGNATURE.md` | Meta webhook signature audit and enforcement for every WhatsApp Cloud number (commit A), and the rollout steps for manual numbers |
+| `SECURITY-BACKLOG.md` | Finding status: agent create (commit C), browser token exposure and App Secret (commit B), encryption at rest (open blocker) |
+| `UAT-RUNBOOK.md` | Real Meta UAT: prerequisites, onboarding with a sanitized completion diagnostic, message matrix, coexistence and offboarding checks |
+| `../chatwoot-upgrade/06-target-runtime-and-staging-rehearsal.md` | Ruby 3.4.4 / Node 24 image built from this repo, staging rehearsal, rollback verified |
+| `../chatwoot-upgrade/04-new-plan-features.md` | New 4.18 feature flags and Lynomia billing plans |
+| `../chatwoot-upgrade/07-production-gate.md` | Gate table, production procedure and rollback |
+
+- The older `../whatsapp-qr/` documents (Evolution / "WhatsApp QR" research) are kept as they are: PAUSED, fallback research only.
+- No Evolution code or service exists in the app.

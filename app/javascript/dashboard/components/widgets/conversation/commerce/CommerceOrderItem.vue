@@ -36,6 +36,7 @@ const STATUS_CLASSES = {
 const PAYMENT_CLASSES = {
   paid: 'bg-n-teal-3 text-n-teal-11',
   unpaid: 'bg-n-amber-3 text-n-amber-11',
+  partially_paid: 'bg-n-amber-3 text-n-amber-11',
   failed: 'bg-n-ruby-3 text-n-ruby-11',
 };
 const NEUTRAL_BADGE = 'bg-n-slate-3 text-n-slate-11';

@@ -44,6 +44,20 @@ describe('ProviderPicker', () => {
     expect(wrapper.emitted('select')).toEqual([['zid']]);
   });
 
+  it('offers Shopify next to the other providers', async () => {
+    const wrapper = mountPicker(['woocommerce', 'salla', 'zid', 'shopify']);
+
+    expect(wrapper.text()).toContain('Shopify');
+    expect(wrapper.text()).toContain(
+      'Authorize the Lynomia Commerce app on your Shopify store.'
+    );
+    await wrapper
+      .find('[data-test-id="commerce-provider-shopify"]')
+      .trigger('click');
+
+    expect(wrapper.emitted('select')).toEqual([['shopify']]);
+  });
+
   it('never offers a provider the installation switched off', () => {
     const wrapper = mountPicker(['woocommerce']);
 

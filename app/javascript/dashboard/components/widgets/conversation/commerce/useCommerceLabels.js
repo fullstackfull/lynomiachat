@@ -23,6 +23,7 @@ export function useCommerceLabels() {
     ({
       paid: t('COMMERCE.PAYMENT_STATUS.PAID'),
       unpaid: t('COMMERCE.PAYMENT_STATUS.UNPAID'),
+      partially_paid: t('COMMERCE.PAYMENT_STATUS.PARTIALLY_PAID'),
       failed: t('COMMERCE.PAYMENT_STATUS.FAILED'),
       refunded: t('COMMERCE.PAYMENT_STATUS.REFUNDED'),
       partially_refunded: t('COMMERCE.PAYMENT_STATUS.PARTIALLY_REFUNDED'),
@@ -53,6 +54,9 @@ export function useCommerceLabels() {
       ENCRYPTION_NOT_CONFIGURED: t('COMMERCE.ERRORS.ENCRYPTION_NOT_CONFIGURED'),
       STORE_ALREADY_CONNECTED: t('COMMERCE.ERRORS.STORE_ALREADY_CONNECTED'),
       PROVIDER_DISABLED: t('COMMERCE.ERRORS.PROVIDER_DISABLED'),
+      PROTECTED_DATA_NOT_APPROVED: t(
+        'COMMERCE.ERRORS.PROTECTED_DATA_NOT_APPROVED'
+      ),
     })[code] || t('COMMERCE.ERRORS.GENERIC');
 
   const urlError = reason =>
@@ -63,12 +67,16 @@ export function useCommerceLabels() {
       ip_address_not_allowed: t('COMMERCE.URL_ERRORS.IP_ADDRESS_NOT_ALLOWED'),
       private_address: t('COMMERCE.URL_ERRORS.PRIVATE_ADDRESS'),
       redirect: t('COMMERCE.URL_ERRORS.REDIRECT'),
+      shopify_domain: t('COMMERCE.URL_ERRORS.SHOPIFY_DOMAIN'),
     })[reason] || t('COMMERCE.ERRORS.INVALID_STORE_URL');
 
   // The message for a failed API call: `{ error: { code, reason } }` bodies from the Commerce API.
   const apiErrorMessage = error => {
     const { code, reason } = error?.response?.data?.error || {};
     if (code === 'INVALID_STORE_URL' && reason) return urlError(reason);
+    if (reason === 'legacy_shopify_integration') {
+      return t('COMMERCE.ERRORS.LEGACY_SHOPIFY_CONNECTED');
+    }
     return errorMessage(code);
   };
 

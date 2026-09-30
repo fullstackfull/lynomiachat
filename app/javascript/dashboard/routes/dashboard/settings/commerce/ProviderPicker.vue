@@ -35,6 +35,11 @@ const options = computed(() =>
       icon: 'i-lucide-store',
       hint: t('COMMERCE.SETTINGS.PICKER.ZID_HINT'),
     },
+    {
+      provider: 'shopify',
+      icon: 'i-lucide-shopping-cart',
+      hint: t('COMMERCE.SETTINGS.PICKER.SHOPIFY_HINT'),
+    },
   ].filter(option => props.providers.includes(option.provider))
 );
 

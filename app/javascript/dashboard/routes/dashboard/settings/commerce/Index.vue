@@ -13,6 +13,7 @@ import StoreDialog from './StoreDialog.vue';
 import ProviderPicker from './ProviderPicker.vue';
 import SallaConnectDialog from './SallaConnectDialog.vue';
 import ZidConnectDialog from './ZidConnectDialog.vue';
+import ShopifyConnectDialog from './ShopifyConnectDialog.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
@@ -22,11 +23,13 @@ const router = useRouter();
 const { apiErrorMessage, errorMessage, providerName, storeStatus } =
   useCommerceLabels();
 
-// Providers whose credentials are API keys an administrator enters here. Salla and Zid stores get their tokens from
-// the provider's app authorization instead, so they have no keys to replace.
+// Providers whose credentials are API keys an administrator enters here. Salla, Zid and Shopify stores get their tokens
+// from the provider's app authorization instead, so they have no keys to replace.
 const KEY_PROVIDERS = ['woocommerce'];
-// Providers re-authorized from here (Zid's OAuth). A Salla store is re-authorized from the Salla dashboard.
-const REAUTHORIZED_HERE = ['zid'];
+// Providers re-authorized from here (Zid's and Shopify's OAuth). A Salla store is re-authorized from the Salla dashboard.
+const REAUTHORIZED_HERE = ['zid', 'shopify'];
+// Providers whose authorization returns here with `<provider>=connected` or `<provider>_error=<code>`.
+const RETURNING_PROVIDERS = ['zid', 'shopify'];
 
 const STATUS_DOT = {
   active: 'bg-n-teal-9',
@@ -41,6 +44,9 @@ const isLoading = ref(true);
 const showPicker = ref(false);
 const showSallaDialog = ref(false);
 const showZidDialog = ref(false);
+const showShopifyDialog = ref(false);
+// The myshopify.com domain of a Shopify store being reconnected.
+const shopifyShop = ref('');
 const showStoreDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
@@ -86,6 +92,11 @@ const providerTexts = store =>
       reauth: t('COMMERCE.SETTINGS.ZID.REAUTH_HINT'),
       disconnect: t('COMMERCE.SETTINGS.ZID.DISCONNECT_DESCRIPTION'),
     },
+    shopify: {
+      off: t('COMMERCE.SETTINGS.SHOPIFY.PROVIDER_OFF'),
+      reauth: t('COMMERCE.SETTINGS.SHOPIFY.REAUTH_HINT'),
+      disconnect: t('COMMERCE.SETTINGS.SHOPIFY.DISCONNECT_DESCRIPTION'),
+    },
   })[store.provider] || {};
 
 const disconnectDescription = store =>
@@ -106,10 +117,14 @@ const openAddStore = () => {
   }
 };
 
-const openConnect = provider => {
+// `store` is the store being reconnected, if any.
+const openConnect = (provider, store = null) => {
   if (provider === 'salla') showSallaDialog.value = true;
   else if (provider === 'zid') showZidDialog.value = true;
-  else openKeysDialog();
+  else if (provider === 'shopify') {
+    shopifyShop.value = store ? new URL(store.base_url).host : '';
+    showShopifyDialog.value = true;
+  } else openKeysDialog();
 };
 
 const onProviderSelected = provider => {
@@ -117,11 +132,18 @@ const onProviderSelected = provider => {
   openConnect(provider);
 };
 
-// Zid's authorization comes back here with `zid=connected` or `zid_error=<code>`.
-const showZidResult = () => {
-  const { zid, zid_error: code, ...query } = route.query;
-  if (!zid && !code) return;
+// Zid's and Shopify's authorizations come back here with `<provider>=connected` or `<provider>_error=<code>`.
+const showAuthorizationResult = () => {
+  const provider = RETURNING_PROVIDERS.find(
+    name => route.query[name] || route.query[`${name}_error`]
+  );
+  if (!provider) return;
 
+  const {
+    [provider]: _connected,
+    [`${provider}_error`]: code,
+    ...query
+  } = route.query;
   useAlert(code ? errorMessage(code) : t('COMMERCE.SETTINGS.CONNECTED'));
   router.replace({ query });
 };
@@ -182,7 +204,7 @@ const disconnect = async () => {
 };
 
 onMounted(() => {
-  showZidResult();
+  showAuthorizationResult();
   fetchStores();
 });
 </script>
@@ -320,7 +342,7 @@ onMounted(() => {
               variant="faded"
               color="slate"
               size="sm"
-              @click="openConnect(store.provider)"
+              @click="openConnect(store.provider, store)"
             />
             <Button
               v-if="store.status !== 'disconnected'"
@@ -346,6 +368,11 @@ onMounted(() => {
         @connected="onSallaConnected"
       />
       <ZidConnectDialog :show="showZidDialog" @close="showZidDialog = false" />
+      <ShopifyConnectDialog
+        :show="showShopifyDialog"
+        :shop="shopifyShop"
+        @close="showShopifyDialog = false"
+      />
       <StoreDialog
         :show="showStoreDialog"
         :store="rotatingStore"

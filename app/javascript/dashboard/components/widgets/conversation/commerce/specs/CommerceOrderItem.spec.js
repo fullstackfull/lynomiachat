@@ -94,6 +94,12 @@ describe('CommerceOrderItem', () => {
     expect(mountOrder({ item_count: null }).text()).not.toContain('items');
   });
 
+  it('shows a partly paid order as such', () => {
+    expect(mountOrder({ payment_status: 'partially_paid' }).text()).toContain(
+      'Partially paid'
+    );
+  });
+
   it('never claims payment it cannot confirm', () => {
     expect(mountOrder({ payment_status: 'unknown' }).text()).toContain(
       'Payment not confirmed'

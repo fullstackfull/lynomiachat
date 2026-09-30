@@ -26,6 +26,14 @@ class CommerceAPI extends ApiClient {
     return axios.post(`${this.baseUrl()}/commerce/zid_connection`);
   }
 
+  // The shop's authorization link for "Connect with Shopify" (the browser is sent there; Shopify redirects back to
+  // Lynomia). `shop` is the store's myshopify.com domain.
+  createShopifyConnection(shop) {
+    return axios.post(`${this.baseUrl()}/commerce/shopify_connection`, {
+      shop,
+    });
+  }
+
   conversationStoresUrl(conversationId) {
     return `${this.baseUrl()}/conversations/${conversationId}/commerce/stores`;
   }

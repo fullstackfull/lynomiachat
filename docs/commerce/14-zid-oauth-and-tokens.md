@@ -60,7 +60,7 @@ GET /commerce/zid/callback
 
 ## 3. State
 
-`Commerce::Zid::OauthState` answers "never trust query parameters alone for tenant ownership":
+`Commerce::OauthState` (provider `zid`; shared with Shopify since Phase 5) answers "never trust query parameters alone for tenant ownership":
 
 | Property | How |
 |---|---|
@@ -73,7 +73,7 @@ GET /commerce/zid/callback
 Reuse: the same Rails message-verifier infrastructure the upstream Google/Microsoft OAuth callbacks use (`to_sgid` in `OauthCallbackController`). The `code` and `state` parameters are filtered from request logs (`config/initializers/filter_parameter_logging.rb`, exact-key match).
 
 Evidence (specs):
-- `spec/services/commerce/zid/oauth_state_spec.rb`: valid, replayed, other browser, missing cookie, expired, forged with another key, tampered, garbage.
+- `spec/services/commerce/oauth_state_spec.rb`: valid, replayed, other browser, missing cookie, expired, forged with another key, tampered, garbage.
 - `spec/controllers/commerce/zid/callbacks_controller_spec.rb`:
   - state checked before the code;
   - replay, expired state, query `account_id` ignored;

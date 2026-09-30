@@ -17,9 +17,9 @@ class Api::V1::Accounts::Commerce::ZidConnectionsController < Api::V1::Accounts:
   def create
     raise ::Commerce::Error, 'ENCRYPTION_NOT_CONFIGURED' unless Chatwoot.encryption_configured?
 
-    issued = ::Commerce::Zid::OauthState.issue(account: Current.account, user: Current.user)
+    issued = ::Commerce::OauthState.issue('zid', account: Current.account, user: Current.user)
     cookies.encrypted[::Commerce::Zid::CallbacksController::COOKIE] = {
-      value: issued.nonce, expires: ::Commerce::Zid::OauthState::TTL.from_now, httponly: true, same_site: :lax, secure: request.ssl?,
+      value: issued.nonce, expires: ::Commerce::OauthState::TTL.from_now, httponly: true, same_site: :lax, secure: request.ssl?,
       path: ::Commerce::Zid::Config::CALLBACK_PATH
     }
     render json: { authorize_url: ::Commerce::Zid::Oauth.authorize_url(issued.state) }, status: :created

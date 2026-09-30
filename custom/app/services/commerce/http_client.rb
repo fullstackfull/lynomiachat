@@ -1,5 +1,6 @@
-# JSON client for store APIs: merchant-hosted ones (WooCommerce) and fixed platform APIs (Salla, Zid). Every provider uses
-# it, so the limits below are the same everywhere (docs/commerce/08-woocommerce-security.md, 12-salla-security.md).
+# JSON client for store APIs: merchant-hosted ones (WooCommerce), fixed platform APIs (Salla, Zid) and each Shopify shop's
+# myshopify.com host. Every provider uses it, so the limits below are the same everywhere
+# (docs/commerce/08-woocommerce-security.md, 12-salla-security.md).
 #
 # - Every request goes through SsrfFilter: the host is resolved, private/loopback/link-local/metadata addresses are
 #   refused and the connection is pinned to the checked IP (no DNS rebinding between check and connect).
@@ -46,12 +47,12 @@ class Commerce::HttpClient
   # transport failure raises Commerce::Error with reason 'not_sent' when the request provably never reached the server
   # (DNS, refused connection, connect timeout) and 'unknown_outcome' when the server may have processed it.
   def post_form(path, form)
-    response = perform(:post, build_uri(path), URI.encode_www_form(form), 'application/x-www-form-urlencoded')
-    [response.code.to_i, parse_json(strict: false)]
-  rescue *NOT_SENT_ERRORS
-    raise Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent')
-  rescue Commerce::Error, Net::ReadTimeout, Net::WriteTimeout, *CONNECTION_ERRORS
-    raise Commerce::Error.new('TIMEOUT', reason: 'unknown_outcome')
+    post_once(path, URI.encode_www_form(form), 'application/x-www-form-urlencoded')
+  end
+
+  # The same single request with a JSON body (Shopify's token endpoint).
+  def post_json_status(path, body)
+    post_once(path, body.to_json, 'application/json')
   end
 
   # One JSON POST, never retried (a webhook subscription could be created twice). Returns the parsed body of a 2xx answer.
@@ -68,6 +69,15 @@ class Commerce::HttpClient
   end
 
   private
+
+  def post_once(path, body, content_type)
+    response = perform(:post, build_uri(path), body, content_type)
+    [response.code.to_i, parse_json(strict: false)]
+  rescue *NOT_SENT_ERRORS
+    raise Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent')
+  rescue Commerce::Error, Net::ReadTimeout, Net::WriteTimeout, *CONNECTION_ERRORS
+    raise Commerce::Error.new('TIMEOUT', reason: 'unknown_outcome')
+  end
 
   def build_uri(path, params = {})
     uri = @base_uri.dup

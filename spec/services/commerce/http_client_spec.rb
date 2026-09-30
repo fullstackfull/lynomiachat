@@ -214,6 +214,31 @@ RSpec.describe Commerce::HttpClient do
     end
   end
 
+  describe '#post_json_status' do
+    let(:token_client) { described_class.new(base_uri: URI('https://lynomia-demo.myshopify.com'), log_tag: 'shopify') }
+    let(:token_url) { 'https://lynomia-demo.myshopify.com/admin/oauth/access_token' }
+
+    before { resolve('lynomia-demo.myshopify.com', '93.184.216.60') }
+
+    it 'sends one JSON POST and returns the status and body, errors included, without retrying' do
+      stub = stub_request(:post, token_url).with(body: { 'grant_type' => 'refresh_token', 'refresh_token' => 'refresh-1' },
+                                                 headers: { 'Content-Type' => 'application/json' })
+                                           .to_return(status: 502, body: '{"error":"bad gateway"}')
+
+      expect(token_client.post_json_status('/admin/oauth/access_token', grant_type: 'refresh_token', refresh_token: 'refresh-1'))
+        .to eq([502, { 'error' => 'bad gateway' }])
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'classifies transport failures like #post_form' do
+      stub_request(:post, token_url).to_raise(Net::ReadTimeout)
+      expect(error_for { token_client.post_json_status('/admin/oauth/access_token', {}) }).to eq(code: 'TIMEOUT', reason: 'unknown_outcome')
+
+      stub_request(:post, token_url).to_raise(Errno::ECONNREFUSED)
+      expect(error_for { token_client.post_json_status('/admin/oauth/access_token', {}) }).to eq(code: 'STORE_UNAVAILABLE', reason: 'not_sent')
+    end
+  end
+
   it 'sends a Bearer token as given' do
     bearer = described_class.new(base_uri: URI('https://shop.example.com/admin/v2'), authorization: 'Bearer access-1', log_tag: 'salla')
     stub = stub_request(:get, 'https://shop.example.com/admin/v2/orders').with(headers: { 'Authorization' => 'Bearer access-1' })

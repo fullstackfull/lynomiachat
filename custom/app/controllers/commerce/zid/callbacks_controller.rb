@@ -1,6 +1,6 @@
 # GET /commerce/zid/callback, the callback URL of the Lynomia Zid app (docs/commerce/14-zid-oauth-and-tokens.md).
 #
-# The state is checked first (Commerce::Zid::OauthState: signature, expiry, one use, the browser that started it). The
+# The state is checked first (Commerce::OauthState: signature, expiry, one use, the browser that started it). The
 # account and administrator come only from it and are checked again: the user is still an administrator of the account,
 # and the account and installation still offer Zid. Only then is the code read and exchanged server-side. The browser
 # returns to Settings → Commerce with `zid=connected` or `zid_error=<code>`; a callback without a valid state changes
@@ -9,7 +9,7 @@ class Commerce::Zid::CallbacksController < ApplicationController
   COOKIE = :lynomia_zid_oauth
 
   def show
-    grant = Commerce::Zid::OauthState.consume(params[:state], cookies.encrypted[COOKIE])
+    grant = Commerce::OauthState.consume('zid', params[:state], cookies.encrypted[COOKIE])
     cookies.delete(COOKIE, path: Commerce::Zid::Config::CALLBACK_PATH)
     return redirect_to("#{ENV.fetch('FRONTEND_URL')}/app", allow_other_host: true) unless grant
 

@@ -4,7 +4,7 @@ module Commerce::Zid::Oauth
   OAUTH_URI = URI('https://oauth.zid.sa').freeze
   API_URI = URI('https://api.zid.sa/v1').freeze
 
-  # Where the administrator's browser is sent to authorize the Lynomia app. `state` is Commerce::Zid::OauthState's.
+  # Where the administrator's browser is sent to authorize the Lynomia app. `state` is Commerce::OauthState's.
   def self.authorize_url(state)
     query = { client_id: Commerce::Zid::Config.client_id, redirect_uri: Commerce::Zid::Config.redirect_uri, response_type: 'code',
               state: state }

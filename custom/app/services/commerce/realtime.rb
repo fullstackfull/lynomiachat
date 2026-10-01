@@ -80,7 +80,8 @@ module Commerce::Realtime
     Commerce::RefreshJob.set(wait: COALESCE_WINDOW).perform_later(link.id)
   end
 
-  def self.lock_key(link) = "COMMERCE::V1::ACCOUNT::#{link.account_id}::STORE::#{link.commerce_store_id}::REFRESH::#{link.id}"
+  # Kept apart from the cache's keys, so a refresh lock is never taken for cached data.
+  def self.lock_key(link) = "COMMERCE::REFRESH::ACCOUNT::#{link.account_id}::STORE::#{link.commerce_store_id}::LINK::#{link.id}"
 
   def self.dirty_key(link) = "#{lock_key(link)}::PENDING"
 

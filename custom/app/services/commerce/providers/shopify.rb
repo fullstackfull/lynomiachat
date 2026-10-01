@@ -95,6 +95,24 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  def self.supports_realtime? = true
+
+  # An orders/create or orders/updated body: its customer's id, or for a guest checkout the order's email as guest links
+  # keep it. Tracking-only changes that do not update the order arrive with no event (docs/commerce/20 §1).
+  def event_customer_ids(payload)
+    return [] unless payload.is_a?(Hash)
+
+    customer_id = payload.dig('customer', 'id') if payload['customer'].is_a?(Hash)
+    return [Integer(customer_id.to_s, 10).to_s] if customer_id
+
+    email = payload['email'].to_s.strip.downcase
+    email.present? ? ["#{GUEST_PREFIX}#{email}"] : []
+  rescue ArgumentError, TypeError
+    []
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) ? payload['id']&.to_s : nil
+
   # Built from the store's validated myshopify.com domain and the order's numeric id, never from a URL in a response.
   def admin_order_url(external_order_id)
     id = Integer(external_order_id.to_s, 10)

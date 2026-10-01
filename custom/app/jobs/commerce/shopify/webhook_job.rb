@@ -2,7 +2,8 @@
 # compliance.md). Lynomia keeps no order database: per shop it keeps the store (encrypted token), customer links and
 # cached reads, so that is all these events touch. Contacts and conversations are never deleted.
 #
-# - orders/create, orders/updated: the customer's (or guest's) cached orders are dropped, so the panel reads them again.
+# - orders/create, orders/updated: through Commerce::Realtime, the customer's (or guest's) cached orders are dropped and,
+#   for a linked contact, refreshed.
 # - app/uninstalled: the store is disconnected: token, customer links and cache removed.
 # - customers/redact: the customer's links and the store's cache are removed; the audit keeps counts only.
 # - customers/data_request: recorded for the operator with the ids of the customer's links, so the data can be exported
@@ -28,12 +29,7 @@ class Commerce::Shopify::WebhookJob < ApplicationJob
   private
 
   def invalidate_orders(payload)
-    return if @store.disconnected?
-
-    customer_id = payload.dig('customer', 'id')
-    email = payload['email'].to_s.strip.downcase
-    Commerce::Cache.invalidate(@store, :orders, customer_id.to_s) if customer_id
-    Commerce::Cache.invalidate(@store, :orders, "#{Commerce::Providers::Shopify::GUEST_PREFIX}#{email}") if customer_id.nil? && email.present?
+    Commerce::Realtime.order_event(@store, payload) unless @store.disconnected?
   end
 
   def uninstalled(payload)

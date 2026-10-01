@@ -51,6 +51,20 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  def self.supports_realtime? = true
+
+  # Zid's order events (order.create, order.status.update, order.payment_status.update) carry the order at the top level,
+  # with its customer (docs/commerce/15-zid-webhook-security.md §8 for what is still to confirm on a live store).
+  def event_customer_ids(payload)
+    customer = payload['customer'] if payload.is_a?(Hash)
+    id = Integer(customer['id'].to_s, 10) if customer.is_a?(Hash)
+    id&.positive? ? [id.to_s] : []
+  rescue ArgumentError, TypeError
+    []
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) ? payload['id']&.to_s : nil
+
   # Zid stops sending the store's order events to Lynomia.
   def release
     Commerce::Zid::Webhooks.new(@store).unregister

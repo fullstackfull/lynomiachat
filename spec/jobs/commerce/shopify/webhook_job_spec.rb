@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Commerce::Shopify::WebhookJob do
   include_context 'with commerce encryption'
+  include ActiveJob::TestHelper
   include_context 'with shopify commerce app'
 
   let(:account) { create(:account) }
@@ -37,6 +38,13 @@ RSpec.describe Commerce::Shopify::WebhookJob do
 
     expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(false)
     expect(Redis::Alfred.exists?(cache_key.call('7002'))).to be(true)
+  end
+
+  it 'refreshes the linked contact of an order event, and only it' do
+    run('orders/updated', { 'id' => 6_001_006, 'email' => 'sara.ali@example.com', 'customer' => customer })
+
+    link = Commerce::CustomerLink.find_by!(contact: sara)
+    expect(enqueued_jobs.select { |job| job[:job] == Commerce::RefreshJob }.map { |job| job[:args] }).to eq([[link.id]])
   end
 
   it "drops a guest's cached orders on a guest checkout event" do

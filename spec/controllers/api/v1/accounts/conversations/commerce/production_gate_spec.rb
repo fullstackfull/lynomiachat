@@ -43,7 +43,7 @@ RSpec.describe 'Commerce production gate: one account, four providers', type: :r
                                          'cs_factory', 'ck_factory')
   end
 
-  it 'keeps each store in its own cache: an order event drops only that store customer orders' do
+  it 'keeps each store in its own cache: an order event drops and refreshes only that store customer orders' do
     [woo, salla, zid, shopify].each { |store| panel.call(store) }
     before_keys = [woo, salla, zid, shopify].index_with { |store| cache_keys.call(store) }
     expect(before_keys.values).to all(be_present)
@@ -52,7 +52,7 @@ RSpec.describe 'Commerce production gate: one account, four providers', type: :r
     zid.update!(credentials: zid.credentials.merge('webhook_username' => 'u' * 32, 'webhook_password' => 'p' * 64))
     body = { id: 6_001_006, customer: { id: 7001 } }.to_json
     signature = Base64.strict_encode64(OpenSSL::HMAC.digest('SHA256', shopify_client_secret, body))
-    perform_enqueued_jobs do
+    perform_enqueued_jobs(only: Commerce::Shopify::WebhookJob) do
       post '/webhooks/shopify_commerce', params: body,
                                          headers: { 'Content-Type' => 'application/json', 'X-Shopify-Topic' => 'orders/updated',
                                                     'X-Shopify-Shop-Domain' => 'lynomia-demo.myshopify.com', 'X-Shopify-Webhook-Id' => 'gate-1',
@@ -60,6 +60,10 @@ RSpec.describe 'Commerce production gate: one account, four providers', type: :r
     end
 
     expect(cache_keys.call(shopify).size).to eq(before_keys[shopify].size - 1)
+    [woo, salla, zid].each { |store| expect(cache_keys.call(store)).to match_array(before_keys[store]) }
+
+    perform_enqueued_jobs(only: Commerce::RefreshJob)
+    expect(cache_keys.call(shopify)).to match_array(before_keys[shopify])
     [woo, salla, zid].each { |store| expect(cache_keys.call(store)).to match_array(before_keys[store]) }
   end
 

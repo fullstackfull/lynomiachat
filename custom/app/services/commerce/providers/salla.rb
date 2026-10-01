@@ -44,6 +44,22 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
     orders.sort_by { |order| order.created_at.to_s }.reverse.first(limit).map { |order| with_shipments(order) }
   end
 
+  def self.supports_realtime? = true
+
+  # VERIFY(salla-store-events): Salla delivers the store events an app subscribes to in the Partner Portal to the app's
+  # webhook URL, signed like the app events, as { event, merchant, data }. Lynomia reads only the customer id of an order
+  # event (data.customer.id); the exact payload of order and shipment events is unconfirmed on a live store, so anything
+  # else names nobody and every customer's cached orders of the store are dropped instead.
+  def event_customer_ids(payload)
+    customer = payload.dig('data', 'customer') if payload.is_a?(Hash) && payload['data'].is_a?(Hash)
+    id = Integer(customer['id'].to_s, 10) if customer.is_a?(Hash)
+    id&.positive? ? [id.to_s] : []
+  rescue ArgumentError, TypeError
+    []
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) && payload['data'].is_a?(Hash) ? payload['data']['id']&.to_s : nil
+
   def get_order(external_order_id)
     raw = get("/orders/#{Integer(external_order_id.to_s, 10)}")['data']
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless raw.is_a?(Hash)

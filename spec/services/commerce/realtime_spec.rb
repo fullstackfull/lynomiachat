@@ -44,7 +44,7 @@ RSpec.describe Commerce::Realtime do
     allow(Resolv).to receive(:getaddresses).and_call_original
     allow(Resolv).to receive(:getaddresses).with('shop.example.com').and_return(['93.184.216.34'])
     [store, other_store].each { |target| Commerce::Cache.purge(target) }
-    Redis::Alfred.scan_each(match: "COMMERCE::V1::ACCOUNT::#{account.id}::STORE::*::REFRESH::*") { |key| Redis::Alfred.delete(key) }
+    Redis::Alfred.scan_each(match: "COMMERCE::REFRESH::ACCOUNT::#{account.id}::*") { |key| Redis::Alfred.delete(key) }
     orders_api.to_return(status: 200, body: JSON.parse(file_fixture('commerce/woocommerce/orders.json').read).first(2).to_json)
   end
 

@@ -8,8 +8,9 @@
 #  query       :jsonb            not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
+#  shared      :boolean          default(FALSE), not null
 #  account_id  :bigint           not null
-#  user_id     :bigint           not null
+#  user_id     :bigint
 #
 # Indexes
 #
@@ -17,7 +18,7 @@
 #  index_custom_filters_on_user_id     (user_id)
 #
 class CustomFilter < ApplicationRecord
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :account
 
   enum filter_type: { conversation: 0, contact: 1, report: 2 }
@@ -52,3 +53,4 @@ class CustomFilter < ApplicationRecord
 end
 
 CustomFilter.include_mod_with('Audit::CustomFilter')
+CustomFilter.prepend_mod_with('CustomFilter')

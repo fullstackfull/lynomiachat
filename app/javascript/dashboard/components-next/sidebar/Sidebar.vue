@@ -552,7 +552,9 @@ const menuItems = computed(() => {
           showTreeLine: true,
           children: contactCustomViews.value.map(view => ({
             name: `${view.name}-${view.id}`,
-            label: view.name,
+            label: view.shared
+              ? t('SIDEBAR.SHARED_AUDIENCE', { name: view.name })
+              : view.name,
             to: accountScopedRoute(
               'contacts_dashboard_segments_index',
               { segmentId: view.id },

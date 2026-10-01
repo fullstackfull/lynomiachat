@@ -51,3 +51,5 @@ class Api::V1::Accounts::CustomFiltersController < Api::V1::Accounts::BaseContro
     params.permit(:id, :filter_type)
   end
 end
+
+Api::V1::Accounts::CustomFiltersController.prepend_mod_with('Api::V1::Accounts::CustomFiltersController')

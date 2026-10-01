@@ -368,7 +368,9 @@
             "PLACEHOLDER": "Name this audience",
             "ERROR": "Enter a valid name",
             "SUCCESS_MESSAGE": "Audience saved",
-            "ERROR_MESSAGE": "Couldn’t save the audience. Please try again."
+            "ERROR_MESSAGE": "Couldn’t save the audience. Please try again.",
+            "SHARE": "Share with the whole account",
+            "SHARE_HINT": "Everyone in the account can open a shared audience, and automation rules can use it. Only administrators can change it."
           },
           "DELETE_SEGMENT": {
             "TITLE": "Delete this audience?",

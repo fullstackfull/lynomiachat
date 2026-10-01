@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_02_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_03_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1106,9 +1106,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_02_100000) do
     t.integer "filter_type", default: 0, null: false
     t.jsonb "query", default: "{}", null: false
     t.bigint "account_id", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "shared", default: false, null: false
     t.index ["account_id"], name: "index_custom_filters_on_account_id"
     t.index ["user_id"], name: "index_custom_filters_on_user_id"
   end

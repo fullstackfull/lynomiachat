@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useRouter } from 'vue-router';
 import { useAlert, useTrack } from 'dashboard/composables';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { CONTACTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import filterQueryGenerator from 'dashboard/helper/filterQueryGenerator';
 import contactFilterItems from 'dashboard/routes/dashboard/contacts/contactFilterItems';
@@ -73,6 +74,12 @@ const hasActiveSegments = computed(
   () => props.activeSegment && props.segmentsId !== 0
 );
 const activeSegmentName = computed(() => props.activeSegment?.name);
+// Lynomia shared audiences: members open them; only administrators change or delete them.
+const { isAdmin } = useAdmin();
+const isSharedSegment = computed(() => Boolean(props.activeSegment?.shared));
+const canManageSegment = computed(
+  () => !isSharedSegment.value || isAdmin.value
+);
 
 const openCreateNewContactDialog = () => {
   createNewContactDialogRef.value?.dialogRef.open();
@@ -183,8 +190,14 @@ const onDeleteSegment = async payload => {
       t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.SUCCESS_MESSAGE')
     );
   } catch (error) {
+    // A shared audience automation rules use is refused with the reason.
+    deleteSegmentDialogRef.value?.dialogRef.close();
     useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.ERROR_MESSAGE')
+      isSharedSegment.value && error.message
+        ? error.message
+        : t(
+            'CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.DELETE_SEGMENT.ERROR_MESSAGE'
+          )
     );
   }
 };
@@ -292,6 +305,7 @@ defineExpose({
     :active-ordering="activeOrdering"
     :header-title="headerTitle"
     :is-segments-view="hasActiveSegments"
+    :can-manage-segment="canManageSegment"
     :is-label-view="isLabelView"
     :is-active-view="isActiveView"
     :has-active-filters="hasAppliedFilters"
@@ -313,7 +327,9 @@ defineExpose({
           v-if="showFiltersModal"
           v-model="appliedFilter"
           :segment-name="activeSegmentName"
-          :is-segment-view="hasActiveSegments"
+          :is-segment-view="hasActiveSegments && canManageSegment"
+          :shared-segment="isSharedSegment"
+          :active-rule-count="activeSegment?.active_automation_rules_count || 0"
           @apply-filter="onApplyFilter"
           @update-segment="onUpdateSegment"
           @close="closeAdvanceFiltersModal"

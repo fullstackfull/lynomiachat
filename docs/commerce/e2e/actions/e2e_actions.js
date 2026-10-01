@@ -755,6 +755,7 @@ const sim = async () => {
     && cards.some(text => text.includes('Shopify') && /410/.test(text)), JSON.stringify(cards.map(text => text.slice(0, 90))));
 
   // ---- E. Prepare, send, cooldown ----------------------------------------------------------------------------------------------
+  const sentBefore = ctl('sims').whatsapp_sent.length;
   const zidCart = agentA.locator('[data-test-id="commerce-cart"]', { hasText: '185.50' }).first();
   await zidCart.locator('[data-test-id="commerce-cart-prepare"]').click();
   await agentA.waitForTimeout(2500);
@@ -762,7 +763,7 @@ const sim = async () => {
   const draft = clean(await editor.innerText().catch(() => ''));
   let recovery = runs().filter(run => run.action_type === 'recovery_message');
   check('prepare: the message lands in the reply box with the store\'s own link; nothing is sent', draft.includes('https://jasmine.zid.store/cart/recover/1?key=e2e1')
-    && draft.startsWith('Hi Omar') && recovery.length === 1 && recovery[0].status === 'pending' && ctl('sims').whatsapp_sent.length === 0, draft);
+    && draft.startsWith('Hi Omar') && recovery.length === 1 && recovery[0].status === 'pending' && ctl('sims').whatsapp_sent.length === sentBefore, draft);
   cards = await cartCards();
   check('the cart says the message is prepared, not sent', cards.some(text => text.includes('not sent yet')));
   await shot(agentA, 's03-recovery-prepared-en');
@@ -770,7 +771,7 @@ const sim = async () => {
   await waitFor(async () => runs().find(run => run.action_type === 'recovery_message')?.status === 'succeeded', 30000, 1500);
   recovery = runs().filter(run => run.action_type === 'recovery_message');
   check('sent by the agent: the outgoing message with the link marks it sent', recovery[0].status === 'succeeded' && recovery[0].metadata.message_id
-    && ctl('sims').whatsapp_sent.length === 1, JSON.stringify(recovery[0]));
+    && ctl('sims').whatsapp_sent.length === sentBefore + 1, JSON.stringify(recovery[0]));
   await waitFor(async () => (await cartCards()).some(text => text.includes('Recovery message sent')), 30000, 1000, async () => openOverview(agentA));
   cards = await cartCards();
   check('the cart shows it sent, and the cooldown; the agent has no Prepare (and no override)', cards.some(text => text.includes('Recovery message sent')

@@ -1,0 +1,54 @@
+{"stores":0,"runs":0}
+PASS  [gate] production defaults: WooCommerce read on, order actions switch on (each store still opts in), Salla/Zid/Shopify off  -- {"woocommerce":true,"salla":false,"zid":false,"shopify":false}
+PASS  [gate] production defaults: recovery off everywhere (WooCommerce has no abandoned-cart API), no pre-UAT override  -- {"woocommerce":false,"salla":false,"zid":false,"shopify":false}
+PASS  [gate] disposable WooCommerce orders created for this run (never a merchant order)  -- {"api":"72","limit":"73","status":"74","cancel":"75","refund":"76","manual":"77","lost":"78"}
+PASS  [gate] Read/Write key: Read-only Commerce, live updates and order actions shown separately; actions off until opted in  -- Syria Cosmetics Active WooCommerce http://localhost:8081 Verified this minute Read-only Commerce: on Live order updates on Order actions: off Refunds and cancellations stay limited to administrators. Turn on order actions Disable Replace keys Disconnect
+PASS  [gate] Read key: "Order actions require a Read/Write WooCommerce API key." and nothing to turn on; the key is not upgraded  -- Damascus Perfumes Active WooCommerce http://localhost:8082 Verified this minute Read-only Commerce: on Live order updates off: this key is read-only. Replace it with a Read/Write key to turn them on. Order actions require a Read/Write WooCommerce API key. Disable Replace keys Disconnect
+{"stores":[[130,"woocommerce","Syria Cosmetics","active"],[131,"woocommerce","Damascus Perfumes","active"],[132,"salla","متجر الورد","active"],[133,"zid","متجر الياسمين","active"],[134,"shopify","Lynomia Demo","active"]]}
+PASS  [gate] switches on for Salla/Zid/Shopify, yet their actions and carts stay off: providers before UAT are held back  -- {"actions":{"woocommerce":true,"salla":false,"zid":false,"shopify":false},"recovery":{"woocommerce":false,"salla":false,"zid":false,"shopify":false}}
+PASS  [gate] settings: Zid and Shopify say order actions are switched off on this installation; Salla offers none  -- متجر الياسمين Active Zid https://jasmine.zid.store Verified 1 minute ago Read-only Commerce: on Order actions are switch | Lynomia Demo Active Shopify https://lynomia-demo.myshopify.com Verified 1 minute ago Read-only Commerce: on Order action
+PASS  [gate] no abandoned-cart queue while no store offers carts
+PASS  [gate] the administrator turns order actions on for the Read/Write store  -- Syria Cosmetics Active WooCommerce http://localhost:8081 Verified 1 minute ago Read-only Commerce: on Live order updates on Order actions: on Refunds and cancellations stay limited to administrators. Turn off order actions Disable Replace keys Disconnect
+PASS  [gate] the administrator sees the order actions menu on the opted-in store's orders  -- #74 SAR 85.50 Processing Paid Oct 1, 2026 1 item View order
+PASS  [gate] an agent without the order permission sees no actions menu at all  -- #74 SAR 85.50 Processing Paid Oct 1, 2026 1 item View order
+PASS  [gate] menu of a paid processing order: status, resend, refunds; cancel explained as "refund it first"; never trash  -- Order #74 Syria Cosmetics · WooCommerce Change status Resend order details Resend payment link Not possible in the order’s current status. Cancel order The order is paid: refund it first. Partial refund Refund in full Close
+PASS  [gate] status change: the review names store, provider, order and the change; done after the store confirms  -- The order’s status changes from Processing to Completed. The store may email the customer about it. | Done. The order shown is now read from the store.
+PASS  [gate] WooCommerce has the order completed, written once  -- completed run=succeeded
+PASS  [gate] another agent's open panel shows the new status live, without a reload  -- ms=5 frames=1
+PASS  [gate] resend invoice: WooCommerce emails the order details once, to the order's billing email  -- The store emails its order details to the order’s billing email. | mails=[{"to":"omar.khalil@example.com","subject":"Details for order #74 on Syria Cosmetics","at":1790865498}]
+PASS  [gate] cancel an unpaid order: the review says cancelling refunds nothing; WooCommerce cancels it, no refund, no gateway call  -- The order will be cancelled and its items returned to stock. Cancelling does not refund any payment. | cancelled
+PASS  [gate] refund form: an amount above the refundable maximum is refused before review  -- Order #76 Syria Cosmetics · WooCommerce Partial refund Amount Enter an amount above 0 and up to SAR 240.00. Reason Customer request Duplicate order Damaged item Item not received Other Back REVIEW
+PASS  [gate] Enter submits nothing: not in the amount field, not on the review  -- runs 3→3
+PASS  [gate] refund review: store, order, amount and currency, the gateway and "can’t be undone"  -- Order #76 Syria Cosmetics · WooCommerce Check before confirming Store Syria Cosmetics · WooCommerce Order #76 Action Partial refund Amount SAR 10.00 SAR 10.00 will be sent back to the customer through Lynomia E2E Card. This can’t be undone. Back Confirm
+PASS  [gate] a double-clicked Confirm makes one run and one refund of 10.00 through the gateway  -- [{"id":79,"amount":"10.00","key":"commerce-action:9ee6c48e-d5f5-45af-9fcd-e586b8b12652","payment":true}]
+PASS  [gate] the refund carries the run's idempotency key in WooCommerce (how a lost answer is reconciled)  -- commerce-action:9ee6c48e-d5f5-45af-9fcd-e586b8b12652
+PASS  [gate] the same key again answers the same run; with other values it is refused (IDEMPOTENCY_CONFLICT)  -- 202 422 {"error":{"code":"IDEMPOTENCY_CONFLICT"}}
+PASS  [gate] two simultaneous requests with one key: one run, one refund in WooCommerce  -- 202,202 refunds=1
+PASS  [gate] the order changed in the store after review: the action stops, nothing is sent (ORDER_CHANGED)  -- The order changed in the store after you opened it. Nothing was sent. Review it again.
+PASS  [gate] the gateway declines: the dialog says so and no refund exists  -- The payment gateway refused the refund. No money was sent.
+PASS  [gate] no answer within the timeout: the run is unknown and the dialog says not to try again  -- The store didn’t answer in time. Lynomia is checking the order with the store: don’t try again until it does. run=unknown
+PASS  [gate] while unknown, no other action on the order is possible  -- {"available":false,"reason":"action_in_progress"}
+PASS  [gate] reconciled by reading WooCommerce: the refund made after the timeout is found by its key; nothing was sent again  -- run=succeeded {"mode":"gateway","amount":"7.77","reason":"customer_request","result":{"status":"processing","payment_status":"partially_refunded"},"version":"c95fdcb38047f45391e56414c3039eca","currency":"SAR","from_status":"processing","order_number":"78","reconcile_attempts":1} refunds=1
+PASS  [gate] refund in full: the remaining refundable amount, fixed; WooCommerce marks the order refunded  -- amount=230.00 status=refunded
+PASS  [gate] nothing is left to refund afterwards  -- Order #76 Syria Cosmetics · WooCommerce Change status Not possible in the order’s current status. Resend order details Not possible in the order’s current status. Resend payment link Not possible in t
+PASS  [gate] cash on delivery in processing is not paid yet (WooCommerce sets no payment date): no refund offered  -- {"available":false,"reason":"not_paid"}
+PASS  [gate] a gateway without refunds: the review says the refund is recorded only; WooCommerce records it, no money moves  -- The store will record a refund of SAR 20.00. No money is sent to the customer: refund the payment yourself.
+PASS  [gate] more than the provider-confirmed refundable amount is never sent (INVALID_AMOUNT)  -- 202 INVALID_AMOUNT
+PASS  [gate] …and WooCommerce has no new refund
+PASS  [gate] an agent cannot refund through the API either  -- 401
+PASS  [gate] the Read-key store refuses actions (and does not know the other store's order)  -- 422 {"error":{"code":"ACTIONS_DISABLED","reason":"store_actions_off"}}
+PASS  [gate] rate limit: the sixth request on one order within 10 minutes gets 429 with Retry-After; refused runs wrote nothing  -- 202,422,422,422,422,429 {"error":{"code":"RATE_LIMITED","retry_after":600}}
+PASS  [gate] COMMERCE_ACTIONS_ENABLED=false: no actions menu, requests refused (ACTIONS_DISABLED), orders still shown read-only  -- 422 {"error":{"code":"ACTIONS_DISABLED","reason":"actions_disabled"}}
+PASS  [gate] WooCommerce refuses the write (the key became read-only): the dialog says the credentials can't change orders  -- The store’s credentials can’t change orders. An administrator can replace them.
+PASS  [gate] settings now ask for a Read/Write key; nothing was upgraded or retried silently  -- Syria Cosmetics Active WooCommerce http://localhost:8081 Verified 7 minutes ago Read-only Commerce: on Live order updates on Order actions require a Read/Write WooCommerce API key. Disable Replace keys Disconnect
+PASS  [gate] the administrator replaces the key with a Read/Write one: order actions on again (the opt-in was kept)  -- Syria Cosmetics Active WooCommerce http://localhost:8081 Verified this minute Read-only Commerce: on Live order updates on Order actions: on Refunds and cancellations stay limited to administrators. Turn off order actions Disable Replace keys Disconnect
+PASS  [gate] WooCommerce: no abandoned carts (no merchant-wide API in WooCommerce core); none shown, nothing else asked of the store  -- []
+PASS  [gate] audit trail: requested, succeeded, failed, reconciled, order actions changed  -- commerce.store_connected,commerce.salla.connect_started,commerce.salla.connected,commerce.zid.connected,commerce.shopify.connected,commerce.order_actions_changed,commerce.customer_link_created,commerce.action.requested,commerce.action.succeeded,commerce.action.failed,commerce.action.reconciled,commerce.credentials_rotated
+PASS  [gate] action runs keep no addresses, contact details, tokens, payment data or order JSON  -- result,version,from_status,order_number,target_status,reason,restock,mode,amount,currency,reconcile_attempts
+PASS  [gate] audit entries carry no contact details or credentials
+PASS  [gate] Arabic: the review in Arabic, right to left  -- الطلب #77 Syria Cosmetics · WooCommerce تحقق قبل التأكيد المتجر Syria Cosmetics · WooCommerce الطلب #77 الإجراء استرداد 
+PASS  [gate] mobile: the conversation renders at 390 px
+PASS  [gate] no credential, token or secret in logs, API responses or socket frames  -- secrets=27 leaks=
+PASS  [gate] no raw provider error reached the browser
+PASS  [gate] no page errors
+51/51 passed

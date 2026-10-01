@@ -75,7 +75,8 @@ def reset
   Commerce::ActionRun.delete_all
   Commerce::Store.find_each(&:destroy!)
   [SallaSim, ZidSim, ShopifySim].each(&:reset!)
-  %w[COMMERCE::* E2E::REALTIME::* E2E::WHATSAPP::*].each do |pattern|
+  ZidSim.redis.del('E2E::WHATSAPP::SENT')
+  %w[COMMERCE::* E2E::REALTIME::*].each do |pattern|
     keys = []
     Redis::Alfred.scan_each(match: pattern) { |key| keys << key }
     keys.each { |key| Redis::Alfred.delete(key) }

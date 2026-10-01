@@ -164,8 +164,16 @@ Indexes: unique `idempotency_key`; `[commerce_store_id, external_resource_id, st
 
 ## 11. Rollback
 
-The phase adds one table (`20261001100000_create_commerce_action_runs`). Rolling the code back leaves it unused; older
-code ignores it, the `order_actions` store setting and the `write_access` store metadata key. To remove it:
-`bundle exec rails db:migrate:down VERSION=20261001100000` (drops `commerce_action_runs`; no other table changes). Set
-`COMMERCE_ACTIONS_ENABLED=false` first to stop new actions; let unresolved runs finish reconciling (at most ~13 min) before
-dropping the table if their audit matters.
+The phase adds one table (`20261001100000_create_commerce_action_runs`) and no change to existing tables. Rollback is a
+code rollback only, with no downgrade migration:
+
+1. Set `COMMERCE_ACTIONS_ENABLED=false` and `COMMERCE_RECOVERY_ENABLED=false` (Super Admin): no new action or recovery
+   preparation. Actions already sent keep being reconciled by reading the store (at most ~13 minutes).
+2. As before (Phase 7–8, doc 25): before rolling back to code that does not understand suppressed links, run
+   `Commerce::CustomerLink.where(match_source: 4).delete_all`.
+3. Deploy the previous release. Older code never reads `commerce_action_runs`, the `order_actions` store setting or the
+   `write_access` store metadata key, so they are safely ignored; the table stays, with its audit history.
+
+Do not run the down migration as part of a rollback: it would drop the action history. It exists and was rehearsed on a
+throwaway database (doc 33 §3: `db:migrate:down VERSION=20261001100000` drops only `commerce_action_runs`, `db:migrate`
+restores it), for a deliberate clean-up later.

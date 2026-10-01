@@ -443,7 +443,11 @@ const back = () => {
           <dt class="text-n-slate-11">
             {{ t('COMMERCE.ACTIONS.REVIEW.ORDER') }}
           </dt>
-          <dd class="text-n-slate-12" dir="ltr">#{{ order.order_number }}</dd>
+          <dd class="text-n-slate-12" dir="ltr">
+            {{
+              t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number })
+            }}
+          </dd>
           <dt class="text-n-slate-11">
             {{ t('COMMERCE.ACTIONS.REVIEW.ACTION') }}
           </dt>

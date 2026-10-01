@@ -108,6 +108,13 @@ Shopify differs from the row above:
 - **No `shopify_api` 16.x upgrade.** The connector talks to Shopify through `Commerce::HttpClient`, so the upstream gem and its billing code are untouched.
 - **Exit criteria still open:** the development-store run and Shopify's protected customer data approval (doc 22 §6).
 
+**Phases 7–10 status (2026-10-01): implemented; Lynomia Commerce ends here.** Phase 7–8 (rows 6 and part of 7):
+Customer 360 and realtime (docs 24–27). Phase 9–10 (row 7 and the abandoned carts of row 6): order actions with a
+separate permission, a two-step confirmation and an audit trail; abandoned carts; prepared, human-sent recovery
+messages (docs 28–34). Production readiness per provider is in doc 34 §1: WooCommerce read, realtime and per-store
+order actions GO; Salla, Zid and Shopify held back until their real UAT. Not started, by decision: CRM, SLA, Audiences,
+Automation, AI, and the Captain copilot tool of row 6.
+
 ## 4. Files likely to change in Phase 2 (core + WooCommerce)
 
 **New (Lynomia-owned, `custom/`)**

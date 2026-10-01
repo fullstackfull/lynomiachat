@@ -1,0 +1,6 @@
+# Enterprise RSpec, 4 shards, code at 5775b9ea2 + the uncommitted Arabic string fix (later: the review's order number through i18n, same text), lynomia/verify:base (Ruby 3.4.4)
+shard 0: 2342 examples, 0 failures, 9 pending
+shard 1: 2614 examples, 0 failures, 9 pending
+shard 2: 2771 examples, 1 failure, 39 pending
+  failed: rspec ./spec/enterprise/services/voice/call_transcription_service_spec.rb:77 # Voice::CallTranscriptionService#perform reindexes before broadcasting so a retry after a reindex failure does not resend the update event
+shard 3: 2566 examples, 0 failures, 10 pending

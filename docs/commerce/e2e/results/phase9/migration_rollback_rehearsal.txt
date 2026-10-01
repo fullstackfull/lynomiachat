@@ -1,0 +1,16 @@
+== before
+true
+107
+== down
+== 20261001100000 CreateCommerceActionRuns: reverting =========================
+-- drop_table(:commerce_action_runs)
+== 20261001100000 CreateCommerceActionRuns: reverted (0.0201s) ================
+false
+106
+0
+true
+== up
+== 20261001100000 CreateCommerceActionRuns: migrating =========================
+== 20261001100000 CreateCommerceActionRuns: migrated (0.0292s) ================
+true
+107

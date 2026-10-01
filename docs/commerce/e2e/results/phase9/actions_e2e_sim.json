@@ -1,0 +1,260 @@
+[
+  {
+    "phase": "sim",
+    "name": "staging override set: Zid and Shopify actions, Salla/Zid/Shopify carts available for this run only",
+    "ok": true,
+    "detail": "{\"actions\":{\"woocommerce\":true,\"salla\":true,\"zid\":true,\"shopify\":true},\"recovery\":{\"woocommerce\":false,\"salla\":true,\"zid\":true,\"shopify\":true}}"
+  },
+  {
+    "phase": "sim",
+    "name": "Zid: order actions available to opt in",
+    "ok": true,
+    "detail": "متجر الياسمين Active Zid https://jasmine.zid.store Verified 8 minutes ago Read-only Commerce: on Order actions: off Refunds and cancellations stay limited to administrators. Turn on order actions Disable Disconnect"
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify connected read-only: \"Additional Shopify permissions are required. Reconnect Shopify to enable order actions.\"",
+    "ok": true,
+    "detail": "Lynomia Demo Active Shopify https://lynomia-demo.myshopify.com Verified 8 minutes ago Read-only Commerce: on Additional Shopify permissions are required. Reconnect Shopify to enable order actions. Reconnect for order actions Disable Disconnect"
+  },
+  {
+    "phase": "sim",
+    "name": "read-only until now: the connection never held write_orders",
+    "ok": true,
+    "detail": "read_customers,read_orders"
+  },
+  {
+    "phase": "sim",
+    "name": "Reconnect for order actions asks Shopify for write_orders explicitly",
+    "ok": true,
+    "detail": "read_customers,read_orders,write_orders"
+  },
+  {
+    "phase": "sim",
+    "name": "the merchant approves fewer permissions than asked: refused, the read-only connection is kept as it was",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/settings/commerce?shopify_error=PERMISSION_DENIED read_customers,read_orders"
+  },
+  {
+    "phase": "sim",
+    "name": "approved: the same store now holds write_orders and can be opted in (still off until the administrator turns it on)",
+    "ok": true,
+    "detail": "read_customers,read_orders,write_orders | Lynomia Demo Active Shopify https://lynomia-demo.myshopify.com Verified this minute Read-only Commerce: on Order actions: off Refunds and cancellations stay lim"
+  },
+  {
+    "phase": "sim",
+    "name": "Zid and Shopify opted in",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "Zid: ready → shipped through change-order-status, once",
+    "ok": true,
+    "detail": "The order’s status changes from Processing to Shipped. The store may email the customer about it. | [{\"store\":\"318001\",\"order\":\"41000101\",\"body\":{\"order_status\":\"indelivery\"}}]"
+  },
+  {
+    "phase": "sim",
+    "name": "Zid: in delivery → delivered",
+    "ok": true,
+    "detail": "Done. The order shown is now read from the store."
+  },
+  {
+    "phase": "sim",
+    "name": "Zid offers nothing else (no refunds, no cancellation through Lynomia)",
+    "ok": true,
+    "detail": "Order #41000103 متجر الياسمين · Zid Change status Not possible in the order’s current status. Close"
+  },
+  {
+    "phase": "sim",
+    "name": "Zid refuses the write (403): Lynomia learns the authorization lacks the permission and asks for a reconnect",
+    "ok": true,
+    "detail": "The store’s credentials can’t change orders. An administrator can replace them. | متجر الياسمين Active Zid https://jasmine.zid.store Verified 10 minutes ago Read-only Commerce: on Additional Zid permissions are required. Reconnect Zid to enable order actions. Reconnect for order ac"
+  },
+  {
+    "phase": "sim",
+    "name": "after the administrator authorizes Zid again, order actions are back on",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify paid order: refunds through its payment, no cancellation (\"refund it first\")",
+    "ok": true,
+    "detail": "Order #1006 Lynomia Demo · Shopify Cancel order The order is paid: refund it first. Partial refund Refund in full Close"
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify refund: refundCreate once, with @idempotent and the run's key, through Shopify Payments, notify off",
+    "ok": true,
+    "detail": "SAR 50.00 will be sent back to the customer through Shopify Payments. This can’t be undone. | [{\"name\":\"refundCreate\",\"key\":\"commerce-action:e0c0ffc6-413c-4701-8d50-03bd62f065fb\",\"variables\":{\"input\":{\"orderId\":\"gid://shopify/Order/6001006\",\"currency\":\"SAR\",\"notify\":false,\"note\":\"Lynomia commerce-action:e0c0ffc6-413c-4701-8d50-03bd62f065fb\",\"transactions\":[{\"orderId\":\"gid://shopify/Order/6001006\",\"amount\":\"50.00\",\"gateway\":\"shopify_payments\",\"kind\":\"REFUND\",\"parentId\":\"gid://shopify/OrderTransaction/96001006\"}]},\"idempotencyKey\":\"commerce-action:e0c0ffc6-413c-4701-8d50-03bd62f065fb\"}}]"
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify: two simultaneous requests with one key send one refundCreate",
+    "ok": true,
+    "detail": "202,202"
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify userErrors: the store refused, nothing refunded",
+    "ok": true,
+    "detail": "The store refused this change."
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify lost answer: unknown, then found by its note when reconciling; refundCreate was sent once",
+    "ok": true,
+    "detail": "The store didn’t answer in time. Lynomia is checking the order with the store: don’t try again until it does. | succeeded"
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify cancel of an unpaid order: orderCancel (refund false, customer not notified), followed through its Job until the order shows it",
+    "ok": true,
+    "detail": "Done. The order shown is now read from the store. | {\"orderId\":\"gid://shopify/Order/6001005\",\"reason\":\"CUSTOMER\",\"restock\":true,\"staffNote\":\"Lynomia commerce-action:69e7c9b2-4ceb-4131-aea1-d76a9320c5af\"}"
+  },
+  {
+    "phase": "sim",
+    "name": "the cancelled order reads back as cancelled",
+    "ok": true,
+    "detail": "#1005 SAR 310.50 Cancelled Payment not confirmed Sep 25, 2026 5 items DHL Express In transit View order Track shipment Send tracking"
+  },
+  {
+    "phase": "sim",
+    "name": "Salla: no order actions (no verified write contract)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "only Omar's carts: Zid by his linked customer, Shopify by customer id, Salla by linked customer",
+    "ok": true,
+    "detail": "[\"salla:551100:linked_customer\",\"zid:c0ffee01-0000-4000-8000-000000000001:linked_customer\",\"zid:c0ffee02-0000-4000-8000-000000000002:linked_customer\",\"shopify:9101:linked_customer\"]"
+  },
+  {
+    "phase": "sim",
+    "name": "never another customer's cart (same phone), a masked one, a recovered or an expired one, or a guest checkout",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "the cart list carries no email, phone or recovery link",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "the Customer 360 section shows them with store, provider, total and items",
+    "ok": true,
+    "detail": "[\"SAR 230.00 2 items متجر الورد · Salla · left 2 hours ago Linked store customer View cart P\",\"SAR 185.50 2 items متجر الياسمين · Zid · left 2 hours ago Linked store customer View cart \",\"SAR 99.00 2 items متجر الياسمين · Zid · left 5 hours ago Linked store customer View cart P\",\"SAR 410.00 3 items Lynomia Demo · Shopify · left 3 hours ago Linked store customer View ca\"]"
+  },
+  {
+    "phase": "sim",
+    "name": "prepare: the message lands in the reply box with the store's own link; nothing is sent",
+    "ok": true,
+    "detail": "Hi Omar, you left 2 items in your cart at متجر الياسمين (SAR 185.50). You can complete your order here: https://jasmine.zid.store/cart/recover/1?key=e2e1"
+  },
+  {
+    "phase": "sim",
+    "name": "the cart says the message is prepared, not sent",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "sent by the agent: the outgoing message with the link marks it sent",
+    "ok": true,
+    "detail": "{\"id\":82,\"account_id\":1,\"commerce_store_id\":133,\"contact_id\":1,\"conversation_id\":1,\"requested_by_id\":2,\"provider\":\"zid\",\"action_type\":\"recovery_message\",\"external_resource_id\":\"c0ffee01-0000-4000-8000-000000000001\",\"idempotency_key\":\"commerce-recovery:46561309-2f3d-4006-bde4-19513cdc0534\",\"status\":\"succeeded\",\"provider_request_id\":null,\"started_at\":null,\"completed_at\":\"2026-10-01T14:50:19.125Z\",\"error_code\":null,\"metadata\":{\"match\":\"linked_customer\",\"total\":\"185.5\",\"currency\":\"SAR\",\"message_id\":17,\"url_digest\":\"ea1899accc95ea3e87644a9361728503f2b9bd8e06692f870f2e42e2eaa59f4f\"},\"created_at\":\"2026-10-01T14:50:01.907Z\",\"updated_at\":\"2026-10-01T14:50:19.402Z\"}"
+  },
+  {
+    "phase": "sim",
+    "name": "the cart shows it sent, and the cooldown; the agent has no Prepare (and no override)",
+    "ok": true,
+    "detail": "[\"SAR 230.00 2 items متجر الورد · Salla · left 2 hours ago Linked store customer View cart PREPARE RECOVERY MESSAGE\",\"SAR 185.50 2 items متجر الياسمين · Zid · left 2 hours ago Linked store customer Recovery message sent this minute Another recovery message i\",\"SAR 99.00 2 items متجر الياسمين · Zid · left 5 hours ago Linked store customer View cart PREPARE RECOVERY MESSAGE\",\"SAR 410.00 3 items Lynomia Demo · Shopify · left 3 hours ago Linked store customer View cart PREPARE RECOVERY MESSAGE\"]"
+  },
+  {
+    "phase": "sim",
+    "name": "cooldown: an agent is refused (RECOVERY_COOLDOWN), and cannot override",
+    "ok": true,
+    "detail": "422 401"
+  },
+  {
+    "phase": "sim",
+    "name": "an administrator can override the cooldown for one message (recorded)",
+    "ok": true,
+    "detail": "{\"match\":\"linked_customer\",\"total\":\"185.5\",\"currency\":\"SAR\",\"url_digest\":\"ea1899accc95ea3e87644a9361728503f2b9bd8e06692f870f2e42e2eaa59f4f\",\"override_cooldown\":true}"
+  },
+  {
+    "phase": "sim",
+    "name": "a recovery link outside the store's hosts is refused: nothing prepared",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "outside the 24-hour window nothing is prepared and the reason is shown (a template is needed)",
+    "ok": true,
+    "detail": "SAR 410.00 3 items Lynomia Demo · Shopify · left 3 hours ago Linked store customer This conversation can’t receive a free-form message now (the customer last wrote more than 24 hours ago). Nothing was prepared: reach the customer with an approved template instead. View cart PREPARE RECOVERY MESSAGE"
+  },
+  {
+    "phase": "sim",
+    "name": "back inside the window, the Shopify checkout's myshopify.com link is prepared",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "Shopify protected customer data refused: no checkout shown, the store is reported unreadable",
+    "ok": true,
+    "detail": "Abandoned carts Couldn’t read Lynomia Demo’s abandoned carts. SAR 230.00 2 items متجر الورد · Salla · left 2 hours ago Linked store customer View cart PREPARE RECOVERY MESSAGE SAR 185.50 2 items متجر "
+  },
+  {
+    "phase": "sim",
+    "name": "Salla abandoned.cart event: the new cart appears live, without a reload",
+    "ok": true,
+    "detail": "status=200 ms=1041"
+  },
+  {
+    "phase": "sim",
+    "name": "admin queue: the stores' recent carts, linked contacts first, deterministic",
+    "ok": true,
+    "detail": "[[\"salla\",\"551102\",true],[\"salla\",\"551100\",true],[\"zid\",\"c0ffee01-0000-4000-8000-000000000001\",true],[\"shopify\",\"9101\",true],[\"zid\",\"c0ffee02-0000-4000-8000-000000000002\",true],[\"salla\",\"551101\",false],[\"zid\",\"c0ffee03-0000-4000-8000-000000000003\",false],[\"zid\",\"c0ffee04-0000-4000-8000-000000000004\",false],[\"shopify\",\"9103\",false],[\"shopify\",\"9102\",false]]"
+  },
+  {
+    "phase": "sim",
+    "name": "the queue shows no contact details or recovery links, and has no bulk send",
+    "ok": true,
+    "detail": "SAR 145.00 · 2 items متجر الورد · Salla · left 2 hours ago Omar Khalil | SAR 230.00 · 2 items متجر الورد · Salla · left 2 hours ago Omar Khalil | SAR 185.50 · 2 items متجر الياسمين · Zid · left 2 hours ago Recovery message sent 3 minutes ago Omar Khalil"
+  },
+  {
+    "phase": "sim",
+    "name": "Arabic: the abandoned carts section in Arabic",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "another account cannot read this account's cart queue or runs",
+    "ok": true,
+    "detail": "401 401"
+  },
+  {
+    "phase": "sim",
+    "name": "no credential, token or secret in logs, API responses or socket frames",
+    "ok": true,
+    "detail": "secrets=27 leaks="
+  },
+  {
+    "phase": "sim",
+    "name": "no raw provider error reached the browser",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "phase": "sim",
+    "name": "no page errors",
+    "ok": true,
+    "detail": ""
+  }
+]

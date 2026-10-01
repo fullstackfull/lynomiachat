@@ -1,0 +1,49 @@
+{"stores":0,"links":0,"purged_keys":27}
+PASS  settings: no stores state
+PASS  connect refused with a wrong secret (AUTH_INVALID)  -- The store rejected Lynomia's credentials. An administrator needs to reconnect the store.
+PASS  connect refused for an IP address URL  -- Use the store's domain name, not an IP address.
+PASS  connect refused for plain http (untrusted host)  -- The store must use https.
+PASS  connect refused for a public name resolving to loopback (or unresolvable here)  -- This address points to a private network and can't be used.
+PASS  A1 and A2 connected and active
+PASS  account B cannot connect store A1 (already connected)  -- This store is already connected.
+PASS  account B connected B1
+PASS  WhatsApp phone auto-links the guest (0551112233 stored locally in Woo)  -- Overview Store Refresh Store Syria Cosmetics Damascus Perfumes Linked customer Omar Khalil Matched by the verified phone of this conversation Change Unlink #25 SAR 100.50 Failed Payment failed Sep 28,
+PASS  payment statuses: failed / paid (virtual, no shipping) / unpaid
+PASS  registered customer: latest 5 of 7 orders, never "paid" without evidence  -- orders=5
+PASS  store selector present with two stores
+PASS  View order = trusted store URL + numeric id  -- http://localhost:8081/wp-admin/admin.php?action=edit&id=22&page=wc-orders
+PASS  no tracking controls (WooCommerce core has no tracking; plugin meta ignored)
+PASS  switching to A2 shows only A2 orders
+PASS  duplicate phone: both customers offered, masked, nothing linked
+PASS  agent picks Sara: linked manually with her order
+PASS  widget contact email only suggests (no auto-link)
+PASS  linked customer without orders
+PASS  duplicate billing email: two candidates
+PASS  not found state with link action
+PASS  search by name refused
+PASS  manual search by international phone finds the guest
+store 1 stopped; waiting past the 120 s fresh window
+PASS  store down: last fetched orders shown as stale with their age  -- Overview Store Refresh Store Syria Cosmetics Damascus Perfumes Couldn't refresh store data right now. Last updated 3 minutes ago Linked customer ليلى حداد Match
+PASS  store down with nothing cached: safe message only  -- Overview Store Refresh Store Syria Cosmetics Damascus Perfumes Couldn't refresh store data right now. The store is not reachable right now. Find an order
+{"account":1,"locale":"ar","lynomia_commerce":true}
+PASS  Arabic: panel title and order labels
+PASS  Arabic: not found + link customer
+PASS  mobile (Arabic): panel renders inside the viewport  -- elements outside=0
+{"account":1,"locale":"en","lynomia_commerce":true}
+PASS  mobile (English): panel inside the viewport, no page overflow
+PASS  agent without inbox access sees no store data
+{"account":1,"locale":"en","lynomia_commerce":false}
+PASS  feature off: no Commerce section
+PASS  feature off: no Commerce in settings navigation
+{"account":1,"locale":"en","lynomia_commerce":true}
+PASS  admin disables A2
+PASS  disabled store leaves the agent store list
+PASS  admin re-enables A2 after a fresh health check
+PASS  admin replaces A2 keys (health-checked)
+PASS  admin disconnects A2
+PASS  agent changes the link to Noor (her order shown)
+PASS  agent unlinks Mona: back to a suggestion
+[["commerce.store_connected","Commerce::Store",146,1,{"provider":"woocommerce","external_store_id":"localhost:8081"}],["commerce.store_connected","Commerce::Store",147,1,{"provider":"woocommerce","external_store_id":"localhost:8082"}],["commerce.store_connected","Commerce::Store",148,4,{"provider":"woocommerce","external_store_id":"localhost:8083"}],["commerce.customer_link_created","Commerce::CustomerLink",139,2,{"match_source":"verified_phone"}],["commerce.customer_link_created","Commerce::CustomerLink",140,2,{"match_source":"verified_phone"}],["commerce.customer_link_created","Commerce::CustomerLink",141,2,{"match_source":"verified_phone"}],["commerce.customer_link_created","Commerce::CustomerLink",142,2,{"match_source":"manual"}],["commerce.customer_link_created","Commerce::CustomerLink",143,2,{"match_source":"manual"}],["commerce.store_disabled","Commerce::Store",147,1,{"status":["active","disabled"]}],["commerce.store_enabled","Commerce::Store",147,1,{"status":["disabled","active"]}],["commerce.credentials_rotated","Commerce::Store",147,1,{"status":["active","active"]}],["commerce.store_disconnected","Commerce::Store",147,1,{"customer_links_removed":1}],["commerce.customer_link_changed","Commerce::CustomerLink",142,2,{"match_source":["manual","manual"]}],["commerce.customer_link_removed","Commerce::CustomerLink",143,2,{"match_source":["manual","suppressed"]}]]
+PASS  no consumer key/secret or credentials field in any API response  -- responses=697 leaked=
+PASS  no uncaught page errors
+41/41 passed

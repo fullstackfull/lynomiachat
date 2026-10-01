@@ -4,7 +4,8 @@
 #
 #   1. the cached orders of the customers the event names are marked outdated (every customer's of the store when it names
 #      none): the next read goes to the store, and they stay the stale fallback if it cannot answer;
-#   2. for each contact linked to such a customer, one coalesced refresh (Commerce::RefreshJob) reads the orders again;
+#   2. for each contact linked to such a customer, one coalesced refresh (Commerce::RefreshJob) reads the orders again,
+#      which also updates the link's audience summary (Commerce::ContactMetric);
 #   3. the refresh tells the account's agents through ActionCable (`commerce.customer.updated`: ids and a time only), and
 #      an open Commerce section refetches the Commerce API, which authorizes as usual.
 #
@@ -86,9 +87,10 @@ module Commerce::Realtime
   end
 
   def self.read_orders(store, link)
-    Commerce::Cache.fetch(store, :orders, link.external_customer_id) do
+    orders = Commerce::Cache.fetch(store, :orders, link.external_customer_id) do
       Commerce::Providers.for(store).list_customer_orders(link.external_customer_id, limit: Commerce::ConversationPanel::ORDER_LIMIT)
     end
+    Commerce::ContactMetric.record(link, orders)
   rescue Commerce::Error => e
     Commerce::Metrics.event('commerce.provider.error', provider: store.provider, store_id: store.id, code: e.code)
     Commerce::StoreConnection.new(account: store.account, user: nil).credentials_rejected(store) if e.code == 'AUTH_INVALID'

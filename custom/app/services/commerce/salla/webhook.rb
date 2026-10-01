@@ -16,10 +16,11 @@ module Commerce::Salla::Webhook
 
   def self.enqueue(raw_body)
     key = "COMMERCE::SALLA::WEBHOOK::#{Digest::SHA256.hexdigest(raw_body)}"
-    return unless Redis::Alfred.set(key, 1, nx: true, ex: DEDUP_TTL)
+    return Commerce::Metrics.event('commerce.webhook.duplicate', provider: 'salla') unless Redis::Alfred.set(key, 1, nx: true, ex: DEDUP_TTL)
 
     begin
       Commerce::Salla::WebhookJob.perform_later(encryptor.encrypt_and_sign(raw_body, purpose: PURPOSE))
+      Commerce::Metrics.event('commerce.webhook.accepted', provider: 'salla')
     rescue StandardError
       Redis::Alfred.delete(key)
       raise

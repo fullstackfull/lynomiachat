@@ -2,7 +2,8 @@
 # store's API stays the source, and no event is kept as order data. After a provider's endpoint has authenticated and
 # deduplicated a delivery:
 #
-#   1. the cached orders of the customers the event names are dropped (every customer's of the store when it names none);
+#   1. the cached orders of the customers the event names are marked outdated (every customer's of the store when it names
+#      none): the next read goes to the store, and they stay the stale fallback if it cannot answer;
 #   2. for each contact linked to such a customer, one coalesced refresh (Commerce::RefreshJob) reads the orders again;
 #   3. the refresh tells the account's agents through ActionCable (`commerce.customer.updated`: ids and a time only), and
 #      an open Commerce section refetches the Commerce API, which authorizes as usual.
@@ -10,7 +11,7 @@
 # Events arriving out of order need no handling: every refresh reads the current state from the store. Many events for
 # one customer within COALESCE_WINDOW make one refresh, and one that arrives while a refresh runs makes exactly one more.
 # COMMERCE_REALTIME_ENABLED=false (installation config or ENV) stops refreshes and broadcasts; cached orders are still
-# dropped, as before realtime existed.
+# marked outdated, so the next read or Refresh shows the change.
 module Commerce::Realtime
   EVENT = 'commerce.customer.updated'.freeze
   COALESCE_WINDOW = 2.seconds

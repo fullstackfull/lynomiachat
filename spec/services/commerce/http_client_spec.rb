@@ -209,7 +209,7 @@ RSpec.describe Commerce::HttpClient do
 
       token_client.post_form('/oauth2/token', form)
 
-      expect(logged.join).to include('[Commerce:salla] POST /oauth2/token status=200')
+      expect(logged.join).to include('metric=commerce.provider.request client=salla method=POST path=/oauth2/token status=200')
       expect(logged.join).not_to include('refresh-1', 'new-access')
     end
   end
@@ -290,7 +290,7 @@ RSpec.describe Commerce::HttpClient do
 
     client.get_json('/wp-json/wc/v3/orders', search: 'omar@example.com')
 
-    expect(logged.join).to include('[Commerce:woocommerce] GET /wp-json/wc/v3/orders status=200')
+    expect(logged.join).to include('metric=commerce.provider.request client=woocommerce method=GET path=/wp-json/wc/v3/orders status=200')
     expect(logged.join).not_to include('omar', 'ck_key', 'cs_secret')
   end
 end

@@ -192,6 +192,6 @@ class Commerce::HttpClient
 
   def log(verb, uri, status, started)
     elapsed = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
-    Rails.logger.info("[Commerce:#{@log_tag}] #{verb.upcase} #{uri.path} status=#{status} ms=#{elapsed}")
+    Commerce::Metrics.event('commerce.provider.request', client: @log_tag, method: verb.upcase, path: uri.path, status: status, ms: elapsed)
   end
 end

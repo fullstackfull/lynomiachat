@@ -82,6 +82,23 @@ class Commerce::Providers::Base
   # applied, safe to ask again) or unknown.
   def reconcile_action(_run, _snapshot) = Commerce::ActionResult.unknown('NOT_RECONCILABLE')
 
+  # Abandoned carts (docs/commerce/30-abandoned-carts.md): only providers whose merchant API lists the store's abandoned
+  # carts. Read-only.
+  def self.supports_carts? = false
+
+  # nil when the credentials may read abandoned carts, else why not ('missing_scope').
+  def cart_access_problem = 'unsupported'
+
+  # The store's most recent abandoned carts (at most `limit`, newest first), as Commerce::AbandonedCart; only the
+  # customer's when the store can filter by `customer_reference`. Matching to a contact is Commerce::AbandonedCarts'.
+  def abandoned_carts(customer_reference: nil, limit: 20) = raise(NotImplementedError)
+
+  # One cart read now (for a recovery message), or NOT_FOUND once the store no longer lists it.
+  def abandoned_cart(_external_cart_id) = raise(NotImplementedError)
+
+  # Hosts a recovery link of this store may point to, besides the store's own (Commerce::RecoveryUrl).
+  def recovery_hosts = [URI(@store.base_url).host]
+
   def normalize_customer(raw) = raise(NotImplementedError)
 
   def normalize_order(raw) = raise(NotImplementedError)

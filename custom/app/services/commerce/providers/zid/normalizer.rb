@@ -53,6 +53,13 @@ class Commerce::Providers::Zid::Normalizer
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'malformed_customer')
   end
 
+  # Abandoned carts (Commerce::Providers::Zid::Carts) use the same rules for times and identities.
+  def cart_time(value) = value.blank? ? nil : time(value)
+
+  def cart_email(value) = email(value)
+
+  def cart_phone(value) = phone(value)
+
   private
 
   # { shipping:, shipments:, tracking: } from the order's shipping method, where Zid keeps its one shipment. As for Salla,

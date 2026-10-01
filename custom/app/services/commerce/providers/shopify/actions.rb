@@ -165,7 +165,7 @@ class Commerce::Providers::Shopify::Actions
   def reconcile_cancel(run, snapshot)
     return Commerce::ActionResult.succeeded if snapshot.order.status == 'cancelled'
 
-    job = @provider.query_job(run.provider_request_id) if run.provider_request_id.present?
+    job = @provider.read(JOB, id: run.provider_request_id.to_s)['job'] if run.provider_request_id.present?
     done = job.is_a?(Hash) && job['done'] == true
     done || (run.provider_request_id.blank? && settled?(run)) ? Commerce::ActionResult.failed('NOT_APPLIED') : Commerce::ActionResult.unknown
   end

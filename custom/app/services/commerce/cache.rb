@@ -32,6 +32,11 @@ class Commerce::Cache
     outdate(key(store, kind, identifier))
   end
 
+  # Drops one entry: what it held must not be shown again, not even as a stale fallback (a recovered cart).
+  def self.delete(store, kind, identifier)
+    Redis::Alfred.delete(key(store, kind, identifier))
+  end
+
   def self.purge(store)
     delete_matching("#{prefix(store)}::*")
   end

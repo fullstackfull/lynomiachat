@@ -111,6 +111,16 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
 
   def self.supports_actions? = true
 
+  def self.supports_carts? = true
+
+  def cart_access_problem = nil
+
+  def abandoned_carts(customer_reference: nil, limit: 20) = carts.recent(limit) # rubocop:disable Lint/UnusedMethodArgument
+
+  def abandoned_cart(external_cart_id) = carts.find(external_cart_id)
+
+  def recovery_hosts = [shop, carts.primary_domain].compact
+
   # write_orders is granted only by an administrator's reconnect for order actions; a write Shopify refuses as
   # ACCESS_DENIED also marks it missing until the next authorization.
   def write_access_problem
@@ -140,7 +150,8 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
     tokens.with_credentials { |credentials| Commerce::Shopify::Graphql.new(shop, credentials['access_token']).mutate(document, variables) }
   end
 
-  def query_job(job_id) = query(Commerce::Providers::Shopify::Actions::JOB, id: job_id.to_s)['job']
+  # One query for the action and cart readers (Commerce::Providers::Shopify::Actions, ::Carts).
+  def read(document, variables = {}) = query(document, variables)
 
   # An orders/create or orders/updated body: its customer's id, or for a guest checkout the order's email as guest links
   # keep it. Tracking-only changes that do not update the order arrive with no event (docs/commerce/20 §1).
@@ -214,6 +225,10 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
 
   def tokens
     @tokens ||= Commerce::Shopify::TokenManager.new(@store)
+  end
+
+  def carts
+    @carts ||= Carts.new(self, @store)
   end
 
   def normalizer

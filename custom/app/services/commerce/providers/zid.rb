@@ -56,6 +56,32 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
 
   def self.supports_realtime? = true
 
+  def self.supports_carts? = true
+
+  def cart_access_problem = nil
+
+  # Zid filters by customer: a linked customer's carts are asked for directly, else the most recent page is read.
+  def abandoned_carts(customer_reference: nil, limit: 20)
+    params = { page: 1, page_size: limit }
+    params[:customer_id] = customer_reference.to_s if customer_reference.to_s.match?(/\A\d{1,20}\z/)
+    list = get('/managers/store/abandoned-carts', params)['abandoned-carts']
+    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless list.is_a?(Array) && list.all?(Hash)
+
+    list.map { |raw| carts.normalize(raw) }
+  end
+
+  def abandoned_cart(external_cart_id)
+    id = external_cart_id.to_s
+    raise Commerce::Error, 'NOT_FOUND' unless id.match?(Carts::CART_ID)
+
+    raw = get("/managers/store/abandoned-carts/#{id}")['abandoned_cart']
+    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless raw.is_a?(Hash)
+
+    carts.normalize(raw)
+  end
+
+  def recovery_hosts = [URI(@store.base_url).host, 'zid.store', '.zid.store']
+
   # Zid's order events (order.create, order.status.update, order.payment_status.update) carry the order at the top level,
   # with its customer (docs/commerce/15-zid-webhook-security.md §8 for what is still to confirm on a live store).
   def event_customer_ids(payload)
@@ -139,6 +165,10 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
 
   def tokens
     @tokens ||= Commerce::Zid::TokenManager.new(@store)
+  end
+
+  def carts
+    @carts ||= Carts.new(@store, normalizer)
   end
 
   def normalizer

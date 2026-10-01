@@ -19,6 +19,7 @@ namespace :api, defaults: { format: 'json' } do
               resource :refresh, only: [:create]
               resources :orders, only: [:index]
               resources :action_runs, only: [:show]
+              resources :carts, only: [:index]
               resources :stores, only: [:index, :show] do
                 member do
                   get :customers

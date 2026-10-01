@@ -33,7 +33,7 @@ RSpec.describe 'Conversation commerce API', type: :request do
       get path, headers: agent.create_new_auth_token, as: :json
 
       expect(response.parsed_body['payload']).to eq([{ 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
-                                                       'linked' => false, 'actions' => false }])
+                                                       'linked' => false, 'actions' => false, 'carts' => false }])
     end
 
     it 'is refused to agents who cannot see the conversation' do
@@ -71,9 +71,9 @@ RSpec.describe 'Conversation commerce API', type: :request do
 
         expect(response.parsed_body['payload']).to eq([
                                                         { 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
-                                                          'linked' => false, 'actions' => false },
+                                                          'linked' => false, 'actions' => false, 'carts' => false },
                                                         { 'id' => salla.id, 'name' => 'Salla Demo', 'provider' => 'salla', 'linked' => false,
-                                                          'actions' => false }
+                                                          'actions' => false, 'carts' => false }
                                                       ])
       end
     end

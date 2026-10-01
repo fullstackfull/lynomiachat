@@ -18,6 +18,20 @@ class Commerce::Customer360
   ACTIVE_STATUSES = %w[pending processing on_hold shipped].freeze
   NOT_PURCHASES = %w[draft failed cancelled].freeze
 
+  # Paid totals per currency as exact decimal strings; the panel formats them in the currency's own precision.
+  def self.spend(orders)
+    paid = orders.select { |order| order['payment_status'] == 'paid' && order['currency'].present? && order['total'].present? }
+    paid.group_by { |order| order['currency'] }.sort.map do |currency, group|
+      { currency: currency, amount: group.sum { |order| BigDecimal(order['total'].to_s) }.to_s('F') }
+    end
+  end
+
+  def self.last_purchase_at(orders)
+    orders.reject { |order| NOT_PURCHASES.include?(order['status']) }.filter_map { |order| order['created_at'] }.max
+  end
+
+  def self.active_orders_count(orders) = orders.count { |order| ACTIVE_STATUSES.include?(order['status']) }
+
   def initialize(conversation:, user:, force: false)
     @conversation = conversation
     @user = user
@@ -55,21 +69,13 @@ class Commerce::Customer360
   def order_figures(orders)
     {
       orders_count_visible: orders.size,
-      total_spend_visible: spend(orders),
+      total_spend_visible: self.class.spend(orders),
       currencies: orders.filter_map { |order| order['currency'].presence }.uniq.sort,
-      last_order_at: orders.reject { |order| NOT_PURCHASES.include?(order['status']) }.filter_map { |order| order['created_at'] }.max,
-      active_orders_count: orders.count { |order| ACTIVE_STATUSES.include?(order['status']) },
+      last_order_at: self.class.last_purchase_at(orders),
+      active_orders_count: self.class.active_orders_count(orders),
       shipped_orders_count: orders.count { |order| order['status'] == 'shipped' },
       latest_orders: orders.sort_by { |order| order['created_at'].to_s }.reverse.first(LATEST_ORDERS)
     }
-  end
-
-  # Paid totals per currency as exact decimal strings; the panel formats them in the currency's own precision.
-  def spend(orders)
-    paid = orders.select { |order| order['payment_status'] == 'paid' && order['currency'].present? && order['total'].present? }
-    paid.group_by { |order| order['currency'] }.sort.map do |currency, group|
-      { currency: currency, amount: group.sum { |order| BigDecimal(order['total'].to_s) }.to_s('F') }
-    end
   end
 
   def fetch(stores)

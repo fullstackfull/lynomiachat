@@ -36,6 +36,9 @@ class Commerce::Store < ApplicationRecord
 
   enum :status, { active: 0, disabled: 1, needs_reauth: 2, disconnected: 3 }
 
+  # Stores the plan's `stores` limit counts: a disconnected store keeps only its history.
+  scope :connected, -> { where.not(status: :disconnected) }
+
   serialize :credentials, coder: JSON
   encrypts :credentials
 

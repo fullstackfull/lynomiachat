@@ -50,3 +50,5 @@ class CustomFilter < ApplicationRecord
     ::Conversations::UnreadCounts::FilteredCountInvalidator.new(account)
   end
 end
+
+CustomFilter.include_mod_with('Audit::CustomFilter')

@@ -120,6 +120,12 @@ RSpec.describe Commerce::Realtime do
       expect(data).to include('account_id' => account.id, 'contact_id' => contact.id, 'store_id' => store.id)
     end
 
+    it 'updates the link\'s audience summary from the orders it read' do
+      described_class.refresh(link)
+
+      expect(Commerce::ContactMetric.find_by!(commerce_customer_link_id: link.id)).to have_attributes(account_id: account.id, orders_count: 2)
+    end
+
     it 'runs once more when an event arrived during the refresh, and only once' do
       described_class.schedule_refresh(link)
       clear_enqueued_jobs

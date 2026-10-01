@@ -22,6 +22,12 @@
     <dt class="attribute-label">Plan</dt>
     <dd class="attribute-data"><%= subscription.plan&.name || '—' %></dd>
 
+    <dt class="attribute-label">Usage / plan limit</dt>
+    <dd class="attribute-data">
+      <%= Billing::ApiSerializer.usage(subscription.account).map { |key, usage|
+            "#{BillingPlanLimitsField::LABELS.fetch(key.to_s)}: #{usage[:used]} / #{usage[:limit] || '∞'}" }.join(' · ') %>
+    </dd>
+
     <dt class="attribute-label">Status</dt>
     <dd class="attribute-data">
       <strong><%= subscription.status %></strong>

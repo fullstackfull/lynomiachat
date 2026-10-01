@@ -6,14 +6,21 @@ import Input from 'dashboard/components-next/input/Input.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
-// Connects a WooCommerce store, or replaces the API keys of `store`. Keys are write-only: they are sent once and the
-// fields are cleared whenever the dialog closes.
+// Connects a WooCommerce store, or replaces the API keys of `store`. The administrator first chooses what Lynomia may do
+// (Read, or Read/Write for live updates and order actions) and gets the steps to create a key with that permission. The
+// choice only guides: what the key can really do is what WooCommerce answers once it is saved (settings show it per
+// store). Keys are write-only: they are sent once and the fields are cleared whenever the dialog closes.
 const props = defineProps({
   show: { type: Boolean, default: false },
   store: { type: Object, default: null },
 });
 
 const emit = defineEmits(['close', 'saved']);
+
+const ACCESS = {
+  READ: 'read',
+  READ_WRITE: 'read_write',
+};
 
 const { t } = useI18n();
 const { apiErrorMessage } = useCommerceLabels();
@@ -24,6 +31,26 @@ const consumerKey = ref('');
 const consumerSecret = ref('');
 const errorMessage = ref('');
 const isSaving = ref(false);
+const access = ref(ACCESS.READ_WRITE);
+
+const accessOptions = computed(() => [
+  {
+    value: ACCESS.READ_WRITE,
+    label: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_WRITE'),
+    hint: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_WRITE_HINT'),
+  },
+  {
+    value: ACCESS.READ,
+    label: t('COMMERCE.SETTINGS.FORM.ACCESS_READ'),
+    hint: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_HINT'),
+  },
+]);
+// WooCommerce's own name for the permission, as its key form shows it.
+const permission = computed(() =>
+  access.value === ACCESS.READ
+    ? t('COMMERCE.SETTINGS.FORM.PERMISSION_READ')
+    : t('COMMERCE.SETTINGS.FORM.PERMISSION_READ_WRITE')
+);
 
 const isRotation = computed(() => !!props.store);
 const canSave = computed(
@@ -70,6 +97,7 @@ watch(
     consumerKey.value = '';
     consumerSecret.value = '';
     errorMessage.value = '';
+    access.value = ACCESS.READ_WRITE;
   }
 );
 </script>
@@ -82,7 +110,7 @@ watch(
         ? t('COMMERCE.SETTINGS.FORM.ROTATE_TITLE')
         : t('COMMERCE.SETTINGS.FORM.TITLE')
     "
-    :description="t('COMMERCE.SETTINGS.FORM.READ_ONLY_HINT')"
+    :description="t('COMMERCE.SETTINGS.FORM.DESCRIPTION')"
     :confirm-button-label="
       isRotation
         ? t('COMMERCE.SETTINGS.FORM.SAVE')
@@ -92,10 +120,50 @@ watch(
     :disable-confirm-button="!canSave"
     :is-loading="isSaving"
     width="md"
+    overflow-y-auto
     @confirm="save"
     @close="emit('close')"
   >
     <div class="flex flex-col gap-4">
+      <fieldset class="flex flex-col gap-2">
+        <legend class="mb-2 text-heading-3 text-n-slate-12">
+          {{ t('COMMERCE.SETTINGS.FORM.ACCESS') }}
+        </legend>
+        <button
+          v-for="option in accessOptions"
+          :key="option.value"
+          type="button"
+          class="flex flex-col gap-0.5 rounded-xl border border-solid p-3 text-start"
+          :class="
+            access === option.value
+              ? 'border-n-brand bg-n-alpha-2'
+              : 'border-n-weak hover:border-n-strong'
+          "
+          :aria-pressed="access === option.value"
+          :data-test-id="`commerce-store-access-${option.value}`"
+          @click="access = option.value"
+        >
+          <span class="text-body-main font-medium text-n-slate-12">
+            {{ option.label }}
+          </span>
+          <span class="text-label-small text-n-slate-11">
+            {{ option.hint }}
+          </span>
+        </button>
+      </fieldset>
+      <div
+        class="flex flex-col gap-1 rounded-xl bg-n-alpha-2 px-3 py-2"
+        data-test-id="commerce-store-steps"
+      >
+        <span class="text-body-main font-medium text-n-slate-12">
+          {{ t('COMMERCE.SETTINGS.FORM.STEPS') }}
+        </span>
+        <ol class="ms-4 list-decimal text-body-main text-n-slate-11">
+          <li>{{ t('COMMERCE.SETTINGS.FORM.STEP_1') }}</li>
+          <li>{{ t('COMMERCE.SETTINGS.FORM.STEP_2', { permission }) }}</li>
+          <li>{{ t('COMMERCE.SETTINGS.FORM.STEP_3') }}</li>
+        </ol>
+      </div>
       <template v-if="!isRotation">
         <Input
           v-model="baseUrl"

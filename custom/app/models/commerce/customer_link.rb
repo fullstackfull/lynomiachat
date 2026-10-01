@@ -31,6 +31,8 @@ class Commerce::CustomerLink < ApplicationRecord
   belongs_to :store, class_name: 'Commerce::Store', foreign_key: :commerce_store_id, inverse_of: :customer_links
   belongs_to :contact
   belongs_to :confirmed_by, class_name: 'User', optional: true
+  has_one :contact_metric, class_name: 'Commerce::ContactMetric', foreign_key: :commerce_customer_link_id, inverse_of: :customer_link,
+                           dependent: :delete
 
   enum :match_source, { external_id: 0, verified_phone: 1, verified_email: 2, manual: 3, suppressed: 4 }
 
@@ -40,7 +42,14 @@ class Commerce::CustomerLink < ApplicationRecord
   validates :contact_id, uniqueness: { scope: :commerce_store_id }
   validate :same_account
 
+  # The orders summed for audiences belonged to the customer this link no longer counts (docs/audience/03-commerce-query-model.md).
+  after_update :drop_contact_metric, if: -> { saved_change_to_external_customer_id? || (saved_change_to_match_source? && suppressed?) }
+
   private
+
+  def drop_contact_metric
+    Commerce::ContactMetric.where(commerce_customer_link_id: id).delete_all
+  end
 
   def same_account
     return if store.blank? || contact.blank?

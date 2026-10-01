@@ -1,0 +1,112 @@
+[
+  {
+    "name": "setup: a separate account on a manual \"Commerce Starter\" subscription (1 store), \"Commerce Growth\" (3 stores) offered",
+    "ok": true,
+    "detail": "{\"account_id\":5,\"plan\":\"Commerce Starter\",\"limits\":{\"agents\":5,\"stores\":1,\"inboxes\":3},\"stores\":[],\"connected\":0,\"plans\":{\"starter\":5,\"growth\":6},\"subscription_id\":3}"
+  },
+  {
+    "name": "Commerce settings show the plan: \"Stores on your plan: 0 of 1\", Add store available",
+    "ok": true,
+    "detail": "Stores on your plan: 0 of 1"
+  },
+  {
+    "name": "Add store first asks for the platform: all four listed, each with how it connects",
+    "ok": true,
+    "detail": "Add a store Choose the platform your store runs on. Each platform connects in its own way. WooCommerce Connect with a REST API key from your WordPress admin: Read to see orders, Read/Write for live updates and order actions. Salla Not available yet Install the Lynomia app from the Salla App Store. No keys to copy. Zid Not available yet Authorize the Lynomia app on Zid. No keys to copy. Shopify Not available yet Authorize the Lynomia Commerce app on your Shopify store. No keys to copy. Platforms marked “Not available yet” aren’t offered on this workspace yet. Cancel"
+  },
+  {
+    "name": "production configuration: WooCommerce can be chosen; Salla, Zid and Shopify say \"Not available yet\" and cannot be chosen",
+    "ok": true,
+    "detail": "{\"disabled\":{\"woocommerce\":false,\"salla\":true,\"zid\":true,\"shopify\":true},\"badged\":{\"woocommerce\":false,\"salla\":true,\"zid\":true,\"shopify\":true}}"
+  },
+  {
+    "name": "WooCommerce asks what Lynomia may do; Read/Write (recommended) is chosen and the steps ask for a Read/Write key",
+    "ok": true,
+    "detail": "Create the key in WordPress Open WooCommerce → Settings → Advanced → REST API and click “Add key”. Choose an administrator as the user and set Permissions to “Read/Write”. Generate the key, then paste the Consumer key and Consumer secret below."
+  },
+  {
+    "name": "choosing Read changes the steps to a Read key",
+    "ok": true,
+    "detail": "Create the key in WordPress Open WooCommerce → Settings → Advanced → REST API and click “Add key”. Choose an administrator as the user and set Permissions to “Read”. Generate the key, then paste the Consumer key and Consumer secret below."
+  },
+  {
+    "name": "the dialog scrolls: \"Test and connect\" is reachable on a 900 px high screen",
+    "ok": true,
+    "detail": "{\"x\":726,\"y\":817,\"width\":194,\"height\":40}"
+  },
+  {
+    "name": "the first store connects; the plan is full: \"1 of 1\", Add store off, a note with a link to the plans",
+    "ok": true,
+    "detail": "Stores on your plan: 1 of 1 You’ve reached your plan’s store limit (1). To add another store, upgrade your plan or disconnect one. View plans"
+  },
+  {
+    "name": "the server decides, not the button: an API call past the limit answers 422 STORE_LIMIT_REACHED and saves nothing",
+    "ok": true,
+    "detail": "{\"status\":422,\"body\":{\"error\":{\"code\":\"STORE_LIMIT_REACHED\"}}}"
+  },
+  {
+    "name": "the subscription page shows Commerce stores \"1 / 1\" next to agents and inboxes, and each plan's store count",
+    "ok": true,
+    "detail": "Lynomia Plans Demo Search... CTRL K My Inbox Conversations Settings Account Settings Templates Commerce Conversation Workflow Billing Subscription AP Admin P admin_p@commerce.lynomia.local Subscription Manage your plan, payment and usage. Current subscription Update your card, download invoices or cancel. Plan Commerce Starter Status Active (managed by administrator) Usage Your usage compared to t"
+  },
+  {
+    "name": "Super Admin → plan: \"Commerce stores\" sits with Agents and Inboxes, with what it counts",
+    "ok": true,
+    "detail": "Name Description Price Currency usd Interval month Pricing type flat Limits Agents Inboxes Commerce stores Leave empty for unlimited. 0 = not allowed. Commerce stores: stores an account keeps connected (any platform; disconnected stores do not count). Applies when the plan includes Lynomia Commerce."
+  },
+  {
+    "name": "the super admin raises Commerce Starter to 2 stores",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Super Admin → subscription shows the account's usage against its plan: \"Commerce stores: 1 / 2\"",
+    "ok": true,
+    "detail": "Chatwoot 4.18.0 Super Admin Console Dashboard Accounts Users Agent Bots Platform Apps Billing Plans Billing Subscriptions Billing Settings Settings Sidekiq Dashboard Instance Health Push Diagnostics Agent Dashboard Logout Subscription #3 — Lynomia Plans Demo All subscriptions ACCOUNT #5 Lynomia Plans Demo PLAN Commerce Starter USAGE / PLAN LIMIT Agents: 1 / 5 · Inboxes: 0 / 3 · Commerce stores: 1 "
+  },
+  {
+    "name": "after the upgrade the merchant can add a store again: \"1 of 2\"",
+    "ok": true,
+    "detail": "Stores on your plan: 1 of 2"
+  },
+  {
+    "name": "a second store connects: \"2 of 2\", Add store off again",
+    "ok": true,
+    "detail": "Stores on your plan: 2 of 2 You’ve reached your plan’s store limit (2). To add another store, upgrade your plan or disconnect one. View plans"
+  },
+  {
+    "name": "a disconnected store does not count: \"1 of 2\", Add store available",
+    "ok": true,
+    "detail": "Stores on your plan: 1 of 2"
+  },
+  {
+    "name": "a plan granted without a Stripe price still shows its own limits to the merchant (not \"Unlimited\")",
+    "ok": true,
+    "detail": "Lynomia Plans Demo Search... CTRL K My Inbox Conversations Settings Account Settings Templates Commerce Conversation Workflow Billing Subscription AP Admin P admin_p@commerce.lynomia.local Subscription Manage your plan, payment and usage. Current subscription Update your card, download invoices or cancel. Plan Commerce Starter Status Active (managed by administrator) Usage Your usage compared to t"
+  },
+  {
+    "name": "Arabic, 390 px: the platform picker in Arabic",
+    "ok": true,
+    "detail": "إضافة متجر اختر المنصة التي يعمل عليها متجرك. لكل منصة طريقة ربط خاصة بها. WooCommerce اربط بمفتاح REST API من لوحة WordPress: قراءة لعرض الطلبات، أو قراءة/كتابة للتحديث المباشر وإجراءات الطلبات. سلة "
+  },
+  {
+    "name": "Arabic, 390 px: the WooCommerce dialog asks for the access and scrolls to \"Test and connect\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no consumer key or secret in any response the browser received",
+    "ok": true,
+    "detail": "responses=215"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "teardown: the account, its stores and both plans removed",
+    "ok": true,
+    "detail": "{\"account\":false,\"plans\":0}"
+  }
+]

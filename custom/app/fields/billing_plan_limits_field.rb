@@ -7,11 +7,15 @@ class BillingPlanLimitsField < Administrate::Field::Base
     { attr => BillingPlan::LIMIT_KEYS }
   end
 
+  LABELS = { 'agents' => 'Agents', 'inboxes' => 'Inboxes', 'stores' => 'Commerce stores' }.freeze
+
   def limits
     (data || {}).to_h
   end
 
+  def label(key) = LABELS.fetch(key)
+
   def to_s
-    BillingPlan::LIMIT_KEYS.map { |key| "#{key.humanize}: #{limits[key].nil? ? '∞' : limits[key]}" }.join(' · ')
+    BillingPlan::LIMIT_KEYS.map { |key| "#{label(key)}: #{limits[key].nil? ? '∞' : limits[key]}" }.join(' · ')
   end
 end

@@ -23,7 +23,8 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       plans: subscribable_plans.map { |plan| plan_json(plan) },
       usage: {
         agents: Current.account.users.count,
-        inboxes: Current.account.inboxes.count
+        inboxes: Current.account.inboxes.count,
+        stores: Current.account.commerce_stores.connected.count
       }
     }
   end
@@ -56,10 +57,7 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       is_admin: administrator?,
       mobile_checkout_enabled: Billing::Settings.mobile_checkout_enabled?,
       features: BillingPlan.assignable_features.to_h { |f| [f['name'], account.feature_enabled?(f['name'])] },
-      limits: {
-        agents: { used: account.account_users.count, limit: plan&.limit_for(:agents) },
-        inboxes: { used: account.inboxes.count, limit: plan&.limit_for(:inboxes) }
-      }
+      limits: Billing::ApiSerializer.usage(account, plan)
     }
   end
 
@@ -155,6 +153,9 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       source: subscription.source,
       plan_id: subscription.plan_id,
       plan_name: subscription.plan&.name,
+      # The subscribed plan's own limits: a plan granted by the super admin may have no Stripe price, so it is not in `plans`.
+      plan_limits: subscription.plan&.limits || {},
+      plan_commerce: subscription.plan&.feature_included?('lynomia_commerce') || false,
       scheduled_plan_id: subscription.scheduled_plan_id,
       quantity: subscription.quantity,
       trial_ends_at: subscription.trial_ends_at,
@@ -175,7 +176,8 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       interval: plan.interval,
       pricing_type: plan.pricing_type,
       limits: plan.limits,
-      features: plan.features.map { |name| feature_names[name] || name }
+      features: plan.features.map { |name| feature_names[name] || name },
+      commerce: plan.feature_included?('lynomia_commerce')
     }
   end
 end

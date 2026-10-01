@@ -334,8 +334,9 @@ const stores = async (page, account, conversation) => (await api(page, `/api/v1/
   check('Salla off: stores kept and explained', offRow.includes('turned off'), offRow.replace(/\s+/g, ' '));
   await adminA.getByRole('button', { name: /add store/i }).click();
   await adminA.waitForTimeout(700);
-  check('Salla off: Add store goes straight to WooCommerce keys (no Salla option)',
-    await adminA.locator('[data-test-id="commerce-provider-salla"]').count() === 0 && await adminA.getByLabel('Consumer key').count() === 1);
+  check('Salla off: Add store shows Salla as not available yet; WooCommerce can still be chosen',
+    await adminA.locator('[data-test-id="commerce-provider-salla"]').isDisabled() && !(await adminA.locator('[data-test-id="commerce-provider-woocommerce"]').isDisabled()));
+  await adminA.keyboard.press('Escape');
   check('Salla off: Salla stores are not offered in conversations', !(await stores(agentA, 1, 1)).payload.some(s => s.provider === 'salla'));
   const connectionOff = (await api(adminA, '/api/v1/accounts/1/commerce/salla_connection', 'POST')).body;
   check('Salla off: no connection code can be created', connectionOff.error?.code === 'PROVIDER_DISABLED', JSON.stringify(connectionOff));

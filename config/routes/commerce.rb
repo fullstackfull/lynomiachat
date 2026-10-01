@@ -8,6 +8,7 @@ namespace :api, defaults: { format: 'json' } do
         namespace :commerce do
           resources :stores, only: [:index, :create, :update, :destroy]
           resources :carts, only: [:index]
+          resource :audience_fields, only: [:show]
           resource :salla_connection, only: [:show, :create]
           resource :zid_connection, only: [:create]
           resource :shopify_connection, only: [:create]

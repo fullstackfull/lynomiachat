@@ -250,6 +250,29 @@ RSpec.describe Commerce::Salla::Installation do
     end
   end
 
+  describe "an account at its plan's store limit" do
+    let(:plan) { BillingPlan.create!(name: 'Commerce', features: ['lynomia_commerce'], limits: { 'stores' => 1 }) }
+
+    before do
+      BillingSubscription.create!(account: account, plan: plan, status: 'active', source: 'manual', quantity: 1)
+      create(:commerce_store, account: account)
+    end
+
+    it 'connects nothing and says why; after an upgrade a new code connects the store without a new authorization' do
+      process(authorize)
+      process(settings(code_for(account, admin)))
+
+      expect(salla_store).to be_nil
+      expect(Commerce::Salla::ConnectionCode.status(account)).to include(status: 'limit_reached')
+
+      plan.update!(limits: { 'stores' => 2 })
+      process(settings(code_for(account, admin)))
+
+      expect(salla_store).to have_attributes(account_id: account.id, status: 'active')
+      expect(Commerce::Salla::ConnectionCode.status(account)).to include(status: 'connected', store_id: salla_store.id)
+    end
+  end
+
   describe 'when the installation has Salla switched off' do
     it 'ignores new installations and codes without calling Salla' do
       code = code_for(account, admin)

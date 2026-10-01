@@ -158,7 +158,8 @@
       "CANNOT_REPLY": "This conversation can’t receive a free-form message now (the customer last wrote more than 24 hours ago). Nothing was prepared: reach the customer with an approved template instead.",
       "INVALID_RECOVERY_URL": "The store’s recovery link isn’t safe to send. Nothing was prepared.",
       "CART_NOT_ABANDONED": "This cart was completed or has expired. Nothing was prepared.",
-      "NOT_SENT": "Lynomia didn’t send this action to the store. Nothing changed; you can try again."
+      "NOT_SENT": "Lynomia didn’t send this action to the store. Nothing changed; you can try again.",
+      "STORE_LIMIT_REACHED": "You’ve connected all the stores your plan allows. Upgrade your plan or disconnect a store to connect another."
     },
     "URL_ERRORS": {
       "INVALID": "Enter the store address, for example https://shop.example.com.",
@@ -171,7 +172,7 @@
     },
     "SETTINGS": {
       "HEADER": "Commerce",
-      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Lynomia never changes your orders, customers or products.",
+      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Lynomia changes an order only after an administrator turns order actions on for that store and someone confirms the action.",
       "LOADING": "Loading stores…",
       "ADD_STORE": "Add store",
       "EMPTY": "No store connected yet.",
@@ -202,19 +203,32 @@
         "CONSUMER_SECRET": "Consumer secret",
         "NAME": "Display name (optional)",
         "NAME_PLACEHOLDER": "Main store",
-        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key for an administrator, and paste it here. A Read key is enough to show orders. A Read/Write key also turns on live order updates: Lynomia then only adds its own webhooks to the store.",
         "KEYS_HINT": "Keys are encrypted and never shown again.",
         "CONNECT": "Test and connect",
         "SAVE": "Test and save",
-        "CANCEL": "Cancel"
+        "CANCEL": "Cancel",
+        "DESCRIPTION": "Lynomia connects with a WooCommerce REST API key. Choose what Lynomia may do, then create a key with that permission.",
+        "ACCESS": "What should Lynomia be able to do?",
+        "ACCESS_READ": "Read",
+        "ACCESS_READ_HINT": "Agents see each customer’s orders in conversations.",
+        "ACCESS_READ_WRITE": "Read/Write (recommended)",
+        "ACCESS_READ_WRITE_HINT": "Also live order updates, and order actions once you turn them on. Lynomia only adds its own webhooks; refunds and cancellations stay with administrators.",
+        "STEPS": "Create the key in WordPress",
+        "STEP_1": "Open WooCommerce → Settings → Advanced → REST API and click “Add key”.",
+        "STEP_2": "Choose an administrator as the user and set Permissions to “{permission}”.",
+        "STEP_3": "Generate the key, then paste the Consumer key and Consumer secret below.",
+        "PERMISSION_READ": "Read",
+        "PERMISSION_READ_WRITE": "Read/Write"
       },
       "PICKER": {
         "TITLE": "Add a store",
-        "DESCRIPTION": "Choose the platform your store runs on.",
-        "WOOCOMMERCE_HINT": "Connect with a read-only REST API key.",
+        "DESCRIPTION": "Choose the platform your store runs on. Each platform connects in its own way.",
+        "WOOCOMMERCE_HINT": "Connect with a REST API key from your WordPress admin: Read to see orders, Read/Write for live updates and order actions.",
         "SALLA_HINT": "Install the Lynomia app from the Salla App Store. No keys to copy.",
         "ZID_HINT": "Authorize the Lynomia app on Zid. No keys to copy.",
-        "SHOPIFY_HINT": "Authorize the Lynomia Commerce app on your Shopify store. No keys to copy."
+        "SHOPIFY_HINT": "Authorize the Lynomia Commerce app on your Shopify store. No keys to copy.",
+        "UNAVAILABLE": "Not available yet",
+        "UNAVAILABLE_NOTE": "Platforms marked “Not available yet” aren’t offered on this workspace yet."
       },
       "SALLA": {
         "TITLE": "Connect with Salla",
@@ -235,7 +249,8 @@
           "CLAIMED": "Code received. Waiting for Salla to authorize the app…",
           "CONNECTED": "Your Salla store is connected.",
           "CONFLICT": "This Salla store is connected to another Lynomia account. Disconnect it there first.",
-          "EXPIRED": "This code expired. Create a new one."
+          "EXPIRED": "This code expired. Create a new one.",
+          "LIMIT_REACHED": "Your plan’s store limit is reached, so this Salla store wasn’t connected. Upgrade your plan or disconnect a store, then create a new code."
         },
         "REAUTH_HINT": "Salla needs to authorize the Lynomia app again: update or reinstall it from your Salla dashboard. The store reconnects on its own.",
         "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read."
@@ -300,6 +315,11 @@
         "EMPTY": "No abandoned cart matches.",
         "OPEN_CONTACT": "Open contact",
         "LOADING": "Reading abandoned carts…"
+      },
+      "PLAN": {
+        "USAGE": "Stores on your plan: {used} of {limit}",
+        "LIMIT_REACHED": "You’ve reached your plan’s store limit ({limit}). To add another store, upgrade your plan or disconnect one.",
+        "VIEW_PLANS": "View plans"
       }
     },
     "ACTIONS": {

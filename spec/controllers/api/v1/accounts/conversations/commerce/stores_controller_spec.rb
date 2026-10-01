@@ -122,6 +122,23 @@ RSpec.describe 'Conversation commerce API', type: :request do
       expect(response.body).not_to include('order_key', 'payment_url', '_links', 'customer_ip_address')
     end
 
+    it 'records the link\'s audience summary with Customer 360\'s figures, and a stale fallback changes nothing' do
+      link = create(:commerce_customer_link, store: store, contact: contact, external_customer_id: '2', match_source: :manual)
+      stub_request(:get, "#{api}/orders").with(query: hash_including('customer' => '2'))
+                                         .to_return(status: 200, body: orders.values_at(22, 20, 18, 17, 16).to_json).then.to_timeout
+      get "#{path}/#{store.id}", headers: agent.create_new_auth_token, as: :json
+      shown = response.parsed_body['orders']
+      metric = Commerce::ContactMetric.find_by!(commerce_customer_link_id: link.id)
+
+      expect(metric).to have_attributes(account_id: account.id, orders_count: 5,
+                                        active_orders_count: Commerce::Customer360.active_orders_count(shown),
+                                        spend: Commerce::Customer360.spend(shown).to_h { |total| [total[:currency], total[:amount]] },
+                                        order_statuses: shown.pluck('status').uniq.sort)
+      expect(metric.last_purchase_at).to eq(Time.zone.parse(Commerce::Customer360.last_purchase_at(shown)))
+      expect { travel(18.minutes) { get "#{path}/#{store.id}", headers: agent.create_new_auth_token, as: :json } }
+        .not_to(change { metric.reload.updated_at })
+    end
+
     it 'falls back to the last fetched orders, marked stale, when the store times out' do
       create(:commerce_customer_link, store: store, contact: contact, external_customer_id: '2', match_source: :manual)
       stub_request(:get, "#{api}/orders").with(query: hash_including('customer' => '2'))

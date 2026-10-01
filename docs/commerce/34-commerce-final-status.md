@@ -2,7 +2,8 @@
 
 Where Lynomia Commerce stands after its last phase (order actions, abandoned carts and sales recovery). **Nothing was
 deployed to production.** Earlier verdicts: doc 23 (Phase 6, production gate) and doc 27 (Phase 7–8). This phase ends
-Lynomia Commerce: CRM, SLA, Audiences, Automation and AI were not started.
+Lynomia Commerce: CRM, SLA, Audiences, Automation and AI were not started. How a merchant adds a store (platform picker,
+WooCommerce access choice) and the plan's store limit set in Super Admin: doc 35.
 
 ## 1. Readiness per provider
 

@@ -5,7 +5,8 @@ class BillingPlan < ApplicationRecord
   PRICING_TYPES = %w[flat per_agent].freeze
   # 2-decimal currencies only (price is stored in cents)
   CURRENCIES = %w[usd eur gbp sar aed try egp].freeze
-  LIMIT_KEYS = %w[agents inboxes].freeze
+  # stores: Lynomia Commerce stores an account keeps connected (Commerce::StoreConnection)
+  LIMIT_KEYS = %w[agents inboxes stores].freeze
   FEATURES_FILE = Rails.root.join('config/features.yml')
   # System flags that must never be switched off by a plan
   SYSTEM_FEATURES = %w[chatwoot_v4 assignment_v2 report_rollup].freeze

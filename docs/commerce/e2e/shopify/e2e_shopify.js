@@ -494,7 +494,8 @@ const tokenRequests = () => requests().requests['POST /admin/oauth/access_token'
   check('Shopify off: Shopify stores kept and explained', offRow.includes('Shopify is turned off'), offRow);
   await adminA.getByRole('button', { name: /add store/i }).click();
   await adminA.waitForTimeout(700);
-  check('Shopify off: no Shopify in Add store', await adminA.locator('[data-test-id="commerce-provider-shopify"]').count() === 0);
+  check('Shopify off: Add store shows Shopify as not available yet', await adminA.locator('[data-test-id="commerce-provider-shopify"]').isDisabled());
+  await adminA.keyboard.press('Escape');
   const startOff = (await api(adminA, '/api/v1/accounts/1/commerce/shopify_connection', 'POST', { shop: SHOP2 })).body;
   check('Shopify off: no authorization can start', startOff.error?.code === 'PROVIDER_DISABLED', JSON.stringify(startOff));
   check('Shopify off: a privacy webhook is still accepted', await deliver('customers/redact', SHOP1, { shop_id: 68210001, shop_domain: SHOP1, customer: { id: 1 } }) === 200);

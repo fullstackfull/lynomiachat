@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_01_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_02_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -832,6 +832,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_01_100000) do
     t.index ["idempotency_key"], name: "index_commerce_action_runs_on_idempotency_key", unique: true
     t.index ["requested_by_id"], name: "index_commerce_action_runs_on_requested_by_id"
     t.index ["status", "updated_at"], name: "index_commerce_action_runs_on_status_and_updated_at"
+  end
+
+  create_table "commerce_contact_metrics", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "commerce_customer_link_id", null: false
+    t.integer "orders_count", null: false
+    t.integer "active_orders_count", null: false
+    t.datetime "last_purchase_at"
+    t.jsonb "spend", default: {}, null: false
+    t.string "order_statuses", default: [], null: false, array: true
+    t.string "payment_statuses", default: [], null: false, array: true
+    t.string "shipment_statuses", default: [], null: false, array: true
+    t.datetime "fetched_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_commerce_contact_metrics_on_account_id"
+    t.index ["commerce_customer_link_id"], name: "index_commerce_contact_metrics_on_commerce_customer_link_id", unique: true
   end
 
   create_table "commerce_customer_links", force: :cascade do |t|
@@ -1735,6 +1752,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_01_100000) do
   add_foreign_key "commerce_action_runs", "contacts", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "conversations", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "users", column: "requested_by_id", on_delete: :nullify
+  add_foreign_key "commerce_contact_metrics", "accounts", on_delete: :cascade
+  add_foreign_key "commerce_contact_metrics", "commerce_customer_links", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "accounts", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "commerce_stores", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "contacts", on_delete: :cascade

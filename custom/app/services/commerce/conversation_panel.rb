@@ -59,6 +59,7 @@ class Commerce::ConversationPanel
     orders = Commerce::Cache.fetch(@store, :orders, link.external_customer_id, force: @force) do
       provider.list_customer_orders(link.external_customer_id, limit: ORDER_LIMIT)
     end
+    Commerce::ContactMetric.record(link, orders)
     base.merge(state: 'linked', link: link_json(link), orders: orders.value, fetched_at: orders.fetched_at, stale: orders.stale,
                error: orders.error)
   rescue Commerce::Error => e

@@ -1,0 +1,8 @@
+Provider E2E regressions on the store-limit / platform-picker build (production Vite build, Ruby 3.4.4 / Node 24), 2026-10-01
+
+realtime + Customer 360 (Phase 7–8): 41/41 passed
+Shopify:     64/64 passed
+Zid:         49/49 passed
+WooCommerce: 41/41 passed
+Salla:       47/47 passed
+Phase 9–10 order actions + recovery (final build): gate 51/51, sim 43/43 (TOTAL 94/94)

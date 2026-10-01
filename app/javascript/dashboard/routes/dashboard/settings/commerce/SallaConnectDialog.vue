@@ -46,6 +46,7 @@ const statusMessage = computed(
       connected: t('COMMERCE.SETTINGS.SALLA.STATUS.CONNECTED'),
       conflict: t('COMMERCE.SETTINGS.SALLA.STATUS.CONFLICT'),
       expired: t('COMMERCE.SETTINGS.SALLA.STATUS.EXPIRED'),
+      limit_reached: t('COMMERCE.SETTINGS.SALLA.STATUS.LIMIT_REACHED'),
     })[status.value] || ''
 );
 const statusClass = computed(
@@ -54,6 +55,7 @@ const statusClass = computed(
       connected: 'bg-n-teal-2 text-n-teal-11',
       conflict: 'bg-n-ruby-2 text-n-ruby-11',
       expired: 'bg-n-amber-2 text-n-amber-11',
+      limit_reached: 'bg-n-amber-2 text-n-amber-11',
     })[status.value] || 'bg-n-alpha-2 text-n-slate-11'
 );
 

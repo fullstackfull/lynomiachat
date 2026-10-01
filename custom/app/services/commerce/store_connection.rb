@@ -1,6 +1,10 @@
 # Store lifecycle, for account administrators and Salla installation events. Credentials are saved only once verified
 # (WooCommerce keys by the provider health check, Salla tokens by a signed installation confirmed with Salla), so a store
 # is never saved as active with credentials that do not work. Audit entries never carry credentials.
+#
+# Every new connection of every provider, and every disconnected store coming back, passes through #attach or
+# #rotate_credentials, which keep the account within its plan's `stores` limit (Billing::PlanLimits; disconnected stores do
+# not count, an empty limit is unlimited).
 class Commerce::StoreConnection
   def initialize(account:, user:)
     @account = account
@@ -21,7 +25,9 @@ class Commerce::StoreConnection
   def attach(store, identity, credentials, name: nil, event: 'commerce.store_connected')
     ensure_encryption!
     store = Commerce::Store.transaction do
+      @account.lock!
       claim(store, identity[:external_store_id]).tap do |row|
+        ensure_within_plan!(row)
         row.update!(name: name.presence || row.name.presence || identity[:name], credentials: credentials, status: :active,
                     metadata: row.metadata.merge(store.metadata, 'verified_at' => Time.current.iso8601))
       end
@@ -36,7 +42,11 @@ class Commerce::StoreConnection
     ensure_encryption!
     Commerce::Providers.for(store, credentials: credentials).health
     previous_status = store.status
-    store.update!(credentials: credentials, status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
+    Commerce::Store.transaction do
+      @account.lock!
+      ensure_within_plan!(store)
+      store.update!(credentials: credentials, status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
+    end
     Commerce::Cache.purge(store)
     audit('commerce.credentials_rotated', store, status: [previous_status, store.status])
     register_webhooks(store)
@@ -113,6 +123,14 @@ class Commerce::StoreConnection
 
   def ensure_encryption!
     raise Commerce::Error, 'ENCRYPTION_NOT_CONFIGURED' unless Chatwoot.encryption_configured?
+  end
+
+  # A store that is not counted yet (new, or disconnected) may become connected only below the plan's limit.
+  def ensure_within_plan!(store)
+    return if store.persisted? && !store.disconnected?
+
+    connected = @account.commerce_stores.connected.count
+    raise Commerce::Error, 'STORE_LIMIT_REACHED' if Billing::PlanLimits.reached?(@account, :stores, connected)
   end
 
   # One account owns a store. Reconnecting in the same account reuses the disconnected row; a store another account

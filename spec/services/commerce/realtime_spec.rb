@@ -63,7 +63,7 @@ RSpec.describe Commerce::Realtime do
       expect([outdated?(store, 'ORDERS', '8'), outdated?(store, 'CANDIDATES', 'x'), outdated?(other_store, 'ORDERS', '7')]).to all(be(false))
       expect(Redis::Alfred.ttl(cache_key.call(store, 'ORDERS', '7'))).to be > 23.hours
       expect(enqueued_refreshes.size).to eq(1)
-      expect(enqueued_refreshes.first).to include('arguments' => [link.id], 'scheduled_at' => be_present)
+      expect(enqueued_refreshes.first).to include('arguments' => [link.id], 'scheduled_at' => nil)
     end
 
     it 'outdates every customer\'s cached orders of the store when the event names none, and refreshes nobody' do
@@ -131,6 +131,7 @@ RSpec.describe Commerce::Realtime do
       described_class.refresh(link)
 
       expect(enqueued_refreshes.size).to eq(1)
+      expect(enqueued_refreshes.first['scheduled_at']).to be_present
       expect(outdated?(store, 'ORDERS', '7')).to be(true)
     end
 

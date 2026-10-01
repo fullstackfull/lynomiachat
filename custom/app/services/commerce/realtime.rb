@@ -8,8 +8,9 @@
 #   3. the refresh tells the account's agents through ActionCable (`commerce.customer.updated`: ids and a time only), and
 #      an open Commerce section refetches the Commerce API, which authorizes as usual.
 #
-# Events arriving out of order need no handling: every refresh reads the current state from the store. Many events for
-# one customer within COALESCE_WINDOW make one refresh, and one that arrives while a refresh runs makes exactly one more.
+# Events arriving out of order need no handling: every refresh reads the current state from the store. The first event
+# for a customer refreshes at once; any that arrive while that refresh is queued or running make exactly one more, after
+# COALESCE_WINDOW, however many they are.
 # COMMERCE_REALTIME_ENABLED=false (installation config or ENV) stops refreshes and broadcasts; cached orders are still
 # marked outdated, so the next read or Refresh shows the change.
 module Commerce::Realtime
@@ -37,7 +38,7 @@ module Commerce::Realtime
 
   def self.schedule_refresh(link)
     if Redis::Alfred.set(lock_key(link), 1, nx: true, ex: LOCK_TTL.to_i)
-      Commerce::RefreshJob.set(wait: COALESCE_WINDOW).perform_later(link.id)
+      Commerce::RefreshJob.perform_later(link.id)
     else
       Redis::Alfred.set(dirty_key(link), 1, ex: LOCK_TTL.to_i)
       Commerce::Metrics.event('commerce.refresh.coalesced', store_id: link.commerce_store_id, link_id: link.id)

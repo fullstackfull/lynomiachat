@@ -30,6 +30,13 @@ per-store results side by side.
 | Redis | Refresh cooldown per contact and view | 30 s |
 | Redis | order-search counter per agent | 60 s |
 
+**Rollback.** Phase 7–8 is code only. Before rolling back to earlier code, delete the suppressed rows
+(`Commerce::CustomerLink.where(match_source: 4).delete_all`). Earlier code does not know that value and would read such
+a row as an ordinary link, showing the customer an agent had removed. Everything else added is ignored by earlier code:
+the WooCommerce webhook secret and realtime metadata, the Redis keys, and the cache entries' `outdated` flag. The
+WooCommerce webhooks Lynomia created stay in the store: they are refused with 401, and WooCommerce disables them after
+5 failures. Delete them first with "Disable" then "Enable" on earlier code, or from the store's admin.
+
 ## 3. API
 
 `GET /api/v1/accounts/:account_id/conversations/:conversation_id/commerce/overview` (`Commerce::Customer360`).

@@ -65,7 +65,7 @@ class Automation::LynomiaCondition
 
   def commerce_errors(operator, values)
     return ['commerce_disabled'] unless @account.feature_enabled?('lynomia_commerce')
-    return ['invalid_store'] if @key == 'commerce_store' && !own_stores?(values)
+    return ['invalid_store'] if @key == 'commerce_store' && %w[equal_to not_equal_to].include?(operator) && !own_stores?(values)
 
     commerce_condition.to_sql(operator, values, 'lynomia_check')
     []

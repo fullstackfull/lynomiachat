@@ -17,10 +17,13 @@ import {
 
 const props = defineProps({
   order: { type: Object, required: true },
+  // The order's store, shown when orders of several stores are listed together (Customer 360).
+  store: { type: Object, default: null },
 });
 
 const { t, locale } = useI18n();
-const { orderStatus, paymentStatus, shipmentStatus } = useCommerceLabels();
+const { orderStatus, paymentStatus, shipmentStatus, providerName } =
+  useCommerceLabels();
 
 const STATUS_CLASSES = {
   completed: 'bg-n-teal-3 text-n-teal-11',
@@ -71,6 +74,18 @@ const sendTracking = () => {
       </span>
       <span class="text-body-main text-n-slate-12">{{ total }}</span>
     </div>
+    <span
+      v-if="store"
+      class="text-label-small text-n-slate-11"
+      data-test-id="commerce-order-store"
+    >
+      {{
+        t('COMMERCE.OVERVIEW.ORDER_STORE', {
+          store: store.name,
+          provider: providerName(store.provider),
+        })
+      }}
+    </span>
     <div class="flex flex-wrap items-center gap-1.5">
       <span
         class="px-1.5 py-0.5 rounded-md text-label-small"

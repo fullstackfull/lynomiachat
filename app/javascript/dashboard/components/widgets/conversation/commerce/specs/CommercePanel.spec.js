@@ -8,6 +8,7 @@ import CommercePanel from '../CommercePanel.vue';
 vi.mock('dashboard/api/commerce', () => ({
   default: {
     getConversationStores: vi.fn(),
+    getOverview: vi.fn(),
     getPanel: vi.fn(),
     searchCustomers: vi.fn(),
     linkCustomer: vi.fn(),
@@ -90,8 +91,37 @@ const respond = (stores, panel) => {
   CommerceAPI.getPanel.mockResolvedValue({ data: panel });
 };
 
+const overview = {
+  contact: { id: 3 },
+  stores_count: 2,
+  linked_stores_count: 2,
+  orders_count_visible: 2,
+  total_spend_visible: [{ currency: 'SAR', amount: '100.00' }],
+  currencies: ['SAR'],
+  last_order_at: '2026-09-29T08:00:00Z',
+  active_orders_count: 1,
+  shipped_orders_count: 0,
+  latest_orders: [{ ...order('26'), store }],
+  stores: [
+    {
+      store,
+      state: 'linked',
+      link: { match_source: 'verified_phone', customer_type: 'guest' },
+      fetched_at: new Date().toISOString(),
+      stale: false,
+      error: null,
+      orders_count: 1,
+    },
+  ],
+  partial: false,
+};
+const sallaStore = { id: 2, name: 'Second store', provider: 'salla' };
+
 describe('CommercePanel', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+  });
 
   it('explains when no store is connected', async () => {
     respond([], null);
@@ -234,5 +264,80 @@ describe('CommercePanel', () => {
     expect(wrapper.text()).toContain(
       "The store rejected Lynomia's credentials."
     );
+  });
+
+  describe('Customer 360', () => {
+    it('opens on the overview for a contact linked in several stores', async () => {
+      respond(
+        [
+          { ...store, linked: true },
+          { ...sallaStore, linked: true },
+        ],
+        linkedPanel
+      );
+      CommerceAPI.getOverview.mockResolvedValue({ data: overview });
+      const wrapper = mountPanel();
+      await flushPromises();
+
+      expect(CommerceAPI.getOverview).toHaveBeenCalledWith(
+        7,
+        expect.any(Object)
+      );
+      expect(CommerceAPI.getPanel).not.toHaveBeenCalled();
+      expect(wrapper.find('[data-test-id="commerce-overview"]').exists()).toBe(
+        true
+      );
+      expect(
+        wrapper.find('[data-test-id="commerce-order-store"]').text()
+      ).toContain('Syria Cosmetics · WooCommerce');
+    });
+
+    it('keeps the store view for a single store, with no views to switch', async () => {
+      respond([{ ...store, linked: true }], linkedPanel);
+      const wrapper = mountPanel();
+      await flushPromises();
+
+      expect(wrapper.find('[data-test-id="commerce-views"]').exists()).toBe(
+        false
+      );
+      expect(CommerceAPI.getOverview).not.toHaveBeenCalled();
+    });
+
+    it('opens a store from the overview and remembers the agent choice', async () => {
+      respond(
+        [
+          { ...store, linked: true },
+          { ...sallaStore, linked: true },
+        ],
+        linkedPanel
+      );
+      CommerceAPI.getOverview.mockResolvedValue({ data: overview });
+      const wrapper = mountPanel();
+      await flushPromises();
+
+      const open = wrapper
+        .findAll('button')
+        .find(button => button.text() === 'Open store');
+      await open.trigger('click');
+      await flushPromises();
+
+      expect(CommerceAPI.getPanel).toHaveBeenCalledWith(
+        7,
+        1,
+        expect.any(Object)
+      );
+      expect(wrapper.findAll('[data-test-id="commerce-order"]')).toHaveLength(
+        5
+      );
+      expect(window.localStorage.getItem('lynomia.commerce.view')).toBe(
+        'store'
+      );
+
+      vi.clearAllMocks();
+      mountPanel();
+      await flushPromises();
+      expect(CommerceAPI.getOverview).not.toHaveBeenCalled();
+      expect(CommerceAPI.getPanel).toHaveBeenCalled();
+    });
   });
 });

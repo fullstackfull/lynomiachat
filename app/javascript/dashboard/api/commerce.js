@@ -42,6 +42,14 @@ class CommerceAPI extends ApiClient {
     return axios.get(this.conversationStoresUrl(conversationId), { signal });
   }
 
+  // Customer 360: every connected store's view of the conversation's contact, aggregated.
+  getOverview(conversationId, { signal } = {}) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/overview`,
+      { signal }
+    );
+  }
+
   getPanel(conversationId, storeId, { signal } = {}) {
     return axios.get(
       `${this.conversationStoresUrl(conversationId)}/${storeId}`,

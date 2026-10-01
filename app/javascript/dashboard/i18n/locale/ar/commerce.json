@@ -48,6 +48,38 @@
       "CANCEL": "إلغاء",
       "ORDER_NUMBER": "#{number}"
     },
+    "OVERVIEW": {
+      "TAB": "نظرة عامة",
+      "STORE_TAB": "المتجر",
+      "STORES": "المتاجر",
+      "STORES_VALUE": "{count} متصل",
+      "LINKED_VALUE": "{count} مرتبط",
+      "ORDERS": "الطلبات",
+      "ORDERS_VALUE": "{count} ظاهرة",
+      "ORDERS_HINT": "أحدث الطلبات التي أعادها كل متجر، وليست إجمالي كل الطلبات",
+      "LAST_PURCHASE": "آخر شراء",
+      "NO_ORDERS": "لا توجد طلبات",
+      "SPEND": "المدفوعات",
+      "SPEND_HINT": "الطلبات المدفوعة من بين الطلبات المعروضة، لكل عملة",
+      "NO_SPEND": "لا توجد طلبات مدفوعة",
+      "ACTIVITY": "{active} نشطة · {shipped} مشحونة",
+      "RECENT_ORDERS": "أحدث الطلبات",
+      "STORES_SECTION": "المتاجر",
+      "NOT_LINKED": "العميل غير مرتبط",
+      "NOT_LINKED_HINT": "افتح متجرًا للبحث عن العميل وربطه.",
+      "PARTIAL": "تعذر تحديث بعض المتاجر",
+      "UPDATED": "تم التحديث {time}",
+      "STALE": "بيانات من {time}",
+      "ORDER_STORE": "{store} · {provider}",
+      "OPEN_STORE": "فتح المتجر",
+      "STATE": {
+        "LINKED": "مرتبط",
+        "NOT_LINKED": "العميل غير مرتبط",
+        "NEEDS_REAUTH": "المتجر يحتاج إلى إعادة التفويض",
+        "PROVIDER_UNAVAILABLE": "المزوّد غير متاح حاليًا",
+        "UNAVAILABLE": "تعذر التحديث"
+      }
+    },
     "ORDER_STATUS": {
       "PENDING": "بانتظار الدفع",
       "PROCESSING": "قيد التجهيز",

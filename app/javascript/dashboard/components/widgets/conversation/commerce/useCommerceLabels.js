@@ -110,6 +110,17 @@ export function useCommerceLabels() {
       multiple: t('COMMERCE.PANEL.MULTIPLE'),
     })[state] || '';
 
+  // A store's entry in Customer 360.
+  const overviewState = state =>
+    ({
+      linked: t('COMMERCE.OVERVIEW.STATE.LINKED'),
+      not_found: t('COMMERCE.OVERVIEW.STATE.NOT_LINKED'),
+      suggested: t('COMMERCE.OVERVIEW.STATE.NOT_LINKED'),
+      multiple: t('COMMERCE.OVERVIEW.STATE.NOT_LINKED'),
+      needs_reauth: t('COMMERCE.OVERVIEW.STATE.NEEDS_REAUTH'),
+      provider_unavailable: t('COMMERCE.OVERVIEW.STATE.PROVIDER_UNAVAILABLE'),
+    })[state] || t('COMMERCE.OVERVIEW.STATE.UNAVAILABLE');
+
   return {
     orderStatus,
     paymentStatus,
@@ -121,5 +132,6 @@ export function useCommerceLabels() {
     storeStatus,
     matchSource,
     matchState,
+    overviewState,
   };
 }

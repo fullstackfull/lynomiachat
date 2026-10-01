@@ -48,6 +48,38 @@
       "CANCEL": "Cancel",
       "ORDER_NUMBER": "#{number}"
     },
+    "OVERVIEW": {
+      "TAB": "Overview",
+      "STORE_TAB": "Store",
+      "STORES": "Stores",
+      "STORES_VALUE": "{count} connected",
+      "LINKED_VALUE": "{count} linked",
+      "ORDERS": "Orders",
+      "ORDERS_VALUE": "{count} visible",
+      "ORDERS_HINT": "Latest orders each store returned, not a lifetime total",
+      "LAST_PURCHASE": "Last purchase",
+      "NO_ORDERS": "No orders found",
+      "SPEND": "Spend",
+      "SPEND_HINT": "Paid orders among those shown, per currency",
+      "NO_SPEND": "No paid orders",
+      "ACTIVITY": "{active} active · {shipped} shipped",
+      "RECENT_ORDERS": "Recent orders",
+      "STORES_SECTION": "Stores",
+      "NOT_LINKED": "Customer not linked",
+      "NOT_LINKED_HINT": "Open a store to find and link the customer.",
+      "PARTIAL": "Some stores couldn't be refreshed",
+      "UPDATED": "Updated {time}",
+      "STALE": "Showing data from {time}",
+      "ORDER_STORE": "{store} · {provider}",
+      "OPEN_STORE": "Open store",
+      "STATE": {
+        "LINKED": "Linked",
+        "NOT_LINKED": "Customer not linked",
+        "NEEDS_REAUTH": "Store needs re-authorization",
+        "PROVIDER_UNAVAILABLE": "Provider currently unavailable",
+        "UNAVAILABLE": "Couldn't refresh"
+      }
+    },
     "ORDER_STATUS": {
       "PENDING": "Pending payment",
       "PROCESSING": "Processing",

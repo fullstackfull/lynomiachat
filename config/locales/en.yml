@@ -604,6 +604,9 @@ en:
       audience_not_shared: "Automation rules can only use the shared audiences of this account."
       commerce_disabled: "Commerce conditions and triggers need Lynomia Commerce on this account."
       invalid_store: "The store is not one of this account's stores."
+      no_delay: "Commerce triggers run at once; they cannot wait."
+      no_customer_message: "Commerce triggers cannot send messages to the customer (%{actions}). Use a label, an assignment, a private note or a webhook."
+      event_condition_without_trigger: "The order store and order platform conditions need a Commerce trigger."
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'

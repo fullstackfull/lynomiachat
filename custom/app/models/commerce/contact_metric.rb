@@ -14,14 +14,28 @@ class Commerce::ContactMetric < ApplicationRecord
 
   # `result` is the Commerce::Cache result of reading the link's orders. Only a new read changes the row: a cache hit or
   # a stale fallback carries the time of the read it came from, so writing it again changes nothing.
+  #
+  # The same write compares the read's normalized orders with the previous read's (Commerce::OrderTransitions) and hands
+  # what changed to Lynomia Automation once (docs/automation/04-commerce-triggers.md): under the row lock, so two reads
+  # racing never emit the same change twice; after the lock, so a rule never sees an uncommitted row.
   def self.record(link, result)
     fetched_at = Time.iso8601(result.fetched_at)
     metric = find_or_initialize_by(commerce_customer_link_id: link.id)
     return if metric.persisted? && metric.fetched_at >= fetched_at
 
-    metric.update!(account_id: link.account_id, fetched_at: fetched_at, **figures(result.value))
+    transitions = metric.persisted? ? metric.with_lock { metric.apply(link, result.value, fetched_at) } : metric.apply(link, result.value, fetched_at)
+    Automation::CommerceEvents.dispatch(link, transitions, fetched_at) if transitions.present?
   rescue ActiveRecord::RecordNotUnique
     retry
+  end
+
+  def apply(link, orders, fetched_at)
+    return [] if persisted? && self.fetched_at >= fetched_at
+
+    states = Commerce::OrderTransitions.states(link.commerce_store_id, orders)
+    transitions = Commerce::OrderTransitions.between(persisted? ? order_states : nil, states, link.commerce_store_id, orders)
+    update!(account_id: link.account_id, fetched_at: fetched_at, order_states: states, **self.class.figures(orders))
+    transitions
   end
 
   def self.figures(orders)
@@ -35,6 +49,4 @@ class Commerce::ContactMetric < ApplicationRecord
       shipment_statuses: orders.flat_map { |order| Array(order['shipments']).filter_map { |shipment| shipment['status'] } }.uniq.sort
     }
   end
-
-  private_class_method :figures
 end

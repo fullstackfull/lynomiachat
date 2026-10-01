@@ -591,6 +591,9 @@ ar:
       audience_not_shared: "يمكن لقواعد الأتمتة استخدام الجماهير المشتركة لهذا الحساب فقط."
       commerce_disabled: "شروط ومشغّلات Commerce تحتاج إلى تفعيل Lynomia Commerce في هذا الحساب."
       invalid_store: "المتجر ليس من متاجر هذا الحساب."
+      no_delay: "مشغّلات Commerce تعمل فورًا ولا يمكنها الانتظار."
+      no_customer_message: "لا يمكن لمشغّلات Commerce إرسال رسائل إلى العميل (%{actions}). استخدم وسمًا أو إسنادًا أو ملاحظة خاصة أو Webhook."
+      event_condition_without_trigger: "شرطا متجر الطلب ومنصة الطلب يحتاجان إلى مشغّل Commerce."
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'

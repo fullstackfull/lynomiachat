@@ -7,16 +7,21 @@
 #                     true / false, so the audience's SQL is never pasted into the rule's.
 #   commerce_*        the Audience Commerce fields (Audience::CommerceCondition): the same SQL and semantics, unknown
 #                     never zero, correlated to the rule's `contacts.id`.
+#   commerce_event_store, commerce_event_provider
+#                     the store and platform of the Commerce event a `commerce_order_*` rule is handling
+#                     (docs/automation/04-commerce-triggers.md), not the contact's links: "WHEN order shipped IF platform
+#                     = Salla" is about that order. Only on Commerce triggers.
 #
 # Local data only: never a store call.
 class Automation::LynomiaCondition
   AUDIENCE_KEY = 'contact_audience'.freeze
   AUDIENCE_OPERATORS = %w[equal_to not_equal_to].freeze
+  EVENT_KEYS = %w[commerce_event_store commerce_event_provider].freeze
   MAX_VALUES = Custom::Contacts::FilterService::MAX_VALUES
 
-  def self.key?(key) = key.to_s == AUDIENCE_KEY || Audience::CommerceCondition.field?(key.to_s)
+  def self.key?(key) = key.to_s == AUDIENCE_KEY || event_key?(key) || Audience::CommerceCondition.field?(key.to_s)
 
-  def self.commerce?(key) = Audience::CommerceCondition.field?(key.to_s)
+  def self.event_key?(key) = EVENT_KEYS.include?(key.to_s)
 
   def initialize(key, account:, contact_id: nil)
     @key = key.to_s
@@ -24,7 +29,7 @@ class Automation::LynomiaCondition
     @contact_id = contact_id
   end
 
-  def operators = audience? ? AUDIENCE_OPERATORS : commerce_condition.operators
+  def operators = audience? || event? ? AUDIENCE_OPERATORS : commerce_condition.operators
 
   # Whether the account may use the key at all: the switch, and Commerce for Commerce keys.
   def available?
@@ -37,12 +42,15 @@ class Automation::LynomiaCondition
     return ['invalid_operator'] unless operators.include?(operator)
     return ['invalid_values'] if values.size > MAX_VALUES
 
-    audience? ? audience_errors(values) : commerce_errors(operator, values)
+    return audience_errors(values) if audience?
+
+    event? ? event_errors(values) : commerce_errors(operator, values)
   end
 
   # [sql, binds] for the rule's condition chain. `bind` is the condition's own bind name.
   def to_sql(operator, values, bind)
     return ['FALSE', {}] unless available?
+    return event_sql(operator, values, bind) if event?
     return commerce_condition.to_sql(operator, Array(values), bind) unless audience?
 
     member = audiences(values).any? { |audience| member?(audience) }
@@ -52,6 +60,25 @@ class Automation::LynomiaCondition
   private
 
   def audience? = @key == AUDIENCE_KEY
+
+  def event? = self.class.event_key?(@key)
+
+  # A constant for the rule's chain: the event's store or platform against the condition's values.
+  def event_sql(operator, values, bind)
+    data = Automation::CommerceEvents.current
+    return ['FALSE', {}] if data.nil?
+
+    actual = (@key == 'commerce_event_store' ? data[:store_id] : data[:provider]).to_s
+    listed = Array(values).map(&:to_s).include?(actual)
+    [":#{bind}", { bind => operator == 'not_equal_to' ? !listed : listed }]
+  end
+
+  def event_errors(values)
+    return ['commerce_disabled'] unless @account.feature_enabled?('lynomia_commerce')
+    return (own_stores?(values) ? [] : ['invalid_store']) if @key == 'commerce_event_store'
+
+    values.present? && values.all? { |value| Commerce::Providers::REGISTRY.key?(value.to_s) } ? [] : ['invalid_values']
+  end
 
   def commerce_condition = @commerce_condition ||= Audience::CommerceCondition.new(@key, account: @account)
 

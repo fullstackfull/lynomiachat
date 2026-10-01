@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_03_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_03_100100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -847,6 +847,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_03_100000) do
     t.datetime "fetched_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "order_states"
     t.index ["account_id"], name: "index_commerce_contact_metrics_on_account_id"
     t.index ["commerce_customer_link_id"], name: "index_commerce_contact_metrics_on_commerce_customer_link_id", unique: true
   end

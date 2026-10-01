@@ -101,8 +101,10 @@ class Commerce::ConversationPanel
     }
   end
 
+  # The store's customer id is not shown; whether it is a guest checkout or a registered customer is.
   def link_json(link)
-    { match_source: link.match_source, linked_at: link.updated_at.to_i, confirmed_by: link.confirmed_by&.slice(:id, :name) }
+    { match_source: link.match_source, linked_at: link.updated_at.to_i, confirmed_by: link.confirmed_by&.slice(:id, :name),
+      customer_type: link.external_customer_id.start_with?('guest:') ? 'guest' : 'registered' }
   end
 
   def base

@@ -32,8 +32,17 @@ class Commerce::Cache
   end
 
   def self.purge(store)
+    delete_matching("#{prefix(store)}::*")
+  end
+
+  # Drops every entry of one kind in the store (an order event that names no customer drops every customer's orders).
+  def self.invalidate_all(store, kind)
+    delete_matching("#{prefix(store)}::#{kind.to_s.upcase}::*")
+  end
+
+  def self.delete_matching(pattern)
     keys = []
-    Redis::Alfred.scan_each(match: "#{prefix(store)}::*") { |key| keys << key }
+    Redis::Alfred.scan_each(match: pattern) { |key| keys << key }
     keys.each { |key| Redis::Alfred.delete(key) }
   end
 
@@ -49,5 +58,5 @@ class Commerce::Cache
     entry.present? && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
   end
 
-  private_class_method :key, :prefix, :fresh?
+  private_class_method :key, :prefix, :fresh?, :delete_matching
 end

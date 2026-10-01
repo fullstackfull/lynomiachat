@@ -30,6 +30,16 @@ class Commerce::Providers::Base
   # Removes what Lynomia set up in the store (webhook subscriptions) before a disconnect deletes the credentials.
   def release = nil
 
+  # Realtime (docs/commerce/24-realtime-architecture.md). An order event of the store's webhooks names the customers
+  # whose cached orders changed, as the store customer ids links keep (external_customer_id): [] when it names none, and
+  # then every customer's cached orders of the store are dropped. Events never carry order data into Lynomia.
+  def self.supports_realtime? = false
+
+  def event_customer_ids(_payload) = []
+
+  # The order an event is about, for logs and metrics only; nil when the event does not say.
+  def event_order_id(_payload) = nil
+
   def normalize_customer(raw) = raise(NotImplementedError)
 
   def normalize_order(raw) = raise(NotImplementedError)

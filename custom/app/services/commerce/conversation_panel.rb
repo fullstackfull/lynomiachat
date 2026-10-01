@@ -113,11 +113,7 @@ class Commerce::ConversationPanel
 
   # Keys that no longer work: the store is flagged for an administrator and its cached data is dropped.
   def store_error!(error)
-    return unless error.code == 'AUTH_INVALID' && @store.active?
-
-    @store.update!(status: :needs_reauth)
-    Commerce::Cache.purge(@store)
-    Commerce::AuditTrail.record('commerce.store_needs_reauth', auditable: @store)
+    Commerce::StoreConnection.new(account: @store.account, user: nil).credentials_rejected(@store) if error.code == 'AUTH_INVALID'
   end
 
   def mask_email(email)

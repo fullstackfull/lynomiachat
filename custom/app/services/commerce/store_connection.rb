@@ -52,6 +52,16 @@ class Commerce::StoreConnection
     store
   end
 
+  # The store answered that its credentials no longer work: it is flagged for an administrator and its cached data is
+  # dropped, so nothing is shown from it until it is authorized again.
+  def credentials_rejected(store)
+    return unless store.active?
+
+    store.update!(status: :needs_reauth)
+    Commerce::Cache.purge(store)
+    audit('commerce.store_needs_reauth', store, {})
+  end
+
   def disable(store)
     previous_status = store.status
     store.update!(status: :disabled)

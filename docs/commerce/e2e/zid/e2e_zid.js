@@ -60,6 +60,9 @@ const zidAuthorizes = (context, { store, decline = false, hold = false }) => con
 });
 const newPage = async (email, { viewport = { width: 1440, height: 1500 }, superAdmin = false } = {}) => {
   const context = await browser.newContext({ viewport });
+  // Since Phase 7–8 the Commerce section may open on Customer 360; these checks are about the store view, the agent's
+  // saved choice here (docs/commerce/27-phase7-8-e2e.md §4).
+  await context.addInitScript(() => window.localStorage.setItem('lynomia.commerce.view', 'store'));
   const page = await context.newPage();
   page.on('pageerror', e => pageErrors.push(`${email}: ${e.message}`));
   page.on('framenavigated', frame => frame === page.mainFrame() && navigations.push(frame.url()));

@@ -2,6 +2,19 @@
 # (docs/automation/03-audience-and-commerce-conditions.md): each becomes one more parenthesised expression joined by
 # its query_operator, about the contact of the rule's conversation only (the base relation is that one conversation).
 module Custom::AutomationRules::ConditionsFilterService
+  # Rules with Lynomia conditions on Chatwoot's own triggers leave one log line per evaluation (Automation::ExecutionLog);
+  # Commerce triggers log from the listener, which knows the event.
+  def perform
+    lynomia = @rule.conditions.any? { |condition| Automation::LynomiaCondition.key?(condition['attribute_key']) }
+    return super if !lynomia || Automation::CommerceEvents.event?(@rule.event_name)
+
+    started_at = Automation::ExecutionLog.clock
+    super.tap do |matched|
+      Automation::ExecutionLog.write(@rule, @rule.event_name, matched ? 'matched' : 'skipped', "conversation:#{@conversation.id}",
+                                     started_at: started_at)
+    end
+  end
+
   def apply_filter(query_hash, current_index)
     key = query_hash['attribute_key']
     return super unless Automation::LynomiaCondition.key?(key)

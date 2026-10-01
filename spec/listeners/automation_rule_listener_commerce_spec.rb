@@ -115,6 +115,28 @@ RSpec.describe AutomationRuleListener do
     expect(account.automation_rules.new(base.merge(actions: []))).not_to be_valid
   end
 
+  it 'leaves one log line per rule and event: ids, outcome and duration, no contact data' do
+    shipped_rule
+    lines = []
+    allow(Rails.logger).to(receive(:info).and_wrap_original do |original, message|
+      lines << message if message.to_s.include?('[Lynomia::Automation]')
+      original.call(message)
+    end)
+
+    ship!
+    event = Events::Base.new('commerce.order_shipped', Time.zone.now, contact: contact, event_name: 'commerce_order_shipped',
+                                                                      store_id: store.id, provider: 'woocommerce', order: {},
+                                                                      event_id: "#{link.id}:replay")
+    2.times { described_class.instance.commerce_order_shipped(event) }
+
+    entries = lines.map { |line| JSON.parse(line.delete_prefix('[Lynomia::Automation] ')) }
+    expect(entries.pluck('outcome')).to eq(%w[executed executed duplicate])
+    expect(entries.first).to include('rule_id' => shipped_rule.id, 'trigger' => 'commerce_order_shipped',
+                                     'actions' => %w[add_label send_webhook_event])
+    expect(entries.first['duration_ms']).to be_a(Numeric)
+    expect(lines.join).not_to include(contact.email)
+  end
+
   it 'stops Commerce triggers when the extensions are switched off' do
     shipped_rule
 

@@ -82,6 +82,17 @@
         "UNAVAILABLE": "Couldn't refresh"
       }
     },
+    "ORDER_SEARCH": {
+      "TOGGLE": "Find an order",
+      "PLACEHOLDER": "Order number",
+      "SEARCH": "Search",
+      "HINT": "Searches by the exact order number. An order found can belong to any customer of the store.",
+      "INVALID": "Enter an order number using digits only.",
+      "RATE_LIMITED": "Too many searches. Try again in {seconds} s.",
+      "NO_RESULTS": "No order with this number",
+      "UNSUPPORTED": "{store}: order search isn't available for this store",
+      "UNAVAILABLE": "{store}: couldn't be searched"
+    },
     "ORDER_STATUS": {
       "PENDING": "Pending payment",
       "PROCESSING": "Processing",

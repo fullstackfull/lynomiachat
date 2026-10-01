@@ -31,7 +31,7 @@ module Commerce::Realtime
     customer_ids.each { |customer_id| Commerce::Cache.invalidate(store, :orders, customer_id) }
     return unless enabled? && store.active? && Commerce::Providers.enabled?(store.provider)
 
-    store.customer_links.where(external_customer_id: customer_ids).find_each { |link| schedule_refresh(link) }
+    store.customer_links.not_suppressed.where(external_customer_id: customer_ids).find_each { |link| schedule_refresh(link) }
   end
 
   def self.schedule_refresh(link)

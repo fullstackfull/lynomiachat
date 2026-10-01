@@ -2,7 +2,8 @@
 #
 #   1. an existing link
 #   2. the phone of the conversation's own channel identity (WhatsApp / SMS source id): one exact store customer is
-#      linked automatically, several are offered for manual selection
+#      linked automatically (unless an agent removed the contact's link in this store), several are offered for manual
+#      selection
 #   3. the contact's email, then its phone number: agent-editable fields, so their matches are only suggestions
 #
 # Matching is exact (normalized email, E.164 phone); names are never used. A signed widget identity (HMAC) covers only
@@ -18,7 +19,7 @@ class Commerce::CustomerMatcher
   end
 
   def call
-    link = @store.customer_links.find_by(contact: @contact)
+    link = @store.customer_links.not_suppressed.find_by(contact: @contact)
     return Result.new(link: link, verified: [], suggested: [], fetched_at: nil, stale: false, error: nil) if link
 
     discovery = Commerce::Cache.fetch(@store, :candidates, identity_key, force: @force) { discover }
@@ -55,13 +56,16 @@ class Commerce::CustomerMatcher
     found.uniq(&:external_id)
   end
 
+  # Not after an agent removed the contact's link in this store (a suppressed link).
   def auto_link(customer)
+    return if @store.customer_links.suppressed.exists?(contact: @contact)
+
     link = @store.customer_links.create!(account: @store.account, contact: @contact, external_customer_id: customer.external_id,
                                          match_source: :verified_phone)
     Commerce::AuditTrail.record('commerce.customer_link_created', auditable: link, changes: { match_source: 'verified_phone' })
     link
   rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
-    @store.customer_links.find_by!(contact: @contact)
+    @store.customer_links.not_suppressed.find_by(contact: @contact)
   end
 
   # Changes whenever an identifier used for discovery changes, so an edited contact is searched again.

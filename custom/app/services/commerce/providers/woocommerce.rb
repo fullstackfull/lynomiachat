@@ -57,6 +57,9 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  # WooCommerce numbers orders by their id unless a plugin renumbers them (such a store's orders are not found by number).
+  def self.searches_orders? = true
+
   # Works with both order storages: WooCommerce redirects this HPOS screen to post.php when HPOS is off.
   def admin_order_url(external_order_id)
     id = Integer(external_order_id.to_s, 10)

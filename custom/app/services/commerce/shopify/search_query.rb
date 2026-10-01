@@ -8,6 +8,8 @@ module Commerce::Shopify::SearchQuery
 
   def self.phone(value) = phrase('phone', value)
 
+  def self.order_name(value) = phrase('name', value)
+
   def self.customer_id(value)
     id = Integer(value.to_s, 10)
     raise ArgumentError, 'customer id must be positive' unless id.positive?

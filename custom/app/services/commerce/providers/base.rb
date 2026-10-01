@@ -24,6 +24,20 @@ class Commerce::Providers::Base
 
   def get_order(external_order_id) = raise(NotImplementedError)
 
+  # Order search (docs/commerce/25-customer-360.md §order search): the store's orders whose number, as the panel shows
+  # it, is exactly `number` (digits). Each provider asks the store for that number directly and never scans its orders;
+  # providers without such a lookup are reported as not searchable.
+  def self.searches_orders? = false
+
+  # For stores that number orders by their id: the order with that id, kept only when its number is the one asked for.
+  def find_orders(number)
+    [get_order(number)].select { |order| order.order_number == number }
+  rescue Commerce::Error => e
+    raise unless e.code == 'NOT_FOUND'
+
+    []
+  end
+
   # Built from the store's validated base URL and a validated order id, never from a URL in a provider response.
   def admin_order_url(external_order_id) = raise(NotImplementedError)
 

@@ -5,7 +5,7 @@ class Commerce::RefreshJob < ApplicationJob
   sidekiq_options retry: false
 
   def perform(link_id)
-    link = Commerce::CustomerLink.find_by(id: link_id)
+    link = Commerce::CustomerLink.not_suppressed.find_by(id: link_id)
     Commerce::Realtime.refresh(link) if link
   end
 end

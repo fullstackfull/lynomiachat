@@ -16,7 +16,7 @@ class Api::V1::Accounts::Conversations::Commerce::StoresController < Api::V1::Ac
   end
 
   def index
-    linked_ids = ::Commerce::CustomerLink.where(contact: @conversation.contact).pluck(:commerce_store_id)
+    linked_ids = ::Commerce::CustomerLink.not_suppressed.where(contact: @conversation.contact).pluck(:commerce_store_id)
     render json: {
       payload: active_stores.order(:created_at).map do |store|
         { id: store.id, name: store.name, provider: store.provider, linked: linked_ids.include?(store.id) }

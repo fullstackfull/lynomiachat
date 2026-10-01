@@ -51,6 +51,9 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  # The number the panel shows is Zid's order id (docs/commerce/16-zid-provider.md).
+  def self.searches_orders? = true
+
   def self.supports_realtime? = true
 
   # Zid's order events (order.create, order.status.update, order.payment_status.update) carry the order at the top level,

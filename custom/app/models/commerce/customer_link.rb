@@ -21,6 +21,9 @@
 #
 # Lynomia Commerce: the store customer a contact was matched to. `external_customer_id` is the store's customer id,
 # or "guest:<normalized email or E.164 phone>" for guest checkouts, so it is encrypted like other identifiers.
+#
+# A `suppressed` row is a link an agent removed: the contact counts as not linked in that store, and its phone no
+# longer links it automatically (a match is offered instead) until someone links a customer by hand.
 class Commerce::CustomerLink < ApplicationRecord
   self.table_name = 'commerce_customer_links'
 
@@ -29,7 +32,7 @@ class Commerce::CustomerLink < ApplicationRecord
   belongs_to :contact
   belongs_to :confirmed_by, class_name: 'User', optional: true
 
-  enum :match_source, { external_id: 0, verified_phone: 1, verified_email: 2, manual: 3 }
+  enum :match_source, { external_id: 0, verified_phone: 1, verified_email: 2, manual: 3, suppressed: 4 }
 
   encrypts :external_customer_id, deterministic: true
 

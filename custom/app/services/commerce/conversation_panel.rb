@@ -45,10 +45,12 @@ class Commerce::ConversationPanel
     show
   end
 
+  # Kept as a suppressed row, so the contact's phone does not link the same customer again on the next read.
   def unlink
-    link = @store.customer_links.find_by!(contact: @contact)
-    link.destroy!
-    Commerce::AuditTrail.record('commerce.customer_link_removed', auditable: link, user: @user, changes: { match_source: link.match_source })
+    link = @store.customer_links.not_suppressed.find_by!(contact: @contact)
+    changes = { match_source: [link.match_source, 'suppressed'] }
+    link.update!(match_source: :suppressed, confirmed_by: @user)
+    Commerce::AuditTrail.record('commerce.customer_link_removed', auditable: link, user: @user, changes: changes)
   end
 
   private

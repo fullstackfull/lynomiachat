@@ -166,12 +166,12 @@ RSpec.describe 'Conversation commerce API', type: :request do
 
       delete "#{path}/#{store.id}/link", headers: agent.create_new_auth_token, as: :json
       expect(response).to have_http_status(:ok)
-      expect(store.customer_links.count).to eq(0)
+      expect(store.customer_links.sole).to have_attributes(match_source: 'suppressed', confirmed_by: agent)
 
       if defined?(Enterprise::AuditLog)
         expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').order(:id).pluck(:comment, :audited_changes))
           .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
-                  ['commerce.customer_link_removed', { 'match_source' => 'manual' }]])
+                  ['commerce.customer_link_removed', { 'match_source' => %w[manual suppressed] }]])
       end
     end
 

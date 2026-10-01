@@ -95,6 +95,14 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
     normalize_order(raw)
   end
 
+  def self.searches_orders? = true
+
+  # Orders whose name is the number (the panel shows the name without its "#"), re-checked exactly.
+  def find_orders(number)
+    orders(Commerce::Shopify::SearchQuery.order_name(number), SEARCH_LIMIT).map { |raw| normalize_order(raw) }
+                                                                           .select { |order| order.order_number == number }
+  end
+
   def self.supports_realtime? = true
 
   # An orders/create or orders/updated body: its customer's id, or for a guest checkout the order's email as guest links

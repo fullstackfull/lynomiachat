@@ -19,6 +19,8 @@ const props = defineProps({
   order: { type: Object, required: true },
   // The order's store, shown when orders of several stores are listed together (Customer 360).
   store: { type: Object, default: null },
+  // Orders found by number may be another customer's: their tracking is not offered for sending into the conversation.
+  canSend: { type: Boolean, default: true },
 });
 
 const { t, locale } = useI18n();
@@ -52,7 +54,9 @@ const createdAt = computed(() =>
 );
 const adminUrl = computed(() => safeAdminUrl(props.order.admin_order_url));
 const trackingUrl = computed(() => safeHttpsUrl(props.order.tracking?.url));
-const canSendTracking = computed(() => hasTracking(props.order));
+const canSendTracking = computed(
+  () => props.canSend && hasTracking(props.order)
+);
 
 const sendTracking = () => {
   emitter.emit(

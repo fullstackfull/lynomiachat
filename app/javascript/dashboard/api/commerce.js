@@ -59,6 +59,14 @@ class CommerceAPI extends ApiClient {
     );
   }
 
+  // Orders with this number (digits, an optional leading #) in one store, or in every store without one.
+  searchOrders(conversationId, number, storeId = null) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/orders`,
+      { params: storeId ? { number, store_id: storeId } : { number } }
+    );
+  }
+
   getPanel(conversationId, storeId, { signal } = {}) {
     return axios.get(
       `${this.conversationStoresUrl(conversationId)}/${storeId}`,

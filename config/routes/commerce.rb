@@ -17,6 +17,7 @@ namespace :api, defaults: { format: 'json' } do
             namespace :commerce do
               resource :overview, only: [:show]
               resource :refresh, only: [:create]
+              resources :orders, only: [:index]
               resources :stores, only: [:index, :show] do
                 member do
                   get :customers

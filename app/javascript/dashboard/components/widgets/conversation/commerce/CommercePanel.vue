@@ -12,6 +12,7 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import CommerceOrderItem from './CommerceOrderItem.vue';
 import CommerceOverview from './CommerceOverview.vue';
+import CommerceOrderSearch from './CommerceOrderSearch.vue';
 import { relativeTime } from './commerceHelper';
 import { useCommerceLabels } from './useCommerceLabels';
 
@@ -358,6 +359,10 @@ watch(() => props.conversationId, loadStores, { immediate: true });
           :overview="overview"
           @open-store="openStore"
         />
+        <CommerceOrderSearch
+          v-if="overview"
+          :conversation-id="conversationId"
+        />
       </template>
 
       <template v-else>
@@ -523,6 +528,12 @@ watch(() => props.conversationId, loadStores, { immediate: true });
               />
             </li>
           </ul>
+
+          <CommerceOrderSearch
+            :key="storeId"
+            :conversation-id="conversationId"
+            :store-id="storeId"
+          />
         </template>
       </template>
     </template>

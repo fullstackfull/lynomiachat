@@ -3,9 +3,9 @@
 # aggregates those views. Nothing is stored: the stores' APIs and the Redis cache stay the source, so every figure covers
 # only the orders the stores returned (the latest ConversationPanel::ORDER_LIMIT per store), never a lifetime total.
 #
-# Stores are read concurrently, at most MAX_CONCURRENCY at a time, and the overview is answered after STORE_TIMEOUT
-# whatever is still running: one slow or failing store is reported in its own entry and never fails the overview.
-# Threads hold no database connection while waiting on a store (Rails returns it after each query).
+# Stores are read concurrently (Commerce::Parallel), at most MAX_CONCURRENCY at a time, and the overview is answered
+# after STORE_TIMEOUT whatever is still running: one slow or failing store is reported in its own entry and never fails
+# the overview.
 #
 #   active order     status pending, processing, on_hold or shipped
 #   shipped order    status shipped (handed to the carrier, not yet delivered)
@@ -73,31 +73,8 @@ class Commerce::Customer360
   end
 
   def fetch(stores)
-    results = {}
-    lock = Mutex.new
-    queue = Queue.new
-    stores.each_with_index { |store, index| queue << [store, index] }
-    queue.close
-    wait(Array.new([MAX_CONCURRENCY, stores.size].min) { worker(queue, results, lock) })
-    lock.synchronize { stores.each_with_index.map { |store, index| results[index] || unavailable(store, 'TIMEOUT') } }
-  end
-
-  def worker(queue, results, lock)
-    Thread.new do
-      Rails.application.executor.wrap do
-        while (item = queue.pop)
-          view = view(item.first)
-          lock.synchronize { results[item.last] = view }
-        end
-      end
-    end
-  end
-
-  def wait(workers)
-    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + STORE_TIMEOUT
-    ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
-      workers.each { |worker| worker.join([deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC), 0].max) }
-    end
+    views = Commerce::Parallel.map(stores, concurrency: MAX_CONCURRENCY, timeout: STORE_TIMEOUT) { |store| view(store) }
+    stores.zip(views).map { |store, view| view || unavailable(store, 'TIMEOUT') }
   end
 
   # One store's entry: its state, link, freshness and orders. Stores of a provider the installation switched off, and

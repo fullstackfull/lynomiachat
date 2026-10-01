@@ -583,6 +583,14 @@ ar:
     policy_actor: 'Automation System via %{policy_name}'
   automation:
     system_name: 'Automation System'
+    lynomia:
+      extensions_disabled: "إضافات أتمتة Lynomia متوقفة على هذا الخادم."
+      too_many_conditions: "يمكن أن تحتوي القاعدة على %{count} من شروط الجمهور وCommerce كحد أقصى."
+      invalid_operator: "هذا العامل غير متاح للحقل %{key}."
+      invalid_values: "قيم الحقل %{key} غير صالحة."
+      audience_not_shared: "يمكن لقواعد الأتمتة استخدام الجماهير المشتركة لهذا الحساب فقط."
+      commerce_disabled: "شروط ومشغّلات Commerce تحتاج إلى تفعيل Lynomia Commerce في هذا الحساب."
+      invalid_store: "المتجر ليس من متاجر هذا الحساب."
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'

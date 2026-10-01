@@ -63,3 +63,5 @@ class AutomationRules::ConditionValidationService
     ).find_by(attribute_key: attribute_key).present?
   end
 end
+
+AutomationRules::ConditionValidationService.prepend_mod_with('AutomationRules::ConditionValidationService')

@@ -182,3 +182,5 @@ class AutomationRules::ConditionsFilterService < FilterService
     records
   end
 end
+
+AutomationRules::ConditionsFilterService.prepend_mod_with('AutomationRules::ConditionsFilterService')

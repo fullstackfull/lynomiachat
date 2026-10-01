@@ -1,7 +1,8 @@
 # Lynomia Audience: "the contact has a conversation where …" conditions for contact filters and audiences
 # (docs/audience/02-audience-architecture.md). `equal_to` is "has at least one such conversation", `not_equal_to` "has
 # none". Only conversations the user may see count (Conversations::PermissionFilterService, with the Enterprise custom-role
-# rules), so a filter never reveals a conversation in an inbox the user cannot open.
+# rules), so a filter never reveals a conversation in an inbox the user cannot open; an automation rule, which has no
+# user, evaluates a shared audience over the account's conversations.
 class Audience::ConversationCondition
   OPERATORS = %w[equal_to not_equal_to].freeze
   FIELDS = {
@@ -30,7 +31,10 @@ class Audience::ConversationCondition
 
   private
 
+  # Without a user (an automation rule evaluating a shared audience) the account's conversations count.
   def accessible
+    return @account.conversations if @user.nil?
+
     Conversations::PermissionFilterService.new(@account.conversations, @user, @account).perform
   end
 

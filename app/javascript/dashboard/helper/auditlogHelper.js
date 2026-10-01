@@ -27,6 +27,9 @@ const translationKeys = {
   'macro:create': `AUDIT_LOGS.MACRO.ADD`,
   'macro:update': `AUDIT_LOGS.MACRO.EDIT`,
   'macro:destroy': `AUDIT_LOGS.MACRO.DELETE`,
+  'customfilter:create': `AUDIT_LOGS.AUDIENCE.ADD`,
+  'customfilter:update': `AUDIT_LOGS.AUDIENCE.EDIT`,
+  'customfilter:destroy': `AUDIT_LOGS.AUDIENCE.DELETE`,
   'accountuser:create': `AUDIT_LOGS.ACCOUNT_USER.ADD`,
   'accountuser:update:self': `AUDIT_LOGS.ACCOUNT_USER.EDIT.SELF`,
   'accountuser:update:other': `AUDIT_LOGS.ACCOUNT_USER.EDIT.OTHER`,
@@ -243,6 +246,7 @@ export const EVENT_TYPE_GROUPS = [
       { value: 'Webhook', key: 'WEBHOOKS' },
       { value: 'AutomationRule', key: 'AUTOMATION_RULES' },
       { value: 'Macro', key: 'MACROS' },
+      { value: 'CustomFilter', key: 'AUDIENCES' },
     ],
   },
   {

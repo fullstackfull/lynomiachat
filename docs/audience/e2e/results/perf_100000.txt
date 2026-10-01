@@ -1,0 +1,75 @@
+Audience performance, 100000 contacts (docs/audience/e2e/perf.rb measure/api 100000), 2026-10-01
+Ruby 3.4.4 production environment (verify image), PostgreSQL 16 local, default settings (jit on, work_mem 4MB).
+Times in ms, median and max of 5 uncached runs.
+
+Contact filter as the API runs it (Contacts::FilterService):
+ count med  count max  page med  matches  scenario
+     105.0      169.7       2.8    11111  existing: email contains
+      17.8       20.4       5.0     5000  existing: label vip
+      52.5       59.8       7.1    80000  Commerce: linked store is present
+      47.6       55.6       6.0    40000  Commerce: store = store 1
+     534.5      618.1       3.0    37925  Commerce: visible spend SAR > 1000
+     565.5      582.3       3.9    13209  Commerce: visible spend SAR < 100 (every store known)
+     421.2      563.6       3.3    22829  Commerce: visible orders < 2 (every store known)
+     439.7      493.7       4.1     4136  Commerce: last visible purchase after 30 days ago
+      54.0       57.4       3.2    19051  Commerce: order status = processing
+      42.9       60.4       6.1    30000  conversation: status open or resolved
+      59.6       63.7       7.5     1163  combined: spend SAR > 1000 AND open conversation AND label vip
+      47.7       61.2       5.2    15000  conversation: status open or resolved (agent, one of the two inboxes)
+
+Full Rails stack, in process (routing, authentication, policies, JSON):
+    median        max  matches  request
+     123.4      173.9           open filter builder: Commerce options
+      14.0       14.3           audiences list (sidebar)
+     130.2      138.8    11111  preview: email contains (existing)
+     520.9      652.1    37925  preview: visible spend SAR > 1000
+     596.1      708.8    22829  preview: visible orders < 2
+     106.6      120.2     1163  preview: combined: spend SAR > 1000 AND open conversation AND label vip
+     104.5      119.6     1163  open saved audience: read it, count and first page
+
+Outbound HTTP during all of the above: 0 (measure), 0 (api)
+
+EXPLAIN (ANALYZE, BUFFERS) count of 'Commerce: visible spend SAR > 1000':
+Aggregate  (cost=1880924.22..1880924.23 rows=1 width=8) (actual time=631.956..631.959 rows=1 loops=1)
+  Buffers: shared hit=670883
+  ->  Index Scan using index_resolved_contact_account_id on contacts  (cost=0.29..1880840.86 rows=33347 width=0) (actual time=172.012..627.883 rows=37925 loops=1)
+        Index Cond: (account_id = 7)
+        Filter: ((SubPlan 1) > 1000.0)
+        Rows Removed by Filter: 62075
+        Buffers: shared hit=670883
+        SubPlan 1
+          ->  Aggregate  (cost=18.75..18.76 rows=1 width=32) (actual time=0.004..0.004 rows=1 loops=100000)
+                Buffers: shared hit=668571
+                ->  Nested Loop  (cost=0.58..18.74 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=100000)
+                      Buffers: shared hit=668571
+                      ->  Nested Loop  (cost=0.29..10.43 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=100000)
+                            Join Filter: (audience_links.commerce_store_id = audience_stores.id)
+                            Rows Removed by Join Filter: 2
+                            Buffers: shared hit=440000
+                            ->  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=100000)
+                                  Index Cond: (contact_id = contacts.id)
+                                  Filter: ((match_source <> 4) AND (account_id = 7))
+                                  Buffers: shared hit=280000
+                            ->  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.06 rows=4 width=8) (actual time=0.000..0.001 rows=4 loops=80000)
+                                  Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))
+                                  Buffers: shared hit=160000
+                      ->  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=29) (actual time=0.001..0.001 rows=1 loops=80000)
+                            Index Cond: (commerce_customer_link_id = audience_links.id)
+                            Filter: (id IS NOT NULL)
+                            Buffers: shared hit=228571
+Planning:
+  Buffers: shared hit=18
+Planning Time: 0.523 ms
+JIT:
+  Functions: 29
+  Options: Inlining true, Optimization true, Expressions true, Deforming true
+  Timing: Generation 1.639 ms, Inlining 16.260 ms, Optimization 87.261 ms, Emission 68.337 ms, Total 173.497 ms
+Execution Time: 633.772 ms
+
+EXPLAIN (ANALYZE) count of the combined scenario:
+Planning Time: 1.045 ms
+Execution Time: 45.529 ms
+
+Raw:
+SIM {"contacts":100000,"results":{"existing: email contains":{"count":11111,"count_ms":{"median_ms":105.0,"max_ms":169.7},"first_page_ms":{"median_ms":2.8,"max_ms":10.2}},"existing: label vip":{"count":5000,"count_ms":{"median_ms":17.8,"max_ms":20.4},"first_page_ms":{"median_ms":5.0,"max_ms":6.3}},"Commerce: linked store is present":{"count":80000,"count_ms":{"median_ms":52.5,"max_ms":59.8},"first_page_ms":{"median_ms":7.1,"max_ms":7.7}},"Commerce: store = store 1":{"count":40000,"count_ms":{"median_ms":47.6,"max_ms":55.6},"first_page_ms":{"median_ms":6.0,"max_ms":7.4}},"Commerce: visible spend SAR \u003e 1000":{"count":37925,"count_ms":{"median_ms":534.5,"max_ms":618.1},"first_page_ms":{"median_ms":3.0,"max_ms":3.3}},"Commerce: visible spend SAR \u003c 100 (every store known)":{"count":13209,"count_ms":{"median_ms":565.5,"max_ms":582.3},"first_page_ms":{"median_ms":3.9,"max_ms":4.0}},"Commerce: visible orders \u003c 2 (every store known)":{"count":22829,"count_ms":{"median_ms":421.2,"max_ms":563.6},"first_page_ms":{"median_ms":3.3,"max_ms":3.5}},"Commerce: last visible purchase after 30 days ago":{"count":4136,"count_ms":{"median_ms":439.7,"max_ms":493.7},"first_page_ms":{"median_ms":4.1,"max_ms":5.5}},"Commerce: order status = processing":{"count":19051,"count_ms":{"median_ms":54.0,"max_ms":57.4},"first_page_ms":{"median_ms":3.2,"max_ms":3.7}},"conversation: status open or resolved":{"count":30000,"count_ms":{"median_ms":42.9,"max_ms":60.4},"first_page_ms":{"median_ms":6.1,"max_ms":6.9}},"combined: spend SAR \u003e 1000 AND open conversation AND label vip":{"count":1163,"count_ms":{"median_ms":59.6,"max_ms":63.7},"first_page_ms":{"median_ms":7.5,"max_ms":7.9}},"conversation: status open or resolved (agent, one of the two inboxes)":{"count":15000,"count_ms":{"median_ms":47.7,"max_ms":61.2},"first_page_ms":{"median_ms":5.2,"max_ms":6.3}}},"explain_spend":["Aggregate  (cost=1880924.22..1880924.23 rows=1 width=8) (actual time=631.956..631.959 rows=1 loops=1)","  Buffers: shared hit=670883","  -\u003e  Index Scan using index_resolved_contact_account_id on contacts  (cost=0.29..1880840.86 rows=33347 width=0) (actual time=172.012..627.883 rows=37925 loops=1)","        Index Cond: (account_id = 7)","        Filter: ((SubPlan 1) \u003e 1000.0)","        Rows Removed by Filter: 62075","        Buffers: shared hit=670883","        SubPlan 1","          -\u003e  Aggregate  (cost=18.75..18.76 rows=1 width=32) (actual time=0.004..0.004 rows=1 loops=100000)","                Buffers: shared hit=668571","                -\u003e  Nested Loop  (cost=0.58..18.74 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=100000)","                      Buffers: shared hit=668571","                      -\u003e  Nested Loop  (cost=0.29..10.43 rows=1 width=8) (actual time=0.002..0.002 rows=1 loops=100000)","                            Join Filter: (audience_links.commerce_store_id = audience_stores.id)","                            Rows Removed by Join Filter: 2","                            Buffers: shared hit=440000","                            -\u003e  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=100000)","                                  Index Cond: (contact_id = contacts.id)","                                  Filter: ((match_source \u003c\u003e 4) AND (account_id = 7))","                                  Buffers: shared hit=280000","                            -\u003e  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.06 rows=4 width=8) (actual time=0.000..0.001 rows=4 loops=80000)","                                  Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))","                                  Buffers: shared hit=160000","                      -\u003e  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=29) (actual time=0.001..0.001 rows=1 loops=80000)","                            Index Cond: (commerce_customer_link_id = audience_links.id)","                            Filter: (id IS NOT NULL)","                            Buffers: shared hit=228571","Planning:","  Buffers: shared hit=18","Planning Time: 0.523 ms","JIT:","  Functions: 29","  Options: Inlining true, Optimization true, Expressions true, Deforming true","  Timing: Generation 1.639 ms, Inlining 16.260 ms, Optimization 87.261 ms, Emission 68.337 ms, Total 173.497 ms","Execution Time: 633.772 ms"],"explain_combined":["Planning Time: 1.045 ms","Execution Time: 45.529 ms"],"http_calls":0}
+SIM {"contacts":100000,"api":{"open filter builder: Commerce options":{"median_ms":123.4,"max_ms":173.9},"audiences list (sidebar)":{"median_ms":14.0,"max_ms":14.3},"preview: email contains (existing)":{"median_ms":130.2,"max_ms":138.8,"count":11111},"preview: visible spend SAR \u003e 1000":{"median_ms":520.9,"max_ms":652.1,"count":37925},"preview: visible orders \u003c 2":{"median_ms":596.1,"max_ms":708.8,"count":22829},"preview: combined: spend SAR \u003e 1000 AND open conversation AND label vip":{"median_ms":106.6,"max_ms":120.2,"count":1163},"open saved audience: read it, count and first page":{"median_ms":104.5,"max_ms":119.6,"count":1163}},"http_calls":0}

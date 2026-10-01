@@ -36,7 +36,7 @@ condition fields, and one small Commerce projection because order figures are no
 | Account scoping | yes | `Current.account.contacts`, `Current.account.custom_filters.where(user:)` | **READY TO REUSE** | Commerce subqueries also pin `account_id` |
 | Permissions | yes | `ContactPolicy`, `CustomFilterPolicy` | **READY TO REUSE** | no new permission flag |
 | Search | yes | `contacts/search` | **READY TO REUSE** | untouched |
-| Audit | partial (not for saved filters) | `Enterprise::Audit::*` | **NEEDS PATCH** | audit contact segments (audiences): created / updated / deleted |
+| Audit | partial (not for saved filters) | `Enterprise::Audit::*`, audit log page | **NEEDS PATCH** | audit contact segments (audiences): created / updated / deleted, named and filterable on the existing audit log page |
 | Commerce link conditions | yes, in SQL | `commerce_customer_links`, `commerce_stores` | **READY TO REUSE** | has a linked store, provider, store |
 | Commerce order figures | no (Redis, in memory) | `Commerce::Cache`, `Commerce::Customer360` | **NOT PRESENT** | `commerce_contact_metrics`: one summary row per customer link, written by the existing read paths (03) |
 | Abandoned carts | no (Redis, per conversation identity) | `Commerce::AbandonedCarts` | **NOT PRESENT** | not exposed in this phase (03 §7) |

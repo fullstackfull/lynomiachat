@@ -238,7 +238,36 @@ const chooseField = async (page, rowIndex, currentLabel, search, option) => {
   const inside = panelBox && panelBox.x >= 0 && panelBox.x + panelBox.width <= 390;
   check('Arabic at 390 px: right to left, the Commerce field and its notes in Arabic, the filter panel inside the screen',
     dir === 'rtl' && arNotes.includes('ليست إجماليات مدى الحياة') && inside, `dir=${dir} panel=${JSON.stringify(panelBox)}`);
+  await admin.goto(`${B}/app/accounts/${account}/contacts`, { waitUntil: 'networkidle' });
+  await admin.waitForTimeout(1500);
+  await openFilter(admin);
+  await admin.getByRole('button', { name: 'الاسم', exact: true }).click();
+  await admin.waitForTimeout(300);
+  await admin.keyboard.type('الطلبات');
+  await admin.waitForTimeout(300);
+  await admin.locator('li.n-dropdown-item', { hasText: 'الطلبات الظاهرة' }).first().click();
+  await admin.waitForTimeout(400);
+  const arDesktop = clean(await admin.locator('[data-test-id="audience-notes"]').innerText().catch(() => ''));
+  await shot(admin, 'audience-10-ar-desktop');
+  check('Arabic on a desktop screen: the same builder right to left, the Commerce notes in Arabic',
+    arDesktop.includes('ليست إجماليات مدى الحياة'), arDesktop.slice(0, 120));
   await api(admin, `${B}/api/v1/accounts/${account}`, 'PATCH', { locale: 'en' });
+
+  // ---- English, 390 px -----------------------------------------------------------------------------------------------------------
+  const phone = await login('agent_a@commerce.lynomia.local', { width: 390, height: 844 });
+  await phone.goto(`${B}/app/accounts/${account}/contacts`, { waitUntil: 'networkidle' });
+  await phone.waitForTimeout(1500);
+  await openFilter(phone);
+  await phone.getByRole('button', { name: 'Name', exact: true }).first().click();
+  await phone.waitForTimeout(300);
+  await phone.keyboard.type('Visible orders');
+  await phone.waitForTimeout(300);
+  await phone.locator('li.n-dropdown-item', { hasText: 'Visible orders' }).first().click();
+  await phone.waitForTimeout(400);
+  const phoneBox = await phone.locator('[data-test-id="audience-notes"]').locator('xpath=..').boundingBox();
+  await shot(phone, 'audience-11-en-mobile-condition');
+  check('English at 390 px: the Commerce field and its notes, the filter panel inside the screen',
+    phoneBox && phoneBox.x >= 0 && phoneBox.x + phoneBox.width <= 390, JSON.stringify(phoneBox));
 
   // ---- Safety ------------------------------------------------------------------------------------------------------------------
   const secrets = [keys.s1.ck, keys.s1.cs];

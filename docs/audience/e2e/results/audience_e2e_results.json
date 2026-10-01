@@ -2,7 +2,7 @@
   {
     "name": "setup: store A1 connected (real WooCommerce, Read key), Salla switched off",
     "ok": true,
-    "detail": "{\"store\":194,\"salla\":false}"
+    "detail": "{\"store\":219,\"salla\":false}"
   },
   {
     "name": "an agent opening Omar's conversation reads his orders from the store, as before",
@@ -47,7 +47,7 @@
   {
     "name": "editing rebuilds the saved condition (\"Visible spend (SAR)\" … 1) and adds a store condition by name",
     "ok": true,
-    "detail": "[{\"values\":[\"1\"],\"attribute_key\":\"commerce_spend_sar\",\"query_operator\":\"and\",\"attribute_model\":\"standard\",\"filter_operator\":\"is_greater_than\"},{\"values\":[194],\"attribute_key\":\"commerce_store\",\"attribute_model\":\"standard\",\"filter_operator\":\"equal_to\"}]"
+    "detail": "[{\"values\":[\"1\"],\"attribute_key\":\"commerce_spend_sar\",\"query_operator\":\"and\",\"attribute_model\":\"standard\",\"filter_operator\":\"is_greater_than\"},{\"values\":[219],\"attribute_key\":\"commerce_store\",\"attribute_model\":\"standard\",\"filter_operator\":\"equal_to\"}]"
   },
   {
     "name": "unknown is never zero: \"fewer than 100 visible orders\" matches Omar, not Layla whose orders were never read",
@@ -77,7 +77,7 @@
   {
     "name": "evaluating audiences never called the store: its access log is unchanged",
     "ok": true,
-    "detail": "before=1291 after=1291"
+    "detail": "before=1496 after=1496"
   },
   {
     "name": "malformed, injected, unknown, wrong-operator and oversized conditions answer 422",
@@ -105,9 +105,19 @@
     "detail": "dir=rtl panel={\"x\":15,\"y\":158,\"width\":354,\"height\":502.75}"
   },
   {
+    "name": "Arabic on a desktop screen: the same builder right to left, the Commerce notes in Arabic",
+    "ok": true,
+    "detail": "شروط Commerce تستخدم أحدث الطلبات التي قرأتها Lynomia من كل متجر مرتبط، لذا فهي طلبات وإنفاق ظاهران وليست إجماليات مدى ا"
+  },
+  {
+    "name": "English at 390 px: the Commerce field and its notes, the filter panel inside the screen",
+    "ok": true,
+    "detail": "{\"x\":18,\"y\":158,\"width\":354,\"height\":525.84375}"
+  },
+  {
     "name": "no store key or secret in any response the browser received",
     "ok": true,
-    "detail": "responses=200"
+    "detail": "responses=259"
   },
   {
     "name": "no uncaught page errors",

@@ -75,8 +75,14 @@ class Commerce::AbandonedCarts
                        .filter_map { |cart| (match = match_of(cart)) && { cart: cart, match: match } }
     ambiguous = ambiguous?(by_identity)
     result = ambiguous ? by_identity.select { |entry| entry[:match] == 'linked_customer' } : by_identity
-    Commerce::Metrics.event('commerce.cart.matched', provider: @store.provider, store_id: @store.id, carts: result.size, ambiguous: ambiguous)
+    measure(result, ambiguous)
     result
+  end
+
+  def measure(result, ambiguous)
+    Commerce::Metrics.event('commerce.cart.matched', provider: @store.provider, store_id: @store.id, carts: result.size, ambiguous: ambiguous)
+    recovered = result.count { |entry| entry[:cart].status == 'recovered' }
+    Commerce::Metrics.event('commerce.cart.recovered', provider: @store.provider, store_id: @store.id, carts: recovered) if recovered.positive?
   end
 
   # A verified phone or email found on carts of several store customers says nothing about which one is the contact.

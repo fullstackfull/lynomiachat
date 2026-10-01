@@ -37,6 +37,10 @@ class Commerce::Cache
     Redis::Alfred.delete(key(store, kind, identifier))
   end
 
+  def self.delete_all(store, kind)
+    delete_matching("#{prefix(store)}::#{kind.to_s.upcase}::*")
+  end
+
   def self.purge(store)
     delete_matching("#{prefix(store)}::*")
   end

@@ -8,6 +8,10 @@
 #   3. the refresh tells the account's agents through ActionCable (`commerce.customer.updated`: ids and a time only), and
 #      an open Commerce section refetches the Commerce API, which authorizes as usual.
 #
+# Abandoned carts: every order event and every cart event (Salla abandoned.cart, abandoned.cart.update) drops the store's
+# cached carts, so a cart an order completed is never shown again, not even as a stale fallback; the next view reads the
+# store. A cart event refreshes the customer's linked contacts like an order event.
+#
 # Events arriving out of order need no handling: every refresh reads the current state from the store. The first event
 # for a customer refreshes at once; any that arrive while that refresh is queued or running make exactly one more, after
 # COALESCE_WINDOW, however many they are.
@@ -27,6 +31,7 @@ module Commerce::Realtime
   def self.order_event(store, payload)
     provider = Commerce::Providers.for(store)
     customer_ids = provider.event_customer_ids(payload).compact_blank.map(&:to_s).uniq
+    drop_carts(store)
     Commerce::Metrics.event('commerce.webhook.applied', provider: store.provider, store_id: store.id, customers: customer_ids.size)
     return Commerce::Cache.invalidate_all(store, :orders) if customer_ids.empty?
 
@@ -34,6 +39,20 @@ module Commerce::Realtime
     return unless enabled? && store.active? && Commerce::Providers.enabled?(store.provider)
 
     store.customer_links.not_suppressed.where(external_customer_id: customer_ids).find_each { |link| schedule_refresh(link) }
+  end
+
+  def self.cart_event(store, payload)
+    customer_ids = Commerce::Providers.for(store).event_customer_ids(payload).compact_blank.map(&:to_s).uniq
+    drop_carts(store)
+    Commerce::Metrics.event('commerce.cart.event', provider: store.provider, store_id: store.id, customers: customer_ids.size)
+    return unless enabled? && store.active? && Commerce::Providers.enabled?(store.provider) && customer_ids.any?
+
+    store.customer_links.not_suppressed.where(external_customer_id: customer_ids).find_each { |link| schedule_refresh(link) }
+  end
+
+  def self.drop_carts(store)
+    Commerce::Cache.delete_all(store, :carts)
+    Commerce::Cache.delete_all(store, :cart_queue)
   end
 
   def self.schedule_refresh(link)
@@ -87,5 +106,5 @@ module Commerce::Realtime
 
   def self.dirty_key(link) = "#{lock_key(link)}::PENDING"
 
-  private_class_method :read_orders, :requeue, :lock_key, :dirty_key
+  private_class_method :read_orders, :requeue, :lock_key, :dirty_key, :drop_carts
 end

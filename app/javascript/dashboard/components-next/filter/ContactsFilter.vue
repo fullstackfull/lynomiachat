@@ -1,11 +1,15 @@
 <script setup>
-import { useTemplateRef, onBeforeUnmount, computed, ref } from 'vue';
+import { useTemplateRef, onBeforeUnmount, onMounted, computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTrack } from 'dashboard/composables';
 import { useStore } from 'dashboard/composables/store';
 import { vOnClickOutside } from '@vueuse/components';
 import { CONTACTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import { useContactFilterContext } from './contactProvider.js';
+import {
+  useAudienceFilterTypes,
+  COMMERCE_ORDER_KEY,
+} from './audienceProvider.js';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
 
 import Button from 'next/button/Button.vue';
@@ -24,6 +28,7 @@ const emit = defineEmits([
   'clearFilters',
 ]);
 const { attributeFilterTypes } = useContactFilterContext();
+const { loadAudienceFields, unreadContacts } = useAudienceFilterTypes();
 
 const filters = defineModel({
   type: Array,
@@ -88,6 +93,23 @@ function validateAndSubmit() {
   });
 }
 
+// What the conversation and Commerce conditions mean, shown while they are used (docs/audience/02).
+const usesKey = test =>
+  filters.value.some(filter => test(filter.attributeKey || ''));
+const usesConversation = computed(() =>
+  usesKey(key => key.startsWith('conversation_'))
+);
+const usesCommerce = computed(() =>
+  usesKey(key => key.startsWith('commerce_'))
+);
+const unreadNote = computed(() =>
+  usesKey(key => COMMERCE_ORDER_KEY.test(key)) && unreadContacts.value > 0
+    ? t('CONTACTS_FILTER.AUDIENCE.UNREAD', { count: unreadContacts.value })
+    : ''
+);
+
+onMounted(() => loadAudienceFields());
+
 const filterModalHeaderTitle = computed(() => {
   return !props.isSegmentView
     ? t('CONTACTS_LAYOUT.FILTER.TITLE')
@@ -104,7 +126,7 @@ const outsideClickHandler = [
 <template>
   <div
     v-on-click-outside="outsideClickHandler"
-    class="z-40 w-[min(34rem,calc(100vw-2rem))] lg:w-[750px] overflow-visible border border-n-weak bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-6 grid gap-6"
+    class="z-40 w-full sm:w-[min(34rem,calc(100vw-2rem))] lg:w-[750px] overflow-visible border border-n-weak bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-6 grid gap-6"
   >
     <h3 class="text-base font-medium leading-6 text-n-slate-12">
       {{ filterModalHeaderTitle }}
@@ -145,7 +167,26 @@ const outsideClickHandler = [
         />
       </template>
     </ul>
-    <div class="flex justify-between gap-2">
+    <div
+      v-if="usesConversation || usesCommerce"
+      class="flex flex-col gap-1 text-label-small text-n-slate-11"
+      data-test-id="audience-notes"
+    >
+      <p v-if="usesConversation">
+        {{ t('CONTACTS_FILTER.AUDIENCE.CONVERSATION_NOTE') }}
+      </p>
+      <p v-if="usesCommerce">
+        {{ t('CONTACTS_FILTER.AUDIENCE.COMMERCE_NOTE') }}
+      </p>
+      <p
+        v-if="unreadNote"
+        class="rounded-lg bg-n-amber-2 px-3 py-2 text-n-amber-11"
+        data-test-id="audience-unread"
+      >
+        {{ unreadNote }}
+      </p>
+    </div>
+    <div class="flex flex-wrap justify-between gap-2">
       <Button sm ghost blue class="flex-shrink-0" @click="addFilter">
         {{ $t('CONTACTS_LAYOUT.FILTER.BUTTONS.ADD_FILTER') }}
       </Button>

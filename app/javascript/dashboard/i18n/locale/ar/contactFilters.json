@@ -54,7 +54,33 @@
     "GROUPS": {
       "STANDARD_FILTERS": "الفلاتر القياسية",
       "ADDITIONAL_FILTERS": "فلاتر إضافية",
-      "CUSTOM_ATTRIBUTES": "سمات مخصصة"
+      "CUSTOM_ATTRIBUTES": "سمات مخصصة",
+      "CONVERSATIONS": "المحادثات",
+      "COMMERCE": "Commerce"
+    },
+    "AUDIENCE": {
+      "FIELDS": {
+        "CONVERSATION_STATUS": "حالة المحادثة",
+        "CONVERSATION_PRIORITY": "أولوية المحادثة",
+        "CONVERSATION_INBOX": "صندوق وارد المحادثة",
+        "CONVERSATION_ASSIGNEE": "الوكيل المسند",
+        "CONVERSATION_TEAM": "الفريق المسند",
+        "CONVERSATION_LABELS": "وسوم المحادثة",
+        "STORE": "المتجر المرتبط",
+        "PROVIDER": "منصة المتجر",
+        "ORDERS": "الطلبات الظاهرة",
+        "SPEND": "الإنفاق الظاهر ({currency})",
+        "LAST_PURCHASE": "آخر شراء ظاهر",
+        "ACTIVE_ORDER": "لديه طلب نشط",
+        "ORDER_STATUS": "حالة الطلب",
+        "PAYMENT_STATUS": "حالة الدفع",
+        "SHIPMENT_STATUS": "حالة الشحن"
+      },
+      "YES": "نعم",
+      "NO": "لا",
+      "CONVERSATION_NOTE": "شروط المحادثات تطابق جهات الاتصال التي لديها محادثة واحدة على الأقل بهذه الصفة (يساوي) أو ليس لديها أي محادثة كهذه (لا يساوي)، ضمن المحادثات التي يمكنك رؤيتها.",
+      "COMMERCE_NOTE": "شروط Commerce تستخدم أحدث الطلبات التي قرأتها Lynomia من كل متجر مرتبط، لذا فهي طلبات وإنفاق ظاهران وليست إجماليات مدى الحياة. الإنفاق محسوب لكل عملة على حدة.",
+      "UNREAD": "لم تُقرأ الطلبات بعد لـ {count} من جهات الاتصال المرتبطة، لذلك لا يمكن أن تطابقها شروط الطلبات. تُقرأ عندما يفتح أحد الوكلاء محادثة جهة الاتصال أو يرسل المتجر تحديثًا."
     }
   }
 }

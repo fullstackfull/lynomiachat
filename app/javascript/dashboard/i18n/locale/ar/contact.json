@@ -360,21 +360,21 @@
         },
         "FILTERS": {
           "CREATE_SEGMENT": {
-            "TITLE": "هل تريد حفظ هذه التصفية؟",
-            "CONFIRM": "حفظ التصفية",
+            "TITLE": "هل تريد حفظ هذه الفلاتر كجمهور؟",
+            "CONFIRM": "حفظ الجمهور",
             "LABEL": "الاسم",
-            "PLACEHOLDER": "Enter the name of the filter",
-            "ERROR": "Enter a valid name",
-            "SUCCESS_MESSAGE": "Filter saved successfully",
-            "ERROR_MESSAGE": "Unable to save filter. Please try again later."
+            "PLACEHOLDER": "سمِّ هذا الجمهور",
+            "ERROR": "أدخل اسمًا صالحًا",
+            "SUCCESS_MESSAGE": "تم حفظ الجمهور",
+            "ERROR_MESSAGE": "تعذر حفظ الجمهور. حاول مرة أخرى."
           },
           "DELETE_SEGMENT": {
-            "TITLE": "تأكيد الحذف",
-            "DESCRIPTION": "Are you sure you want to delete this filter?",
+            "TITLE": "هل تريد حذف هذا الجمهور؟",
+            "DESCRIPTION": "تُحذف شروطه المحفوظة فقط، وتبقى جهات الاتصال.",
             "CONFIRM": "نعم، احذف",
             "CANCEL": "لا، إلغاء",
-            "SUCCESS_MESSAGE": "Filter deleted successfully",
-            "ERROR_MESSAGE": "Unable to delete filter. Please try again later."
+            "SUCCESS_MESSAGE": "تم حذف الجمهور",
+            "ERROR_MESSAGE": "تعذر حذف الجمهور. حاول مرة أخرى."
           }
         }
       }
@@ -398,15 +398,15 @@
       "BLOCKED_FALSE": "خاطئ",
       "BUTTONS": {
         "CLEAR_FILTERS": "مسح التصفيات",
-        "UPDATE_SEGMENT": "Update segment",
+        "UPDATE_SEGMENT": "تحديث الجمهور",
         "APPLY_FILTERS": "تطبيق التصفيات",
         "ADD_FILTER": "إضافة تصفية"
       },
       "TITLE": "تصفية جهات الاتصال",
-      "EDIT_SEGMENT": "تحرير الجزء",
+      "EDIT_SEGMENT": "تعديل الجمهور",
       "SEGMENT": {
-        "LABEL": "Segment name",
-        "INPUT_PLACEHOLDER": "Enter the name of the segment"
+        "LABEL": "اسم الجمهور",
+        "INPUT_PLACEHOLDER": "سمِّ هذا الجمهور"
       },
       "ACTIVE_FILTERS": {
         "MORE_FILTERS": "+ {count} more filters",

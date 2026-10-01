@@ -1,0 +1,25 @@
+PASS  setup: store A1 connected (real WooCommerce, Read key), Salla switched off  -- {"store":194,"salla":false}
+PASS  an agent opening Omar's conversation reads his orders from the store, as before  -- orders=3
+PASS  that read also wrote Omar's audience summary: the same orders, spend per currency, no order data  -- {"contact":"Omar Khalil","provider":"woocommerce","orders":3,"spend":{"SAR":"100.0"},"last_purchase_at":"2026-09-28T08:36:55Z","order_statuses":["completed","failed","pending"]}
+PASS  Contacts → Filter offers Conversation and Commerce groups next to the existing fields  -- My Inbox | Conversations | Contacts All Contacts Active | Settings | Standard Filters | Name | Email | Phone number | Identifier | City | Company | Created at | Last activity | Blocked | Labels | Additional Filters | Country name | Conversations | Conversation status | Conversation priority | Conver
+PASS  a Commerce field uses the existing operators ("Is greater than") and says what "visible" means  -- Commerce conditions use the latest orders Lynomia has read for each linked store, so figures are visible orders and spend, not lifetime totals. Spend is per currency. Orders haven’t been read yet for 1 linked contacts, so order conditions can’t match them. They’re read when an agent opens the contact’s conversation or the store sends an update.
+PASS  the builder says how many linked contacts have no orders read yet (Layla), instead of hiding them  -- Commerce conditions use the latest orders Lynomia has read for each linked store, so figures are visible orders and spend, not lifetime totals. Spend is per currency. Orders haven’t been read yet for 1 linked contacts, so order conditions can’t match them. They’re read when an agent opens the contact’s conversation or the store sends an update.
+PASS  applying shows the matching contacts with their count (Omar only)  -- Showing 1 - 1 of 1 contact 1 of 1 page
+PASS  "Save audience" stores it as a contact segment with the same conditions, listed under Audiences  -- [{"payload":[{"values":[1],"attribute_key":"commerce_spend_sar","attribute_model":"standard","filter_operator":"is_greater_than"}]}]
+PASS  opening the audience evaluates it now: Omar
+PASS  editing rebuilds the saved condition ("Visible spend (SAR)" … 1) and adds a store condition by name  -- [{"values":["1"],"attribute_key":"commerce_spend_sar","query_operator":"and","attribute_model":"standard","filter_operator":"is_greater_than"},{"values":[194],"attribute_key":"commerce_store","attribute_model":"standard","filter_operator":"equal_to"}]
+PASS  unknown is never zero: "fewer than 100 visible orders" matches Omar, not Layla whose orders were never read  -- Omar Khalil
+PASS  a store of a switched-off provider never counts (Hana's Salla summary of SAR 99,999)
+PASS  spend is per currency: nobody has USD spend, whatever their SAR spend
+PASS  conversation conditions only see the conversations the user may see (an agent without inboxes sees none)  -- admin=7
+PASS  Commerce, conversation and contact conditions combine through the existing AND / OR chain  -- Hana Saeed,Omar Khalil,ليلى حداد
+PASS  evaluating audiences never called the store: its access log is unchanged  -- before=1291 after=1291
+PASS  malformed, injected, unknown, wrong-operator and oversized conditions answer 422  -- 422,422,422,422,422
+PASS  another account can neither evaluate this account's contacts nor read its audience  -- 401/404
+PASS  an agent removing Omar's link drops him from the audience at once (the link is suppressed, its summary deleted)  -- unlink=200 names=
+PASS  deleting the audience deletes only its conditions; every contact stays  -- 7 → 7
+PASS  Arabic at 390 px: right to left, the Commerce field and its notes in Arabic, the filter panel inside the screen  -- dir=rtl panel={"x":15,"y":158,"width":354,"height":502.75}
+PASS  no store key or secret in any response the browser received  -- responses=200
+PASS  no uncaught page errors
+PASS  teardown: stores, links, summaries and audiences of the run removed
+24/24 passed

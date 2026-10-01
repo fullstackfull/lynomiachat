@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, unref } from 'vue';
+import { ref, computed, unref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useRouter } from 'vue-router';
@@ -25,6 +25,10 @@ import ContactImportDialog from 'dashboard/components-next/Contacts/ContactsForm
 import CreateSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/CreateSegmentDialog.vue';
 import DeleteSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/DeleteSegmentDialog.vue';
 import ContactsFilter from 'dashboard/components-next/filter/ContactsFilter.vue';
+import {
+  useAudienceFilterTypes,
+  audienceValuesForEdit,
+} from 'dashboard/components-next/filter/audienceProvider.js';
 
 const props = defineProps({
   showSearch: { type: Boolean, default: true },
@@ -61,6 +65,8 @@ const appliedFilter = ref([]);
 const segmentsQuery = ref({});
 
 const appliedFilters = useMapGetter('contacts/getAppliedContactFiltersV4');
+const { audienceFilterTypes, loadAudienceFields } = useAudienceFilterTypes();
+onMounted(() => loadAudienceFields());
 const contactAttributes = useMapGetter('attributes/getContactAttributes');
 const labels = useMapGetter('labels/getLabels');
 const hasActiveSegments = computed(
@@ -225,12 +231,19 @@ const initializeSegmentToFilterModal = segment => {
 
   const newFilters = query.map(filter => {
     const transformed = useCamelCase(filter);
-    const values = Array.isArray(transformed.values)
-      ? generateValuesForEditCustomViews(
-          useSnakeCase(filter),
-          setParamsForEditSegmentModal()
-        )
-      : [];
+    // Conversation and Commerce conditions (Lynomia Audience) rebuild from their own options.
+    const audienceType = audienceFilterTypes.value.find(
+      type => type.attributeKey === transformed.attributeKey
+    );
+    let values = [];
+    if (audienceType) {
+      values = audienceValuesForEdit(audienceType, transformed.values);
+    } else if (Array.isArray(transformed.values)) {
+      values = generateValuesForEditCustomViews(
+        useSnakeCase(filter),
+        setParamsForEditSegmentModal()
+      );
+    }
 
     return {
       attributeKey: transformed.attributeKey,
@@ -245,8 +258,9 @@ const initializeSegmentToFilterModal = segment => {
   appliedFilter.value = [...appliedFilter.value, ...newFilters];
 };
 
-const onToggleFilters = () => {
+const onToggleFilters = async () => {
   appliedFilter.value = [];
+  await loadAudienceFields();
   if (hasActiveSegments.value) {
     initializeSegmentToFilterModal(props.activeSegment);
   } else {
@@ -293,7 +307,7 @@ defineExpose({
   >
     <template #filter>
       <div
-        class="absolute mt-1 ltr:-right-52 rtl:-left-52 sm:ltr:right-0 sm:rtl:left-0 top-full"
+        class="absolute mt-1 inset-x-0 sm:inset-x-auto sm:ltr:right-0 sm:rtl:left-0 top-full"
       >
         <ContactsFilter
           v-if="showFiltersModal"

@@ -60,9 +60,15 @@ const formatFilterValue = value => {
           @click="emit('openFilter')"
         >
           <span
-            class="lowercase whitespace-nowrap first-letter:capitalize text-n-slate-12"
+            class="whitespace-nowrap text-n-slate-12"
+            :class="{
+              'lowercase first-letter:capitalize': !filter.attributeName,
+            }"
           >
-            {{ replaceUnderscoreWithSpace(filter.attributeKey) }}
+            {{
+              filter.attributeName ||
+              replaceUnderscoreWithSpace(filter.attributeKey)
+            }}
           </span>
           <span class="px-1 text-xs text-n-slate-10 whitespace-nowrap">
             {{ formatOperatorLabel(filter.filterOperator) }}

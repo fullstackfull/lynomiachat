@@ -167,17 +167,25 @@ From the final run (`e2e/results/phase7/realtime_measurements.json`, `panel_api_
 
 | Suite | Result |
 |---|---|
-| WooCommerce E2E (real stores) | REGRESSION_WOO |
-| Salla E2E (simulated) | REGRESSION_SALLA |
-| Zid E2E (simulated) | REGRESSION_ZID |
-| Shopify E2E (simulated) | REGRESSION_SHOPIFY |
+| WooCommerce E2E (real stores) | **41/41** |
+| Salla E2E (simulated) | **47/47** |
+| Zid E2E (simulated) | **49/49** |
+| Shopify E2E (simulated) | **64/64** |
 | Realtime + Customer 360 E2E | **41/41** |
+| WhatsApp harnesses on this code (rehearsal database, doc 23 §8) | existing numbers **41/41**, WhatsApp Business coexistence **54/54**, Lynomia **17/17** |
 | Commerce RSpec (all Commerce specs) | REGRESSION_COMMERCE |
 | Backend RSpec, Enterprise, 4 shards | REGRESSION_EE |
 | Backend RSpec, Community (`enterprise/` removed), 4 shards | REGRESSION_CE |
 | Frontend Vitest | REGRESSION_VITEST |
 | ESLint | REGRESSION_ESLINT |
 | RuboCop | REGRESSION_RUBOCOP |
+
+**One harness change in the provider E2Es.** The Commerce section now opens on Customer 360 for a contact linked in
+several stores (doc 25 §11). The four provider E2Es check the store view, so each now saves "store" as the agent's view
+choice in the browser before loading pages (one init script in `newPage`). Nothing else in them changed. The first
+rerun showed that the script threw on documents without storage (`about:blank`, the OAuth pages), which those E2Es
+report as page errors: Shopify 63/64 and Zid 48/49, the failing check being "no uncaught page errors" in both. With
+the script guarded (try/catch), the reruns passed 64/64 and 49/49. Results: `e2e/results/phase7/*_regression.*`.
 
 These existing paths have no code change in Phase 7–8 and are covered by the full suites above:
 

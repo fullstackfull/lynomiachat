@@ -1,0 +1,322 @@
+[
+  {
+    "name": "Super Admin shows Enable Shopify Commerce, Client ID and a masked, empty Client Secret; no merchant token field",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the legacy Shopify settings page is unchanged and separate: no Commerce field on it",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Add store offers WooCommerce, Salla, Zid and Shopify",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Connect with Shopify asks only for the myshopify.com domain",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a host that is not a myshopify.com domain is refused, before any redirect",
+    "ok": true,
+    "detail": "[true,true,true,true,true]"
+  },
+  {
+    "name": "a shop this account shows through the legacy Shopify integration is refused, the legacy hook untouched",
+    "ok": true,
+    "detail": "This Shopify store is already connected through this account's Shopify integration. Disconnect it there first, then connect it here."
+  },
+  {
+    "name": "the browser is sent to the shop's authorization page: client_id, read-only scopes, redirect URL, state, offline (no per-user)",
+    "ok": true,
+    "detail": "?client_id=e2e-shopify-commerce-client&scope=read_customers%2Cread_orders&redirect_uri=http%3A%2F%2Flocalhost%3A3100%2Fc"
+  },
+  {
+    "name": "back in Settings → Commerce: store connected to account A with Shopify's shop id, name and myshopify.com URL",
+    "ok": true,
+    "detail": "{\"id\":101,\"account_id\":1,\"name\":\"Lynomia Demo\",\"status\":\"active\",\"external_store_id\":\"68210001\",\"base_url\":\"https://lynomia-demo.myshopify.com\",\"credential_fields\":[\"access_token\",\"access_token_expires_at\",\"refresh_token\",\"refresh_token_expires_at\",\"scope\"],\"expires\":[\"2026-10-01T10:47:01Z\",\"2026-12-30T09:47:01Z\"],\"scope\":\"read_customers,read_orders\",\"token_generation\":\"1\",\"links\":[]}"
+  },
+  {
+    "name": "one code exchange, server-side, with expiring=1",
+    "ok": true,
+    "detail": "[\"1\"]"
+  },
+  {
+    "name": "the expiring offline token is stored encrypted as Shopify sent it: token pair, both expiry times from its answer, scope",
+    "ok": true,
+    "detail": "2026-10-01T10:47:01Z,2026-12-30T09:47:01Z read_customers,read_orders"
+  },
+  {
+    "name": "the shop identity is confirmed with a GraphQL query, and no mutation is ever sent",
+    "ok": true,
+    "detail": "query LynomiaShop"
+  },
+  {
+    "name": "the settings list shows the store: name, Shopify, Active",
+    "ok": true,
+    "detail": "Lynomia Demo Active Shopify https://lynomia-demo.myshopify.com Verified this minute Disable Disconnect"
+  },
+  {
+    "name": "a replayed callback (state already used) changes nothing and names no account",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/dashboard"
+  },
+  {
+    "name": "unsigned, wrong-secret, modified, stale (5 min) and other-shop callbacks are refused before any code exchange",
+    "ok": true,
+    "detail": "{\"unsigned\":true,\"wrongSecret\":true,\"modifiedCode\":true,\"stale\":true,\"otherShop\":true}"
+  },
+  {
+    "name": "a forged state is refused before any code exchange",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a valid, signed callback from another browser (an agent's) is refused: no exchange, no store",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "an agent cannot start a Shopify authorization",
+    "ok": true,
+    "detail": "status=401"
+  },
+  {
+    "name": "a non-expiring token and a token with write scopes are refused; nothing is stored",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/1/settings/commerce?shopify_error=INVALID_RESPONSE | http://localhost:3100/app/accounts/1/settings/commerce?shopify_error=PERMISSION_DENIED"
+  },
+  {
+    "name": "account B authorizing A's shop: refused as already connected; the shop stays with A",
+    "ok": true,
+    "detail": "http://localhost:3100/app/accounts/2/settings/commerce?shopify_error=STORE_ALREADY_CONNECTED"
+  },
+  {
+    "name": "a second Shopify shop connects to the same account",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "one conversation lists WooCommerce, Salla and both Shopify shops",
+    "ok": true,
+    "detail": "woocommerce:Syria Cosmetics, salla:متجر الورد, shopify:Lynomia Demo, shopify:Lynomia Two"
+  },
+  {
+    "name": "Shopify customer linked by the verified WhatsApp phone; the last five orders, newest first",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Linked customer Matched by the verified phone of this conversation Change Unlink #1006 SAR 520.00 Delivered Paid Sep 28, 2026 3 items Arame"
+  },
+  {
+    "name": "multi-fulfillment order delivered: Delivered, Paid, Aramex, Track shipment and Send tracking",
+    "ok": true,
+    "detail": "#1006 SAR 520.00 Delivered Paid Sep 28, 2026 3 items Aramex Delivered View order Track shipment Send tracking"
+  },
+  {
+    "name": "partially fulfilled + pending: Processing, Unpaid, In transit with DHL tracking",
+    "ok": true,
+    "detail": "#1005 SAR 310.50 Processing Unpaid Sep 25, 2026 5 items DHL Express In transit View order Track shipment Send tracking"
+  },
+  {
+    "name": "fulfilled without tracking: Shipped, Partially refunded, Out for delivery, nothing to track",
+    "ok": true,
+    "detail": "#1004 SAR 150.00 Shipped Partially refunded Sep 20, 2026 1 item Out for delivery View order"
+  },
+  {
+    "name": "payment only from displayFinancialStatus: cancelled + refunded; on hold + partially paid",
+    "ok": true,
+    "detail": "#1003 SAR 99.00 Cancelled Refunded Sep 15, 2026 1 item View order | #1002 SAR 250.00 On hold Partially paid Sep 10, 2026 1 item View order"
+  },
+  {
+    "name": "tracking link is the https link Shopify gave; the admin link is built from the shop domain",
+    "ok": true,
+    "detail": "https://www.aramex.com/track/ARX100 https://lynomia-demo.myshopify.com/admin/orders/6001006"
+  },
+  {
+    "name": "Send tracking puts the tracking message in the reply box (nothing sent)",
+    "ok": true,
+    "detail": "Your order #1006 is on its way. Tracking number: ARX100. Track it here: https://www.aramex.com/track/ARX100"
+  },
+  {
+    "name": "a guest checkout found by the contact email is suggested, never linked automatically",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Possible match. Confirm before linking. LINK CUSTOMER mo***@example.com Guest checkout LINK Find an order"
+  },
+  {
+    "name": "the linked guest shows its checkout: Shipped, tracking from the active fulfillment only",
+    "ok": true,
+    "detail": "#1010 SAR 80.00 Shipped Paid Sep 27, 2026 1 item Aramex In transit View order Track shipment Send tracking"
+  },
+  {
+    "name": "the same email as a registered customer and as a guest: several matches, the agent chooses",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Several store customers match. Choose the right one. LINK CUSTOMER om***@example.com · +966*******33 Registered customer LINK om***@example"
+  },
+  {
+    "name": "no match: customer not found",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a phone with no Shopify customer: not found, no guest guessed by phone",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "protected customer data not approved: the panel says so and invents no match",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Couldn't refresh store data right now. Shopify has not approved Lynomia to read this store's customer data (email and p"
+  },
+  {
+    "name": "throttled by Shopify: cached orders are served, marked as not refreshed",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Couldn't refresh store data right now. Last updated 5 minutes ago Linked customer Matched by the verified phone of this"
+  },
+  {
+    "name": "deliveries without a signature, with a wrong one, signed with another secret or hex-encoded get 401",
+    "ok": true,
+    "detail": "{\"missing\":401,\"wrong\":401,\"otherSecret\":401,\"hex\":401}"
+  },
+  {
+    "name": "nothing queued for refused deliveries",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a signed delivery is accepted, and its retry (same webhook id) is acknowledged but queued once",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the order event dropped the cached orders: the panel shows Shopify's new status at once",
+    "ok": true,
+    "detail": "#1005 SAR 310.50 Shipped Paid Sep 25, 2026 5 items DHL Express In transit View order Track shipment Send tracking"
+  },
+  {
+    "name": "the legacy webhook endpoint refuses a Commerce-signed delivery",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "10 concurrent readers of an expired token: one refresh request, one new token pair saved",
+    "ok": true,
+    "detail": "{\"threads\":10,\"distinct_tokens\":1,\"token_requests\":1,\"saved\":true}"
+  },
+  {
+    "name": "an expired access token is refreshed before use: new access and refresh token stored, orders shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Shopify rejecting the token early (401): one controlled refresh and retry, orders shown",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a refresh lost to a timeout is sent again with the same refresh token and Shopify returns the same pair",
+    "ok": true,
+    "detail": "requests=2"
+  },
+  {
+    "name": "Shopify refuses the refresh token: the store needs re-authorization, its tokens are removed and nothing stale is shown",
+    "ok": true,
+    "detail": "Overview Store Refresh Store Syria Cosmetics متجر الورد Lynomia Demo Lynomia Two Couldn't refresh store data right now. The store rejected Lynomia's credentials"
+  },
+  {
+    "name": "settings explain re-authorization and offer Reconnect",
+    "ok": true,
+    "detail": "Lynomia Demo Needs re-authorization Shopify https://lynomia-demo.myshopify.com Verified 9 minutes ago Shopify needs you to authorize the Lynomia Commerce app again. Use Reconnect. Reconnect Disconnect"
+  },
+  {
+    "name": "Reconnect (domain prefilled) re-authorizes the same store in place",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "customers/data_request and customers/redact: 200; the customer's links in that shop are removed, recorded without personal data",
+    "ok": true,
+    "detail": "[200,200]"
+  },
+  {
+    "name": "app/uninstalled disconnects the store: token, links and cache removed; contacts and conversations stay",
+    "ok": true,
+    "detail": "{\"id\":102,\"account_id\":1,\"name\":\"Lynomia Two\",\"status\":\"disconnected\",\"external_store_id\":\"68210002\",\"base_url\":\"https://lynomia-two.myshopify.com\",\"credential_fields\":null,\"expires\":null,\"scope\":null,\"token_generation\":null,\"links\":[]}"
+  },
+  {
+    "name": "shop/redact deletes the store row; the account audit keeps the store id only",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Shopify off: Shopify stores kept and explained",
+    "ok": true,
+    "detail": "Lynomia Demo Active Shopify https://lynomia-demo.myshopify.com Verified 2 minutes ago Shopify is turned off on this installation. The store is kept but not read. Disable Disconnect"
+  },
+  {
+    "name": "Shopify off: no Shopify in Add store",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Shopify off: no authorization can start",
+    "ok": true,
+    "detail": "{\"error\":{\"code\":\"PROVIDER_DISABLED\"}}"
+  },
+  {
+    "name": "Shopify off: a privacy webhook is still accepted",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Commerce off for the account: no Commerce in settings and no Shopify authorization",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the legacy Shopify integration settings and hooks are exactly as before",
+    "ok": true,
+    "detail": "{\"fingerprint\":\"0d57a526e8de30b4fd18e2380ea5fb8989ffb4d4b9f90fd4bd284539e6c10922\",\"hooks\":0} → {\"fingerprint\":\"0d57a526e8de30b4fd18e2380ea5fb8989ffb4d4b9f90fd4bd284539e6c10922\",\"hooks\":0}"
+  },
+  {
+    "name": "Arabic: Shopify in the picker and الربط مع Shopify",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "mobile: the Connect with Shopify dialog fits the screen",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "audit trail: connected, token_refreshed, needs_reauth, reauthorized, uninstalled, shop_redacted",
+    "ok": true,
+    "detail": "commerce.store_connected, commerce.store_disabled, commerce.store_enabled, commerce.store_disconnected, commerce.shopify.connected, commerce.shopify.token_refreshed, commerce.shopify.needs_reauth, commerce.shopify.reauthorized, commerce.shopify.customer_redacted, commerce.shopify.customer_data_requested, commerce.shopify.uninstalled, commerce.shopify.shop_redacted"
+  },
+  {
+    "name": "only queries were sent to Shopify: no mutation in any GraphQL request",
+    "ok": true,
+    "detail": "query LynomiaShop,query LynomiaCustomers,query LynomiaOrders,query LynomiaGuestOrders"
+  },
+  {
+    "name": "audit entries carry no token, code or secret",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no Shopify token, code or client secret in any browser response",
+    "ok": true,
+    "detail": "responses=1221 "
+  },
+  {
+    "name": "no token, code, state or client secret in the server or job logs",
+    "ok": true,
+    "detail": "log bytes=813182"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  }
+]

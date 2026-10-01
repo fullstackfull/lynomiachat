@@ -183,6 +183,47 @@ const setStatus = async (store, status) => {
   }
 };
 
+// Order actions (docs/commerce/28-commerce-actions-architecture.md): the administrator's opt-in, and why it cannot be
+// turned on (a Read key, missing permissions, the installation's switches).
+const orderActionsText = store => {
+  const provider = providerName(store.provider);
+  switch (store.order_actions_status) {
+    case 'available':
+      return store.order_actions
+        ? t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_ON')
+        : t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_OFF');
+    case 'read_only_key':
+    case 'write_access_unverified':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_READ_ONLY_KEY', {
+        provider,
+      });
+    case 'missing_scope':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_MISSING_SCOPE', {
+        provider,
+      });
+    case 'actions_disabled':
+    case 'provider_actions_disabled':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_SWITCHED_OFF');
+    default:
+      return '';
+  }
+};
+
+const setOrderActions = async (store, enabled) => {
+  busyStoreId.value = store.id;
+  try {
+    const response = await CommerceAPI.update(store.id, {
+      order_actions: enabled,
+    });
+    replaceStore(response.data);
+    useAlert(t('COMMERCE.SETTINGS.UPDATED'));
+  } catch (error) {
+    useAlert(apiErrorMessage(error));
+  } finally {
+    busyStoreId.value = null;
+  }
+};
+
 const askDisconnect = store => {
   disconnectingStore.value = store;
   disconnectDialogRef.value?.open();
@@ -291,6 +332,13 @@ onMounted(() => {
                 }}
               </span>
               <span
+                v-if="store.status === 'active'"
+                class="text-label-small text-n-slate-11"
+                data-test-id="commerce-store-read"
+              >
+                {{ t('COMMERCE.SETTINGS.CAPABILITIES.READ') }}
+              </span>
+              <span
                 v-if="store.status === 'active' && store.realtime_status"
                 class="text-label-small"
                 :class="
@@ -305,6 +353,28 @@ onMounted(() => {
                     ? t('COMMERCE.SETTINGS.REALTIME.ACTIVE')
                     : t('COMMERCE.SETTINGS.REALTIME.READ_ONLY_KEY')
                 }}
+              </span>
+              <span
+                v-if="store.status === 'active' && orderActionsText(store)"
+                class="text-label-small"
+                :class="
+                  store.order_actions &&
+                  store.order_actions_status === 'available'
+                    ? 'text-n-teal-11'
+                    : 'text-n-slate-11'
+                "
+                data-test-id="commerce-store-order-actions"
+              >
+                {{ orderActionsText(store) }}
+              </span>
+              <span
+                v-if="
+                  store.status === 'active' &&
+                  store.order_actions_status === 'available'
+                "
+                class="text-label-small text-n-slate-11"
+              >
+                {{ t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_HINT') }}
               </span>
               <span
                 v-if="!store.provider_enabled"
@@ -323,6 +393,23 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
+            <Button
+              v-if="
+                store.status === 'active' &&
+                store.order_actions_status === 'available'
+              "
+              :label="
+                store.order_actions
+                  ? t('COMMERCE.SETTINGS.CAPABILITIES.TURN_OFF')
+                  : t('COMMERCE.SETTINGS.CAPABILITIES.TURN_ON')
+              "
+              variant="faded"
+              color="slate"
+              size="sm"
+              :is-loading="busyStoreId === store.id"
+              data-test-id="commerce-store-order-actions-toggle"
+              @click="setOrderActions(store, !store.order_actions)"
+            />
             <Button
               v-if="store.status === 'active'"
               :label="t('COMMERCE.SETTINGS.ACTIONS.DISABLE')"

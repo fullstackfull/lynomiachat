@@ -85,7 +85,8 @@ class Commerce::ActionRun < ApplicationRecord
     {
       id: id, action_type: action_type, status: status, error_code: error_code, store_id: commerce_store_id,
       order_id: external_resource_id, provider_reference: provider_request_id, created_at: created_at.to_i,
-      completed_at: completed_at&.to_i, **metadata.slice('order_number', 'amount', 'currency', 'target_status', 'mode', 'result').symbolize_keys
+      completed_at: completed_at&.to_i,
+      **metadata.slice('order_number', 'amount', 'currency', 'target_status', 'mode', 'result', 'reconcile').symbolize_keys
     }
   end
 end

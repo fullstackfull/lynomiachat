@@ -1,4 +1,6 @@
-# WooCommerce REST API v3 with a merchant-created Read key (HTTP Basic over TLS). Read-only: only GET requests exist here.
+# WooCommerce REST API v3 with a merchant-created key (HTTP Basic over TLS). Reads need a Read key. With a Read/Write key
+# Lynomia also creates its webhooks (realtime) and, once the store's administrator opts in, performs order actions
+# (Commerce::Providers::Woocommerce::Actions).
 #
 # Customer identity: a registered customer is its WooCommerce customer id; a guest checkout has no id, so it is
 # "guest:<email>" or "guest:<E.164 phone>", the verified identifier it was found by. Candidates are discovered with
@@ -9,10 +11,27 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
   SEARCH_LIMIT = 20
   WEBHOOK_TOPICS = %w[order.created order.updated order.deleted].freeze
   WEBHOOK_NAME = 'Lynomia Commerce'.freeze
+  REALTIME_WRITE_ACCESS = { 'active' => 'granted', 'read_only_key' => 'read_only_key' }.freeze
 
   def self.supports_realtime? = true
 
   def self.registers_webhooks? = true
+
+  def self.supports_actions? = true
+
+  # Write access is proven by the webhook registration (it creates webhooks with the key) and revoked by a write the store
+  # refuses: write_access is granted or read_only_key. Stores registered before it was recorded fall back to their
+  # realtime status.
+  def write_access_problem
+    access = @store.metadata['write_access'] || REALTIME_WRITE_ACCESS[@store.metadata.dig('realtime', 'status')]
+    { 'granted' => nil, 'read_only_key' => 'read_only_key' }.fetch(access, 'write_access_unverified')
+  end
+
+  def action_snapshot(external_order_id) = actions.snapshot(external_order_id)
+
+  def perform_action(action_type, snapshot, params, idempotency_key) = actions.perform(action_type, snapshot, params, idempotency_key)
+
+  def reconcile_action(run, snapshot) = actions.reconcile(run, snapshot)
 
   def health
     index = get('', _fields: 'namespace')
@@ -144,7 +163,8 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
 
   def realtime!(status, webhook_ids)
     @store.update!(metadata: @store.metadata.merge('realtime' => { 'status' => status, 'webhook_ids' => webhook_ids,
-                                                                   'registered_at' => Time.current.iso8601 }))
+                                                                   'registered_at' => Time.current.iso8601 },
+                                                   'write_access' => status == 'active' ? 'granted' : 'read_only_key'))
   end
 
   def delivery_url = "#{ENV.fetch('FRONTEND_URL')}/webhooks/woocommerce/#{@store.id}"
@@ -180,5 +200,9 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
 
   def normalizer
     @normalizer ||= Normalizer.new(self)
+  end
+
+  def actions
+    @actions ||= Actions.new(self, http, @store)
   end
 end

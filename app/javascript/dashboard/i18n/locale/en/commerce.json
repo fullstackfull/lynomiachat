@@ -140,7 +140,19 @@
       "PROVIDER_DISABLED": "This store platform is turned off on this installation.",
       "PROTECTED_DATA_NOT_APPROVED": "Shopify has not approved Lynomia to read this store's customer data (email and phone) yet, so customers can't be matched.",
       "LEGACY_SHOPIFY_CONNECTED": "This Shopify store is already connected through this account's Shopify integration. Disconnect it there first, then connect it here.",
-      "GENERIC": "Something went wrong. Try again."
+      "GENERIC": "Something went wrong. Try again.",
+      "ACTIONS_DISABLED": "Order actions are off for this store.",
+      "ACTION_UNAVAILABLE": "This action isn’t possible for the order right now.",
+      "ACTION_IN_PROGRESS": "Another action on this order is still being processed.",
+      "ORDER_CHANGED": "The order changed in the store after you opened it. Nothing was sent. Review it again.",
+      "INVALID_AMOUNT": "The amount isn’t valid for this order. Nothing was sent.",
+      "IDEMPOTENCY_CONFLICT": "This confirmation was already used. Start again.",
+      "WRITE_ACCESS_DENIED": "The store’s credentials can’t change orders. An administrator can replace them.",
+      "NOT_APPLIED": "The store shows the change wasn’t made. You can try again.",
+      "PROVIDER_REJECTED": "The store refused this change.",
+      "REFUND_DECLINED": "The payment gateway refused the refund. No money was sent.",
+      "INVALID_REQUEST": "This request isn’t valid.",
+      "UNKNOWN_OUTCOME": "The store didn’t answer in time. Lynomia is checking the order with the store."
     },
     "URL_ERRORS": {
       "INVALID": "Enter the store address, for example https://shop.example.com.",
@@ -250,7 +262,98 @@
       },
       "CONNECTED": "Store connected.",
       "UPDATED": "Store updated.",
-      "DISCONNECTED": "Store disconnected."
+      "DISCONNECTED": "Store disconnected.",
+      "CAPABILITIES": {
+        "READ": "Read-only Commerce: on",
+        "ORDER_ACTIONS_ON": "Order actions: on",
+        "ORDER_ACTIONS_OFF": "Order actions: off",
+        "ORDER_ACTIONS_READ_ONLY_KEY": "Order actions require a Read/Write {provider} API key.",
+        "ORDER_ACTIONS_MISSING_SCOPE": "Additional {provider} permissions are required. Reconnect {provider} to enable order actions.",
+        "ORDER_ACTIONS_SWITCHED_OFF": "Order actions are switched off on this installation.",
+        "ORDER_ACTIONS_HINT": "Refunds and cancellations stay limited to administrators.",
+        "TURN_ON": "Turn on order actions",
+        "TURN_OFF": "Turn off order actions"
+      }
+    },
+    "ACTIONS": {
+      "MENU": "Order actions",
+      "TITLE": "Order #{number}",
+      "STORE_LINE": "{store} · {provider}",
+      "LOADING": "Reading the order from the store…",
+      "NONE": "No action is possible on this order right now.",
+      "TYPES": {
+        "UPDATE_ORDER_STATUS": "Change status",
+        "CANCEL_ORDER": "Cancel order",
+        "REFUND_FULL": "Refund in full",
+        "REFUND_PARTIAL": "Partial refund",
+        "RESEND_INVOICE": "Resend order details",
+        "RESEND_PAYMENT_LINK": "Resend payment link",
+        "UPDATE_SHIPPING": "Update shipping"
+      },
+      "UNAVAILABLE": {
+        "PERMISSION_DENIED": "You don’t have permission for this.",
+        "ACTION_IN_PROGRESS": "Another action on this order is still being processed.",
+        "PAID_REFUND_FIRST": "The order is paid: refund it first.",
+        "ALREADY_CANCELLED": "The order is already cancelled.",
+        "NOT_PAID": "The order isn’t paid.",
+        "NOTHING_REFUNDABLE": "Nothing is left to refund.",
+        "ORDER_STATE": "Not possible in the order’s current status.",
+        "NO_EMAIL": "The order has no email address.",
+        "UNSUPPORTED": "Not supported for this store.",
+        "OTHER": "Not available right now."
+      },
+      "REFUND_REASONS": {
+        "CUSTOMER_REQUEST": "Customer request",
+        "DUPLICATE": "Duplicate order",
+        "DAMAGED": "Damaged item",
+        "NOT_RECEIVED": "Item not received",
+        "OTHER": "Other"
+      },
+      "CANCEL_REASONS": {
+        "CUSTOMER_REQUEST": "Customer request",
+        "INVENTORY": "Out of stock",
+        "FRAUD": "Suspected fraud",
+        "PAYMENT_DECLINED": "Payment declined",
+        "OTHER": "Other"
+      },
+      "FORM": {
+        "AMOUNT": "Amount",
+        "AMOUNT_HINT": "Up to {amount}",
+        "REASON": "Reason",
+        "NEW_STATUS": "New status",
+        "INVALID_AMOUNT": "Enter an amount above 0 and up to {amount}.",
+        "REVIEW": "Review",
+        "BACK": "Back",
+        "CLOSE": "Close",
+        "CONFIRM": "Confirm"
+      },
+      "REVIEW": {
+        "HEADING": "Check before confirming",
+        "STORE": "Store",
+        "ORDER": "Order",
+        "ACTION": "Action",
+        "AMOUNT": "Amount"
+      },
+      "CONSEQUENCES": {
+        "REFUND_GATEWAY": "{amount} will be sent back to the customer through {gateway}. This can’t be undone.",
+        "REFUND_GATEWAY_UNNAMED": "{amount} will be sent back to the customer through the order’s payment method. This can’t be undone.",
+        "REFUND_MANUAL": "The store will record a refund of {amount}. No money is sent to the customer: refund the payment yourself.",
+        "CANCEL": "The order will be cancelled and its items returned to stock. Cancelling does not refund any payment.",
+        "CANCEL_NO_RESTOCK": "The order will be cancelled. Cancelling does not refund any payment.",
+        "STATUS": "The order’s status changes from {from} to {to}. The store may email the customer about it.",
+        "RESEND_INVOICE": "The store emails its order details to the order’s billing email.",
+        "RESEND_PAYMENT_LINK": "The store emails the order details, with its payment link, to the order’s billing email."
+      },
+      "RESULT": {
+        "PROCESSING": "Sending to the store…",
+        "SUCCEEDED": "Done. The order shown is now read from the store.",
+        "FAILED": "The store didn’t make this change.",
+        "UNKNOWN": "The store didn’t answer in time. Lynomia is checking the order with the store: don’t try again until it does.",
+        "UNRESOLVED": "Lynomia couldn’t confirm the result with the store. Check the order in the store before trying again.",
+        "STILL_PROCESSING": "Still being processed. The order will update when the store answers.",
+        "EARLIER_UNRESOLVED": "An earlier action on this order couldn’t be confirmed. Check the order in the store before continuing."
+      },
+      "DONE_ALERT": "Order #{number} updated in {store}."
     }
   }
 }

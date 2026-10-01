@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import Button from 'dashboard/components-next/button/Button.vue';
+import CommerceOrderActions from './CommerceOrderActions.vue';
 import { useCommerceLabels } from './useCommerceLabels';
 import {
   formatAmount,
@@ -21,7 +22,12 @@ const props = defineProps({
   store: { type: Object, default: null },
   // Orders found by number may be another customer's: their tracking is not offered for sending into the conversation.
   canSend: { type: Boolean, default: true },
+  // The order's store when this agent is offered order actions there (the linked customer's orders only).
+  actionsStoreId: { type: Number, default: null },
+  conversationId: { type: [Number, String], default: null },
 });
+
+const emit = defineEmits(['actionDone']);
 
 const { t, locale } = useI18n();
 const { orderStatus, paymentStatus, shipmentStatus, providerName } =
@@ -76,7 +82,16 @@ const sendTracking = () => {
       <span class="text-heading-3 text-n-slate-12" dir="ltr">
         {{ t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number }) }}
       </span>
-      <span class="text-body-main text-n-slate-12">{{ total }}</span>
+      <div class="flex items-center gap-1">
+        <span class="text-body-main text-n-slate-12">{{ total }}</span>
+        <CommerceOrderActions
+          v-if="actionsStoreId && conversationId"
+          :conversation-id="conversationId"
+          :store-id="actionsStoreId"
+          :order="order"
+          @done="emit('actionDone')"
+        />
+      </div>
     </div>
     <span
       v-if="store"

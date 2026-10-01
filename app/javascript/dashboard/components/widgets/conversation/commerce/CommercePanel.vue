@@ -65,6 +65,9 @@ const isSearching = ref(false);
 const linkingToken = ref('');
 
 const hasOverview = computed(() => stores.value.length > 1);
+const actionStoreIds = computed(() =>
+  stores.value.filter(store => store.actions).map(store => store.id)
+);
 const isOverview = computed(
   () => hasOverview.value && view.value === VIEWS.OVERVIEW
 );
@@ -357,7 +360,10 @@ watch(() => props.conversationId, loadStores, { immediate: true });
         <CommerceOverview
           v-if="overview"
           :overview="overview"
+          :conversation-id="conversationId"
+          :action-store-ids="actionStoreIds"
           @open-store="openStore"
+          @action-done="loadView({ silent: true })"
         />
         <CommerceOrderSearch
           v-if="overview"
@@ -437,6 +443,11 @@ watch(() => props.conversationId, loadStores, { immediate: true });
                 v-for="order in panel.orders"
                 :key="order.external_order_id"
                 :order="order"
+                :conversation-id="conversationId"
+                :actions-store-id="
+                  actionStoreIds.includes(storeId) ? storeId : null
+                "
+                @action-done="loadView({ silent: true })"
               />
             </div>
           </template>

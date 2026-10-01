@@ -93,6 +93,29 @@ class CommerceAPI extends ApiClient {
       `${this.conversationStoresUrl(conversationId)}/${storeId}/link`
     );
   }
+
+  orderActionsUrl(conversationId, storeId, orderId) {
+    return `${this.conversationStoresUrl(conversationId)}/${storeId}/orders/${orderId}/actions`;
+  }
+
+  // What can be done to the order now: read from the store, with Lynomia's rules and this agent's permissions applied.
+  getOrderActions(conversationId, storeId, orderId) {
+    return axios.get(this.orderActionsUrl(conversationId, storeId, orderId));
+  }
+
+  // One confirmed action: { action_type, version, idempotency_key, params }. Answered with the queued run.
+  requestOrderAction(conversationId, storeId, orderId, payload) {
+    return axios.post(
+      this.orderActionsUrl(conversationId, storeId, orderId),
+      payload
+    );
+  }
+
+  getActionRun(conversationId, runId) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/action_runs/${runId}`
+    );
+  }
 }
 
 export default new CommerceAPI();

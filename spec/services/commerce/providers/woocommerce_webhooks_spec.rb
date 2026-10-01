@@ -36,7 +36,7 @@ RSpec.describe Commerce::Providers::Woocommerce do
       secret = store.reload.credentials['webhook_secret']
       expect(secret).to match(/\A\h{64}\z/)
       expect(created.pluck('secret').uniq).to eq([secret])
-      expect(store.metadata['realtime']).to include('status' => 'active', 'webhook_ids' => %w[41 42 43])
+      expect(store.metadata).to include('realtime' => include('status' => 'active', 'webhook_ids' => %w[41 42 43]), 'write_access' => 'granted')
     end
 
     it 'keeps the secret encrypted at rest and writes nothing but its own webhooks' do
@@ -55,6 +55,7 @@ RSpec.describe Commerce::Providers::Woocommerce do
 
       expect(store.reload.credentials).not_to have_key('webhook_secret')
       expect(store.metadata['realtime']).to include('status' => 'read_only_key', 'webhook_ids' => [])
+      expect(store.metadata['write_access']).to eq('read_only_key')
       expect(store).to be_active
     end
 

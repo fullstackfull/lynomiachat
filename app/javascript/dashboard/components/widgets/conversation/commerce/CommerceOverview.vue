@@ -10,8 +10,11 @@ import { useCommerceLabels } from './useCommerceLabels';
 // cover the orders the stores returned, so they are labelled as visible, not lifetime. Nothing here is provider-specific.
 const props = defineProps({
   overview: { type: Object, required: true },
+  conversationId: { type: [Number, String], default: null },
+  // Stores where this agent is offered order actions.
+  actionStoreIds: { type: Array, default: () => [] },
 });
-const emit = defineEmits(['openStore']);
+const emit = defineEmits(['openStore', 'actionDone']);
 
 const { t, locale } = useI18n();
 const { providerName, matchSource, overviewState } = useCommerceLabels();
@@ -191,6 +194,11 @@ const freshness = entry => {
           :key="`${order.store.id}-${order.external_order_id}`"
           :order="order"
           :store="order.store"
+          :conversation-id="conversationId"
+          :actions-store-id="
+            actionStoreIds.includes(order.store.id) ? order.store.id : null
+          "
+          @action-done="emit('actionDone')"
         />
       </template>
     </section>

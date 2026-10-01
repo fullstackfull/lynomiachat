@@ -157,7 +157,8 @@
       "RECOVERY_COOLDOWN": "A recovery message for this cart was sent recently.",
       "CANNOT_REPLY": "This conversation can’t receive a free-form message now (the customer last wrote more than 24 hours ago). Nothing was prepared: reach the customer with an approved template instead.",
       "INVALID_RECOVERY_URL": "The store’s recovery link isn’t safe to send. Nothing was prepared.",
-      "CART_NOT_ABANDONED": "This cart was completed or has expired. Nothing was prepared."
+      "CART_NOT_ABANDONED": "This cart was completed or has expired. Nothing was prepared.",
+      "NOT_SENT": "Lynomia didn’t send this action to the store. Nothing changed; you can try again."
     },
     "URL_ERRORS": {
       "INVALID": "Enter the store address, for example https://shop.example.com.",

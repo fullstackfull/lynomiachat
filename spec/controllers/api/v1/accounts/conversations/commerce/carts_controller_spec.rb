@@ -60,6 +60,17 @@ RSpec.describe 'Commerce abandoned carts API', type: :request do
     expect(response.parsed_body['stores'].sole['carts'].sole['recovery']).to include('prepared_at' => be_present, 'sent_at' => nil)
   end
 
+  it 'never prepares a message for another store\'s cart through this store' do
+    create(:message, conversation: conversation, account: account, inbox: whatsapp.inbox, message_type: :incoming)
+    other = create(:commerce_store, :zid, account: account, external_store_id: '318002', metadata: { 'time_zone' => 'Asia/Riyadh' })
+    stub_request(:get, %r{/abandoned-carts/#{carts.first[:id]}\z}).to_return(status: 404, body: '{}')
+
+    post "#{path.delete_suffix('/carts')}/stores/#{other.id}/carts/#{carts.first[:id]}/recovery", headers: agent.create_new_auth_token, as: :json
+
+    expect(response.parsed_body).to eq('error' => { 'code' => 'NOT_FOUND' })
+    expect(Commerce::ActionRun.count).to eq(0)
+  end
+
   it 'flags in the stores list which stores offer carts' do
     get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/commerce/stores", headers: agent.create_new_auth_token, as: :json
 

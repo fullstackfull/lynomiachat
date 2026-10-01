@@ -304,6 +304,7 @@
     },
     "ACTIONS": {
       "MENU": "إجراءات الطلب",
+      "RATE_LIMITED": "طُلبت إجراءات كثيرة على هذا الطلب. حاول مجددًا بعد {seconds} ث.",
       "TITLE": "الطلب #{number}",
       "STORE_LINE": "{store} · {provider}",
       "LOADING": "جارٍ قراءة الطلب من المتجر…",

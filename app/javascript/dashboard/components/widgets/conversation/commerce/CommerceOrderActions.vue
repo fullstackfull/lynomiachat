@@ -41,6 +41,7 @@ const NEEDS_FORM = [
 const AMOUNT_PATTERN = /^\d{1,12}(\.\d{1,4})?$/;
 const POLL_INTERVAL_MS = 1500;
 const POLL_LIMIT = 40;
+const RETRY_FALLBACK_SECONDS = 60;
 const OPEN_RUN_STATUSES = ['pending', 'running', 'unknown'];
 const STEPS = {
   MENU: 'menu',
@@ -289,10 +290,18 @@ const confirm = async () => {
     pollsLeft.value = POLL_LIMIT;
     pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
   } catch (error) {
-    submitError.value =
-      error?.response?.status === 401
-        ? unavailableReason('permission_denied')
-        : apiErrorMessage(error);
+    const status = error?.response?.status;
+    if (status === 401) {
+      submitError.value = unavailableReason('permission_denied');
+    } else if (status === 429) {
+      // Lynomia's own limit on requests (not the store's): nothing was recorded or sent.
+      submitError.value = t('COMMERCE.ACTIONS.RATE_LIMITED', {
+        seconds:
+          error.response.data?.error?.retry_after ?? RETRY_FALLBACK_SECONDS,
+      });
+    } else {
+      submitError.value = apiErrorMessage(error);
+    }
   } finally {
     isSubmitting.value = false;
   }

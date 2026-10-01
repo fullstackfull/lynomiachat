@@ -187,6 +187,23 @@ describe('CommerceOrderActions', () => {
     );
   });
 
+  it("tells Lynomia's own request limit apart from the store's", async () => {
+    CommerceAPI.requestOrderAction.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: { error: { code: 'RATE_LIMITED', retry_after: 120 } },
+      },
+    });
+    const wrapper = await mountActions();
+    await click(wrapper, 'commerce-action-resend_invoice');
+    await click(wrapper, 'commerce-action-confirm');
+
+    expect(wrapper.text()).toContain(
+      'Too many actions were requested on this order. Try again in 120 s.'
+    );
+    expect(wrapper.text()).not.toContain('The store is limiting requests');
+  });
+
   it('says plainly when the store did not answer, and does not offer to try again', async () => {
     CommerceAPI.requestOrderAction.mockResolvedValue({
       data: { id: 42, status: 'pending' },

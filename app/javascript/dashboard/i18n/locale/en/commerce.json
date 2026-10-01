@@ -304,6 +304,7 @@
     },
     "ACTIONS": {
       "MENU": "Order actions",
+      "RATE_LIMITED": "Too many actions were requested on this order. Try again in {seconds} s.",
       "TITLE": "Order #{number}",
       "STORE_LINE": "{store} · {provider}",
       "LOADING": "Reading the order from the store…",

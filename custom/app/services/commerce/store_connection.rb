@@ -12,7 +12,7 @@ class Commerce::StoreConnection
     store = @account.commerce_stores.new(provider: provider, base_url: Commerce::StoreUrl.parse(base_url).to_s, created_by: @user)
     adapter = Commerce::Providers.for(store, credentials: credentials)
     adapter.health
-    attach(store, adapter.store_identity, credentials, name: name)
+    attach(store, adapter.store_identity, credentials, name: name).tap { |connected| register_webhooks(connected) }
   end
 
   # Saves a connection whose store identity and credentials are already verified: by the health check in #connect, or
@@ -39,6 +39,7 @@ class Commerce::StoreConnection
     store.update!(credentials: credentials, status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
     Commerce::Cache.purge(store)
     audit('commerce.credentials_rotated', store, status: [previous_status, store.status])
+    register_webhooks(store)
     store
   end
 
@@ -49,6 +50,7 @@ class Commerce::StoreConnection
     Commerce::Providers.for(store).health
     store.update!(status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
     audit('commerce.store_enabled', store, status: %w[disabled active])
+    register_webhooks(store)
     store
   end
 
@@ -92,6 +94,10 @@ class Commerce::StoreConnection
     Commerce::Providers.for(store).release if store.credentials.present?
   rescue Commerce::Error => e
     Rails.logger.warn("[Commerce:#{store.provider}] release failed store=#{store.id} code=#{e.code}")
+  end
+
+  def register_webhooks(store)
+    Commerce::WebhookRegistrationJob.perform_later(store.id) if Commerce::Providers::REGISTRY.fetch(store.provider).constantize.registers_webhooks?
   end
 
   def ensure_encryption!

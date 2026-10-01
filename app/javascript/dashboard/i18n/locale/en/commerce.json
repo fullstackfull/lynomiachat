@@ -140,11 +140,15 @@
     },
     "SETTINGS": {
       "HEADER": "Commerce",
-      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Read-only: Lynomia never changes anything in your store.",
+      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Lynomia never changes your orders, customers or products.",
       "LOADING": "Loading stores…",
       "ADD_STORE": "Add store",
       "EMPTY": "No store connected yet.",
       "VERIFIED": "Verified {time}",
+      "REALTIME": {
+        "ACTIVE": "Live order updates on",
+        "READ_ONLY_KEY": "Live order updates off: this key is read-only. Replace it with a Read/Write key to turn them on."
+      },
       "STATUS": {
         "ACTIVE": "Active",
         "DISABLED": "Disabled",
@@ -167,7 +171,7 @@
         "CONSUMER_SECRET": "Consumer secret",
         "NAME": "Display name (optional)",
         "NAME_PLACEHOLDER": "Main store",
-        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key with Read permission for an administrator, and paste it here.",
+        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key for an administrator, and paste it here. A Read key is enough to show orders. A Read/Write key also turns on live order updates: Lynomia then only adds its own webhooks to the store.",
         "KEYS_HINT": "Keys are encrypted and never shown again.",
         "CONNECT": "Test and connect",
         "SAVE": "Test and save",

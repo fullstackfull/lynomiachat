@@ -7,6 +7,12 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
   API_PATH = '/wp-json/wc/v3'.freeze
   GUEST_PREFIX = 'guest:'.freeze
   SEARCH_LIMIT = 20
+  WEBHOOK_TOPICS = %w[order.created order.updated order.deleted].freeze
+  WEBHOOK_NAME = 'Lynomia Commerce'.freeze
+
+  def self.supports_realtime? = true
+
+  def self.registers_webhooks? = true
 
   def health
     index = get('', _fields: 'namespace')
@@ -59,6 +65,49 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
     "#{@store.base_url}/wp-admin/admin.php?#{{ page: 'wc-orders', action: 'edit', id: id }.to_query}"
   end
 
+  # Subscribes the store's order events to Lynomia (docs/commerce/24-realtime-architecture.md §4): Lynomia's previous
+  # webhooks in the store are deleted, a new random secret is saved (encrypted, before WooCommerce can use it) and one
+  # webhook per topic is created with it. WooCommerce accepts webhook changes only from a key with write permission: with a
+  # Read key nothing is created, no secret is kept, and the store works as before, refreshed by the cache and on request.
+  def register_webhooks
+    Commerce::StoreLock.with('woocommerce_webhooks', @store.id) do
+      existing = list('/webhooks', per_page: 100, _fields: 'id,delivery_url').select { |hook| hook['delivery_url'] == delivery_url }
+      begin
+        existing.each { |hook| http.delete("#{API_PATH}/webhooks/#{Integer(hook['id'].to_s, 10)}", force: true) }
+        ids = create_webhooks
+        realtime!('active', ids)
+      rescue Commerce::Error => e
+        raise unless e.code == 'AUTH_INVALID'
+
+        @store.update!(credentials: @store.reload.credentials.except('webhook_secret'))
+        realtime!('read_only_key', [])
+      end
+    end
+  end
+
+  # Before a disconnect: the webhooks Lynomia created are deleted (a Read key cannot, and WooCommerce then disables them
+  # after five refused deliveries).
+  def release
+    Array(@store.metadata.dig('realtime', 'webhook_ids')).each do |id|
+      http.delete("#{API_PATH}/webhooks/#{Integer(id.to_s, 10)}", force: true)
+    rescue Commerce::Error => e
+      raise unless e.code == 'NOT_FOUND'
+    end
+  end
+
+  # The customer an order event is about: its customer id, or for a guest checkout every guest identity the order
+  # carries (normalized billing email and phones), as guest links keep them.
+  def event_customer_ids(payload)
+    return [] unless payload.is_a?(Hash) && payload.key?('customer_id')
+
+    customer_id = Integer(payload['customer_id'].to_s, 10)
+    customer_id.positive? ? [customer_id.to_s] : normalizer.order_identifiers(payload).map { |identifier| "#{GUEST_PREFIX}#{identifier}" }
+  rescue ArgumentError, TypeError, NoMethodError
+    []
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) ? payload['id']&.to_s : nil
+
   def normalize_customer(raw)
     normalizer.customer(raw)
   end
@@ -78,6 +127,24 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
     list('/orders', search: term, per_page: SEARCH_LIMIT, orderby: 'date', order: 'desc', **filters)
       .select { |raw| normalizer.order_identifiers(raw).include?(identifier) }
   end
+
+  def create_webhooks
+    secret = SecureRandom.hex(32)
+    @store.update!(credentials: @store.reload.credentials.merge('webhook_secret' => secret))
+    WEBHOOK_TOPICS.map do |topic|
+      hook = http.post_json("#{API_PATH}/webhooks", name: WEBHOOK_NAME, topic: topic, delivery_url: delivery_url, secret: secret, status: 'active')
+      raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless hook.is_a?(Hash) && hook['id']
+
+      hook['id'].to_s
+    end
+  end
+
+  def realtime!(status, webhook_ids)
+    @store.update!(metadata: @store.metadata.merge('realtime' => { 'status' => status, 'webhook_ids' => webhook_ids,
+                                                                   'registered_at' => Time.current.iso8601 }))
+  end
+
+  def delivery_url = "#{ENV.fetch('FRONTEND_URL')}/webhooks/woocommerce/#{@store.id}"
 
   def merge(customers)
     customers.group_by(&:external_id).map do |external_id, group|

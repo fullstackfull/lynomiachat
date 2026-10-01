@@ -35,6 +35,12 @@ class Commerce::Providers::Base
   # then every customer's cached orders of the store are dropped. Events never carry order data into Lynomia.
   def self.supports_realtime? = false
 
+  # Providers whose webhooks Lynomia creates with the store's own credentials, after each new authorization
+  # (Commerce::WebhookRegistrationJob). Zid registers from its authorization flow; Salla and Shopify from their app setup.
+  def self.registers_webhooks? = false
+
+  def register_webhooks = nil
+
   def event_customer_ids(_payload) = []
 
   # The order an event is about, for logs and metrics only; nil when the event does not say.

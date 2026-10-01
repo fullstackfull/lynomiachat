@@ -291,6 +291,22 @@ onMounted(() => {
                 }}
               </span>
               <span
+                v-if="store.status === 'active' && store.realtime_status"
+                class="text-label-small"
+                :class="
+                  store.realtime_status === 'active'
+                    ? 'text-n-teal-11'
+                    : 'text-n-slate-11'
+                "
+                data-test-id="commerce-store-realtime"
+              >
+                {{
+                  store.realtime_status === 'active'
+                    ? t('COMMERCE.SETTINGS.REALTIME.ACTIVE')
+                    : t('COMMERCE.SETTINGS.REALTIME.READ_ONLY_KEY')
+                }}
+              </span>
+              <span
                 v-if="!store.provider_enabled"
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"

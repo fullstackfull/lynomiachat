@@ -152,7 +152,12 @@
       "PROVIDER_REJECTED": "The store refused this change.",
       "REFUND_DECLINED": "The payment gateway refused the refund. No money was sent.",
       "INVALID_REQUEST": "This request isn’t valid.",
-      "UNKNOWN_OUTCOME": "The store didn’t answer in time. Lynomia is checking the order with the store."
+      "UNKNOWN_OUTCOME": "The store didn’t answer in time. Lynomia is checking the order with the store.",
+      "RECOVERY_DISABLED": "Abandoned carts are off for this store.",
+      "RECOVERY_COOLDOWN": "A recovery message for this cart was sent recently.",
+      "CANNOT_REPLY": "This conversation can’t receive a free-form message now (the customer last wrote more than 24 hours ago). Nothing was prepared: reach the customer with an approved template instead.",
+      "INVALID_RECOVERY_URL": "The store’s recovery link isn’t safe to send. Nothing was prepared.",
+      "CART_NOT_ABANDONED": "This cart was completed or has expired. Nothing was prepared."
     },
     "URL_ERRORS": {
       "INVALID": "Enter the store address, for example https://shop.example.com.",
@@ -276,6 +281,24 @@
         "TURN_ON": "Turn on order actions",
         "TURN_OFF": "Turn off order actions",
         "RECONNECT_FOR_ACTIONS": "Reconnect for order actions"
+      },
+      "CART_QUEUE": {
+        "TITLE": "Abandoned carts",
+        "DESCRIPTION": "Recent abandoned carts of your stores, carts of linked contacts first. Prepare a recovery message from the contact’s conversation: nothing is sent automatically.",
+        "ALL_STORES": "All stores",
+        "ALL_AGES": "Any age",
+        "AGE_24H": "Last 24 hours",
+        "AGE_7D": "Last 7 days",
+        "AGE_30D": "Last 30 days",
+        "ALL_STATUSES": "Any status",
+        "STATUS_ABANDONED": "Abandoned",
+        "STATUS_RECOVERED": "Recovered",
+        "ALL_CONTACTS": "Linked or not",
+        "LINKED": "Linked contact",
+        "UNLINKED": "No linked contact",
+        "EMPTY": "No abandoned cart matches.",
+        "OPEN_CONTACT": "Open contact",
+        "LOADING": "Reading abandoned carts…"
       }
     },
     "ACTIONS": {
@@ -357,6 +380,33 @@
         "EARLIER_UNRESOLVED": "An earlier action on this order couldn’t be confirmed. Check the order in the store before continuing."
       },
       "DONE_ALERT": "Order #{number} updated in {store}."
+    },
+    "CARTS": {
+      "TITLE": "Abandoned carts",
+      "STORE_LINE": "{store} · {provider}",
+      "ITEMS": "{count} item | {count} items",
+      "VIEW": "View cart",
+      "HIDE": "Hide cart",
+      "ITEM": "Item",
+      "PREPARE": "Prepare recovery message",
+      "PREPARED": "Recovery message added to the reply box. Review it and send it yourself.",
+      "SENT": "Recovery message sent {time}",
+      "PREPARED_AT": "Recovery message prepared {time}, not sent yet",
+      "COOLDOWN": "Another recovery message is possible {time}.",
+      "OVERRIDE": "Prepare anyway",
+      "MATCH": {
+        "LINKED_CUSTOMER": "Linked store customer",
+        "VERIFIED_PHONE": "Matched by this conversation’s verified phone",
+        "VERIFIED_EMAIL": "Matched by this conversation’s verified email"
+      },
+      "UNAVAILABLE": "Couldn’t read {store}’s abandoned carts.",
+      "TEMPLATE": {
+        "WITH_NAME": "Hi {name}, you left {count} items in your cart at {store} ({total}). You can complete your order here: {url}",
+        "WITHOUT_NAME": "Hello, you left {count} items in your cart at {store} ({total}). You can complete your order here: {url}"
+      },
+      "STORE_AND_AGE": "{store} · {provider} · left {time}",
+      "ITEM_LINE": "{quantity} × {name}",
+      "TOTAL_AND_ITEMS": "{total} · {items}"
     }
   }
 }

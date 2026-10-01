@@ -112,6 +112,31 @@ class CommerceAPI extends ApiClient {
     );
   }
 
+  // The conversation contact's abandoned carts in every store that offers them, each with its recovery state.
+  getCarts(conversationId) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/carts`
+    );
+  }
+
+  // Prepares a recovery message for the reply box; Lynomia never sends it. `overrideCooldown` is for administrators.
+  prepareRecovery(
+    conversationId,
+    storeId,
+    cartId,
+    { overrideCooldown = false } = {}
+  ) {
+    return axios.post(
+      `${this.conversationStoresUrl(conversationId)}/${storeId}/carts/${encodeURIComponent(cartId)}/recovery`,
+      overrideCooldown ? { override_cooldown: true } : {}
+    );
+  }
+
+  // Administrators' recovery queue: recent abandoned carts across the account's stores.
+  getCartQueue(params = {}) {
+    return axios.get(`${this.baseUrl()}/commerce/carts`, { params });
+  }
+
   getActionRun(conversationId, runId) {
     return axios.get(
       `${this.baseUrl()}/conversations/${conversationId}/commerce/action_runs/${runId}`

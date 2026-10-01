@@ -13,6 +13,7 @@ import CommerceAPI from 'dashboard/api/commerce';
 import CommerceOrderItem from './CommerceOrderItem.vue';
 import CommerceOverview from './CommerceOverview.vue';
 import CommerceOrderSearch from './CommerceOrderSearch.vue';
+import CommerceCarts from './CommerceCarts.vue';
 import { relativeTime } from './commerceHelper';
 import { useCommerceLabels } from './useCommerceLabels';
 
@@ -68,6 +69,9 @@ const hasOverview = computed(() => stores.value.length > 1);
 const actionStoreIds = computed(() =>
   stores.value.filter(store => store.actions).map(store => store.id)
 );
+const hasCarts = computed(() => stores.value.some(store => store.carts));
+// Read the carts again with the open view (live updates, Refresh, an order action).
+const cartsReloadKey = ref(0);
 const isOverview = computed(
   () => hasOverview.value && view.value === VIEWS.OVERVIEW
 );
@@ -145,8 +149,10 @@ const loadOverview = async ({ silent = false } = {}) => {
   }
 };
 
-const loadView = options =>
-  isOverview.value ? loadOverview(options) : loadPanel(options);
+const loadView = options => {
+  cartsReloadKey.value += 1;
+  return isOverview.value ? loadOverview(options) : loadPanel(options);
+};
 
 // Live updates: the backend sends only ids. Several events in a burst (one per store) make one refetch.
 const LIVE_UPDATE_DEBOUNCE_MS = 500;
@@ -547,6 +553,12 @@ watch(() => props.conversationId, loadStores, { immediate: true });
           />
         </template>
       </template>
+      <CommerceCarts
+        v-if="hasCarts"
+        :conversation-id="conversationId"
+        :store-id="isOverview ? null : storeId"
+        :reload-key="cartsReloadKey"
+      />
     </template>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
@@ -14,6 +14,7 @@ import ProviderPicker from './ProviderPicker.vue';
 import SallaConnectDialog from './SallaConnectDialog.vue';
 import ZidConnectDialog from './ZidConnectDialog.vue';
 import ShopifyConnectDialog from './ShopifyConnectDialog.vue';
+import CartQueue from './CartQueue.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
@@ -39,6 +40,9 @@ const STATUS_DOT = {
 };
 
 const stores = ref([]);
+const cartStores = computed(() =>
+  stores.value.filter(store => store.abandoned_carts)
+);
 const providers = ref([]);
 const isLoading = ref(true);
 const showPicker = ref(false);
@@ -473,6 +477,8 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
+      <CartQueue v-if="cartStores.length" :stores="cartStores" class="mt-8" />
 
       <ProviderPicker
         :show="showPicker"

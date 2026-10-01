@@ -7,6 +7,7 @@ namespace :api, defaults: { format: 'json' } do
       scope module: :accounts do
         namespace :commerce do
           resources :stores, only: [:index, :create, :update, :destroy]
+          resources :carts, only: [:index]
           resource :salla_connection, only: [:show, :create]
           resource :zid_connection, only: [:create]
           resource :shopify_connection, only: [:create]
@@ -28,6 +29,9 @@ namespace :api, defaults: { format: 'json' } do
                 end
                 resources :orders, only: [] do
                   resource :actions, only: [:show, :create], controller: 'order_actions'
+                end
+                resources :carts, only: [], constraints: { cart_id: /[\w-]{1,64}/ } do
+                  resource :recovery, only: [:create]
                 end
               end
             end

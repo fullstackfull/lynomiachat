@@ -15,7 +15,7 @@ class Api::V1::Accounts::Conversations::Commerce::CartsController < Api::V1::Acc
     views = ::Commerce::Parallel.map(stores.to_a, concurrency: MAX_CONCURRENCY, timeout: STORE_TIMEOUT) do |store|
       ::Commerce::AbandonedCarts.new(store: store, conversation: @conversation).list
     end
-    render json: { stores: stores.zip(views).map { |store, view| view || timed_out(store) } }
+    render json: { stores: stores.zip(views).map { |store, view| with_recovery(store, view || timed_out(store)) } }
   end
 
   private
@@ -28,6 +28,12 @@ class Api::V1::Accounts::Conversations::Commerce::CartsController < Api::V1::Acc
     ids = Current.account.commerce_stores.active.where(provider: ::Commerce::Providers.enabled).order(:created_at)
                  .select { |store| ::Commerce::AbandonedCarts.offered?(store) }.map(&:id)
     Current.account.commerce_stores.where(id: ids).order(:created_at)
+  end
+
+  # Each cart's recovery messages: when one was prepared, sent, and until when the cooldown runs.
+  def with_recovery(store, view)
+    states = ::Commerce::RecoveryMessages.states(store, view[:carts].pluck('external_cart_id'))
+    view.merge(carts: view[:carts].map { |cart| cart.merge('recovery' => states[cart['external_cart_id']]) })
   end
 
   def timed_out(store)

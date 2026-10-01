@@ -43,6 +43,23 @@ RSpec.describe 'Commerce abandoned carts API', type: :request do
     expect(response.body).not_to include('966500000001', 'my-store.zid.store/r/')
   end
 
+  it 'prepares a recovery message for a cart of the contact, never another store\'s or account\'s' do
+    create(:message, conversation: conversation, account: account, inbox: whatsapp.inbox, message_type: :incoming)
+    cart_id = carts.first[:id]
+    stub_request(:get, %r{/abandoned-carts/#{cart_id}\z}).to_return(status: 200, body: { abandoned_cart: carts.first }.to_json)
+    recovery = ->(store_id) { "#{path.delete_suffix('/carts')}/stores/#{store_id}/carts/#{cart_id}/recovery" }
+
+    post recovery.call(zid.id), headers: agent.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:created)
+    expect(response.parsed_body).to include('recovery_url' => 'https://my-store.zid.store/r/1')
+
+    post recovery.call(create(:commerce_store, :zid, external_store_id: '318998').id), headers: agent.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:not_found)
+
+    get path, headers: agent.create_new_auth_token, as: :json
+    expect(response.parsed_body['stores'].sole['carts'].sole['recovery']).to include('prepared_at' => be_present, 'sent_at' => nil)
+  end
+
   it 'flags in the stores list which stores offer carts' do
     get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/commerce/stores", headers: agent.create_new_auth_token, as: :json
 

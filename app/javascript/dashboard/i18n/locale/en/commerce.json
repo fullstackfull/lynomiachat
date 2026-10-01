@@ -252,7 +252,9 @@
         "CONNECT": "Connect with Shopify",
         "REAUTH_HINT": "Shopify needs you to authorize the Lynomia Commerce app again. Use Reconnect.",
         "PROVIDER_OFF": "Shopify is turned off on this installation. The store is kept but not read.",
-        "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify."
+        "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify.",
+        "ACTIONS_TITLE": "Reconnect Shopify to enable order actions",
+        "ACTIONS_DESCRIPTION": "Shopify will ask you to give the Lynomia Commerce app write access to orders, for cancellations and refunds. Until you approve it, the store stays read-only and keeps working."
       },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",
@@ -272,7 +274,8 @@
         "ORDER_ACTIONS_SWITCHED_OFF": "Order actions are switched off on this installation.",
         "ORDER_ACTIONS_HINT": "Refunds and cancellations stay limited to administrators.",
         "TURN_ON": "Turn on order actions",
-        "TURN_OFF": "Turn off order actions"
+        "TURN_OFF": "Turn off order actions",
+        "RECONNECT_FOR_ACTIONS": "Reconnect for order actions"
       }
     },
     "ACTIONS": {

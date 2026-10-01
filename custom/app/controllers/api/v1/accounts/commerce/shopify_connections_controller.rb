@@ -1,7 +1,9 @@
 # Connecting a Shopify shop through the Lynomia Commerce Shopify app (administrators, `lynomia_commerce` accounts,
 # installations that offer Shopify Commerce).
 #
-#   POST /api/v1/accounts/:account_id/commerce/shopify_connection   { shop } → { authorize_url } for "Connect with Shopify"
+#   POST /api/v1/accounts/:account_id/commerce/shopify_connection   { shop[, order_actions: true] } → { authorize_url } for
+#        "Connect with Shopify", or for "Reconnect Shopify to enable order actions" (write_orders is asked only then, and
+#        only while the installation offers Shopify order actions)
 #
 # `shop` is the shop's myshopify.com domain, validated by Shopify::ShopDomain: no other host, no scheme, port, path,
 # userinfo, query or fragment. A shop this account already shows through the legacy Shopify integration is refused, so
@@ -25,12 +27,10 @@ class Api::V1::Accounts::Commerce::ShopifyConnectionsController < Api::V1::Accou
     raise ::Commerce::Error.new('INVALID_STORE_URL', reason: 'shopify_domain') unless ::Shopify::ShopDomain.valid?(shop)
     raise ::Commerce::Error.new('STORE_ALREADY_CONNECTED', reason: 'legacy_shopify_integration') if legacy_integration?(shop)
 
-    issued = ::Commerce::OauthState.issue('shopify', account: Current.account, user: Current.user, shop: shop)
-    cookies.encrypted[::Commerce::Shopify::CallbacksController::COOKIE] = {
-      value: issued.nonce, expires: ::Commerce::OauthState::TTL.from_now, httponly: true, same_site: :lax, secure: request.ssl?,
-      path: ::Commerce::Shopify::Config::CALLBACK_PATH
-    }
-    render json: { authorize_url: ::Commerce::Shopify::Oauth.authorize_url(shop, issued.state) }, status: :created
+    scopes = requested_scopes
+    issued = ::Commerce::OauthState.issue('shopify', account: Current.account, user: Current.user, shop: shop, scopes: scopes.join(','))
+    remember_browser(issued.nonce)
+    render json: { authorize_url: ::Commerce::Shopify::Oauth.authorize_url(shop, issued.state, scopes) }, status: :created
   end
 
   private
@@ -41,6 +41,23 @@ class Api::V1::Accounts::Commerce::ShopifyConnectionsController < Api::V1::Accou
 
   def ensure_shopify_enabled
     raise ::Commerce::Error, 'PROVIDER_DISABLED' unless ::Commerce::Providers.enabled?('shopify')
+  end
+
+  def remember_browser(nonce)
+    cookies.encrypted[::Commerce::Shopify::CallbacksController::COOKIE] = {
+      value: nonce, expires: ::Commerce::OauthState::TTL.from_now, httponly: true, same_site: :lax, secure: request.ssl?,
+      path: ::Commerce::Shopify::Config::CALLBACK_PATH
+    }
+  end
+
+  # write_orders only for an administrator's reconnect for order actions, while the installation offers them.
+  def requested_scopes
+    return ::Commerce::Shopify::Config::SCOPES unless params[:order_actions] == true
+    unless ::Commerce::Switches.provider_actions_enabled?('shopify')
+      raise ::Commerce::Error.new('ACTIONS_DISABLED', reason: 'provider_actions_disabled')
+    end
+
+    ::Commerce::Shopify::Config::ACTION_SCOPES
   end
 
   def legacy_integration?(shop)

@@ -27,10 +27,11 @@ class CommerceAPI extends ApiClient {
   }
 
   // The shop's authorization link for "Connect with Shopify" (the browser is sent there; Shopify redirects back to
-  // Lynomia). `shop` is the store's myshopify.com domain.
-  createShopifyConnection(shop) {
+  // Lynomia). `shop` is the store's myshopify.com domain; `orderActions` also asks Shopify for write access to orders.
+  createShopifyConnection(shop, { orderActions = false } = {}) {
     return axios.post(`${this.baseUrl()}/commerce/shopify_connection`, {
       shop,
+      ...(orderActions ? { order_actions: true } : {}),
     });
   }
 

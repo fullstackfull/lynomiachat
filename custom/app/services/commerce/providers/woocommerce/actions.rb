@@ -102,7 +102,7 @@ class Commerce::Providers::Woocommerce::Actions
     return unavailable('nothing_refundable') unless remaining.positive?
 
     gateway = gateway_refunds?(raw['payment_method'])
-    { available: true, max_amount: decimal(remaining, raw.fetch('total').to_s), currency: raw.fetch('currency').to_s,
+    { available: true, max_amount: Commerce::Amount.format(remaining, like: raw.fetch('total')), currency: raw.fetch('currency').to_s,
       mode: gateway ? 'gateway' : 'manual', gateway: gateway ? raw['payment_method_title'].to_s.presence : nil }.compact
   end
 
@@ -197,13 +197,6 @@ class Commerce::Providers::Woocommerce::Actions
 
   def refunded(raw)
     Array(raw['refunds']).sum(BigDecimal(0)) { |refund| BigDecimal(refund.fetch('total').to_s).abs }
-  end
-
-  # `value` with as many decimals as the order's own total (`like`).
-  def decimal(value, like)
-    decimals = like.split('.', 2)[1].to_s.length
-    integer, fraction = value.round(decimals).to_s('F').split('.')
-    decimals.zero? ? integer : "#{integer}.#{fraction.to_s.ljust(decimals, '0')[0, decimals]}"
   end
 
   def unavailable(reason) = { available: false, reason: reason }

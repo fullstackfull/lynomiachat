@@ -19,7 +19,7 @@ class Commerce::OrderActions
   VERSION = /\A\h{16,64}\z/
   AMOUNT = /\A\d{1,12}(\.\d{1,4})?\z/
   CURRENCY = /\A[A-Z]{3}\z/
-  TARGET_STATUSES = %w[processing on_hold completed].freeze
+  TARGET_STATUSES = %w[processing on_hold completed shipped delivered].freeze
   REFUND_REASONS = %w[customer_request duplicate damaged not_received other].freeze
   CANCEL_REASONS = %w[customer_request inventory fraud payment_declined other].freeze
   RATE_LIMITS = { user: [10, 1.minute], store: [30, 1.minute], order: [5, 10.minutes] }.freeze

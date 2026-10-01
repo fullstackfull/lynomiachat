@@ -47,6 +47,7 @@ const showZidDialog = ref(false);
 const showShopifyDialog = ref(false);
 // The myshopify.com domain of a Shopify store being reconnected.
 const shopifyShop = ref('');
+const shopifyOrderActions = ref(false);
 const showStoreDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
@@ -117,12 +118,13 @@ const openAddStore = () => {
   }
 };
 
-// `store` is the store being reconnected, if any.
-const openConnect = (provider, store = null) => {
+// `store` is the store being reconnected, if any; `orderActions` reconnects a Shopify store for order actions.
+const openConnect = (provider, store = null, orderActions = false) => {
   if (provider === 'salla') showSallaDialog.value = true;
   else if (provider === 'zid') showZidDialog.value = true;
   else if (provider === 'shopify') {
     shopifyShop.value = store ? new URL(store.base_url).host : '';
+    shopifyOrderActions.value = orderActions;
     showShopifyDialog.value = true;
   } else openKeysDialog();
 };
@@ -411,6 +413,19 @@ onMounted(() => {
               @click="setOrderActions(store, !store.order_actions)"
             />
             <Button
+              v-if="
+                store.status === 'active' &&
+                store.order_actions_status === 'missing_scope' &&
+                REAUTHORIZED_HERE.includes(store.provider)
+              "
+              :label="t('COMMERCE.SETTINGS.CAPABILITIES.RECONNECT_FOR_ACTIONS')"
+              variant="faded"
+              color="slate"
+              size="sm"
+              data-test-id="commerce-store-reconnect-actions"
+              @click="openConnect(store.provider, store, true)"
+            />
+            <Button
               v-if="store.status === 'active'"
               :label="t('COMMERCE.SETTINGS.ACTIONS.DISABLE')"
               variant="faded"
@@ -474,6 +489,7 @@ onMounted(() => {
       <ShopifyConnectDialog
         :show="showShopifyDialog"
         :shop="shopifyShop"
+        :order-actions="shopifyOrderActions"
         @close="showShopifyDialog = false"
       />
       <StoreDialog

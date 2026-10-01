@@ -1,6 +1,6 @@
 # The Shopify Admin GraphQL API of one shop, at the pinned Commerce::Shopify::Config::API_VERSION
-# (docs/commerce/19-shopify-graphql-provider.md). Queries only. Every value travels as a GraphQL variable, never written
-# into a document.
+# (docs/commerce/19-shopify-graphql-provider.md). Queries, and the order action mutations (#mutate). Every value travels
+# as a GraphQL variable, never written into a document.
 #
 # HTTP 200 is not success: a response with top-level `errors` raises, whatever `data` holds. THROTTLED is RATE_LIMITED,
 # ACCESS_DENIED is PROTECTED_DATA_NOT_APPROVED when Shopify says the app is not approved for protected customer data and
@@ -24,6 +24,12 @@ class Commerce::Shopify::Graphql
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless body['data'].is_a?(Hash)
 
     body['data']
+  end
+
+  # One mutation, sent once and never retried (Commerce::HttpClient#write_json): [HTTP status, parsed body]. What the
+  # answer proves, top-level `errors` and userErrors included, is the caller's to judge (Commerce::Providers::Shopify::Actions).
+  def mutate(document, variables)
+    @http.write_json(:post, PATH, { query: document, variables: variables })
   end
 
   # For Commerce::Backoff: { retry_after: } when the shop's query budget cannot pay for another query like the last one

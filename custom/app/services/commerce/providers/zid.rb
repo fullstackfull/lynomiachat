@@ -1,7 +1,7 @@
 # Zid Merchant API (https://api.zid.sa/v1) with the store's OAuth tokens from the Zid app authorization
-# (docs/commerce/16-zid-provider.md). Read-only: only GET requests exist here. The API host is fixed by Zid, never taken
-# from a store or tenant setting, and every request carries the tokens from Commerce::Zid::TokenManager, never the
-# credentials a caller passes in.
+# (docs/commerce/16-zid-provider.md). Reads, plus the order status changes of Commerce::Providers::Zid::Actions. The API
+# host is fixed by Zid, never taken from a store or tenant setting, and every request carries the tokens from
+# Commerce::Zid::TokenManager, never the credentials a caller passes in.
 #
 # Customers are found through the orders list's documented search (search_term matches the customer's phone, email,
 # name or the order code) and kept only when their E.164 mobile or email matches exactly; names never match, and
@@ -68,6 +68,28 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
 
   def event_order_id(payload) = payload.is_a?(Hash) ? payload['id']&.to_s : nil
 
+  def self.supports_actions? = true
+
+  def write_access_problem = @store.metadata['write_access'] == 'missing_scope' ? 'missing_scope' : nil
+
+  def action_snapshot(external_order_id)
+    raw = get("/managers/store/orders/#{Integer(external_order_id.to_s, 10)}/view")['order']
+    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless raw.is_a?(Hash)
+
+    actions.snapshot(raw)
+  end
+
+  def perform_action(action_type, snapshot, params, _idempotency_key)
+    raise ArgumentError, "unsupported action #{action_type}" unless action_type == 'update_order_status'
+
+    path, body = actions.request(snapshot, params)
+    Commerce::Backoff.check!(backoff_key)
+    status, answer = tokens.with_credentials { |credentials| Commerce::Zid::Oauth.api(credentials).write_json(:post, path, body) }
+    actions.answer(status, answer, body[:order_status])
+  end
+
+  def reconcile_action(run, snapshot) = actions.reconcile(run, snapshot)
+
   # Zid stops sending the store's order events to Lynomia.
   def release
     Commerce::Zid::Webhooks.new(@store).unregister
@@ -121,5 +143,9 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
 
   def normalizer
     @normalizer ||= Normalizer.new(time_zone: @store.metadata['time_zone'])
+  end
+
+  def actions
+    @actions ||= Actions.new(self, @store)
   end
 end

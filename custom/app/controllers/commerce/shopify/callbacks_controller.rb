@@ -32,11 +32,14 @@ class Commerce::Shopify::CallbacksController < ApplicationController
     raise Commerce::Error, 'PROVIDER_DISABLED' unless Commerce::Providers.enabled?('shopify')
     raise Commerce::Error.new('AUTH_INVALID', reason: 'shopify_authorization_denied') if params[:code].blank?
 
-    Commerce::Shopify::Authorization.new(account: @account, user: user).connect(grant['shop'], params[:code].to_s)
+    Commerce::Shopify::Authorization.new(account: @account, user: user).connect(grant['shop'], params[:code].to_s, scopes: requested_scopes(grant))
     { shopify: 'connected' }
   rescue Commerce::Error => e
     { shopify_error: e.code }
   end
+
+  # What the administrator asked for when the state was issued (read-only by default).
+  def requested_scopes(grant) = grant['scopes'].to_s.split(',').presence || Commerce::Shopify::Config::SCOPES
 
   def administrator?(user)
     account_user = @account.account_users.find_by(user: user)

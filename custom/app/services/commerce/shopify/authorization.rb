@@ -9,22 +9,26 @@ class Commerce::Shopify::Authorization
     @user = user
   end
 
-  def connect(shop, code)
+  # `scopes` are what the administrator asked for (Config::SCOPES, or Config::ACTION_SCOPES for order actions), carried in
+  # the signed state.
+  def connect(shop, code, scopes: Commerce::Shopify::Config::SCOPES)
     status, body = Commerce::Shopify::Oauth.token(shop, code: code, expiring: '1')
     raise Commerce::Error.new('AUTH_INVALID', reason: "shopify_code_http_#{status}") unless status == 200
 
     credentials = Commerce::Shopify::Tokens.credentials(body)
-    ensure_read_only!(credentials['scope'])
+    ensure_scopes!(credentials['scope'], scopes)
     identity = Commerce::Shopify::Oauth.identity(shop, credentials['access_token'])
     Commerce::StoreLock.with('shopify', identity[:external_store_id]) { save(shop, identity, credentials) }
   end
 
   private
 
-  # Every requested scope granted, and nothing beyond read access: an app configured with more is refused, not used.
-  def ensure_read_only!(scope)
-    granted = scope.split(',').map(&:strip)
-    return if (Commerce::Shopify::Config::SCOPES - granted).empty? && granted.all? { |name| name.start_with?('read_') }
+  # Every requested scope granted (Shopify may report write_x alone for read_x and write_x), and nothing beyond what was
+  # asked: an app configured with more is refused, not used. A read-only connection never holds a write scope.
+  def ensure_scopes!(scope, requested)
+    granted = scope.to_s.split(',').map(&:strip)
+    covered = granted + granted.filter_map { |name| name.sub('write_', 'read_') if name.start_with?('write_') }
+    return if (requested - covered).empty? && (granted - requested).empty?
 
     raise Commerce::Error.new('PERMISSION_DENIED', reason: 'shopify_scopes')
   end
@@ -41,7 +45,7 @@ class Commerce::Shopify::Authorization
   def reauthorize(store, shop, credentials)
     previous = store.status
     store.update!(base_url: "https://#{shop}", credentials: credentials, status: store.disabled? ? :disabled : :active,
-                  metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
+                  metadata: store.metadata.except('write_access').merge('verified_at' => Time.current.iso8601))
     Commerce::AuditTrail.record('commerce.shopify.reauthorized', auditable: store, user: @user, changes: { status: [previous, store.status] })
     store
   end

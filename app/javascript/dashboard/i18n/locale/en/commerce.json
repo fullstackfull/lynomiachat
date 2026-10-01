@@ -317,8 +317,8 @@
         "LOADING": "Reading abandoned carts…"
       },
       "PLAN": {
-        "USAGE": "{used} of {limit} stores on your plan",
-        "LIMIT_REACHED": "You’ve connected all {limit} stores your plan allows. To add another, upgrade your plan or disconnect a store.",
+        "USAGE": "Stores on your plan: {used} of {limit}",
+        "LIMIT_REACHED": "You’ve reached your plan’s store limit ({limit}). To add another store, upgrade your plan or disconnect one.",
         "VIEW_PLANS": "View plans"
       }
     },

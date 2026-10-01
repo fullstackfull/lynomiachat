@@ -85,6 +85,8 @@ const selectStore = async (page, name) => {
 const addStore = async (page, { url, name, ck, cs }) => {
   await page.getByRole('button', { name: /add store|إضافة متجر/i }).click();
   await page.waitForTimeout(600);
+  await page.locator('[data-test-id="commerce-provider-woocommerce"]').click(); // the platform picker (every platform listed)
+  await page.waitForTimeout(500);
   await page.getByLabel(/Store URL|رابط المتجر/).fill(url);
   if (name) await page.getByLabel(/Display name|اسم العرض/).fill(name);
   await page.getByLabel('Consumer key').fill(ck);

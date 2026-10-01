@@ -40,6 +40,7 @@ const TEXT = {
     USAGE_DESC: 'Your usage compared to the limits of your plan.',
     AGENTS: 'Agents',
     INBOXES: 'Inboxes',
+    STORES: 'Commerce stores',
     UNLIMITED: 'Unlimited',
     PLANS: 'Plans',
     PLANS_DESC: 'Choose the plan that fits your team.',
@@ -94,6 +95,7 @@ const TEXT = {
     USAGE_DESC: 'استهلاكك مقارنة بحدود خطتك.',
     AGENTS: 'الوكلاء',
     INBOXES: 'صناديق الوارد',
+    STORES: 'متاجر Commerce',
     UNLIMITED: 'غير محدود',
     PLANS: 'الخطط',
     PLANS_DESC: 'اختر الخطة المناسبة لفريقك.',
@@ -148,10 +150,15 @@ const checkoutResult = computed(() => route.query.checkout);
 const subscription = computed(() => billing.value?.subscription || null);
 const plans = computed(() => billing.value?.plans || []);
 const isAdmin = computed(() => !!billing.value?.is_admin);
-const usage = computed(() => billing.value?.usage || { agents: 0, inboxes: 0 });
+const usage = computed(
+  () => billing.value?.usage || { agents: 0, inboxes: 0, stores: 0 }
+);
 
-const currentPlan = computed(() =>
-  plans.value.find(plan => plan.id === subscription.value?.plan_id)
+// The subscribed plan's limits come with the subscription: a plan granted by the super admin is not always in `plans`.
+const planLimits = computed(() => subscription.value?.plan_limits || {});
+// Commerce stores matter once the plan includes Lynomia Commerce, or the account still has stores connected.
+const showsStores = computed(
+  () => !!subscription.value?.plan_commerce || usage.value.stores > 0
 );
 
 const hasPaidSubscription = computed(() => {
@@ -451,15 +458,21 @@ onMounted(async () => {
         <!-- usage -->
         <BillingCard :title="t('USAGE')" :description="t('USAGE_DESC')">
           <div
-            class="grid grid-cols-1 gap-2 sm:grid-cols-2 divide-x divide-n-weak"
+            class="grid grid-cols-1 gap-2 divide-x divide-n-weak"
+            :class="showsStores ? 'sm:grid-cols-3' : 'sm:grid-cols-2'"
           >
             <DetailItem
               :label="t('AGENTS')"
-              :value="`${usage.agents} / ${limitText(currentPlan?.limits?.agents)}`"
+              :value="`${usage.agents} / ${limitText(planLimits.agents)}`"
             />
             <DetailItem
               :label="t('INBOXES')"
-              :value="`${usage.inboxes} / ${limitText(currentPlan?.limits?.inboxes)}`"
+              :value="`${usage.inboxes} / ${limitText(planLimits.inboxes)}`"
+            />
+            <DetailItem
+              v-if="showsStores"
+              :label="t('STORES')"
+              :value="`${usage.stores} / ${limitText(planLimits.stores)}`"
             />
           </div>
         </BillingCard>
@@ -516,6 +529,10 @@ onMounted(async () => {
               <li class="flex items-center gap-1.5">
                 <span class="i-lucide-check size-3.5 flex-shrink-0" />
                 {{ t('INBOXES') }}: {{ limitText(plan.limits?.inboxes) }}
+              </li>
+              <li v-if="plan.commerce" class="flex items-center gap-1.5">
+                <span class="i-lucide-check size-3.5 flex-shrink-0" />
+                {{ `${t('STORES')}: ${limitText(plan.limits?.stores)}` }}
               </li>
               <li
                 v-for="feature in plan.features"

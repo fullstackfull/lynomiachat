@@ -45,7 +45,7 @@ class Commerce::Salla::ConnectionCode
     save_progress(account_id, current.merge('status' => status, 'store_id' => store_id).compact) if current
   end
 
-  # What the settings page shows: none | waiting | expired | claimed | connected | conflict.
+  # What the settings page shows: none | waiting | expired | claimed | connected | conflict | limit_reached.
   def self.status(account)
     current = progress(account.id)
     return { status: 'none' } if current.nil?

@@ -62,11 +62,11 @@ module Billing::ApiSerializer
     }
   end
 
-  def usage(account)
-    plan = account.billing_subscription&.plan
+  def usage(account, plan = account.billing_subscription&.plan)
     {
       agents: { used: account.account_users.count, limit: plan&.limit_for(:agents) },
-      inboxes: { used: account.inboxes.count, limit: plan&.limit_for(:inboxes) }
+      inboxes: { used: account.inboxes.count, limit: plan&.limit_for(:inboxes) },
+      stores: { used: account.commerce_stores.connected.count, limit: plan&.limit_for(:stores) }
     }
   end
 

@@ -88,6 +88,65 @@ RSpec.describe Commerce::StoreConnection do
     end
   end
 
+  describe "the plan's store limit" do
+    let(:plan) { BillingPlan.create!(name: 'Commerce', features: ['lynomia_commerce'], limits: { 'stores' => 1 }) }
+
+    before { BillingSubscription.create!(account: account, plan: plan, status: 'active', source: 'manual', quantity: 1) }
+
+    it 'refuses a new store once the account has as many connected stores as its plan allows, whatever their provider' do
+      create(:commerce_store, :salla, account: account, status: :needs_reauth)
+
+      expect { connect }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
+      expect(account.commerce_stores.count).to eq(1)
+    end
+
+    it 'does not count disconnected stores' do
+      create(:commerce_store, account: account, status: :disconnected, credentials: nil)
+
+      expect(connect).to be_active
+    end
+
+    it 'refuses to bring a disconnected store back at the limit, and keeps it disconnected' do
+      old = create(:commerce_store, account: account, base_url: 'https://shop.example.com', external_store_id: 'shop.example.com',
+                                    status: :disconnected, credentials: nil)
+      create(:commerce_store, account: account)
+
+      expect { connect }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
+      expect(old.reload).to have_attributes(status: 'disconnected', credentials: nil)
+      expect { connection.rotate_credentials(old, credentials) }
+        .to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
+    end
+
+    it 'keeps a store another account disconnected with that account when this one is at its limit' do
+      old = create(:commerce_store, base_url: 'https://shop.example.com', external_store_id: 'shop.example.com', status: :disconnected,
+                                    credentials: nil)
+      create(:commerce_store, account: account)
+
+      expect { connect }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
+      expect(Commerce::Store.exists?(old.id)).to be(true)
+    end
+
+    it 'replaces the keys of a store that is already counted' do
+      store = connect
+      new_credentials = { 'consumer_key' => "ck_#{'c' * 40}", 'consumer_secret' => "cs_#{'d' * 40}" }
+
+      expect(connection.rotate_credentials(store, new_credentials).reload.credentials).to eq(new_credentials)
+    end
+
+    it 'connects any number of stores when the plan sets no store limit' do
+      plan.update!(limits: { 'stores' => '' })
+      create_list(:commerce_store, 2, account: account)
+
+      expect(connect).to be_active
+    end
+
+    it 'connects nothing on a plan that allows no stores' do
+      plan.update!(limits: { 'stores' => 0 })
+
+      expect { connect }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
+    end
+  end
+
   describe 'lifecycle' do
     let!(:store) { connect }
     let!(:link) { create(:commerce_customer_link, store: store, account: account) }

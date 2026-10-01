@@ -58,14 +58,23 @@ describe('ProviderPicker', () => {
     expect(wrapper.emitted('select')).toEqual([['shopify']]);
   });
 
-  it('never offers a provider the installation switched off', () => {
+  it('lists every platform, and a platform the installation does not offer cannot be chosen', async () => {
     const wrapper = mountPicker(['woocommerce']);
+    const salla = wrapper.find('[data-test-id="commerce-provider-salla"]');
 
-    expect(
-      wrapper.find('[data-test-id="commerce-provider-salla"]').exists()
-    ).toBe(false);
-    expect(
-      wrapper.find('[data-test-id="commerce-provider-woocommerce"]').exists()
-    ).toBe(true);
+    expect(salla.exists()).toBe(true);
+    expect(salla.attributes('disabled')).toBeDefined();
+    expect(salla.text()).toContain('Not available yet');
+    expect(wrapper.text()).toContain(
+      'Platforms marked “Not available yet” aren’t offered on this workspace yet.'
+    );
+    await salla.trigger('click');
+    expect(wrapper.emitted('select')).toBeUndefined();
+
+    const woo = wrapper.find('[data-test-id="commerce-provider-woocommerce"]');
+    expect(woo.attributes('disabled')).toBeUndefined();
+    expect(woo.text()).toContain(
+      'Read/Write for live updates and order actions'
+    );
   });
 });

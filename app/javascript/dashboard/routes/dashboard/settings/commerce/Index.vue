@@ -44,6 +44,14 @@ const cartStores = computed(() =>
   stores.value.filter(store => store.abandoned_carts)
 );
 const providers = ref([]);
+// The plan's store limit (null: unlimited). Disconnected stores do not count, as on the server.
+const storeLimit = ref(null);
+const connectedCount = computed(
+  () => stores.value.filter(store => store.status !== 'disconnected').length
+);
+const limitReached = computed(
+  () => storeLimit.value !== null && connectedCount.value >= storeLimit.value
+);
 const isLoading = ref(true);
 const showPicker = ref(false);
 const showSallaDialog = ref(false);
@@ -63,6 +71,7 @@ const fetchStores = async () => {
     const response = await CommerceAPI.get();
     stores.value = response.data.payload;
     providers.value = response.data.providers;
+    storeLimit.value = response.data.store_limit?.limit ?? null;
   } catch (error) {
     useAlert(apiErrorMessage(error));
   } finally {
@@ -114,12 +123,9 @@ const openKeysDialog = () => {
   showStoreDialog.value = true;
 };
 
+// Every platform is listed first, so the merchant picks theirs and sees how it connects.
 const openAddStore = () => {
-  if (providers.value.length > 1) {
-    showPicker.value = true;
-  } else {
-    openKeysDialog();
-  }
+  showPicker.value = true;
 };
 
 // `store` is the store being reconnected, if any; `orderActions` reconnects a Shopify store for order actions.
@@ -271,6 +277,8 @@ onMounted(() => {
             size="sm"
             icon="i-lucide-plus"
             :label="t('COMMERCE.SETTINGS.ADD_STORE')"
+            :disabled="limitReached"
+            data-test-id="commerce-add-store"
             @click="openAddStore"
           />
         </template>
@@ -278,6 +286,35 @@ onMounted(() => {
     </template>
 
     <template #body>
+      <div
+        v-if="storeLimit !== null"
+        class="mb-4 flex flex-col gap-2"
+        data-test-id="commerce-store-plan"
+      >
+        <span class="text-label-small text-n-slate-11">
+          {{
+            t('COMMERCE.SETTINGS.PLAN.USAGE', {
+              used: connectedCount,
+              limit: storeLimit,
+            })
+          }}
+        </span>
+        <p
+          v-if="limitReached"
+          class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-n-amber-2 px-3 py-2 text-body-main text-n-amber-11"
+        >
+          {{ t('COMMERCE.SETTINGS.PLAN.LIMIT_REACHED', { limit: storeLimit }) }}
+          <router-link
+            :to="{
+              name: 'subscription_settings_index',
+              params: { accountId: route.params.accountId },
+            }"
+            class="font-medium underline"
+          >
+            {{ t('COMMERCE.SETTINGS.PLAN.VIEW_PLANS') }}
+          </router-link>
+        </p>
+      </div>
       <div
         v-if="!stores.length"
         class="flex min-h-60 flex-col items-center justify-center gap-4 rounded-xl border border-n-weak bg-n-solid-1 px-6 py-16 text-center"

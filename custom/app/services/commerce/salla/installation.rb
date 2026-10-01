@@ -82,16 +82,26 @@ class Commerce::Salla::Installation
     end
   end
 
-  # Connects the store once both halves are here: the tokens and an account's claim.
+  # Connects the store once both halves are here: the tokens and an account's claim. An account already at its plan's
+  # store limit gets nothing connected and its settings page says why (limit_reached); the tokens keep waiting, so after
+  # an upgrade a new code connects the store without reinstalling the app.
   def complete
     claim = JSON.parse(Redis::Alfred.get(claim_key) || 'null')
     pending = Redis::SecureStorage.get(tokens_key)
     return unless claim && pending
 
-    store = connect(Account.find(claim['account_id']), claim['user_id'], JSON.parse(pending))
-    Redis::SecureStorage.delete(tokens_key)
+    status, store_id = connected_or_limit_reached(claim, JSON.parse(pending))
+    Redis::SecureStorage.delete(tokens_key) if status == 'connected'
     Redis::Alfred.delete(claim_key)
-    Commerce::Salla::ConnectionCode.finish(store.account_id, 'connected', store_id: store.id)
+    Commerce::Salla::ConnectionCode.finish(claim['account_id'], status, store_id: store_id)
+  end
+
+  def connected_or_limit_reached(claim, pending)
+    ['connected', connect(Account.find(claim['account_id']), claim['user_id'], pending).id]
+  rescue Commerce::Error => e
+    raise unless e.code == 'STORE_LIMIT_REACHED'
+
+    ['limit_reached', nil]
   end
 
   def connect(account, user_id, pending)

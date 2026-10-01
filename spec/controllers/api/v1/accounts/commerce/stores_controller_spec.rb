@@ -77,6 +77,42 @@ RSpec.describe 'Commerce stores API', type: :request do
     end
   end
 
+  describe "the plan's store limit" do
+    let(:plan) { BillingPlan.create!(name: 'Commerce', features: ['lynomia_commerce'], limits: { 'stores' => 1 }) }
+
+    before do
+      BillingSubscription.create!(account: account, plan: plan, status: 'active', source: 'manual', quantity: 1)
+      create(:commerce_store, account: account, status: :disconnected, credentials: nil)
+    end
+
+    it 'lists how many stores are connected against the limit, without counting disconnected ones' do
+      create(:commerce_store, :salla, account: account)
+
+      get stores_path, headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['store_limit']).to eq('used' => 1, 'limit' => 1)
+    end
+
+    it 'answers STORE_LIMIT_REACHED and saves nothing when the account is at its limit' do
+      create(:commerce_store, account: account)
+
+      post stores_path, headers: admin.create_new_auth_token, as: :json,
+                        params: keys.merge(provider: 'woocommerce', base_url: 'https://shop.example.com')
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to eq('error' => { 'code' => 'STORE_LIMIT_REACHED' })
+      expect(account.commerce_stores.where(status: :active).count).to eq(1)
+    end
+
+    it 'shows no limit for an account without a plan' do
+      account.billing_subscription.destroy!
+
+      get stores_path, headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['store_limit']).to eq('used' => 0, 'limit' => nil)
+    end
+  end
+
   describe 'existing stores' do
     let!(:store) { create(:commerce_store, account: account, base_url: 'https://shop.example.com', external_store_id: 'shop.example.com') }
     let(:other_account) { create(:account) }

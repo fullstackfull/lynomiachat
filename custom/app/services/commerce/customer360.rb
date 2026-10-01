@@ -18,9 +18,10 @@ class Commerce::Customer360
   ACTIVE_STATUSES = %w[pending processing on_hold shipped].freeze
   NOT_PURCHASES = %w[draft failed cancelled].freeze
 
-  def initialize(conversation:, user:)
+  def initialize(conversation:, user:, force: false)
     @conversation = conversation
     @user = user
+    @force = force
   end
 
   def call
@@ -105,7 +106,7 @@ class Commerce::Customer360
     return base(store).merge(state: 'provider_unavailable') unless Commerce::Providers.enabled?(store.provider)
     return base(store).merge(state: 'needs_reauth') if store.needs_reauth?
 
-    panel = Commerce::ConversationPanel.new(store: store, conversation: @conversation, user: @user).show
+    panel = Commerce::ConversationPanel.new(store: store, conversation: @conversation, user: @user).show(force: @force)
     base(store).merge(panel.slice(:state, :link, :fetched_at, :stale, :error), orders: panel[:orders], orders_count: panel[:orders]&.size)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: @conversation.account).capture_exception

@@ -35,6 +35,8 @@
       "NO_ORDERS": "No orders yet.",
       "UPDATE_FAILED": "Couldn't refresh store data right now.",
       "LAST_UPDATED": "Last updated {time}",
+      "REFRESH": "Refresh",
+      "REFRESH_COOLDOWN": "Just refreshed. Try again in {seconds} s.",
       "ITEMS": "{count} item | {count} items",
       "VIEW_ORDER": "View order",
       "TRACK_SHIPMENT": "Track shipment",

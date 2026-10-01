@@ -17,8 +17,10 @@ class Commerce::ConversationPanel
     @user = user
   end
 
-  def show
-    match = Commerce::CustomerMatcher.new(store: @store, conversation: @conversation).call
+  # `force`: an agent's Refresh reads the store again even when its cached data is still fresh.
+  def show(force: false)
+    @force = force
+    match = Commerce::CustomerMatcher.new(store: @store, conversation: @conversation, force: force).call
     match.link ? linked(match.link) : unlinked(match)
   rescue Commerce::Error => e
     store_error!(e)
@@ -52,7 +54,7 @@ class Commerce::ConversationPanel
   private
 
   def linked(link)
-    orders = Commerce::Cache.fetch(@store, :orders, link.external_customer_id) do
+    orders = Commerce::Cache.fetch(@store, :orders, link.external_customer_id, force: @force) do
       provider.list_customer_orders(link.external_customer_id, limit: ORDER_LIMIT)
     end
     base.merge(state: 'linked', link: link_json(link), orders: orders.value, fetched_at: orders.fetched_at, stale: orders.stale,

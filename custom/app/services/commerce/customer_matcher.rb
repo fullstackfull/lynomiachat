@@ -10,17 +10,18 @@
 class Commerce::CustomerMatcher
   Result = Data.define(:link, :verified, :suggested, :fetched_at, :stale, :error)
 
-  def initialize(store:, conversation:)
+  def initialize(store:, conversation:, force: false)
     @store = store
     @conversation = conversation
     @contact = conversation.contact
+    @force = force
   end
 
   def call
     link = @store.customer_links.find_by(contact: @contact)
     return Result.new(link: link, verified: [], suggested: [], fetched_at: nil, stale: false, error: nil) if link
 
-    discovery = Commerce::Cache.fetch(@store, :candidates, identity_key) { discover }
+    discovery = Commerce::Cache.fetch(@store, :candidates, identity_key, force: @force) { discover }
     verified = discovery.value['verified'].map { |attrs| customer(attrs) }
     suggested = discovery.value['suggested'].map { |attrs| customer(attrs) }
     link = auto_link(verified.first) if verified.one?

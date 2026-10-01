@@ -3,6 +3,8 @@ import { createI18n } from 'vue-i18n';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import ar from 'dashboard/i18n/locale/ar/commerce.json';
 import CommerceAPI from 'dashboard/api/commerce';
+import { emitter } from 'shared/helpers/mitt';
+import { BUS_EVENTS } from 'shared/constants/busEvents';
 import CommercePanel from '../CommercePanel.vue';
 
 vi.mock('dashboard/api/commerce', () => ({
@@ -13,6 +15,7 @@ vi.mock('dashboard/api/commerce', () => ({
     searchCustomers: vi.fn(),
     linkCustomer: vi.fn(),
     unlinkCustomer: vi.fn(),
+    refresh: vi.fn(),
   },
 }));
 vi.mock('dashboard/composables/useAdmin', () => ({
@@ -75,14 +78,19 @@ const linkedPanel = {
   error: null,
 };
 
-const mountPanel = (locale = 'en') =>
-  mount(CommercePanel, {
-    props: { conversationId: 7 },
+// Panels listen on the app-wide emitter, so each test unmounts the ones it mounted.
+const mounted = [];
+const mountPanel = (locale = 'en') => {
+  const wrapper = mount(CommercePanel, {
+    props: { conversationId: 7, contactId: 3 },
     global: {
       plugins: [createI18n({ legacy: false, locale, messages: { en, ar } })],
       stubs,
     },
   });
+  mounted.push(wrapper);
+  return wrapper;
+};
 
 const respond = (stores, panel) => {
   CommerceAPI.getConversationStores.mockResolvedValue({
@@ -122,6 +130,7 @@ describe('CommercePanel', () => {
     vi.clearAllMocks();
     window.localStorage.clear();
   });
+  afterEach(() => mounted.splice(0).forEach(wrapper => wrapper.unmount()));
 
   it('explains when no store is connected', async () => {
     respond([], null);
@@ -338,6 +347,107 @@ describe('CommercePanel', () => {
       await flushPromises();
       expect(CommerceAPI.getOverview).not.toHaveBeenCalled();
       expect(CommerceAPI.getPanel).toHaveBeenCalled();
+    });
+  });
+
+  describe('live updates and refresh', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('refetches the open store view when this contact changes in that store, once per burst', async () => {
+      vi.useFakeTimers();
+      respond([{ ...store, linked: true }], linkedPanel);
+      mountPanel();
+      await flushPromises();
+      CommerceAPI.getPanel.mockClear();
+
+      emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, {
+        contact_id: 3,
+        store_id: 1,
+      });
+      emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, {
+        contact_id: 3,
+        store_id: 1,
+      });
+      emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, {
+        contact_id: 4,
+        store_id: 1,
+      });
+      emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, {
+        contact_id: 3,
+        store_id: 2,
+      });
+      vi.advanceTimersByTime(600);
+      await flushPromises();
+
+      expect(CommerceAPI.getPanel).toHaveBeenCalledTimes(1);
+    });
+
+    it('refetches the overview for any store of this contact', async () => {
+      vi.useFakeTimers();
+      respond(
+        [
+          { ...store, linked: true },
+          { ...sallaStore, linked: true },
+        ],
+        linkedPanel
+      );
+      CommerceAPI.getOverview.mockResolvedValue({ data: overview });
+      mountPanel();
+      await flushPromises();
+      CommerceAPI.getOverview.mockClear();
+
+      emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, {
+        contact_id: 3,
+        store_id: 2,
+      });
+      vi.advanceTimersByTime(600);
+      await flushPromises();
+
+      expect(CommerceAPI.getOverview).toHaveBeenCalledTimes(1);
+      expect(CommerceAPI.getPanel).not.toHaveBeenCalled();
+    });
+
+    it('reads the open view again after the socket reconnects', async () => {
+      respond([{ ...store, linked: true }], linkedPanel);
+      mountPanel();
+      await flushPromises();
+      CommerceAPI.getPanel.mockClear();
+
+      emitter.emit(BUS_EVENTS.WEBSOCKET_RECONNECT);
+      await flushPromises();
+
+      expect(CommerceAPI.getPanel).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes the open view on request, and explains the cooldown', async () => {
+      respond([{ ...store, linked: true }], linkedPanel);
+      const wrapper = mountPanel();
+      await flushPromises();
+
+      CommerceAPI.refresh.mockResolvedValueOnce({
+        data: { ...linkedPanel, orders: [order('30')] },
+      });
+      await wrapper.find('[data-test-id="commerce-refresh"]').trigger('click');
+      await flushPromises();
+      expect(CommerceAPI.refresh).toHaveBeenCalledWith(7, 1);
+      expect(wrapper.findAll('[data-test-id="commerce-order"]')).toHaveLength(
+        1
+      );
+
+      CommerceAPI.refresh.mockRejectedValueOnce({
+        response: {
+          status: 429,
+          data: { error: { code: 'RATE_LIMITED', retry_after: 25 } },
+        },
+      });
+      await wrapper.find('[data-test-id="commerce-refresh"]').trigger('click');
+      await flushPromises();
+      expect(
+        wrapper.find('[data-test-id="commerce-refresh-notice"]').text()
+      ).toBe('Just refreshed. Try again in 25 s.');
+      expect(wrapper.findAll('[data-test-id="commerce-order"]')).toHaveLength(
+        1
+      );
     });
   });
 });

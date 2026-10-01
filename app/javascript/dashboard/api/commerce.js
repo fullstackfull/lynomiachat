@@ -50,6 +50,15 @@ class CommerceAPI extends ApiClient {
     );
   }
 
+  // Reads the current view again from the stores (rate-limited server-side). Without a store: the Customer 360 overview.
+  refresh(conversationId, storeId = null) {
+    return axios.post(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/refresh`,
+      null,
+      { params: storeId ? { store_id: storeId } : {} }
+    );
+  }
+
   getPanel(conversationId, storeId, { signal } = {}) {
     return axios.get(
       `${this.conversationStoresUrl(conversationId)}/${storeId}`,

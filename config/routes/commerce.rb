@@ -16,6 +16,7 @@ namespace :api, defaults: { format: 'json' } do
           scope module: :conversations do
             namespace :commerce do
               resource :overview, only: [:show]
+              resource :refresh, only: [:create]
               resources :stores, only: [:index, :show] do
                 member do
                   get :customers

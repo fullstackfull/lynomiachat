@@ -1,8 +1,10 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useAbortableRequest } from 'dashboard/composables/useAbortableRequest';
+import { useEmitter } from 'dashboard/composables/emitter';
+import { BUS_EVENTS } from 'shared/constants/busEvents';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Select from 'dashboard/components-next/select/Select.vue';
@@ -15,6 +17,8 @@ import { useCommerceLabels } from './useCommerceLabels';
 
 const props = defineProps({
   conversationId: { type: [Number, String], required: true },
+  // The conversation's contact: live updates (commerce.customer.updated) for this contact refresh the open view.
+  contactId: { type: [Number, String], default: null },
 });
 
 const { t, locale } = useI18n();
@@ -102,11 +106,14 @@ const resetSearch = () => {
   searchError.value = '';
 };
 
-const loadPanel = async () => {
+// `silent`: a live update or reconnect refetches the open view without closing the agent's search or showing a spinner.
+const loadPanel = async ({ silent = false } = {}) => {
   if (!storeId.value) return;
-  isLoading.value = true;
-  loadError.value = '';
-  resetSearch();
+  isLoading.value = !silent;
+  if (!silent) {
+    loadError.value = '';
+    resetSearch();
+  }
   try {
     const response = await run(signal =>
       CommerceAPI.getPanel(props.conversationId, storeId.value, { signal })
@@ -119,9 +126,9 @@ const loadPanel = async () => {
   }
 };
 
-const loadOverview = async () => {
-  isLoading.value = true;
-  loadError.value = '';
+const loadOverview = async ({ silent = false } = {}) => {
+  isLoading.value = !silent;
+  if (!silent) loadError.value = '';
   try {
     const response = await run(signal =>
       CommerceAPI.getOverview(props.conversationId, { signal })
@@ -134,7 +141,57 @@ const loadOverview = async () => {
   }
 };
 
-const loadView = () => (isOverview.value ? loadOverview() : loadPanel());
+const loadView = options =>
+  isOverview.value ? loadOverview(options) : loadPanel(options);
+
+// Live updates: the backend sends only ids. Several events in a burst (one per store) make one refetch.
+const LIVE_UPDATE_DEBOUNCE_MS = 500;
+const DEFAULT_REFRESH_COOLDOWN_SECONDS = 30;
+let liveUpdateTimer = null;
+const onCustomerUpdated = data => {
+  if (!props.contactId || Number(data?.contact_id) !== Number(props.contactId))
+    return;
+  if (!isOverview.value && Number(data.store_id) !== Number(storeId.value))
+    return;
+  clearTimeout(liveUpdateTimer);
+  liveUpdateTimer = setTimeout(
+    () => loadView({ silent: true }),
+    LIVE_UPDATE_DEBOUNCE_MS
+  );
+};
+useEmitter(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, onCustomerUpdated);
+// Events sent while the socket was down are not replayed, so the open view is read again on reconnect.
+useEmitter(BUS_EVENTS.WEBSOCKET_RECONNECT, () => {
+  if (stores.value.length) loadView({ silent: true });
+});
+onBeforeUnmount(() => clearTimeout(liveUpdateTimer));
+
+const isRefreshing = ref(false);
+const refreshNotice = ref('');
+const refresh = async () => {
+  isRefreshing.value = true;
+  refreshNotice.value = '';
+  try {
+    const response = await CommerceAPI.refresh(
+      props.conversationId,
+      isOverview.value ? null : storeId.value
+    );
+    if (isOverview.value) overview.value = response.data;
+    else panel.value = response.data;
+  } catch (error) {
+    if (error?.response?.status === 429) {
+      refreshNotice.value = t('COMMERCE.PANEL.REFRESH_COOLDOWN', {
+        seconds:
+          error.response.data?.error?.retry_after ??
+          DEFAULT_REFRESH_COOLDOWN_SECONDS,
+      });
+    } else {
+      loadError.value = apiErrorMessage(error);
+    }
+  } finally {
+    isRefreshing.value = false;
+  }
+};
 
 const setView = value => {
   view.value = value;
@@ -244,33 +301,53 @@ watch(() => props.conversationId, loadStores, { immediate: true });
     </div>
 
     <template v-else>
-      <div
-        v-if="hasOverview"
-        class="flex gap-1"
-        role="tablist"
-        data-test-id="commerce-views"
-      >
+      <div class="flex items-center gap-1">
+        <div
+          v-if="hasOverview"
+          class="flex gap-1"
+          role="tablist"
+          data-test-id="commerce-views"
+        >
+          <Button
+            :label="t('COMMERCE.OVERVIEW.TAB')"
+            :variant="isOverview ? 'faded' : 'ghost'"
+            color="slate"
+            size="xs"
+            role="tab"
+            :aria-selected="isOverview"
+            data-test-id="commerce-view-overview"
+            @click="setView(VIEWS.OVERVIEW)"
+          />
+          <Button
+            :label="t('COMMERCE.OVERVIEW.STORE_TAB')"
+            :variant="isOverview ? 'ghost' : 'faded'"
+            color="slate"
+            size="xs"
+            role="tab"
+            :aria-selected="!isOverview"
+            data-test-id="commerce-view-store"
+            @click="setView(VIEWS.STORE)"
+          />
+        </div>
         <Button
-          :label="t('COMMERCE.OVERVIEW.TAB')"
-          :variant="isOverview ? 'faded' : 'ghost'"
+          :label="t('COMMERCE.PANEL.REFRESH')"
+          icon="i-lucide-refresh-cw"
+          variant="ghost"
           color="slate"
           size="xs"
-          role="tab"
-          :aria-selected="isOverview"
-          data-test-id="commerce-view-overview"
-          @click="setView(VIEWS.OVERVIEW)"
-        />
-        <Button
-          :label="t('COMMERCE.OVERVIEW.STORE_TAB')"
-          :variant="isOverview ? 'ghost' : 'faded'"
-          color="slate"
-          size="xs"
-          role="tab"
-          :aria-selected="!isOverview"
-          data-test-id="commerce-view-store"
-          @click="setView(VIEWS.STORE)"
+          class="ms-auto"
+          :is-loading="isRefreshing"
+          data-test-id="commerce-refresh"
+          @click="refresh"
         />
       </div>
+      <p
+        v-if="refreshNotice"
+        class="text-label-small text-n-slate-11"
+        data-test-id="commerce-refresh-notice"
+      >
+        {{ refreshNotice }}
+      </p>
 
       <template v-if="isOverview">
         <p v-if="loadError" class="text-body-main text-n-ruby-11">

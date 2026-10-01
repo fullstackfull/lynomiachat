@@ -35,6 +35,8 @@
       "NO_ORDERS": "لا توجد طلبات بعد.",
       "UPDATE_FAILED": "تعذر تحديث البيانات حاليًا",
       "LAST_UPDATED": "آخر تحديث: {time}",
+      "REFRESH": "تحديث",
+      "REFRESH_COOLDOWN": "تم التحديث للتو. حاول مجددًا بعد {seconds} ث.",
       "ITEMS": "عدد المنتجات: {count}",
       "VIEW_ORDER": "عرض الطلب",
       "TRACK_SHIPMENT": "تتبع الشحنة",

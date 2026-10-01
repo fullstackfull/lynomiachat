@@ -59,6 +59,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'conversation.unread_count_changed':
         this.onConversationUnreadCountChanged,
       'account.cache_invalidated': this.onCacheInvalidate,
+      'commerce.customer.updated': this.onCommerceCustomerUpdated,
       'account.enrichment_completed': this.onEnrichmentCompleted,
       'copilot.message.created': this.onCopilotMessageCreated,
       'voice_call.incoming': this.onVoiceCallIncoming,
@@ -340,6 +341,12 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onEnrichmentCompleted = () => {
     this.app.$store.dispatch('accounts/get', { silent: true });
+  };
+
+  // Lynomia Commerce: a contact's store data changed. The payload only has ids; an open Commerce section refetches.
+  // eslint-disable-next-line class-methods-use-this
+  onCommerceCustomerUpdated = data => {
+    emitter.emit(BUS_EVENTS.COMMERCE_CUSTOMER_UPDATED, data);
   };
 
   onCacheInvalidate = data => {

@@ -11,15 +11,15 @@ class Commerce::Cache
 
   Result = Data.define(:value, :fetched_at, :stale, :error)
 
-  def self.fetch(store, kind, identifier)
+  # `force` reads the store even when the entry is fresh (an agent's Refresh); the entry stays the fallback if it fails.
+  def self.fetch(store, kind, identifier, force: false)
     key = key(store, kind, identifier)
-    entry = JSON.parse(Redis::Alfred.get(key) || 'null')
-    return Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: false, error: nil) if fresh?(entry)
+    entry = read(key)
+    hit = !force && fresh?(entry)
+    Commerce::Metrics.event(hit ? 'commerce.cache.hit' : 'commerce.cache.miss', store_id: store.id, kind: kind, forced: force)
+    return Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: false, error: nil) if hit
 
-    value = yield.as_json
-    fetched_at = Time.current.utc.iso8601
-    Redis::Alfred.setex(key, { value: value, fetched_at: fetched_at }.to_json, KEEP_FOR)
-    Result.new(value: value, fetched_at: fetched_at, stale: false, error: nil)
+    write(key, yield.as_json)
   rescue Commerce::Error => e
     raise unless entry && STALE_FALLBACK_CODES.include?(e.code)
 
@@ -54,9 +54,17 @@ class Commerce::Cache
     "COMMERCE::V1::ACCOUNT::#{store.account_id}::STORE::#{store.id}"
   end
 
+  def self.read(key) = JSON.parse(Redis::Alfred.get(key) || 'null')
+
+  def self.write(key, value)
+    fetched_at = Time.current.utc.iso8601
+    Redis::Alfred.setex(key, { value: value, fetched_at: fetched_at }.to_json, KEEP_FOR)
+    Result.new(value: value, fetched_at: fetched_at, stale: false, error: nil)
+  end
+
   def self.fresh?(entry)
     entry.present? && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
   end
 
-  private_class_method :key, :prefix, :fresh?, :delete_matching
+  private_class_method :key, :prefix, :read, :write, :fresh?, :delete_matching
 end

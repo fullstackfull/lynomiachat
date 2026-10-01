@@ -9,10 +9,11 @@ module Commerce::Shopify::Oauth
   SHOP_QUERY = 'query LynomiaShop { shop { id name myshopifyDomain } }'.freeze
 
   # Where the administrator's browser is sent to authorize the app. Without grant_options[]=per-user the token is an
-  # offline token, the only kind background reads can use. `state` is Commerce::OauthState's.
-  def self.authorize_url(shop, state)
+  # offline token, the only kind background reads can use. `state` is Commerce::OauthState's; `scopes` are Config::SCOPES,
+  # or Config::ACTION_SCOPES when the administrator asked for order actions.
+  def self.authorize_url(shop, state, scopes = Commerce::Shopify::Config::SCOPES)
     config = Commerce::Shopify::Config
-    query = { client_id: config.client_id, scope: config::SCOPES.join(','), redirect_uri: config.redirect_uri, state: state }
+    query = { client_id: config.client_id, scope: scopes.join(','), redirect_uri: config.redirect_uri, state: state }
     "https://#{shop}/admin/oauth/authorize?#{URI.encode_www_form(query)}"
   end
 

@@ -33,7 +33,7 @@ RSpec.describe 'Conversation commerce API', type: :request do
       get path, headers: agent.create_new_auth_token, as: :json
 
       expect(response.parsed_body['payload']).to eq([{ 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
-                                                       'linked' => false }])
+                                                       'linked' => false, 'actions' => false, 'carts' => false }])
     end
 
     it 'is refused to agents who cannot see the conversation' do
@@ -71,8 +71,9 @@ RSpec.describe 'Conversation commerce API', type: :request do
 
         expect(response.parsed_body['payload']).to eq([
                                                         { 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
-                                                          'linked' => false },
-                                                        { 'id' => salla.id, 'name' => 'Salla Demo', 'provider' => 'salla', 'linked' => false }
+                                                          'linked' => false, 'actions' => false, 'carts' => false },
+                                                        { 'id' => salla.id, 'name' => 'Salla Demo', 'provider' => 'salla', 'linked' => false,
+                                                          'actions' => false, 'carts' => false }
                                                       ])
       end
     end
@@ -166,12 +167,12 @@ RSpec.describe 'Conversation commerce API', type: :request do
 
       delete "#{path}/#{store.id}/link", headers: agent.create_new_auth_token, as: :json
       expect(response).to have_http_status(:ok)
-      expect(store.customer_links.count).to eq(0)
+      expect(store.customer_links.sole).to have_attributes(match_source: 'suppressed', confirmed_by: agent)
 
       if defined?(Enterprise::AuditLog)
         expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').order(:id).pluck(:comment, :audited_changes))
           .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
-                  ['commerce.customer_link_removed', { 'match_source' => 'manual' }]])
+                  ['commerce.customer_link_removed', { 'match_source' => %w[manual suppressed] }]])
       end
     end
 

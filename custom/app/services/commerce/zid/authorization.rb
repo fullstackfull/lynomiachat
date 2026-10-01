@@ -35,7 +35,7 @@ class Commerce::Zid::Authorization
   def reauthorize(store, credentials, identity)
     previous = store.status
     store.update!(credentials: credentials, status: store.disabled? ? :disabled : :active,
-                  metadata: store.metadata.merge('verified_at' => Time.current.iso8601, 'time_zone' => identity[:time_zone]))
+                  metadata: store.metadata.except('write_access').merge('verified_at' => Time.current.iso8601, 'time_zone' => identity[:time_zone]))
     Commerce::AuditTrail.record('commerce.zid.reauthorized', auditable: store, user: @user, changes: { status: [previous, store.status] })
     store
   end

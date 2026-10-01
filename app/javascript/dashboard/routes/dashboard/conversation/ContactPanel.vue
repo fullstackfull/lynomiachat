@@ -311,7 +311,10 @@ onMounted(() => {
               compact
               @toggle="value => toggleSidebarUIState('is_commerce_open', value)"
             >
-              <CommercePanel :conversation-id="conversationId" />
+              <CommercePanel
+                :conversation-id="conversationId"
+                :contact-id="contactId"
+              />
             </AccordionItem>
           </div>
           <div v-else-if="element.name === 'contact_notes'">

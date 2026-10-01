@@ -1,0 +1,4 @@
+# ESLint (pnpm eslint), commit f842e12ec
+✖ 444 problems (0 errors, 444 warnings)
+
+lines mentioning commerce: 0

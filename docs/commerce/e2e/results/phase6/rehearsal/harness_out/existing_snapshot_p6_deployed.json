@@ -1,0 +1,25 @@
+{
+  "A": {
+    "provider": "whatsapp_cloud",
+    "provider_config_keys": [
+      "api_key",
+      "business_account_id",
+      "phone_number_id",
+      "webhook_verify_token"
+    ],
+    "source": null,
+    "api_key_readable": true
+  },
+  "B": {
+    "provider": "whatsapp_cloud",
+    "provider_config_keys": [
+      "api_key",
+      "business_account_id",
+      "phone_number_id",
+      "source",
+      "webhook_verify_token"
+    ],
+    "source": "embedded_signup",
+    "api_key_readable": true
+  }
+}

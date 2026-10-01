@@ -5,13 +5,16 @@
 # - Every request goes through SsrfFilter: the host is resolved, private/loopback/link-local/metadata addresses are
 #   refused and the connection is pinned to the checked IP (no DNS rebinding between check and connect).
 # - Redirects are never followed: a 3xx is an INVALID_STORE_URL error, so nothing can bounce us to another host.
-# - Bounded: connect 3 s, each read 8 s, whole body 10 s and 5 MB. One retry, GET only, for a dropped connection or a
-#   502/503/504; timeouts are not retried so a slow store costs at most one timeout. POST and DELETE are never retried.
+# - Bounded: connect 3 s, each read 8 s (25 s for an order action), whole body 10 s and 5 MB. One retry, GET only, for a
+#   dropped connection or a 502/503/504; timeouts are not retried so a slow store costs at most one timeout. POST, PUT and
+#   DELETE are never retried.
 # - Hosts listed in COMMERCE_TRUSTED_STORE_HOSTS (development/staging stores on internal addresses) skip the address
 #   check only; they get the same limits and no redirects either.
 # - Errors are Commerce::Error codes. Credentials, query strings and response bodies are never logged or raised.
 class Commerce::HttpClient
   HTTP_OPTIONS = { open_timeout: 3, read_timeout: 8, write_timeout: 8, ssl_timeout: 3 }.freeze
+  # An order action may wait on the store's payment gateway: its answer gets longer than a read's.
+  WRITE_READ_TIMEOUT = 25
   BODY_DEADLINE = 10
   MAX_BODY_BYTES = 5.megabytes
   RETRYABLE_REASONS = %w[http_502 http_503 http_504].freeze
@@ -47,12 +50,18 @@ class Commerce::HttpClient
   # transport failure raises Commerce::Error with reason 'not_sent' when the request provably never reached the server
   # (DNS, refused connection, connect timeout) and 'unknown_outcome' when the server may have processed it.
   def post_form(path, form)
-    post_once(path, URI.encode_www_form(form), 'application/x-www-form-urlencoded')
+    send_once(:post, path, URI.encode_www_form(form), 'application/x-www-form-urlencoded')
   end
 
   # The same single request with a JSON body (Shopify's token endpoint).
   def post_json_status(path, body)
-    post_once(path, body.to_json, 'application/json')
+    send_once(:post, path, body.to_json, 'application/json')
+  end
+
+  # One order action (POST or PUT with a JSON body), never retried: a refund must never be sent twice. Same answer and
+  # errors as #post_form ([status, parsed body or nil]; 'not_sent' or 'unknown_outcome'), so the provider classifies it.
+  def write_json(verb, path, body)
+    send_once(verb, path, body.to_json, 'application/json', read_timeout: WRITE_READ_TIMEOUT)
   end
 
   # One JSON POST, never retried (a webhook subscription could be created twice). Returns the parsed body of a 2xx answer.
@@ -70,8 +79,8 @@ class Commerce::HttpClient
 
   private
 
-  def post_once(path, body, content_type)
-    response = perform(:post, build_uri(path), body, content_type)
+  def send_once(verb, path, body, content_type, read_timeout: nil)
+    response = perform(verb, build_uri(path), body, content_type, read_timeout: read_timeout)
     [response.code.to_i, parse_json(strict: false)]
   rescue *NOT_SENT_ERRORS
     raise Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent')
@@ -115,9 +124,10 @@ class Commerce::HttpClient
     raise Commerce::Error, 'TIMEOUT'
   end
 
-  def perform(verb, uri, body = nil, content_type = nil)
+  def perform(verb, uri, body = nil, content_type = nil, read_timeout: nil)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     @body = +''
+    @http_options = read_timeout ? HTTP_OPTIONS.merge(read_timeout: read_timeout) : HTTP_OPTIONS
     request_headers = headers(content_type)
     response = if Commerce::StoreUrl.trusted_host?(uri.host)
                  fetch_trusted(verb, uri, body, request_headers)
@@ -130,14 +140,14 @@ class Commerce::HttpClient
   end
 
   def fetch(verb, uri, body, headers)
-    SsrfFilter.public_send(verb, uri, max_redirects: 0, allow_unfollowed_redirects: true, http_options: HTTP_OPTIONS,
+    SsrfFilter.public_send(verb, uri, max_redirects: 0, allow_unfollowed_redirects: true, http_options: @http_options,
                                       headers: headers, body: body) do |response|
       read_body(response)
     end
   end
 
   def fetch_trusted(verb, uri, body, headers)
-    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', **HTTP_OPTIONS) do |http|
+    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https', **@http_options) do |http|
       req = Net::HTTP.const_get(verb.to_s.capitalize).new(uri)
       headers.each { |name, value| req[name] = value }
       req.body = body if body
@@ -192,6 +202,6 @@ class Commerce::HttpClient
 
   def log(verb, uri, status, started)
     elapsed = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
-    Rails.logger.info("[Commerce:#{@log_tag}] #{verb.upcase} #{uri.path} status=#{status} ms=#{elapsed}")
+    Commerce::Metrics.event('commerce.provider.request', client: @log_tag, method: verb.upcase, path: uri.path, status: status, ms: elapsed)
   end
 end

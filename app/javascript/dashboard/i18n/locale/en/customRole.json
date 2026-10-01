@@ -38,7 +38,8 @@
       "CONVERSATION_PARTICIPATING_MANAGE": "Manage participating conversations and those assigned to them",
       "CONTACT_MANAGE": "Manage contacts",
       "REPORT_MANAGE": "Manage reports",
-      "KNOWLEDGE_BASE_MANAGE": "Manage knowledge base"
+      "KNOWLEDGE_BASE_MANAGE": "Manage knowledge base",
+      "COMMERCE_ORDER_MANAGE": "Manage store orders (status changes, resend store emails)"
     },
     "FORM": {
       "NAME": {

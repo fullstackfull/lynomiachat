@@ -1,0 +1,59 @@
+{
+  "overview_browser_ms": {
+    "samples": [
+      2232,
+      1793,
+      2175,
+      1982,
+      1688
+    ],
+    "p50": 1982,
+    "p95": 2232
+  },
+  "customer360_server_ms": {
+    "samples": 12,
+    "p50": 38,
+    "p95": 343
+  },
+  "cache": {
+    "hits": 76,
+    "misses": 19,
+    "hit_ratio": 0.8
+  },
+  "provider_requests": 74,
+  "provider_errors": 1,
+  "webhooks": {
+    "accepted": 21,
+    "rejected": 7,
+    "duplicate": 2
+  },
+  "refresh_coalesced": 10,
+  "live_update_ms": {
+    "woocommerce-real": 7687,
+    "zid": 700,
+    "shopify": 690,
+    "salla": 787,
+    "woocommerce-created": 5497
+  },
+  "simulated_requests": {
+    "salla": {
+      "GET /oauth2/user/info": 1,
+      "GET /admin/v2/customers": 1,
+      "GET /admin/v2/orders": 4,
+      "GET /admin/v2/shipments": 20,
+      "GET /admin/v2/orders (outage)": 4
+    },
+    "zid": {
+      "POST /oauth/token": 1,
+      "GET /v1/managers/account/profile": 1,
+      "DELETE /v1/managers/webhooks": 1,
+      "POST /v1/managers/webhooks": 3,
+      "GET /v1/managers/store/orders": 7,
+      "GET /v1/managers/store/orders/24/view": 1
+    },
+    "shopify": {
+      "POST /admin/oauth/access_token": 2,
+      "POST /admin/api/2026-07/graphql.json": 6
+    }
+  }
+}

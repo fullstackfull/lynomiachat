@@ -35,6 +35,8 @@
       "NO_ORDERS": "No orders yet.",
       "UPDATE_FAILED": "Couldn't refresh store data right now.",
       "LAST_UPDATED": "Last updated {time}",
+      "REFRESH": "Refresh",
+      "REFRESH_COOLDOWN": "Just refreshed. Try again in {seconds} s.",
       "ITEMS": "{count} item | {count} items",
       "VIEW_ORDER": "View order",
       "TRACK_SHIPMENT": "Track shipment",
@@ -47,6 +49,49 @@
       },
       "CANCEL": "Cancel",
       "ORDER_NUMBER": "#{number}"
+    },
+    "OVERVIEW": {
+      "TAB": "Overview",
+      "STORE_TAB": "Store",
+      "STORES": "Stores",
+      "STORES_VALUE": "{count} connected",
+      "LINKED_VALUE": "{count} linked",
+      "ORDERS": "Orders",
+      "ORDERS_VALUE": "{count} visible",
+      "ORDERS_HINT": "Latest orders each store returned, not a lifetime total",
+      "LAST_PURCHASE": "Last purchase",
+      "NO_ORDERS": "No orders found",
+      "SPEND": "Spend",
+      "SPEND_HINT": "Paid orders among those shown, per currency",
+      "NO_SPEND": "No paid orders",
+      "ACTIVITY": "{active} active · {shipped} shipped",
+      "RECENT_ORDERS": "Recent orders",
+      "STORES_SECTION": "Stores",
+      "NOT_LINKED": "Customer not linked",
+      "NOT_LINKED_HINT": "Open a store to find and link the customer.",
+      "PARTIAL": "Some stores couldn't be refreshed",
+      "UPDATED": "Updated {time}",
+      "STALE": "Showing data from {time}",
+      "ORDER_STORE": "{store} · {provider}",
+      "OPEN_STORE": "Open store",
+      "STATE": {
+        "LINKED": "Linked",
+        "NOT_LINKED": "Customer not linked",
+        "NEEDS_REAUTH": "Store needs re-authorization",
+        "PROVIDER_UNAVAILABLE": "Provider currently unavailable",
+        "UNAVAILABLE": "Couldn't refresh"
+      }
+    },
+    "ORDER_SEARCH": {
+      "TOGGLE": "Find an order",
+      "PLACEHOLDER": "Order number",
+      "SEARCH": "Search",
+      "HINT": "Searches by the exact order number. An order found can belong to any customer of the store.",
+      "INVALID": "Enter an order number using digits only.",
+      "RATE_LIMITED": "Too many searches. Try again in {seconds} s.",
+      "NO_RESULTS": "No order with this number",
+      "UNSUPPORTED": "{store}: order search isn't available for this store",
+      "UNAVAILABLE": "{store}: couldn't be searched"
     },
     "ORDER_STATUS": {
       "PENDING": "Pending payment",
@@ -95,7 +140,25 @@
       "PROVIDER_DISABLED": "This store platform is turned off on this installation.",
       "PROTECTED_DATA_NOT_APPROVED": "Shopify has not approved Lynomia to read this store's customer data (email and phone) yet, so customers can't be matched.",
       "LEGACY_SHOPIFY_CONNECTED": "This Shopify store is already connected through this account's Shopify integration. Disconnect it there first, then connect it here.",
-      "GENERIC": "Something went wrong. Try again."
+      "GENERIC": "Something went wrong. Try again.",
+      "ACTIONS_DISABLED": "Order actions are off for this store.",
+      "ACTION_UNAVAILABLE": "This action isn’t possible for the order right now.",
+      "ACTION_IN_PROGRESS": "Another action on this order is still being processed.",
+      "ORDER_CHANGED": "The order changed in the store after you opened it. Nothing was sent. Review it again.",
+      "INVALID_AMOUNT": "The amount isn’t valid for this order. Nothing was sent.",
+      "IDEMPOTENCY_CONFLICT": "This confirmation was already used. Start again.",
+      "WRITE_ACCESS_DENIED": "The store’s credentials can’t change orders. An administrator can replace them.",
+      "NOT_APPLIED": "The store shows the change wasn’t made. You can try again.",
+      "PROVIDER_REJECTED": "The store refused this change.",
+      "REFUND_DECLINED": "The payment gateway refused the refund. No money was sent.",
+      "INVALID_REQUEST": "This request isn’t valid.",
+      "UNKNOWN_OUTCOME": "The store didn’t answer in time. Lynomia is checking the order with the store.",
+      "RECOVERY_DISABLED": "Abandoned carts are off for this store.",
+      "RECOVERY_COOLDOWN": "A recovery message for this cart was sent recently.",
+      "CANNOT_REPLY": "This conversation can’t receive a free-form message now (the customer last wrote more than 24 hours ago). Nothing was prepared: reach the customer with an approved template instead.",
+      "INVALID_RECOVERY_URL": "The store’s recovery link isn’t safe to send. Nothing was prepared.",
+      "CART_NOT_ABANDONED": "This cart was completed or has expired. Nothing was prepared.",
+      "NOT_SENT": "Lynomia didn’t send this action to the store. Nothing changed; you can try again."
     },
     "URL_ERRORS": {
       "INVALID": "Enter the store address, for example https://shop.example.com.",
@@ -108,11 +171,15 @@
     },
     "SETTINGS": {
       "HEADER": "Commerce",
-      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Read-only: Lynomia never changes anything in your store.",
+      "DESCRIPTION": "Connect your stores so agents see a customer's orders next to the conversation. Lynomia never changes your orders, customers or products.",
       "LOADING": "Loading stores…",
       "ADD_STORE": "Add store",
       "EMPTY": "No store connected yet.",
       "VERIFIED": "Verified {time}",
+      "REALTIME": {
+        "ACTIVE": "Live order updates on",
+        "READ_ONLY_KEY": "Live order updates off: this key is read-only. Replace it with a Read/Write key to turn them on."
+      },
       "STATUS": {
         "ACTIVE": "Active",
         "DISABLED": "Disabled",
@@ -135,7 +202,7 @@
         "CONSUMER_SECRET": "Consumer secret",
         "NAME": "Display name (optional)",
         "NAME_PLACEHOLDER": "Main store",
-        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key with Read permission for an administrator, and paste it here.",
+        "READ_ONLY_HINT": "In WooCommerce go to Settings → Advanced → REST API, add a key for an administrator, and paste it here. A Read key is enough to show orders. A Read/Write key also turns on live order updates: Lynomia then only adds its own webhooks to the store.",
         "KEYS_HINT": "Keys are encrypted and never shown again.",
         "CONNECT": "Test and connect",
         "SAVE": "Test and save",
@@ -191,7 +258,9 @@
         "CONNECT": "Connect with Shopify",
         "REAUTH_HINT": "Shopify needs you to authorize the Lynomia Commerce app again. Use Reconnect.",
         "PROVIDER_OFF": "Shopify is turned off on this installation. The store is kept but not read.",
-        "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify."
+        "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify.",
+        "ACTIONS_TITLE": "Reconnect Shopify to enable order actions",
+        "ACTIONS_DESCRIPTION": "Shopify will ask you to give the Lynomia Commerce app write access to orders, for cancellations and refunds. Until you approve it, the store stays read-only and keeps working."
       },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",
@@ -201,7 +270,145 @@
       },
       "CONNECTED": "Store connected.",
       "UPDATED": "Store updated.",
-      "DISCONNECTED": "Store disconnected."
+      "DISCONNECTED": "Store disconnected.",
+      "CAPABILITIES": {
+        "READ": "Read-only Commerce: on",
+        "ORDER_ACTIONS_ON": "Order actions: on",
+        "ORDER_ACTIONS_OFF": "Order actions: off",
+        "ORDER_ACTIONS_READ_ONLY_KEY": "Order actions require a Read/Write {provider} API key.",
+        "ORDER_ACTIONS_MISSING_SCOPE": "Additional {provider} permissions are required. Reconnect {provider} to enable order actions.",
+        "ORDER_ACTIONS_SWITCHED_OFF": "Order actions are switched off on this installation.",
+        "ORDER_ACTIONS_HINT": "Refunds and cancellations stay limited to administrators.",
+        "TURN_ON": "Turn on order actions",
+        "TURN_OFF": "Turn off order actions",
+        "RECONNECT_FOR_ACTIONS": "Reconnect for order actions"
+      },
+      "CART_QUEUE": {
+        "TITLE": "Abandoned carts",
+        "DESCRIPTION": "Recent abandoned carts of your stores, carts of linked contacts first. Prepare a recovery message from the contact’s conversation: nothing is sent automatically.",
+        "ALL_STORES": "All stores",
+        "ALL_AGES": "Any age",
+        "AGE_24H": "Last 24 hours",
+        "AGE_7D": "Last 7 days",
+        "AGE_30D": "Last 30 days",
+        "ALL_STATUSES": "Any status",
+        "STATUS_ABANDONED": "Abandoned",
+        "STATUS_RECOVERED": "Recovered",
+        "ALL_CONTACTS": "Linked or not",
+        "LINKED": "Linked contact",
+        "UNLINKED": "No linked contact",
+        "EMPTY": "No abandoned cart matches.",
+        "OPEN_CONTACT": "Open contact",
+        "LOADING": "Reading abandoned carts…"
+      }
+    },
+    "ACTIONS": {
+      "MENU": "Order actions",
+      "RATE_LIMITED": "Too many actions were requested on this order. Try again in {seconds} s.",
+      "TITLE": "Order #{number}",
+      "STORE_LINE": "{store} · {provider}",
+      "LOADING": "Reading the order from the store…",
+      "NONE": "No action is possible on this order right now.",
+      "TYPES": {
+        "UPDATE_ORDER_STATUS": "Change status",
+        "CANCEL_ORDER": "Cancel order",
+        "REFUND_FULL": "Refund in full",
+        "REFUND_PARTIAL": "Partial refund",
+        "RESEND_INVOICE": "Resend order details",
+        "RESEND_PAYMENT_LINK": "Resend payment link",
+        "UPDATE_SHIPPING": "Update shipping"
+      },
+      "UNAVAILABLE": {
+        "PERMISSION_DENIED": "You don’t have permission for this.",
+        "ACTION_IN_PROGRESS": "Another action on this order is still being processed.",
+        "PAID_REFUND_FIRST": "The order is paid: refund it first.",
+        "ALREADY_CANCELLED": "The order is already cancelled.",
+        "NOT_PAID": "The order isn’t paid.",
+        "NOTHING_REFUNDABLE": "Nothing is left to refund.",
+        "ORDER_STATE": "Not possible in the order’s current status.",
+        "NO_EMAIL": "The order has no email address.",
+        "UNSUPPORTED": "Not supported for this store.",
+        "OTHER": "Not available right now."
+      },
+      "REFUND_REASONS": {
+        "CUSTOMER_REQUEST": "Customer request",
+        "DUPLICATE": "Duplicate order",
+        "DAMAGED": "Damaged item",
+        "NOT_RECEIVED": "Item not received",
+        "OTHER": "Other"
+      },
+      "CANCEL_REASONS": {
+        "CUSTOMER_REQUEST": "Customer request",
+        "INVENTORY": "Out of stock",
+        "FRAUD": "Suspected fraud",
+        "PAYMENT_DECLINED": "Payment declined",
+        "OTHER": "Other"
+      },
+      "FORM": {
+        "AMOUNT": "Amount",
+        "AMOUNT_HINT": "Up to {amount}",
+        "REASON": "Reason",
+        "NEW_STATUS": "New status",
+        "INVALID_AMOUNT": "Enter an amount above 0 and up to {amount}.",
+        "REVIEW": "Review",
+        "BACK": "Back",
+        "CLOSE": "Close",
+        "CONFIRM": "Confirm"
+      },
+      "REVIEW": {
+        "HEADING": "Check before confirming",
+        "STORE": "Store",
+        "ORDER": "Order",
+        "ACTION": "Action",
+        "AMOUNT": "Amount"
+      },
+      "CONSEQUENCES": {
+        "REFUND_GATEWAY": "{amount} will be sent back to the customer through {gateway}. This can’t be undone.",
+        "REFUND_GATEWAY_UNNAMED": "{amount} will be sent back to the customer through the order’s payment method. This can’t be undone.",
+        "REFUND_MANUAL": "The store will record a refund of {amount}. No money is sent to the customer: refund the payment yourself.",
+        "CANCEL": "The order will be cancelled and its items returned to stock. Cancelling does not refund any payment.",
+        "CANCEL_NO_RESTOCK": "The order will be cancelled. Cancelling does not refund any payment.",
+        "STATUS": "The order’s status changes from {from} to {to}. The store may email the customer about it.",
+        "RESEND_INVOICE": "The store emails its order details to the order’s billing email.",
+        "RESEND_PAYMENT_LINK": "The store emails the order details, with its payment link, to the order’s billing email."
+      },
+      "RESULT": {
+        "PROCESSING": "Sending to the store…",
+        "SUCCEEDED": "Done. The order shown is now read from the store.",
+        "FAILED": "The store didn’t make this change.",
+        "UNKNOWN": "The store didn’t answer in time. Lynomia is checking the order with the store: don’t try again until it does.",
+        "UNRESOLVED": "Lynomia couldn’t confirm the result with the store. Check the order in the store before trying again.",
+        "STILL_PROCESSING": "Still being processed. The order will update when the store answers.",
+        "EARLIER_UNRESOLVED": "An earlier action on this order couldn’t be confirmed. Check the order in the store before continuing."
+      },
+      "DONE_ALERT": "Order #{number} updated in {store}."
+    },
+    "CARTS": {
+      "TITLE": "Abandoned carts",
+      "STORE_LINE": "{store} · {provider}",
+      "ITEMS": "{count} item | {count} items",
+      "VIEW": "View cart",
+      "HIDE": "Hide cart",
+      "ITEM": "Item",
+      "PREPARE": "Prepare recovery message",
+      "PREPARED": "Recovery message added to the reply box. Review it and send it yourself.",
+      "SENT": "Recovery message sent {time}",
+      "PREPARED_AT": "Recovery message prepared {time}, not sent yet",
+      "COOLDOWN": "Another recovery message is possible {time}.",
+      "OVERRIDE": "Prepare anyway",
+      "MATCH": {
+        "LINKED_CUSTOMER": "Linked store customer",
+        "VERIFIED_PHONE": "Matched by this conversation’s verified phone",
+        "VERIFIED_EMAIL": "Matched by this conversation’s verified email"
+      },
+      "UNAVAILABLE": "Couldn’t read {store}’s abandoned carts.",
+      "TEMPLATE": {
+        "WITH_NAME": "Hi {name}, you left {count} items in your cart at {store} ({total}). You can complete your order here: {url}",
+        "WITHOUT_NAME": "Hello, you left {count} items in your cart at {store} ({total}). You can complete your order here: {url}"
+      },
+      "STORE_AND_AGE": "{store} · {provider} · left {time}",
+      "ITEM_LINE": "{quantity} × {name}",
+      "TOTAL_AND_ITEMS": "{total} · {items}"
     }
   }
 }

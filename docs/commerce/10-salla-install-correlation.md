@@ -145,4 +145,4 @@ touched. Waiting tokens and claims for the merchant are deleted too.
   account's progress stays `claimed` until it expires.
 - **Not yet verified against a live Salla store** (`REAL_SALLA_UAT = BLOCKED`, doc 13): that saving the settings form
   on an installed app sends `app.settings.updated` with the field's `id` as its key, and the exact shape of `domain` in
-  `user/info` for stores without a custom domain.
+  `user/info` for stores without a custom domain. Phase 6 status: doc 23 §9 (S1, S8).

@@ -74,3 +74,10 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# executed every 10 minutes
+# settles Lynomia Commerce order actions whose jobs were lost (reads stores only) and drops old recovery message records
+commerce_action_sweep_job:
+  cron: '*/10 * * * *'
+  class: 'Commerce::ActionSweepJob'
+  queue: scheduled_jobs

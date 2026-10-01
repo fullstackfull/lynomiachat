@@ -12,7 +12,7 @@ class Commerce::StoreConnection
     store = @account.commerce_stores.new(provider: provider, base_url: Commerce::StoreUrl.parse(base_url).to_s, created_by: @user)
     adapter = Commerce::Providers.for(store, credentials: credentials)
     adapter.health
-    attach(store, adapter.store_identity, credentials, name: name)
+    attach(store, adapter.store_identity, credentials, name: name).tap { |connected| register_webhooks(connected) }
   end
 
   # Saves a connection whose store identity and credentials are already verified: by the health check in #connect, or
@@ -39,6 +39,7 @@ class Commerce::StoreConnection
     store.update!(credentials: credentials, status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
     Commerce::Cache.purge(store)
     audit('commerce.credentials_rotated', store, status: [previous_status, store.status])
+    register_webhooks(store)
     store
   end
 
@@ -49,7 +50,29 @@ class Commerce::StoreConnection
     Commerce::Providers.for(store).health
     store.update!(status: :active, metadata: store.metadata.merge('verified_at' => Time.current.iso8601))
     audit('commerce.store_enabled', store, status: %w[disabled active])
+    register_webhooks(store)
     store
+  end
+
+  # An administrator's opt-in to order actions (docs/commerce/28-commerce-actions-architecture.md). Turning them on needs
+  # the installation to offer the provider's actions and credentials that can write: a Read key is never upgraded here,
+  # the administrator replaces it. Turning them off always works.
+  def change_order_actions(store, enabled)
+    Commerce::OrderActions.new(store: store, contact_id: nil, user: @user, account_user: nil).store_blocker!(opt_in: false) if enabled
+    previous = store.settings['order_actions'] == true
+    store.update!(settings: store.settings.merge('order_actions' => enabled))
+    audit('commerce.order_actions_changed', store, order_actions: [previous, enabled])
+    store
+  end
+
+  # The store answered that its credentials no longer work: it is flagged for an administrator and its cached data is
+  # dropped, so nothing is shown from it until it is authorized again.
+  def credentials_rejected(store)
+    return unless store.active?
+
+    store.update!(status: :needs_reauth)
+    Commerce::Cache.purge(store)
+    audit('commerce.store_needs_reauth', store, {})
   end
 
   def disable(store)
@@ -82,6 +105,10 @@ class Commerce::StoreConnection
     Commerce::Providers.for(store).release if store.credentials.present?
   rescue Commerce::Error => e
     Rails.logger.warn("[Commerce:#{store.provider}] release failed store=#{store.id} code=#{e.code}")
+  end
+
+  def register_webhooks(store)
+    Commerce::WebhookRegistrationJob.perform_later(store.id) if Commerce::Providers::REGISTRY.fetch(store.provider).constantize.registers_webhooks?
   end
 
   def ensure_encryption!

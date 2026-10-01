@@ -1,0 +1,13 @@
+GET /app/login -> 200
+GET /api -> 200
+GET /super_admin/sign_in -> 200
+GET /vite/assets/ArticleEditor-BftlcPkO.js -> 200
+POST /webhooks/shopify_commerce -> 401
+POST /webhooks/salla -> 401
+POST /webhooks/zid/1 -> 401
+GET /commerce/shopify/callback -> 302
+GET /commerce/zid/callback -> 302
+POST /webhooks/shopify -> 404
+worker: 1 boot lines, running=true
+rollback B: /app/login 200, /webhooks/shopify_commerce 404
+previous image over Commerce data: /app/login 200, /api 200, /webhooks/shopify_commerce 404

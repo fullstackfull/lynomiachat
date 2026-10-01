@@ -1,7 +1,12 @@
 # Lynomia Commerce: provider capability matrix
 
-- **Sources:** official docs (see the per-provider URLs in `02-provider-contracts.md`) and this repository's code. `VERIFY` = not confirmed on the official page (`00` §0).
+- **Sources:** official docs (see the per-provider URLs in `02-provider-contracts.md`) and this repository's code. `VERIFY` = not confirmed on the official page (`00` §0). Every item's Phase 6 status is in doc 23 §9.
 - **"Existing code"** refers to Lynomia/Chatwoot 4.18 as it stands today.
+- **Updated for Phase 9–10** (order actions, abandoned carts and sales recovery: section "Phase 9–10" at the end; docs
+  28–34). Production: WooCommerce read and realtime GO, its order actions GO per store opt-in with a Read/Write key;
+  Salla, Zid and Shopify stay off (NO-GO) until their real UAT.
+- **Updated for Phase 7–8** (Customer 360 and realtime: section "Phase 7–8" at the end; docs 24–27). Production
+  enablement is unchanged from doc 23: WooCommerce only; Salla, Zid and Shopify stay off in production.
 - **Updated for Phase 5.** WooCommerce (Phase 2), Salla (Phase 3), Zid (Phase 4) and Shopify (Phase 5) are implemented;
   the section "Implemented" below records what the connectors actually do. The table rows describe the platforms; the Zid
   column is sourced from Zid's official agent skill and Python SDK as well (doc 14 §0), the Shopify column from Shopify's
@@ -25,7 +30,7 @@
 | **Delivery / retries** | 3 × ~5 min | 3 with backoff; degraded after 10 failures/h; recovery needs a new URL | 8 over 4 h; subscription deleted after 8 consecutive failures | **No retries**; disabled after 5 consecutive failures |
 | **Token refresh** | Access token until its `expires` (absolute Unix time); **refresh single-use, rotating, never expires** (Salla agent kit); needs `offline_access` | Tokens ~1 y (`expires_in`); refresh ~1 y, refresh ~10 months in; single-use **not documented** by the official skill/SDK (not assumed, doc 14 §5) | **Expiring offline tokens**: 1 h access / 90 d rotating refresh; **mandatory for all public apps from 2027-01-01**; existing code: none | Not applicable (keys don't expire; revocable) |
 | **Rate limits** | Per-plan leaky bucket (`X-RateLimit-*`); customers 500 per 10 min | 60 requests/min per app per store (leaky bucket) | GraphQL query cost, leaky bucket | None built in (host or WAF) |
-| **Abandoned carts** | Yes: `carts.read`, `/carts/abandoned`, `abandoned.cart*` events | Yes: API + events (`abandoned_carts.read`) | Exists in the API (abandoned checkouts); not researched in this phase, **VERIFY** | Not in core (plugins) |
+| **Abandoned carts** | Yes: `carts.read`, `/carts/abandoned`, `abandoned.cart*` events | Yes: API (`abandoned_carts.read`); events not used (none confirmed) | GraphQL `abandonedCheckouts` (`read_orders`; customer id only, Phase 9–10) | Not in core (plugins): **unsupported** |
 | **Arabic / Saudi specifics** | Default `ar` responses; `mobile` + `mobile_code` (+966); dates `Asia/Riyadh` | `Accept-Language: ar/en`; mobiles as international digits (`9665…`); order dates without zone (store `timezone` in profile) | n/a | Store-configured |
 | **Sandbox / testing** | Partner Portal demo stores (needs a Salla Partner account) | Partner Dashboard test stores (needs a Zid Partner account) | Free development stores (Partner account); protected data works on dev stores without review | **Local WooCommerce in Docker** (Docker Hub images; plugin from GitHub releases **VERIFY** reachability) |
 | **Docs reachable from this environment** | No (proxy 403) | No (official skill and SDK on GitHub/PyPI yes) | No | No (GitHub sources yes) |
@@ -45,3 +50,39 @@
 | Rate limits | None built in | Salla headers: back off on 429 / exhausted budget until reset | Same backoff (`Commerce::Backoff`) on 429 / exhausted budget | GraphQL cost: pause on THROTTLED or a budget too low for the next query, from `throttleStatus` (`Commerce::Backoff`) |
 | Provider switch | Always on | `SALLA_ENABLED` in Super Admin | `ZID_ENABLED` in Super Admin | `SHOPIFY_COMMERCE_ENABLED` in Super Admin (separate from the legacy `ENABLE_SHOPIFY_INTEGRATION`) |
 | Live E2E | Real WooCommerce 10.9.4 stores (doc 09) | **Blocked**: Salla hosts not reachable; simulated E2E with documented payloads (doc 13) | **Blocked**: Zid hosts not reachable; simulated E2E with documented payloads (doc 17) | **Blocked**: Shopify hosts not reachable; simulated E2E with 2026-07 shapes and Shopify's documented OAuth/refresh semantics (doc 22) |
+
+## Phase 7–8: Customer 360 and realtime
+
+| | WooCommerce | Salla | Zid | Shopify |
+|---|---|---|---|---|
+| Customer 360 | Yes (latest 5 per store, per-store freshness) | Yes | Yes | Yes |
+| Realtime events (`supports_realtime?`) | `order.created`, `order.updated`, `order.deleted` | `order.*`, `shipment.*` store events on the app webhook. **KEEP VERIFY**: payload shape on a live store | `order.create`, `order.status.update`, `order.payment_status.update` (no shipment event: none documented) | `orders/create`, `orders/updated` (no new topic, no new scope) |
+| Webhook authentication | Base64 HMAC-SHA256, per-store secret generated by Lynomia, encrypted | Hex HMAC-SHA256, app webhook secret, Signature strategy only | HTTP Basic Auth, per-store random pair | Base64 HMAC-SHA256, app client secret |
+| Who registers the webhooks | **Lynomia** (`registers_webhooks?`), with a **Read/Write key** only; a Read key keeps working without live updates (`read_only_key`); removed on disconnect | Salla app settings (Partner Portal) | Lynomia at authorization (existing, doc 15) | `shopify.app.toml` |
+| Event → customer | `customer_id`, or the order's guest identities | `data.customer.id` | `customer.id` | `customer.id`, or `guest:<email>` |
+| Dedup | `X-WC-Webhook-Delivery-ID` (else body), 1 day | body hash, 3 days | body hash per store, 1 day | `X-Shopify-Webhook-Id`, 1 day |
+| Invalidation when no customer is named | store level (`order.deleted`) | store level (`shipment.*` without a customer) | store level | store level |
+| Order search by number (`find_orders`) | Yes: order by id, number re-checked (renumbering plugins not supported) | **No** (no confirmed lookup; reported "not searchable") | Yes: order by id (= the number shown; Z15 VERIFY) | Yes: `orders(query: name:"<n>")`, exact re-check |
+| Rate-limit backoff respected by refresh | n/a (none built in) | Yes | Yes | Yes (GraphQL cost) |
+| Live E2E (Phase 7–8) | **Real** WooCommerce 10.9.4: signed deliveries from the store itself (doc 27) | Simulated (hosts unreachable) | Simulated | Simulated |
+| Production | **GO with pilot** (doc 23) | **NO-GO** (unchanged) | **NO-GO** (unchanged) | **NO-GO** (unchanged) |
+
+
+## Phase 9–10: order actions, abandoned carts, sales recovery
+
+| | WooCommerce | Salla | Zid | Shopify |
+|---|---|---|---|---|
+| Order actions (`supports_actions?`) | yes | **no** (no verified write contract) | yes | yes |
+| Change status | processing → completed / on-hold; on-hold → processing (allow-list; never trash) | — | ready → shipped; in delivery → delivered | — |
+| Cancel | pending / on-hold only; refunds nothing | — | — (VERIFY status name) | unpaid + unfulfilled; `orderCancel` with `refund: false`, a Job |
+| Refund | partial / full up to total − refunds; gateway (if it supports refunds) or recorded only | — | — (reverse orders) | partial / full up to Shopify's suggested maximum; one payment transaction only |
+| Resend invoice / payment link | `send_order_details` (WooCommerce 9.8+) | — | — | — |
+| Update shipping | — | — | — | — |
+| Write credentials | Read/Write REST key (never upgraded by Lynomia; "Order actions require a Read/Write WooCommerce API key.") | — | the authorization's permission (403 → reconnect) | `write_orders` via **Reconnect for order actions** only (exact scope check) |
+| Idempotency / reconciliation | Lynomia key in refund meta; status read back | — | status read back | `@idempotent` (VERIFY) + key in refund note; cancel Job + `cancelledAt` |
+| Abandoned carts (`supports_carts?`) | **no** (core has no merchant-wide API) | yes (`/carts/abandoned`, `carts.read`; VERIFY) | yes (`/abandoned-carts`, customer filter) | yes (`abandonedCheckouts`, customer id only) |
+| Cart events | — | `abandoned.cart`, `abandoned.cart.update` | none | none |
+| Recovery link hosts | — | store host, `salla.sa`, `*.salla.sa` | store host, `zid.store`, `*.zid.store` | myshopify.com host, primary domain |
+| Live E2E (Phase 9–10) | **Real** WooCommerce 10.9.4 with a test-only refund gateway, disposable orders (doc 33) | Simulated | Simulated | Simulated |
+| Production: actions | **GO** per store opt-in (default: off for each store) | NO-GO | NO-GO (held until real UAT) | NO-GO (real UAT + Protected Customer Data approval) |
+| Production: recovery | unsupported | NO-GO (held until real UAT) | NO-GO (held until real UAT) | NO-GO (held until real UAT) |

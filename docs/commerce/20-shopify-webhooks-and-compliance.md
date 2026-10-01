@@ -53,7 +53,7 @@ The privacy topics and `app/uninstalled` are accepted whatever the provider swit
 | `orders/create`, `orders/updated` | The customer's cached orders are dropped (`customer.id`, or `guest:<email>` for a guest checkout), so the panel reads Shopify again. Disconnected stores are ignored. | Everything |
 | `app/uninstalled` | `StoreConnection#disconnect`: status `disconnected`, token pair removed, customer links deleted, cache purged. Audit `commerce.shopify.uninstalled`. | Store row (can be reconnected), contacts, conversations |
 | `customers/redact` | That customer's links in this store (registered id and `guest:<email>`) are deleted and the store cache is purged. Audit `commerce.shopify.customer_redacted` with the **count** only. | Contacts, conversations, other customers' links |
-| `customers/data_request` | Nothing is removed. Audit `commerce.shopify.customer_data_requested` with the number of links held for the customer and Shopify's `data_request.id`, for the operator (§4). | Everything |
+| `customers/data_request` | Nothing is removed. Audit `commerce.shopify.customer_data_requested` with the ids of the customer's links and Shopify's `data_request.id`, for the operator's export (§4). | Everything |
 | `shop/redact` | The store row is deleted: token, links and cache go with it. Audit `commerce.shopify.shop_redacted` on the **account**, with the store id and the link count. | Contacts, conversations, the account audit entry |
 
 Chatwoot contacts and conversations are never deleted by these topics.
@@ -67,11 +67,21 @@ For a Shopify customer, Lynomia Commerce stores:
 - **The Redis cache**: provider-neutral order summaries and candidates, 120 s fresh and 24 h at most, then gone.
 - **`commerce_stores`**: the shop, not the customer: the encrypted token pair, the shop name and domain.
 
-Shopify's contract for `customers/data_request` is:
-1. respond 200;
-2. provide the data to the store owner within 30 days.
+Shopify's contract for `customers/data_request` ([Shopify: privacy law compliance](https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance)):
+1. The topic is declared in the app configuration.
+2. The app answers 200 to a genuine delivery and 401 to one with an invalid HMAC. Shopify's automated app review sends a bad HMAC to the compliance endpoints and expects the 401.
+3. The app provides the data to the store owner directly within 30 days.
 
-Lynomia does not send data automatically. The operator uses the `commerce.shopify.customer_data_requested` audit entry (store and request id) to export the customer's links for that store and send them to the merchant. The Chatwoot conversation data about the same person is governed by the installation's own privacy process, not by this webhook.
+Shopify prescribes no API or automated response for step 3, so an operator-assisted fulfilment meets the contract, for the App Store and for custom distribution alike (decision recorded in doc 23 §5). Lynomia does 1 and 2 automatically. For 3:
+1. The job records `commerce.shopify.customer_data_requested` on the store with Shopify's `data_request_id` and the **ids of the customer's links** in that store, registered and guest. No email, phone or customer number is recorded. The ids are what makes the export possible after the payload is gone.
+2. The operator exports those links, within 30 days, as JSON for the merchant (the account's administrators):
+   ```
+   bundle exec rails runner docs/commerce/ops/shopify_data_request_export.rb <data_request_id>
+   ```
+   An empty list means Lynomia holds no link for that customer. Cached order summaries expire within 24 h and are not retained.
+3. The operator sends the export to the merchant and records the date.
+
+The audit lives in the Enterprise audit log, and Lynomia runs the Enterprise overlay. In the Community edition only a log line is written, without the ids.
 
 ## 5. Evidence
 

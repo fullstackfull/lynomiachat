@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
@@ -14,6 +14,7 @@ import ProviderPicker from './ProviderPicker.vue';
 import SallaConnectDialog from './SallaConnectDialog.vue';
 import ZidConnectDialog from './ZidConnectDialog.vue';
 import ShopifyConnectDialog from './ShopifyConnectDialog.vue';
+import CartQueue from './CartQueue.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
@@ -39,6 +40,9 @@ const STATUS_DOT = {
 };
 
 const stores = ref([]);
+const cartStores = computed(() =>
+  stores.value.filter(store => store.abandoned_carts)
+);
 const providers = ref([]);
 const isLoading = ref(true);
 const showPicker = ref(false);
@@ -47,6 +51,7 @@ const showZidDialog = ref(false);
 const showShopifyDialog = ref(false);
 // The myshopify.com domain of a Shopify store being reconnected.
 const shopifyShop = ref('');
+const shopifyOrderActions = ref(false);
 const showStoreDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
@@ -117,12 +122,13 @@ const openAddStore = () => {
   }
 };
 
-// `store` is the store being reconnected, if any.
-const openConnect = (provider, store = null) => {
+// `store` is the store being reconnected, if any; `orderActions` reconnects a Shopify store for order actions.
+const openConnect = (provider, store = null, orderActions = false) => {
   if (provider === 'salla') showSallaDialog.value = true;
   else if (provider === 'zid') showZidDialog.value = true;
   else if (provider === 'shopify') {
     shopifyShop.value = store ? new URL(store.base_url).host : '';
+    shopifyOrderActions.value = orderActions;
     showShopifyDialog.value = true;
   } else openKeysDialog();
 };
@@ -174,6 +180,47 @@ const setStatus = async (store, status) => {
   busyStoreId.value = store.id;
   try {
     const response = await CommerceAPI.update(store.id, { status });
+    replaceStore(response.data);
+    useAlert(t('COMMERCE.SETTINGS.UPDATED'));
+  } catch (error) {
+    useAlert(apiErrorMessage(error));
+  } finally {
+    busyStoreId.value = null;
+  }
+};
+
+// Order actions (docs/commerce/28-commerce-actions-architecture.md): the administrator's opt-in, and why it cannot be
+// turned on (a Read key, missing permissions, the installation's switches).
+const orderActionsText = store => {
+  const provider = providerName(store.provider);
+  switch (store.order_actions_status) {
+    case 'available':
+      return store.order_actions
+        ? t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_ON')
+        : t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_OFF');
+    case 'read_only_key':
+    case 'write_access_unverified':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_READ_ONLY_KEY', {
+        provider,
+      });
+    case 'missing_scope':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_MISSING_SCOPE', {
+        provider,
+      });
+    case 'actions_disabled':
+    case 'provider_actions_disabled':
+      return t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_SWITCHED_OFF');
+    default:
+      return '';
+  }
+};
+
+const setOrderActions = async (store, enabled) => {
+  busyStoreId.value = store.id;
+  try {
+    const response = await CommerceAPI.update(store.id, {
+      order_actions: enabled,
+    });
     replaceStore(response.data);
     useAlert(t('COMMERCE.SETTINGS.UPDATED'));
   } catch (error) {
@@ -291,6 +338,51 @@ onMounted(() => {
                 }}
               </span>
               <span
+                v-if="store.status === 'active'"
+                class="text-label-small text-n-slate-11"
+                data-test-id="commerce-store-read"
+              >
+                {{ t('COMMERCE.SETTINGS.CAPABILITIES.READ') }}
+              </span>
+              <span
+                v-if="store.status === 'active' && store.realtime_status"
+                class="text-label-small"
+                :class="
+                  store.realtime_status === 'active'
+                    ? 'text-n-teal-11'
+                    : 'text-n-slate-11'
+                "
+                data-test-id="commerce-store-realtime"
+              >
+                {{
+                  store.realtime_status === 'active'
+                    ? t('COMMERCE.SETTINGS.REALTIME.ACTIVE')
+                    : t('COMMERCE.SETTINGS.REALTIME.READ_ONLY_KEY')
+                }}
+              </span>
+              <span
+                v-if="store.status === 'active' && orderActionsText(store)"
+                class="text-label-small"
+                :class="
+                  store.order_actions &&
+                  store.order_actions_status === 'available'
+                    ? 'text-n-teal-11'
+                    : 'text-n-slate-11'
+                "
+                data-test-id="commerce-store-order-actions"
+              >
+                {{ orderActionsText(store) }}
+              </span>
+              <span
+                v-if="
+                  store.status === 'active' &&
+                  store.order_actions_status === 'available'
+                "
+                class="text-label-small text-n-slate-11"
+              >
+                {{ t('COMMERCE.SETTINGS.CAPABILITIES.ORDER_ACTIONS_HINT') }}
+              </span>
+              <span
                 v-if="!store.provider_enabled"
                 class="text-label-small text-n-amber-11"
                 data-test-id="commerce-store-hint"
@@ -307,6 +399,36 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
+            <Button
+              v-if="
+                store.status === 'active' &&
+                store.order_actions_status === 'available'
+              "
+              :label="
+                store.order_actions
+                  ? t('COMMERCE.SETTINGS.CAPABILITIES.TURN_OFF')
+                  : t('COMMERCE.SETTINGS.CAPABILITIES.TURN_ON')
+              "
+              variant="faded"
+              color="slate"
+              size="sm"
+              :is-loading="busyStoreId === store.id"
+              data-test-id="commerce-store-order-actions-toggle"
+              @click="setOrderActions(store, !store.order_actions)"
+            />
+            <Button
+              v-if="
+                store.status === 'active' &&
+                store.order_actions_status === 'missing_scope' &&
+                REAUTHORIZED_HERE.includes(store.provider)
+              "
+              :label="t('COMMERCE.SETTINGS.CAPABILITIES.RECONNECT_FOR_ACTIONS')"
+              variant="faded"
+              color="slate"
+              size="sm"
+              data-test-id="commerce-store-reconnect-actions"
+              @click="openConnect(store.provider, store, true)"
+            />
             <Button
               v-if="store.status === 'active'"
               :label="t('COMMERCE.SETTINGS.ACTIONS.DISABLE')"
@@ -356,6 +478,8 @@ onMounted(() => {
         </div>
       </div>
 
+      <CartQueue v-if="cartStores.length" :stores="cartStores" class="mt-8" />
+
       <ProviderPicker
         :show="showPicker"
         :providers="providers"
@@ -371,6 +495,7 @@ onMounted(() => {
       <ShopifyConnectDialog
         :show="showShopifyDialog"
         :shop="shopifyShop"
+        :order-actions="shopifyOrderActions"
         @close="showShopifyDialog = false"
       />
       <StoreDialog

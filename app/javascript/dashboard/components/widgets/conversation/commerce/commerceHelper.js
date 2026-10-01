@@ -2,6 +2,7 @@
 
 export const ORDER_LIMIT = 5;
 export const MINUTE_MS = 60 * 1000;
+const MINUTES_PER_DAY = 24 * 60;
 
 // Only absolute https links without credentials are opened or sent to a customer.
 export const safeHttpsUrl = url => {
@@ -59,7 +60,10 @@ export const relativeTime = (isoDate, locale, now = Date.now()) => {
   );
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   if (minutes < 60) return formatter.format(-minutes, 'minute');
-  return formatter.format(-Math.round(minutes / 60), 'hour');
+  if (minutes < MINUTES_PER_DAY) {
+    return formatter.format(-Math.round(minutes / 60), 'hour');
+  }
+  return formatter.format(-Math.round(minutes / MINUTES_PER_DAY), 'day');
 };
 
 export const hasTracking = order =>

@@ -1,0 +1,43 @@
+PASS  Read/Write key: Lynomia registers its webhooks, settings say live updates are on  -- Syria Cosmetics Active WooCommerce http://localhost:8081 Verified this minute Live order updates on Disable Replace keys Disconnect
+PASS  read-only key: store connected and active, live updates off with the reason  -- Damascus Perfumes Active WooCommerce http://localhost:8082 Verified this minute Live order updates off: this key is read-only. Replace it with a Read/Write key to turn them on. Disable Replace keys Disconnect
+PASS  WooCommerce holds one active Lynomia webhook per order topic, to this store's URL  -- [["order.updated","active"],["order.deleted","active"],["order.created","active"]]
+PASS  WooCommerce's unsigned creation pings were refused  -- rejected=3
+PASS  Salla, Zid and Shopify stores connected to account A  -- [[85,"woocommerce","Syria Cosmetics","active"],[86,"woocommerce","Damascus Perfumes","active"],[87,"salla","متجر الورد","active"],[88,"zid","متجر الياسمين","active"],[89,"shopify","Lynomia Demo","active"]]
+PASS  first visit, contact not linked anywhere yet: the store view opens
+PASS  Overview opens first for a contact linked in several stores
+PASS  Customer 360: linked in one store of each provider, each with its provider; the store without the customer says so  -- ["Syria Cosmetics · WooCommerce Linked Guest checkout · Matched by the v","Damascus Perfumes · WooCommerce Customer not linked Updated this minut","متجر الورد · Salla Linked Registered customer · Matched by the verifie","متجر الياسمين · Zid Linked Registered customer · Matched by the verifi","Lynomia Demo · Shopify Linked Registered customer · Matched by the ver"]
+PASS  figures: 5 connected · 4 linked, visible orders (not lifetime), last purchase, no partial banner  -- Overview Store Refresh Stores 5 connected 4 linked Orders 16 visible 9 active · 3 shipped Last purchase 2 days ago Spend SAR 843.56 Recent orders #41000102 SAR 223.56 متجر الياسمين · Zid Shipped Paid Sep 29, 2026 1 item kwickbox In transit Track shipment Send tracking #41000101 SAR 100.00 متجر الياس
+PASS  spend per currency, never converted into one figure  -- ["SAR 843.56"]
+PASS  latest orders across stores: at most 10, each naming its store and provider  -- orders=10 providers=Zid,Salla,WooCommerce,Shopify
+PASS  no LTV, average order value or predictions
+PASS  WooCommerce order #23 starts unpaid
+PASS  woocommerce-real: the open store view shows the change live, without a reload  -- before="#23 SAR 135.00 Pending payment Unpaid Sep 27, 2026 1 item Fl" after="#23 SAR 135.00 Processing Paid Sep 27, 2026 1 item Flat rate" ms=7610
+PASS  WooCommerce delivery: signed by the store, accepted, applied to the store
+PASS  zid: the open store view shows the change live, without a reload  -- before="#41000101 SAR 100.00 Processing Unpaid Sep 28, 2026 1 item D" after="#41000101 SAR 100.00 Delivered Paid Sep 28, 2026 1 item Does" ms=665
+PASS  shopify: the open store view shows the change live, without a reload  -- before="#1005 SAR 310.50 Processing Unpaid Sep 25, 2026 5 items DHL " after="#1005 SAR 310.50 Shipped Paid Sep 25, 2026 5 items DHL Expre" ms=690
+PASS  salla: the open store view shows the change live, without a reload  -- before="#30013 SAR 99.00 Pending payment Unpaid Sep 28, 2026 1 item " after="#30013 SAR 99.00 Delivered Unpaid Sep 28, 2026 1 item View o" ms=951
+PASS  WooCommerce: a new order of the same guest appears live  -- order=32 ms=5900
+PASS  a replayed Zid delivery is acknowledged and not applied again
+PASS  a replayed Shopify delivery (same X-Shopify-Webhook-Id) is acknowledged once
+PASS  a burst of 10 Zid events for one customer: all applied, refreshed at most twice (coalesced)  -- applied=10 refreshes=2 coalesced=9
+PASS  an out-of-order event claiming an older state changes nothing: the store is read again  -- #1005 SAR 310.50 Shipped Paid Sep 25, 2026 5 items DHL Express In transit View order Track shipment Send tracking
+PASS  Salla outage during an event: the last orders stay, marked stale with their time  -- Couldn't refresh store data right now. Last updated 2 minutes ago
+PASS  Shopify access revoked: the store shows it needs re-authorization, live, and none of its orders remain  -- ms=800
+PASS  COMMERCE_REALTIME_ENABLED=false: no live update  -- #41000103 SAR 100.00 Other Payment not confirmed Sep 20, 2026 1 item Doesn't Require Shipping
+PASS  manual Refresh reads the store again even though its cache was fresh
+PASS  a second Refresh within the cooldown is refused with the wait  -- Just refreshed. Try again in 30 s.
+PASS  WooCommerce order.deleted names no customer: the store's cached orders are outdated, nobody refreshed
+PASS  after a store-level invalidation the next read no longer shows the deleted order
+PASS  order search by number across stores: WooCommerce #24 found, Salla reported as not searchable, no Send tracking  -- Find an order SEARCH Searches by the exact order number. An order found can belong to any customer of the store. متجر الورد: order search isn't available for this store #24 SAR 100.00 Syria Cosmetics · WooCommerce Completed Paid Sep 28, 202
+PASS  unlinked store stays unlinked: the matched customer is offered, not linked again  -- Overview Store Refresh Store Syria Cosmetics Damascus Perfumes متجر الورد متجر الياسمين Possible match. Confirm before linking. LINK CUSTOMER Omar Khalil om***@example.com · +966*******33 Registered c
+PASS  the agent can link the customer again by hand
+PASS  Arabic: Customer 360 in Arabic, right to left
+PASS  mobile: the conversation and its Commerce section render at 390 px
+PASS  agents of account A received commerce.customer.updated over the existing ActionCable connection  -- frames=11
+PASS  each event carries ids only: account, contact, store, time
+PASS  account B received no commerce event of account A  -- frames=0
+PASS  disconnecting removes Lynomia's webhooks from WooCommerce  -- []
+PASS  no credential, webhook secret or token in logs, API responses or socket frames  -- secrets=20 leaks=
+PASS  no page errors
+{"overview_browser_ms":{"samples":[2135,2085,1748,2184,2226],"p50":2135,"p95":2226},"customer360_server_ms":{"samples":12,"p50":41,"p95":365},"cache":{"hits":76,"misses":19,"hit_ratio":0.8},"provider_requests":74,"provider_errors":1,"webhooks":{"accepted":21,"rejected":7,"duplicate":2},"refresh_coalesced":10,"live_update_ms":{"woocommerce-real":7610,"zid":665,"shopify":690,"salla":951,"woocommerce-created":5900},"simulated_requests":{"salla":{"GET /oauth2/user/info":1,"GET /admin/v2/customers":1,"GET /admin/v2/orders":4,"GET /admin/v2/shipments":20,"GET /admin/v2/orders (outage)":4},"zid":{"POST /oauth/token":1,"GET /v1/managers/account/profile":1,"DELETE /v1/managers/webhooks":1,"POST /v1/managers/webhooks":3,"GET /v1/managers/store/orders":7,"GET /v1/managers/store/orders/24/view":1},"shopify":{"POST /admin/oauth/access_token":2,"POST /admin/api/2026-07/graphql.json":6}}}
+41/41 passed

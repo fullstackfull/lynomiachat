@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_30_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_01_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -804,6 +804,34 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_30_100100) do
     t.string "phone_number_health_error", limit: 500
     t.index ["phone_number_health_checked_at"], name: "index_channel_whatsapp_on_phone_number_health_checked_at"
     t.index ["phone_number"], name: "index_channel_whatsapp_on_phone_number", unique: true
+  end
+
+  create_table "commerce_action_runs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id"
+    t.bigint "contact_id"
+    t.bigint "conversation_id"
+    t.bigint "requested_by_id"
+    t.string "provider", null: false
+    t.string "action_type", null: false
+    t.string "external_resource_id", null: false
+    t.string "idempotency_key", null: false
+    t.string "request_digest", null: false
+    t.integer "status", default: 0, null: false
+    t.string "provider_request_id"
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.string "error_code"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_commerce_action_runs_on_account_id"
+    t.index ["commerce_store_id", "external_resource_id", "status"], name: "index_commerce_action_runs_on_store_resource_status"
+    t.index ["contact_id"], name: "index_commerce_action_runs_on_contact_id"
+    t.index ["conversation_id"], name: "index_commerce_action_runs_on_conversation_id"
+    t.index ["idempotency_key"], name: "index_commerce_action_runs_on_idempotency_key", unique: true
+    t.index ["requested_by_id"], name: "index_commerce_action_runs_on_requested_by_id"
+    t.index ["status", "updated_at"], name: "index_commerce_action_runs_on_status_and_updated_at"
   end
 
   create_table "commerce_customer_links", force: :cascade do |t|
@@ -1702,6 +1730,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_30_100100) do
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "inboxes", on_delete: :cascade
+  add_foreign_key "commerce_action_runs", "accounts", on_delete: :cascade
+  add_foreign_key "commerce_action_runs", "commerce_stores", on_delete: :nullify
+  add_foreign_key "commerce_action_runs", "contacts", on_delete: :nullify
+  add_foreign_key "commerce_action_runs", "conversations", on_delete: :nullify
+  add_foreign_key "commerce_action_runs", "users", column: "requested_by_id", on_delete: :nullify
   add_foreign_key "commerce_customer_links", "accounts", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "commerce_stores", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "contacts", on_delete: :cascade

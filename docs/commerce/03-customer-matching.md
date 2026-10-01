@@ -49,6 +49,7 @@ Chatwoot already records the channel identity of a contact in `contact_inboxes.s
 - The provider search term uses the provider's preferred format:
   - Salla `keyword=9665…` (confirm that a local form also matches: **VERIFY**);
   - Zid `customer_phone` (format **VERIFY**);
+  - Phase 6 status of both, and of what the connectors do instead: doc 23 §9 (S7, Z11);
   - Shopify `customerByIdentifier(phoneNumber: "+9665…")`;
   - WooCommerce order `search=5XXXXXXXX` (last 9 digits; results then re-checked for exact E.164 equality).
 

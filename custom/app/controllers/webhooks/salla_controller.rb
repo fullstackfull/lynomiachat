@@ -9,7 +9,10 @@ class Webhooks::SallaController < ActionController::API
     raw_body = request.raw_post
     verified = secret && Commerce::Salla::Webhook.verified?(raw_body, strategy: request.headers['X-Salla-Security-Strategy'],
                                                                       signature: request.headers['X-Salla-Signature'], secret: secret)
-    return head :unauthorized unless verified
+    unless verified
+      Commerce::Metrics.event('commerce.webhook.rejected', provider: 'salla')
+      return head :unauthorized
+    end
 
     Commerce::Salla::Webhook.enqueue(raw_body)
     head :ok

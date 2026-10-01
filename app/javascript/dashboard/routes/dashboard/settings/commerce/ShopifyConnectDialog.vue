@@ -15,6 +15,8 @@ const props = defineProps({
   show: { type: Boolean, default: false },
   // The domain of a store being reconnected.
   shop: { type: String, default: '' },
+  // Reconnecting for order actions: Shopify also asks the merchant for write access to orders.
+  orderActions: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['close']);
@@ -31,7 +33,8 @@ const connect = async () => {
   errorMessage.value = '';
   try {
     const response = await CommerceAPI.createShopifyConnection(
-      shopDomain.value.trim()
+      shopDomain.value.trim(),
+      { orderActions: props.orderActions }
     );
     const url = safeHttpsUrl(response.data.authorize_url);
     if (url) window.location.assign(url);
@@ -59,8 +62,16 @@ watch(
 <template>
   <Dialog
     ref="dialogRef"
-    :title="t('COMMERCE.SETTINGS.SHOPIFY.TITLE')"
-    :description="t('COMMERCE.SETTINGS.SHOPIFY.DESCRIPTION')"
+    :title="
+      orderActions
+        ? t('COMMERCE.SETTINGS.SHOPIFY.ACTIONS_TITLE')
+        : t('COMMERCE.SETTINGS.SHOPIFY.TITLE')
+    "
+    :description="
+      orderActions
+        ? t('COMMERCE.SETTINGS.SHOPIFY.ACTIONS_DESCRIPTION')
+        : t('COMMERCE.SETTINGS.SHOPIFY.DESCRIPTION')
+    "
     :show-confirm-button="false"
     :cancel-button-label="t('COMMERCE.SETTINGS.FORM.CANCEL')"
     width="md"

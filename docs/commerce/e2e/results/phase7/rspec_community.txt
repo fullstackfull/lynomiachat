@@ -1,0 +1,5 @@
+# Community RSpec (enterprise/ and spec/enterprise removed), 4 shards, code at 0e0b9d4c2 (later commits change docs and E2E drivers only), lynomia/verify:base (Ruby 3.4.4)
+shard 0: 1862 examples, 0 failures, 25 pending
+shard 1: 2138 examples, 0 failures, 24 pending
+shard 2: 1792 examples, 0 failures, 12 pending
+shard 3: 1672 examples, 0 failures, 9 pending

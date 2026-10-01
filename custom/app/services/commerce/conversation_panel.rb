@@ -17,8 +17,10 @@ class Commerce::ConversationPanel
     @user = user
   end
 
-  def show
-    match = Commerce::CustomerMatcher.new(store: @store, conversation: @conversation).call
+  # `force`: an agent's Refresh reads the store again even when its cached data is still fresh.
+  def show(force: false)
+    @force = force
+    match = Commerce::CustomerMatcher.new(store: @store, conversation: @conversation, force: force).call
     match.link ? linked(match.link) : unlinked(match)
   rescue Commerce::Error => e
     store_error!(e)
@@ -43,16 +45,18 @@ class Commerce::ConversationPanel
     show
   end
 
+  # Kept as a suppressed row, so the contact's phone does not link the same customer again on the next read.
   def unlink
-    link = @store.customer_links.find_by!(contact: @contact)
-    link.destroy!
-    Commerce::AuditTrail.record('commerce.customer_link_removed', auditable: link, user: @user, changes: { match_source: link.match_source })
+    link = @store.customer_links.not_suppressed.find_by!(contact: @contact)
+    changes = { match_source: [link.match_source, 'suppressed'] }
+    link.update!(match_source: :suppressed, confirmed_by: @user)
+    Commerce::AuditTrail.record('commerce.customer_link_removed', auditable: link, user: @user, changes: changes)
   end
 
   private
 
   def linked(link)
-    orders = Commerce::Cache.fetch(@store, :orders, link.external_customer_id) do
+    orders = Commerce::Cache.fetch(@store, :orders, link.external_customer_id, force: @force) do
       provider.list_customer_orders(link.external_customer_id, limit: ORDER_LIMIT)
     end
     base.merge(state: 'linked', link: link_json(link), orders: orders.value, fetched_at: orders.fetched_at, stale: orders.stale,
@@ -101,8 +105,10 @@ class Commerce::ConversationPanel
     }
   end
 
+  # The store's customer id is not shown; whether it is a guest checkout or a registered customer is.
   def link_json(link)
-    { match_source: link.match_source, linked_at: link.updated_at.to_i, confirmed_by: link.confirmed_by&.slice(:id, :name) }
+    { match_source: link.match_source, linked_at: link.updated_at.to_i, confirmed_by: link.confirmed_by&.slice(:id, :name),
+      customer_type: link.external_customer_id.start_with?('guest:') ? 'guest' : 'registered' }
   end
 
   def base
@@ -111,11 +117,7 @@ class Commerce::ConversationPanel
 
   # Keys that no longer work: the store is flagged for an administrator and its cached data is dropped.
   def store_error!(error)
-    return unless error.code == 'AUTH_INVALID' && @store.active?
-
-    @store.update!(status: :needs_reauth)
-    Commerce::Cache.purge(@store)
-    Commerce::AuditTrail.record('commerce.store_needs_reauth', auditable: @store)
+    Commerce::StoreConnection.new(account: @store.account, user: nil).credentials_rejected(@store) if error.code == 'AUTH_INVALID'
   end
 
   def mask_email(email)

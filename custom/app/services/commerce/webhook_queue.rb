@@ -1,4 +1,4 @@
-# Queues an authenticated provider webhook delivery (Zid, Shopify): once, and with its body encrypted.
+# Queues an authenticated provider webhook delivery (WooCommerce, Zid, Shopify): once, and with its body encrypted.
 #
 # The caller has already authenticated the delivery; nothing heavy happens in the request. A delivery whose dedup key was
 # seen within DEDUP_TTL is a redelivery and is acknowledged without being queued again; the key expires, so a key is
@@ -10,10 +10,14 @@ module Commerce::WebhookQueue
   # Queues `job` with `args` and the sealed body, unless `dedup_key` was queued within DEDUP_TTL.
   def self.enqueue(provider, dedup_key, job, *, body:)
     key = "COMMERCE::#{provider.upcase}::WEBHOOK::#{dedup_key}"
-    return unless Redis::Alfred.set(key, 1, nx: true, ex: DEDUP_TTL.to_i)
+    unless Redis::Alfred.set(key, 1, nx: true, ex: DEDUP_TTL.to_i)
+      Commerce::Metrics.event('commerce.webhook.duplicate', provider: provider)
+      return
+    end
 
     begin
       job.perform_later(*, encryptor(provider).encrypt_and_sign(body, purpose: purpose(provider)))
+      Commerce::Metrics.event('commerce.webhook.accepted', provider: provider)
     rescue StandardError
       Redis::Alfred.delete(key)
       raise

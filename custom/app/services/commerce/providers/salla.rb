@@ -44,6 +44,43 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
     orders.sort_by { |order| order.created_at.to_s }.reverse.first(limit).map { |order| with_shipments(order) }
   end
 
+  def self.supports_realtime? = true
+
+  def self.supports_carts? = true
+
+  CART_PAGE = 30
+
+  # The installation's token lists its scopes: abandoned carts need carts.read (docs/commerce/05; VERIFY).
+  def cart_access_problem
+    granted = @store.credentials.to_h['scope'].to_s.split
+    granted.empty? || granted.include?(Carts::SCOPE) ? nil : 'missing_scope'
+  end
+
+  # Salla's list has no documented customer filter: its most recent page (CART_PAGE at most).
+  def abandoned_carts(customer_reference: nil, limit: CART_PAGE) # rubocop:disable Lint/UnusedMethodArgument
+    list('/carts/abandoned', per_page: [limit, CART_PAGE].min).map { |raw| carts.normalize(raw) }
+  end
+
+  def abandoned_cart(external_cart_id)
+    abandoned_carts.find { |cart| cart.external_cart_id == external_cart_id.to_s } || raise(Commerce::Error, 'NOT_FOUND')
+  end
+
+  def recovery_hosts = [URI(@store.base_url).host, 'salla.sa', '.salla.sa']
+
+  # VERIFY(salla-store-events): Salla delivers the store events an app subscribes to in the Partner Portal to the app's
+  # webhook URL, signed like the app events, as { event, merchant, data }. Lynomia reads only the customer id of an order
+  # event (data.customer.id); the exact payload of order and shipment events is unconfirmed on a live store, so anything
+  # else names nobody and every customer's cached orders of the store are dropped instead.
+  def event_customer_ids(payload)
+    customer = payload.dig('data', 'customer') if payload.is_a?(Hash) && payload['data'].is_a?(Hash)
+    id = Integer(customer['id'].to_s, 10) if customer.is_a?(Hash)
+    id&.positive? ? [id.to_s] : []
+  rescue ArgumentError, TypeError
+    []
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) && payload['data'].is_a?(Hash) ? payload['data']['id']&.to_s : nil
+
   def get_order(external_order_id)
     raw = get("/orders/#{Integer(external_order_id.to_s, 10)}")['data']
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless raw.is_a?(Hash)
@@ -91,6 +128,10 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
 
   def http
     @http ||= Commerce::HttpClient.new(base_uri: API_BASE, authorization: "Bearer #{token}", log_tag: 'salla')
+  end
+
+  def carts
+    @carts ||= Carts.new(@store)
   end
 
   def normalizer

@@ -1,0 +1,15 @@
+# Phase 6: documents extracted from lynomia/staging:final-f842e12e (rails runner), identical to docs/commerce/e2e/shopify/schema/documents.json
+## admin_2026-07
+VALID  LynomiaShop  operation=query  errors=0  deprecated=none
+VALID  LynomiaCustomers  operation=query  errors=0  deprecated=none
+VALID  LynomiaGuestOrders  operation=query  errors=0  deprecated=none
+VALID  LynomiaOrders  operation=query  errors=0  deprecated=none
+VALID  LynomiaOrder  operation=query  errors=0  deprecated=none
+5/5 documents valid against admin_2026-07.json.gz
+Customer: `read_customers` access scope.
+CustomerEmailAddress: `read_customers` access scope.
+CustomerPhoneNumber: `read_customers` access scope.
+Fulfillment: `read_orders` access scope, `read_marketplace_orders` access scope, `read_assigned_fulfillment_orders` access scope, `read_merchant_managed_fulfillment_orders` access scope, `read_third_party_fulfillment_orders` access s
+FulfillmentTrackingInfo: `read_orders` access scope, `read_marketplace_orders` access scope, `read_assigned_fulfillment_orders` access scope, `read_merchant_managed_fulfillment_orders` access scope, `read_third_party_fulfillment_orders` access s
+LineItem: `read_orders` access scope or `read_marketplace_orders` access scope.
+Order: `read_orders` access scope, `read_marketplace_orders` access scope or `read_quick_sale` access scope.

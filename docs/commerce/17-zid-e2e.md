@@ -124,6 +124,8 @@ The first run ended 46/49. None of the three failures touched security or tenanc
 
 ## 6. `REAL_ZID_UAT = BLOCKED`: what the real UAT must confirm
 
+Still blocked in Phase 6 (doc 23 §4.3); every open item is classified in doc 23 §9.
+
 - **Blocker:** no network path to Zid from this environment, and no Zid Partner account or test store.
 - **Needed:**
   1. a Zid Partner app with the scopes of doc 14 §6 and the callback `<FRONTEND_URL>/commerce/zid/callback`;

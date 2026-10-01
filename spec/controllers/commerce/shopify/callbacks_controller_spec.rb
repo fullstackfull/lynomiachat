@@ -251,6 +251,43 @@ RSpec.describe 'Shopify Commerce OAuth callback', type: :request do
       expect(Commerce::Store.count).to eq(0)
     end
 
+    it 'asks for write_orders only when an administrator reconnects for order actions the installation offers' do
+      post "/api/v1/accounts/#{account.id}/commerce/shopify_connection", params: { shop: shop, order_actions: true },
+                                                                         headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body).to eq('error' => { 'code' => 'ACTIONS_DISABLED', 'reason' => 'provider_actions_disabled' })
+
+      InstallationConfig.where(name: 'SHOPIFY_COMMERCE_ACTIONS_ENABLED').first_or_initialize.update!(value: true, locked: false)
+      GlobalConfig.clear_cache
+      with_modified_env(COMMERCE_ALLOW_PRE_UAT_PROVIDERS: 'true') do
+        post "/api/v1/accounts/#{account.id}/commerce/shopify_connection", params: { shop: shop, order_actions: true },
+                                                                           headers: admin.create_new_auth_token, as: :json
+      end
+      expect(Rack::Utils.parse_query(URI(response.parsed_body['authorize_url']).query)['scope']).to eq('read_customers,read_orders,write_orders')
+
+      start.call
+      expect(Rack::Utils.parse_query(URI(response.parsed_body['authorize_url']).query)['scope']).to eq('read_customers,read_orders')
+    end
+
+    it 're-authorizes for order actions only with write_orders granted, and keeps the read-only store working otherwise' do
+      store = create(:commerce_store, :shopify, account: account, external_store_id: '68210001', base_url: "https://#{shop}")
+      issued = Commerce::OauthState.issue('shopify', account: account, user: admin, shop: shop, scopes: 'read_customers,read_orders,write_orders')
+      cookie = issued.nonce
+      allow(Commerce::OauthState).to(receive(:consume).and_wrap_original { |original, *args| original.call(args[0], args[1], cookie) })
+
+      stub_request(:post, token_url).to_return(status: 200, body: token_body.to_json)
+      get '/commerce/shopify/callback', params: signed.call('code' => 'shopify-code-1', 'state' => issued.state)
+      expect(response).to redirect_to("#{settings}?shopify_error=PERMISSION_DENIED")
+      expect(store.reload.credentials['scope']).to eq('read_customers,read_orders')
+
+      issued = Commerce::OauthState.issue('shopify', account: account, user: admin, shop: shop, scopes: 'read_customers,read_orders,write_orders')
+      cookie = issued.nonce
+      stub_request(:post, token_url).to_return(status: 200, body: token_body.merge('scope' => 'read_customers,write_orders').to_json)
+      get '/commerce/shopify/callback', params: signed.call('code' => 'shopify-code-2', 'state' => issued.state)
+      expect(response).to redirect_to("#{settings}?shopify=connected")
+      expect(store.reload.credentials['scope']).to eq('read_customers,write_orders')
+      expect(Commerce::Providers.for(store).write_access_problem).to be_nil
+    end
+
     it 'refuses a token whose shop is not the shop in the state, and a shop another account owns' do
       other_shop = { data: { shop: { id: 'gid://shopify/Shop/9', name: 'X', myshopifyDomain: 'x.myshopify.com' } } }
       stub_request(:post, graphql_url).to_return(status: 200, body: other_shop.to_json)

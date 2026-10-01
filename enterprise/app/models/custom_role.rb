@@ -23,6 +23,8 @@
 # - 'contact_manage': Can manage contacts.
 # - 'report_manage': Can manage reports.
 # - 'knowledge_base_manage': Can manage knowledge base portals.
+# - 'commerce_order_manage': Lynomia Commerce: can change store order statuses and resend store emails (refunds and
+#   cancellations stay administrator-only).
 
 class CustomRole < ApplicationRecord
   belongs_to :account
@@ -39,6 +41,7 @@ class CustomRole < ApplicationRecord
     contact_manage
     report_manage
     knowledge_base_manage
+    commerce_order_manage
   ].freeze
 
   validates :name, presence: true

@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import Button from 'dashboard/components-next/button/Button.vue';
+import CommerceOrderActions from './CommerceOrderActions.vue';
 import { useCommerceLabels } from './useCommerceLabels';
 import {
   formatAmount,
@@ -17,10 +18,20 @@ import {
 
 const props = defineProps({
   order: { type: Object, required: true },
+  // The order's store, shown when orders of several stores are listed together (Customer 360).
+  store: { type: Object, default: null },
+  // Orders found by number may be another customer's: their tracking is not offered for sending into the conversation.
+  canSend: { type: Boolean, default: true },
+  // The order's store when this agent is offered order actions there (the linked customer's orders only).
+  actionsStoreId: { type: Number, default: null },
+  conversationId: { type: [Number, String], default: null },
 });
 
+const emit = defineEmits(['actionDone']);
+
 const { t, locale } = useI18n();
-const { orderStatus, paymentStatus, shipmentStatus } = useCommerceLabels();
+const { orderStatus, paymentStatus, shipmentStatus, providerName } =
+  useCommerceLabels();
 
 const STATUS_CLASSES = {
   completed: 'bg-n-teal-3 text-n-teal-11',
@@ -49,7 +60,9 @@ const createdAt = computed(() =>
 );
 const adminUrl = computed(() => safeAdminUrl(props.order.admin_order_url));
 const trackingUrl = computed(() => safeHttpsUrl(props.order.tracking?.url));
-const canSendTracking = computed(() => hasTracking(props.order));
+const canSendTracking = computed(
+  () => props.canSend && hasTracking(props.order)
+);
 
 const sendTracking = () => {
   emitter.emit(
@@ -69,8 +82,29 @@ const sendTracking = () => {
       <span class="text-heading-3 text-n-slate-12" dir="ltr">
         {{ t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number }) }}
       </span>
-      <span class="text-body-main text-n-slate-12">{{ total }}</span>
+      <div class="flex items-center gap-1">
+        <span class="text-body-main text-n-slate-12">{{ total }}</span>
+        <CommerceOrderActions
+          v-if="actionsStoreId && conversationId"
+          :conversation-id="conversationId"
+          :store-id="actionsStoreId"
+          :order="order"
+          @done="emit('actionDone')"
+        />
+      </div>
     </div>
+    <span
+      v-if="store"
+      class="text-label-small text-n-slate-11"
+      data-test-id="commerce-order-store"
+    >
+      {{
+        t('COMMERCE.OVERVIEW.ORDER_STORE', {
+          store: store.name,
+          provider: providerName(store.provider),
+        })
+      }}
+    </span>
     <div class="flex flex-wrap items-center gap-1.5">
       <span
         class="px-1.5 py-0.5 rounded-md text-label-small"

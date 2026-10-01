@@ -1,0 +1,7 @@
+GET order actions (reads the order from the store now): n=31 p50=333ms p95=408ms max=414ms
+POST order action (validate, record, queue): n=31 p50=33ms p95=134ms max=137ms
+GET action run (dialog polling): n=58 p50=15ms p95=21ms max=26ms
+GET conversation carts (all stores, concurrent): n=41 p50=89ms p95=232ms max=256ms
+POST prepare recovery message: n=6 p50=51ms p95=83ms max=83ms
+GET admin cart queue: n=10 p50=94ms p95=299ms max=299ms
+Commerce::ActionJob (re-read + version check + one write + read back): n=21 p50=0.50s p95=0.76s max=25.46s (includes the 25 s timeout case)

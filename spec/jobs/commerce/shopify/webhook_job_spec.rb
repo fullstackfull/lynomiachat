@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Commerce::Shopify::WebhookJob do
   include_context 'with commerce encryption'
+  include ActiveJob::TestHelper
   include_context 'with shopify commerce app'
 
   let(:account) { create(:account) }
@@ -20,6 +21,7 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     ->(payload) { Commerce::WebhookQueue.send(:encryptor, 'shopify').encrypt_and_sign(payload.to_json, purpose: 'commerce_shopify_webhook') }
   end
   let(:cache_key) { ->(identifier) { Commerce::Cache.send(:key, store, :orders, identifier) } }
+  let(:outdated) { ->(identifier) { JSON.parse(Redis::Alfred.get(cache_key.call(identifier)))['outdated'] == true } }
 
   before do
     create(:commerce_customer_link, store: store, account: account, contact: sara, external_customer_id: '7001')
@@ -32,18 +34,23 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     described_class.perform_now(topic, shop, triggered_at, seal.call(payload))
   end
 
-  it "drops only the customer's cached orders on an order event" do
+  it "outdates only the customer's cached orders on an order event" do
     run('orders/updated', { 'id' => 6_001_006, 'email' => 'sara.ali@example.com', 'customer' => customer })
 
-    expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(false)
-    expect(Redis::Alfred.exists?(cache_key.call('7002'))).to be(true)
+    expect(%w[7001 7002].map { |identifier| outdated.call(identifier) }).to eq([true, false])
   end
 
-  it "drops a guest's cached orders on a guest checkout event" do
+  it 'refreshes the linked contact of an order event, and only it' do
+    run('orders/updated', { 'id' => 6_001_006, 'email' => 'sara.ali@example.com', 'customer' => customer })
+
+    link = Commerce::CustomerLink.find_by!(contact: sara)
+    expect(enqueued_jobs.select { |job| job[:job] == Commerce::RefreshJob }.map { |job| job[:args] }).to eq([[link.id]])
+  end
+
+  it "outdates a guest's cached orders on a guest checkout event" do
     run('orders/create', { 'id' => 6_001_010, 'email' => 'Guest.Buyer@Example.com', 'customer' => nil })
 
-    expect(Redis::Alfred.exists?(cache_key.call('guest:guest.buyer@example.com'))).to be(false)
-    expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(true)
+    expect(%w[guest:guest.buyer@example.com 7001].map { |identifier| outdated.call(identifier) }).to eq([true, false])
   end
 
   it 'disconnects the store on app/uninstalled, removing its token, links and cache, and keeping contacts and conversations' do
@@ -81,13 +88,15 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     end
   end
 
-  it 'records a customer data request for the operator without removing anything' do
+  it 'records a customer data request for the operator, with the link ids to export and no personal data, removing nothing' do
     run('customers/data_request', { 'shop_id' => 68_210_001, 'shop_domain' => shop, 'customer' => customer, 'data_request' => { 'id' => 9999 } })
 
     expect(store.customer_links.count).to eq(3)
     if defined?(Enterprise::AuditLog)
       audit = Enterprise::AuditLog.find_by!(comment: 'commerce.shopify.customer_data_requested')
-      expect(audit.audited_changes).to eq('customer_links' => 2, 'data_request_id' => 9999)
+      expect(audit.audited_changes).to eq('customer_link_ids' => store.customer_links.where(contact: [sara, guest]).order(:id).pluck(:id),
+                                          'data_request_id' => 9999)
+      expect(audit.to_json).not_to include('sara.ali', '966551112233')
     end
   end
 

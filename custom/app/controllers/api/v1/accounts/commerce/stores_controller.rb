@@ -2,7 +2,8 @@
 #
 #   GET    /api/v1/accounts/:account_id/commerce/stores       list, with the providers this installation offers
 #   POST   /api/v1/accounts/:account_id/commerce/stores       connect WooCommerce: provider, base_url, consumer_key, consumer_secret, name
-#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), consumer_key + consumer_secret (WooCommerce)
+#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), consumer_key + consumer_secret (WooCommerce),
+#                                                             order_actions (true|false: the store's opt-in to order actions)
 #   DELETE /api/v1/accounts/:account_id/commerce/stores/:id   disconnect (credentials and customer links deleted)
 #
 # Credentials are write-only: they are accepted here and never rendered back. Salla stores are connected through the Salla
@@ -35,6 +36,7 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
     @store.update!(name: params[:name].to_s.strip) if params.key?(:name)
     connection.rotate_credentials(@store, credentials_param) if params.key?(:consumer_key) || params.key?(:consumer_secret)
     change_status if params.key?(:status)
+    change_order_actions if params.key?(:order_actions)
     render :show
   end
 
@@ -59,6 +61,12 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
     when 'disabled' then connection.disable(@store)
     else raise ActionController::ParameterMissing, :status
     end
+  end
+
+  def change_order_actions
+    raise ActionController::ParameterMissing, :order_actions unless [true, false].include?(params[:order_actions])
+
+    connection.change_order_actions(@store, params[:order_actions])
   end
 
   def credentials_param

@@ -1,0 +1,3 @@
+# Vitest, full suite
+ Test Files  461 passed (461)
+      Tests  4745 passed (4745)

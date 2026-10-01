@@ -27,10 +27,11 @@ class CommerceAPI extends ApiClient {
   }
 
   // The shop's authorization link for "Connect with Shopify" (the browser is sent there; Shopify redirects back to
-  // Lynomia). `shop` is the store's myshopify.com domain.
-  createShopifyConnection(shop) {
+  // Lynomia). `shop` is the store's myshopify.com domain; `orderActions` also asks Shopify for write access to orders.
+  createShopifyConnection(shop, { orderActions = false } = {}) {
     return axios.post(`${this.baseUrl()}/commerce/shopify_connection`, {
       shop,
+      ...(orderActions ? { order_actions: true } : {}),
     });
   }
 
@@ -40,6 +41,31 @@ class CommerceAPI extends ApiClient {
 
   getConversationStores(conversationId, { signal } = {}) {
     return axios.get(this.conversationStoresUrl(conversationId), { signal });
+  }
+
+  // Customer 360: every connected store's view of the conversation's contact, aggregated.
+  getOverview(conversationId, { signal } = {}) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/overview`,
+      { signal }
+    );
+  }
+
+  // Reads the current view again from the stores (rate-limited server-side). Without a store: the Customer 360 overview.
+  refresh(conversationId, storeId = null) {
+    return axios.post(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/refresh`,
+      null,
+      { params: storeId ? { store_id: storeId } : {} }
+    );
+  }
+
+  // Orders with this number (digits, an optional leading #) in one store, or in every store without one.
+  searchOrders(conversationId, number, storeId = null) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/orders`,
+      { params: storeId ? { number, store_id: storeId } : { number } }
+    );
   }
 
   getPanel(conversationId, storeId, { signal } = {}) {
@@ -66,6 +92,54 @@ class CommerceAPI extends ApiClient {
   unlinkCustomer(conversationId, storeId) {
     return axios.delete(
       `${this.conversationStoresUrl(conversationId)}/${storeId}/link`
+    );
+  }
+
+  orderActionsUrl(conversationId, storeId, orderId) {
+    return `${this.conversationStoresUrl(conversationId)}/${storeId}/orders/${orderId}/actions`;
+  }
+
+  // What can be done to the order now: read from the store, with Lynomia's rules and this agent's permissions applied.
+  getOrderActions(conversationId, storeId, orderId) {
+    return axios.get(this.orderActionsUrl(conversationId, storeId, orderId));
+  }
+
+  // One confirmed action: { action_type, version, idempotency_key, params }. Answered with the queued run.
+  requestOrderAction(conversationId, storeId, orderId, payload) {
+    return axios.post(
+      this.orderActionsUrl(conversationId, storeId, orderId),
+      payload
+    );
+  }
+
+  // The conversation contact's abandoned carts in every store that offers them, each with its recovery state.
+  getCarts(conversationId) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/carts`
+    );
+  }
+
+  // Prepares a recovery message for the reply box; Lynomia never sends it. `overrideCooldown` is for administrators.
+  prepareRecovery(
+    conversationId,
+    storeId,
+    cartId,
+    { overrideCooldown = false } = {}
+  ) {
+    return axios.post(
+      `${this.conversationStoresUrl(conversationId)}/${storeId}/carts/${encodeURIComponent(cartId)}/recovery`,
+      overrideCooldown ? { override_cooldown: true } : {}
+    );
+  }
+
+  // Administrators' recovery queue: recent abandoned carts across the account's stores.
+  getCartQueue(params = {}) {
+    return axios.get(`${this.baseUrl()}/commerce/carts`, { params });
+  }
+
+  getActionRun(conversationId, runId) {
+    return axios.get(
+      `${this.baseUrl()}/conversations/${conversationId}/commerce/action_runs/${runId}`
     );
   }
 }

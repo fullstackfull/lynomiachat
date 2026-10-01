@@ -1,0 +1,3 @@
+# ESLint (pnpm eslint: app/**/*.{js,vue}). Suite run: 0 errors, 445 warnings (the 445th: a bare '#' in the order actions review, fixed); after the fix:
+✖ 444 problems (0 errors, 444 warnings)
+

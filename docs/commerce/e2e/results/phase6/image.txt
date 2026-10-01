@@ -1,0 +1,11 @@
+image=lynomia/staging:final-f842e12e
+id=sha256:2c556fe0f7062cf342a33a68fa83b02e6aca52680d1b70ad0425ae9451b5fe8f created=2026-09-30T21:56:40.380308771Z revision=f842e12ec7cf3924d65bafda874562269c52a905 size=1084239523
+base_id=sha256:4814b1e373c81403146a0722f7842674ab079c09461519613b6ecec9f6860f6f
+ruby=3.4.4 node=v24.13.0 bundler=2.5.16 RAILS_ENV=production
+gemfile_lock_sha256=b9efc099d923d19a20c74a1c6d292afb009bc31d9495bf12a63a4debe2b66359
+pnpm_lock_sha256=3330795cf541bd610d3986693e6dc693feac8139757effb8db5c72e445e34946
+custom_files=120 enterprise_files=557
+vite_manifest=public/vite/.vite/manifest.json vite_assets=298
+migrations=186 latest=20260930100100_create_commerce_customer_links.rb
+spec_dir=absent node_modules=absent
+manifest_commerce_refs=0

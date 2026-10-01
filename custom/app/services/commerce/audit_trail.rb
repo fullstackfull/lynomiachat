@@ -2,7 +2,8 @@
 # Enterprise overlay); the Community edition keeps the tagged log line only. Never pass credentials in `changes`.
 # `auditable` is a store, a customer link, or the account itself (commerce.salla.connect_started, before any store).
 module Commerce::AuditTrail
-  # Events without an entry are recorded as 'update': store_enabled, store_disabled, store_needs_reauth,
+  # Events without an entry are recorded as 'update': store_enabled, store_disabled, store_needs_reauth, order_actions_changed,
+  # action.succeeded, action.failed, action.reconciled,
   # credentials_rotated, customer_link_changed, salla.connect_started, salla.reauthorized, salla.token_refreshed,
   # salla.needs_reauth, zid.reauthorized, zid.token_refreshed, zid.needs_reauth, shopify.reauthorized,
   # shopify.token_refreshed, shopify.needs_reauth, shopify.customer_redacted, shopify.customer_data_requested.
@@ -11,6 +12,7 @@ module Commerce::AuditTrail
     'commerce.store_disconnected' => 'destroy',
     'commerce.customer_link_created' => 'create',
     'commerce.customer_link_removed' => 'destroy',
+    'commerce.action.requested' => 'create',
     'commerce.salla.connected' => 'create',
     'commerce.salla.disconnected' => 'destroy',
     'commerce.zid.connected' => 'create',

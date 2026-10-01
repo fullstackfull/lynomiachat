@@ -7,7 +7,10 @@
 class Webhooks::ShopifyCommerceController < ActionController::API
   def create
     body = request.raw_post
-    return head :unauthorized unless Commerce::Shopify::Webhook.authentic?(body, request.headers['X-Shopify-Hmac-Sha256'])
+    unless Commerce::Shopify::Webhook.authentic?(body, request.headers['X-Shopify-Hmac-Sha256'])
+      Commerce::Metrics.event('commerce.webhook.rejected', provider: 'shopify')
+      return head :unauthorized
+    end
 
     shop = request.headers['X-Shopify-Shop-Domain']
     webhook_id = request.headers['X-Shopify-Webhook-Id']

@@ -49,6 +49,7 @@ describe('commerceHelper', () => {
     );
     expect(relativeTime('2026-09-30T12:00:00Z', 'ar', now)).toMatch(/دقيقة/);
     expect(relativeTime('2026-09-30T09:00:00Z', 'en', now)).toBe('3 hours ago');
+    expect(relativeTime('2026-09-28T12:00:00Z', 'en', now)).toBe('2 days ago');
   });
 
   describe('tracking', () => {

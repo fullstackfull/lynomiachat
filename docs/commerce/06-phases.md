@@ -99,12 +99,21 @@ Changes from the exit criteria above, all decided in that brief:
 - no webhooks;
 - Arabic strings are included.
 
+**Phase 6 gate (2026-09-30): PARTIAL GO** (doc 23). WooCommerce GO with a pilot; Salla, Zid and Shopify NO-GO with their switches off until their real UAT (and, for Shopify, the protected customer data approval).
+
 **Phases 3–5 status (2026-09-30): implemented, real UAT blocked.** Salla (docs 10–13), Zid (docs 14–17) and Shopify (docs 18–22) are built on the same core. Each passed a simulated-provider E2E; `REAL_*_UAT = BLOCKED` for all three, since provider hosts are unreachable here and no partner accounts exist.
 
 Shopify differs from the row above:
 - **A dedicated Shopify app** (`SHOPIFY_COMMERCE_*`). It does not reuse the upstream pieces beyond the hardened `Shopify::ShopDomain`. The legacy integration is left unchanged and nothing is migrated (doc 21).
 - **No `shopify_api` 16.x upgrade.** The connector talks to Shopify through `Commerce::HttpClient`, so the upstream gem and its billing code are untouched.
 - **Exit criteria still open:** the development-store run and Shopify's protected customer data approval (doc 22 §6).
+
+**Phases 7–10 status (2026-10-01): implemented; Lynomia Commerce ends here.** Phase 7–8 (rows 6 and part of 7):
+Customer 360 and realtime (docs 24–27). Phase 9–10 (row 7 and the abandoned carts of row 6): order actions with a
+separate permission, a two-step confirmation and an audit trail; abandoned carts; prepared, human-sent recovery
+messages (docs 28–34). Production readiness per provider is in doc 34 §1: WooCommerce read, realtime and per-store
+order actions GO; Salla, Zid and Shopify held back until their real UAT. Not started, by decision: CRM, SLA, Audiences,
+Automation, AI, and the Captain copilot tool of row 6.
 
 ## 4. Files likely to change in Phase 2 (core + WooCommerce)
 

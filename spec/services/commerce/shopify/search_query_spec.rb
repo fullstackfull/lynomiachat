@@ -22,6 +22,11 @@ RSpec.describe Commerce::Shopify::SearchQuery do
     end
   end
 
+  it 'quotes an order name as an exact phrase that no value can leave' do
+    expect(described_class.order_name('1006')).to eq('name:"1006"')
+    expect(described_class.order_name('1" OR name:*')).to eq('name:"1\\" OR name:*"')
+  end
+
   it 'accepts only a positive integer customer id' do
     expect(described_class.customer_id('7001')).to eq('customer_id:7001')
     ['7001 OR tag:vip', '-1', '0', 'gid://shopify/Customer/7001', '', nil, '1e3'].each do |value|

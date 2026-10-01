@@ -226,9 +226,14 @@ RSpec.describe Commerce::Providers::Woocommerce do
     expect { provider.admin_order_url('0') }.to raise_error(ArgumentError)
   end
 
-  it 'exposes no write operation' do
+  # The only writes are Lynomia's own webhook subscriptions (register_webhooks, release) and the order actions an agent
+  # confirms (perform_action, through Commerce::OrderActions only): never customers or products
+  # (docs/commerce/24-realtime-architecture.md §4, 29-provider-action-capabilities.md).
+  it 'writes only webhooks and confirmed order actions' do
     expect(described_class.public_instance_methods(false)).to contain_exactly(
-      :health, :store_identity, :find_customers, :list_customer_orders, :get_order, :admin_order_url, :normalize_customer, :normalize_order
+      :health, :store_identity, :find_customers, :list_customer_orders, :get_order, :admin_order_url, :normalize_customer, :normalize_order,
+      :register_webhooks, :release, :event_customer_ids, :event_order_id, :write_access_problem, :action_snapshot, :perform_action,
+      :reconcile_action
     )
   end
 end

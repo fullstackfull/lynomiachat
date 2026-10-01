@@ -13,6 +13,9 @@ module Commerce::Shopify::Config
   # Read-only. The 2026-07 schema grants every field the connector reads (customers, orders, fulfillments and their
   # tracking) to these two scopes, so read_fulfillments and read_all_orders are not requested.
   SCOPES = %w[read_customers read_orders].freeze
+  # Asked only when an administrator reconnects a store for order actions (orderCancel, refundCreate). Never added to a
+  # read-only connection, and a read-only token keeps working until the administrator decides.
+  ACTION_SCOPES = %w[read_customers read_orders write_orders].freeze
 
   # Read from the config cache directly, like Commerce::Zid::Config.enabled?: it is checked on every Commerce request.
   def self.enabled?

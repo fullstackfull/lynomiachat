@@ -180,6 +180,8 @@ cd docs/commerce/e2e/salla && ERUN=../erun.sh CHROMIUM_PATH=… E2E_SALLA_WEBHOO
 
 ## 4. Checklist for the real Salla UAT (when unblocked)
 
+Still blocked in Phase 6 (doc 23 §4.2); every open item is classified in doc 23 §9.
+
 **Prerequisites:**
 
 - The environment's network access must allow `api.salla.dev`, `accounts.salla.sa`, `s.salla.sa`, and `docs.salla.dev`

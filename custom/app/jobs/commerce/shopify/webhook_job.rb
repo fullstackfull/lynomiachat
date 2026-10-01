@@ -2,10 +2,12 @@
 # compliance.md). Lynomia keeps no order database: per shop it keeps the store (encrypted token), customer links and
 # cached reads, so that is all these events touch. Contacts and conversations are never deleted.
 #
-# - orders/create, orders/updated: the customer's (or guest's) cached orders are dropped, so the panel reads them again.
+# - orders/create, orders/updated: through Commerce::Realtime, the customer's (or guest's) cached orders are dropped and,
+#   for a linked contact, refreshed.
 # - app/uninstalled: the store is disconnected: token, customer links and cache removed.
 # - customers/redact: the customer's links and the store's cache are removed; the audit keeps counts only.
-# - customers/data_request: recorded for the operator (docs/commerce/20 §data requests); nothing is removed.
+# - customers/data_request: recorded for the operator with the ids of the customer's links, so the data can be exported
+#   for the merchant (docs/commerce/20 §4); nothing is removed.
 # - shop/redact: the store row, its links and cache are deleted; the account's audit keeps the store id and counts.
 # Shopify's headers are not signed, so the removals act only when the shop id in the signed body is the store's, and
 # app/uninstalled and shop/redact are ignored for a store authorized again after the event was triggered.
@@ -27,12 +29,7 @@ class Commerce::Shopify::WebhookJob < ApplicationJob
   private
 
   def invalidate_orders(payload)
-    return if @store.disconnected?
-
-    customer_id = payload.dig('customer', 'id')
-    email = payload['email'].to_s.strip.downcase
-    Commerce::Cache.invalidate(@store, :orders, customer_id.to_s) if customer_id
-    Commerce::Cache.invalidate(@store, :orders, "#{Commerce::Providers::Shopify::GUEST_PREFIX}#{email}") if customer_id.nil? && email.present?
+    Commerce::Realtime.order_event(@store, payload) unless @store.disconnected?
   end
 
   def uninstalled(payload)
@@ -52,7 +49,7 @@ class Commerce::Shopify::WebhookJob < ApplicationJob
   def data_requested(payload)
     return unless shop?(payload['shop_id'])
 
-    changes = { customer_links: customer_links(payload['customer']).count, data_request_id: payload.dig('data_request', 'id') }
+    changes = { customer_link_ids: customer_links(payload['customer']).pluck(:id), data_request_id: payload.dig('data_request', 'id') }
     Commerce::AuditTrail.record('commerce.shopify.customer_data_requested', auditable: @store, changes: changes)
   end
 

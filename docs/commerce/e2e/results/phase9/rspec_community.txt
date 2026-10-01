@@ -1,0 +1,5 @@
+# Community RSpec (no enterprise/), 4 shards, same code
+shard 0: 1835 examples, 0 failures, 2 pending
+shard 1: 1610 examples, 0 failures, 10 pending
+shard 2: 1938 examples, 0 failures, 9 pending
+shard 3: 2206 examples, 0 failures, 49 pending

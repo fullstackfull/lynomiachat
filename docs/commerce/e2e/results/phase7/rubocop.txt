@@ -1,0 +1,11 @@
+# RuboCop (repo config), offenses by file; every file is byte-identical to v4.18.0 (git diff v4.18.0 is empty)
+3242 files inspected, 54 offenses detected, 50 offenses autocorrectable
+     20 script/bulk_reindex_messages.rb
+     10 spec/support/opensearch_check.rb
+      8 script/reindex_single_account.rb
+      7 script/monitor_reindex.rb
+      2 spec/rails_helper.rb
+      2 script/rails_upgrade/preflight.rb
+      2 script/rails_upgrade/active_storage_smoke.rb
+      2 docker/entrypoints/helpers/pg_database_url.rb
+      1 script/backfill_applied_sla_completed_at.rb

@@ -1,0 +1,207 @@
+[
+  {
+    "name": "A: channel still whatsapp_cloud with readable token (no reconnect)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: channel not flagged for reauthorization",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: inbound text Arabic",
+    "ok": true,
+    "detail": "http=200 msg=51 attachments=0"
+  },
+  {
+    "name": "A: inbound text English + emoji",
+    "ok": true,
+    "detail": "http=200 msg=52 attachments=0"
+  },
+  {
+    "name": "A: inbound image",
+    "ok": true,
+    "detail": "http=200 msg=53 attachments=1"
+  },
+  {
+    "name": "A: inbound video",
+    "ok": true,
+    "detail": "http=200 msg=54 attachments=1"
+  },
+  {
+    "name": "A: inbound document",
+    "ok": true,
+    "detail": "http=200 msg=55 attachments=1"
+  },
+  {
+    "name": "A: inbound audio",
+    "ok": true,
+    "detail": "http=200 msg=56 attachments=1"
+  },
+  {
+    "name": "A: all inbound in one conversation for the contact",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: contact phone mapped",
+    "ok": true,
+    "detail": "\"+15557770001\""
+  },
+  {
+    "name": "A: inbound quoted reply linked (in_reply_to)",
+    "ok": true,
+    "detail": "in_reply_to=51"
+  },
+  {
+    "name": "A: duplicate inbound webhook is deduplicated",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: outbound text sent via Cloud API",
+    "ok": true,
+    "detail": "http=200 source_id=wamid.FAKE-acc98c-1 to=15557770001"
+  },
+  {
+    "name": "A: outbound uses Cloud API token of this tenant",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: outbound image sent",
+    "ok": true,
+    "detail": "type=image"
+  },
+  {
+    "name": "A: outbound template sent",
+    "ok": true,
+    "detail": "http=200 type=template"
+  },
+  {
+    "name": "A: delivery/read status applied",
+    "ok": true,
+    "detail": "status=read"
+  },
+  {
+    "name": "A: webhook verify handshake",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: credentials untouched by traffic",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A: no /register call during normal traffic",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: channel still whatsapp_cloud with readable token (no reconnect)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: channel not flagged for reauthorization",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: inbound text Arabic",
+    "ok": true,
+    "detail": "http=200 msg=61 attachments=0"
+  },
+  {
+    "name": "B: inbound text English + emoji",
+    "ok": true,
+    "detail": "http=200 msg=62 attachments=0"
+  },
+  {
+    "name": "B: inbound image",
+    "ok": true,
+    "detail": "http=200 msg=63 attachments=1"
+  },
+  {
+    "name": "B: inbound video",
+    "ok": true,
+    "detail": "http=200 msg=64 attachments=1"
+  },
+  {
+    "name": "B: inbound document",
+    "ok": true,
+    "detail": "http=200 msg=65 attachments=1"
+  },
+  {
+    "name": "B: inbound audio",
+    "ok": true,
+    "detail": "http=200 msg=66 attachments=1"
+  },
+  {
+    "name": "B: all inbound in one conversation for the contact",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: contact phone mapped",
+    "ok": true,
+    "detail": "\"+15557770002\""
+  },
+  {
+    "name": "B: inbound quoted reply linked (in_reply_to)",
+    "ok": true,
+    "detail": "in_reply_to=61"
+  },
+  {
+    "name": "B: duplicate inbound webhook is deduplicated",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: outbound text sent via Cloud API",
+    "ok": true,
+    "detail": "http=200 source_id=wamid.FAKE-acc98c-5 to=15557770002"
+  },
+  {
+    "name": "B: outbound uses Cloud API token of this tenant",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: outbound image sent",
+    "ok": true,
+    "detail": "type=image"
+  },
+  {
+    "name": "B: outbound template sent",
+    "ok": true,
+    "detail": "http=200 type=template"
+  },
+  {
+    "name": "B: delivery/read status applied",
+    "ok": true,
+    "detail": "status=read"
+  },
+  {
+    "name": "B: webhook verify handshake",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: forged signature rejected",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "B: credentials untouched by traffic",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B: no /register call during normal traffic",
+    "ok": true,
+    "detail": null
+  }
+]

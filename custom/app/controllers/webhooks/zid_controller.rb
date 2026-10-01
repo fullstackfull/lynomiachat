@@ -12,7 +12,10 @@ class Webhooks::ZidController < ActionController::API
     store_id = request.path_parameters[:store_id].to_s
     store = Commerce::Store.where.not(status: :disconnected).find_by(provider: 'zid', external_store_id: store_id)
     authorized = authenticate_with_http_basic { |username, password| Commerce::Zid::Webhook.authorized?(store, username, password) }
-    return head :unauthorized unless authorized
+    unless authorized
+      Commerce::Metrics.event('commerce.webhook.rejected', provider: 'zid', store_id: store&.id)
+      return head :unauthorized
+    end
 
     Commerce::Zid::Webhook.enqueue(store, request.raw_post)
     head :ok

@@ -11,30 +11,58 @@ class Commerce::Cache
 
   Result = Data.define(:value, :fetched_at, :stale, :error)
 
-  def self.fetch(store, kind, identifier)
+  # `force` reads the store even when the entry is fresh (an agent's Refresh); the entry stays the fallback if it fails.
+  def self.fetch(store, kind, identifier, force: false)
     key = key(store, kind, identifier)
-    entry = JSON.parse(Redis::Alfred.get(key) || 'null')
-    return Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: false, error: nil) if fresh?(entry)
+    entry = read(key)
+    hit = !force && fresh?(entry)
+    Commerce::Metrics.event(hit ? 'commerce.cache.hit' : 'commerce.cache.miss', store_id: store.id, kind: kind, forced: force)
+    return Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: false, error: nil) if hit
 
-    value = yield.as_json
-    fetched_at = Time.current.utc.iso8601
-    Redis::Alfred.setex(key, { value: value, fetched_at: fetched_at }.to_json, KEEP_FOR)
-    Result.new(value: value, fetched_at: fetched_at, stale: false, error: nil)
+    write(key, yield.as_json)
   rescue Commerce::Error => e
     raise unless entry && STALE_FALLBACK_CODES.include?(e.code)
 
     Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: true, error: e.code)
   end
 
-  # Drops one entry, so its next read goes to the store (a Zid order webhook for the customer's cached orders).
+  # Marks one entry outdated (a store event says it changed): its next read goes to the store, and the entry stays the
+  # stale fallback, with the time it was fetched, if the store cannot answer then.
   def self.invalidate(store, kind, identifier)
+    outdate(key(store, kind, identifier))
+  end
+
+  # Drops one entry: what it held must not be shown again, not even as a stale fallback (a recovered cart).
+  def self.delete(store, kind, identifier)
     Redis::Alfred.delete(key(store, kind, identifier))
   end
 
+  def self.delete_all(store, kind)
+    delete_matching("#{prefix(store)}::#{kind.to_s.upcase}::*")
+  end
+
   def self.purge(store)
+    delete_matching("#{prefix(store)}::*")
+  end
+
+  # Marks every entry of one kind in the store outdated (an order event that names no customer: every customer's orders).
+  def self.invalidate_all(store, kind)
+    matching("#{prefix(store)}::#{kind.to_s.upcase}::*").each { |key| outdate(key) }
+  end
+
+  def self.matching(pattern)
     keys = []
-    Redis::Alfred.scan_each(match: "#{prefix(store)}::*") { |key| keys << key }
-    keys.each { |key| Redis::Alfred.delete(key) }
+    Redis::Alfred.scan_each(match: pattern) { |key| keys << key }
+    keys
+  end
+
+  def self.delete_matching(pattern)
+    matching(pattern).each { |key| Redis::Alfred.delete(key) }
+  end
+
+  def self.outdate(key)
+    entry = read(key)
+    Redis::Alfred.with { |conn| conn.set(key, entry.merge('outdated' => true).to_json, keepttl: true) } if entry
   end
 
   def self.key(store, kind, identifier)
@@ -45,9 +73,17 @@ class Commerce::Cache
     "COMMERCE::V1::ACCOUNT::#{store.account_id}::STORE::#{store.id}"
   end
 
-  def self.fresh?(entry)
-    entry.present? && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
+  def self.read(key) = JSON.parse(Redis::Alfred.get(key) || 'null')
+
+  def self.write(key, value)
+    fetched_at = Time.current.utc.iso8601
+    Redis::Alfred.setex(key, { value: value, fetched_at: fetched_at }.to_json, KEEP_FOR)
+    Result.new(value: value, fetched_at: fetched_at, stale: false, error: nil)
   end
 
-  private_class_method :key, :prefix, :fresh?
+  def self.fresh?(entry)
+    entry.present? && !entry['outdated'] && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
+  end
+
+  private_class_method :key, :prefix, :read, :write, :fresh?, :matching, :delete_matching, :outdate
 end

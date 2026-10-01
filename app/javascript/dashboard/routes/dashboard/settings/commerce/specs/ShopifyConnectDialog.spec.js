@@ -72,9 +72,31 @@ describe('ShopifyConnectDialog', () => {
     await connectWith(wrapper, ' lynomia-demo.myshopify.com ');
 
     expect(CommerceAPI.createShopifyConnection).toHaveBeenCalledWith(
-      'lynomia-demo.myshopify.com'
+      'lynomia-demo.myshopify.com',
+      { orderActions: false }
     );
     expect(assign).toHaveBeenCalledWith(AUTHORIZE_URL);
+  });
+
+  it('asks for write access to orders only when reconnecting for order actions, and says so', async () => {
+    CommerceAPI.createShopifyConnection.mockResolvedValue({
+      data: { authorize_url: AUTHORIZE_URL },
+    });
+    const wrapper = await mountDialog({
+      shop: 'lynomia-demo.myshopify.com',
+      orderActions: true,
+    });
+
+    expect(wrapper.text()).toContain(
+      'Reconnect Shopify to enable order actions'
+    );
+    await wrapper.find('[data-test-id="shopify-connect"]').trigger('click');
+    await flushPromises();
+
+    expect(CommerceAPI.createShopifyConnection).toHaveBeenCalledWith(
+      'lynomia-demo.myshopify.com',
+      { orderActions: true }
+    );
   });
 
   it('starts with the store domain when reconnecting', async () => {
@@ -90,7 +112,8 @@ describe('ShopifyConnectDialog', () => {
     await flushPromises();
 
     expect(CommerceAPI.createShopifyConnection).toHaveBeenCalledWith(
-      'lynomia-demo.myshopify.com'
+      'lynomia-demo.myshopify.com',
+      { orderActions: false }
     );
   });
 

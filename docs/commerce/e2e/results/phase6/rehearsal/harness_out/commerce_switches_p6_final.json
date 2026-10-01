@@ -1,0 +1,97 @@
+[
+  {
+    "name": "deploy: no account has Commerce",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "deploy: only WooCommerce is offered",
+    "ok": true,
+    "detail": "[\"woocommerce\"]"
+  },
+  {
+    "name": "WhatsApp inbound and agent reply work (commerce-off)",
+    "ok": true,
+    "detail": "webhook=200 reply=200"
+  },
+  {
+    "name": "Commerce settings refused while Commerce is off",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "conversation Commerce refused while Commerce is off",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "Commerce on: a real WooCommerce store connects",
+    "ok": true,
+    "detail": "http=201"
+  },
+  {
+    "name": "store response carries no credentials",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "Commerce on: the conversation reads the store",
+    "ok": true,
+    "detail": "http=200 state=not_found"
+  },
+  {
+    "name": "WhatsApp inbound and agent reply work (commerce-on)",
+    "ok": true,
+    "detail": "webhook=200 reply=200"
+  },
+  {
+    "name": "provider switch on: Zid offered",
+    "ok": true,
+    "detail": "[\"woocommerce\", \"zid\"]"
+  },
+  {
+    "name": "provider switch off: Zid no longer offered, WooCommerce unchanged",
+    "ok": true,
+    "detail": "[\"woocommerce\"]"
+  },
+  {
+    "name": "provider switch off: the WooCommerce store still reads",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "WhatsApp inbound and agent reply work (zid-switched-off)",
+    "ok": true,
+    "detail": "webhook=200 reply=200"
+  },
+  {
+    "name": "emergency off: Commerce settings refused",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "emergency off: conversation Commerce refused",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "WhatsApp inbound and agent reply work (emergency-off)",
+    "ok": true,
+    "detail": "webhook=200 reply=200"
+  },
+  {
+    "name": "emergency off: store and encrypted credentials kept",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "switched back on: the conversation reads the store again",
+    "ok": true,
+    "detail": "http=200"
+  },
+  {
+    "name": "WhatsApp inbound and agent reply work (commerce-on-again)",
+    "ok": true,
+    "detail": "webhook=200 reply=200"
+  }
+]

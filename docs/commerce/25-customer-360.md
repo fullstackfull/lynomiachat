@@ -34,8 +34,9 @@ per-store results side by side.
 (`Commerce::CustomerLink.where(match_source: 4).delete_all`). Earlier code does not know that value and would read such
 a row as an ordinary link, showing the customer an agent had removed. Everything else added is ignored by earlier code:
 the WooCommerce webhook secret and realtime metadata, the Redis keys, and the cache entries' `outdated` flag. The
-WooCommerce webhooks Lynomia created stay in the store: they are refused with 401, and WooCommerce disables them after
-5 failures. Delete them first with "Disable" then "Enable" on earlier code, or from the store's admin.
+WooCommerce webhooks Lynomia created stay in the store. Earlier code refuses them with 401, and WooCommerce disables a
+webhook after 5 failures. A merchant can also delete them in WooCommerce → Settings → Advanced → Webhooks
+("Lynomia Commerce").
 
 ## 3. API
 

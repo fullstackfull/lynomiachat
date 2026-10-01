@@ -8,6 +8,7 @@ import {
   getActionOptions,
   getConditionOptions,
 } from 'dashboard/helper/automationHelper';
+import { useLynomiaAutomation } from 'dashboard/routes/dashboard/settings/automation/lynomiaAutomation';
 import {
   MESSAGE_CONDITION_VALUES,
   PRIORITY_CONDITION_VALUES,
@@ -27,6 +28,7 @@ export default function useAutomationValues() {
   const labels = useMapGetter('labels/getLabels');
   const teams = useMapGetter('teams/getTeams');
   const slaPolicies = useMapGetter('sla/getSLA');
+  const { conditionOptions: lynomiaConditionOptions } = useLynomiaAutomation();
 
   const booleanFilterOptions = computed(() => [
     { id: true, name: t('FILTER.ATTRIBUTE_LABELS.TRUE') },
@@ -94,22 +96,24 @@ export default function useAutomationValues() {
    * @returns {Array} An array of condition dropdown values.
    */
   const getConditionDropdownValues = type => {
-    return getConditionOptions({
-      agents: agents.value,
-      booleanFilterOptions: booleanFilterOptions.value,
-      campaigns: campaigns.value,
-      contacts: contacts.value,
-      customAttributes: getters['attributes/getAttributes'].value,
-      inboxes: inboxes.value,
-      labels: labels.value,
-      statusFilterOptions: statusFilterOptions.value,
-      priorityOptions: priorityOptions.value,
-      messageTypeOptions: messageTypeOptions.value,
-      teams: teams.value,
-      languages,
-      countries,
-      type,
-    });
+    return (
+      getConditionOptions({
+        agents: agents.value,
+        booleanFilterOptions: booleanFilterOptions.value,
+        campaigns: campaigns.value,
+        contacts: contacts.value,
+        customAttributes: getters['attributes/getAttributes'].value,
+        inboxes: inboxes.value,
+        labels: labels.value,
+        statusFilterOptions: statusFilterOptions.value,
+        priorityOptions: priorityOptions.value,
+        messageTypeOptions: messageTypeOptions.value,
+        teams: teams.value,
+        languages,
+        countries,
+        type,
+      }) ?? lynomiaConditionOptions(type)
+    );
   };
 
   /**

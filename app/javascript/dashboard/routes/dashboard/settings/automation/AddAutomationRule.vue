@@ -43,12 +43,17 @@ const {
   resetAction,
   getActionDropdownValues,
   manifestCustomAttributes,
+  manifestLynomiaConditions,
+  loadLynomiaOptions,
 } = useAutomation(START_VALUE);
 
 const open = (executionDelay = null) => {
   automation.value = structuredClone(START_VALUE);
   manifestCustomAttributes();
+  manifestLynomiaConditions();
   formRef.value?.open(executionDelay);
+  // Shared audiences and the Commerce options arrive after the panel opens.
+  loadLynomiaOptions().then(manifestLynomiaConditions);
 };
 const close = () => formRef.value?.close();
 

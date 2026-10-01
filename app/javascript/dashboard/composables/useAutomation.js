@@ -10,6 +10,7 @@ import {
   generateCustomAttributes,
 } from 'dashboard/helper/automationHelper';
 import useAutomationValues from './useAutomationValues';
+import { useLynomiaAutomation } from 'dashboard/routes/dashboard/settings/automation/lynomiaAutomation';
 
 import {
   // AUTOMATION_RULE_EVENTS,
@@ -41,6 +42,7 @@ export function useAutomation(startValue = null) {
 
   const automation = ref(startValue);
   const automationTypes = reactive(structuredClone(AUTOMATIONS));
+  const lynomia = useLynomiaAutomation();
   const eventName = computed(() => automation.value?.event_name);
 
   /**
@@ -183,9 +185,17 @@ export function useAutomation(startValue = null) {
     });
   };
 
+  /**
+   * Lynomia Automation: Commerce triggers and the Audience and Commerce condition groups
+   * (docs/automation/03-audience-and-commerce-conditions.md). Call after manifestCustomAttributes.
+   */
+  const manifestLynomiaConditions = () => lynomia.manifest(automationTypes);
+
   return {
     automation,
     automationTypes,
+    manifestLynomiaConditions,
+    loadLynomiaOptions: lynomia.load,
     agents,
     campaigns,
     contacts,

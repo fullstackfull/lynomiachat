@@ -181,7 +181,14 @@
       "CONVERSATION_UPDATED": "تم تحديث المحادثة",
       "MESSAGE_CREATED": "Message Created",
       "CONVERSATION_RESOLVED": "Conversation Resolved",
-      "CONVERSATION_OPENED": "Conversation Opened"
+      "CONVERSATION_OPENED": "Conversation Opened",
+      "COMMERCE_ORDER_CREATED": "تم إنشاء طلب في المتجر",
+      "COMMERCE_ORDER_UPDATED": "تم تحديث طلب في المتجر",
+      "COMMERCE_ORDER_PAID": "تم دفع طلب في المتجر",
+      "COMMERCE_ORDER_SHIPPED": "تم شحن طلب في المتجر",
+      "COMMERCE_ORDER_DELIVERED": "تم توصيل طلب في المتجر",
+      "COMMERCE_ORDER_CANCELLED": "تم إلغاء طلب في المتجر",
+      "COMMERCE_ORDER_REFUNDED": "تم استرداد طلب في المتجر"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Assign to Agent",
@@ -233,6 +240,20 @@
       "TEAM_NAME": "الفريق",
       "PRIORITY": "الأولوية",
       "LABELS": "الوسوم"
+    },
+    "LYNOMIA": {
+      "GROUPS": {
+        "CONVERSATION_TRIGGERS": "المحادثات",
+        "COMMERCE_TRIGGERS": "Commerce",
+        "AUDIENCE": "الجمهور",
+        "COMMERCE": "Commerce"
+      },
+      "CONTACT_AUDIENCE": "جمهور جهة الاتصال",
+      "IS_IN": "ضمن",
+      "IS_NOT_IN": "ليس ضمن",
+      "EVENT_STORE": "متجر الطلب",
+      "EVENT_PROVIDER": "منصة متجر الطلب",
+      "COMMERCE_TRIGGER_NOTE": "تعمل عندما تقرأ Lynomia تغييرًا في طلبات عميل مرتبط (تحديث من المتجر، أو فتح وكيل للمحادثة)، على آخر محادثة لجهة الاتصال. إرسال الرسائل إلى العميل غير متاح لمشغّلات Commerce."
     }
   }
 }

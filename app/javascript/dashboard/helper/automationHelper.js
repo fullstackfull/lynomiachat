@@ -248,8 +248,10 @@ export const filterCustomAttributes = customAttributes => {
 };
 
 export const getStandardAttributeInputType = (automationTypes, event, key) => {
-  return automationTypes[event].conditions.find(item => item.key === key)
-    .inputType;
+  return (
+    automationTypes[event].conditions.find(item => item.key === key)
+      ?.inputType || 'plain_text'
+  );
 };
 
 export const generateAutomationPayload = payload => {

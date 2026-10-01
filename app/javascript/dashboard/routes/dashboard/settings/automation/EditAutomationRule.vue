@@ -30,6 +30,8 @@ const {
   resetAction,
   getActionDropdownValues,
   manifestCustomAttributes,
+  manifestLynomiaConditions,
+  loadLynomiaOptions,
 } = useAutomation();
 
 const { formatAutomation } = useEditableAutomation();
@@ -38,6 +40,7 @@ const syncAutomationFromSelected = (source = props.selectedResponse) => {
   if (!source?.conditions) return;
 
   manifestCustomAttributes();
+  manifestLynomiaConditions();
   automation.value = formatAutomation(
     source,
     allCustomAttributes.value,
@@ -48,7 +51,9 @@ const syncAutomationFromSelected = (source = props.selectedResponse) => {
 
 // Format from the rule passed to open(): the prop updates a tick later, so at open() time
 // automation still holds the previously selected rule (its execution_delay hydrates the form).
-const open = rule => {
+const open = async rule => {
+  // A saved audience or Commerce condition is rebuilt from its options, so they load first.
+  await loadLynomiaOptions();
   syncAutomationFromSelected(rule);
   formRef.value?.open(rule?.execution_delay);
 };

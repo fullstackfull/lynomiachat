@@ -24,6 +24,7 @@ import AutomationRunTypeSelector from './components/AutomationRunTypeSelector.vu
 import AutomationWaitCondition from './components/AutomationWaitCondition.vue';
 import AutomationInstantTrigger from './components/AutomationInstantTrigger.vue';
 import AutomationActions from './components/AutomationActions.vue';
+import { useLynomiaAutomation, isCommerceEvent } from './lynomiaAutomation';
 
 const props = defineProps({
   mode: {
@@ -83,6 +84,7 @@ const INPUT_TYPE_MAP = {
 const { t } = useI18n();
 const { isCloudFeatureEnabled } = useAccount();
 const { operators } = useOperators();
+const lynomia = useLynomiaAutomation();
 
 provideDropdownTeleport();
 
@@ -202,6 +204,7 @@ const submitKey = computed(() =>
 const getTranslatedAttributes = (type, event) => {
   return getAttributes(type, event).map(attribute => {
     const skipTranslation =
+      attribute.translated ||
       attribute.customAttributeType ||
       ['contact_custom_attribute', 'conversation_custom_attribute'].includes(
         attribute.key
@@ -233,6 +236,10 @@ const filterTypes = computed(() => {
 
     const filterOperators = (attr.filterOperators || []).map(op => {
       const enriched = operators.value[op.value];
+      // Lynomia's audience condition reads "is in / is not in" on the same operators.
+      if (enriched && op.lynomiaLabel) {
+        return { ...enriched, label: op.lynomiaLabel };
+      }
       if (enriched) return enriched;
       return {
         value: op.value,
@@ -261,12 +268,16 @@ const filterTypes = computed(() => {
   });
 });
 
-const automationRuleEvents = computed(() =>
-  AUTOMATION_RULE_EVENTS.map(event => ({
+const automationRuleEvents = computed(() => [
+  ...AUTOMATION_RULE_EVENTS.map(event => ({
     ...event,
     value: t(`AUTOMATION.EVENTS.${event.value}`),
-  }))
-);
+    group: t('AUTOMATION.LYNOMIA.GROUPS.CONVERSATION_TRIGGERS'),
+  })),
+  ...lynomia.events.value,
+]);
+
+const isCommerceTrigger = computed(() => isCommerceEvent(eventName.value));
 
 const hasAutomationMutated = computed(() => {
   return Boolean(
@@ -276,9 +287,11 @@ const hasAutomationMutated = computed(() => {
 });
 
 const automationActionTypes = computed(() => {
-  const actionTypes = isCloudFeatureEnabled('sla')
-    ? AUTOMATION_ACTION_TYPES
-    : AUTOMATION_ACTION_TYPES.filter(({ key }) => key !== 'add_sla');
+  const actionTypes = (
+    isCloudFeatureEnabled('sla')
+      ? AUTOMATION_ACTION_TYPES
+      : AUTOMATION_ACTION_TYPES.filter(({ key }) => key !== 'add_sla')
+  ).filter(({ key }) => lynomia.actionAllowed(eventName.value, key));
 
   return actionTypes.map(action => ({
     ...action,
@@ -399,6 +412,11 @@ defineExpose({ open, close });
         :filter-types="filterTypes"
         :errors="errors"
         :show-reset-message="!isEditMode && hasAutomationMutated"
+        :note="
+          isCommerceTrigger
+            ? $t('AUTOMATION.LYNOMIA.COMMERCE_TRIGGER_NOTE')
+            : ''
+        "
         :append-new-condition="appendNewCondition"
         :remove-filter="removeFilter"
         :on-event-change="onEventChange"

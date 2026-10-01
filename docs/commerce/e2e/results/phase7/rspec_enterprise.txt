@@ -1,0 +1,6 @@
+# Enterprise RSpec, 4 shards, code at 0e0b9d4c2 (later commits change docs and E2E drivers only), lynomia/verify:base (Ruby 3.4.4)
+shard 0: 2362 examples, 1 failure, 0 pending
+  failed: rspec ./spec/enterprise/services/voice/call_transcription_service_spec.rb:77 # Voice::CallTranscriptionService#perform reindexes before broadcasting so a retry after a reindex failure does not resend the update event
+shard 1: 2334 examples, 0 failures, 9 pending
+shard 2: 2639 examples, 0 failures, 35 pending
+shard 3: 2830 examples, 0 failures, 23 pending

@@ -1,0 +1,3 @@
+# ESLint (pnpm eslint: app/**/*.{js,vue})
+✖ 444 problems (0 errors, 444 warnings)
+

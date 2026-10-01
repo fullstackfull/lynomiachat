@@ -173,12 +173,12 @@ From the final run (`e2e/results/phase7/realtime_measurements.json`, `panel_api_
 | Shopify E2E (simulated) | **64/64** |
 | Realtime + Customer 360 E2E | **41/41** |
 | WhatsApp harnesses on this code (rehearsal database, doc 23 §8) | existing numbers **41/41**, WhatsApp Business coexistence **54/54**, Lynomia **17/17** |
-| Commerce RSpec (all Commerce specs) | REGRESSION_COMMERCE |
-| Backend RSpec, Enterprise, 4 shards | REGRESSION_EE |
-| Backend RSpec, Community (`enterprise/` removed), 4 shards | REGRESSION_CE |
-| Frontend Vitest | REGRESSION_VITEST |
-| ESLint | REGRESSION_ESLINT |
-| RuboCop | REGRESSION_RUBOCOP |
+| Commerce and Shopify specs within the Enterprise run (74 files) | **715 examples, 0 failures** |
+| Backend RSpec, Enterprise (how Lynomia runs), 4 shards | **10,165 examples, 1 failure, 67 pending**: `call_transcription_service_spec.rb:77`, the known OpenSearch-dependent spec that fails identically on clean upstream `v4.18.0` (doc 23 §8.1) |
+| Backend RSpec, Community (`enterprise/` removed), 4 shards | **7,464 examples, 0 failures, 70 pending** |
+| Frontend Vitest | **459 files, 4,733 tests, all passed** |
+| ESLint | **0 errors**, 444 warnings (same count as Phase 6; none in Commerce files) |
+| RuboCop (repo config) | 3,242 files, 54 offenses, all in the same 9 upstream files byte-identical to `v4.18.0` as in Phase 6; 0 in Lynomia files |
 
 **One harness change in the provider E2Es.** The Commerce section now opens on Customer 360 for a contact linked in
 several stores (doc 25 §11). The four provider E2Es check the store view, so each now saves "store" as the agent's view
@@ -186,6 +186,9 @@ choice in the browser before loading pages (one init script in `newPage`). Nothi
 rerun showed that the script threw on documents without storage (`about:blank`, the OAuth pages), which those E2Es
 report as page errors: Shopify 63/64 and Zid 48/49, the failing check being "no uncaught page errors" in both. With
 the script guarded (try/catch), the reruns passed 64/64 and 49/49. Results: `e2e/results/phase7/*_regression.*`.
+
+Raw summaries: `e2e/results/phase7/` (`rspec_enterprise.txt`, `rspec_community.txt`, `vitest.txt`, `eslint.txt`,
+`rubocop.txt`, `whatsapp_harnesses.txt`).
 
 These existing paths have no code change in Phase 7–8 and are covered by the full suites above:
 

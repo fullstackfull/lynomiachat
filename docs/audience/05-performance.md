@@ -137,5 +137,21 @@ filter is opened (Chatwoot layout); the filter panel itself stays inside the scr
 
 ## Regression
 
-See the checkpoint for the runs on the final build: existing filter, segment, conversation, automation and campaign
-specs; Vitest; ESLint; RuboCop; the Commerce E2Es.
+On the final build (2026-10-01):
+
+| Suite | Result |
+|---|---|
+| RSpec, 129 files: contact filter (existing + Audience), contacts API and sub-resources, custom filters (segments), conversation filter and permission filters (with Enterprise custom roles), automation rules (conditions, validation, actions, listeners), campaigns (SMS, Twilio, WhatsApp, Enterprise recipients), labels, every Commerce spec, audit logs | **1,317 examples, 0 failures** |
+| Vitest, whole dashboard | **4,754 tests, 463 files, all passed** |
+| ESLint, `app/javascript` | 0 errors (447 warnings, all pre-existing) |
+| RuboCop, every Ruby file of the Audience change | no offenses |
+| Audience E2E (above) | **26 / 26** |
+| Commerce E2E: realtime + Customer 360 (Phase 7–8) | **41 / 41** |
+| Commerce E2E: Shopify | **64 / 64** |
+| Commerce E2E: Zid | **49 / 49** |
+| Commerce E2E: WooCommerce | **41 / 41** |
+| Commerce E2E: Salla | **47 / 47** |
+| Commerce E2E: order actions and carts (Phase 9–10) | **94 / 94** (gate 51 + simulated providers 43) |
+
+Existing filters, segments, campaigns, conversations, labels and custom attributes behave as before when no Audience key
+is used: their specs pass unchanged, and an Audience key only takes effect when it is not a contact custom attribute.

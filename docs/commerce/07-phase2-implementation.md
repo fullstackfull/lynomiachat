@@ -258,13 +258,11 @@ For an automatic `verified_phone` link:
 - `confirmed_by` stays empty;
 - the audit `user` is the agent whose panel load triggered the link (set by `audited` from the request).
 
-## 12. Plan limits later (no schema change)
+## 12. Plan limits (done, no schema change)
 
-- `BillingPlan#limits` is jsonb, with `LIMIT_KEYS = %w[agents inboxes]`.
-- A store limit is:
-  1. add `stores` to `LIMIT_KEYS`;
-  2. in `Commerce::StoreConnection#connect`, before the health check: `Billing::PlanLimits.reached?(account, :stores, account.commerce_stores.where.not(status: :disconnected).count)`, raising a new `Commerce::Error` code.
-- Stores are already one row each, scoped by account, so counting needs nothing new.
+Done in [35-stores-on-plans.md](35-stores-on-plans.md): `stores` is a plan limit next to agents and inboxes, enforced in
+`Commerce::StoreConnection#attach` and `#rotate_credentials` (every provider's connections pass through them), with
+`STORE_LIMIT_REACHED`.
 
 ## 13. Tests
 

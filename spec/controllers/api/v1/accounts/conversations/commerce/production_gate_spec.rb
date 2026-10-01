@@ -43,7 +43,7 @@ RSpec.describe 'Commerce production gate: one account, four providers', type: :r
                                          'cs_factory', 'ck_factory')
   end
 
-  it 'keeps each store in its own cache: an order event drops and refreshes only that store customer orders' do
+  it 'keeps each store in its own cache: an order event outdates and refreshes only that store customer orders' do
     [woo, salla, zid, shopify].each { |store| panel.call(store) }
     before_keys = [woo, salla, zid, shopify].index_with { |store| cache_keys.call(store) }
     expect(before_keys.values).to all(be_present)
@@ -59,12 +59,13 @@ RSpec.describe 'Commerce production gate: one account, four providers', type: :r
                                                     'X-Shopify-Hmac-Sha256' => signature }
     end
 
-    expect(cache_keys.call(shopify).size).to eq(before_keys[shopify].size - 1)
-    [woo, salla, zid].each { |store| expect(cache_keys.call(store)).to match_array(before_keys[store]) }
+    outdated = ->(store) { cache_keys.call(store).select { |key| JSON.parse(Redis::Alfred.get(key))['outdated'] } }
+    expect(outdated.call(shopify).size).to eq(1)
+    [woo, salla, zid].each { |store| expect(outdated.call(store)).to be_empty }
 
     perform_enqueued_jobs(only: Commerce::RefreshJob)
-    expect(cache_keys.call(shopify)).to match_array(before_keys[shopify])
-    [woo, salla, zid].each { |store| expect(cache_keys.call(store)).to match_array(before_keys[store]) }
+    expect(outdated.call(shopify)).to be_empty
+    [woo, salla, zid, shopify].each { |store| expect(cache_keys.call(store)).to match_array(before_keys[store]) }
   end
 
   it 'serves data fresh for 120 seconds, stale for at most a day on an outage, and never over rejected credentials' do

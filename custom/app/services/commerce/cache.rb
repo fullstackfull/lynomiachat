@@ -26,24 +26,34 @@ class Commerce::Cache
     Result.new(value: entry['value'], fetched_at: entry['fetched_at'], stale: true, error: e.code)
   end
 
-  # Drops one entry, so its next read goes to the store (a Zid order webhook for the customer's cached orders).
+  # Marks one entry outdated (a store event says it changed): its next read goes to the store, and the entry stays the
+  # stale fallback, with the time it was fetched, if the store cannot answer then.
   def self.invalidate(store, kind, identifier)
-    Redis::Alfred.delete(key(store, kind, identifier))
+    outdate(key(store, kind, identifier))
   end
 
   def self.purge(store)
     delete_matching("#{prefix(store)}::*")
   end
 
-  # Drops every entry of one kind in the store (an order event that names no customer drops every customer's orders).
+  # Marks every entry of one kind in the store outdated (an order event that names no customer: every customer's orders).
   def self.invalidate_all(store, kind)
-    delete_matching("#{prefix(store)}::#{kind.to_s.upcase}::*")
+    matching("#{prefix(store)}::#{kind.to_s.upcase}::*").each { |key| outdate(key) }
+  end
+
+  def self.matching(pattern)
+    keys = []
+    Redis::Alfred.scan_each(match: pattern) { |key| keys << key }
+    keys
   end
 
   def self.delete_matching(pattern)
-    keys = []
-    Redis::Alfred.scan_each(match: pattern) { |key| keys << key }
-    keys.each { |key| Redis::Alfred.delete(key) }
+    matching(pattern).each { |key| Redis::Alfred.delete(key) }
+  end
+
+  def self.outdate(key)
+    entry = read(key)
+    Redis::Alfred.with { |conn| conn.set(key, entry.merge('outdated' => true).to_json, keepttl: true) } if entry
   end
 
   def self.key(store, kind, identifier)
@@ -63,8 +73,8 @@ class Commerce::Cache
   end
 
   def self.fresh?(entry)
-    entry.present? && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
+    entry.present? && !entry['outdated'] && Time.iso8601(entry['fetched_at']) > FRESH_FOR.ago
   end
 
-  private_class_method :key, :prefix, :read, :write, :fresh?, :delete_matching
+  private_class_method :key, :prefix, :read, :write, :fresh?, :matching, :delete_matching, :outdate
 end

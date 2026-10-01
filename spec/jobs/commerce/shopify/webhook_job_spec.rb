@@ -21,6 +21,7 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     ->(payload) { Commerce::WebhookQueue.send(:encryptor, 'shopify').encrypt_and_sign(payload.to_json, purpose: 'commerce_shopify_webhook') }
   end
   let(:cache_key) { ->(identifier) { Commerce::Cache.send(:key, store, :orders, identifier) } }
+  let(:outdated) { ->(identifier) { JSON.parse(Redis::Alfred.get(cache_key.call(identifier)))['outdated'] == true } }
 
   before do
     create(:commerce_customer_link, store: store, account: account, contact: sara, external_customer_id: '7001')
@@ -33,11 +34,10 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     described_class.perform_now(topic, shop, triggered_at, seal.call(payload))
   end
 
-  it "drops only the customer's cached orders on an order event" do
+  it "outdates only the customer's cached orders on an order event" do
     run('orders/updated', { 'id' => 6_001_006, 'email' => 'sara.ali@example.com', 'customer' => customer })
 
-    expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(false)
-    expect(Redis::Alfred.exists?(cache_key.call('7002'))).to be(true)
+    expect(%w[7001 7002].map { |identifier| outdated.call(identifier) }).to eq([true, false])
   end
 
   it 'refreshes the linked contact of an order event, and only it' do
@@ -47,11 +47,10 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     expect(enqueued_jobs.select { |job| job[:job] == Commerce::RefreshJob }.map { |job| job[:args] }).to eq([[link.id]])
   end
 
-  it "drops a guest's cached orders on a guest checkout event" do
+  it "outdates a guest's cached orders on a guest checkout event" do
     run('orders/create', { 'id' => 6_001_010, 'email' => 'Guest.Buyer@Example.com', 'customer' => nil })
 
-    expect(Redis::Alfred.exists?(cache_key.call('guest:guest.buyer@example.com'))).to be(false)
-    expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(true)
+    expect(%w[guest:guest.buyer@example.com 7001].map { |identifier| outdated.call(identifier) }).to eq([true, false])
   end
 
   it 'disconnects the store on app/uninstalled, removing its token, links and cache, and keeping contacts and conversations' do

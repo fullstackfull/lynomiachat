@@ -33,6 +33,8 @@ RSpec.describe Commerce::Realtime do
     Redis::Alfred.setex(cache_key.call(target, kind, id), { value: [], fetched_at: Time.current.utc.iso8601 }.to_json, 1.day)
   end
 
+  def outdated?(target, kind, id) = JSON.parse(Redis::Alfred.get(cache_key.call(target, kind, id)))['outdated'] == true
+
   def event(customer_ids)
     allow(Commerce::Providers).to receive(:for).and_call_original
     allow(Commerce::Providers).to receive(:for).with(store).and_return(provider)
@@ -49,7 +51,7 @@ RSpec.describe Commerce::Realtime do
   end
 
   describe '.order_event' do
-    it 'drops only the named customer\'s cached orders and schedules one refresh for its linked contact' do
+    it 'outdates only the named customer\'s cached orders and schedules one refresh for its linked contact' do
       warm(store, 'ORDERS', '7')
       warm(store, 'ORDERS', '8')
       warm(store, 'CANDIDATES', 'x')
@@ -57,15 +59,14 @@ RSpec.describe Commerce::Realtime do
 
       event(%w[7 7])
 
-      expect(Redis::Alfred.exists?(cache_key.call(store, 'ORDERS', '7'))).to be(false)
-      [cache_key.call(store, 'ORDERS', '8'), cache_key.call(store, 'CANDIDATES', 'x'), cache_key.call(other_store, 'ORDERS', '7')].each do |key|
-        expect(Redis::Alfred.exists?(key)).to be(true)
-      end
+      expect(outdated?(store, 'ORDERS', '7')).to be(true)
+      expect([outdated?(store, 'ORDERS', '8'), outdated?(store, 'CANDIDATES', 'x'), outdated?(other_store, 'ORDERS', '7')]).to all(be(false))
+      expect(Redis::Alfred.ttl(cache_key.call(store, 'ORDERS', '7'))).to be > 23.hours
       expect(enqueued_refreshes.size).to eq(1)
       expect(enqueued_refreshes.first).to include('arguments' => [link.id], 'scheduled_at' => be_present)
     end
 
-    it 'drops every customer\'s cached orders of the store when the event names none, and refreshes nobody' do
+    it 'outdates every customer\'s cached orders of the store when the event names none, and refreshes nobody' do
       warm(store, 'ORDERS', '7')
       warm(store, 'ORDERS', '8')
       warm(store, 'CANDIDATES', 'x')
@@ -73,9 +74,8 @@ RSpec.describe Commerce::Realtime do
 
       event([])
 
-      expect(%w[7 8].map { |id| Redis::Alfred.exists?(cache_key.call(store, 'ORDERS', id)) }).to eq([false, false])
-      expect(Redis::Alfred.exists?(cache_key.call(store, 'CANDIDATES', 'x'))).to be(true)
-      expect(Redis::Alfred.exists?(cache_key.call(other_store, 'ORDERS', '7'))).to be(true)
+      expect(%w[7 8].map { |id| outdated?(store, 'ORDERS', id) }).to eq([true, true])
+      expect([outdated?(store, 'CANDIDATES', 'x'), outdated?(other_store, 'ORDERS', '7')]).to all(be(false))
       expect(enqueued_refreshes).to be_empty
     end
 
@@ -131,7 +131,22 @@ RSpec.describe Commerce::Realtime do
       described_class.refresh(link)
 
       expect(enqueued_refreshes.size).to eq(1)
-      expect(Redis::Alfred.exists?(cache_key.call(store, 'ORDERS', '7'))).to be(false)
+      expect(outdated?(store, 'ORDERS', '7')).to be(true)
+    end
+
+    it 'keeps the outdated orders, with the time they were fetched, as the stale fallback when the store is down' do
+      described_class.refresh(link)
+      fetched_at = Commerce::Cache.fetch(store, :orders, '7') { raise 'not cached' }.fetched_at
+      travel(1.minute) do
+        event(['7'])
+        stub_request(:get, 'https://shop.example.com/wp-json/wc/v3/orders').with(query: hash_including('customer' => '7')).to_return(status: 503)
+
+        described_class.refresh(link)
+
+        result = Commerce::Cache.fetch(store, :orders, '7') { raise Commerce::Error, 'STORE_UNAVAILABLE' }
+        expect(result).to have_attributes(stale: true, error: 'STORE_UNAVAILABLE', fetched_at: fetched_at)
+        expect(result.value.size).to eq(2)
+      end
     end
 
     it 'flags a store whose credentials are rejected, still tells the agents, and frees the customer for later events' do

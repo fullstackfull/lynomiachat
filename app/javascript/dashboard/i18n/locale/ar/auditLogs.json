@@ -30,6 +30,7 @@
         "WEBHOOKS": "Webhook",
         "AUTOMATION_RULES": "Automation rules",
         "MACROS": "ماكروس",
+        "AUDIENCES": "الجماهير",
         "CONVERSATION_DELETIONS": "Conversation deletions",
         "MESSAGE_DELETIONS": "Message deletions"
       },
@@ -89,6 +90,11 @@
       "ADD": "{agentName} أنشأ ماكرو جديد (#{id})",
       "EDIT": "{agentName} قام بتحديث ماكرو (#{id})",
       "DELETE": "{agentName} حذف ماكرو (#{id})"
+    },
+    "AUDIENCE": {
+      "ADD": "{agentName} أنشأ جمهورًا جديدًا (#{id})",
+      "EDIT": "{agentName} قام بتحديث جمهور (#{id})",
+      "DELETE": "{agentName} حذف جمهورًا (#{id})"
     },
     "INBOX_MEMBER": {
       "ADD": "{agentName} أضاف {user} إلى صندوق الوارد (#{inbox_id})",

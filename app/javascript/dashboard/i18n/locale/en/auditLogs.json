@@ -30,6 +30,7 @@
         "WEBHOOKS": "Webhooks",
         "AUTOMATION_RULES": "Automation rules",
         "MACROS": "Macros",
+        "AUDIENCES": "Audiences",
         "CONVERSATION_DELETIONS": "Conversation deletions",
       "MESSAGE_DELETIONS": "Message deletions"
       },
@@ -90,6 +91,11 @@
       "ADD": "{agentName} created a new macro (#{id})",
       "EDIT": "{agentName} updated a macro (#{id})",
       "DELETE": "{agentName} deleted a macro (#{id})"
+    },
+    "AUDIENCE": {
+      "ADD": "{agentName} created a new audience (#{id})",
+      "EDIT": "{agentName} updated an audience (#{id})",
+      "DELETE": "{agentName} deleted an audience (#{id})"
     },
     "INBOX_MEMBER": {
       "ADD": "{agentName} added {user} to the inbox(#{inbox_id})",

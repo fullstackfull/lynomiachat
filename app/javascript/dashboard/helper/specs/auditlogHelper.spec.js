@@ -223,6 +223,21 @@ describe('Helper functions', () => {
       const logActionKey = generateLogActionKey(auditLogItem);
       expect(logActionKey).toEqual('AUDIT_LOGS.ACCOUNT_USER.EDIT.DELETED');
     });
+
+    it('should name saved audiences (contact custom filters)', () => {
+      expect(
+        ['create', 'update', 'destroy'].map(action =>
+          generateLogActionKey({ auditable_type: 'CustomFilter', action })
+        )
+      ).toEqual([
+        'AUDIT_LOGS.AUDIENCE.ADD',
+        'AUDIT_LOGS.AUDIENCE.EDIT',
+        'AUDIT_LOGS.AUDIENCE.DELETE',
+      ]);
+      expect(auditLogFiltersFromQuery({ type: 'CustomFilter' }).types).toEqual([
+        'CustomFilter',
+      ]);
+    });
   });
 
   describe('#auditLogFiltersFromQuery', () => {

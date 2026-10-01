@@ -35,6 +35,11 @@ class CommerceAPI extends ApiClient {
     });
   }
 
+  // The contact filter's Commerce field options (docs/audience/02): counted stores, currencies seen, contacts not read yet.
+  getAudienceFields() {
+    return axios.get(`${this.baseUrl()}/commerce/audience_fields`);
+  }
+
   conversationStoresUrl(conversationId) {
     return `${this.baseUrl()}/conversations/${conversationId}/commerce/stores`;
   }

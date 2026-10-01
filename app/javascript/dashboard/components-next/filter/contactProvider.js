@@ -7,6 +7,7 @@ import {
   CONTACT_ATTRIBUTES,
 } from './helper/filterHelper.js';
 import { groupFilterTypes } from './helper/filterAttributeIcons.js';
+import { useAudienceFilterTypes } from './audienceProvider.js';
 import countries from 'shared/constants/countries.js';
 
 /**
@@ -51,6 +52,7 @@ export function useContactFilterContext() {
   const { t } = useI18n();
 
   const contactAttributes = useMapGetter('attributes/getContactAttributes');
+  const { audienceFilterTypes } = useAudienceFilterTypes();
   const labels = useMapGetter('labels/getLabels');
 
   const {
@@ -201,6 +203,7 @@ export function useContactFilterContext() {
       attributeModel: 'standard',
     },
     ...customFilterTypes.value,
+    ...audienceFilterTypes.value,
   ]);
 
   // The same attributes, grouped into sections with a leading icon, for the attribute picker.

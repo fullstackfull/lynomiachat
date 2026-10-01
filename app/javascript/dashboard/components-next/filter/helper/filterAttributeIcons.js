@@ -32,6 +32,21 @@ const ATTRIBUTE_ICONS = {
   content: 'i-lucide-message-square-text',
   mail_subject: 'i-lucide-mail-open',
   conversation_language: 'i-lucide-languages',
+  // Lynomia Audience: conversation and Commerce fields of the contact filter
+  conversation_status: 'i-lucide-circle-dot',
+  conversation_priority: 'i-lucide-signal-high',
+  conversation_inbox: 'i-lucide-inbox',
+  conversation_assignee: 'i-lucide-user-round',
+  conversation_team: 'i-lucide-users-round',
+  conversation_labels: 'i-lucide-tags',
+  commerce_store: 'i-lucide-store',
+  commerce_provider: 'i-lucide-shopping-bag',
+  commerce_orders_count: 'i-lucide-package',
+  commerce_last_purchase_at: 'i-lucide-calendar-check',
+  commerce_active_order: 'i-lucide-loader',
+  commerce_order_status: 'i-lucide-package-check',
+  commerce_payment_status: 'i-lucide-credit-card',
+  commerce_shipment_status: 'i-lucide-truck',
   // Shared
   labels: 'i-lucide-tags',
   created_at: 'i-lucide-calendar',
@@ -61,6 +76,7 @@ const DEFAULT_ICON = 'i-lucide-tag';
 export const getAttributeIcon = ({ attributeKey, attributeDisplayType }) =>
   CUSTOM_TYPE_ICONS[attributeDisplayType] ||
   ATTRIBUTE_ICONS[attributeKey] ||
+  (attributeKey?.startsWith('commerce_spend_') && 'i-lucide-banknote') ||
   DEFAULT_ICON;
 
 // The order groups appear in, keyed by attributeModel. Labels resolve against the caller's i18n
@@ -69,6 +85,8 @@ const GROUPS = [
   { model: 'standard', labelKey: 'STANDARD_FILTERS' },
   { model: 'additional', labelKey: 'ADDITIONAL_FILTERS' },
   { model: 'customAttributes', labelKey: 'CUSTOM_ATTRIBUTES' },
+  { model: 'conversation', labelKey: 'CONVERSATIONS' },
+  { model: 'commerce', labelKey: 'COMMERCE' },
 ];
 
 const KNOWN_MODELS = GROUPS.map(({ model }) => model);

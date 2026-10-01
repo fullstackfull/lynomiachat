@@ -54,7 +54,33 @@
     "GROUPS": {
       "STANDARD_FILTERS": "Standard Filters",
       "ADDITIONAL_FILTERS": "Additional Filters",
-      "CUSTOM_ATTRIBUTES": "Custom Attributes"
+      "CUSTOM_ATTRIBUTES": "Custom Attributes",
+      "CONVERSATIONS": "Conversations",
+      "COMMERCE": "Commerce"
+    },
+    "AUDIENCE": {
+      "FIELDS": {
+        "CONVERSATION_STATUS": "Conversation status",
+        "CONVERSATION_PRIORITY": "Conversation priority",
+        "CONVERSATION_INBOX": "Conversation inbox",
+        "CONVERSATION_ASSIGNEE": "Assigned agent",
+        "CONVERSATION_TEAM": "Assigned team",
+        "CONVERSATION_LABELS": "Conversation labels",
+        "STORE": "Linked store",
+        "PROVIDER": "Store platform",
+        "ORDERS": "Visible orders",
+        "SPEND": "Visible spend ({currency})",
+        "LAST_PURCHASE": "Last visible purchase",
+        "ACTIVE_ORDER": "Has an active order",
+        "ORDER_STATUS": "Order status",
+        "PAYMENT_STATUS": "Payment status",
+        "SHIPMENT_STATUS": "Shipment status"
+      },
+      "YES": "Yes",
+      "NO": "No",
+      "CONVERSATION_NOTE": "Conversation conditions match contacts with at least one such conversation (Equal to) or none (Not equal to), among the conversations you can see.",
+      "COMMERCE_NOTE": "Commerce conditions use the latest orders Lynomia has read for each linked store, so figures are visible orders and spend, not lifetime totals. Spend is per currency.",
+      "UNREAD": "Orders haven’t been read yet for {count} linked contacts, so order conditions can’t match them. They’re read when an agent opens the contact’s conversation or the store sends an update."
     }
   }
 }

@@ -61,7 +61,8 @@ const emit = defineEmits([
         </div>
         <div class="flex items-center flex-shrink-0 gap-4">
           <div class="flex items-center gap-2">
-            <div v-if="!isLabelView && !isActiveView" class="relative">
+            <!-- Below sm the filter panel anchors to the header, so it spans the screen instead of the button. -->
+            <div v-if="!isLabelView && !isActiveView" class="sm:relative">
               <Button
                 id="toggleContactsFilterButton"
                 :icon="

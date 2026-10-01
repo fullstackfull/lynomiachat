@@ -6,6 +6,10 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useCamelCase } from 'dashboard/composables/useTransformKeys';
 
 import ActiveFilterPreview from 'dashboard/components-next/filter/ActiveFilterPreview.vue';
+import {
+  useAudienceFilterTypes,
+  audienceValuesForEdit,
+} from 'dashboard/components-next/filter/audienceProvider.js';
 
 const props = defineProps({
   activeSegment: { type: Object, default: null },
@@ -17,6 +21,7 @@ const { t } = useI18n();
 const route = useRoute();
 
 const appliedFilters = useMapGetter('contacts/getAppliedContactFiltersV4');
+const { audienceFilterTypes } = useAudienceFilterTypes();
 const activeSegmentId = computed(() => route.params.segmentId);
 
 const activeSegmentQuery = computed(() => {
@@ -42,10 +47,27 @@ const hasActiveSegments = computed(
   () => props.activeSegment && activeSegmentId.value !== 0
 );
 
+// Conversation and Commerce conditions (Lynomia Audience) show their field's name and their options' names.
+const withAudienceNames = filter => {
+  const type = audienceFilterTypes.value.find(
+    item => item.attributeKey === filter.attributeKey
+  );
+  if (!type) return filter;
+
+  const values = Array.isArray(filter.values)
+    ? audienceValuesForEdit(
+        type,
+        filter.values.map(value => value?.id ?? value)
+      )
+    : filter.values;
+  return { ...filter, attributeName: type.attributeName, values };
+};
+
 const activeFilterQueryData = computed(() => {
-  return hasActiveSegments.value
+  const filters = hasActiveSegments.value
     ? activeSegmentQuery.value
     : appliedFilters.value;
+  return filters.map(withAudienceNames);
 });
 </script>
 

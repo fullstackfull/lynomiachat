@@ -2,7 +2,8 @@
 # contact's store data and link or unlink the store customer (like editing the contact); only active stores of the
 # conversation's account, of a provider the installation offers, are reachable.
 #
-#   GET    .../conversations/:conversation_id/commerce/stores                 active stores + whether the contact is linked
+#   GET    .../conversations/:conversation_id/commerce/stores                 active stores, whether the contact is linked, and
+#                                                                             whether this agent is offered order actions there
 #   GET    .../conversations/:conversation_id/commerce/stores/:id             panel: link, candidates, latest orders
 #   GET    .../conversations/:conversation_id/commerce/stores/:id/customers   search by exact email or international phone
 #   POST   .../conversations/:conversation_id/commerce/stores/:id/link        link a candidate (signed token)
@@ -19,7 +20,8 @@ class Api::V1::Accounts::Conversations::Commerce::StoresController < Api::V1::Ac
     linked_ids = ::Commerce::CustomerLink.not_suppressed.where(contact: @conversation.contact).pluck(:commerce_store_id)
     render json: {
       payload: active_stores.order(:created_at).map do |store|
-        { id: store.id, name: store.name, provider: store.provider, linked: linked_ids.include?(store.id) }
+        { id: store.id, name: store.name, provider: store.provider, linked: linked_ids.include?(store.id),
+          actions: ::Commerce::OrderActions.offered?(store, Current.user) }
       end
     }
   end

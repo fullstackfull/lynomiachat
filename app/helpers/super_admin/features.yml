@@ -168,3 +168,9 @@ shopify_commerce:
   enabled: true
   icon: 'icon-shopify'
   config_key: 'shopify_commerce'
+commerce:
+  name: 'Lynomia Commerce'
+  description: 'Order actions and abandoned carts: kill switches and per-provider switches'
+  enabled: true
+  icon: 'icon-apps-2-line'
+  config_key: 'commerce'

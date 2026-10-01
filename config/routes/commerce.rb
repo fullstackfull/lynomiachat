@@ -18,11 +18,15 @@ namespace :api, defaults: { format: 'json' } do
               resource :overview, only: [:show]
               resource :refresh, only: [:create]
               resources :orders, only: [:index]
+              resources :action_runs, only: [:show]
               resources :stores, only: [:index, :show] do
                 member do
                   get :customers
                   post :link
                   delete :link, action: :unlink
+                end
+                resources :orders, only: [] do
+                  resource :actions, only: [:show, :create], controller: 'order_actions'
                 end
               end
             end

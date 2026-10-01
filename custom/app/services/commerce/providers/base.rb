@@ -1,6 +1,6 @@
-# The contract every commerce provider implements (docs/commerce/02-provider-contracts.md). Read-only by design:
-# nothing here writes to a store. Every method returns provider-neutral values (Commerce::Customer, Commerce::Order)
-# or raises Commerce::Error.
+# The contract every commerce provider implements (docs/commerce/02-provider-contracts.md). Reads, plus the order
+# actions below (docs/commerce/29-provider-action-capabilities.md), which are the only writes to a store. Every method
+# returns provider-neutral values (Commerce::Customer, Commerce::Order) or raises Commerce::Error.
 class Commerce::Providers::Base
   # Whether this installation offers the provider (see Commerce::Providers.enabled?).
   def self.enabled? = true
@@ -59,6 +59,28 @@ class Commerce::Providers::Base
 
   # The order an event is about, for logs and metrics only; nil when the event does not say.
   def event_order_id(_payload) = nil
+
+  # Order actions (docs/commerce/29-provider-action-capabilities.md): the only writes a provider makes, and only through
+  # Commerce::OrderActions, which checks switches, permissions, idempotency and the order's version first. A provider
+  # implements just the actions its store API supports for certain; every other action is reported unsupported.
+  def self.supports_actions? = false
+
+  # nil when the store's credentials can change orders, else why not: 'read_only_key' (a WooCommerce Read key),
+  # 'missing_scope' (Shopify without write_orders). Credentials are never upgraded silently: an administrator does it.
+  def write_access_problem = 'unsupported'
+
+  # The order read from the store now, with what each action could do to it (Commerce::ActionSnapshot).
+  def action_snapshot(_external_order_id) = raise(NotImplementedError)
+
+  # Sends one action to the store, once; never retried here. `params` are validated by Commerce::OrderActions and
+  # checked against `snapshot`. Returns a Commerce::ActionResult; a lost answer raises Commerce::Error with reason
+  # 'unknown_outcome'.
+  def perform_action(_action_type, _snapshot, _params, _idempotency_key) = raise(NotImplementedError)
+
+  # After a lost answer (or an asynchronous store job): whether the action took effect, judged only by reading the store
+  # (`snapshot` is fresh). Never sends the action again. Returns a Commerce::ActionResult: succeeded, failed (provably not
+  # applied, safe to ask again) or unknown.
+  def reconcile_action(_run, _snapshot) = Commerce::ActionResult.unknown('NOT_RECONCILABLE')
 
   def normalize_customer(raw) = raise(NotImplementedError)
 

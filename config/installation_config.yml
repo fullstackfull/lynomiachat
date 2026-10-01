@@ -549,6 +549,68 @@
   type: secret
 # ------- End of Lynomia Commerce: Shopify app ------- #
 
+# ------- Lynomia Commerce: order actions and sales recovery ------- #
+- name: COMMERCE_ACTIONS_ENABLED
+  display_title: 'Enable order actions'
+  value: true
+  description: 'Kill switch for every Lynomia Commerce order action (refunds, cancellations, status changes, resending store emails). Off stops new actions at once; actions already sent are still reconciled. Each store also needs its administrator to turn order actions on.'
+  locked: false
+  type: boolean
+- name: WOOCOMMERCE_ACTIONS_ENABLED
+  display_title: 'Enable WooCommerce order actions'
+  value: true
+  description: 'Order actions for WooCommerce stores whose administrator opted in with a Read/Write API key.'
+  locked: false
+  type: boolean
+- name: SALLA_ACTIONS_ENABLED
+  display_title: 'Enable Salla order actions'
+  value: false
+  description: 'Order actions for Salla stores. Has no effect while Salla is off, or before Salla passes its real UAT.'
+  locked: false
+  type: boolean
+- name: ZID_ACTIONS_ENABLED
+  display_title: 'Enable Zid order actions'
+  value: false
+  description: 'Order status changes for Zid stores. Has no effect while Zid is off, or before Zid passes its real UAT.'
+  locked: false
+  type: boolean
+- name: SHOPIFY_COMMERCE_ACTIONS_ENABLED
+  display_title: 'Enable Shopify order actions'
+  value: false
+  description: 'Order actions for Shopify stores reconnected with the write_orders permission. Has no effect while Shopify Commerce is off, or before Shopify passes its real UAT.'
+  locked: false
+  type: boolean
+- name: COMMERCE_RECOVERY_ENABLED
+  display_title: 'Enable abandoned carts and recovery messages'
+  value: true
+  description: 'Kill switch for abandoned carts in the conversation Commerce section and for preparing recovery messages. Recovery messages are never sent automatically.'
+  locked: false
+  type: boolean
+- name: SALLA_RECOVERY_ENABLED
+  display_title: 'Enable Salla abandoned carts'
+  value: false
+  description: 'Abandoned carts of Salla stores. Has no effect while Salla is off, or before Salla passes its real UAT.'
+  locked: false
+  type: boolean
+- name: ZID_RECOVERY_ENABLED
+  display_title: 'Enable Zid abandoned carts'
+  value: false
+  description: 'Abandoned carts of Zid stores. Has no effect while Zid is off, or before Zid passes its real UAT.'
+  locked: false
+  type: boolean
+- name: SHOPIFY_COMMERCE_RECOVERY_ENABLED
+  display_title: 'Enable Shopify abandoned checkouts'
+  value: false
+  description: 'Abandoned checkouts of Shopify stores. Has no effect while Shopify Commerce is off, or before Shopify passes its real UAT.'
+  locked: false
+  type: boolean
+- name: COMMERCE_RECOVERY_COOLDOWN_HOURS
+  display_title: 'Recovery message cooldown (hours)'
+  value: 24
+  description: 'Hours before the same abandoned cart can get another recovery message. An account administrator can override it for one message.'
+  locked: false
+# ------- End of Lynomia Commerce: order actions and sales recovery ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'

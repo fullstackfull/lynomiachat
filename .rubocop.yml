@@ -25,6 +25,8 @@ Metrics/MethodLength:
   Exclude:
     - 'enterprise/lib/captain/agent.rb'
     - 'custom/db/migrate/20260926100100_create_billing_subscriptions.rb'
+    - 'custom/db/migrate/20261001100000_create_commerce_action_runs.rb'
+    - 'app/controllers/super_admin/app_configs_controller.rb'
 
 RSpec/ExampleLength:
   Max: 50
@@ -86,6 +88,7 @@ Metrics/BlockLength:
   Exclude:
     - spec/**/*
     - '**/routes.rb'
+    - 'config/routes/*.rb'
     - 'config/environments/*'
     - db/schema.rb
 

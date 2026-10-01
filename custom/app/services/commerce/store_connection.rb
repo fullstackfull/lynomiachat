@@ -54,6 +54,17 @@ class Commerce::StoreConnection
     store
   end
 
+  # An administrator's opt-in to order actions (docs/commerce/28-commerce-actions-architecture.md). Turning them on needs
+  # the installation to offer the provider's actions and credentials that can write: a Read key is never upgraded here,
+  # the administrator replaces it. Turning them off always works.
+  def change_order_actions(store, enabled)
+    Commerce::OrderActions.new(store: store, contact_id: nil, user: @user, account_user: nil).store_blocker!(opt_in: false) if enabled
+    previous = store.settings['order_actions'] == true
+    store.update!(settings: store.settings.merge('order_actions' => enabled))
+    audit('commerce.order_actions_changed', store, order_actions: [previous, enabled])
+    store
+  end
+
   # The store answered that its credentials no longer work: it is flagged for an administrator and its cached data is
   # dropped, so nothing is shown from it until it is authorized again.
   def credentials_rejected(store)

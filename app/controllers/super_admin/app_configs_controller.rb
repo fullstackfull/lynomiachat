@@ -58,6 +58,11 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
     params['app_config'].delete_if { |key, value| value.blank? && InstallationConfig.secret_names.include?(key) }
   end
 
+  COMMERCE_CONFIGS = %w[
+    COMMERCE_ACTIONS_ENABLED WOOCOMMERCE_ACTIONS_ENABLED SALLA_ACTIONS_ENABLED ZID_ACTIONS_ENABLED SHOPIFY_COMMERCE_ACTIONS_ENABLED
+    COMMERCE_RECOVERY_ENABLED SALLA_RECOVERY_ENABLED ZID_RECOVERY_ENABLED SHOPIFY_COMMERCE_RECOVERY_ENABLED COMMERCE_RECOVERY_COOLDOWN_HOURS
+  ].freeze
+
   def allowed_configs
     general_configs = GENERAL_CONFIGS + (ChatwootApp.chatwoot_cloud? ? META_INCIDENT_CONFIGS : [])
 
@@ -67,6 +72,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
       'salla' => %w[SALLA_ENABLED SALLA_APP_ID SALLA_CLIENT_ID SALLA_CLIENT_SECRET SALLA_WEBHOOK_SECRET],
       'zid' => %w[ZID_ENABLED ZID_CLIENT_ID ZID_CLIENT_SECRET],
       'shopify_commerce' => %w[SHOPIFY_COMMERCE_ENABLED SHOPIFY_COMMERCE_CLIENT_ID SHOPIFY_COMMERCE_CLIENT_SECRET],
+      'commerce' => COMMERCE_CONFIGS,
       'microsoft' => %w[AZURE_APP_ID AZURE_APP_SECRET],
       'email' => %w[MAILER_INBOUND_EMAIL_DOMAIN ACCOUNT_EMAILS_LIMIT ACCOUNT_EMAILS_PLAN_LIMITS],
       'linear' => %w[LINEAR_CLIENT_ID LINEAR_CLIENT_SECRET],

@@ -1,0 +1,382 @@
+{
+  "sizes": {
+    "50": {
+      "graph": {
+        "flow_id": 46,
+        "nodes": 50,
+        "edges": 59,
+        "errors": 0
+      },
+      "nodes": 50,
+      "initialRenderMs": {
+        "first": 1489,
+        "median": 1428
+      },
+      "heapAfterLoadMb": 88.4,
+      "fitScale": 0.2,
+      "nodesUsed": [
+        "n21",
+        "n22"
+      ],
+      "zoom": {
+        "ms": 675,
+        "frames": 40,
+        "worstFrameMs": 17,
+        "slowFrames": 0,
+        "steps": 4,
+        "scale": 0.9
+      },
+      "pan": {
+        "ms": 788,
+        "frames": 93,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "nodeSelect": {
+        "ms": 55,
+        "frames": 2,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "openConfigPanel": {
+        "ms": 59,
+        "frames": 1,
+        "worstFrameMs": 0,
+        "slowFrames": 0
+      },
+      "modifyNode": {
+        "ms": 436,
+        "frames": 21,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "nodeDrag": {
+        "ms": 410,
+        "frames": 24,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "addEdge": {
+        "ms": 262,
+        "frames": 15,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "save": {
+        "ms": 287,
+        "frames": 33,
+        "worstFrameMs": 17,
+        "slowFrames": 0,
+        "status": 200
+      },
+      "heapAfterInteractionsMb": 89.5,
+      "idleMutations3s": 0,
+      "canvas": {
+        "count": 50,
+        "unique": 50
+      },
+      "longTasks": {
+        "count": 4,
+        "worstMs": 135
+      },
+      "inputDelay": {
+        "slowEvents": 481,
+        "worstMs": 112
+      }
+    },
+    "100": {
+      "graph": {
+        "flow_id": 47,
+        "nodes": 100,
+        "edges": 119,
+        "errors": 0
+      },
+      "nodes": 100,
+      "initialRenderMs": {
+        "first": 1425,
+        "median": 1692
+      },
+      "heapAfterLoadMb": 92.9,
+      "fitScale": 0.2,
+      "nodesUsed": [
+        "n51",
+        "n52"
+      ],
+      "zoom": {
+        "ms": 644,
+        "frames": 37,
+        "worstFrameMs": 33,
+        "slowFrames": 0,
+        "steps": 4,
+        "scale": 0.9
+      },
+      "pan": {
+        "ms": 819,
+        "frames": 97,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "nodeSelect": {
+        "ms": 48,
+        "frames": 1,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "openConfigPanel": {
+        "ms": 51,
+        "frames": 0,
+        "worstFrameMs": 0,
+        "slowFrames": 0
+      },
+      "modifyNode": {
+        "ms": 500,
+        "frames": 22,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "nodeDrag": {
+        "ms": 359,
+        "frames": 21,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "addEdge": {
+        "ms": 284,
+        "frames": 15,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "save": {
+        "ms": 180,
+        "frames": 21,
+        "worstFrameMs": 17,
+        "slowFrames": 0,
+        "status": 200
+      },
+      "heapAfterInteractionsMb": 93.4,
+      "idleMutations3s": 0,
+      "canvas": {
+        "count": 100,
+        "unique": 100
+      },
+      "longTasks": {
+        "count": 4,
+        "worstMs": 289
+      },
+      "inputDelay": {
+        "slowEvents": 498,
+        "worstMs": 192
+      }
+    },
+    "200": {
+      "graph": {
+        "flow_id": 48,
+        "nodes": 200,
+        "edges": 239,
+        "errors": 0
+      },
+      "nodes": 200,
+      "initialRenderMs": {
+        "first": 1298,
+        "median": 1442
+      },
+      "heapAfterLoadMb": 100.6,
+      "fitScale": 0.2,
+      "nodesUsed": [
+        "n101",
+        "n102"
+      ],
+      "zoom": {
+        "ms": 689,
+        "frames": 41,
+        "worstFrameMs": 17,
+        "slowFrames": 0,
+        "steps": 5,
+        "scale": 1.1
+      },
+      "pan": {
+        "ms": 836,
+        "frames": 97,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "nodeSelect": {
+        "ms": 48,
+        "frames": 1,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "openConfigPanel": {
+        "ms": 50,
+        "frames": 1,
+        "worstFrameMs": -1,
+        "slowFrames": 0
+      },
+      "modifyNode": {
+        "ms": 789,
+        "frames": 25,
+        "worstFrameMs": 100,
+        "slowFrames": 5
+      },
+      "nodeDrag": {
+        "ms": 499,
+        "frames": 28,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "addEdge": {
+        "ms": 392,
+        "frames": 17,
+        "worstFrameMs": 100,
+        "slowFrames": 1
+      },
+      "save": {
+        "ms": 239,
+        "frames": 27,
+        "worstFrameMs": 17,
+        "slowFrames": 0,
+        "status": 200
+      },
+      "heapAfterInteractionsMb": 101.2,
+      "idleMutations3s": 0,
+      "canvas": {
+        "count": 200,
+        "unique": 200
+      },
+      "longTasks": {
+        "count": 12,
+        "worstMs": 338
+      },
+      "inputDelay": {
+        "slowEvents": 462,
+        "worstMs": 304
+      }
+    }
+  },
+  "matrix": {
+    "desktop-en": {
+      "initialRenderMs": 1884,
+      "rtl": false,
+      "canvasLtr": true,
+      "paletteVisible": true,
+      "overflowPx": 0,
+      "pan": {
+        "ms": 608,
+        "frames": 35,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "select": {
+        "ms": 74,
+        "frames": 5,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "panelWidthPx": 384,
+      "canvas": {
+        "count": 200,
+        "unique": 200
+      }
+    },
+    "desktop-ar": {
+      "initialRenderMs": 1525,
+      "rtl": true,
+      "canvasLtr": true,
+      "paletteVisible": true,
+      "overflowPx": 0,
+      "pan": {
+        "ms": 522,
+        "frames": 29,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "select": {
+        "ms": 100,
+        "frames": 7,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "panelWidthPx": 384,
+      "canvas": {
+        "count": 200,
+        "unique": 200
+      }
+    },
+    "mobile-en": {
+      "initialRenderMs": 1712,
+      "rtl": false,
+      "canvasLtr": true,
+      "paletteVisible": false,
+      "overflowPx": 0,
+      "pan": {
+        "ms": 349,
+        "frames": 20,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "select": {
+        "ms": 48,
+        "frames": 1,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "panelWidthPx": 354,
+      "canvas": {
+        "count": 200,
+        "unique": 200
+      }
+    },
+    "mobile-ar": {
+      "initialRenderMs": 1559,
+      "rtl": true,
+      "canvasLtr": true,
+      "paletteVisible": false,
+      "overflowPx": 0,
+      "pan": {
+        "ms": 311,
+        "frames": 19,
+        "worstFrameMs": 17,
+        "slowFrames": 0
+      },
+      "select": {
+        "ms": 49,
+        "frames": 3,
+        "worstFrameMs": 33,
+        "slowFrames": 0
+      },
+      "panelWidthPx": 354,
+      "canvas": {
+        "count": 200,
+        "unique": 200
+      }
+    }
+  },
+  "consoleErrors": [
+    "50 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "50 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "50 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "50 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "50 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "50 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "100 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "100 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "100 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "100 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "100 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "100 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "200 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "200 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "200 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "200 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "200 nodes: 404 /enterprise/api/v1/accounts/1/limits",
+    "200 nodes: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "desktop-en: 404 /enterprise/api/v1/accounts/1/limits",
+    "desktop-en: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "desktop-ar: 404 /enterprise/api/v1/accounts/1/limits",
+    "desktop-ar: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "mobile-en: 404 /enterprise/api/v1/accounts/1/limits",
+    "mobile-en: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "mobile-ar: 404 /enterprise/api/v1/accounts/1/limits",
+    "mobile-ar: Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

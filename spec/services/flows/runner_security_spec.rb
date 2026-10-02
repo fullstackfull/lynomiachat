@@ -59,6 +59,27 @@ RSpec.describe Flows::Runner do
     expect(Flows::GraphValidator.new(account, huge).shape_errors.pluck(:code)).to eq(['graph_too_large'])
   end
 
+  it "never resumes a session from another conversation's message or timer" do
+    graph = { 'nodes' => [node.call('start', 'start'), node.call('ask', 'question', 'text' => 'Your order?', 'timeout_minutes' => 5),
+                          node.call('done', 'send_message', 'text' => 'Thanks'), node.call('end', 'end')],
+              'edges' => [edge.call('start', 'ask'), edge.call('ask', 'done', 'reply'), edge.call('done', 'end')] }
+    Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish!
+    say.call('hi')
+    session = FlowSession.find_by!(conversation: conversation)
+    other_contact = create(:contact, account: account)
+    other = create(:conversation, account: account, inbox: whatsapp.inbox, contact: other_contact,
+                                  contact_inbox: create(:contact_inbox, contact: other_contact, inbox: whatsapp.inbox, source_id: '966500000013'))
+    stray = create(:message, conversation: other, account: account, inbox: whatsapp.inbox, message_type: :incoming, sender: other_contact,
+                             content: '42')
+
+    described_class.new(conversation).messages(stray)
+    Flows::RunJob.perform_now(other.id, 'wake', nil, session.id, session.step_token)
+
+    expect(session.reload).to have_attributes(status: 'waiting', current_node_id: 'ask', last_message_id: session.last_message_id)
+    expect(FlowSession.where(conversation: other)).to be_empty
+    expect(conversation.messages.outgoing.pluck(:content)).to eq(['Your order?'])
+  end
+
   it 'keeps versions and sessions in the bot\'s account' do
     other = create(:account)
     foreign_bot = create(:agent_bot, account: other, bot_type: :flow, outgoing_url: nil)

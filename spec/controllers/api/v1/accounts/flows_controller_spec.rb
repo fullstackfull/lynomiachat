@@ -35,6 +35,20 @@ RSpec.describe 'Flows API', type: :request do
     expect(response).to have_http_status(:unauthorized)
   end
 
+  it "never connects another account's flow to an inbox, and never shows the bot's secret or token" do
+    other = create(:account).tap { |record| record.enable_features!('lynomia_flow_builder') }
+    foreign = create(:agent_bot, account: other, bot_type: :flow, outgoing_url: nil)
+    post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp.inbox.id}/set_agent_bot", params: { agent_bot: foreign.id },
+                                                                                      headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:not_found)
+    expect(whatsapp.inbox.reload.agent_bot).to be_nil
+
+    get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:ok)
+    expect(response.body).not_to include(flow.secret)
+    expect(response.body).not_to include(flow.access_token.token)
+  end
+
   it 'creates a flow bot, saves its draft, refuses to publish an invalid one, and publishes a valid one' do
     post base, params: { name: 'Welcome', description: 'Main menu' }, headers: admin.create_new_auth_token, as: :json
     created = response.parsed_body

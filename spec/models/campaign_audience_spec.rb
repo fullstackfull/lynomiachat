@@ -12,7 +12,9 @@ RSpec.describe Campaign do
     create(:custom_filter, account: account, user: admin, filter_type: :contact, shared: true, name: 'Gulf',
                            query: { 'payload' => [{ 'attribute_key' => 'country_code', 'filter_operator' => 'equal_to', 'values' => ['sa'] }] })
   end
-  let!(:vip) { create(:contact, account: account, email: 'layla@vip.example', phone_number: '+966500000001', country_code: 'SA') }
+  let!(:vip) do
+    create(:contact, account: account, email: 'layla@vip.example', phone_number: '+966500000001', additional_attributes: { 'country_code' => 'SA' })
+  end
   let!(:tagged) { create(:contact, account: account, email: 'omar@mail.example', phone_number: '+966500000002') }
   let!(:other) { create(:contact, account: account, email: 'sara@mail.example', phone_number: '+966500000003') }
 

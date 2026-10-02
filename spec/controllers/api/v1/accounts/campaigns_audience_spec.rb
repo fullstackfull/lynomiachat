@@ -104,6 +104,64 @@ RSpec.describe 'Campaigns API with shared audiences', type: :request do
     end
   end
 
+  describe 'POST /campaigns/audience_preview' do
+    let(:preview) { "/api/v1/accounts/#{account.id}/campaigns/audience_preview" }
+    let(:gulf) do
+      create(:custom_filter, account: account, user: administrator, filter_type: :contact, shared: true, name: 'Gulf',
+                             query: { 'payload' => [{ 'attribute_key' => 'country_code', 'filter_operator' => 'equal_to', 'values' => ['sa'] }] })
+    end
+
+    before do
+      create(:contact, account: account, email: 'layla@vip.example', additional_attributes: { 'country_code' => 'SA' }).update_labels([label.title])
+      create(:contact, account: account, email: 'omar@vip.example')
+      create(:contact, account: account, email: 'sara@mail.example').update_labels([label.title])
+      create(:contact, account: account, email: 'noor@mail.example', additional_attributes: { 'country_code' => 'SA' })
+      create(:contact, account: account, email: 'ali@mail.example')
+      create(:contact, account: create(:account), email: 'twin@vip.example', additional_attributes: { 'country_code' => 'SA' })
+    end
+
+    it 'counts each contact once across labels and shared audiences, in the account only, calling nothing outside' do
+      counts = [
+        [{ type: 'Label', id: label.id }],
+        [{ type: 'Audience', id: shared.id }],
+        [{ type: 'Label', id: label.id }, { type: 'Audience', id: shared.id }],
+        [{ type: 'Label', id: label.id }, { type: 'Audience', id: shared.id }, { type: 'Audience', id: gulf.id }]
+      ].map do |audience|
+        post preview, params: { audience: audience }, headers: administrator.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:ok)
+        response.parsed_body['count']
+      end
+
+      expect(counts).to eq([2, 2, 3, 4])
+      expect(a_request(:any, /.*/)).not_to have_been_made
+    end
+
+    it 'counts what the campaign would send to' do
+      audience = [{ type: 'Label', id: label.id }, { type: 'Audience', id: shared.id }]
+      campaign = create(:campaign, account: account, inbox: sms_inbox, audience: audience)
+
+      post preview, params: { audience: audience }, headers: administrator.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['count']).to eq(campaign.audience_contacts.to_a.size)
+    end
+
+    it 'refuses personal and foreign audiences and a missing audience with 422' do
+      [[{ type: 'Audience', id: personal.id }], [{ type: 'Audience', id: foreign.id }], []].each do |audience|
+        post preview, params: { audience: audience }, headers: administrator.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
+
+    it 'is for those who may create campaigns' do
+      post preview, params: { audience: [{ type: 'Audience', id: shared.id }] }, headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unauthorized)
+
+      post preview, params: { audience: [{ type: 'Audience', id: shared.id }] }, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   it 'keeps campaigns for administrators only' do
     post "/api/v1/accounts/#{account.id}/campaigns",
          params: campaign_params.merge(audience: [{ type: 'Audience', id: shared.id }]),

@@ -20,15 +20,17 @@ module Custom::CampaignAudience
 
   def audience_ids = Array(audience).select { |entry| entry['type'] == AUDIENCE_TYPE }.pluck('id')
 
+  # Audience entries are allowed on one-off campaigns only, and name shared contact audiences of the campaign's account.
+  def audiences_shared_in_account?
+    ids = audience_ids
+    ids.empty? || (one_off? && ids.all?(Integer) && shared_audiences.where(id: ids).count == ids.uniq.size)
+  end
+
   private
 
   def shared_audiences = account.custom_filters.contact.where(shared: true)
 
   def audiences_shared_in_account
-    ids = audience_ids
-    return if ids.empty?
-    return if one_off? && ids.all?(Integer) && shared_audiences.where(id: ids).count == ids.uniq.size
-
-    errors.add(:base, I18n.t('errors.campaigns.audience_not_shared'))
+    errors.add(:base, I18n.t('errors.campaigns.audience_not_shared')) unless audiences_shared_in_account?
   end
 end

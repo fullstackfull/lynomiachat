@@ -1,0 +1,42 @@
+{
+    "runs": 5,
+    "api": {
+        "50": {
+            "nodes": 50,
+            "edges": 59,
+            "bytes": 10372,
+            "load_ms": 49.2,
+            "save_ms": 78.7,
+            "validate_ms": 44.4,
+            "publish_ms": 75.5,
+            "test_mode_6_inputs_ms": 550.2
+        },
+        "100": {
+            "nodes": 100,
+            "edges": 119,
+            "bytes": 20952,
+            "load_ms": 69.1,
+            "save_ms": 97.3,
+            "validate_ms": 82.4,
+            "publish_ms": 80.2,
+            "test_mode_6_inputs_ms": 551.6
+        },
+        "200": {
+            "nodes": 200,
+            "edges": 239,
+            "bytes": 42627,
+            "load_ms": 98.9,
+            "save_ms": 148.4,
+            "validate_ms": 156.2,
+            "publish_ms": 135.1,
+            "test_mode_6_inputs_ms": 488.0
+        }
+    },
+    "runtime": {
+        "start_ms": 167.6,
+        "resume_one_segment_ms": 280.0,
+        "chain_max_auto_steps_ms": 893.3,
+        "handoff_ms": 408.5,
+        "bot": "Perf 200"
+    }
+}

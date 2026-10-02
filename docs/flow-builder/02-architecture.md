@@ -19,6 +19,8 @@ WhatsApp Cloud webhook ─▶ Chatwoot incoming service ─▶ Message (incoming
      Flows::Runner ── FlowSession (version, node, status, context, timers)
          │  node executors (Flows::Nodes::*)
          ├─ say ─────────────▶ conversation.messages.create!(sender: AgentBot) ─▶ SendReplyJob ─▶ WhatsApp provider
+         ├─ template ────────▶ the same message with the composer's template_params ─▶ SendOnWhatsappService
+         │                     ─▶ TemplateProcessorService ─▶ send_template (WhatsApp API and coexistence alike)
          ├─ conditions ──────▶ AutomationRules::ConditionsFilterService (unsaved AutomationRule)
          ├─ labels / team / agent / priority ─▶ ActionService
          ├─ attributes ──────▶ contact / conversation custom_attributes (account definitions)
@@ -26,6 +28,9 @@ WhatsApp Cloud webhook ─▶ Chatwoot incoming service ─▶ Message (incoming
          ├─ webhook ─────────▶ WebhookJob ─▶ Webhooks::Trigger ─▶ SafeFetch (signed with the bot secret)
          ├─ delay / timeout ─▶ Flows::RunJob.set(wait_until:) with a step token
          └─ handoff / failure ▶ Conversation#bot_handoff! (open, ai_assignee cleared)
+
+A flow message turning failed (Meta rejected it) ─▶ MESSAGE_UPDATED ─▶ Custom::AgentBotListener
+                              ─▶ Flows::RunJob 'rejected' ─▶ humans (message_rejected)
 ```
 
 ## Components

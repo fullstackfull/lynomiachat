@@ -1,0 +1,22 @@
+== 1. this release: schema, a published flow bot connected with a waiting session
+schema 0
+SEED account=1 inbox=1 bot=1 session=waiting conversation=pending
+== 2. the previous release on that database, flows still connected (what step C.2 prevents)
+PASS  tables ignored, app boots
+PASS  flow bot loads (bot_type unknown to the old enum)
+PASS  Settings > Bots API answers 200 and lists the flow bot
+PASS  inboxes API answers 200
+PASS  a customer message is stored; no webhook job for the flow bot
+STATE conversation=pending inbox_bot=1 bot_messages=1
+enqueued: ["ActionCableBroadcastJob", "EventDispatcherJob", "SendReplyJob"]
+== 3. this release: kill switch, hand over and detach, timers removed (§10 A, C.2, C.3)
+SWITCH enabled=false
+DETACHED sessions_live=0 flow_inboxes=0 pending=0 published=0
+== 4. the previous release after the documented steps
+PASS  tables ignored, app boots
+PASS  flow bot loads (bot_type unknown to the old enum)
+PASS  Settings > Bots API answers 200 and lists the flow bot
+PASS  inboxes API answers 200
+PASS  a customer message is stored; no webhook job for the flow bot
+STATE conversation=open inbox_bot=nil bot_messages=1
+enqueued: ["ActionCableBroadcastJob", "EventDispatcherJob", "SendReplyJob"]

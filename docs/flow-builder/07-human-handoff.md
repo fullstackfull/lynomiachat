@@ -16,7 +16,9 @@ conversation in the inbox).
 | `human_assigned` | an agent was assigned (Assign Agent node, or an agent in the dashboard) and the flow reached a wait or its end |
 | `left_bot_phase` (cancelled) | the conversation was opened, resolved, snoozed or assigned from outside |
 | `no_choice` | no option chosen after the menu was sent three times |
-| `window_closed` | a message was due after WhatsApp's 24-hour window |
+| `window_closed` | a free-form message was due after WhatsApp's 24-hour window (a template is still sent) |
+| `template_not_found`, `template_language_unavailable`, `template_not_approved`, `template_not_allowed`, `template_unsupported`, `template_param_missing` (failed) | a Send template node whose template the inbox can no longer send, or whose value was empty, with `failed` not connected |
+| `message_rejected` | WhatsApp refused a message the flow sent (for example Meta rejected a template); also when the session had already completed while the conversation was still with the flow |
 | `unrouted_<output>` | an optional output that is not connected (`invalid`, `timeout`, `other`, `failed`, `not_found`, `unavailable`) |
 | `flow_disabled`, `flow_unavailable` | the flow was disabled; the feature or the kill switch is off; the contact is blocked |
 | `step_limit`, `visit_limit`, `send_limit`, `node_error`, `interrupted`, `attribute_missing`, `invalid_attribute_value` | failures |

@@ -19,9 +19,9 @@ Node executors, sessions, versions, the builder and the API do not change.
 
 ## Templates
 
-A Template node would create a Chatwoot message with `additional_attributes.template_params` (a synced, approved template
-of the inbox), sent by Chatwoot's template processing — usable outside the 24-hour window — and be offered only where the
-channel declares `template: true`.
+Built in the Phase 1 closeout: the Send WhatsApp template node ([04](04-node-contracts.md),
+[06](06-whatsapp-channel-capabilities.md)) creates the composer's `template_params` message and Chatwoot sends it. A
+later channel offers it by declaring `template: true` and a template path of its own in Chatwoot.
 
 ## AI
 

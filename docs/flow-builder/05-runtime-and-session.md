@@ -14,6 +14,7 @@ worker at a time**.
 | `human` | the listener: a human reply (`Message#human_response?`) while a session is live | hand off (`human_reply`) |
 | `stop` | the listener: the conversation left pending, or got an assignee | cancel (`left_bot_phase`) |
 | `disabled` | `Flows::Versions#disable!` | hand off (`flow_disabled`) |
+| `rejected` | `Custom::AgentBotListener#message_updated`: a message the flow bot sent turned `failed` (Meta rejected it) | hand off (`message_rejected`); a finished session's conversation still with the flow goes to humans |
 
 ## Bot phase
 

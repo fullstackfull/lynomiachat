@@ -28,6 +28,12 @@ Agents get `401` from the flows API; other accounts' flows are `404` (looked up 
   that customer are kept (`Commerce::OrderSearch` `owners`): a guessed number of another customer's order is not found
   (WhatsApp E2E A6).
 - Personal audiences are refused: only shared audiences (Automation's rule).
+- WhatsApp templates are looked up only in the account's own inboxes (`Flows::TemplateValidator`): a template name that
+  exists only in another account's channel is `template_not_found`; at runtime only the conversation's inbox is read.
+- Connecting a flow to an inbox is Chatwoot's `set_agent_bot`, which finds the bot among the account's (and global)
+  bots only: another account's flow bot is 404.
+- A session only ever advances on its own conversation: a message or a timer of another conversation (another session id
+  or token) is ignored (`Flows::Runner#messages` checks the trigger's conversation, `#wake` the session's).
 
 ## Input never becomes code
 
@@ -51,7 +57,9 @@ run's values, never the secret, and **nothing the endpoint answers enters the fl
 - Blocked contacts never enter a flow (`flow_unavailable`).
 - A human reply or assignment ends the bot phase at once; the flow never talks over an agent.
 - Every failure hands the conversation to humans; nothing stays silently pending.
-- WhatsApp's 24-hour window is respected (`window_closed`).
+- WhatsApp's 24-hour window is respected (`window_closed`); after it only an approved template goes out, through
+  Chatwoot's template path, and a free-form message is never turned into one. A message Meta rejects hands the
+  conversation to humans (`message_rejected`).
 
 ## Audit and privacy
 
@@ -63,7 +71,10 @@ values. Test Mode rolls everything back and keeps no test conversation.
 ## Tests
 
 `spec/services/flows/runner_security_spec.rb` (template injection, catastrophic regex, size limits, cross-account
-versions and sessions, webhook payload and variable allow-list), `spec/controllers/api/v1/accounts/flows_controller_spec.rb`
-(roles, feature, foreign flows, Test Mode leaves nothing), `spec/services/flows/graph_validator_spec.rb` (another
+versions and sessions, another conversation's message or timer, webhook payload and variable allow-list), `spec/controllers/api/v1/accounts/flows_controller_spec.rb`
+(roles, feature, foreign flows, another account's flow on an inbox, no secret or token in the flow JSON, Test Mode leaves
+nothing), `spec/services/flows/template_validator_spec.rb` (another account's template, every connected inbox, missing
+values, unsafe values), `spec/services/flows/nodes/send_template_spec.rb` (window, rejected, deleted / disabled /
+language / authentication templates), `spec/services/flows/graph_validator_spec.rb` (another
 account's labels, teams, agents, attributes and audiences), `spec/services/flows/nodes/commerce_lookup_spec.rb` (another
 customer's order), and the WhatsApp E2E tenancy checks ([10](10-e2e.md)).

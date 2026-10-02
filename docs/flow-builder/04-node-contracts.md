@@ -15,6 +15,7 @@ to humans. Nothing is retried silently.
 |---|---|---|---|---|
 | `start` | — | `next` | | `keywords`, `conditions` (both optional) |
 | `send_message` | Messages | `next` | | `text` |
+| `send_template` | Messages | `next`, `failed`* | | `name`, `language`, `params` (Chatwoot's `processed_params`) |
 | `question` | Messages | `reply`, `invalid`*, `timeout`* | yes | `text`, `reply_type`, `keywords`, `store_as`, `max_attempts`, `retry_text`, `timeout_minutes` |
 | `buttons` | Messages | one per option, `other`*, `timeout`* | yes | `text`, `options` (≤ 3), `timeout_minutes` |
 | `list` | Messages | one per option, `other`*, `timeout`* | yes | `text`, `button_label`, `options` (≤ 10), `timeout_minutes` |
@@ -43,6 +44,23 @@ customer message must contain one of `keywords` (any message, when none) and the
 
 One text message from the flow bot through Chatwoot's message path. Outside WhatsApp's 24-hour window nothing is sent:
 the session ends handed off (`window_closed`).
+
+## Send WhatsApp template
+
+One approved WhatsApp template of the conversation's inbox, sent by Chatwoot's own template path: the flow bot's message
+carries `additional_attributes.template_params` exactly as the dashboard composer sends them (`name`, `category`,
+`language`, `namespace`, `content_mode: raw_template`, `processed_params`), and `Whatsapp::SendOnWhatsappService` sends
+it with `TemplateProcessorService` — also after the 24-hour window, unlike Send Message.
+
+- `name` + `language`: a template of the inbox (`message_templates`), approved, one the composer would send.
+- `params`: `body` and text `header` values by variable, a media header's `media_url` (and `media_name` for a document),
+  `buttons` by position (`url` value, `copy_code`). Values may use the allow-listed variables; copy codes only `flow.*`;
+  media links none.
+- Publish: looked up in this account's inboxes only (every connected inbox, or one of the account's WhatsApp inboxes
+  before any is connected); every value required.
+- Run: a template the inbox can no longer send, or a value empty once filled in, follows `failed`, or fails the session
+  (`template_*` codes) when `failed` is not connected. A message Meta rejects later hands the conversation to humans
+  (`message_rejected`). Details in [06](06-whatsapp-channel-capabilities.md).
 
 ## Question
 

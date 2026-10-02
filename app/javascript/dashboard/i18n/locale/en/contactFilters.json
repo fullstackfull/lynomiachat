@@ -84,7 +84,7 @@
       "SHARED": {
         "READ_ONLY": "This is a shared audience. Only administrators can change it; you can still adjust the filters and apply them.",
         "EDIT": "Shared audience: everyone in the account can open it, and automation rules can use it.",
-        "USED_BY": "This shared audience is used by {count} active automation rules. Saving changes what they match at once."
+        "USED_BY": "This shared audience is used by {rules} active automation rules and {campaigns} campaigns not yet sent. Saving changes what they match at once."
       }
     }
   }

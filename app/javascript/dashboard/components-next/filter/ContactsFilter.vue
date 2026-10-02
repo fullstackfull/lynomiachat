@@ -22,6 +22,8 @@ const props = defineProps({
   // Lynomia shared audiences (docs/automation/02-shared-audiences.md).
   sharedSegment: { type: Boolean, default: false },
   activeRuleCount: { type: Number, default: 0 },
+  // Lynomia Campaigns: campaigns still to send that use it (docs/campaigns/03-audience-dependency.md).
+  campaignCount: { type: Number, default: 0 },
 });
 
 const emit = defineEmits([
@@ -113,13 +115,15 @@ const unreadNote = computed(() =>
 
 onMounted(() => loadAudienceFields());
 
-// Members open a shared audience read-only; administrators are told when rules depend on it.
+// Members open a shared audience read-only; administrators are told when rules or campaigns depend on it.
+const isUsed = computed(() => props.activeRuleCount + props.campaignCount > 0);
 const sharedNote = computed(() => {
   if (!props.isSegmentView)
     return t('CONTACTS_FILTER.AUDIENCE.SHARED.READ_ONLY');
-  if (props.activeRuleCount) {
+  if (isUsed.value) {
     return t('CONTACTS_FILTER.AUDIENCE.SHARED.USED_BY', {
-      count: props.activeRuleCount,
+      rules: props.activeRuleCount,
+      campaigns: props.campaignCount,
     });
   }
   return t('CONTACTS_FILTER.AUDIENCE.SHARED.EDIT');
@@ -186,7 +190,7 @@ const outsideClickHandler = [
       v-if="sharedSegment"
       class="rounded-lg px-3 py-2 text-label-small"
       :class="
-        isSegmentView && activeRuleCount
+        isSegmentView && isUsed
           ? 'bg-n-amber-2 text-n-amber-11'
           : 'bg-n-alpha-2 text-n-slate-11'
       "

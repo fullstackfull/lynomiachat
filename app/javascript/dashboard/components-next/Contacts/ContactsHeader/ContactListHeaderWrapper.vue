@@ -330,6 +330,7 @@ defineExpose({
           :is-segment-view="hasActiveSegments && canManageSegment"
           :shared-segment="isSharedSegment"
           :active-rule-count="activeSegment?.active_automation_rules_count || 0"
+          :campaign-count="activeSegment?.campaigns_count || 0"
           @apply-filter="onApplyFilter"
           @update-segment="onUpdateSegment"
           @close="closeAdvanceFiltersModal"

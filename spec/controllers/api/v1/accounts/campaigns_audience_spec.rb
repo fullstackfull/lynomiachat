@@ -46,6 +46,64 @@ RSpec.describe 'Campaigns API with shared audiences', type: :request do
     expect(campaign.reload.audience).to eq([{ 'type' => 'Label', 'id' => label.id }])
   end
 
+  describe 'audience dependency' do
+    let(:filters) { "/api/v1/accounts/#{account.id}/custom_filters" }
+    let!(:campaign) { create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Audience', id: shared.id }]) }
+
+    it 'refuses to delete or unshare an audience a campaign still to send uses, and says how many' do
+      [:active, :processing].each do |status|
+        campaign.update!(campaign_status: status)
+
+        delete "#{filters}/#{shared.id}", headers: administrator.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq(I18n.t('errors.custom_filters.used_by_campaigns', count: 1))
+
+        patch "#{filters}/#{shared.id}", params: { custom_filter: { shared: false } }, headers: administrator.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+      expect(shared.reload.shared).to be(true)
+    end
+
+    it 'reports automation rules and campaigns together' do
+      rule = account.automation_rules.new(name: 'VIP', event_name: 'conversation_created', actions: [],
+                                          conditions: [{ 'attribute_key' => 'contact_audience', 'filter_operator' => 'equal_to',
+                                                         'values' => [shared.id], 'query_operator' => nil }])
+      rule.save!(validate: false)
+
+      delete "#{filters}/#{shared.id}", headers: administrator.create_new_auth_token, as: :json
+      expect(response.parsed_body['error']).to eq("#{I18n.t('errors.custom_filters.used_by_automation', count: 1)} " \
+                                                  "#{I18n.t('errors.custom_filters.used_by_campaigns', count: 1)}")
+
+      get "#{filters}/#{shared.id}", headers: administrator.create_new_auth_token, as: :json
+      expect(response.parsed_body).to include('automation_rules_count' => 1, 'campaigns_count' => 1)
+    end
+
+    it 'releases the audience once the campaign is sent or deleted' do
+      campaign.update!(campaign_status: :completed)
+      get "#{filters}/#{shared.id}", headers: administrator.create_new_auth_token, as: :json
+      expect(response.parsed_body['campaigns_count']).to eq(0)
+
+      other = create(:custom_filter, account: account, user: administrator, filter_type: :contact, shared: true, name: 'Other', query: query)
+      scheduled = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Audience', id: other.id }])
+      delete "/api/v1/accounts/#{account.id}/campaigns/#{scheduled.display_id}", headers: administrator.create_new_auth_token, as: :json
+
+      [shared, other].each do |audience|
+        delete "#{filters}/#{audience.id}", headers: administrator.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:no_content)
+      end
+    end
+
+    it 'counts only the campaigns of the audience\'s own account' do
+      foreign_campaign = build(:campaign, account: create(:account), campaign_type: :one_off, audience: [{ type: 'Audience', id: shared.id }])
+      foreign_campaign.save!(validate: false)
+      campaign.destroy!
+      expect(Campaign.one_off.active.where('audience @> ?', [{ type: 'Audience', id: shared.id }].to_json)).to eq([foreign_campaign])
+
+      delete "#{filters}/#{shared.id}", headers: administrator.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:no_content)
+    end
+  end
+
   it 'keeps campaigns for administrators only' do
     post "/api/v1/accounts/#{account.id}/campaigns",
          params: campaign_params.merge(audience: [{ type: 'Audience', id: shared.id }]),

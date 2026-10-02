@@ -7,7 +7,7 @@ S=${1:?scratch dir}
 R=$(cd "$(dirname "$0")/../../.." && pwd); P=$R/docs/flow-builder/rollback; OLD=$S/rollback-old
 rm -rf "${OLD:?}"; git -C "$R" worktree add -q --detach "$OLD" 81ad706d2
 run() { # <tree> <command>
-  docker run --rm --network host --env-file "$S/commerce/e2e/e2e.env" -e POSTGRES_DATABASE=lyn_rollback -e REDIS_URL=redis://localhost:6379/13 \
+  docker run --rm --network host --env-file "$S/commerce/e2e/e2e.env" -e POSTGRES_DATABASE=lyn_rollback -e REDIS_URL=redis://localhost:6379/10 \
     -e DISABLE_DATABASE_ENVIRONMENT_CHECK=1 -e RAILS_LOG_TO_STDOUT=false -v "$1":/app -v "$P":/proof -v /app/node_modules -w /app \
     lynomia/verify:base bash -lc "$2" 2>&1 | grep -E "^(SEED|PASS|FAIL|STATE|SWITCH|DETACHED|enqueued|schema)|Error|error" | grep -v "RubyLLM"
 }

@@ -8,7 +8,15 @@ Branch `claude/laughing-albattani-8yi0kh`, final commit in §12.
 
 ## 1. Verdict
 
-⟨VERDICT⟩
+**GO WITH CONDITIONS** — the only condition is the real WhatsApp UAT, blocked by the environment (§11).
+
+| | |
+|---|---|
+| Software | complete: the four closeout gaps are closed; no failure of this phase in RSpec, Vitest, ESLint, the builds, the E2Es or the regressions (§3–§7); the rollback is rehearsed (§10) |
+| Deploy | by §9, with `pnpm install --frozen-lockfile` before the Vite build (missing from `/root/deploy-lynomia.sh`); `lynomia_flow_builder` stays off for customer accounts |
+| Before customers | §11's UAT on a Lynomia-owned pilot account and number (WhatsApp API, then coexistence) |
+| Unchanged gates | WooCommerce GO; Salla, Zid and Shopify stay off in production |
+| Not started | Resume Bot (deferred), AI node, knowledge base, intent detection, CRM, pipelines, tasks, SLA, campaigns, Audience entered/left, new channels, destructive Commerce actions, payment flows, bot analytics and reporting |
 
 ## 2. WhatsApp Template node
 
@@ -89,7 +97,28 @@ Details: [10](10-e2e.md).
 
 ## 6. Regressions
 
-⟨REGRESSIONS⟩
+Final run on `e0f4ed71a` (the production build of the closeout, the builder fixes included), sequential, production
+configuration:
+
+| Suite | Result |
+|---|---|
+| Realtime + Customer 360 (Commerce Phase 7–8) | **41/41** |
+| Shopify / Zid / WooCommerce / Salla E2E | **64/64**, **49/49**, **41/41**, **47/47** |
+| Commerce order actions (Phase 9–10) | **94/94** (51 + 43) |
+| Automation E2E | **28/28** |
+| Audience E2E | **26/26** |
+| WhatsApp harnesses: existing WhatsApp, Lynomia, coexistence | **41/41**, **17/17**, **54/54** |
+| Flow Builder: builder E2E, WhatsApp E2E | **21/21**, **39/39** (§5) |
+
+The first WhatsApp harness run of the chain gave 40/41 and 53/54: both failed checks were "Tenant A's number is not
+flagged for reauthorization". Cause, environment (class C): the rollback rehearsal of the closeout had used the same
+Redis database (13) and left Chatwoot's `REAUTHORIZATION_REQUIRED:channel_whatsapp:1` flag there for its own channel
+1; the harness's `redis-cli flushdb` never runs because the verification image has no `redis-cli`, and its Tenant A
+channel is also id 1. Rerun unchanged on an empty Redis database: 41/41, 17/17, 54/54. The rehearsal script now uses
+a Redis database of its own.
+
+The disposable WooCommerce test store's order 23 is back to `pending` after the runs (checked in its database,
+read-only).
 
 ## 7. Security recheck
 
@@ -248,4 +277,5 @@ Flow Builder Phase 1 on `claude/laughing-albattani-8yi0kh`, from the commit befo
 | `f003dac39` | canvas fit after nodes are measured; no colliding cache fetches; load errors handled |
 | `e0f4ed71a` | reproducible RSpec runner, security rechecks, canvas measurement |
 | `bd21b2b6b` | docs 01–11 updated, rollback rehearsal |
-| the commit adding this page | regression results, verdict |
+| `8cb458524` | this page (draft) |
+| the commit after it | regression results and verdict |

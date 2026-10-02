@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_03_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_04_100100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1229,6 +1229,45 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_03_100100) do
     t.index ["name", "template_type", "locale"], name: "index_email_templates_on_installation_scope", unique: true, where: "(account_id IS NULL) AND (inbox_id IS NULL)"
   end
 
+  create_table "flow_sessions", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agent_bot_id", null: false
+    t.bigint "flow_version_id", null: false
+    t.bigint "conversation_id", null: false
+    t.integer "status", default: 0, null: false
+    t.string "current_node_id"
+    t.jsonb "context", default: {}, null: false
+    t.bigint "last_message_id"
+    t.datetime "wake_at"
+    t.string "step_token"
+    t.integer "steps_count", default: 0, null: false
+    t.string "failure_code"
+    t.datetime "finished_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "agent_bot_id", "status"], name: "index_flow_sessions_on_account_id_and_agent_bot_id_and_status"
+    t.index ["conversation_id", "created_at"], name: "index_flow_sessions_on_conversation_id_and_created_at"
+    t.index ["conversation_id"], name: "index_flow_sessions_one_live", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
+    t.index ["flow_version_id"], name: "index_flow_sessions_on_flow_version_id"
+  end
+
+  create_table "flow_versions", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "agent_bot_id", null: false
+    t.integer "version", null: false
+    t.integer "status", default: 0, null: false
+    t.jsonb "graph", default: {}, null: false
+    t.bigint "created_by_id"
+    t.bigint "published_by_id"
+    t.datetime "published_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_flow_versions_on_account_id"
+    t.index ["agent_bot_id", "version"], name: "index_flow_versions_on_agent_bot_id_and_version", unique: true
+    t.index ["agent_bot_id"], name: "index_flow_versions_one_draft", unique: true, where: "(status = 0)"
+    t.index ["agent_bot_id"], name: "index_flow_versions_one_published", unique: true, where: "(status = 1)"
+  end
+
   create_table "folders", force: :cascade do |t|
     t.integer "account_id", null: false
     t.integer "category_id", null: false
@@ -1762,6 +1801,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_03_100100) do
   add_foreign_key "commerce_customer_links", "users", column: "confirmed_by_id", on_delete: :nullify
   add_foreign_key "commerce_stores", "accounts", on_delete: :cascade
   add_foreign_key "commerce_stores", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "flow_sessions", "accounts", on_delete: :cascade
+  add_foreign_key "flow_sessions", "agent_bots", on_delete: :cascade
+  add_foreign_key "flow_sessions", "conversations", on_delete: :cascade
+  add_foreign_key "flow_sessions", "flow_versions", on_delete: :cascade
+  add_foreign_key "flow_versions", "accounts", on_delete: :cascade
+  add_foreign_key "flow_versions", "agent_bots", on_delete: :cascade
+  add_foreign_key "flow_versions", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
   add_foreign_key "user_sessions", "users"

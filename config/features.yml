@@ -283,3 +283,7 @@
   display_name: Lynomia Commerce
   enabled: false
   column: feature_flags_ext_1
+- name: lynomia_flow_builder
+  display_name: Lynomia Flow Builder
+  enabled: false
+  column: feature_flags_ext_1

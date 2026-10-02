@@ -145,6 +145,14 @@ RSpec.describe 'Campaigns API with shared audiences', type: :request do
       expect(response.parsed_body['count']).to eq(campaign.audience_contacts.to_a.size)
     end
 
+    it 'counts nobody for another account\'s label, which resolves inside this account only' do
+      foreign_label = create(:label, account: create(:account), title: label.title)
+
+      post preview, params: { audience: [{ type: 'Label', id: foreign_label.id }] }, headers: administrator.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['count']).to eq(0)
+    end
+
     it 'refuses personal and foreign audiences and a missing audience with 422' do
       [[{ type: 'Audience', id: personal.id }], [{ type: 'Audience', id: foreign.id }], []].each do |audience|
         post preview, params: { audience: audience }, headers: administrator.create_new_auth_token, as: :json

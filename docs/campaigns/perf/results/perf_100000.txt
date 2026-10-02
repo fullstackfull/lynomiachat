@@ -1,0 +1,317 @@
+# docs/campaigns/perf/perf.rb measure 100000 (production configuration, verify image, PostgreSQL 16, 4 vCPU)
+
+{
+    "contacts": 100000,
+    "phone_numbers_added": 100000,
+    "results": {
+        "basic": {
+            "members": 11111,
+            "preview": {
+                "median_ms": 197.8,
+                "max_ms": 212.8,
+                "count": 11111
+            },
+            "preview_with_vip": {
+                "median_ms": 438.3,
+                "max_ms": 596.3,
+                "count": 15557
+            },
+            "dispatch": {
+                "recipients": 11111,
+                "unique": 11111,
+                "ms": 2121.0,
+                "batches": 12,
+                "sql_statements": 13
+            },
+            "dispatch_with_vip": {
+                "recipients": 15557,
+                "unique": 15557,
+                "ms": 5433.8,
+                "batches": 16,
+                "sql_statements": 18
+            }
+        },
+        "conversation": {
+            "members": 30000,
+            "preview": {
+                "median_ms": 142.7,
+                "max_ms": 148.9,
+                "count": 30000
+            },
+            "preview_with_vip": {
+                "median_ms": 337.1,
+                "max_ms": 352.2,
+                "count": 30000
+            },
+            "dispatch": {
+                "recipients": 30000,
+                "unique": 30000,
+                "ms": 5290.9,
+                "batches": 30,
+                "sql_statements": 33
+            },
+            "dispatch_with_vip": {
+                "recipients": 30000,
+                "unique": 30000,
+                "ms": 7772.9,
+                "batches": 30,
+                "sql_statements": 34
+            }
+        },
+        "commerce": {
+            "members": 37925,
+            "preview": {
+                "median_ms": 827.9,
+                "max_ms": 1017.8,
+                "count": 37925
+            },
+            "preview_with_vip": {
+                "median_ms": 1121.7,
+                "max_ms": 1400.0,
+                "count": 41762
+            },
+            "dispatch": {
+                "recipients": 37925,
+                "unique": 37925,
+                "ms": 4522.6,
+                "batches": 38,
+                "sql_statements": 40
+            },
+            "dispatch_with_vip": {
+                "recipients": 41762,
+                "unique": 41762,
+                "ms": 54359.1,
+                "batches": 42,
+                "sql_statements": 45
+            }
+        },
+        "composite": {
+            "members": 1163,
+            "preview": {
+                "median_ms": 206.7,
+                "max_ms": 220.3,
+                "count": 1163
+            },
+            "preview_with_vip": {
+                "median_ms": 293.9,
+                "max_ms": 425.5,
+                "count": 5000
+            },
+            "dispatch": {
+                "recipients": 1163,
+                "unique": 1163,
+                "ms": 349.4,
+                "batches": 2,
+                "sql_statements": 5
+            },
+            "dispatch_with_vip": {
+                "recipients": 5000,
+                "unique": 5000,
+                "ms": 1873.5,
+                "batches": 5,
+                "sql_statements": 10
+            }
+        }
+    },
+    "sends": {
+        "sms_basic_plus_vip": {
+            "ms": 4901.9,
+            "sent": 15557,
+            "sql_statements": 8,
+            "status": "completed",
+            "expected": 15557
+        },
+        "whatsapp_composite_plus_vip": {
+            "ms": 155797.8,
+            "sent": 5000,
+            "sql_statements": 30016,
+            "status": "completed",
+            "expected": 5000,
+            "recipients": {
+                "sent": 5000
+            }
+        },
+        "whatsapp_label_only": {
+            "ms": 108104.4,
+            "sent": 5000,
+            "sql_statements": 30012,
+            "status": "completed",
+            "expected": 5000,
+            "recipients": {
+                "sent": 5000
+            }
+        }
+    },
+    "explain_composite_count": [
+        "Aggregate  (cost=7063.28..7063.29 rows=1 width=8) (actual time=313.879..313.902 rows=1 loops=1)",
+        "  Buffers: shared hit=159347",
+        "  ->  Index Scan using index_contacts_on_account_id on contacts  (cost=1429.44..6878.52 rows=73904 width=0) (actual time=259.517..313.388 rows=5000 loops=1)",
+        "        Index Cond: (account_id = 15)",
+        "        Filter: ((hashed SubPlan 2) OR (hashed SubPlan 3))",
+        "        Rows Removed by Filter: 95000",
+        "        Buffers: shared hit=159347",
+        "        SubPlan 2",
+        "          ->  Nested Loop Semi Join  (cost=338.98..619.93 rows=1 width=4) (actual time=9.836..139.630 rows=1163 loops=1)",
+        "                Buffers: shared hit=90946",
+        "                ->  Nested Loop  (cost=338.56..618.56 rows=1 width=8) (actual time=9.818..132.937 rows=1163 loops=1)",
+        "                      Buffers: shared hit=86294",
+        "                      ->  HashAggregate  (cost=338.14..338.27 rows=13 width=4) (actual time=9.690..15.100 rows=16000 loops=1)",
+        "                            Group Key: taggings.taggable_id",
+        "                            Batches: 1  Memory Usage: 1577kB",
+        "                            Buffers: shared hit=151",
+        "                            ->  Nested Loop  (cost=0.44..338.11 rows=13 width=4) (actual time=0.034..5.330 rows=16000 loops=1)",
+        "                                  Buffers: shared hit=151",
+        "                                  ->  Index Scan using index_tags_on_name on tags  (cost=0.15..8.17 rows=1 width=4) (actual time=0.013..0.015 rows=1 loops=1)",
+        "                                        Index Cond: ((name)::text = 'vip'::text)",
+        "                                        Buffers: shared hit=2",
+        "                                  ->  Index Scan using index_taggings_on_tag_id on taggings  (cost=0.29..276.61 rows=5333 width=8) (actual time=0.018..3.829 rows=16000 loops=1)",
+        "                                        Index Cond: (tag_id = tags.id)",
+        "                                        Filter: ((taggable_type)::text = 'Contact'::text)",
+        "                                        Buffers: shared hit=149",
+        "                      ->  Index Scan using contacts_pkey on contacts contacts_1  (cost=0.42..21.56 rows=1 width=4) (actual time=0.007..0.007 rows=0 loops=16000)",
+        "                            Index Cond: (id = taggings.taggable_id)",
+        "                            Filter: ((account_id = 15) AND (((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text)) AND ((SubPlan 1) > 1000.0))",
+        "                            Rows Removed by Filter: 1",
+        "                            Buffers: shared hit=86143",
+        "                            SubPlan 1",
+        "                              ->  Aggregate  (cost=18.74..18.75 rows=1 width=32) (actual time=0.008..0.008 rows=1 loops=5000)",
+        "                                    Buffers: shared hit=22143",
+        "                                    ->  Nested Loop  (cost=0.58..18.73 rows=1 width=21) (actual time=0.007..0.007 rows=0 loops=5000)",
+        "                                          Buffers: shared hit=22143",
+        "                                          ->  Nested Loop  (cost=0.29..10.42 rows=1 width=8) (actual time=0.005..0.005 rows=0 loops=5000)",
+        "                                                Join Filter: (audience_links.commerce_store_id = audience_stores.id)",
+        "                                                Rows Removed by Join Filter: 1",
+        "                                                Buffers: shared hit=15000",
+        "                                                ->  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.004..0.004 rows=0 loops=5000)",
+        "                                                      Index Cond: (contact_id = contacts_1.id)",
+        "                                                      Filter: ((match_source <> 4) AND (account_id = 15))",
+        "                                                      Buffers: shared hit=12500",
+        "                                                ->  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.08 rows=2 width=8) (actual time=0.000..0.001 rows=3 loops=2500)",
+        "                                                      Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))",
+        "                                                      Buffers: shared hit=2500",
+        "                                          ->  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=29) (actual time=0.004..0.004 rows=1 loops=2500)",
+        "                                                Index Cond: (commerce_customer_link_id = audience_links.id)",
+        "                                                Filter: (id IS NOT NULL)",
+        "                                                Buffers: shared hit=7143",
+        "                ->  Index Scan using index_conversations_on_contact_id on conversations  (cost=0.42..0.89 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=1163)",
+        "                      Index Cond: (contact_id = contacts_1.id)",
+        "                      Filter: ((account_id = 15) AND (status = 0))",
+        "                      Buffers: shared hit=4652",
+        "        SubPlan 3",
+        "          ->  Nested Loop  (cost=435.41..808.98 rows=41 width=4) (actual time=15.689..116.526 rows=5000 loops=1)",
+        "                Buffers: shared hit=64148",
+        "                ->  HashAggregate  (cost=434.99..436.32 rows=133 width=4) (actual time=15.636..22.300 rows=16000 loops=1)",
+        "                      Group Key: taggings_1.taggable_id",
+        "                      Batches: 1  Memory Usage: 1569kB",
+        "                      Buffers: shared hit=148",
+        "                      ->  Hash Join  (cost=28.12..434.66 rows=133 width=4) (actual time=0.059..8.293 rows=16000 loops=1)",
+        "                            Hash Cond: (taggings_1.tag_id = tags_1.id)",
+        "                            Buffers: shared hit=148",
+        "                            ->  Seq Scan on taggings taggings_1  (cost=0.00..364.39 rows=16000 width=8) (actual time=0.009..4.164 rows=16000 loops=1)",
+        "                                  Filter: ((taggable_type)::text = 'Contact'::text)",
+        "                                  Rows Removed by Filter: 1382",
+        "                                  Buffers: shared hit=147",
+        "                            ->  Hash  (cost=28.00..28.00 rows=10 width=4) (actual time=0.031..0.035 rows=1 loops=1)",
+        "                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB",
+        "                                  Buffers: shared hit=1",
+        "                                  ->  Seq Scan on tags tags_1  (cost=0.00..28.00 rows=10 width=4) (actual time=0.022..0.027 rows=1 loops=1)",
+        "                                        Filter: (lower((name)::text) ~~* 'vip'::text)",
+        "                                        Rows Removed by Filter: 3",
+        "                                        Buffers: shared hit=1",
+        "                ->  Index Scan using contacts_pkey on contacts contacts_2  (cost=0.42..2.80 rows=1 width=4) (actual time=0.005..0.005 rows=0 loops=16000)",
+        "                      Index Cond: (id = taggings_1.taggable_id)",
+        "                      Filter: (account_id = 15)",
+        "                      Rows Removed by Filter: 1",
+        "                      Buffers: shared hit=64000",
+        "Planning:",
+        "  Buffers: shared hit=82",
+        "Planning Time: 2.706 ms",
+        "Execution Time: 314.141 ms"
+    ],
+    "explain_dispatch_batch": [
+        "Limit  (cost=1429.44..1710.87 rows=1000 width=156) (actual time=278.316..287.081 rows=1000 loops=1)",
+        "  Buffers: shared hit=171009 read=203 written=1",
+        "  ->  Index Scan using contacts_pkey on contacts  (cost=1429.44..22228.33 rows=73904 width=156) (actual time=278.315..287.000 rows=1000 loops=1)",
+        "        Filter: ((account_id = 15) AND ((hashed SubPlan 2) OR (hashed SubPlan 3)))",
+        "        Rows Removed by Filter: 239001",
+        "        Buffers: shared hit=171009 read=203 written=1",
+        "        SubPlan 2",
+        "          ->  Nested Loop Semi Join  (cost=338.98..619.93 rows=1 width=4) (actual time=8.668..142.660 rows=1163 loops=1)",
+        "                Buffers: shared hit=90946",
+        "                ->  Nested Loop  (cost=338.56..618.56 rows=1 width=8) (actual time=8.648..136.382 rows=1163 loops=1)",
+        "                      Buffers: shared hit=86294",
+        "                      ->  HashAggregate  (cost=338.14..338.27 rows=13 width=4) (actual time=8.506..13.452 rows=16000 loops=1)",
+        "                            Group Key: taggings.taggable_id",
+        "                            Batches: 1  Memory Usage: 1577kB",
+        "                            Buffers: shared hit=151",
+        "                            ->  Nested Loop  (cost=0.44..338.11 rows=13 width=4) (actual time=0.044..4.565 rows=16000 loops=1)",
+        "                                  Buffers: shared hit=151",
+        "                                  ->  Index Scan using index_tags_on_name on tags  (cost=0.15..8.17 rows=1 width=4) (actual time=0.020..0.023 rows=1 loops=1)",
+        "                                        Index Cond: ((name)::text = 'vip'::text)",
+        "                                        Buffers: shared hit=2",
+        "                                  ->  Index Scan using index_taggings_on_tag_id on taggings  (cost=0.29..276.61 rows=5333 width=8) (actual time=0.016..3.141 rows=16000 loops=1)",
+        "                                        Index Cond: (tag_id = tags.id)",
+        "                                        Filter: ((taggable_type)::text = 'Contact'::text)",
+        "                                        Buffers: shared hit=149",
+        "                      ->  Index Scan using contacts_pkey on contacts contacts_1  (cost=0.42..21.56 rows=1 width=4) (actual time=0.007..0.007 rows=0 loops=16000)",
+        "                            Index Cond: (id = taggings.taggable_id)",
+        "                            Filter: ((account_id = 15) AND (((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text)) AND ((SubPlan 1) > 1000.0))",
+        "                            Rows Removed by Filter: 1",
+        "                            Buffers: shared hit=86143",
+        "                            SubPlan 1",
+        "                              ->  Aggregate  (cost=18.74..18.75 rows=1 width=32) (actual time=0.009..0.009 rows=1 loops=5000)",
+        "                                    Buffers: shared hit=22143",
+        "                                    ->  Nested Loop  (cost=0.58..18.73 rows=1 width=21) (actual time=0.008..0.008 rows=0 loops=5000)",
+        "                                          Buffers: shared hit=22143",
+        "                                          ->  Nested Loop  (cost=0.29..10.42 rows=1 width=8) (actual time=0.006..0.006 rows=0 loops=5000)",
+        "                                                Join Filter: (audience_links.commerce_store_id = audience_stores.id)",
+        "                                                Rows Removed by Join Filter: 1",
+        "                                                Buffers: shared hit=15000",
+        "                                                ->  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.004..0.005 rows=0 loops=5000)",
+        "                                                      Index Cond: (contact_id = contacts_1.id)",
+        "                                                      Filter: ((match_source <> 4) AND (account_id = 15))",
+        "                                                      Buffers: shared hit=12500",
+        "                                                ->  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.08 rows=2 width=8) (actual time=0.001..0.001 rows=3 loops=2500)",
+        "                                                      Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))",
+        "                                                      Buffers: shared hit=2500",
+        "                                          ->  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=29) (actual time=0.004..0.004 rows=1 loops=2500)",
+        "                                                Index Cond: (commerce_customer_link_id = audience_links.id)",
+        "                                                Filter: (id IS NOT NULL)",
+        "                                                Buffers: shared hit=7143",
+        "                ->  Index Scan using index_conversations_on_contact_id on conversations  (cost=0.42..0.89 rows=1 width=8) (actual time=0.005..0.005 rows=1 loops=1163)",
+        "                      Index Cond: (contact_id = contacts_1.id)",
+        "                      Filter: ((account_id = 15) AND (status = 0))",
+        "                      Buffers: shared hit=4652",
+        "        SubPlan 3",
+        "          ->  Nested Loop  (cost=435.41..808.98 rows=41 width=4) (actual time=9.092..73.006 rows=5000 loops=1)",
+        "                Buffers: shared hit=64148",
+        "                ->  HashAggregate  (cost=434.99..436.32 rows=133 width=4) (actual time=9.053..13.518 rows=16000 loops=1)",
+        "                      Group Key: taggings_1.taggable_id",
+        "                      Batches: 1  Memory Usage: 1569kB",
+        "                      Buffers: shared hit=148",
+        "                      ->  Hash Join  (cost=28.12..434.66 rows=133 width=4) (actual time=0.045..5.181 rows=16000 loops=1)",
+        "                            Hash Cond: (taggings_1.tag_id = tags_1.id)",
+        "                            Buffers: shared hit=148",
+        "                            ->  Seq Scan on taggings taggings_1  (cost=0.00..364.39 rows=16000 width=8) (actual time=0.007..2.541 rows=16000 loops=1)",
+        "                                  Filter: ((taggable_type)::text = 'Contact'::text)",
+        "                                  Rows Removed by Filter: 1382",
+        "                                  Buffers: shared hit=147",
+        "                            ->  Hash  (cost=28.00..28.00 rows=10 width=4) (actual time=0.022..0.024 rows=1 loops=1)",
+        "                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB",
+        "                                  Buffers: shared hit=1",
+        "                                  ->  Seq Scan on tags tags_1  (cost=0.00..28.00 rows=10 width=4) (actual time=0.014..0.018 rows=1 loops=1)",
+        "                                        Filter: (lower((name)::text) ~~* 'vip'::text)",
+        "                                        Rows Removed by Filter: 3",
+        "                                        Buffers: shared hit=1",
+        "                ->  Index Scan using contacts_pkey on contacts contacts_2  (cost=0.42..2.80 rows=1 width=4) (actual time=0.004..0.004 rows=0 loops=16000)",
+        "                      Index Cond: (id = taggings_1.taggable_id)",
+        "                      Filter: (account_id = 15)",
+        "                      Rows Removed by Filter: 1",
+        "                      Buffers: shared hit=64000",
+        "Planning:",
+        "  Buffers: shared hit=82",
+        "Planning Time: 1.859 ms",
+        "Execution Time: 287.291 ms"
+    ],
+    "http_calls": 0
+}

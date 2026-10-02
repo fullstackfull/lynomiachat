@@ -1,0 +1,57 @@
+[
+  {
+    "name": "setup: account A has WhatsApp campaigns, a label, test contacts and the shared audience",
+    "ok": true,
+    "detail": "واتساب بزنس"
+  },
+  {
+    "name": "1 Recipients offers Labels and the account's shared audiences only",
+    "ok": true,
+    "detail": "E2E VIP buyers"
+  },
+  {
+    "name": "1 the count is the server's, each contact once: label 2, label + audience 4 (Layla in both counted once)",
+    "ok": true,
+    "detail": "2 contacts match now. Each contact receives the campaign once, and recipients are selected again when it is sent. | 4 contacts match now. Each contact receives the campaign once, and recipients are selected again when it is sent."
+  },
+  {
+    "name": "1 the campaign stores a Label and an Audience reference, scheduled, not sent",
+    "ok": true,
+    "detail": "{\"title\":\"E2E Eid offer\",\"audience\":[{\"id\":21,\"type\":\"Label\"},{\"id\":52,\"type\":\"Audience\"}],\"campaign_status\":\"active\",\"campaign_type\":\"one_off\",\"scheduled_at\":\"2026-10-03T19:26:00Z\"}"
+  },
+  {
+    "name": "2 the audience note says it is used by 1 campaign not yet sent",
+    "ok": true,
+    "detail": "This shared audience is used by 0 active automation rules and 1 campaigns not yet sent. Saving changes what they match at once."
+  },
+  {
+    "name": "2 deleting it is refused: \"This audience is used by 1 campaigns that have not been sent yet\"",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "3 Arabic: المستلمون, الجماهير المشتركة, and the count in Arabic",
+    "ok": true,
+    "detail": "3 جهة اتصال مطابقة الآن. تستلم كل جهة اتصال الحملة مرة واحدة، ويُعاد تحديد المستلمين عند إرسالها."
+  },
+  {
+    "name": "3 phone width: no horizontal page scroll, and the recipients block stays inside the create panel (Chatwoot's fixed 25rem popover, unchanged, is wider than a 390px screen before and after this change)",
+    "ok": true,
+    "detail": "block 350px, panel 350px"
+  },
+  {
+    "name": "4 once the campaign is deleted, no campaign uses the audience",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no 5xx from campaigns or saved filters",
+    "ok": true,
+    "detail": ""
+  }
+]

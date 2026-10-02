@@ -1,0 +1,82 @@
+[
+  {
+    "name": "setup: the WhatsApp inbox has the approved hello_world template from Meta",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "1 a shared audience and a personal filter exist",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "2 preview: label 2, audience 3 (Layla, Sara, Ali), both 4: Layla once",
+    "ok": true,
+    "detail": "[2, 3, 4]"
+  },
+  {
+    "name": "2 preview refuses a personal filter (422) and an agent (401)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "3 the campaign is created with label and audience references",
+    "ok": true,
+    "detail": "[{\"id\" => 1, \"type\" => \"Label\"}, {\"id\" => 1, \"type\" => \"Audience\"}]"
+  },
+  {
+    "name": "3 a personal filter is refused (422); an agent cannot create (401)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "3 Tenant B cannot target Tenant A's audience (422)",
+    "ok": true,
+    "detail": "status 422"
+  },
+  {
+    "name": "5 deleting or unsharing the audience is refused (ar): \"This audience is used by 1 campaigns that have not been sent yet. Delete those campaigns or wait until they are sent first.\"",
+    "ok": true,
+    "detail": "هذا الجمهور مستخدم في 1 من الحملات التي لم تُرسل بعد. احذف تلك الحملات أو انتظر حتى تُرسل أولًا."
+  },
+  {
+    "name": "6 the campaign is sent and completed",
+    "ok": true,
+    "detail": "completed"
+  },
+  {
+    "name": "6 Layla (label and audience), Omar (label), Sara (audience), Huda (joined later) get hello_world once each; Noor nothing",
+    "ok": true,
+    "detail": "[[\"15550002001\", \"hello_world\"], [\"15550002002\", \"hello_world\"], [\"15550002003\", \"hello_world\"], [\"15550002006\", \"hello_world\"]]"
+  },
+  {
+    "name": "6 campaign_recipients: 4 sent, Ali (no phone number) skipped by the channel check",
+    "ok": true,
+    "detail": "{\"Layla\" => \"sent\", \"Omar\" => \"sent\", \"Sara\" => \"sent\", \"Ali\" => \"skipped\", \"Huda\" => \"sent\"}"
+  },
+  {
+    "name": "7 a second scheduler run sends nothing",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "8 the delivered status updates Layla's recipient row",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "9 once the campaign is completed the audience can be deleted",
+    "ok": true,
+    "detail": "status 204"
+  },
+  {
+    "name": "10 a label-only campaign sends to Layla and Omar once each",
+    "ok": true,
+    "detail": "[[\"15550002001\", \"hello_world\"], [\"15550002002\", \"hello_world\"]]"
+  },
+  {
+    "name": "11 no host other than Meta (FakeGraph) was called",
+    "ok": true,
+    "detail": "{}"
+  }
+]

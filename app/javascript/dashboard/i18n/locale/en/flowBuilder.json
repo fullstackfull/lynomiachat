@@ -55,7 +55,8 @@
       "INBOX_CONNECTED": "The inbox now answers with this flow.",
       "CREATE_ERROR": "The flow could not be created.",
       "DELETED": "The flow is deleted.",
-      "DELETE_ERROR": "The flow could not be deleted."
+      "DELETE_ERROR": "The flow could not be deleted.",
+      "LOAD_ERROR": "The flows could not be loaded."
     },
     "UNSAVED_CONFIRM": "You have unsaved changes. Leave without saving?",
     "ERRORS_TITLE": "{n} problem to fix before publishing | {n} problems to fix before publishing",

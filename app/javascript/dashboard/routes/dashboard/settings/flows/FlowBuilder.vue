@@ -62,6 +62,14 @@ const savedGraph = ref('');
 const inboxToConnect = ref('');
 const disableDialogRef = ref(null);
 const canvasRef = ref(null);
+// The loaded graph is fitted once its nodes are measured (Vue Flow's pane can be ready before they are); adding a
+// node later must not move the view.
+const isFitted = ref(false);
+const fitLoadedGraph = () => {
+  if (isFitted.value) return;
+  isFitted.value = true;
+  fitView({ maxZoom: 1, padding: 0.3 });
+};
 
 // Unsaved: the graph differs from the one last loaded or saved (Vue Flow's own node state does not count).
 const graphSnapshot = () =>
@@ -121,6 +129,7 @@ const apply = data => {
 
 const load = async () => {
   isLoading.value = true;
+  isFitted.value = false;
   try {
     const { data } = await FlowsAPI.show(flowId.value);
     apply(data);
@@ -128,6 +137,10 @@ const load = async () => {
     nodes.value = canvas.nodes;
     edges.value = canvas.edges;
     savedGraph.value = graphSnapshot();
+  } catch {
+    // A flow of another account, a deleted one, or the feature switched off: back to the list.
+    useAlert(t('FLOW_BUILDER.API.LOAD_ERROR'));
+    router.replace({ name: 'settings_flows_index' });
   } finally {
     isLoading.value = false;
   }
@@ -276,14 +289,10 @@ onBeforeRouteLeave(() =>
   isDirty.value ? window.confirm(t('FLOW_BUILDER.UNSAVED_CONFIRM')) : true
 );
 
+// Labels, inboxes, teams and custom attributes are loaded by the dashboard's sidebar on every page; fetching the
+// cached ones again at the same moment made two cache refreshes collide in IndexedDB.
 onMounted(() => {
-  [
-    'inboxes/get',
-    'labels/get',
-    'teams/get',
-    'agents/get',
-    'attributes/get',
-  ].forEach(action => store.dispatch(action));
+  store.dispatch('agents/get');
   load();
 });
 </script>
@@ -397,7 +406,7 @@ onMounted(() => {
           @connect="onConnect"
           @node-click="selectNode($event.node.id)"
           @pane-click="selectNode(null)"
-          @pane-ready="fitView({ maxZoom: 1, padding: 0.3 })"
+          @nodes-initialized="fitLoadedGraph"
         >
           <template #node-flow="nodeProps">
             <FlowNode v-bind="nodeProps" />

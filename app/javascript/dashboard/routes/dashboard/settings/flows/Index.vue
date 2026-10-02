@@ -41,6 +41,8 @@ const load = async () => {
   try {
     const { data } = await FlowsAPI.get();
     flows.value = data.payload;
+  } catch {
+    useAlert(t('FLOW_BUILDER.API.LOAD_ERROR'));
   } finally {
     isLoading.value = false;
   }

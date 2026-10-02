@@ -24,7 +24,7 @@ module Flows::NodeTypes
     'remove_label' => { outputs: %w[next], data: %w[labels] },
     'assign_agent' => { outputs: %w[next failed], optional: %w[failed], data: %w[agent_id] },
     'assign_team' => { outputs: %w[next failed], optional: %w[failed], data: %w[team_id] },
-    'commerce_lookup' => { outputs: %w[found not_found unavailable], optional: %w[not_found unavailable], data: %w[mode] },
+    'commerce_lookup' => { outputs: %w[found not_found unavailable], optional: %w[not_found unavailable], data: %w[mode number] },
     'webhook' => { outputs: %w[next], data: %w[url] },
     'delay' => { outputs: %w[next], wait: true, data: %w[seconds] },
     'handoff' => { outputs: [], data: %w[team_id agent_id priority labels reason] },

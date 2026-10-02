@@ -200,6 +200,8 @@ class Flows::Runner
 
   def finish(run, status, reason = nil)
     return hand_off(run.session, reason || 'handoff_node') && nil if status == :handed_off
+    # An agent was assigned during the run (Assign Agent): the conversation is theirs, opened by Chatwoot's handoff.
+    return hand_off(run.session, 'human_assigned') && nil if @conversation.reload.pending? && !bot_phase?
 
     ending.complete(run.session)
     nil

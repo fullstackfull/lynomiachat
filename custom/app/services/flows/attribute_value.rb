@@ -19,7 +19,7 @@ module Flows::AttributeValue
   end
 
   def self.number(value, _definition)
-    Float(value.tr(',', '.')).then { |number| number == number.to_i ? number.to_i : number }
+    Float(Flows::Reply.latin_digits(value).tr(',', '.')).then { |number| number == number.to_i ? number.to_i : number }
   rescue ArgumentError
     nil
   end

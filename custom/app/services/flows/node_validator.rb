@@ -107,6 +107,11 @@ class Flows::NodeValidator
   def check_commerce_lookup
     add('commerce_disabled') unless commerce?
     add('invalid_mode') unless LOOKUP_MODES.include?(@data['mode'])
+    return if @data['number'].blank?
+
+    add('invalid_number') unless @data['mode'] == 'order_number' && @data['number'].to_s.length <= 64
+    unknown = Flows::Variables.unknown(@data['number'], flow_only: true)
+    add('unknown_variable', unknown.join(', ')) if unknown.any?
   end
 
   def check_webhook
@@ -177,7 +182,7 @@ class Flows::NodeValidator
     return add('text_required') if value.strip.empty?
     return add('text_too_long', 1024) if value.length > 1024
 
-    unknown = Flows::Variables.unknown(value)
+    unknown = Flows::Variables.unknown(value, flow_only: true)
     return add('unknown_variable', unknown.join(', ')) if unknown.any?
 
     add('invalid_attribute_value', @data['key']) if value.exclude?('{{') && Flows::AttributeValue.cast(found, value).nil?

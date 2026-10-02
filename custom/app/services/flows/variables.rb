@@ -20,11 +20,12 @@ module Flows::Variables
   RESERVED = %w[reply order].freeze
   MAX_VALUE = 1024
 
-  # The tokens of `text` that are not allowed (a tag counts as one).
-  def self.unknown(text)
+  # The tokens of `text` that are not allowed (a tag counts as one). `flow_only`: values the flow stores itself (an
+  # attribute, an order number), where Chatwoot's message rendering never runs, accept only `flow.*`.
+  def self.unknown(text, flow_only: false)
     text = text.to_s
     tags = text.include?('{%') ? ['{%'] : []
-    tags + text.scan(TOKEN).flatten.reject { |name| known?(name) }
+    tags + text.scan(TOKEN).flatten.reject { |name| known?(name) && (!flow_only || name.start_with?('flow.')) }
   end
 
   def self.known?(name)

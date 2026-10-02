@@ -9,7 +9,8 @@ class Flows::Nodes::Base
 
   def enter = raise(NotImplementedError)
 
-  def reply(_message) = Flows::Step.wait
+  # A message the node does not expect: consumed, and the node keeps waiting with its timer.
+  def reply(_message) = Flows::Step.wait(wake_at: @run.session.wake_at)
 
   def wake = Flows::Step.next('timeout')
 

@@ -97,8 +97,7 @@ class Flows::NodeValidator
   def check_set_conversation_attribute = check_attribute('conversation_attribute')
 
   def check_add_label = check_labels(@data['labels'], required: true)
-
-  def check_remove_label = check_labels(@data['labels'], required: true)
+  alias check_remove_label check_add_label
 
   def check_assign_agent = check_agent(@data['agent_id'], required: true)
 
@@ -109,12 +108,12 @@ class Flows::NodeValidator
     add('invalid_mode') unless LOOKUP_MODES.include?(@data['mode'])
     return if @data['number'].blank?
 
-    add('invalid_number') unless @data['mode'] == 'order_number' && @data['number'].to_s.length <= 64
-    unknown = Flows::Variables.unknown(@data['number'], flow_only: true)
-    add('unknown_variable', unknown.join(', ')) if unknown.any?
+    add('invalid_number') unless @data['mode'] == 'order_number' && @data['number'].to_s.length <= 64 &&
+                                 Flows::Variables.unknown(@data['number'], flow_only: true).empty?
   end
 
   def check_webhook
+    add('webhooks_unavailable') unless @account.api_and_webhooks_enabled?
     uri = URI.parse(@data['url'].to_s)
     add('invalid_url') unless uri.is_a?(URI::HTTP) && uri.host.present? && @data['url'].length <= Limits::URL_LENGTH_LIMIT
   rescue URI::InvalidURIError

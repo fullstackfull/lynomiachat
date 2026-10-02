@@ -1,6 +1,7 @@
 # Lynomia Flow Builder E2E control (docs/flow-builder/10-e2e.md), run with `rails runner` on the E2E database:
 #
-#   setup      account A gets the Flow Builder, a Customer Care team and a vip label; earlier E2E flows are removed
+#   setup      account A gets the Flow Builder, a Customer Care team and a vip label, and its WhatsApp inbox the approved
+#              templates Chatwoot would have synced from Meta; earlier E2E flows are removed
 #   locale     account A's language (en | ar), for the screenshots
 #   state      the E2E flow's versions, sessions and inbox connection
 #   teardown   E2E flows removed, the inbox's bot detached, the feature switched back off
@@ -9,6 +10,13 @@
 def report(result) = puts("SIM #{result.to_json}") # rubocop:disable Rails/Output
 
 E2E_PREFIX = 'E2E '.freeze
+# Meta's template list as Chatwoot stores it (the WhatsApp harness syncs the same list from its Graph stand-in).
+TEMPLATES = [
+  { 'name' => 'order_update', 'status' => 'APPROVED', 'category' => 'UTILITY', 'language' => 'ar', 'id' => 't1',
+    'components' => [{ 'type' => 'BODY', 'text' => 'مرحبا {{1}}، طلبك {{2}} في الطريق' }] },
+  { 'name' => 'hello_world', 'status' => 'APPROVED', 'category' => 'MARKETING', 'language' => 'en_US', 'id' => 't2',
+    'components' => [{ 'type' => 'BODY', 'text' => 'Hello World' }] }
+].freeze
 
 def account_a = Account.find_by!(name: 'Lynomia Demo A')
 
@@ -34,6 +42,7 @@ when 'setup'
   admin = User.find_by!(email: 'admin_a@commerce.lynomia.local')
   team.add_members([admin.id]) unless team.members.include?(admin)
   account_a.labels.find_or_create_by!(title: 'vip') { |label| label.color = '#1f93ff' }
+  whatsapp_inbox.channel.update_columns(message_templates: TEMPLATES, message_templates_last_updated: Time.current) # rubocop:disable Rails/SkipsModelValidations
   report({ account_id: account_a.id, inbox_id: whatsapp_inbox.id, inbox_name: whatsapp_inbox.name, team_id: team.id })
 when 'locale'
   account_a.update!(locale: ARGV[1])

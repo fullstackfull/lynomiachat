@@ -82,7 +82,7 @@ class Flows::Simulator
   def transcript(conversation)
     conversation.messages.where(message_type: %i[incoming outgoing]).order(:id).map do |message|
       { from: from(message), text: message.content, items: message.content_attributes['items'],
-        list_button: message.content_attributes['list_button'] }.compact
+        list_button: message.content_attributes['list_button'], template: message.additional_attributes&.dig('template_params', 'name') }.compact
     end
   end
 

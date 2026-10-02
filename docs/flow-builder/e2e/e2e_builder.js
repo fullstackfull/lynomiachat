@@ -15,6 +15,7 @@ const PASSWORD = 'Password1!x';
 const results = [];
 const pageErrors = [];
 const failedResponses = [];
+let debugPage;
 
 const check = (name, ok, detail = '') => {
   results.push({ name, ok: !!ok, detail });
@@ -67,6 +68,7 @@ const placeOnCanvas = async (page, type, x, y) => {
   check('setup: account A has the Flow Builder and its WhatsApp inbox', setup.inbox_id > 0, setup.inbox_name);
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH });
   const page = await login(browser);
+  debugPage = page;
   const base = `${B}/app/accounts/${setup.account_id}/settings/flows`;
 
   // 1. The list, and a new flow.
@@ -149,8 +151,42 @@ const placeOnCanvas = async (page, type, x, y) => {
   check('11 Test Mode: Customer care hands off with the note for agents', (await test.innerText()).includes('Customer asked for customer care'));
   await shot(page, 'flow-06-test-handoff');
   check('12 Test Mode kept no session', ctl('state').sessions.length === 0);
+  await test.locator('header button').last().click();
 
-  // 6. The inspector, Arabic, and phone width.
+  // 6. A WhatsApp template after the reply: the inbox's synced templates, a missing value shown before publishing, Test Mode.
+  await placeOnCanvas(page, 'send_template', 40, 40);
+  await panel.locator('[data-test-id="flow-template-select"] button').first().click();
+  await panel.getByText('order_update · ar').click();
+  const templateField = key => panel.locator(`[data-test-id="flow-template-body-${key}"] input, input[data-test-id="flow-template-body-${key}"]`).first();
+  await templateField(1).waitFor();
+  check('17 the template picker offers the inbox\'s approved templates and asks for each value',
+    (await panel.locator('[data-test-id^="flow-template-body-"]').count()) >= 2, await panel.locator('[data-test-id="flow-template-preview"]').innerText());
+  await templateField(1).fill('{{contact.name}}');
+  await panel.locator('header button').last().click();
+  await page.click('[data-test-id="flow-fit-view"]');
+  await page.waitForTimeout(500);
+  await wire(page, node(page, 'Please send your order number.'), 0, node(page, 'order_update · ar'));
+  await wire(page, node(page, 'order_update · ar'), 0, node(page, 'End'));
+  await page.click('[data-test-id="flow-save-button"]');
+  await page.waitForSelector('[data-test-id="flow-errors"]');
+  const missing = await page.locator('[data-test-id="flow-errors"]').innerText();
+  check('18 a template value left empty is shown before publishing', missing.includes('body.2'), missing.split('\n').filter(Boolean).join(' | '));
+  await node(page, 'order_update · ar').click();
+  await panel.locator('[data-test-id="flow-template-field-body-2"] select').selectOption('flow.reply');
+  await page.click('[data-test-id="flow-publish-button"]');
+  await page.waitForFunction(() => document.querySelector('[data-test-id="flow-status"]')?.innerText.includes('version 2'), null, { timeout: 30000 });
+  check('19 the flow with the template publishes (version 2)', JSON.stringify(ctl('state').versions) === JSON.stringify([[1, 'archived'], [2, 'published']]));
+  await page.click('[data-test-id="flow-test-button"]');
+  await test.locator('[data-test-id="flow-test-input"] input, input[data-test-id="flow-test-input"]').first().fill('hi');
+  await test.locator('button[type="submit"]').click();
+  await test.getByRole('button', { name: 'Track order' }).click();
+  await test.locator('[data-test-id="flow-test-template"]').waitFor({ timeout: 30000 });
+  const transcript = await test.innerText();
+  check('20 Test Mode: the template message, its values filled in by Chatwoot', transcript.includes('Template: order_update') &&
+    transcript.includes('مرحبا Flow Test، طلبك Track order في الطريق'), transcript.split('\n').slice(-6).join(' | '));
+  await shot(page, 'flow-10-template');
+
+  // 7. The inspector, Arabic, and phone width.
   await page.click('text=Sessions');
   await page.locator('[data-test-id="flow-sessions-panel"]').waitFor();
   check('13 the session inspector opens', true);
@@ -177,8 +213,10 @@ const placeOnCanvas = async (page, type, x, y) => {
   ctl('teardown');
   fs.writeFileSync(`${out}/e2e_builder.json`, JSON.stringify(results, null, 2));
   console.log(`${results.filter(r => r.ok).length}/${results.length} passed`);
-})().catch(error => {
+})().catch(async error => {
   console.error(error);
+  console.log(`ERROR ${error.message.split('\n')[0]}`);
+  if (debugPage) await shot(debugPage, 'failure').catch(() => {});
   fs.writeFileSync(`${out}/e2e_builder.json`, JSON.stringify(results, null, 2));
   process.exit(1);
 });

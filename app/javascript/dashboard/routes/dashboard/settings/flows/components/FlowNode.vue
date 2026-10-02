@@ -27,6 +27,7 @@ const isActive = computed(() => builder.activeNodeId.value === props.id);
 const summary = computed(() => {
   const value = config.value;
   if (value.text) return value.text;
+  if (value.name) return `${value.name} · ${value.language}`;
   if (value.labels?.length) return value.labels.join(', ');
   if (value.url) return value.url;
   if (value.key) return value.key;
@@ -41,6 +42,8 @@ const summary = computed(() => {
 const outputLabel = output => {
   const option = (config.value.options || []).find(item => item.id === output);
   if (option) return option.title || t('FLOW_BUILDER.NODE.UNTITLED_OPTION');
+  if (type.value === 'send_template' && output === 'failed')
+    return t('FLOW_BUILDER.OUTPUTS.NOT_SENT');
   return t(`FLOW_BUILDER.OUTPUTS.${output.toUpperCase()}`);
 };
 </script>

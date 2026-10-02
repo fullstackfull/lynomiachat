@@ -14,7 +14,7 @@ module Flows::ChannelCapabilities
     reply_window: 24.hours
   }.freeze
 
-  NODE_NEEDS = { 'buttons' => :buttons, 'list' => :list }.freeze
+  NODE_NEEDS = { 'buttons' => :buttons, 'list' => :list, 'send_template' => :template }.freeze
 
   def self.for(inbox)
     channel = inbox.channel

@@ -13,6 +13,7 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import ConditionsEditor from './ConditionsEditor.vue';
 import OptionsEditor from './OptionsEditor.vue';
+import TemplateEditor from './TemplateEditor.vue';
 import { NODE_ICONS } from '../flowGraph';
 
 // The selected node's settings (docs/flow-builder/04-node-contracts.md). Lists come from the account's own labels,
@@ -23,6 +24,8 @@ const props = defineProps({
   nodes: { type: Array, required: true },
   capabilities: { type: Object, required: true },
   variables: { type: Array, default: () => [] },
+  // The inboxes the flow is connected to (the Send template node offers their templates).
+  inboxIds: { type: Array, default: () => [] },
   // This node's server validation errors, already worded.
   errors: { type: Array, default: () => [] },
 });
@@ -213,6 +216,14 @@ const attributeModel = computed(
           @update:model-value="appendVariable('text', $event)"
         />
       </template>
+
+      <TemplateEditor
+        v-if="type === 'send_template'"
+        :model-value="data"
+        :inbox-ids="inboxIds"
+        :variables="variables"
+        @update:model-value="emit('update', $event)"
+      />
 
       <template v-if="type === 'question'">
         <label class="flex flex-col gap-1 text-sm text-n-slate-12">

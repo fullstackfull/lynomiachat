@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
-# Lynomia Flow Builder WhatsApp E2E (docs/flow-builder/10-e2e.md), scenarios A–E. Runs with `rails runner` in
+# Lynomia Flow Builder WhatsApp E2E (docs/flow-builder/10-e2e.md), scenarios A–F. Runs with `rails runner` in
 # production mode on the staging harness database seeded by docs/chatwoot-upgrade/staging-harness/seed_pre_upgrade.rb.
 #
 # Real: the flows API (created, saved, published as Tenant A's administrator), Chatwoot's WhatsApp webhook endpoint with
 # Meta's signature, the incoming message service, conversations, AgentBot's bot phase and handoff, the flow runtime and
 # its lock, Chatwoot's message model and SendReplyJob through the WhatsApp Cloud provider, ActionService, Commerce's
 # WooCommerce provider against the disposable local test store, Chatwoot's webhook delivery and SafeFetch.
-# Simulated: Meta (FakeGraph, in process), the customers (signed webhook payloads), n8n (a local HTTP catcher).
+# Simulated: Meta (FakeGraph, in process: its template list, sends and rejections), the customers (signed webhook payloads),
+# n8n (a local HTTP catcher), the passing of 24 hours (the customer's last message is dated back).
 # Jobs run inline; scheduled jobs (reply timeouts) are only recorded.
 require_relative '../../chatwoot-upgrade/staging-harness/lib'
 require 'socket'
@@ -259,5 +260,123 @@ H.check('T2 a flow naming another account\'s team cannot be published',
         status == 422 && body['errors'].pluck('code').include?('unknown_team'), "http=#{status}")
 H.check('T3 every message the flow sent went through Chatwoot: one Message for each Graph call',
         FakeGraph.calls('POST', %r{/#{PHONE_ID}/messages\z}).size == INBOX.messages.outgoing.where(private: false).count)
+
+puts "\n== Scenario F: WhatsApp templates on Chatwoot's template path (WhatsApp API and coexistence numbers)"
+graph_template_calls = lambda do |phone_id|
+  FakeGraph.calls('POST', %r{/#{phone_id}/messages\z}).map { |call| JSON.parse(call[:body]) }.select { |body| body['type'] == 'template' }
+end
+template_to = ->(phone_id, to) { graph_template_calls.call(phone_id).select { |body| body['to'].to_s.delete('+') == to } }
+draft_and_publish = lambda do |name, nodes, edges|
+  _, created = H.api(:post, "#{API}/flows", ADMIN, { name: name })
+  H.api(:put, "#{API}/flows/#{created['id']}/draft", ADMIN, { graph: { nodes: nodes, edges: edges } })
+  H.api(:post, "#{API}/flows/#{created['id']}/publish", ADMIN)
+end
+one_template = ->(data) { [[graph_node('start', 'start'), graph_node('tpl', 'send_template', data), graph_node('end', 'end')],
+                           [graph_edge('start', 'tpl'), graph_edge('tpl', 'end')]] }
+order_update = ->(second) { { name: 'order_update', language: 'ar', params: { body: { '1' => '{{contact.name}}', '2' => second } } } }
+
+INBOX.channel.sync_templates # Chatwoot's own template sync, from Meta (FakeGraph)
+synced = INBOX.channel.reload.message_templates.map { |t| [t['name'], t['language'], t['status']] }
+H.check('F1 the WhatsApp inbox has its templates from Chatwoot\'s sync (no flow-side template store)',
+        synced.include?(%w[order_update ar APPROVED]) && synced.include?(%w[hello_world en_US APPROVED]), synced.inspect)
+
+status, body = draft_and_publish.call('Wrong language', *one_template.call(order_update.call('{{flow.reply}}').merge(language: 'en')))
+H.check('F2 an invalid language is refused at publish', status == 422 && body['errors'].pluck('code') == ['template_language_unavailable'], body.inspect)
+status, body = draft_and_publish.call('Missing value', *one_template.call(order_update.call('').merge(params: { body: { '1' => '{{contact.name}}' } })))
+H.check('F3 a missing template value is refused at publish',
+        status == 422 && body['errors'].map { |e| [e['code'], e['detail']] } == [%w[template_param_missing body.2]], body.inspect)
+tenant_b_inbox = Inbox.find(ids['B']['inbox_id'])
+tenant_b_inbox.channel.update_columns(message_templates: [{ 'name' => 'tenant_b_offer', 'language' => 'ar', 'status' => 'APPROVED', 'category' => 'MARKETING',
+                                                            'components' => [{ 'type' => 'BODY', 'text' => 'عرض خاص' }] }])
+status, body = draft_and_publish.call('Foreign template', *one_template.call(name: 'tenant_b_offer', language: 'ar'))
+H.check('F4 another account\'s template is not found: the flow cannot be published',
+        status == 422 && body['errors'].pluck('code').uniq == ['template_not_found'], body.inspect)
+
+flow_f = publish_flow('Order update template', [
+                        graph_node('start', 'start'),
+                        graph_node('ask', 'question', text: 'What is your order number?', store_as: { scope: 'context', key: 'order_no' }, timeout_minutes: 1440),
+                        graph_node('thanks', 'send_message', text: 'Thanks {{contact.name}}.'),
+                        graph_node('tpl_now', 'send_template', order_update.call('{{flow.order_no}}')),
+                        graph_node('tpl_late', 'send_template', name: 'hello_world', language: 'en_US', params: {}), graph_node('end', 'end')
+                      ], [graph_edge('start', 'ask'), graph_edge('ask', 'thanks', 'reply'), graph_edge('thanks', 'tpl_now'), graph_edge('tpl_now', 'end'),
+                          graph_edge('ask', 'tpl_late', 'timeout'), graph_edge('tpl_late', 'end')])
+customer_says('966500000020', 'hi', name: 'Mona')
+customer_says('966500000020', '77', name: 'Mona')
+sent = template_to.call(PHONE_ID, '966500000020').last
+mona_template = conversation_of('966500000020').messages.outgoing.where(sender: flow_f).order(:id).last
+H.check('F5 inside the window: the message and then the template, with the contact\'s name and the stored reply',
+        texts_to('966500000020').include?('Thanks Mona.') && sent&.dig('template', 'name') == 'order_update' &&
+          sent.dig('template', 'language', 'code') == 'ar' && sent.dig('template', 'components', 0, 'parameters').pluck('text') == %w[Mona 77],
+        sent.inspect)
+H.check('F6 it is a Chatwoot message carrying the composer\'s template_params, shown rendered in the conversation',
+        mona_template&.content == 'مرحبا Mona، طلبك 77 في الطريق' && mona_template.additional_attributes.dig('template_params', 'processed_params') ==
+          { 'body' => { '1' => 'Mona', '2' => '77' } } && mona_template.source_id.to_s.start_with?('wamid.') && flow_session_of('966500000020').completed?,
+        mona_template&.attributes&.slice('content', 'source_id', 'status').inspect)
+
+customer_says('966500000021', 'hi', name: 'Salem')
+late = conversation_of('966500000021')
+late.messages.incoming.update_all(created_at: 25.hours.ago) # the customer last wrote 25 hours ago
+waiting = flow_session_of('966500000021')
+Flows::RunJob.perform_now(late.id, 'wake', nil, waiting.id, waiting.step_token) # the recorded reply-timeout job, as the scheduler runs it
+H.check('F7 after the 24-hour window the approved template goes out (Chatwoot sends templates outside the window)',
+        !late.reload.can_reply? && template_to.call(PHONE_ID, '966500000021').last&.dig('template', 'name') == 'hello_world' && waiting.reload.completed?,
+        waiting.attributes.slice('status', 'failure_code').inspect)
+graph_before = FakeGraph.calls('POST', %r{/#{PHONE_ID}/messages\z}).size
+status, reply = H.api(:post, "#{API}/conversations/#{late.display_id}/messages", AGENT, { content: 'A free-form reply' })
+free_form = Message.find_by(id: reply['id'])
+H.check('F8 outside the window a free-form message is refused by Chatwoot\'s existing protection (nothing reaches Meta)',
+        status == 200 && free_form&.reload&.failed? && free_form.external_error == I18n.t('errors.whatsapp.message_outside_messaging_window') &&
+          FakeGraph.calls('POST', %r{/#{PHONE_ID}/messages\z}).size == graph_before, free_form&.attributes&.slice('status', 'external_error').inspect)
+
+publish_flow('Late plain message', [graph_node('start', 'start'), graph_node('ask', 'question', text: 'Your order number?', timeout_minutes: 1440),
+                                    graph_node('late', 'send_message', text: 'Are you still there?'), graph_node('end', 'end')],
+             [graph_edge('start', 'ask'), graph_edge('ask', 'end', 'reply'), graph_edge('ask', 'late', 'timeout'), graph_edge('late', 'end')])
+customer_says('966500000022', 'hi', name: 'Dana')
+plain = conversation_of('966500000022')
+plain.messages.incoming.update_all(created_at: 25.hours.ago)
+waiting = flow_session_of('966500000022')
+Flows::RunJob.perform_now(plain.id, 'wake', nil, waiting.id, waiting.step_token)
+H.check('F9 a Send Message after the window is not sent and never replaced by text: handed to humans (window_closed)',
+        waiting.reload.handed_off? && waiting.context['end_reason'] == 'window_closed' && texts_to('966500000022') == ['Your order number?'] &&
+          plain.reload.open?, waiting.attributes.slice('status', 'context').inspect)
+
+publish_flow('Template without a value', *one_template.call(order_update.call('{{flow.order.number}}')))
+customer_says('966500000023', 'hi', name: 'Basel')
+H.check('F10 a variable without a value at run time: nothing sent, the session fails to humans (template_param_missing)',
+        flow_session_of('966500000023').then { |s| s.failed? && s.failure_code == 'template_param_missing' } &&
+          sent_to('966500000023').empty? && conversation_of('966500000023').open?)
+
+publish_flow('Template, Meta refuses', *one_template.call(order_update.call('{{flow.reply}}')))
+FakeGraph.failures[:send] = true
+HarnessAdapter::DELAYED.clear
+customer_says('966500000024', 'A-9', name: 'Rana')
+FakeGraph.failures.delete(:send)
+rejected = conversation_of('966500000024').messages.outgoing.where(private: false).order(:id).first
+retried = HarnessAdapter::DELAYED.include?('Flows::RunJob') # the rejection job met the running job's lock: Sidekiq retries it after it
+Flows::RunJob.perform_now(rejected.conversation_id, 'rejected', rejected.id)
+H.check('F11 Meta rejects the template after the session completed: the message is failed, humans get the conversation, no text instead',
+        rejected.reload.failed? && retried && flow_session_of('966500000024').completed? && conversation_of('966500000024').open? &&
+          conversation_of('966500000024').messages.outgoing.where(private: false).count == 1,
+        "#{rejected.attributes.slice('status', 'external_error')} conversation=#{conversation_of('966500000024').status}")
+
+FakeGraph.wabas['WABA-COEX-A'] = { name: 'Tenant A Shop', numbers: [{ id: '3330001', display: '+1 555-000-3001', verified_name: 'Tenant A Shop',
+                                                                       is_on_biz_app: true }] }
+status, coex_body = H.api(:post, "#{API}/whatsapp/authorization", ADMIN,
+                          { code: "coex-flow-#{SecureRandom.hex(3)}", waba_id: 'WABA-COEX-A', is_coexistence: true })
+coex_inbox = Inbox.find_by(id: coex_body['id'])
+both = publish_flow('Template on both numbers', *one_template.call(order_update.call('{{flow.reply}}')))
+H.api(:post, "#{API}/inboxes/#{coex_inbox.id}/set_agent_bot", ADMIN, { agent_bot: both.id })
+customer_says('966500000025', 'B-1', name: 'Hadi')
+H.post_webhook('+15550003001', H.inbound('WABA-COEX-A', '3330001', '+1 555-000-3001', from: '966500000026', id: "wamid.in-#{SecureRandom.hex(6)}",
+                                                                                      type: 'text', content: { body: 'B-1' }, name: 'Hadi'))
+api_template = template_to.call(PHONE_ID, '966500000025').last&.dig('template')
+coex_template = template_to.call('3330001', '966500000026').last&.dig('template')
+H.check('F12 the same flow and node on a coexistence number: Chatwoot\'s same provider sends the same template, no provider branch',
+        status == 200 && coex_inbox&.channel&.provider_config&.dig('is_coexistence') == true && both.inboxes.include?(coex_inbox) &&
+          api_template.present? && api_template == coex_template && coex_template.dig('components', 0, 'parameters').pluck('text') == %w[Hadi B-1],
+        "coex=#{status} #{coex_template.inspect}")
+flow_templates = Message.where(sender_type: 'AgentBot').where("additional_attributes ? 'template_params'").count
+H.check('F13 every template went through Chatwoot: one bot template Message per Graph template call',
+        flow_templates == graph_template_calls.call(PHONE_ID).size + graph_template_calls.call('3330001').size, "messages=#{flow_templates}")
 
 H.write_results(File.join(HARNESS, 'out', 'flow_whatsapp_results.json'))

@@ -65,6 +65,26 @@
     "detail": ""
   },
   {
+    "name": "17 the template picker offers the inbox's approved templates and asks for each value",
+    "ok": true,
+    "detail": "مرحبا {{1}}، طلبك {{2}} في الطريق"
+  },
+  {
+    "name": "18 a template value left empty is shown before publishing",
+    "ok": true,
+    "detail": "1 problem to fix before publishing | Send WhatsApp template: Fill in the template value body.2."
+  },
+  {
+    "name": "19 the flow with the template publishes (version 2)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "20 Test Mode: the template message, its values filled in by Chatwoot",
+    "ok": true,
+    "detail": " | Template: order_update |  | Completed |  | Steps"
+  },
+  {
     "name": "13 the session inspector opens",
     "ok": true,
     "detail": ""

@@ -33,7 +33,7 @@ class Flows::GraphValidator
     check_routing
     check_reach
     check_loops
-    @nodes.each { |node| @errors.concat(Flows::NodeValidator.new(@account, node).errors) }
+    @nodes.each { |node| @errors.concat(Flows::NodeValidator.new(@account, node, inboxes: @inboxes).errors) }
     check_channels
     @errors
   end

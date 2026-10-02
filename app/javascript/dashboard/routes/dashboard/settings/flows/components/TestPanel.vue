@@ -128,6 +128,13 @@ const restart = () => {
         >
           {{ entry.text }}
         </p>
+        <span
+          v-if="entry.template"
+          class="text-xs text-n-slate-11"
+          data-test-id="flow-test-template"
+        >
+          {{ t('FLOW_BUILDER.TEST.TEMPLATE', { name: entry.template }) }}
+        </span>
         <span v-if="entry.list_button" class="text-xs text-n-slate-11">
           {{ entry.list_button }}
         </span>

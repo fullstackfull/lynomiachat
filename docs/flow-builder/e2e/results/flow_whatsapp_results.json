@@ -128,5 +128,70 @@
     "name": "T3 every message the flow sent went through Chatwoot: one Message for each Graph call",
     "ok": true,
     "detail": null
+  },
+  {
+    "name": "F1 the WhatsApp inbox has its templates from Chatwoot's sync (no flow-side template store)",
+    "ok": true,
+    "detail": "[[\"order_update\", \"ar\", \"APPROVED\"], [\"hello_world\", \"en_US\", \"APPROVED\"]]"
+  },
+  {
+    "name": "F2 an invalid language is refused at publish",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_language_unavailable\", \"node_id\" => \"tpl\", \"detail\" => \"WhatsApp API A\"}]}"
+  },
+  {
+    "name": "F3 a missing template value is refused at publish",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_param_missing\", \"node_id\" => \"tpl\", \"detail\" => \"body.2\"}]}"
+  },
+  {
+    "name": "F4 another account's template is not found: the flow cannot be published",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_not_found\", \"node_id\" => \"tpl\", \"detail\" => \"WhatsApp API A\"}]}"
+  },
+  {
+    "name": "F5 inside the window: the message and then the template, with the contact's name and the stored reply",
+    "ok": true,
+    "detail": "{\"messaging_product\" => \"whatsapp\", \"recipient_type\" => \"individual\", \"to\" => \"966500000020\", \"type\" => \"template\", \"template\" => {\"name\" => \"order_update\", \"language\" => {\"policy\" => \"deterministic\", \"code\" => \"ar\"}, \"components\" => [{\"type\" => \"body\", \"parameters\" => [{\"type\" => \"text\", \"text\" => \"Mona\"}, {\"type\" => \"text\", \"text\" => \"77\"}]}]}}"
+  },
+  {
+    "name": "F6 it is a Chatwoot message carrying the composer's template_params, shown rendered in the conversation",
+    "ok": true,
+    "detail": "{\"content\" => \"مرحبا Mona، طلبك 77 في الطريق\", \"source_id\" => \"wamid.FAKE-0956ff-25\", \"status\" => \"sent\"}"
+  },
+  {
+    "name": "F7 after the 24-hour window the approved template goes out (Chatwoot sends templates outside the window)",
+    "ok": true,
+    "detail": "{\"status\" => \"completed\", \"failure_code\" => nil}"
+  },
+  {
+    "name": "F8 outside the window a free-form message is refused by Chatwoot's existing protection (nothing reaches Meta)",
+    "ok": true,
+    "detail": "{\"status\" => \"failed\"}"
+  },
+  {
+    "name": "F9 a Send Message after the window is not sent and never replaced by text: handed to humans (window_closed)",
+    "ok": true,
+    "detail": "{\"status\" => \"handed_off\", \"context\" => {\"reply\" => \"hi\", \"visits\" => {\"ask\" => 1, \"late\" => 1, \"start\" => 1}, \"attempts\" => {}, \"end_reason\" => \"window_closed\"}}"
+  },
+  {
+    "name": "F10 a variable without a value at run time: nothing sent, the session fails to humans (template_param_missing)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "F11 Meta rejects the template after the session completed: the message is failed, humans get the conversation, no text instead",
+    "ok": true,
+    "detail": "{\"status\" => \"failed\"} conversation=open"
+  },
+  {
+    "name": "F12 the same flow and node on a coexistence number: Chatwoot's same provider sends the same template, no provider branch",
+    "ok": true,
+    "detail": "coex=200 {\"name\" => \"order_update\", \"language\" => {\"policy\" => \"deterministic\", \"code\" => \"ar\"}, \"components\" => [{\"type\" => \"body\", \"parameters\" => [{\"type\" => \"text\", \"text\" => \"Hadi\"}, {\"type\" => \"text\", \"text\" => \"B-1\"}]}]}"
+  },
+  {
+    "name": "F13 every template went through Chatwoot: one bot template Message per Graph template call",
+    "ok": true,
+    "detail": "messages=5"
   }
 ]

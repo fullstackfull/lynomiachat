@@ -71,6 +71,7 @@
     "NODES": {
       "START": "البداية",
       "SEND_MESSAGE": "إرسال رسالة",
+      "SEND_TEMPLATE": "إرسال قالب واتساب",
       "QUESTION": "سؤال",
       "BUTTONS": "أزرار",
       "LIST": "قائمة",
@@ -106,7 +107,8 @@
       "FAILED": "تعذّر الإسناد",
       "FOUND": "وُجد",
       "NOT_FOUND": "لم يوجد",
-      "UNAVAILABLE": "المتجر غير متاح"
+      "UNAVAILABLE": "المتجر غير متاح",
+      "NOT_SENT": "لم يُرسل"
     },
     "CONFIG": {
       "ADD_CONDITION": "إضافة شرط",
@@ -173,7 +175,18 @@
       },
       "REASON": "ملاحظة للفريق (اختياري)",
       "TARGET": "المتابعة من",
-      "RESOLVE": "حل المحادثة"
+      "RESOLVE": "حل المحادثة",
+      "TEMPLATE": "القالب",
+      "TEMPLATE_PLACEHOLDER": "اختر قالبًا معتمدًا",
+      "TEMPLATE_HINT": "القوالب المعتمدة التي تمت مزامنتها من واتساب لصناديق هذا التدفق. يمكن إرسال القالب بعد انتهاء نافذة الـ 24 ساعة، حيث لا يمكن إرسال رسالة عادية. إذا تعذّر إرساله يتبع التدفق مخرج \"فشل\" أو يحوّل المحادثة إلى فريقك.",
+      "TEMPLATE_NONE": "لا يوجد قالب واتساب معتمد يمكن إرساله من هذه الصناديق. تتم مزامنة القوالب من واتساب في إعدادات الصندوق.",
+      "TEMPLATE_UNAVAILABLE": "لم يعد هذا القالب متاحًا في هذه الصناديق.",
+      "TEMPLATE_HEADER": "الترويسة {key}",
+      "TEMPLATE_BODY": "المتغير {key}",
+      "TEMPLATE_BUTTON": "قيمة رابط الزر {key}",
+      "TEMPLATE_COPY_CODE": "رمز الزر {key} (15 حرفًا على الأكثر)",
+      "TEMPLATE_MEDIA_URL": "رابط {type} (https://)",
+      "TEMPLATE_MEDIA_NAME": "اسم ملف المستند (اختياري)"
     },
     "TEST": {
       "TITLE": "اختبار المسودة",
@@ -184,7 +197,8 @@
       "FAILED": "تعذّر تشغيل الاختبار.",
       "PATH": "الخطوات",
       "FIRE_TIMER": "تخطي الانتظار",
-      "PLACEHOLDER": "اكتب كعميل"
+      "PLACEHOLDER": "اكتب كعميل",
+      "TEMPLATE": "قالب: {name}"
     },
     "SESSIONS": {
       "TITLE": "الجلسات",
@@ -216,7 +230,14 @@
       "NODE_ERROR": "فشلت خطوة",
       "ATTRIBUTE_MISSING": "السمة لم تعد موجودة",
       "INVALID_ATTRIBUTE_VALUE": "القيمة لا تناسب السمة",
-      "UNROUTED": "لا شيء متصل بـ \"{output}\""
+      "UNROUTED": "لا شيء متصل بـ \"{output}\"",
+      "TEMPLATE_NOT_FOUND": "لم يعد القالب موجودًا",
+      "TEMPLATE_LANGUAGE_UNAVAILABLE": "القالب غير متاح بهذه اللغة",
+      "TEMPLATE_NOT_APPROVED": "لم يعد القالب معتمدًا",
+      "TEMPLATE_NOT_ALLOWED": "لا يمكن للتدفق إرسال هذا القالب",
+      "TEMPLATE_UNSUPPORTED": "لا يمكن لهذا الصندوق إرسال القوالب",
+      "TEMPLATE_PARAM_MISSING": "كانت إحدى قيم القالب فارغة",
+      "MESSAGE_REJECTED": "رفض واتساب رسالة"
     },
     "ERRORS": {
       "INVALID_GRAPH": "تعذّرت قراءة التدفق.",
@@ -276,7 +297,17 @@
       "REASON_TOO_LONG": "الملاحظة 255 حرفًا على الأكثر.",
       "INVALID_RESOLVE": "إعداد غير صالح.",
       "NO_INBOX": "اربط صندوق واتساب لاختبار هذا التدفق.",
-      "FLOW_ACTIVE": "أوقف التدفق قبل حذفه."
+      "FLOW_ACTIVE": "أوقف التدفق قبل حذفه.",
+      "TEMPLATE_REQUIRED": "اختر قالبًا.",
+      "TEMPLATE_NO_INBOX": "لا يوجد صندوق واتساب في هذا الحساب يمكنه إرسال القوالب.",
+      "TEMPLATE_NOT_FOUND": "القالب غير موجود في {detail}.",
+      "TEMPLATE_LANGUAGE_UNAVAILABLE": "القالب غير متاح بهذه اللغة في {detail}.",
+      "TEMPLATE_NOT_APPROVED": "القالب غير معتمد في {detail}.",
+      "TEMPLATE_NOT_ALLOWED": "لا يمكن للتدفق إرسال هذا القالب ({detail}).",
+      "TEMPLATE_PARAM_MISSING": "املأ قيمة القالب {detail}.",
+      "INVALID_TEMPLATE_PARAMS": "قيم القالب غير صالحة.",
+      "INVALID_MEDIA_URL": "استخدم رابط http(s) ثابتًا لـ {detail}.",
+      "COPY_CODE_TOO_LONG": "يمكن أن يحتوي الرمز على {detail} حرفًا على الأكثر."
     }
   }
 }

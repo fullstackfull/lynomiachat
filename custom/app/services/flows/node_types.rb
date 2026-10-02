@@ -9,6 +9,7 @@ module Flows::NodeTypes
   TYPES = {
     'start' => { outputs: %w[next], data: %w[keywords conditions] },
     'send_message' => { outputs: %w[next], data: %w[text] },
+    'send_template' => { outputs: %w[next failed], optional: %w[failed], data: %w[name language params] },
     'question' => { outputs: %w[reply invalid timeout], optional: %w[invalid timeout], wait: true,
                     data: %w[text reply_type keywords store_as max_attempts retry_text timeout_minutes] },
     'buttons' => { outputs: :options, extra: %w[other timeout], optional: %w[other timeout], wait: true,

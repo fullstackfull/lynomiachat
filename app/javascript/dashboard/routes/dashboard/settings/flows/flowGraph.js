@@ -3,7 +3,10 @@
 // save and publish. This file only converts between the stored graph and Vue Flow, and lays out the palette.
 
 export const NODE_GROUPS = [
-  { key: 'MESSAGES', types: ['send_message', 'question', 'buttons', 'list'] },
+  {
+    key: 'MESSAGES',
+    types: ['send_message', 'send_template', 'question', 'buttons', 'list'],
+  },
   { key: 'LOGIC', types: ['condition'] },
   {
     key: 'CUSTOMER',
@@ -24,6 +27,7 @@ export const NODE_GROUPS = [
 export const NODE_ICONS = {
   start: 'i-lucide-play',
   send_message: 'i-lucide-message-square',
+  send_template: 'i-lucide-file-text',
   question: 'i-lucide-message-circle-question',
   buttons: 'i-lucide-rectangle-ellipsis',
   list: 'i-lucide-list',
@@ -54,6 +58,7 @@ export function newOption() {
 // What a new node starts with; the rest is filled in its panel.
 const DEFAULT_DATA = {
   send_message: () => ({ text: '' }),
+  send_template: () => ({ name: '', language: '', params: {} }),
   question: () => ({ text: '', reply_type: 'any' }),
   buttons: () => ({ text: '', options: [newOption()] }),
   list: () => ({ text: '', options: [newOption()] }),

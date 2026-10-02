@@ -34,11 +34,13 @@ class Flows::Run
 
   # A message from the bot, through Chatwoot's normal path (Message callbacks → SendReplyJob → the channel), with the
   # run's `flow.*` values filled in; Chatwoot's own `{{contact.*}}` variables are rendered by the message itself.
-  def say(text, content_type: :text, content_attributes: {})
+  # `additional_attributes`: a template's `template_params` (Flows::Nodes::SendTemplate).
+  def say(text, content_type: :text, content_attributes: {}, additional_attributes: {})
     @sends += 1
     @conversation.messages.create!(
       message_type: :outgoing, account_id: @conversation.account_id, inbox_id: @conversation.inbox_id, sender: @bot,
-      content: Flows::Variables.render(text, context), content_type: content_type, content_attributes: content_attributes
+      content: Flows::Variables.render(text, context), content_type: content_type, content_attributes: content_attributes,
+      additional_attributes: additional_attributes
     )
   end
 

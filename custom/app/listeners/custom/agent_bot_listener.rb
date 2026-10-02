@@ -14,6 +14,15 @@ module Custom::AgentBotListener
     end
   end
 
+  # WhatsApp refused a message the flow sent (a template Meta rejects, a parameter it refuses): humans take over.
+  def message_updated(event)
+    super
+    message = event.data[:message]
+    return unless message.outgoing? && message.failed? && event.data[:previous_changes]&.key?('status') && flow_message?(message)
+
+    Flows::RunJob.perform_later(message.conversation_id, 'rejected', message.id)
+  end
+
   def conversation_status_changed(event)
     super
     conversation = event.data[:conversation]
@@ -38,6 +47,8 @@ module Custom::AgentBotListener
     link = inbox.agent_bot_inbox
     link&.active? && link.agent_bot&.flow?
   end
+
+  def flow_message?(message) = message.sender.is_a?(AgentBot) && message.sender.flow? && flow_account?(message.account)
 
   def live_flow?(conversation_id) = FlowSession.live.exists?(conversation_id: conversation_id)
 end

@@ -71,6 +71,7 @@
     "NODES": {
       "START": "Start",
       "SEND_MESSAGE": "Send message",
+      "SEND_TEMPLATE": "Send WhatsApp template",
       "QUESTION": "Question",
       "BUTTONS": "Buttons",
       "LIST": "List",
@@ -106,7 +107,8 @@
       "FAILED": "Could not assign",
       "FOUND": "Found",
       "NOT_FOUND": "Not found",
-      "UNAVAILABLE": "Store unavailable"
+      "UNAVAILABLE": "Store unavailable",
+      "NOT_SENT": "Not sent"
     },
     "CONFIG": {
       "ADD_CONDITION": "Add condition",
@@ -173,7 +175,18 @@
       },
       "REASON": "Note for the team (optional)",
       "TARGET": "Continue at",
-      "RESOLVE": "Resolve the conversation"
+      "RESOLVE": "Resolve the conversation",
+      "TEMPLATE": "Template",
+      "TEMPLATE_PLACEHOLDER": "Choose an approved template",
+      "TEMPLATE_HINT": "Approved templates synced from WhatsApp for this flow's inboxes. A template can be sent after the 24-hour window, where a plain message cannot. If it cannot be sent, the flow follows \"Failed\", or hands the conversation to your team.",
+      "TEMPLATE_NONE": "No approved WhatsApp template can be sent from these inboxes. Templates are synced from WhatsApp in the inbox settings.",
+      "TEMPLATE_UNAVAILABLE": "This template is no longer available on these inboxes.",
+      "TEMPLATE_HEADER": "Header {key}",
+      "TEMPLATE_BODY": "Variable {key}",
+      "TEMPLATE_BUTTON": "Button {key} link value",
+      "TEMPLATE_COPY_CODE": "Button {key} code (at most 15 characters)",
+      "TEMPLATE_MEDIA_URL": "{type} link (https://)",
+      "TEMPLATE_MEDIA_NAME": "Document file name (optional)"
     },
     "TEST": {
       "TITLE": "Test the draft",
@@ -184,7 +197,8 @@
       "FAILED": "The test could not run.",
       "PATH": "Steps",
       "FIRE_TIMER": "Skip the wait",
-      "PLACEHOLDER": "Write as the customer"
+      "PLACEHOLDER": "Write as the customer",
+      "TEMPLATE": "Template: {name}"
     },
     "SESSIONS": {
       "TITLE": "Sessions",
@@ -216,7 +230,14 @@
       "NODE_ERROR": "A step failed",
       "ATTRIBUTE_MISSING": "The attribute no longer exists",
       "INVALID_ATTRIBUTE_VALUE": "The value does not fit the attribute",
-      "UNROUTED": "Nothing connected to \"{output}\""
+      "UNROUTED": "Nothing connected to \"{output}\"",
+      "TEMPLATE_NOT_FOUND": "The template no longer exists",
+      "TEMPLATE_LANGUAGE_UNAVAILABLE": "The template is not available in this language",
+      "TEMPLATE_NOT_APPROVED": "The template is no longer approved",
+      "TEMPLATE_NOT_ALLOWED": "The template cannot be sent by a flow",
+      "TEMPLATE_UNSUPPORTED": "This inbox cannot send templates",
+      "TEMPLATE_PARAM_MISSING": "A template value was empty",
+      "MESSAGE_REJECTED": "WhatsApp rejected a message"
     },
     "ERRORS": {
       "INVALID_GRAPH": "The flow could not be read.",
@@ -276,7 +297,17 @@
       "REASON_TOO_LONG": "The note is at most 255 characters.",
       "INVALID_RESOLVE": "Invalid setting.",
       "NO_INBOX": "Connect a WhatsApp inbox to test this flow.",
-      "FLOW_ACTIVE": "Disable the flow before deleting it."
+      "FLOW_ACTIVE": "Disable the flow before deleting it.",
+      "TEMPLATE_REQUIRED": "Choose a template.",
+      "TEMPLATE_NO_INBOX": "No WhatsApp inbox of this account can send templates.",
+      "TEMPLATE_NOT_FOUND": "The template is not on {detail}.",
+      "TEMPLATE_LANGUAGE_UNAVAILABLE": "The template is not available in this language on {detail}.",
+      "TEMPLATE_NOT_APPROVED": "The template is not approved on {detail}.",
+      "TEMPLATE_NOT_ALLOWED": "This template cannot be sent by a flow ({detail}).",
+      "TEMPLATE_PARAM_MISSING": "Fill in the template value {detail}.",
+      "INVALID_TEMPLATE_PARAMS": "The template values are not valid.",
+      "INVALID_MEDIA_URL": "Use a fixed http(s) link for {detail}.",
+      "COPY_CODE_TOO_LONG": "The code can have at most {detail} characters."
     }
   }
 }

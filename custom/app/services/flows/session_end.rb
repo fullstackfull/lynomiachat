@@ -29,9 +29,10 @@ class Flows::SessionEnd
     hand_over
   end
 
-  # No session starts (nothing published, Start does not match, flows unavailable): humans take the conversation.
-  def skip(bot, reason)
-    Flows::Log.write({ event: 'flow.start.skipped', account_id: @conversation.account_id, flow_id: bot&.id,
+  # No session starts (nothing published, Start does not match, flows unavailable), or a message of a finished session was
+  # refused (`flow.message.rejected`): humans take the conversation.
+  def skip(bot, reason, event: 'flow.start.skipped')
+    Flows::Log.write({ event: event, account_id: @conversation.account_id, flow_id: bot&.id,
                        conversation_id: @conversation.id, reason: reason })
     hand_over
   end

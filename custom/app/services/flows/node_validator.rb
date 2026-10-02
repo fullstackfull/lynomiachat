@@ -12,9 +12,11 @@ class Flows::NodeValidator
   MAX_CONDITIONS = 10
   STORE_MODELS = { 'contact' => 'contact_attribute', 'conversation' => 'conversation_attribute' }.freeze
 
-  def initialize(account, node)
+  # `inboxes`: the inboxes the flow is connected to (templates are checked against them).
+  def initialize(account, node, inboxes: [])
     @account = account
     @node = node
+    @inboxes = inboxes
     @data = node['data'].is_a?(Hash) ? node['data'] : {}
     @errors = []
   end
@@ -40,6 +42,8 @@ class Flows::NodeValidator
   end
 
   def check_send_message = check_text(@data['text'], CAPS[:text][:body])
+
+  def check_send_template = Flows::TemplateValidator.new(@account, @data, @inboxes).errors.each { |code, detail| add(code, detail) }
 
   def check_question
     check_text(@data['text'], CAPS[:text][:body])
@@ -120,9 +124,7 @@ class Flows::NodeValidator
     add('invalid_url')
   end
 
-  def check_delay
-    add('invalid_delay') unless (1..MAX_DELAY_SECONDS).cover?(Integer(@data['seconds'].to_s, exception: false))
-  end
+  def check_delay = (add('invalid_delay') unless (1..MAX_DELAY_SECONDS).cover?(Integer(@data['seconds'].to_s, exception: false)))
 
   def check_handoff
     check_team(@data['team_id']) if @data['team_id'].present?
@@ -136,9 +138,7 @@ class Flows::NodeValidator
     add('invalid_target') unless @data['target'].is_a?(String) && @data['target'] != @node['id']
   end
 
-  def check_end
-    add('invalid_resolve') unless [nil, true, false].include?(@data['resolve'])
-  end
+  def check_end = (add('invalid_resolve') unless [nil, true, false].include?(@data['resolve']))
 
   def check_text(text, max)
     return add('text_required') if text.to_s.strip.empty?

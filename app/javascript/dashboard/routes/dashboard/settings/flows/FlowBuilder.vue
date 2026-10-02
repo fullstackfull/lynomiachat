@@ -452,6 +452,7 @@ onMounted(() => {
         :nodes="nodes"
         :capabilities="capabilities"
         :variables="allVariables"
+        :inbox-ids="(flow?.inboxes || []).map(inbox => inbox.id)"
         :errors="selectedErrors.map(errorText)"
         @update="updateNodeData"
         @delete="deleteSelected"

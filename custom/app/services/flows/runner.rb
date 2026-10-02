@@ -9,6 +9,8 @@
 #                       answer the node the session waits at
 #   wake(id, token)     a node's timer (delay, reply timeout); a stale token is ignored
 #   human(message)      a human replied (agent, or the WhatsApp Business app on a coexistence number): handed off
+#   rejected(message)   the channel refused a message the flow sent (Meta rejected a template): handed off, also when the
+#                       session already completed while the conversation is still with the flow
 #   stop                the conversation left the bot phase (resolved, opened, assigned): the session is cancelled
 #   disabled            the flow was disabled: live sessions are handed to humans
 #
@@ -54,6 +56,15 @@ class Flows::Runner
     return if session.nil? || message.nil? || !message.send(:human_response?) # Chatwoot's own definition of a human reply
 
     hand_off(session, 'human_reply')
+  end
+
+  def rejected(message)
+    return if message.nil? || !message.failed? || message.sender_type != 'AgentBot'
+
+    session = live_session
+    return hand_off(session, 'message_rejected') if session
+
+    ending.skip(bot, 'message_rejected', event: 'flow.message.rejected') if bot_phase?
   end
 
   # The flow was disabled (Flows::Versions#disable!): humans take its live conversations.

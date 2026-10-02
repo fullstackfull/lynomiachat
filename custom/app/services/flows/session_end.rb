@@ -31,9 +31,8 @@ class Flows::SessionEnd
 
   # No session starts (nothing published, Start does not match, flows unavailable): humans take the conversation.
   def skip(bot, reason)
-    entry = { event: 'flow.start.skipped', account_id: @conversation.account_id, flow_id: bot&.id, conversation_id: @conversation.id,
-              reason: reason }
-    Rails.logger.info("[Lynomia::Flow] #{entry.to_json}")
+    Flows::Log.write({ event: 'flow.start.skipped', account_id: @conversation.account_id, flow_id: bot&.id,
+                       conversation_id: @conversation.id, reason: reason })
     hand_over
   end
 
@@ -46,7 +45,7 @@ class Flows::SessionEnd
   # Chatwoot's bot handoff: the conversation opens for humans, the bot assignee is cleared, bot reports count it.
   def hand_over
     @conversation.reload
-    @conversation.bot_handoff! if @conversation.pending?
+    @conversation.bot_handoff!(dispatch_event: !Flows::Simulator.active?) if @conversation.pending?
     true
   end
 end

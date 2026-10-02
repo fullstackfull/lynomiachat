@@ -16,6 +16,7 @@ class Flows::Nodes::CommerceLookup < Flows::Nodes::Base
   THROTTLE_KEY = 'LYNOMIA::FLOW::COMMERCE_LOOKUP::CONVERSATION::%<id>d'.freeze
 
   def enter
+    return Flows::Step.next('not_found') if Flows::Simulator.active? # a test contact has no store customer; no store is called
     return Flows::Step.next('unavailable') unless account.feature_enabled?('lynomia_commerce') && within_limit?
 
     overview = Commerce::Customer360.new(conversation: conversation, user: nil).call

@@ -21,8 +21,10 @@ class Flows::Runner
   MAX_AUTO_SENDS = 5
   MAX_MESSAGES_PER_RUN = 10
 
-  def initialize(conversation)
+  # `version`: the version new sessions start on, the published one by default (Test Mode passes the draft).
+  def initialize(conversation, version: nil)
     @conversation = conversation
+    @version = version
   end
 
   def messages(trigger)
@@ -106,19 +108,25 @@ class Flows::Runner
   end
 
   def start(message)
-    version = bot.published_flow_version
-    return hand_off_conversation('no_published_version') if version.nil?
+    version = @version || bot.published_flow_version
+    reason = start_problem(version, message)
+    return hand_off_conversation(reason) if reason
 
     node = version.nodes.find { |candidate| candidate['type'] == 'start' }
-    unless Flows::Nodes::Start.keywords_match?(node, message.content) && Flows::Nodes::Start.conditions_match?(node, @conversation)
-      return hand_off_conversation('start_not_matched')
-    end
-
     session = FlowSession.create!(account: @conversation.account, agent_bot: bot, flow_version: version, conversation: @conversation,
                                   status: :active, current_node_id: node['id'], last_message_id: message.id,
                                   context: { 'reply' => message.content.to_s.first(Flows::Variables::MAX_VALUE) })
     Flows::Log.event('flow.execution.started', session)
     advance(Flows::Run.new(session), node)
+  end
+
+  def start_problem(version, message)
+    return 'no_published_version' if version.nil?
+    return 'unsupported_channel' if Flows::ChannelCapabilities.for(@conversation.inbox).nil?
+
+    node = version.nodes.find { |candidate| candidate['type'] == 'start' }
+    matched = Flows::Nodes::Start.keywords_match?(node, message.content) && Flows::Nodes::Start.conditions_match?(node, @conversation)
+    'start_not_matched' unless matched
   end
 
   def reply(session, message)
@@ -193,7 +201,9 @@ class Flows::Runner
 
     token = SecureRandom.hex(8)
     run.session.update!(status: :waiting, current_node_id: node['id'], wake_at: wake_at, step_token: token)
-    Flows::RunJob.set(wait_until: wake_at).perform_later(@conversation.id, 'wake', nil, run.session.id, token) if wake_at
+    if wake_at && !Flows::Simulator.active? # Test Mode fires timers on the tester's request
+      Flows::RunJob.set(wait_until: wake_at).perform_later(@conversation.id, 'wake', nil, run.session.id, token)
+    end
     Flows::Log.event('flow.wait.started', run.session, node_type: node['type'], timer: wake_at.present?)
     nil
   end

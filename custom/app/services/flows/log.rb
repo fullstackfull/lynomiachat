@@ -6,8 +6,14 @@
 #   flow.wait.started / resumed
 module Flows::Log
   def self.event(name, session, **details)
-    entry = { event: name, account_id: session.account_id, flow_id: session.agent_bot_id, version_id: session.flow_version_id,
-              session_id: session.id, conversation_id: session.conversation_id }.merge(details.compact)
+    write({ event: name, account_id: session.account_id, flow_id: session.agent_bot_id, version_id: session.flow_version_id,
+            session_id: session.id, conversation_id: session.conversation_id }.merge(details.compact))
+  end
+
+  # Test Mode (Flows::Simulator) shows the entries to the tester instead of logging them.
+  def self.write(entry)
+    return Flows::Simulator.record(entry) if Flows::Simulator.active?
+
     Rails.logger.info("[Lynomia::Flow] #{entry.to_json}")
   end
 

@@ -6,6 +6,7 @@
 #   publish!   the valid draft becomes the published version; the previous one is archived. Sessions keep the version
 #              they started on; new sessions start on this one
 #   disable!   archives the published version: no new session starts; live sessions are handed to humans
+#   delete!    deletes a flow that is not published and has no live session (disable it first)
 class Flows::Versions
   class Invalid < StandardError
     attr_reader :errors
@@ -37,7 +38,10 @@ class Flows::Versions
     errors = Flows::GraphValidator.new(@bot.account, graph).shape_errors
     raise Invalid, errors if errors.any?
 
-    draft.tap { |version| version.update!(graph: graph) }
+    draft.tap do |version|
+      version.update!(graph: graph)
+      Flows::Audit.record('flow.updated', @bot, user: @user, changes: { version: version.version })
+    end
   end
 
   def validate(version = draft) = Flows::GraphValidator.new(@bot.account, version.graph, inboxes: @bot.inboxes.to_a).errors
@@ -65,6 +69,15 @@ class Flows::Versions
       Flows::Audit.record('flow.disabled', @bot, user: @user, changes: { version: published.version })
     end
     @bot.flow_sessions.live.pluck(:conversation_id).each { |id| Flows::RunJob.perform_later(id, 'disabled') }
+  end
+
+  def delete!
+    @bot.with_lock do
+      raise Invalid, [{ code: 'flow_active' }] if @bot.published_flow_version || @bot.flow_sessions.live.exists?
+
+      Flows::Audit.record('flow.deleted', @bot, user: @user, changes: { name: @bot.name })
+      @bot.destroy!
+    end
   end
 
   private

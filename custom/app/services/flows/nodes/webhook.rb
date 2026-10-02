@@ -8,7 +8,9 @@
 # (with its contact), and the run's values: the last reply, values the flow stored, the order a lookup found.
 class Flows::Nodes::Webhook < Flows::Nodes::Base
   def enter
-    if account.api_and_webhooks_enabled?
+    if Flows::Simulator.active?
+      Flows::Log.event('flow.webhook.simulated', @run.session, node_id: @node['id'])
+    elsif account.api_and_webhooks_enabled?
       WebhookJob.perform_later(@data['url'], payload, :flow_webhook, secret: @run.bot.secret, delivery_id: SecureRandom.uuid)
     else
       Flows::Log.event('flow.webhook.skipped', @run.session, node_id: @node['id'], reason: 'plan')

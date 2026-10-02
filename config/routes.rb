@@ -780,4 +780,5 @@ Rails.application.routes.draw do
 
   draw :billing
   draw :commerce
+  draw :flows
 end

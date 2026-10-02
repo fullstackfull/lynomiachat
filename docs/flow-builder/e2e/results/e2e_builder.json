@@ -1,0 +1,107 @@
+[
+  {
+    "name": "setup: account A has the Flow Builder and its WhatsApp inbox",
+    "ok": true,
+    "detail": "واتساب بزنس"
+  },
+  {
+    "name": "1 the Flow Builder is in Settings",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "2 a new flow opens on a Start → End starter",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "3 a Buttons node shows one connector per option",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "4 the server validates the draft: unconnected options and unreachable nodes are shown",
+    "ok": true,
+    "detail": "6 problems to fix before publishing |  | Buttons: Connect the output \"Track order\"."
+  },
+  {
+    "name": "5 connections are drawn from each output",
+    "ok": true,
+    "detail": "4 edges"
+  },
+  {
+    "name": "6 the flow publishes once valid (version 1)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "7 the draft became the published version",
+    "ok": true,
+    "detail": "[[1,\"published\"]]"
+  },
+  {
+    "name": "8 the WhatsApp inbox answers with the flow",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "9 Test Mode: the menu arrives with its buttons",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "10 Test Mode: tapping Track order follows its option to the reply",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "11 Test Mode: Customer care hands off with the note for agents",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "12 Test Mode kept no session",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "17 the template picker offers the inbox's approved templates and asks for each value",
+    "ok": true,
+    "detail": "مرحبا {{1}}، طلبك {{2}} في الطريق"
+  },
+  {
+    "name": "18 a template value left empty is shown before publishing",
+    "ok": true,
+    "detail": "1 problem to fix before publishing | Send WhatsApp template: Fill in the template value body.2."
+  },
+  {
+    "name": "19 the flow with the template publishes (version 2)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "20 Test Mode: the template message, its values filled in by Chatwoot",
+    "ok": true,
+    "detail": " | Template: order_update |  | Completed |  | Steps"
+  },
+  {
+    "name": "13 the session inspector opens",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "14 Arabic: the builder is right to left with translated nodes, and nothing is left unsaved",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "15 phone width: the builder has no page-wide horizontal scroll",
+    "ok": true,
+    "detail": "0px"
+  },
+  {
+    "name": "16 no browser errors, no 5xx from the flows API",
+    "ok": true,
+    "detail": ""
+  }
+]

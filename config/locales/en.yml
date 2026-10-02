@@ -198,6 +198,7 @@ en:
         name: should not start or end with symbols, and it should not have < > / \ @ characters.
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
+      used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.
       invalid_attribute: Invalid attribute key - [%{key}]. The key should be one of [%{allowed_keys}] or a custom attribute defined in the account.
       invalid_operator: Invalid operator. The allowed operators for %{attribute_name} are [%{allowed_keys}].
       invalid_query_operator: Query operator must be either "AND" or "OR".
@@ -595,6 +596,17 @@ en:
     policy_actor: 'Automation System via %{policy_name}'
   automation:
     system_name: 'Automation System'
+    lynomia:
+      extensions_disabled: "Lynomia automation extensions are turned off on this installation."
+      too_many_conditions: "A rule can have at most %{count} audience and Commerce conditions."
+      invalid_operator: "This operator is not available for %{key}."
+      invalid_values: "The values of %{key} are not valid."
+      audience_not_shared: "Automation rules can only use the shared audiences of this account."
+      commerce_disabled: "Commerce conditions and triggers need Lynomia Commerce on this account."
+      invalid_store: "The store is not one of this account's stores."
+      no_delay: "Commerce triggers run at once; they cannot wait."
+      no_customer_message: "Commerce triggers cannot send messages to the customer (%{actions}). Use a label, an assignment, a private note or a webhook."
+      event_condition_without_trigger: "The order store and order platform conditions need a Commerce trigger."
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'

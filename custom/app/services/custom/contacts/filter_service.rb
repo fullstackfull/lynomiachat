@@ -12,10 +12,16 @@ module Custom::Contacts::FilterService
   MAX_VALUES = 50
 
   def perform
-    audience = Array(@params[:payload]).count { |condition| audience_condition(condition['attribute_key']) }
-    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'payload') if audience > MAX_CONDITIONS
-
+    check_audience_limits
     super
+  end
+
+  # The matching contacts without counting them: an automation rule asks about one contact
+  # (docs/automation/03-audience-and-commerce-conditions.md).
+  def relation
+    check_audience_limits
+    validate_query_operator
+    query_builder(@filters['contacts'])
   end
 
   def build_condition_query(model_filters, query_hash, current_index)
@@ -39,6 +45,11 @@ module Custom::Contacts::FilterService
   end
 
   private
+
+  def check_audience_limits
+    audience = Array(@params[:payload]).count { |condition| audience_condition(condition['attribute_key']) }
+    raise CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'payload') if audience > MAX_CONDITIONS
+  end
 
   def audience_condition(key)
     @audience_conditions ||= {}

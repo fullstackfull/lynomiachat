@@ -1,0 +1,197 @@
+[
+  {
+    "name": "A1 the menu goes out as WhatsApp reply buttons whose ids are the flow options",
+    "ok": true,
+    "detail": "[\"lfb:menu:track\", \"lfb:menu:care\"]"
+  },
+  {
+    "name": "A2 the conversation is in the bot phase (pending, the flow bot as AI assignee)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A3 the tap follows the option id: the order number is asked",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A4 the customer's own order is found in the WooCommerce store and its normalized status sent",
+    "ok": true,
+    "detail": "\"Order #18 is refunded.\""
+  },
+  {
+    "name": "A5 the session completed; the conversation stays with the flow",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A6 another customer's order number is not disclosed: not found, then handed to a human",
+    "ok": true,
+    "detail": "[\"Please send your order number.\", \"We could not find that order on your account. A colleague will help you.\"]"
+  },
+  {
+    "name": "A7 after the handoff the bot stays silent",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "A8 Customer care: Customer Care team assigned, conversation opened for humans, the reason left as a private note",
+    "ok": true,
+    "detail": "status=open team=1"
+  },
+  {
+    "name": "A9 a private note never goes to WhatsApp",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B1 Arabic: a WhatsApp list with the Arabic text, the node's button label and option ids",
+    "ok": true,
+    "detail": "{\"button\":\"القائمة\",\"sections\":[{\"rows\":[{\"id\":\"lfb:ar_menu:orders\",\"title\":\"طلباتي\"},{\"id\":\"lfb:ar_menu:care\",\"title\":\"خدمة العملاء\",\"description\":\"تحدث مع فريقنا\"}]}]}"
+  },
+  {
+    "name": "B2 a list row reply follows its id",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B3 English: the English list with its own button label",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "B4 a typed option number is accepted",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "C1 a contact in the shared audience gets the VIP branch and the vip label",
+    "ok": true,
+    "detail": "\"Welcome back, Lina! You are a VIP.\""
+  },
+  {
+    "name": "C2 a contact outside it gets the regular branch, no label",
+    "ok": true,
+    "detail": "\"Welcome, Karim!\""
+  },
+  {
+    "name": "D1 the question is asked and its reply timeout is a scheduled job",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "D2 an answer that does not fit is asked again with the retry text",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "D3 the Arabic-digit answer is stored in the contact attribute as a number",
+    "ok": true,
+    "detail": "{\"order_ref\" => 456}"
+  },
+  {
+    "name": "D4 an agent's reply hands the waiting session to humans (no automatic resume)",
+    "ok": true,
+    "detail": "http=200 {\"status\" => \"handed_off\", \"context\" => {\"reply\" => \"hi\", \"visits\" => {\"ask\" => 1, \"start\" => 1}, \"attempts\" => {}, \"end_reason\" => \"human_reply\"}}"
+  },
+  {
+    "name": "D5 the bot does not answer after the agent took over",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "E1 as shipped, SafeFetch refuses the private address; the flow goes on without waiting",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "E2 self-hosted n8n receives one POST, signed with the flow bot's secret",
+    "ok": true,
+    "detail": "1 request(s)"
+  },
+  {
+    "name": "E3 the payload carries the flow, the conversation and the reply; the flow does not wait for the answer",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "T1 another account's administrator cannot read the flow",
+    "ok": true,
+    "detail": "http=401"
+  },
+  {
+    "name": "T2 a flow naming another account's team cannot be published",
+    "ok": true,
+    "detail": "http=422"
+  },
+  {
+    "name": "T3 every message the flow sent went through Chatwoot: one Message for each Graph call",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "F1 the WhatsApp inbox has its templates from Chatwoot's sync (no flow-side template store)",
+    "ok": true,
+    "detail": "[[\"order_update\", \"ar\", \"APPROVED\"], [\"hello_world\", \"en_US\", \"APPROVED\"]]"
+  },
+  {
+    "name": "F2 an invalid language is refused at publish",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_language_unavailable\", \"node_id\" => \"tpl\", \"detail\" => \"WhatsApp API A\"}]}"
+  },
+  {
+    "name": "F3 a missing template value is refused at publish",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_param_missing\", \"node_id\" => \"tpl\", \"detail\" => \"body.2\"}]}"
+  },
+  {
+    "name": "F4 another account's template is not found: the flow cannot be published",
+    "ok": true,
+    "detail": "{\"errors\" => [{\"code\" => \"template_not_found\", \"node_id\" => \"tpl\", \"detail\" => \"WhatsApp API A\"}]}"
+  },
+  {
+    "name": "F5 inside the window: the message and then the template, with the contact's name and the stored reply",
+    "ok": true,
+    "detail": "{\"messaging_product\" => \"whatsapp\", \"recipient_type\" => \"individual\", \"to\" => \"966500000020\", \"type\" => \"template\", \"template\" => {\"name\" => \"order_update\", \"language\" => {\"policy\" => \"deterministic\", \"code\" => \"ar\"}, \"components\" => [{\"type\" => \"body\", \"parameters\" => [{\"type\" => \"text\", \"text\" => \"Mona\"}, {\"type\" => \"text\", \"text\" => \"77\"}]}]}}"
+  },
+  {
+    "name": "F6 it is a Chatwoot message carrying the composer's template_params, shown rendered in the conversation",
+    "ok": true,
+    "detail": "{\"content\" => \"مرحبا Mona، طلبك 77 في الطريق\", \"source_id\" => \"wamid.FAKE-0956ff-25\", \"status\" => \"sent\"}"
+  },
+  {
+    "name": "F7 after the 24-hour window the approved template goes out (Chatwoot sends templates outside the window)",
+    "ok": true,
+    "detail": "{\"status\" => \"completed\", \"failure_code\" => nil}"
+  },
+  {
+    "name": "F8 outside the window a free-form message is refused by Chatwoot's existing protection (nothing reaches Meta)",
+    "ok": true,
+    "detail": "{\"status\" => \"failed\"}"
+  },
+  {
+    "name": "F9 a Send Message after the window is not sent and never replaced by text: handed to humans (window_closed)",
+    "ok": true,
+    "detail": "{\"status\" => \"handed_off\", \"context\" => {\"reply\" => \"hi\", \"visits\" => {\"ask\" => 1, \"late\" => 1, \"start\" => 1}, \"attempts\" => {}, \"end_reason\" => \"window_closed\"}}"
+  },
+  {
+    "name": "F10 a variable without a value at run time: nothing sent, the session fails to humans (template_param_missing)",
+    "ok": true,
+    "detail": null
+  },
+  {
+    "name": "F11 Meta rejects the template after the session completed: the message is failed, humans get the conversation, no text instead",
+    "ok": true,
+    "detail": "{\"status\" => \"failed\"} conversation=open"
+  },
+  {
+    "name": "F12 the same flow and node on a coexistence number: Chatwoot's same provider sends the same template, no provider branch",
+    "ok": true,
+    "detail": "coex=200 {\"name\" => \"order_update\", \"language\" => {\"policy\" => \"deterministic\", \"code\" => \"ar\"}, \"components\" => [{\"type\" => \"body\", \"parameters\" => [{\"type\" => \"text\", \"text\" => \"Hadi\"}, {\"type\" => \"text\", \"text\" => \"B-1\"}]}]}"
+  },
+  {
+    "name": "F13 every template went through Chatwoot: one bot template Message per Graph template call",
+    "ok": true,
+    "detail": "messages=5"
+  }
+]

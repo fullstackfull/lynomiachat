@@ -3,13 +3,17 @@
 # such a lookup are reported as not searchable. Stores are searched concurrently (Commerce::Parallel) and one failing or
 # slow store is reported in its own entry. The orders may belong to any customer of the store, so they come back without
 # their customer, and nothing is cached or linked.
+#
+# `owners` ({ store id => external customer id }) keeps only that customer's orders in each store: a customer asking
+# for an order by number (a Lynomia flow) never receives another customer's order.
 class Commerce::OrderSearch
   MAX_CONCURRENCY = 4
   STORE_TIMEOUT = 10
 
-  def initialize(stores:, number:)
+  def initialize(stores:, number:, owners: nil)
     @stores = stores
     @number = number
+    @owners = owners
   end
 
   def call
@@ -26,13 +30,20 @@ class Commerce::OrderSearch
     return entry(store, 'unsupported') unless provider.class.searches_orders?
 
     store_json = store.slice(:id, :name, :provider)
-    entry(store, 'searched', orders: provider.find_orders(@number).map { |order| order.as_json.except('customer').merge('store' => store_json) })
+    orders = provider.find_orders(@number)
+    orders = orders.select { |order| owned?(order, store) } if @owners
+    entry(store, 'searched', orders: orders.map { |order| order.as_json.except('customer').merge('store' => store_json) })
   rescue Commerce::Error => e
     Commerce::StoreConnection.new(account: store.account, user: nil).credentials_rejected(store) if e.code == 'AUTH_INVALID'
     entry(store, 'unavailable', error: e.code)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: store.account).capture_exception
     entry(store, 'unavailable', error: 'STORE_UNAVAILABLE')
+  end
+
+  def owned?(order, store)
+    owner = @owners[store.id].to_s
+    owner.present? && order.customer.to_h.with_indifferent_access[:external_id].to_s == owner
   end
 
   def entry(store, state, orders: [], error: nil)

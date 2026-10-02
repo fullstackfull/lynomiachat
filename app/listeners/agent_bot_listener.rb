@@ -88,3 +88,4 @@ class AgentBotListener < BaseListener
                                         secret: agent_bot.secret, delivery_id: SecureRandom.uuid)
   end
 end
+AgentBotListener.prepend_mod_with('AgentBotListener')

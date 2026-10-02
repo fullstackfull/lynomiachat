@@ -346,6 +346,7 @@
     "CANNED_RESPONSES": "Canned Responses",
     "INTEGRATIONS": "Integrations",
     "COMMERCE": "Commerce",
+    "FLOW_BUILDER": "Flow Builder",
     "DATA": "Data",
     "PROFILE_SETTINGS": "Profile Settings",
     "ACCOUNT_SETTINGS": "Account Settings",
@@ -420,7 +421,8 @@
     "DOCS": "Read docs",
     "SECURITY": "Security",
     "CAPTAIN_AI": "Captain",
-    "CONVERSATION_WORKFLOW": "Conversation Workflow"
+    "CONVERSATION_WORKFLOW": "Conversation Workflow",
+    "SHARED_AUDIENCE": "{name} · Shared"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

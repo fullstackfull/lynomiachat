@@ -173,6 +173,7 @@ ar:
         name: لا ينبغي أن تبدأ أو تنتهي بالرموز، ولا ينبغي أن يكون أقل من > / \ أحرف @ .
     custom_filters:
       number_of_records: تم الوصول إلى الحد الأقصى. الحد الأقصى لعدد عوامل التصفية المخصصة المسموح به للمستخدم لكل حساب هو 1000.
+      used_by_automation: هذا الجمهور مستخدم في %{count} من قواعد الأتمتة. أزله من تلك القواعد أولًا.
       invalid_attribute: مفتاح السمة غير صالح - [%{key}]. يجب أن يكون المفتاح واحد من [%{allowed_keys}] أو سمة مخصصة محددة في الحساب.
       invalid_operator: مشغل غير صالح. المشغل المسموح به لـ %{attribute_name} هو [%{allowed_keys}].
       invalid_query_operator: Query operator must be either "AND" or "OR".
@@ -582,6 +583,17 @@ ar:
     policy_actor: 'Automation System via %{policy_name}'
   automation:
     system_name: 'Automation System'
+    lynomia:
+      extensions_disabled: "إضافات أتمتة Lynomia متوقفة على هذا الخادم."
+      too_many_conditions: "يمكن أن تحتوي القاعدة على %{count} من شروط الجمهور وCommerce كحد أقصى."
+      invalid_operator: "هذا العامل غير متاح للحقل %{key}."
+      invalid_values: "قيم الحقل %{key} غير صالحة."
+      audience_not_shared: "يمكن لقواعد الأتمتة استخدام الجماهير المشتركة لهذا الحساب فقط."
+      commerce_disabled: "شروط ومشغّلات Commerce تحتاج إلى تفعيل Lynomia Commerce في هذا الحساب."
+      invalid_store: "المتجر ليس من متاجر هذا الحساب."
+      no_delay: "مشغّلات Commerce تعمل فورًا ولا يمكنها الانتظار."
+      no_customer_message: "لا يمكن لمشغّلات Commerce إرسال رسائل إلى العميل (%{actions}). استخدم وسمًا أو إسنادًا أو ملاحظة خاصة أو Webhook."
+      event_condition_without_trigger: "شرطا متجر الطلب ومنصة الطلب يحتاجان إلى مشغّل Commerce."
   crm:
     no_message: 'No messages in conversation'
     attachment: '[Attachment: %{type}]'

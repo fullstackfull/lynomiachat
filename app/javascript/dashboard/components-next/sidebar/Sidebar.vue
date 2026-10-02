@@ -552,7 +552,9 @@ const menuItems = computed(() => {
           showTreeLine: true,
           children: contactCustomViews.value.map(view => ({
             name: `${view.name}-${view.id}`,
-            label: view.name,
+            label: view.shared
+              ? t('SIDEBAR.SHARED_AUDIENCE', { name: view.name })
+              : view.name,
             to: accountScopedRoute(
               'contacts_dashboard_segments_index',
               { segmentId: view.id },
@@ -828,6 +830,12 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.COMMERCE'),
           icon: 'i-lucide-store',
           to: accountScopedRoute('settings_commerce_index'),
+        },
+        {
+          name: 'Settings Flow Builder',
+          label: t('SIDEBAR.FLOW_BUILDER'),
+          icon: 'i-lucide-workflow',
+          to: accountScopedRoute('settings_flows_index'),
         },
         ...(hasDataImport.value
           ? [
@@ -1509,8 +1517,9 @@ const menuItems = computed(() => {
   box-shadow: 0 0 14px rgba(64, 122, 240, 0.7);
 }
 
-:global([dir='rtl']) .sidebar-nav :deep(a:hover),
-:global([dir='rtl']) .sidebar-nav :deep(button:hover) {
+/* Vue compiles `:global(X) …` to `X` alone: the ancestor selector must stay plain, or every [dir=rtl] element moves. */
+[dir='rtl'] .sidebar-nav :deep(a:hover),
+[dir='rtl'] .sidebar-nav :deep(button:hover) {
   transform: translateX(-3px);
 }
 

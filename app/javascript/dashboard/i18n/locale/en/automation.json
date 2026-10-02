@@ -181,7 +181,14 @@
       "CONVERSATION_UPDATED": "Conversation Updated",
       "MESSAGE_CREATED": "Message Created",
       "CONVERSATION_RESOLVED": "Conversation Resolved",
-      "CONVERSATION_OPENED": "Conversation Opened"
+      "CONVERSATION_OPENED": "Conversation Opened",
+      "COMMERCE_ORDER_CREATED": "Commerce order created",
+      "COMMERCE_ORDER_UPDATED": "Commerce order updated",
+      "COMMERCE_ORDER_PAID": "Commerce order paid",
+      "COMMERCE_ORDER_SHIPPED": "Commerce order shipped",
+      "COMMERCE_ORDER_DELIVERED": "Commerce order delivered",
+      "COMMERCE_ORDER_CANCELLED": "Commerce order cancelled",
+      "COMMERCE_ORDER_REFUNDED": "Commerce order refunded"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Assign to Agent",
@@ -233,6 +240,20 @@
       "TEAM_NAME": "Team",
       "PRIORITY": "Priority",
       "LABELS": "Labels"
+    },
+    "LYNOMIA": {
+      "GROUPS": {
+        "CONVERSATION_TRIGGERS": "Conversations",
+        "COMMERCE_TRIGGERS": "Commerce",
+        "AUDIENCE": "Audience",
+        "COMMERCE": "Commerce"
+      },
+      "CONTACT_AUDIENCE": "Contact audience",
+      "IS_IN": "Is in",
+      "IS_NOT_IN": "Is not in",
+      "EVENT_STORE": "Order store",
+      "EVENT_PROVIDER": "Order store platform",
+      "COMMERCE_TRIGGER_NOTE": "Runs when Lynomia reads a change in a linked customer's orders (a store update, or an agent opening the conversation), on the contact's latest conversation. Messages to the customer aren't available on Commerce triggers."
     }
   }
 }

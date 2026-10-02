@@ -1,16 +1,13 @@
 <script setup>
-import { ref, computed, h, shallowRef, useTemplateRef, watch } from 'vue';
+import { ref, computed, shallowRef, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccount } from 'dashboard/composables/useAccount';
-import { useOperators } from 'dashboard/components-next/filter/operators';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SidePanel from 'dashboard/components-next/side-panel/SidePanel.vue';
 import {
   generateAutomationPayload,
   getActionIcon,
-  getAttributes,
 } from 'dashboard/helper/automationHelper';
-import { getAttributeIcon } from 'dashboard/components-next/filter/helper/filterAttributeIcons';
 import { provideDropdownTeleport } from 'dashboard/components-next/dropdown-menu/base/provider';
 import { validateAutomation } from 'dashboard/helper/validations';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -24,6 +21,8 @@ import AutomationRunTypeSelector from './components/AutomationRunTypeSelector.vu
 import AutomationWaitCondition from './components/AutomationWaitCondition.vue';
 import AutomationInstantTrigger from './components/AutomationInstantTrigger.vue';
 import AutomationActions from './components/AutomationActions.vue';
+import { useLynomiaAutomation, isCommerceEvent } from './lynomiaAutomation';
+import { useConditionFilterTypes } from './useConditionFilterTypes';
 
 const props = defineProps({
   mode: {
@@ -72,17 +71,9 @@ const props = defineProps({
 const emit = defineEmits(['save']);
 const automation = defineModel('automation', { type: Object, default: null });
 
-const INPUT_TYPE_MAP = {
-  multi_select: 'multiSelect',
-  search_select: 'searchSelect',
-  plain_text: 'plainText',
-  multi_text: 'multiText',
-  date: 'date',
-};
-
 const { t } = useI18n();
 const { isCloudFeatureEnabled } = useAccount();
-const { operators } = useOperators();
+const lynomia = useLynomiaAutomation();
 
 provideDropdownTeleport();
 
@@ -199,74 +190,24 @@ const submitKey = computed(() =>
   isEditMode.value ? 'AUTOMATION.EDIT.SUBMIT' : 'AUTOMATION.ADD.SUBMIT'
 );
 
-const getTranslatedAttributes = (type, event) => {
-  return getAttributes(type, event).map(attribute => {
-    const skipTranslation =
-      attribute.customAttributeType ||
-      ['contact_custom_attribute', 'conversation_custom_attribute'].includes(
-        attribute.key
-      );
-    return {
-      ...attribute,
-      name: skipTranslation
-        ? attribute.name
-        : t(`AUTOMATION.ATTRIBUTES.${attribute.name}`),
-    };
-  });
-};
-
 const eventName = computed(() => automation.value?.event_name);
 
-const filterTypes = computed(() => {
-  const event = eventName.value;
-  if (!event || !props.automationTypes[event]) return [];
+const filterTypes = useConditionFilterTypes(
+  () => props.automationTypes,
+  eventName,
+  key => props.getConditionDropdownValues(key)
+);
 
-  const attributes = getTranslatedAttributes(props.automationTypes, event);
-
-  return attributes.map(attr => {
-    if (attr.disabled) {
-      return { value: attr.key, label: attr.name, disabled: true };
-    }
-
-    const mappedInputType = INPUT_TYPE_MAP[attr.inputType] || 'plainText';
-    const options = props.getConditionDropdownValues(attr.key) || [];
-
-    const filterOperators = (attr.filterOperators || []).map(op => {
-      const enriched = operators.value[op.value];
-      if (enriched) return enriched;
-      return {
-        value: op.value,
-        label: t(`FILTER.OPERATOR_LABELS.${op.value}`),
-        hasInput: true,
-        inputOverride: null,
-        icon: h('span', { class: 'i-ph-equals-bold !text-n-blue-11' }),
-      };
-    });
-
-    return {
-      attributeKey: attr.key,
-      value: attr.key,
-      attributeName: attr.name,
-      label: attr.name,
-      icon: getAttributeIcon({
-        attributeKey: attr.key,
-        attributeDisplayType: attr.attributeDisplayType,
-      }),
-      inputType: mappedInputType,
-      options,
-      filterOperators,
-      dataType: 'text',
-      attributeModel: attr.customAttributeType || 'standard',
-    };
-  });
-});
-
-const automationRuleEvents = computed(() =>
-  AUTOMATION_RULE_EVENTS.map(event => ({
+const automationRuleEvents = computed(() => [
+  ...AUTOMATION_RULE_EVENTS.map(event => ({
     ...event,
     value: t(`AUTOMATION.EVENTS.${event.value}`),
-  }))
-);
+    group: t('AUTOMATION.LYNOMIA.GROUPS.CONVERSATION_TRIGGERS'),
+  })),
+  ...lynomia.events.value,
+]);
+
+const isCommerceTrigger = computed(() => isCommerceEvent(eventName.value));
 
 const hasAutomationMutated = computed(() => {
   return Boolean(
@@ -276,9 +217,11 @@ const hasAutomationMutated = computed(() => {
 });
 
 const automationActionTypes = computed(() => {
-  const actionTypes = isCloudFeatureEnabled('sla')
-    ? AUTOMATION_ACTION_TYPES
-    : AUTOMATION_ACTION_TYPES.filter(({ key }) => key !== 'add_sla');
+  const actionTypes = (
+    isCloudFeatureEnabled('sla')
+      ? AUTOMATION_ACTION_TYPES
+      : AUTOMATION_ACTION_TYPES.filter(({ key }) => key !== 'add_sla')
+  ).filter(({ key }) => lynomia.actionAllowed(eventName.value, key));
 
   return actionTypes.map(action => ({
     ...action,
@@ -399,6 +342,11 @@ defineExpose({ open, close });
         :filter-types="filterTypes"
         :errors="errors"
         :show-reset-message="!isEditMode && hasAutomationMutated"
+        :note="
+          isCommerceTrigger
+            ? $t('AUTOMATION.LYNOMIA.COMMERCE_TRIGGER_NOTE')
+            : ''
+        "
         :append-new-condition="appendNewCondition"
         :remove-filter="removeFilter"
         :on-event-change="onEventChange"

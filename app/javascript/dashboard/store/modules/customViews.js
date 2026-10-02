@@ -157,7 +157,7 @@ export const actions = {
       commit(types.DELETE_CUSTOM_VIEW, { data: id, filterType });
       refreshConversationUnreadCounts({ dispatch, rootGetters }, filterType);
     } catch (error) {
-      throw new Error(error);
+      throw new Error(error?.response?.data?.error || error);
     } finally {
       commit(types.SET_CUSTOM_VIEW_UI_FLAG, { isDeleting: false });
     }

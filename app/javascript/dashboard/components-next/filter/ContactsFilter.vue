@@ -19,6 +19,9 @@ import ConditionRow from './ConditionRow.vue';
 const props = defineProps({
   isSegmentView: { type: Boolean, default: false },
   segmentName: { type: String, default: '' },
+  // Lynomia shared audiences (docs/automation/02-shared-audiences.md).
+  sharedSegment: { type: Boolean, default: false },
+  activeRuleCount: { type: Number, default: 0 },
 });
 
 const emit = defineEmits([
@@ -110,6 +113,18 @@ const unreadNote = computed(() =>
 
 onMounted(() => loadAudienceFields());
 
+// Members open a shared audience read-only; administrators are told when rules depend on it.
+const sharedNote = computed(() => {
+  if (!props.isSegmentView)
+    return t('CONTACTS_FILTER.AUDIENCE.SHARED.READ_ONLY');
+  if (props.activeRuleCount) {
+    return t('CONTACTS_FILTER.AUDIENCE.SHARED.USED_BY', {
+      count: props.activeRuleCount,
+    });
+  }
+  return t('CONTACTS_FILTER.AUDIENCE.SHARED.EDIT');
+});
+
 const filterModalHeaderTitle = computed(() => {
   return !props.isSegmentView
     ? t('CONTACTS_LAYOUT.FILTER.TITLE')
@@ -167,6 +182,18 @@ const outsideClickHandler = [
         />
       </template>
     </ul>
+    <p
+      v-if="sharedSegment"
+      class="rounded-lg px-3 py-2 text-label-small"
+      :class="
+        isSegmentView && activeRuleCount
+          ? 'bg-n-amber-2 text-n-amber-11'
+          : 'bg-n-alpha-2 text-n-slate-11'
+      "
+      data-test-id="shared-audience-note"
+    >
+      {{ sharedNote }}
+    </p>
     <div
       v-if="usesConversation || usesCommerce"
       class="flex flex-col gap-1 text-label-small text-n-slate-11"

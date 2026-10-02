@@ -9,6 +9,7 @@ import calls from './calls.json';
 import campaign from './campaign.json';
 import cannedMgmt from './cannedMgmt.json';
 import commerce from './commerce.json';
+import flowBuilder from './flowBuilder.json';
 import chatlist from './chatlist.json';
 import companies from './companies.json';
 import components from './components.json';
@@ -58,6 +59,7 @@ export default {
   ...campaign,
   ...cannedMgmt,
   ...commerce,
+  ...flowBuilder,
   ...chatlist,
   ...companies,
   ...components,

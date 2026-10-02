@@ -127,7 +127,7 @@ const chooseField = async (page, rowIndex, currentLabel, search, option) => {
   await admin.locator('button:has(.i-lucide-save)').click();
   await admin.waitForTimeout(500);
   const saveDialog = clean(await admin.locator('dialog[open]').innerText());
-  await admin.locator('dialog[open] input').fill('Big spenders');
+  await admin.locator('dialog[open] input:not([type="checkbox"])').fill('Big spenders');
   await shot(admin, 'audience-04-save');
   await admin.locator('dialog[open]').getByRole('button', { name: /save audience/i }).click();
   await admin.waitForURL(/\/contacts\/segments\/\d+/, { timeout: 30000 });

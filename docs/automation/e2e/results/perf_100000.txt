@@ -1,0 +1,177 @@
+# docs/automation/e2e/perf.rb measure 100000 (production configuration, verify image, PostgreSQL 16, 4 vCPU)
+
+{
+  "contacts": 100000,
+  "conversations": 60000,
+  "audience_members": 37925,
+  "one_event_audience": {
+    "conversations": 20,
+    "matched": 13,
+    "median_ms": 11.24,
+    "p95_ms": 14.84,
+    "max_ms": 14.84
+  },
+  "one_event_audience_commerce_conversation": {
+    "conversations": 20,
+    "matched": 5,
+    "median_ms": 14.71,
+    "p95_ms": 97.93,
+    "max_ms": 97.93
+  },
+  "one_event_plain_chatwoot": {
+    "conversations": 20,
+    "matched": 9,
+    "median_ms": 4.21,
+    "p95_ms": 42.28,
+    "max_ms": 42.28
+  },
+  "burst_100": {
+    "events": 100,
+    "rules_per_event": 3,
+    "total_ms": 4749.5,
+    "per_event": {
+      "median_ms": 42.38,
+      "p95_ms": 102.86,
+      "max_ms": 138.07
+    },
+    "lynomia_rules": {
+      "outcomes": {
+        "skipped": 161,
+        "matched": 39
+      },
+      "rule_ms": {
+        "median_ms": 9.23,
+        "p95_ms": 19.11,
+        "max_ms": 44.96
+      }
+    }
+  },
+  "burst_1000": {
+    "events": 1000,
+    "rules_per_event": 3,
+    "total_ms": 44862.7,
+    "per_event": {
+      "median_ms": 40.91,
+      "p95_ms": 88.04,
+      "max_ms": 155.8
+    },
+    "lynomia_rules": {
+      "outcomes": {
+        "skipped": 1617,
+        "matched": 383
+      },
+      "rule_ms": {
+        "median_ms": 9.48,
+        "p95_ms": 15.5,
+        "max_ms": 61.98
+      }
+    }
+  },
+  "commerce_burst_1000": {
+    "customers": 1000,
+    "baseline_read": {
+      "median_ms": 8.15,
+      "p95_ms": 11.4,
+      "max_ms": 51.47
+    },
+    "paid_read_event_and_jobs": {
+      "total_ms": 60695.0,
+      "per_event": {
+        "median_ms": 59.1,
+        "p95_ms": 77.17,
+        "max_ms": 123.28
+      }
+    },
+    "paid_rule": {
+      "outcomes": {
+        "executed": 1000
+      },
+      "rule_ms": {
+        "median_ms": 35.34,
+        "p95_ms": 48.05,
+        "max_ms": 84.09
+      }
+    }
+  },
+  "http_calls": 0
+}
+
+## EXPLAIN (ANALYZE, BUFFERS)
+SELECT 1 AS one FROM "contacts" WHERE "contacts"."account_id" = $1 AND (contacts.email <> '' OR contacts.phone_number <> '' OR contacts.identifier <> '') AND ( ((SELECT SUM(COALESCE((audience_metrics.spend ->> $2)::numeric, 0)) FROM commerce_customer_links audience_links INNER JOIN commerce_stores audience_stores ON audience_stores.id = audience_links.commerce_store_id LEFT JOIN commerce_contact_m
+
+Limit  (cost=0.42..27.20 rows=1 width=4) (actual time=0.046..0.048 rows=1 loops=1)
+  Buffers: shared hit=11
+  ->  Index Scan using contacts_pkey on contacts  (cost=0.42..27.20 rows=1 width=4) (actual time=0.045..0.046 rows=1 loops=1)
+        Index Cond: (id = 110015)
+        Filter: ((account_id = 8) AND (((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text)) AND ((SubPlan 1) > 1000.0))
+        Buffers: shared hit=11
+        SubPlan 1
+          ->  Aggregate  (cost=18.74..18.75 rows=1 width=32) (actual time=0.029..0.030 rows=1 loops=1)
+                Buffers: shared hit=7
+                ->  Nested Loop  (cost=0.58..18.73 rows=1 width=21) (actual time=0.019..0.021 rows=1 loops=1)
+                      Buffers: shared hit=7
+                      ->  Nested Loop  (cost=0.29..10.42 rows=1 width=8) (actual time=0.015..0.016 rows=1 loops=1)
+                            Join Filter: (audience_links.commerce_store_id = audience_stores.id)
+                            Buffers: shared hit=4
+                            ->  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.007..0.008 rows=1 loops=1)
+                                  Index Cond: (contact_id = contacts.id)
+                                  Filter: ((match_source <> 4) AND (account_id = '8'::bigint))
+                                  Buffers: shared hit=3
+                            ->  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.08 rows=2 width=8) (actual time=0.006..0.006 rows=1 loops=1)
+                                  Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))
+                                  Buffers: shared hit=1
+                      ->  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=29) (actual time=0.004..0.004 rows=1 loops=1)
+                            Index Cond: (commerce_customer_link_id = audience_links.id)
+                            Filter: (id IS NOT NULL)
+                            Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=21
+Planning Time: 0.637 ms
+Execution Time: 0.096 ms
+
+## EXPLAIN (ANALYZE, BUFFERS)
+SELECT 1 AS one FROM "conversations" LEFT OUTER JOIN contacts on conversations.contact_id = contacts.id LEFT OUTER JOIN messages on messages.conversation_id = conversations.id WHERE "conversations"."id" = $1 AND ( ($2) and ((SELECT SUM(audience_metrics.orders_count) FROM commerce_customer_links audience_links INNER JOIN commerce_stores audience_stores ON audience_stores.id = audience_links.commerc
+
+Limit  (cost=0.99..39.80 rows=1 width=4) (actual time=0.069..0.072 rows=1 loops=1)
+  Buffers: shared hit=17
+  ->  Nested Loop Left Join  (cost=0.99..39.80 rows=1 width=4) (actual time=0.068..0.071 rows=1 loops=1)
+        Buffers: shared hit=17
+        ->  Nested Loop Left Join  (cost=0.71..31.50 rows=1 width=4) (actual time=0.044..0.046 rows=1 loops=1)
+              Filter: ((SubPlan 1) > '1'::bigint)
+              Buffers: shared hit=15
+              ->  Index Scan using conversations_pkey on conversations  (cost=0.29..8.31 rows=1 width=12) (actual time=0.011..0.011 rows=1 loops=1)
+                    Index Cond: (id = 66013)
+                    Filter: (status = 0)
+                    Buffers: shared hit=3
+              ->  Index Only Scan using contacts_pkey on contacts  (cost=0.42..4.44 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+                    Index Cond: (id = conversations.contact_id)
+                    Heap Fetches: 1
+                    Buffers: shared hit=5
+              SubPlan 1
+                ->  Aggregate  (cost=18.73..18.74 rows=1 width=8) (actual time=0.022..0.023 rows=1 loops=1)
+                      Buffers: shared hit=7
+                      ->  Nested Loop  (cost=0.58..18.73 rows=1 width=4) (actual time=0.017..0.019 rows=1 loops=1)
+                            Buffers: shared hit=7
+                            ->  Nested Loop  (cost=0.29..10.42 rows=1 width=8) (actual time=0.013..0.015 rows=1 loops=1)
+                                  Join Filter: (audience_links.commerce_store_id = audience_stores.id)
+                                  Buffers: shared hit=4
+                                  ->  Index Scan using index_commerce_customer_links_on_contact_id on commerce_customer_links audience_links  (cost=0.29..8.32 rows=1 width=16) (actual time=0.006..0.007 rows=1 loops=1)
+                                        Index Cond: (contact_id = contacts.id)
+                                        Filter: ((match_source <> 4) AND (account_id = '8'::bigint))
+                                        Buffers: shared hit=3
+                                  ->  Seq Scan on commerce_stores audience_stores  (cost=0.00..2.08 rows=2 width=8) (actual time=0.006..0.006 rows=1 loops=1)
+                                        Filter: ((status = 0) AND ((provider)::text = 'woocommerce'::text))
+                                        Buffers: shared hit=1
+                            ->  Index Scan using index_commerce_contact_metrics_on_commerce_customer_link_id on commerce_contact_metrics audience_metrics  (cost=0.29..8.31 rows=1 width=12) (actual time=0.003..0.003 rows=1 loops=1)
+                                  Index Cond: (commerce_customer_link_id = audience_links.id)
+                                  Filter: (id IS NOT NULL)
+                                  Buffers: shared hit=3
+        ->  Index Only Scan using index_messages_on_conversation_id on messages  (cost=0.28..8.29 rows=1 width=4) (actual time=0.023..0.023 rows=0 loops=1)
+              Index Cond: (conversation_id = 66013)
+              Heap Fetches: 0
+              Buffers: shared hit=2
+Planning:
+  Buffers: shared hit=38
+Planning Time: 0.825 ms
+Execution Time: 0.122 ms
+

@@ -1,0 +1,142 @@
+[
+  {
+    "name": "setup: store A1 connected (real WooCommerce, Read key); Demo B has its own audience, store and team",
+    "ok": true,
+    "detail": "{\"store\":231,\"b\":[21,232,6]}"
+  },
+  {
+    "name": "baseline: the agent's Commerce read of Omar's orders (order 23 pending, unpaid) emits nothing",
+    "ok": true,
+    "detail": "{\"status\":200,\"order\":\"pending\",\"payment\":\"unpaid\"}"
+  },
+  {
+    "name": "an administrator saves \"VIP buyers\" as a shared audience (account-level) from Contacts → Filter",
+    "ok": true,
+    "detail": "{\"shared\":true,\"query\":[{\"values\":[1],\"attribute_key\":\"commerce_spend_sar\",\"attribute_model\":\"standard\",\"filter_operator\":\"is_greater_than\"}]}"
+  },
+  {
+    "name": "agents see the shared audience read-only: listed as shared, no delete, and cannot share, rename or delete",
+    "ok": true,
+    "detail": "401/401/401 trash=0"
+  },
+  {
+    "name": "the trigger list keeps the Conversation events and adds a Commerce group; a Commerce trigger says when it runs",
+    "ok": true,
+    "detail": "[\"Conversations:5\",\"Commerce:7\"]"
+  },
+  {
+    "name": "conditions: the existing fields plus Audience and Commerce groups; \"Contact audience\" reads \"Is in\" and offers only shared audiences",
+    "ok": true,
+    "detail": "My Inbox | Conversations | Contacts | Settings Account Settings Templates Automation Commerce Conversation Workflow Billing Subscription | Status | Browser Language | Email Subject | Country | Referre || VIP buyers"
+  },
+  {
+    "name": "actions are Chatwoot's own; a Commerce trigger offers no customer message (send message / attachment)",
+    "ok": true,
+    "detail": "Assign to Agent | Assign a Team | Remove Assigned Agent | Remove Assigned Team | Add a Label | Remove a Label | Send an Email to Team | Send an Email Transcript | Mute Conversation | Snooze Conversation | Resolve Conversation | Open conversation | Mark conversation as pending | Send Webhook Event | Add a Private Note | Change Priority"
+  },
+  {
+    "name": "the rule is saved as an ordinary automation rule: commerce_order_paid, audience + platform conditions, label + webhook",
+    "ok": true,
+    "detail": "{\"id\":8,\"name\":\"Paid VIP order\",\"event_name\":\"commerce_order_paid\",\"active\":true,\"conditions\":[{\"values\":[22],\"attribute_key\":\"contact_audience\",\"query_operator\":\"and\",\"filter_operator\":\"equal_to\",\"custom_attribute_type\":\"\"},{\"values\":[\"woocommerce\"],\"attribute_key\":\"commerce_event_provider\",\"filter_operator\":\"equal_to\",\"custom_attribute_type\":\"\"}],\"actions\":[{\"action_name\":\"add_label\",\"action_params\":[\"paid-vip\"]},{\"action_name\":\"send_webhook_event\",\"action_params\":[\"http://127.0.0.1:3901/n8n/lynomia\"]}]}"
+  },
+  {
+    "name": "the API refuses a personal audience, Demo B's audience, Demo B's store, a customer message on a Commerce trigger, an event condition without a Commerce trigger and an injected platform (422)",
+    "ok": true,
+    "detail": "422:{\"conditions\":[\"Automation rules can only use the shared aud | 422:{\"conditions\":[\"Automation rules can only use the shared aud | 422:{\"conditions\":[\"The store is not one of this account's store | 422:{\"actions\":[\"Commerce triggers cannot send messages to the c | 422:{\"conditions\":[\"The order store and order platform condition | 422:{\"conditions\":[\"The values of commerce_event_provider are no"
+  },
+  {
+    "name": "agents cannot create rules; Demo B can neither read Demo A's rule nor use Demo A's audience",
+    "ok": true,
+    "detail": "401/401/422"
+  },
+  {
+    "name": "the store's order 23 → processing; the agent's Refresh reads it as paid (one store call) and the worker runs the rule: label on Omar's latest conversation",
+    "ok": true,
+    "detail": "{\"refresh\":200,\"payment\":\"paid\",\"outcome\":\"executed\",\"labels\":[\"paid-vip\"]}"
+  },
+  {
+    "name": "the same event, the audience condition the other way: \"is not in VIP buyers\" is skipped",
+    "ok": true,
+    "detail": "{\"event\":\"lynomia.automation.rule\",\"account_id\":1,\"rule_id\":9,\"trigger\":\"commerce_order_paid\",\"outcome\":\"skipped\",\"correlation_id\":\"88216:dbf1733873f11c373a537684:commerce_order_paid:1790898047\",\"duration_ms\":58.8}"
+  },
+  {
+    "name": "Demo B's team and agent in a rule are never applied: the conversation keeps its team and assignee",
+    "ok": true,
+    "detail": "{\"team\":null,\"assignee\":null}"
+  },
+  {
+    "name": "the webhook goes through the existing SSRF guard: a private address is refused as shipped (nothing reached the catcher)",
+    "ok": true,
+    "detail": "hooks=0"
+  },
+  {
+    "name": "one log line per rule and event: ids, trigger, outcome, duration, actions; no contact data",
+    "ok": true,
+    "detail": "{\"event\":\"lynomia.automation.rule\",\"account_id\":1,\"rule_id\":8,\"trigger\":\"commerce_order_paid\",\"outcome\":\"executed\",\"correlation_id\":\"88216:dbf1733873f11c373a537684:commerce_order_paid:1790898047\",\"duration_ms\":268.4,\"actions\":[\"add_label\",\"send_webhook_event\"]}"
+  },
+  {
+    "name": "order 23 back to pending: an update no rule listens to runs nothing",
+    "ok": true,
+    "detail": "lines 3 → 3"
+  },
+  {
+    "name": "paid again, with SAFE_FETCH_ALLOW_PRIVATE_NETWORK (self-hosted n8n): the webhook carries the conversation and the Commerce event",
+    "ok": true,
+    "detail": "{\"event\":\"commerce_order_paid\",\"store_id\":231,\"provider\":\"woocommerce\",\"order\":{\"number\":\"23\",\"status\":\"processing\",\"payment_status\":\"paid\",\"shipment_statuses\":[]}}"
+  },
+  {
+    "name": "the webhook carries no store key or secret",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "a cached read of the same orders emits nothing: no new run, no new webhook",
+    "ok": true,
+    "detail": "lines=6 hooks=1"
+  },
+  {
+    "name": "the test store's order 23 is back to pending",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "deleting or unsharing an audience rules use is refused with \"This audience is used by 2 automation rules\"",
+    "ok": true,
+    "detail": "This shared audience is used by 2 active automation rules. Saving changes what they match  | 422/422"
+  },
+  {
+    "name": "LYNOMIA_AUTOMATION_EXTENSIONS_ENABLED=false refuses audience/Commerce conditions; plain Chatwoot rules save as before",
+    "ok": true,
+    "detail": "422/200"
+  },
+  {
+    "name": "Arabic: the trigger groups, the Commerce note and the Audience / Commerce conditions in Arabic (Commerce is the product name)",
+    "ok": true,
+    "detail": "المحادثات / Commerce | تعمل عندما تقرأ Lynomia تغييرًا في طلبات عميل مرتبط (تحديث م"
+  },
+  {
+    "name": "Arabic at 390 px: right to left, the rule builder and its Commerce note inside the screen",
+    "ok": true,
+    "detail": "{\"x\":36,\"y\":373,\"width\":318,\"height\":64}"
+  },
+  {
+    "name": "English at 390 px: the rule builder and its Commerce note inside the screen",
+    "ok": true,
+    "detail": "{\"x\":36,\"y\":373,\"width\":318,\"height\":80}"
+  },
+  {
+    "name": "no store key or secret in any response the browser received",
+    "ok": true,
+    "detail": "responses=368"
+  },
+  {
+    "name": "no uncaught page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "teardown: stores, audiences, rules and the run's label removed",
+    "ok": true,
+    "detail": "{\"stores\":0,\"audiences\":0,\"rules\":0,\"labels\":0}"
+  }
+]

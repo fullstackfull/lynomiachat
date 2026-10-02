@@ -20,6 +20,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  note: {
+    type: String,
+    default: '',
+  },
   appendNewCondition: {
     type: Function,
     required: true,
@@ -35,6 +39,16 @@ const props = defineProps({
 });
 
 const eventName = defineModel('eventName', { type: String, required: true });
+
+// Events that carry a group (Conversation, Commerce) are listed under it.
+const eventGroups = computed(() =>
+  props.events.reduce((groups, event) => {
+    const group = groups.find(item => item.label === (event.group || ''));
+    if (group) group.events.push(event);
+    else groups.push({ label: event.group || '', events: [event] });
+    return groups;
+  }, [])
+);
 const conditions = defineModel('conditions', { type: Array, required: true });
 
 const conditionsRef = useTemplateRef('conditionsRef');
@@ -61,14 +75,31 @@ defineExpose({ validate, resetValidation });
       <label :class="{ error: errors.event_name }">
         {{ $t('AUTOMATION.ADD.FORM.EVENT.LABEL') }}
         <select v-model="eventName" class="m-0" @change="onEventChange()">
-          <option v-for="event in events" :key="event.key" :value="event.key">
-            {{ event.value }}
-          </option>
+          <optgroup
+            v-for="group in eventGroups"
+            :key="group.label"
+            :label="group.label"
+          >
+            <option
+              v-for="event in group.events"
+              :key="event.key"
+              :value="event.key"
+            >
+              {{ event.value }}
+            </option>
+          </optgroup>
         </select>
         <span v-if="errors.event_name" class="message">
           {{ $t('AUTOMATION.ADD.FORM.EVENT.ERROR') }}
         </span>
       </label>
+      <p
+        v-if="note"
+        class="mt-2 mb-0 text-label-small text-n-slate-11"
+        data-test-id="commerce-trigger-note"
+      >
+        {{ note }}
+      </p>
       <p v-if="showResetMessage" class="pt-1 text-xs text-right text-n-teal-10">
         {{ $t('AUTOMATION.FORM.RESET_MESSAGE') }}
       </p>

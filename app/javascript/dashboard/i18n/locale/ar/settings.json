@@ -345,6 +345,7 @@
     "CANNED_RESPONSES": "الردود الجاهزة",
     "INTEGRATIONS": "خيارات الربط",
     "COMMERCE": "المتجر",
+    "FLOW_BUILDER": "منشئ التدفقات",
     "DATA": "Data",
     "PROFILE_SETTINGS": "إعدادات الملف الشخصي",
     "ACCOUNT_SETTINGS": "إعدادات الحساب",
@@ -419,7 +420,8 @@
     "DOCS": "قراءة المستندات",
     "SECURITY": "Security",
     "CAPTAIN_AI": "قائد",
-    "CONVERSATION_WORKFLOW": "Conversation Workflow"
+    "CONVERSATION_WORKFLOW": "Conversation Workflow",
+    "SHARED_AUDIENCE": "{name} · مشترك"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

@@ -117,11 +117,6 @@
             "PLACEHOLDER": "اختر صندوق الوارد",
             "ERROR": "صندوق الوارد مطلوب"
           },
-          "AUDIENCE": {
-            "LABEL": "الجمهور",
-            "PLACEHOLDER": "حدد أوسمة العملاء",
-            "ERROR": "الجمهور مطلوب"
-          },
           "SCHEDULED_AT": {
             "LABEL": "الوقت المجدول",
             "PLACEHOLDER": "الرجاء اختيار الوقت",
@@ -182,11 +177,6 @@
             "CATEGORY": "الفئة",
             "VARIABLES_LABEL": "المتغيرات",
             "VARIABLE_PLACEHOLDER": "Enter value for {variable}"
-          },
-          "AUDIENCE": {
-            "LABEL": "الجمهور",
-            "PLACEHOLDER": "حدد أوسمة العملاء",
-            "ERROR": "الجمهور مطلوب"
           },
           "SCHEDULED_AT": {
             "LABEL": "الوقت المجدول",
@@ -306,6 +296,19 @@
         "SUCCESS_MESSAGE": "تم حذف الحملة بنجاح",
         "ERROR_MESSAGE": "حدث خطأ، الرجاء المحاولة مرة أخرى."
       }
+    },
+    "RECIPIENTS": {
+      "TITLE": "المستلمون",
+      "LABELS": {
+        "LABEL": "الأوسمة",
+        "PLACEHOLDER": "حدد أوسمة العملاء"
+      },
+      "AUDIENCES": {
+        "LABEL": "الجماهير المشتركة",
+        "PLACEHOLDER": "حدد الجماهير المشتركة",
+        "EMPTY": "لا توجد جماهير مشتركة بعد. احفظ فلتر جهات اتصال كجمهور مشترك من صفحة جهات الاتصال."
+      },
+      "ERROR": "حدد وسمًا واحدًا أو جمهورًا مشتركًا واحدًا على الأقل"
     }
   }
 }

@@ -1,0 +1,20 @@
+Lynomia Automation Phase 1: regressions on the phase's working tree (production build after the RTL sidebar fix)
+
+Automation E2E (docs/automation/e2e/run.sh)              28/28 passed
+Audience E2E (docs/audience/e2e/run.sh)                  26/26 passed
+Phase 7-8 realtime + Customer 360 E2E                    41/41 passed
+Shopify E2E                                              64/64 passed
+Zid E2E                                                  49/49 passed
+WooCommerce E2E                                          41/41 passed
+Salla E2E                                                47/47 passed
+Phase 9-10 actions E2E (gate 51 + sim 43)                94/94 passed
+WhatsApp harness: existing WhatsApp                      41/41 checks passed
+WhatsApp harness: Lynomia                                17/17 checks passed
+WhatsApp harness: WhatsApp Business coexistence          54/54 checks passed
+RSpec (models, listeners, automation rules, Commerce,    4424 examples, 2 failures (not from this phase:
+  contacts, WhatsApp services, automation / filter /       voice transcription spec fails on 3d865bd05 too;
+  contact / Commerce controllers, jobs, webhooks,          reporting business-hours spec order-dependent,
+  Enterprise models and services)                          passes alone and with its file, 27/27)
+Vitest (whole suite)                                     4759/4759 passed (464 files)
+ESLint (pnpm eslint)                                     0 errors, 448 existing warnings
+RuboCop (the phase's Ruby files, db/schema.rb aside)     no offenses

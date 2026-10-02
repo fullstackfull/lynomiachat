@@ -25,7 +25,11 @@ const MODAL_TYPES = {
 const store = useStore();
 const { t } = useI18n();
 
-const agentBots = useMapGetter('agentBots/getBots');
+// Lynomia flows are bots too (bot_type flow); they are managed in the Flow Builder.
+const allBots = useMapGetter('agentBots/getBots');
+const agentBots = computed(() =>
+  allBots.value.filter(bot => bot.bot_type !== 'flow')
+);
 const uiFlags = useMapGetter('agentBots/getUIFlags');
 
 const selectedBot = ref({});

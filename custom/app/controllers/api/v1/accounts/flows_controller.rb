@@ -121,7 +121,8 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   def show_json
     current = @flow.flow_versions.draft.first || @flow.published_flow_version
     flow_json(@flow).merge(graph: current&.graph || Flows::Versions::STARTER,
-                           errors: current ? versions.validate(current) : [], capabilities: Flows::ChannelCapabilities::WHATSAPP)
+                           errors: current ? versions.validate(current) : [], capabilities: Flows::ChannelCapabilities::WHATSAPP,
+                           node_types: Flows::NodeTypes::TYPES, variables: Flows::Variables::SUGGESTED)
   end
 
   def version_json(version)

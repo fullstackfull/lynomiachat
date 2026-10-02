@@ -19,6 +19,9 @@ module Flows::Variables
   CONTEXT_KEY = /\A[a-z][a-z0-9_]{0,39}\z/
   RESERVED = %w[reply order].freeze
   MAX_VALUE = 1024
+  # Offered by the builder's variable picker (values a Question stores are added there per flow).
+  SUGGESTED = (%w[contact.name contact.first_name contact.last_name contact.email contact.phone_number conversation.display_id
+                  inbox.name account.name flow.reply] + ORDER_FIELDS.map { |field| "flow.order.#{field}" }).freeze
 
   # The tokens of `text` that are not allowed (a tag counts as one). `flow_only`: values the flow stores itself (an
   # attribute, an order number), where Chatwoot's message rendering never runs, accept only `flow.*`.

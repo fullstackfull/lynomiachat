@@ -1,0 +1,213 @@
+<script setup>
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useAlert } from 'dashboard/composables';
+import FlowsAPI from 'dashboard/api/flows';
+import SettingsLayout from '../SettingsLayout.vue';
+import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import {
+  BaseTable,
+  BaseTableRow,
+  BaseTableCell,
+} from 'dashboard/components-next/table';
+
+// The account's flows (Lynomia Flow Builder): each is a bot that answers its inboxes' conversations until it hands them
+// to humans. Created here, edited in the builder, connected to inboxes there.
+const router = useRouter();
+const { t } = useI18n();
+
+const flows = ref([]);
+const isLoading = ref(true);
+const createDialogRef = ref(null);
+const deleteDialogRef = ref(null);
+const name = ref('');
+const description = ref('');
+const selected = ref(null);
+const isCreating = ref(false);
+
+const headers = computed(() => [
+  t('FLOW_BUILDER.LIST.NAME'),
+  t('FLOW_BUILDER.LIST.STATUS'),
+  t('FLOW_BUILDER.LIST.INBOXES'),
+  t('FLOW_BUILDER.LIST.ACTIONS'),
+]);
+
+const load = async () => {
+  isLoading.value = true;
+  try {
+    const { data } = await FlowsAPI.get();
+    flows.value = data.payload;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const openBuilder = flow =>
+  router.push({ name: 'settings_flows_builder', params: { flowId: flow.id } });
+
+const openCreate = () => {
+  name.value = '';
+  description.value = '';
+  createDialogRef.value.open();
+};
+
+const create = async () => {
+  isCreating.value = true;
+  try {
+    const { data } = await FlowsAPI.create({
+      name: name.value.trim(),
+      description: description.value.trim(),
+    });
+    createDialogRef.value.close();
+    openBuilder(data);
+  } catch {
+    useAlert(t('FLOW_BUILDER.API.CREATE_ERROR'));
+  } finally {
+    isCreating.value = false;
+  }
+};
+
+const confirmDelete = flow => {
+  selected.value = flow;
+  deleteDialogRef.value.open();
+};
+
+const remove = async () => {
+  deleteDialogRef.value.close();
+  try {
+    await FlowsAPI.delete(selected.value.id);
+    useAlert(t('FLOW_BUILDER.API.DELETED'));
+    load();
+  } catch {
+    useAlert(t('FLOW_BUILDER.API.DELETE_ERROR'));
+  }
+};
+
+const status = flow =>
+  flow.published
+    ? t('FLOW_BUILDER.STATUS.PUBLISHED', { version: flow.published.version })
+    : t('FLOW_BUILDER.STATUS.NOT_PUBLISHED');
+
+onMounted(load);
+</script>
+
+<template>
+  <SettingsLayout
+    :is-loading="isLoading"
+    :loading-message="t('FLOW_BUILDER.LIST.LOADING')"
+    :no-records-found="!flows.length"
+    :no-records-message="t('FLOW_BUILDER.LIST.EMPTY')"
+  >
+    <template #header>
+      <BaseSettingsHeader
+        :title="t('FLOW_BUILDER.HEADER')"
+        :description="t('FLOW_BUILDER.DESCRIPTION')"
+      >
+        <template #actions>
+          <NextButton
+            :label="t('FLOW_BUILDER.LIST.NEW')"
+            size="sm"
+            data-test-id="flow-new-button"
+            @click="openCreate"
+          />
+        </template>
+      </BaseSettingsHeader>
+    </template>
+    <template #body>
+      <BaseTable :headers="headers" :items="flows">
+        <template #row="{ items }">
+          <BaseTableRow v-for="flow in items" :key="flow.id" :item="flow">
+            <template #default>
+              <BaseTableCell class="max-w-0">
+                <button
+                  type="button"
+                  class="flex flex-col min-w-0 text-start"
+                  @click="openBuilder(flow)"
+                >
+                  <span class="text-body-main text-n-slate-12 truncate">
+                    {{ flow.name }}
+                  </span>
+                  <span class="text-body-main text-n-slate-11 truncate">
+                    {{ flow.description }}
+                  </span>
+                </button>
+              </BaseTableCell>
+              <BaseTableCell>
+                <span class="text-body-main text-n-slate-12">
+                  {{ status(flow) }}
+                </span>
+                <span
+                  v-if="flow.live_sessions"
+                  class="block text-xs text-n-slate-11"
+                >
+                  {{ t('FLOW_BUILDER.LIST.LIVE', { n: flow.live_sessions }) }}
+                </span>
+              </BaseTableCell>
+              <BaseTableCell class="max-w-0">
+                <span class="text-body-main text-n-slate-11 truncate block">
+                  {{
+                    flow.inboxes.map(inbox => inbox.name).join(', ') ||
+                    t('FLOW_BUILDER.LIST.NO_INBOX')
+                  }}
+                </span>
+              </BaseTableCell>
+              <BaseTableCell align="end" class="w-24">
+                <div class="flex justify-end gap-3">
+                  <NextButton
+                    v-tooltip.top="t('FLOW_BUILDER.LIST.OPEN')"
+                    icon="i-lucide-workflow"
+                    slate
+                    sm
+                    @click="openBuilder(flow)"
+                  />
+                  <NextButton
+                    v-tooltip.top="t('FLOW_BUILDER.LIST.DELETE')"
+                    icon="i-woot-bin"
+                    slate
+                    sm
+                    :disabled="Boolean(flow.published)"
+                    class="hover:enabled:text-n-ruby-11 hover:enabled:bg-n-ruby-2"
+                    @click="confirmDelete(flow)"
+                  />
+                </div>
+              </BaseTableCell>
+            </template>
+          </BaseTableRow>
+        </template>
+      </BaseTable>
+    </template>
+
+    <Dialog
+      ref="createDialogRef"
+      :title="t('FLOW_BUILDER.CREATE.TITLE')"
+      :confirm-button-label="t('FLOW_BUILDER.CREATE.CONFIRM')"
+      :disable-confirm-button="!name.trim()"
+      :is-loading="isCreating"
+      @confirm="create"
+    >
+      <div class="flex flex-col gap-3">
+        <Input
+          v-model="name"
+          :label="t('FLOW_BUILDER.CREATE.NAME')"
+          data-test-id="flow-name-input"
+        />
+        <Input
+          v-model="description"
+          :label="t('FLOW_BUILDER.CREATE.DESCRIPTION')"
+        />
+      </div>
+    </Dialog>
+    <Dialog
+      ref="deleteDialogRef"
+      type="alert"
+      :title="t('FLOW_BUILDER.DELETE.TITLE', { name: selected?.name })"
+      :description="t('FLOW_BUILDER.DELETE.DESCRIPTION')"
+      :confirm-button-label="t('FLOW_BUILDER.DELETE.CONFIRM')"
+      @confirm="remove"
+    />
+  </SettingsLayout>
+</template>

@@ -831,6 +831,12 @@ const menuItems = computed(() => {
           icon: 'i-lucide-store',
           to: accountScopedRoute('settings_commerce_index'),
         },
+        {
+          name: 'Settings Flow Builder',
+          label: t('SIDEBAR.FLOW_BUILDER'),
+          icon: 'i-lucide-workflow',
+          to: accountScopedRoute('settings_flows_index'),
+        },
         ...(hasDataImport.value
           ? [
               {

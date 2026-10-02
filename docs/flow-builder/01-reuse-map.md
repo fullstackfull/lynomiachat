@@ -14,7 +14,7 @@ part nothing in the repository models: a versioned graph, and where a conversati
 | Bot attachment to inbox | `AgentBotInbox` (one bot per inbox, active / inactive), `set_agent_bot` | **REUSE** | attaching the flow bot to an inbox is what routes its conversations to the flow |
 | Flow conflicts | an inbox has at most one bot | **REUSE** | one flow per inbox by construction: no competing flows |
 | Bot phase / human phase | `pending` + `ai_assignee` = bot; `open` after handoff | **REUSE** | no second human-mode flag |
-| Message receiving | incoming message → `MESSAGE_CREATED` → `AgentBotListener#message_created` (inbox bot, bot assignee) | **EXTEND** | for `flow` bots the listener enqueues the flow runner instead of a webhook; webhook bots unchanged |
+| Message receiving | incoming message → `MESSAGE_CREATED` → `AgentBotListener#message_created` (synchronous; inbox bot, bot assignee) | **EXTEND** | for `flow` bots the listener only enqueues the flow runner job (instead of a webhook); webhook bots unchanged |
 | Message sending | `Messages::MessageBuilder` (sender AgentBot) → `Message` → `SendReplyJob` → channel | **REUSE** | every node message is a normal Chatwoot message (persistence, provider ids, delivery status, realtime) |
 | Variables | `Liquidable` + `app/drops` (contact, conversation, inbox, account, custom attributes) | **REUSE** | message text uses Chatwoot's Liquid drops; flow values (Commerce lookup, stored answers) through an allow-listed `{{flow.*}}` pre-substitution, escaped |
 | WhatsApp buttons | `input_select` → interactive `button` (≤ 3, no description) | **REUSE** | Buttons node = an `input_select` message, item `value` = the option id |

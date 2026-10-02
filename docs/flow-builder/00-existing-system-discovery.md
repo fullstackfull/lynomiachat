@@ -78,7 +78,8 @@ So the "bot phase" of a conversation is already modelled: **pending + ai_assigne
 
 ### Events
 
-`AgentBotListener` (async, `EventDispatcherJob`) handles `message_created`, `message_updated`, `conversation_opened`,
+`AgentBotListener` runs **synchronously** (`SyncDispatcher`, with `ActionCableListener`: in the process that created
+the message or changed the conversation) and handles `message_created`, `message_updated`, `conversation_opened`,
 `conversation_resolved`, `conversation_status_changed`, `conversation_updated`, `webwidget_triggered` for
 `agent_bots_for(inbox, conversation)` = the inbox's active bot plus the conversation's bot assignee. Each becomes an
 `AgentBots::WebhookJob` POST to `outgoing_url` (signed with the bot's `secret`); a bot without `outgoing_url` gets

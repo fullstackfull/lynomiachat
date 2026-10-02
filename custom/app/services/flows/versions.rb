@@ -1,10 +1,11 @@
-# Draft, validate and publish a flow bot's graph (docs/flow-builder/03-data-model-and-versioning.md).
+# Draft, validate, publish and disable a flow bot's graph (docs/flow-builder/03-data-model-and-versioning.md).
 #
 #   draft      the bot's draft; created on first edit from the published graph (or a Start → End starter)
 #   save!      replaces the draft's graph (shape checked; references are checked at publish)
 #   validate   Flows::GraphValidator on the draft, against the bot's inboxes
 #   publish!   the valid draft becomes the published version; the previous one is archived. Sessions keep the version
 #              they started on; new sessions start on this one
+#   disable!   archives the published version: no new session starts; live sessions are handed to humans
 class Flows::Versions
   class Invalid < StandardError
     attr_reader :errors
@@ -52,6 +53,18 @@ class Flows::Versions
       Flows::Audit.record('flow.published', @bot, user: @user, changes: { version: version.version })
       version
     end
+  end
+
+  # No new session starts; live sessions are handed to humans (each under its conversation's lock).
+  def disable!
+    @bot.with_lock do
+      published = @bot.published_flow_version
+      next if published.nil?
+
+      published.update!(status: :archived)
+      Flows::Audit.record('flow.disabled', @bot, user: @user, changes: { version: published.version })
+    end
+    @bot.flow_sessions.live.pluck(:conversation_id).each { |id| Flows::RunJob.perform_later(id, 'disabled') }
   end
 
   private

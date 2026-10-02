@@ -3,7 +3,7 @@ class Whatsapp::OneoffCampaignService
 
   def perform
     validate_campaign!
-    process_audience(extract_audience_labels)
+    process_audience
     campaign.completed!
   end
 
@@ -39,11 +39,6 @@ class Whatsapp::OneoffCampaignService
     validate_feature_flag!
   end
 
-  def extract_audience_labels
-    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.pluck('id')
-    campaign.account.labels.where(id: audience_label_ids).pluck(:title)
-  end
-
   def process_contact(contact)
     Rails.logger.info "Processing contact: #{contact.name} (#{contact.phone_number})"
 
@@ -64,8 +59,8 @@ class Whatsapp::OneoffCampaignService
     send_whatsapp_template_message(to: recipient, template_params: processed_template_params)
   end
 
-  def process_audience(audience_labels)
-    contacts = campaign.account.contacts.tagged_with(audience_labels, any: true)
+  def process_audience
+    contacts = campaign.audience_contacts
     Rails.logger.info "Processing #{contacts.count} contacts for campaign #{campaign.id}"
 
     contacts.each { |contact| process_contact(contact) }

@@ -8,6 +8,13 @@ module Custom::CustomFilter
     base.scope :visible_to, ->(user) { where(user: user).or(where(shared: true)) }
   end
 
+  # The audience's contacts now, as the account (no member's inbox scope): how automation rules and campaigns read a
+  # shared audience (docs/campaigns/02-recipients.md). A relation, evaluated by whoever uses it.
+  def members
+    payload = Array(query['payload']).map { |condition| condition.to_h.with_indifferent_access }
+    Contacts::FilterService.new(account, nil, { payload: payload }).relation
+  end
+
   private
 
   def shared_only_for_contacts

@@ -117,11 +117,6 @@
             "PLACEHOLDER": "Select Inbox",
             "ERROR": "Inbox is required"
           },
-          "AUDIENCE": {
-            "LABEL": "Audience",
-            "PLACEHOLDER": "Select the customer labels",
-            "ERROR": "Audience is required"
-          },
           "SCHEDULED_AT": {
             "LABEL": "Scheduled time",
             "PLACEHOLDER": "Please select the time",
@@ -182,11 +177,6 @@
             "CATEGORY": "Category",
             "VARIABLES_LABEL": "Variables",
             "VARIABLE_PLACEHOLDER": "Enter value for {variable}"
-          },
-          "AUDIENCE": {
-            "LABEL": "Audience",
-            "PLACEHOLDER": "Select the customer labels",
-            "ERROR": "Audience is required"
           },
           "SCHEDULED_AT": {
             "LABEL": "Scheduled time",
@@ -305,6 +295,25 @@
       "API": {
         "SUCCESS_MESSAGE": "Campaign deleted successfully",
         "ERROR_MESSAGE": "There was an error. Please try again."
+      }
+    },
+    "RECIPIENTS": {
+      "TITLE": "Recipients",
+      "LABELS": {
+        "LABEL": "Labels",
+        "PLACEHOLDER": "Select the customer labels"
+      },
+      "AUDIENCES": {
+        "LABEL": "Shared audiences",
+        "PLACEHOLDER": "Select shared audiences",
+        "EMPTY": "No shared audiences yet. Save a contact filter as a shared audience in Contacts."
+      },
+      "ERROR": "Select at least one label or shared audience",
+      "COUNT": {
+        "LOADING": "Counting matching contacts…",
+        "MATCHING": "No contacts match now. | 1 contact matches now. | {count} contacts match now.",
+        "NOTE": "Each contact receives the campaign once, and recipients are selected again when it is sent.",
+        "FAILED": "The number of matching contacts could not be loaded."
       }
     }
   }

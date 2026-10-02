@@ -5,9 +5,7 @@ class Sms::OneoffSmsCampaignService
     raise "Invalid campaign #{campaign.id}" if campaign.inbox.inbox_type != 'Sms' || !campaign.one_off?
     raise 'Completed Campaign' if campaign.completed?
 
-    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.pluck('id')
-    audience_labels = campaign.account.labels.where(id: audience_label_ids).pluck(:title)
-    process_audience(audience_labels)
+    process_audience
     campaign.completed!
   end
 
@@ -16,8 +14,8 @@ class Sms::OneoffSmsCampaignService
   delegate :inbox, to: :campaign
   delegate :channel, to: :inbox
 
-  def process_audience(audience_labels)
-    campaign.account.contacts.tagged_with(audience_labels, any: true).each do |contact|
+  def process_audience
+    campaign.audience_contacts.each do |contact|
       next if contact.phone_number.blank?
 
       content = Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)

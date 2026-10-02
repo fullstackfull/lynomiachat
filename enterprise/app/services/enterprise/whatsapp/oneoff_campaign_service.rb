@@ -1,7 +1,7 @@
 module Enterprise::Whatsapp::OneoffCampaignService
   def perform
     validate_campaign!
-    recipients = create_recipients(extract_audience_labels)
+    recipients = create_recipients
     process_recipients(recipients)
     campaign.completed!
   end
@@ -35,8 +35,8 @@ module Enterprise::Whatsapp::OneoffCampaignService
     send_whatsapp_template_message(recipient: recipient, to: destination, template_params: processed_template_params)
   end
 
-  def create_recipients(audience_labels)
-    contacts = campaign.account.contacts.tagged_with(audience_labels, any: true)
+  def create_recipients
+    contacts = campaign.audience_contacts
     Rails.logger.info "Processing #{contacts.count} contacts for campaign #{campaign.id}"
 
     contacts.find_each.map do |contact|

@@ -224,31 +224,16 @@ channel; with either off, Chatwoot's messaging is unchanged (`spec/jobs/flows/ru
 
 ## 11. Real WhatsApp UAT
 
-**BLOCKED BY ENVIRONMENT**
+**BLOCKED BY ENVIRONMENT — UAT KIT READY, NOT YET RUN ON THE REAL NUMBER**
 
 | | |
 |---|---|
-| Missing prerequisite | no WhatsApp Business Account access token, phone number id and WABA id for a test number; no Meta app secret for that app; no public HTTPS URL reaching this environment for Meta's webhook; no test phone; no approved template on such a number. This environment has none of them, and outbound Meta calls are simulated (FakeGraph) |
+| Missing prerequisite | the production server (`root@server2`) is not reachable from the environment that built this release (its network policy denies the host; no SSH access), and that environment has no test phone. The Meta credentials stay on the server: the UAT never needs them elsewhere |
 | What is proven without it | every payload the flow makes Chatwoot send to Meta (interactive buttons and lists, templates with header / body / button parameters, on WhatsApp API and coexistence numbers), every path Meta's answers take back (reply ids, statuses, failures), and the window and rejection behaviour (§2, §5) |
+| What is ready | [`uat/README.md`](uat/README.md), the operator runbook (A1–A14), and [`uat/uat.rb`](uat/uat.rb), run on the server with `rails runner`: `status` (release, migrations, switch, Sidekiq, every WhatsApp inbox and Meta's view of the chosen number through `Whatsapp::HealthService` / `ManualWebhookStatusService`), `setup` (a shared audience on the test phone, a team, the UAT flow published on the inbox, the previous bot remembered), `audience match\|nomatch`, `evidence`, `duplicate` (replays the last customer message with the same WhatsApp id), `teardown`. It prints no secret and masks numbers. Dry-run end to end on the staging harness database |
 
-UAT steps on a staging deployment with a real number (WhatsApp API first, then a coexistence number):
-
-1. Connect the number to a staging Lynomia account (embedded signup); check its templates synced (Settings → Templates).
-2. Enable `lynomia_flow_builder` for the account; build: Start → Buttons (2 options) → Send message / Human handoff;
-   publish; connect the number.
-3. From the test phone send "hi": the buttons arrive; tap each one in two conversations; check the replies, the team,
-   the private note, and that the bot stays silent after the handoff.
-4. Build a List with an Arabic button label; check the list renders and a row reply routes.
-5. Add a Question (timeout 1 minute) → Send WhatsApp template (an approved UTILITY template with a body variable
-   `{{contact.name}}`); let it time out; check the template arrives with the name filled in.
-6. Window: after more than 24 h without writing from the phone, trigger the template path (a Question with the longest
-   timeout, or a Delay chain) and check the template arrives; check a Send Message there hands the conversation to
-   humans and nothing reaches the phone.
-7. Rejection: use a template whose variable has no value (e.g. `{{contact.email}}` on a contact without email) or a
-   paused template; check the message shows failed in Chatwoot, the conversation is open for humans, and nothing else is
-   sent.
-8. Repeat 3 and 5 on a coexistence number; also reply from the WhatsApp Business app while a flow waits: the flow stops.
-9. Check delivery and read statuses on the flow's messages in the conversation view.
+The verdict of §1 changes to **GO** once the runbook's verdict is PASS (or PASS with a named unavailable subcase: >24 h,
+real rejection).
 
 Remaining production risk until it passes: Meta's acceptance of the exact payloads (interactive list `button` label,
 template components built by Chatwoot's processor for the chosen templates), real delivery timing, and real failure

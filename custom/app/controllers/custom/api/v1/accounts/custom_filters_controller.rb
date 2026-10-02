@@ -1,6 +1,7 @@
 # Lynomia shared audiences (docs/automation/02-shared-audiences.md) on Chatwoot's saved filters API. Members list and
 # open their own filters plus the account's shared contact filters; only administrators share a filter or change or
-# delete a shared one; a shared audience that automation rules reference cannot be deleted or made personal.
+# delete a shared one; a shared audience that automation rules or campaigns still to send reference cannot be deleted or
+# made personal.
 module Custom::Api::V1::Accounts::CustomFiltersController
   def create
     raise Pundit::NotAuthorizedError if sharing_requested? && !Current.account_user.administrator?
@@ -42,11 +43,15 @@ module Custom::Api::V1::Accounts::CustomFiltersController
   end
 
   def in_use?
-    @rules_in_use = Audience::Usage.rules(@custom_filter)
-    @rules_in_use.any?
+    @rules_in_use = Audience::Usage.rules(@custom_filter).size
+    @campaigns_in_use = Audience::Usage.campaigns(@custom_filter).count
+    (@rules_in_use + @campaigns_in_use).positive?
   end
 
   def render_in_use
-    render_could_not_create_error(I18n.t('errors.custom_filters.used_by_automation', count: @rules_in_use.size))
+    messages = []
+    messages << I18n.t('errors.custom_filters.used_by_automation', count: @rules_in_use) if @rules_in_use.positive?
+    messages << I18n.t('errors.custom_filters.used_by_campaigns', count: @campaigns_in_use) if @campaigns_in_use.positive?
+    render_could_not_create_error(messages.join(' '))
   end
 end

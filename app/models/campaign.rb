@@ -66,6 +66,12 @@ class Campaign < ApplicationRecord
     execute_campaign
   end
 
+  # The contacts the campaign's audience selects, resolved when it is sent: any of its labels, each contact once.
+  def audience_contacts
+    label_ids = audience.select { |entry| entry['type'] == 'Label' }.pluck('id')
+    account.contacts.tagged_with(account.labels.where(id: label_ids).pluck(:title), any: true)
+  end
+
   private
 
   def feature_enabled?
@@ -165,3 +171,4 @@ class Campaign < ApplicationRecord
   end
 end
 Campaign.include_mod_with('Campaign')
+Campaign.prepend_mod_with('CampaignAudience')

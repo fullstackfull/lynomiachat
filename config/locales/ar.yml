@@ -171,9 +171,12 @@ ar:
         smtp_error: SMTP server error. Please check your configuration and try again.
       validations:
         name: لا ينبغي أن تبدأ أو تنتهي بالرموز، ولا ينبغي أن يكون أقل من > / \ أحرف @ .
+    campaigns:
+      audience_not_shared: يمكن أن يتضمن جمهور الحملة الجماهير المشتركة لهذا الحساب فقط، وفي حملات الرسائل القصيرة وواتساب فقط.
     custom_filters:
       number_of_records: تم الوصول إلى الحد الأقصى. الحد الأقصى لعدد عوامل التصفية المخصصة المسموح به للمستخدم لكل حساب هو 1000.
       used_by_automation: هذا الجمهور مستخدم في %{count} من قواعد الأتمتة. أزله من تلك القواعد أولًا.
+      used_by_campaigns: هذا الجمهور مستخدم في %{count} من الحملات التي لم تُرسل بعد. احذف تلك الحملات أو انتظر حتى تُرسل أولًا.
       invalid_attribute: مفتاح السمة غير صالح - [%{key}]. يجب أن يكون المفتاح واحد من [%{allowed_keys}] أو سمة مخصصة محددة في الحساب.
       invalid_operator: مشغل غير صالح. المشغل المسموح به لـ %{attribute_name} هو [%{allowed_keys}].
       invalid_query_operator: Query operator must be either "AND" or "OR".

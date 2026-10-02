@@ -171,6 +171,8 @@ ar:
         smtp_error: SMTP server error. Please check your configuration and try again.
       validations:
         name: لا ينبغي أن تبدأ أو تنتهي بالرموز، ولا ينبغي أن يكون أقل من > / \ أحرف @ .
+    campaigns:
+      audience_not_shared: يمكن أن يتضمن جمهور الحملة الجماهير المشتركة لهذا الحساب فقط، وفي حملات الرسائل القصيرة وواتساب فقط.
     custom_filters:
       number_of_records: تم الوصول إلى الحد الأقصى. الحد الأقصى لعدد عوامل التصفية المخصصة المسموح به للمستخدم لكل حساب هو 1000.
       used_by_automation: هذا الجمهور مستخدم في %{count} من قواعد الأتمتة. أزله من تلك القواعد أولًا.

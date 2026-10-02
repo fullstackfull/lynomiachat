@@ -116,10 +116,7 @@ class Automation::LynomiaCondition
   def shared_audiences = @account.custom_filters.contact.where(shared: true)
 
   # The audience's saved filter, for the event's contact only, as the account (no member's inbox scope).
-  def member?(audience)
-    payload = Array(audience.query['payload']).map { |condition| condition.to_h.with_indifferent_access }
-    Contacts::FilterService.new(@account, nil, { payload: payload }).relation.exists?(id: @contact_id)
-  end
+  def member?(audience) = audience.members.exists?(id: @contact_id)
 
   def integer_ids(values)
     values.map { |value| Integer(value.to_s, 10) }

@@ -196,6 +196,8 @@ en:
         smtp_error: SMTP server error. Please check your configuration and try again.
       validations:
         name: should not start or end with symbols, and it should not have < > / \ @ characters.
+    campaigns:
+      audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.

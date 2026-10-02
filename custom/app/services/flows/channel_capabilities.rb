@@ -4,12 +4,12 @@
 #
 # WhatsApp limits are Meta's documented ones for interactive messages, applied before anything is sent because
 # Chatwoot's provider sends whatever it is given: reply buttons at most 3, title 20 characters; list one section (as
-# Chatwoot sends it) of at most 10 rows, title 24, description 72; interactive body 1024; text 4096.
+# Chatwoot sends it) of at most 10 rows, title 24, description 72, button 20; interactive body 1024; text 4096.
 module Flows::ChannelCapabilities
   WHATSAPP = {
     text: { body: 4096 },
     buttons: { max: 3, title: 20, body: 1024 },
-    list: { max: 10, title: 24, description: 72, body: 1024 },
+    list: { max: 10, title: 24, description: 72, body: 1024, button: 20 },
     template: true,
     reply_window: 24.hours
   }.freeze

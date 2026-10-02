@@ -14,7 +14,7 @@ module Flows::NodeTypes
     'buttons' => { outputs: :options, extra: %w[other timeout], optional: %w[other timeout], wait: true,
                    data: %w[text options timeout_minutes] },
     'list' => { outputs: :options, extra: %w[other timeout], optional: %w[other timeout], wait: true,
-                data: %w[text options timeout_minutes] },
+                data: %w[text button_label options timeout_minutes] },
     'condition' => { outputs: %w[true false], data: %w[conditions] },
     'audience_condition' => { outputs: %w[true false], data: %w[conditions] },
     'commerce_condition' => { outputs: %w[true false], data: %w[conditions] },

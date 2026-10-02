@@ -57,7 +57,10 @@ class Flows::NodeValidator
 
   def check_buttons = check_choices(CAPS[:buttons])
 
-  def check_list = check_choices(CAPS[:list])
+  def check_list
+    check_choices(CAPS[:list])
+    add('button_label_too_long', CAPS[:list][:button]) if @data['button_label'].to_s.length > CAPS[:list][:button]
+  end
 
   def check_choices(limits)
     check_text(@data['text'], limits[:body])

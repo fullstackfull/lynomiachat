@@ -51,6 +51,51 @@ const tailwindConfig = {
         520: '520',
         620: '620',
       },
+      // The product had colour, type, breakpoints, icons and motion, but no scale for the dimensions
+      // below — which is why 14 modal widths, 16 one-off radii, 46 bespoke shadows and a z-index ladder
+      // running to 99999 grew in their place. These are additive: nothing changes appearance until a
+      // call site moves onto them.
+      spacing: {
+        // The settings/page header height, written as `h-[3.25rem]` in eight files.
+        13: '3.25rem',
+      },
+      borderRadius: {
+        // sm/md/lg/xl are Tailwind's own 4/6/8/12px and are already the de-facto steps; naming the
+        // roles here so a reviewer can tell a deliberate step from an arbitrary value.
+        control: '0.375rem', // 6px  — inputs, selects, badges, menu items
+        surface: '0.5rem', //   8px  — buttons, cards, dropdown bodies
+        overlay: '0.75rem', //  12px — dialogs, drawers, popovers
+      },
+      boxShadow: {
+        raised: 'var(--shadow-raised)',
+        overlay: 'var(--shadow-overlay)',
+        modal: 'var(--shadow-modal)',
+      },
+      blur: {
+        // `backdrop-blur-[100px]` appears 45 times in 41 files as an unnamed token.
+        panel: '100px',
+      },
+      height: {
+        // One control ladder shared by buttons, inputs, selects, chips and badges, so a filter bar
+        // lines up with the button beside it. 40px is also the mobile tap-target floor.
+        'control-xs': '1.5rem',
+        'control-sm': '2rem',
+        'control-md': '2.25rem',
+        'control-lg': '2.5rem',
+      },
+      minHeight: {
+        'control-xs': '1.5rem',
+        'control-sm': '2rem',
+        'control-md': '2.25rem',
+        'control-lg': '2.5rem',
+      },
+      zIndex: {
+        sticky: '10',
+        dropdown: '50',
+        drawer: '60',
+        modal: '70',
+        toast: '80',
+      },
       typography: {
         bubble: {
           css: {

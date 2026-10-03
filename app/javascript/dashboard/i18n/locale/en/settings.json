@@ -423,7 +423,15 @@
     "CAPTAIN_AI": "Captain",
     "CONVERSATION_WORKFLOW": "Conversation Workflow",
     "SHARED_AUDIENCE": "{name} · Shared",
-    "COMPOSE_CONVERSATION": "New conversation"
+    "COMPOSE_CONVERSATION": "New conversation",
+    "SETTINGS_GROUPS": {
+      "ACCOUNT": "Account",
+      "PEOPLE": "People",
+      "CHANNELS": "Channels",
+      "AUTOMATION": "Automation",
+      "CONVERSATION_DATA": "Conversation data",
+      "RECORDS": "Records"
+    }
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

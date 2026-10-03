@@ -183,4 +183,12 @@ export const SURFACES = {
     frame: 'settings',
     state: 'loading',
   },
+  'sidebar-settings': {
+    title: 'Main sidebar · Settings expanded',
+    load: () => import('dashboard/components-next/sidebar/Sidebar.vue'),
+    frame: 'sidebar',
+    // The top-level Settings group header: a direct child of a top-level nav item, so this cannot
+    // match the Help Center's own "Settings" leaf.
+    interactions: ['nav > ul > li > [role="button"][title="Settings"]'],
+  },
 };

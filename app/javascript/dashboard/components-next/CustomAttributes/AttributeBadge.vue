@@ -14,18 +14,19 @@ const props = defineProps({
 
 const { t } = useI18n();
 
+// Where the attribute comes from, not a lifecycle state — so these are the two colours the file
+// always intended, as tones. `colorClass` used to hold them, was never bound to anything, and the two
+// badges therefore rendered identically.
 const attributeConfig = {
   'pre-chat': {
-    colorClass: 'text-n-blue-11',
     icon: 'i-lucide-message-circle',
     labelKey: 'ATTRIBUTES_MGMT.BADGES.PRE_CHAT',
-    color: 'slate',
+    tone: 'info',
   },
   resolution: {
-    colorClass: 'text-n-teal-11',
     icon: 'i-lucide-circle-check-big',
     labelKey: 'ATTRIBUTES_MGMT.BADGES.RESOLUTION',
-    color: 'slate',
+    tone: 'success',
   },
 };
 const config = computed(
@@ -34,9 +35,9 @@ const config = computed(
 </script>
 
 <template>
-  <Label :label="t(config.labelKey)" :color="config.color" compact>
+  <Label :label="t(config.labelKey)" :tone="config.tone" compact>
     <template #icon>
-      <Icon :icon="config.icon" class="size-3.5 text-n-slate-12" />
+      <Icon :icon="config.icon" class="size-3.5" />
     </template>
   </Label>
 </template>

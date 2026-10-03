@@ -51,7 +51,7 @@ defineExpose({
     v-bind="$attrs"
     class="relative flex items-center cursor-pointer min-w-fit group"
   >
-    <Label :label="slaLabel" :color="isSlaMissed ? 'ruby' : 'amber'" compact>
+    <Label :label="slaLabel" :tone="isSlaMissed ? 'danger' : 'warning'" compact>
       <template #icon>
         <Icon icon="i-lucide-flame" class="flex-shrink-0 size-3.5" />
       </template>

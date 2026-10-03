@@ -3,9 +3,11 @@ import { computed } from 'vue';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 import { dynamicTime } from 'shared/helpers/timeHelper';
 import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
-import { ARTICLE_STATUSES } from 'dashboard/helper/portalHelper';
+import { useI18n } from 'vue-i18n';
+import { articleStatusChip } from 'dashboard/helper/portalHelper';
 
 import CardLayout from 'dashboard/components-next/CardLayout.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import MessageFormatter from 'shared/helpers/MessageFormatter';
 
 const props = defineProps({
@@ -20,6 +22,8 @@ const props = defineProps({
   status: { type: String, default: '' },
   updatedAt: { type: Number, default: 0 },
 });
+
+const { t } = useI18n();
 
 const exactTimestamp = useExactTimestamp();
 
@@ -48,16 +52,7 @@ const truncatedContent = computed(() => {
     : plainText;
 });
 
-const statusTextColor = computed(() => {
-  switch (props.status) {
-    case ARTICLE_STATUSES.ARCHIVED:
-      return 'text-n-slate-12';
-    case ARTICLE_STATUSES.DRAFT:
-      return 'text-n-amber-11';
-    default:
-      return 'text-n-teal-11';
-  }
-});
+const statusChip = computed(() => articleStatusChip(props.status));
 </script>
 
 <template>
@@ -75,19 +70,23 @@ const statusTextColor = computed(() => {
               {{ title }}
             </h5>
             <div v-if="category" class="w-px h-4 bg-n-strong mx-2" />
-            <span
+            <Label
               v-if="category"
-              class="text-xs inline-flex items-center font-medium rounded-md whitespace-nowrap capitalize bg-n-alpha-2 px-1.5 h-6 text-n-slate-12"
-            >
-              {{ category }}
-            </span>
-            <span
+              compact
+              variant="subtle"
+              tone="neutral"
+              :label="category"
+              class="capitalize"
+            />
+            <!-- The same three states the article card shows, from the same map and in the same
+                 words — this rendered the raw enum value before. -->
+            <Label
               v-if="status"
-              class="text-xs inline-flex items-center font-medium rounded-md whitespace-nowrap capitalize bg-n-alpha-2 px-2 h-6"
-              :class="statusTextColor"
-            >
-              {{ status }}
-            </span>
+              compact
+              variant="subtle"
+              :tone="statusChip.tone"
+              :label="t(statusChip.labelKey)"
+            />
           </div>
           <span
             v-if="updatedAtTime"

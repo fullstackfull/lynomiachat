@@ -6,6 +6,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import CommerceAPI from 'dashboard/api/commerce';
@@ -32,11 +33,11 @@ const REAUTHORIZED_HERE = ['zid', 'shopify'];
 // Providers whose authorization returns here with `<provider>=connected` or `<provider>_error=<code>`.
 const RETURNING_PROVIDERS = ['zid', 'shopify'];
 
-const STATUS_DOT = {
-  active: 'bg-n-teal-9',
-  disabled: 'bg-n-slate-9',
-  needs_reauth: 'bg-n-amber-9',
-  disconnected: 'bg-n-ruby-9',
+const STATUS_TONE = {
+  active: 'success',
+  disabled: 'neutral',
+  needs_reauth: 'warning',
+  disconnected: 'danger',
 };
 
 const stores = ref([]);
@@ -347,15 +348,12 @@ onMounted(() => {
                 <span class="truncate text-heading-3 text-n-slate-12">
                   {{ store.name }}
                 </span>
-                <span
-                  class="flex items-center gap-1.5 text-label-small text-n-slate-11"
-                >
-                  <span
-                    class="size-2 rounded-full"
-                    :class="STATUS_DOT[store.status]"
-                  />
-                  {{ storeStatus(store.status) }}
-                </span>
+                <Label
+                  compact
+                  variant="solid"
+                  :tone="STATUS_TONE[store.status] || 'neutral'"
+                  :label="storeStatus(store.status)"
+                />
               </div>
               <span
                 class="flex min-w-0 gap-2 text-body-main text-n-slate-11"

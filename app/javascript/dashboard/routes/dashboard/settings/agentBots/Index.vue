@@ -9,6 +9,7 @@ import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import AgentBotModal from './components/AgentBotModal.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import {
@@ -149,12 +150,13 @@ onMounted(() => {
                       <span class="text-body-main text-n-slate-12 truncate">
                         {{ bot.name }}
                       </span>
-                      <span
+                      <Label
                         v-if="bot.system_bot"
-                        class="text-xs text-n-slate-12 bg-n-blue-5 rounded-md py-0.5 px-1 flex-shrink-0"
-                      >
-                        {{ $t('AGENT_BOTS.GLOBAL_BOT_BADGE') }}
-                      </span>
+                        compact
+                        variant="solid"
+                        tone="info"
+                        :label="$t('AGENT_BOTS.GLOBAL_BOT_BADGE')"
+                      />
                     </div>
                     <span class="text-body-main text-n-slate-11 block truncate">
                       {{ bot.description }}

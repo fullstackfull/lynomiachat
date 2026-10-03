@@ -72,6 +72,27 @@ export const ARTICLE_STATUSES = {
   ARCHIVED: 'archived',
 };
 
+// Draft / Published / Archived, as the shared badge's tones. The card and the search result rendered
+// the same three states in two different shapes and read the mapping from two different switches.
+export const ARTICLE_STATUS_CHIP = {
+  [ARTICLE_STATUSES.DRAFT]: {
+    labelKey: 'HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.DRAFT',
+    tone: 'warning',
+  },
+  [ARTICLE_STATUSES.PUBLISHED]: {
+    labelKey: 'HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.PUBLISHED',
+    tone: 'success',
+  },
+  [ARTICLE_STATUSES.ARCHIVED]: {
+    labelKey: 'HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.ARCHIVED',
+    tone: 'neutral',
+  },
+};
+
+export const articleStatusChip = status =>
+  ARTICLE_STATUS_CHIP[status] ??
+  ARTICLE_STATUS_CHIP[ARTICLE_STATUSES.PUBLISHED];
+
 export const ARTICLE_MENU_ITEMS = {
   publish: {
     label: 'HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.DROPDOWN_MENU.PUBLISH',

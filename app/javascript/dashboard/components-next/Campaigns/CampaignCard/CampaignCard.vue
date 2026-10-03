@@ -6,6 +6,7 @@ import { getInboxIconByType } from 'dashboard/helper/inbox';
 
 import CardLayout from 'dashboard/components-next/CardLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import LiveChatCampaignDetails from './LiveChatCampaignDetails.vue';
 import SMSCampaignDetails from './SMSCampaignDetails.vue';
 
@@ -61,10 +62,7 @@ const isActive = computed(() =>
   props.isLiveChatType ? props.isEnabled : props.status !== STATUS_COMPLETED
 );
 
-const statusTextColor = computed(() => ({
-  'text-n-teal-11': isActive.value,
-  'text-n-slate-12': !isActive.value,
-}));
+const statusTone = computed(() => (isActive.value ? 'success' : 'neutral'));
 
 const campaignStatus = computed(() => {
   if (props.isLiveChatType) {
@@ -105,12 +103,12 @@ const inboxIcon = computed(() => {
         >
           {{ title }}
         </span>
-        <span
-          class="text-xs font-medium inline-flex items-center h-6 px-2 py-0.5 rounded-md bg-n-alpha-2"
-          :class="statusTextColor"
-        >
-          {{ campaignStatus }}
-        </span>
+        <Label
+          compact
+          variant="subtle"
+          :tone="statusTone"
+          :label="campaignStatus"
+        />
       </div>
       <div
         v-dompurify-html="formatMessage(message, false, false, false)"

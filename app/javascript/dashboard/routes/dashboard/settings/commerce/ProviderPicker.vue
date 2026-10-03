@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 // The first step of "Add store": which platform the store runs on, and how that platform connects. Every platform is
@@ -86,12 +87,13 @@ watch(
             <span class="text-heading-3 text-n-slate-12">
               {{ providerName(option.provider) }}
             </span>
-            <span
+            <Label
               v-if="!option.available"
-              class="rounded-md bg-n-alpha-2 px-1.5 py-0.5 text-label-small text-n-slate-11"
-            >
-              {{ t('COMMERCE.SETTINGS.PICKER.UNAVAILABLE') }}
-            </span>
+              compact
+              variant="subtle"
+              tone="neutral"
+              :label="t('COMMERCE.SETTINGS.PICKER.UNAVAILABLE')"
+            />
           </span>
           <span class="text-body-main text-n-slate-11">
             {{ option.hint }}

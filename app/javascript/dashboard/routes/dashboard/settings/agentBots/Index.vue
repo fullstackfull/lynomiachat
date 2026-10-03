@@ -129,6 +129,7 @@ onMounted(() => {
     <template #body>
       <BaseTable
         :headers="tableHeaders"
+        align-last-column-end
         :items="filteredAgentBots"
         :no-data-message="
           searchQuery ? t('AGENT_BOTS.NO_RESULTS') : t('AGENT_BOTS.LIST.404')

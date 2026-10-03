@@ -186,6 +186,7 @@ export default {
       <BaseTable
         v-else
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.fetchingList"
         :loading-message="$t('INTEGRATION_SETTINGS.WEBHOOK.LOADING')"

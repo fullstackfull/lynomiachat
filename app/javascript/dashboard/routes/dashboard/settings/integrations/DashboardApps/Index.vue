@@ -157,6 +157,7 @@ export default {
     <template #body>
       <BaseTable
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.isFetching"
         :loading-message="

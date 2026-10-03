@@ -438,6 +438,7 @@ const tableHeaders = computed(() => {
         v-else
         sticky-header
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.isFetching && !visibleRecords.length"
         :sortable-columns="SORTABLE_COLUMNS"

@@ -152,6 +152,7 @@ onBeforeMount(() => {
       <BaseTable
         sticky-header
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.isFetching"
         :loading-message="$t('LABEL_MGMT.LOADING')"

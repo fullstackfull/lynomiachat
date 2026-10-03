@@ -210,6 +210,7 @@ export default {
         scrollable
         sticky-actions
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.isFetching"
         :loading-message="$t('SLA.LOADING')"

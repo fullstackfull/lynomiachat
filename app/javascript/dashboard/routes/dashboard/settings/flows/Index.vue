@@ -261,6 +261,7 @@ onMounted(load);
       <BaseTable
         v-else
         :headers="headers"
+        align-last-column-end
         :items="sortedFlows"
         :loading="isLoading"
         :loading-rows="3"

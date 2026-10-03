@@ -173,6 +173,7 @@ const tableHeaders = computed(() => {
       <BaseTable
         sticky-header
         :headers="tableHeaders"
+        align-last-column-end
         :items="filteredRecords"
         :loading="uiFlags.fetchingList"
         :loading-message="$t('CANNED_MGMT.LOADING')"

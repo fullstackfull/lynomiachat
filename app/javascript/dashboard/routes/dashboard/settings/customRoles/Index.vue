@@ -184,6 +184,7 @@ const confirmDeletion = () => {
         v-else
         stack-on-mobile
         :headers="tableHeaders"
+        align-last-column-end
         :items="sortedRecords"
         :loading="uiFlags.fetchingList"
         :loading-message="$t('CUSTOM_ROLE.LOADING')"

@@ -58,6 +58,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  // Eleven tables render their last column as `BaseTableCell align="end"` — the actions — while every
+  // heading was hard-coded `text-start`, so the word "Actions" sat at the far start of a column whose
+  // buttons sit at the far end. A boolean rather than a per-column array on purpose: there is nothing here
+  // to keep index-aligned with `headers`, so it cannot drift when a column is added.
+  alignLastColumnEnd: {
+    type: Boolean,
+    default: false,
+  },
   // Confines a too-wide table to its container and scrolls it, instead of letting the columns spill
   // past the card. Off by default: on a phone it trades a control that is visible-but-escaping for one
   // that needs a horizontal swipe, so prefer `columnClasses` and hide what is tertiary.
@@ -96,6 +104,11 @@ const showHeaders = computed(() => props.headers.length > 0);
 const columnCount = computed(() => props.headers.length || 1);
 
 const sortKeyFor = index => props.sortableColumns[index] || null;
+
+const alignFor = index =>
+  props.alignLastColumnEnd && index === props.headers.length - 1
+    ? 'text-end'
+    : 'text-start';
 
 const sortStateFor = index => {
   const key = sortKeyFor(index);
@@ -141,8 +154,8 @@ const toggleSort = index => {
           <th
             v-for="(header, index) in headers"
             :key="index"
-            class="py-4 ltr:pr-4 rtl:pl-4 text-start text-heading-3 text-n-slate-12 capitalize"
-            :class="columnClasses[index]"
+            class="py-4 ltr:pr-4 rtl:pl-4 text-heading-3 text-n-slate-12 capitalize"
+            :class="[alignFor(index), columnClasses[index]]"
             :aria-sort="
               sortStateFor(index) === 'none'
                 ? null
@@ -188,7 +201,7 @@ const toggleSort = index => {
               v-for="column in columnCount"
               :key="column"
               class="py-3 ltr:pr-4 rtl:pl-4"
-              :class="columnClasses[column - 1]"
+              :class="[alignFor(column - 1), columnClasses[column - 1]]"
             >
               <Skeleton :width="column === 1 ? 'w-40' : 'w-24'" />
             </td>

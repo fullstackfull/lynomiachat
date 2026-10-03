@@ -44,7 +44,9 @@ const automationActive = computed({
         <div
           class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0"
         >
-          <div class="flex items-center gap-2 min-w-0">
+          <div
+            class="flex items-center gap-2 min-w-0 sm:shrink-0 sm:max-w-[65%]"
+          >
             <span class="text-body-main text-n-slate-12 truncate">
               {{ automation.name }}
             </span>
@@ -60,7 +62,9 @@ const automationActive = computed({
             />
           </div>
           <div class="hidden sm:block w-px h-3 rounded-lg bg-n-weak shrink-0" />
-          <span class="text-body-main text-n-slate-11 truncate">
+          <span
+            class="text-body-main text-n-slate-11 truncate sm:min-w-0 sm:flex-1"
+          >
             {{ automation.description }}
           </span>
         </div>

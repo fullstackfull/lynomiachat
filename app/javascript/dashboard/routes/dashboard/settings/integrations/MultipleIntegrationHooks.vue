@@ -108,6 +108,7 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
         scrollable
         sticky-actions
         :headers="hookHeaders"
+        align-last-column-end
         :items="filteredHooks"
         :no-data-message="searchQuery ? $t('INTEGRATION_APPS.NO_RESULTS') : ''"
       >

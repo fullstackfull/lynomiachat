@@ -5,7 +5,7 @@ import EditAutomationRule from './EditAutomationRule.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { until } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import {
@@ -26,7 +26,6 @@ import { DEFAULT_DELAY_MINUTES } from './constants';
 const getters = useStoreGetters();
 const store = useStore();
 const route = useRoute();
-const router = useRouter();
 const { t } = useI18n();
 const confirmDialog = ref(null);
 
@@ -147,13 +146,12 @@ const showDelayDisabledBanner = computed(
     records.value.some(automation => automation.execution_delay)
 );
 
-// "Use in a new automation rule", from an audience: the route says which one, the panel opens on it, and the query is
-// dropped so a reload is an ordinary visit to this page.
+// "Use in a new automation rule", from an audience: the route says which one, and the panel opens on it. The query
+// stays in the URL, so the link is shareable and a reload opens the same panel again. On mount is enough here:
+// SettingsWrapper keys this page by the route's full path, so arriving with a different audience remounts it.
 const openFromAudience = () => {
   const audienceId = audienceIdFromQuery(route.query);
-  if (!audienceId) return;
-  router.replace({ name: route.name, params: route.params, query: {} });
-  addDialogRef.value?.open({ audienceId });
+  if (audienceId) addDialogRef.value?.open({ audienceId });
 };
 
 onMounted(() => {

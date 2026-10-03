@@ -1,0 +1,302 @@
+{
+  "journeys": [
+    {
+      "name": "A · open a shared audience's menu and choose \"use in a new rule\" (en-desktop)",
+      "clicks": 2,
+      "note": "before: leave the audience, Settings → Automation → Add → event → attribute → Audience group → operator → find it by name (≈11)"
+    },
+    {
+      "name": "C · high-value buyers from a preset (en-desktop)",
+      "clicks": 4,
+      "note": "before: Filter → attribute picker → Commerce group → Visible spend → operator → amount → Apply → Save → name → share → Save (≈11)"
+    },
+    {
+      "name": "D · order tracking bot from a template (en-desktop)",
+      "clicks": 4,
+      "note": "before: New flow → name → create → 12 palette clicks → ≈25 fields → 19 edge drags (≈59)"
+    },
+    {
+      "name": "E · \"customer with an open order\" from a recipe (en-desktop)",
+      "clicks": 4,
+      "note": "before: Add → event → attribute → Commerce group → operator → value → add action → assign team → team → Save (≈15)"
+    },
+    {
+      "name": "A · open a shared audience's menu and choose \"use in a new rule\" (en-390px)",
+      "clicks": 2,
+      "note": "before: leave the audience, Settings → Automation → Add → event → attribute → Audience group → operator → find it by name (≈11)"
+    },
+    {
+      "name": "C · high-value buyers from a preset (en-390px)",
+      "clicks": 4,
+      "note": "before: Filter → attribute picker → Commerce group → Visible spend → operator → amount → Apply → Save → name → share → Save (≈11)"
+    },
+    {
+      "name": "D · order tracking bot from a template (en-390px)",
+      "clicks": 4,
+      "note": "before: New flow → name → create → 12 palette clicks → ≈25 fields → 19 edge drags (≈59)"
+    },
+    {
+      "name": "E · \"customer with an open order\" from a recipe (en-390px)",
+      "clicks": 4,
+      "note": "before: Add → event → attribute → Commerce group → operator → value → add action → assign team → team → Save (≈15)"
+    },
+    {
+      "name": "A · open a shared audience's menu and choose \"use in a new rule\" (ar-desktop)",
+      "clicks": 2,
+      "note": "before: leave the audience, Settings → Automation → Add → event → attribute → Audience group → operator → find it by name (≈11)"
+    },
+    {
+      "name": "C · high-value buyers from a preset (ar-desktop)",
+      "clicks": 4,
+      "note": "before: Filter → attribute picker → Commerce group → Visible spend → operator → amount → Apply → Save → name → share → Save (≈11)"
+    },
+    {
+      "name": "D · order tracking bot from a template (ar-desktop)",
+      "clicks": 4,
+      "note": "before: New flow → name → create → 12 palette clicks → ≈25 fields → 19 edge drags (≈59)"
+    },
+    {
+      "name": "E · \"customer with an open order\" from a recipe (ar-desktop)",
+      "clicks": 4,
+      "note": "before: Add → event → attribute → Commerce group → operator → value → add action → assign team → team → Save (≈15)"
+    },
+    {
+      "name": "A · open a shared audience's menu and choose \"use in a new rule\" (ar-390px)",
+      "clicks": 2,
+      "note": "before: leave the audience, Settings → Automation → Add → event → attribute → Audience group → operator → find it by name (≈11)"
+    },
+    {
+      "name": "C · high-value buyers from a preset (ar-390px)",
+      "clicks": 4,
+      "note": "before: Filter → attribute picker → Commerce group → Visible spend → operator → amount → Apply → Save → name → share → Save (≈11)"
+    },
+    {
+      "name": "D · order tracking bot from a template (ar-390px)",
+      "clicks": 4,
+      "note": "before: New flow → name → create → 12 palette clicks → ≈25 fields → 19 edge drags (≈59)"
+    },
+    {
+      "name": "E · \"customer with an open order\" from a recipe (ar-390px)",
+      "clicks": 4,
+      "note": "before: Add → event → attribute → Commerce group → operator → value → add action → assign team → team → Save (≈15)"
+    }
+  ],
+  "checks": [
+    {
+      "name": "A · the audience section offers both cross-module actions, the duplicate, the link and the preset",
+      "pass": true,
+      "detail": "Used by 2 automation rules · 1 campaign | Use in a new automation rule | Use in a new WhatsApp campaign | Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "A · what already references the audience is visible where it is acted on",
+      "pass": true,
+      "detail": "Used by 2 automation rules · 1 campaign | Use in a new automation rule | Use in a new WhatsApp campaign | Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "accessibility · the overflow button has an accessible name (en-desktop)",
+      "pass": true,
+      "detail": "More actions"
+    },
+    {
+      "name": "accessibility · the overflow button takes focus from the keyboard (en-desktop)",
+      "pass": true,
+      "detail": "contact-more-actions"
+    },
+    {
+      "name": "accessibility · Enter opens the menu (en-desktop)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B · a personal audience offers no rule or campaign action, since neither module may reference one",
+      "pass": true,
+      "detail": "Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "B · neither cross-module item is in a personal audience's menu (en-desktop)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "C · the preset built the condition the engine expects, for the currency chosen",
+      "pass": true,
+      "detail": "{\"payload\":[{\"attribute_key\":\"commerce_spend_sar\",\"filter_operator\":\"is_greater_than\",\"attribute_model\":\"commerce\",\"values\":[\"1000\"],\"query_operator\":null}]}"
+    },
+    {
+      "name": "D · the template produced the whole graph, with the chosen team on its handoff",
+      "pass": true,
+      "detail": "12 nodes / 19 edges"
+    },
+    {
+      "name": "E · the rule arrives switched off",
+      "pass": true,
+      "detail": "{\"event_name\":\"conversation_created\",\"conditions\":[{\"attribute_key\":\"commerce_active_order\",\"filter_operator\":\"equal_to\",\"values\":[\"true\"],\"query_operator\":null}],\"actions\":[{\"action_name\":\"assign_team\",\"action_params\":[1]}],\"active\":false}"
+    },
+    {
+      "name": "E · the rule carries the condition and the chosen team",
+      "pass": true,
+      "detail": "{\"event_name\":\"conversation_created\",\"conditions\":[{\"attribute_key\":\"commerce_active_order\",\"filter_operator\":\"equal_to\",\"values\":[\"true\"],\"query_operator\":null}],\"actions\":[{\"action_name\":\"assign_team\",\"action_params\":[1]}],\"active\":false}"
+    },
+    {
+      "name": "direction · the page renders left to right (en-desktop)",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "name": "layout · no horizontal overflow at 1280px (en-desktop)",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "A · the audience section offers both cross-module actions, the duplicate, the link and the preset",
+      "pass": true,
+      "detail": "Used by 2 automation rules · 1 campaign | Use in a new automation rule | Use in a new WhatsApp campaign | Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "A · what already references the audience is visible where it is acted on",
+      "pass": true,
+      "detail": "Used by 2 automation rules · 1 campaign | Use in a new automation rule | Use in a new WhatsApp campaign | Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "accessibility · the overflow button has an accessible name (en-390px)",
+      "pass": true,
+      "detail": "More actions"
+    },
+    {
+      "name": "accessibility · the overflow button takes focus from the keyboard (en-390px)",
+      "pass": true,
+      "detail": "contact-more-actions"
+    },
+    {
+      "name": "accessibility · Enter opens the menu (en-390px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B · a personal audience offers no rule or campaign action, since neither module may reference one",
+      "pass": true,
+      "detail": "Duplicate this audience | Copy link to this audience | New audience from a preset | Add contact | Export contacts | Import contacts"
+    },
+    {
+      "name": "B · neither cross-module item is in a personal audience's menu (en-390px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "C · the preset built the condition the engine expects, for the currency chosen",
+      "pass": true,
+      "detail": "{\"payload\":[{\"attribute_key\":\"commerce_spend_sar\",\"filter_operator\":\"is_greater_than\",\"attribute_model\":\"commerce\",\"values\":[\"1000\"],\"query_operator\":null}]}"
+    },
+    {
+      "name": "D · the template produced the whole graph, with the chosen team on its handoff",
+      "pass": true,
+      "detail": "12 nodes / 19 edges"
+    },
+    {
+      "name": "E · the rule arrives switched off",
+      "pass": true,
+      "detail": "{\"event_name\":\"conversation_created\",\"conditions\":[{\"attribute_key\":\"commerce_active_order\",\"filter_operator\":\"equal_to\",\"values\":[\"true\"],\"query_operator\":null}],\"actions\":[{\"action_name\":\"assign_team\",\"action_params\":[1]}],\"active\":false}"
+    },
+    {
+      "name": "E · the rule carries the condition and the chosen team",
+      "pass": true,
+      "detail": "{\"event_name\":\"conversation_created\",\"conditions\":[{\"attribute_key\":\"commerce_active_order\",\"filter_operator\":\"equal_to\",\"values\":[\"true\"],\"query_operator\":null}],\"actions\":[{\"action_name\":\"assign_team\",\"action_params\":[1]}],\"active\":false}"
+    },
+    {
+      "name": "direction · the page renders left to right (en-390px)",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "name": "layout · no horizontal overflow at 390px (en-390px)",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "accessibility · the overflow button has an accessible name (ar-desktop)",
+      "pass": true,
+      "detail": "More actions"
+    },
+    {
+      "name": "accessibility · the overflow button takes focus from the keyboard (ar-desktop)",
+      "pass": true,
+      "detail": "contact-more-actions"
+    },
+    {
+      "name": "accessibility · Enter opens the menu (ar-desktop)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B · neither cross-module item is in a personal audience's menu (ar-desktop)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "direction · the page renders right to left (ar-desktop)",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "name": "layout · no horizontal overflow at 1280px (ar-desktop)",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "accessibility · the overflow button has an accessible name (ar-390px)",
+      "pass": true,
+      "detail": "More actions"
+    },
+    {
+      "name": "accessibility · the overflow button takes focus from the keyboard (ar-390px)",
+      "pass": true,
+      "detail": "contact-more-actions"
+    },
+    {
+      "name": "accessibility · Enter opens the menu (ar-390px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "B · neither cross-module item is in a personal audience's menu (ar-390px)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "direction · the page renders right to left (ar-390px)",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "name": "layout · no horizontal overflow at 390px (ar-390px)",
+      "pass": true,
+      "detail": "0px"
+    }
+  ],
+  "screenshots": [
+    "journey-a-audience-menu-en-desktop.png",
+    "journey-c-audience-presets-en-desktop.png",
+    "journey-c-audience-wizard-en-desktop.png",
+    "journey-d-flow-templates-en-desktop.png",
+    "journey-d-flow-wizard-en-desktop.png",
+    "journey-e-automation-recipes-en-desktop.png",
+    "journey-a-audience-menu-en-390px.png",
+    "journey-c-audience-presets-en-390px.png",
+    "journey-c-audience-wizard-en-390px.png",
+    "journey-d-flow-templates-en-390px.png",
+    "journey-d-flow-wizard-en-390px.png",
+    "journey-e-automation-recipes-en-390px.png",
+    "journey-a-audience-menu-ar-desktop.png",
+    "journey-c-audience-presets-ar-desktop.png",
+    "journey-c-audience-wizard-ar-desktop.png",
+    "journey-d-flow-templates-ar-desktop.png",
+    "journey-d-flow-wizard-ar-desktop.png",
+    "journey-e-automation-recipes-ar-desktop.png",
+    "journey-a-audience-menu-ar-390px.png",
+    "journey-c-audience-presets-ar-390px.png",
+    "journey-c-audience-wizard-ar-390px.png",
+    "journey-d-flow-templates-ar-390px.png",
+    "journey-d-flow-wizard-ar-390px.png",
+    "journey-e-automation-recipes-ar-390px.png"
+  ]
+}

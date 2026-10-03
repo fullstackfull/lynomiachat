@@ -7,7 +7,7 @@ import Index from '../Index.vue';
 import { AUTOMATION_RECIPES } from 'dashboard/recipes/automationRecipes';
 
 const dispatch = vi.fn();
-const replace = vi.fn();
+const addOpen = vi.fn();
 const alerts = [];
 const query = ref({});
 const records = ref([]);
@@ -28,12 +28,11 @@ vi.mock('dashboard/composables/store', () => ({
 vi.mock('vue-router', async importOriginal => ({
   ...(await importOriginal()),
   useRoute: () => ({ name: 'automation_list', params: {}, query: query.value }),
-  useRouter: () => ({ replace }),
 }));
 
-const exposing = template => ({
+const exposing = (open, template = '<div />') => ({
   setup(_, { expose }) {
-    expose({ open: vi.fn(), close: vi.fn() });
+    expose({ open, close: vi.fn() });
   },
   template,
 });
@@ -64,8 +63,8 @@ const mountIndex = async () => {
         },
         BaseSettingsHeader: { template: '<div><slot name="actions" /></div>' },
         BaseTable: { template: '<div><slot name="row" :items="[]" /></div>' },
-        AddAutomationRule: exposing('<div />'),
-        EditAutomationRule: exposing('<div />'),
+        AddAutomationRule: exposing(addOpen),
+        EditAutomationRule: exposing(vi.fn()),
         RecipeDialog: RecipeDialogStub,
         TabBar: true,
         AutomationRuleRow: true,
@@ -82,8 +81,8 @@ describe('automation Index', () => {
   beforeEach(() => {
     alerts.length = 0;
     dispatch.mockReset();
+    addOpen.mockReset();
     dispatch.mockResolvedValue(undefined);
-    replace.mockClear();
     query.value = {};
     records.value = [];
   });
@@ -160,20 +159,16 @@ describe('automation Index', () => {
     ).toHaveLength(AUTOMATION_RECIPES.length);
   });
 
-  it('drops the audience query so a reload is an ordinary visit', async () => {
+  it('opens the rule panel on the audience the route names', async () => {
     query.value = { audience: '9' };
     await mountIndex();
 
-    expect(replace).toHaveBeenCalledWith({
-      name: 'automation_list',
-      params: {},
-      query: {},
-    });
+    expect(addOpen).toHaveBeenCalledWith({ audienceId: 9 });
   });
 
-  it('leaves the route alone when no audience is named', async () => {
+  it('opens nothing when the route names no audience', async () => {
     await mountIndex();
 
-    expect(replace).not.toHaveBeenCalled();
+    expect(addOpen).not.toHaveBeenCalled();
   });
 });

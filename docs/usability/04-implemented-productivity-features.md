@@ -53,7 +53,7 @@ Detail in [11](11-flow-templates.md).
 | | |
 |---|---|
 | BEFORE (order tracking) | New flow → name → create → 12 nodes from the palette → ≈25 fields → 19 edges → Save → Publish. **≈59 interactions before the first customer sees anything.** |
-| AFTER | Templates → Use this → team (preselected when the account has one) → language (starts at "Arabic and English") → Create → the builder opens on the full graph. **3–4 clicks.** |
+| AFTER | Templates → Use this → team (preselected when the account has exactly one) → language (starts at "Arabic and English") → Create → the builder opens on the full graph. **4 clicks, measured in a browser** ([07](07-e2e.md) journey D). |
 
 ## P0-5 · Flow list empty state
 
@@ -78,8 +78,9 @@ already existed and already gated its items), `ContactListHeaderWrapper.vue`, `h
 | Copy link | select the address bar, `Cmd+C`, and the URL carries `?page=1` | ⋮ → Copy link. **2 clicks, clean URL** |
 | See what uses it | open the filter editor (1 click) — the one place the counts were shown | in the same menu you act from, as a line you cannot click |
 
-"Use it there" is a route query naming the audience id. The target page reads it, prefills its own form and drops the
-query, so the URL is shareable and a reload is an ordinary visit. **Nothing is created on the way.**
+"Use it there" is a route query naming the audience id: the target page reads it and prefills its own form. The query
+stays in the URL, so the link is shareable and a reload opens the same prefilled form. **Nothing is created on the
+way.**
 
 ## P0-7 · Seven automation recipes
 
@@ -89,7 +90,7 @@ Friction 15. `recipes/automationRecipes.js`, offered from the list header and th
 | | |
 |---|---|
 | BEFORE (VIP priority) | Add → event → change the default condition's attribute → scroll to the Audience group → operator → audience → add action → priority → value → add action → assign team → team → Save. **≈21 clicks — and the rule is saved active, so it runs before anyone has read it.** |
-| AFTER | Recipes → Use this → audience → team → priority (starts at High) → Create. **≈7 clicks, and the rule is created switched off and opened for review.** |
+| AFTER | Recipes → Use this → audience → team → priority (starts at High) → Create. **≈7 clicks for this recipe, and the rule is created switched off and opened for review.** The simplest recipe, "customer with an open order", is **4 clicks measured in a browser** ([07](07-e2e.md) journey E). |
 
 ## P0-8 · Seven audience presets
 
@@ -99,9 +100,9 @@ Friction 13. `recipes/audiencePresets.js`, offered from the contacts overflow me
 | | |
 |---|---|
 | BEFORE (high-value buyers) | Contacts → Filter → attribute picker → scroll to the Commerce group → "Visible spend (SAR)" → operator → amount → Apply → Save → name → share → Save. **≈11 clicks** |
-| AFTER | ⋮ → New audience from a preset → Use this → currency → amount → Create → the name is prefilled → Save. **≈8 clicks** |
+| AFTER | ⋮ → New audience from a preset → Use this → currency → amount (starts at 1000) → Create → the name is prefilled → Save. **4 clicks to the built conditions, measured in a browser** ([07](07-e2e.md) journey C), **plus 2** for the name-and-share dialog: **6**. |
 
-**Honest measurement: about three clicks.** What the preset actually removes is needing to know the Commerce field
+**Honest measurement: about five clicks.** What the preset actually removes is needing to know the Commerce field
 model first — that spend is per currency and never converted, that "has an order with status X" grows with more data
 while "has none" needs every linked customer read, and which of the nine fields answers the question you have. The
 preset asks for the currency and the threshold and names itself after what it measures.

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onActivated, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToggle } from '@vueuse/core';
 import {
@@ -48,13 +48,15 @@ const handleDelete = campaign => {
   confirmDeleteCampaignDialogRef.value.dialogRef.open();
 };
 
-// "Use in a new WhatsApp campaign", from an audience. The audience's own record decides: an id that is not one of
-// this account's shared audiences opens the ordinary empty dialog, and the server would refuse it anyway.
-onMounted(async () => {
+// "Use in a new WhatsApp campaign", from an audience. The query stays in the URL, so the link is shareable and a
+// reload opens the same dialog. On activation rather than on mount: this page is kept alive, so coming back to it
+// with another audience never mounts it again (`onActivated` also runs on the first render).
+// The audience's own record decides: an id that is not one of this account's shared audiences opens the ordinary
+// empty dialog, and the server would refuse it anyway.
+onActivated(async () => {
   const audienceId = audienceIdFromQuery(route.query);
   if (!audienceId) return;
 
-  router.replace({ name: route.name, params: route.params, query: {} });
   await store.dispatch('customViews/get', 'contact');
   const audience = findSharedAudience(
     getters['customViews/getContactCustomViews'].value,

@@ -190,6 +190,7 @@ onMounted(() => {
               'text-n-slate-12': item.action !== 'delete',
             }"
             :disabled="item.disabled"
+            :data-test-id="item.value ? `dropdown-item-${item.value}` : null"
             @click="handleAction(item)"
           >
             <slot name="thumbnail" :item="item">
@@ -246,6 +247,7 @@ onMounted(() => {
             'text-n-slate-12': item.action !== 'delete',
           }"
           :disabled="item.disabled"
+          :data-test-id="item.value ? `dropdown-item-${item.value}` : null"
           @click="handleAction(item)"
         >
           <slot name="thumbnail" :item="item">

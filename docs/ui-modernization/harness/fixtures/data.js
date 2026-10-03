@@ -567,3 +567,49 @@ export const FLOW_NODE_TYPES = {
   goto: { outputs: [], data: ['target'] },
   end: { outputs: [], data: ['resolve'] },
 };
+
+// A WhatsApp campaign's analytics: the counts the six metric tiles read, and three delivery rows that
+// between them cover a clean send, a failure with a reason, and a skip — the three states the delivery
+// table styles differently.
+export const CAMPAIGN_METRICS = {
+  status_counts: {
+    audience: 240,
+    queued: 12,
+    sent: 36,
+    delivered: 171,
+    read: 118,
+    failed: 9,
+    skipped: 12,
+  },
+};
+
+export const CAMPAIGN_DELIVERIES = [
+  {
+    id: 1,
+    contact: { id: 101, name: 'Rania Mansour', phone_number: '+966500000001' },
+    status: 'read',
+    message_content: 'Our Eid hours are now live.',
+    error_code: null,
+    error_message: null,
+    error_title: null,
+  },
+  {
+    id: 2,
+    contact: { id: 102, name: 'Khaled Aziz', phone_number: '+966500000002' },
+    status: 'failed',
+    message_content: 'Our Eid hours are now live.',
+    error_code: '131047',
+    error_title: 'Re-engagement message',
+    error_message:
+      'More than 24 hours have passed since the contact last replied, so this template could not be delivered.',
+  },
+  {
+    id: 3,
+    contact: { id: 103, name: 'Noor Al-Sayed', phone_number: '+966500000003' },
+    status: 'skipped',
+    message_content: null,
+    error_code: null,
+    error_title: null,
+    error_message: null,
+  },
+];

@@ -461,4 +461,30 @@ export const SURFACES = {
     params: { flowId: '1' },
     frame: 'plain',
   },
+  'campaigns-whatsapp-analytics': {
+    title: 'Campaigns · WhatsApp analytics',
+    load: () =>
+      import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignAnalyticsPage.vue'),
+    route: 'campaigns_whatsapp_analytics',
+    params: { campaignId: '201' },
+    frame: 'plain',
+  },
+  'campaigns-whatsapp-analytics-empty': {
+    title: 'Campaigns · WhatsApp analytics (nothing sent yet)',
+    load: () =>
+      import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignAnalyticsPage.vue'),
+    route: 'campaigns_whatsapp_analytics',
+    params: { campaignId: '201' },
+    frame: 'plain',
+    state: 'empty',
+  },
+  'campaigns-whatsapp-create': {
+    title: 'Campaigns · WhatsApp · create dialog',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignsPage.vue'),
+    route: 'campaigns_whatsapp_index',
+    frame: 'plain',
+    // The create panel is the page's primary action and is captured by nothing. The trigger carries no
+    // test id, so the plus icon is the handle that also works in the pre-phase tree.
+    interactions: ['[class*="i-lucide-plus"]'],
+  },
 };

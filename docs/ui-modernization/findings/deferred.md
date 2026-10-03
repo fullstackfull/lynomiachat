@@ -137,38 +137,45 @@ with no header row anywhere, so the list cannot say what its columns are and can
 Whether that becomes a `BaseTable` is the open question, and answering it needs
 `conversation-card-expanded` in the capture set first.
 
-## A second design system in `_woot.scss`, keyed off Tailwind utility names
+## RESOLVED — the second design system in `_woot.scss` is gone, and the brand is a component variant
 
-**Found while planning the Commerce panel; the blast radius is the whole product.**
+**Was:** ~120 hand-written lines at the end of `app/javascript/dashboard/assets/scss/_woot.scss`, inside
+the `@layer utilities` block, attaching styling to Tailwind's own class names and to bare element
+selectors. Four of the five rules reached things that never opted in:
 
-`app/javascript/dashboard/assets/scss/_woot.scss` ends with ~120 hand-written lines inside the
-`@layer utilities` block that attach styling to Tailwind's own class names and to bare element
-selectors. Four of its five rules are defects whatever the brand intent, because they reach things that
-never opted in:
-
-| Selector | What it does | What it actually hits |
+| Selector | Did | Reached |
 |---|---|---|
-| `.bg-n-brand\/10` | `!important` navy→blue gradient, `text-transform: uppercase`, `color: white`, `display: block`, `margin: 10px`, `box-shadow: 0 0 20px #eee` | `components-next/button/Button.vue:106` — the **faded blue variant of the shared Button component** — plus the Captain FAQ chip, the inbox sort menu's active row and the context-menu hover tint. A 10%-alpha brand tint is a *subtle background*; it is being rendered as an uppercase white-on-gradient block. |
-| `.bg-n-brand\/20:hover` | background-position + `color: #fff` | the same Button variant's hover state |
-| `main` | `border: 2px solid`, `margin: 1rem`, `border-radius: 10px`, a 28px drop shadow | every `<main>` in the product — Help Center, Companies (list and detail), Campaigns (list and analytics), Contacts (list and detail), the gallery view |
-| `button:has(span.sr-only)` | `background: #111 !important`, `width: 27px`, `height: 17px` | **any button in the product containing a screen-reader-only label.** Adding an `sr-only` name to a button — exactly what the accessibility work in this phase does — squashes it to 27×17px and paints it black. |
+| `.bg-n-brand\/10` | `!important` gradient, `uppercase`, `color: white`, `display: block`, `margin: 10px`, `box-shadow: 0 0 20px #eee` | `components-next/button/Button.vue:106` — the **faded blue variant of the shared Button** — plus the Captain FAQ chip, the inbox sort menu's active row, the context-menu hover tint |
+| `.bg-n-brand\/20:hover` | background-position, `color: #fff` | that variant's hover state |
+| `main` | `border: 2px solid`, `margin: 1rem`, `border-radius: 10px`, a 28px drop shadow | every `<main>` in the product — Help Center, Companies, Campaigns, Contacts, the gallery view |
+| `button:has(span.sr-only)` | `background: #111 !important`, `width: 27px`, `height: 17px` | **any button carrying a screen-reader-only label**, so naming a button broke its layout |
 
-The fifth rule, `button.bg-n-brand, .bg-n-brand button`, is the "Lynomia brand gradient for primary
-buttons" the comment names: a navy→blue gradient, white text, `font-family: Arial`, `font-size: 16px`,
-`font-weight: bold`, `text-transform: uppercase`, `border-radius: 10px`, a sweeping `::before` overlay
-and `transform: scale(1.05)` on hover.
+The fifth was the "Lynomia brand gradient for primary buttons": a navy→blue gradient, white text,
+`font-family: Arial`, `font-size: 16px`, `font-weight: bold`, `text-transform: uppercase`,
+`border-radius: 10px`, a sweeping `::before` overlay and `scale(1.05)` on hover — applied to every
+`<button>` that happened to carry `bg-n-brand`, and to every button inside anything that did.
 
-**Not done in this phase, and deliberately not done silently.** The four defect rules are a
-straightforward fix. The brand gradient is a product decision: it is plainly intentional, and it equally
-plainly overrides the typography scale this phase is built on (`font-inter`, `text-button`, the nine
-type utilities) and the radius, colour and elevation tokens. The right shape is a `brand` variant on
-`components-next/button/Button.vue` that an author opts into, rather than a global rule triggered by a
-background utility — but which primary buttons should carry it, and whether uppercase Arial is the
-intended brand voice, is not mine to decide.
+**Now:** the whole block is deleted. Not scoped, not guarded, not excepted — removed, because the source
+of the conflict was the global selectors themselves and every exception would have been another one.
 
-**Needs:** a yes/no from the product owner on the gradient, then one commit that removes the four defect
-rules and moves whatever survives into the Button component. Its before/after is visible on nearly every
-surface in the capture set, so it wants its own capture pass rather than riding inside another batch.
+Lynomia's identity reaches an ordinary primary button the way the design system intends: the `solid`
+variant is `bg-n-brand`, and `n-brand` is Lynomia's blue. Nothing about that changed.
+
+The gradient survives as an **explicit, opt-in variant** on the shared Button — `variant="brand"` — built
+from the brand token (`from-n-blue-10 to-n-brand`), the product's own elevation (`shadow-raised`), the
+shared radius, the shared size scale and `font-inter`. No Arial, no uppercase, no fixed pixel font size,
+no `!important`, no hover scale, and no global selector. It is colour-independent, because the gradient
+*is* the fill and crossing it with the five colours would mean nothing.
+
+It is deliberately applied **nowhere** by default. Which promotional call to action deserves to stand
+apart from an ordinary primary button is a per-call-site design decision, not something to spray across
+the product from here. The variant is documented in `Button.story.vue` so it is discoverable, and the
+comment on it says why it is not a default.
+
+**Consequences visible in the capture set, all intended:** the faded-blue Button variant renders as the
+subtle 10%-alpha tint it was always meant to be instead of an uppercase white-on-gradient block; eight
+layout components get their own spacing back instead of a 2px border, a 1rem margin and a 28px shadow
+nobody asked for; and a button with an accessible name keeps its size.
 
 ## Deleting a contact from the conversation panel leaves the panel open on a deleted record
 

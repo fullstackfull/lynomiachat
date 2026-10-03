@@ -9,6 +9,19 @@ const SIZES = ['default', 'sm', 'lg'];
 
 <template>
   <Story title="Components/Button" :layout="{ type: 'grid', width: '800px' }">
+    <!-- Lynomia's gradient: deliberately apart from the colour grid below, because it is
+         colour-independent and is opted into per call site rather than being any primary button's
+         default. The brand reaches an ordinary primary button through `n-brand` on `solid`. -->
+    <Variant title="Brand (promotional)">
+      <div class="flex flex-wrap items-center gap-2 p-4 bg-n-background">
+        <Button label="Brand" variant="brand" />
+        <Button label="Brand small" variant="brand" size="sm" />
+        <Button label="Brand large" variant="brand" size="lg" />
+        <Button icon="i-lucide-sparkles" variant="brand" aria-label="Brand" />
+        <Button label="Brand disabled" variant="brand" disabled />
+      </div>
+    </Variant>
+
     <!-- Basic Variants -->
     <Variant title="Basic Variants">
       <div class="flex flex-wrap gap-2 p-4 bg-n-background">

@@ -118,6 +118,20 @@ describe('DataManager', () => {
       const result = await dataManager.get({ modelName: 'inbox' });
       expect(result).toEqual(newData);
     });
+
+    it('keeps the collection when two replaces of the same model race, and raises nothing', async () => {
+      const data = [
+        { id: 1, name: 'inbox-1' },
+        { id: 2, name: 'inbox-2' },
+      ];
+
+      await Promise.all([
+        dataManager.replace({ modelName: 'inbox', data }),
+        dataManager.replace({ modelName: 'inbox', data }),
+      ]);
+
+      expect(await dataManager.get({ modelName: 'inbox' })).toEqual(data);
+    });
   });
 
   describe('push', () => {

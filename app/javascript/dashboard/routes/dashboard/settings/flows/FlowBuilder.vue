@@ -329,6 +329,8 @@ onMounted(() => {
       class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-n-weak shrink-0"
     >
       <NextButton
+        v-tooltip="t('FLOW_BUILDER.CANVAS.BACK')"
+        :aria-label="t('FLOW_BUILDER.CANVAS.BACK')"
         icon="i-lucide-arrow-left"
         slate
         ghost
@@ -439,8 +441,18 @@ onMounted(() => {
             <FlowNode v-bind="nodeProps" />
           </template>
           <Panel position="bottom-left" class="flex gap-1">
-            <NextButton icon="i-lucide-plus" slate faded xs @click="zoomIn()" />
             <NextButton
+              v-tooltip="t('FLOW_BUILDER.CANVAS.ZOOM_IN')"
+              :aria-label="t('FLOW_BUILDER.CANVAS.ZOOM_IN')"
+              icon="i-lucide-plus"
+              slate
+              faded
+              xs
+              @click="zoomIn()"
+            />
+            <NextButton
+              v-tooltip="t('FLOW_BUILDER.CANVAS.ZOOM_OUT')"
+              :aria-label="t('FLOW_BUILDER.CANVAS.ZOOM_OUT')"
               icon="i-lucide-minus"
               slate
               faded
@@ -448,6 +460,8 @@ onMounted(() => {
               @click="zoomOut()"
             />
             <NextButton
+              v-tooltip="t('FLOW_BUILDER.CANVAS.FIT_VIEW')"
+              :aria-label="t('FLOW_BUILDER.CANVAS.FIT_VIEW')"
               icon="i-lucide-maximize"
               slate
               faded

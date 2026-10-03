@@ -452,4 +452,13 @@ export const SURFACES = {
       showPaginationFooter: true,
     },
   },
+  'flow-builder': {
+    title: 'Settings · Flow Builder canvas',
+    load: () => import('dashboard/routes/dashboard/settings/flows/FlowBuilder.vue'),
+    route: 'settings_flows_builder',
+    // The page reads the flow off the route, so the harness has to supply it: `params` are appended to that
+    // route's path as optional segments, because `router.push` drops a param the path does not declare.
+    params: { flowId: '1' },
+    frame: 'plain',
+  },
 };

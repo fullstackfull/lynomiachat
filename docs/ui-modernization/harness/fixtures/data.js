@@ -1,3 +1,5 @@
+import { FLOW_TEMPLATES } from 'dashboard/recipes/flowTemplates';
+
 // The fixture account every surface renders against. One WooCommerce store, three teams, labels, a WhatsApp inbox,
 // a shared audience referenced by a rule and a scheduled campaign, and a personal filter. Deliberately small but
 // never empty, so density and alignment are visible; surfaces that also need an empty variant get one via ?state=.
@@ -512,3 +514,56 @@ export const APPLIED_CONTACT_FILTERS = [
     queryOperator: 'and',
   },
 ];
+
+// The flow builder's canvas, from a real template rather than a hand-drawn graph: `FLOW_TEMPLATES[0].build`
+// produces the twelve nodes and nineteen edges its own spec asserts against the backend's graph contract, so
+// the capture renders a flow the server would accept.
+export const FLOW_GRAPH = FLOW_TEMPLATES[0].build({ team: 1, language: 'both' });
+
+// `Flows::NodeTypes::TYPES`, as the flows API serves it. Transcribed from the backend the same way
+// `recipes/specs/flowTemplates.spec.js` transcribes it, and for the same reason: the node's output handles
+// and the palette both come from this, so a canvas without it has nodes and no connections.
+export const FLOW_NODE_TYPES = {
+  start: { outputs: ['next'], data: ['keywords', 'conditions'] },
+  send_message: { outputs: ['next'], data: ['text'] },
+  send_template: { outputs: ['next', 'failed'], optional: ['failed'], data: ['name', 'language', 'params'] },
+  question: {
+    outputs: ['reply', 'invalid', 'timeout'],
+    optional: ['invalid', 'timeout'],
+    wait: true,
+    data: ['text', 'reply_type', 'keywords', 'store_as', 'max_attempts', 'retry_text', 'timeout_minutes'],
+  },
+  buttons: {
+    outputs: 'options',
+    extra: ['other', 'timeout'],
+    optional: ['other', 'timeout'],
+    wait: true,
+    data: ['text', 'options', 'timeout_minutes'],
+  },
+  list: {
+    outputs: 'options',
+    extra: ['other', 'timeout'],
+    optional: ['other', 'timeout'],
+    wait: true,
+    data: ['text', 'button_label', 'options', 'timeout_minutes'],
+  },
+  condition: { outputs: ['true', 'false'], data: ['conditions'] },
+  audience_condition: { outputs: ['true', 'false'], data: ['conditions'] },
+  commerce_condition: { outputs: ['true', 'false'], data: ['conditions'] },
+  set_contact_attribute: { outputs: ['next'], data: ['key', 'value'] },
+  set_conversation_attribute: { outputs: ['next'], data: ['key', 'value'] },
+  add_label: { outputs: ['next'], data: ['labels'] },
+  remove_label: { outputs: ['next'], data: ['labels'] },
+  assign_agent: { outputs: ['next', 'failed'], optional: ['failed'], data: ['agent_id'] },
+  assign_team: { outputs: ['next', 'failed'], optional: ['failed'], data: ['team_id'] },
+  commerce_lookup: {
+    outputs: ['found', 'not_found', 'unavailable'],
+    optional: ['not_found', 'unavailable'],
+    data: ['mode', 'number'],
+  },
+  webhook: { outputs: ['next'], data: ['url'] },
+  delay: { outputs: ['next'], wait: true, data: ['seconds'] },
+  handoff: { outputs: [], data: ['team_id', 'agent_id', 'priority', 'labels', 'reason'] },
+  goto: { outputs: [], data: ['target'] },
+  end: { outputs: [], data: ['resolve'] },
+};

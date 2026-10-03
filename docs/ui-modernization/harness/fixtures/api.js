@@ -10,6 +10,8 @@ import {
   COMMERCE_OVERVIEW,
   COMMERCE_PANEL,
   COMMERCE_STORES,
+  FLOW_GRAPH,
+  FLOW_NODE_TYPES,
   CANNED_RESPONSES,
   CONTACT_NOTES,
   CONVERSATION,
@@ -33,7 +35,14 @@ const list = rows => (STATE === 'empty' || STATE === 'loading' ? [] : rows);
 
 // Longest match wins, so a specific path beats its prefix.
 const ROUTES = [
-  [/\/flows\/\d+$/, () => ({ ...FLOWS[0], graph: { nodes: [], edges: [] }, errors: [], capabilities: {}, node_types: {}, variables: [] })],
+  [/\/flows\/\d+$/, () => ({
+    ...FLOWS[0],
+    graph: FLOW_GRAPH,
+    errors: [],
+    capabilities: { whatsapp: { buttons: true, list: true, template: true } },
+    node_types: FLOW_NODE_TYPES,
+    variables: [],
+  })],
   [/\/flows$/, () => ({ payload: list(FLOWS) })],
   [/\/automation_rules$/, () => ({ payload: list(AUTOMATIONS) })],
   [/\/commerce\/audience_fields$/, () => AUDIENCE_FIELDS],

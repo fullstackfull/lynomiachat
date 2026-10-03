@@ -42,7 +42,7 @@
       "PUBLISHED": "Published · version {version}",
       "NOT_PUBLISHED": "Not published",
       "UNSAVED": "Unsaved changes",
-    "UNPUBLISHED": "Unpublished changes"
+      "UNPUBLISHED": "Unpublished changes"
     },
     "ACTIONS": {
       "SESSIONS": "Sessions",
@@ -319,6 +319,12 @@
       "INVALID_TEMPLATE_PARAMS": "The template values are not valid.",
       "INVALID_MEDIA_URL": "Use a fixed http(s) link for {detail}.",
       "COPY_CODE_TOO_LONG": "The code can have at most {detail} characters."
+    },
+    "CANVAS": {
+      "BACK": "Back to flows",
+      "ZOOM_IN": "Zoom in",
+      "ZOOM_OUT": "Zoom out",
+      "FIT_VIEW": "Fit the flow to the view"
     }
   }
 }

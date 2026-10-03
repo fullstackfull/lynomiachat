@@ -16,6 +16,7 @@ import constants from 'dashboard/constants/globals';
 import App from './App.vue';
 import WootModal from 'dashboard/components/Modal.vue';
 import WootLoadingState from 'dashboard/components/widgets/LoadingState.vue';
+import { SURFACES } from './surfaces';
 import { GETTERS } from './fixtures/vuexGetters';
 import { ROUTE_NAMES } from './fixtures/routeNames';
 import { attachRouter } from './fixtures/routerBridge';
@@ -43,13 +44,25 @@ store.dispatch = () => Promise.resolve(true);
 
 // Every real route name, so each `accountScopedRoute(...)` and `router.resolve({ name })` a component makes
 // resolves. The components are real; only the destinations are inert.
+//
+// A surface can declare `params`, for the pages that read one off the route — a flow builder needs
+// `flowId`, a contact detail needs `contactId`. Those names are appended to that route's path as optional
+// segments, because `router.push` drops a param the path does not declare and the page would then read
+// `undefined`. Every other route keeps the bare path.
 const Blank = { template: '<div />' };
+const paramsFor = name =>
+  Object.keys(
+    Object.values(SURFACES).find(entry => entry.route === name)?.params || {}
+  );
 const router = createRouter({
   history: createMemoryHistory(),
   routes: [
     { path: '/app/accounts/:accountId', name: 'harness_root', component: Blank },
     ...ROUTE_NAMES.map(name => ({
-      path: `/app/accounts/:accountId/_r/${name}`,
+      path: [
+        `/app/accounts/:accountId/_r/${name}`,
+        ...paramsFor(name).map(param => `:${param}?`),
+      ].join('/'),
       name,
       component: Blank,
       meta: { permissions: ['administrator', 'agent', 'custom_role'] },
@@ -97,7 +110,10 @@ app.directive('on-clickaway', onClickaway);
 const surface = params.get('surface') || 'flows-list';
 const routeName = params.get('route');
 const target = routeName
-  ? { name: routeName, params: { accountId: '1' } }
+  ? {
+      name: routeName,
+      params: { accountId: '1', ...(SURFACES[surface]?.params || {}) },
+    }
   : { name: 'harness_root', params: { accountId: '1' } };
 
 router

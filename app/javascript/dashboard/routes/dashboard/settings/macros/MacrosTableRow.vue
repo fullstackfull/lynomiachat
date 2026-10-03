@@ -55,7 +55,7 @@ const editTooltip = computed(() =>
         </span>
       </BaseTableCell>
 
-      <BaseTableCell class="max-w-0">
+      <BaseTableCell class="max-w-0 hidden sm:table-cell">
         <div v-if="macro.created_by" class="flex items-center gap-2 min-w-0">
           <Avatar
             :name="createdByName"
@@ -70,7 +70,7 @@ const editTooltip = computed(() =>
         <span v-else class="text-body-main text-n-slate-11">--</span>
       </BaseTableCell>
 
-      <BaseTableCell class="max-w-0">
+      <BaseTableCell class="max-w-0 hidden sm:table-cell">
         <div v-if="macro.updated_by" class="flex items-center gap-2 min-w-0">
           <Avatar
             :name="updatedByName"

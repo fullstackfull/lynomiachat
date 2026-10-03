@@ -44,10 +44,25 @@ const props = defineProps({
     type: Number,
     default: 5,
   },
+  // Announced while `loading`. The skeleton rows are `aria-hidden`, so without this a screen reader
+  // gets no signal at all during a fetch — which is what the page-level spinner used to provide.
+  loadingMessage: {
+    type: String,
+    default: '',
+  },
+  // Per-column classes, in the same order as `headers`, applied to both the heading and the skeleton
+  // cell. This is how a table hides a tertiary column at narrow widths — `hidden md:table-cell` on the
+  // entry here and the same class on the matching `BaseTableCell` — instead of scrolling sideways.
+  // Head and body must be changed together or every cell below the breakpoint shifts one column over.
+  columnClasses: {
+    type: Array,
+    default: () => [],
+  },
   // Confines a too-wide table to its container and scrolls it, instead of letting the columns spill
   // past the card. Off by default: on a phone it trades a control that is visible-but-escaping for one
-  // that needs a horizontal swipe, and that trade belongs with the sticky action column designed in the
-  // responsive phase, not here.
+  // that needs a horizontal swipe, so prefer `columnClasses` and hide what is tertiary.
+  // Never combine with `stickyHeader`: the scroll wrapper becomes the sticky containing block, and the
+  // heading then sticks to the top of a box that does not scroll vertically, which is to say nowhere.
   scrollable: {
     type: Boolean,
     default: false,
@@ -85,17 +100,29 @@ const toggleSort = index => {
 
 <template>
   <div class="w-full" :class="{ 'overflow-x-auto': scrollable }">
-    <table class="min-w-full table-auto divide-y divide-n-weak">
+    <table
+      class="min-w-full table-auto divide-y divide-n-weak"
+      :aria-busy="loading"
+    >
+      <caption v-if="loading && loadingMessage" class="sr-only">
+        {{
+          loadingMessage
+        }}
+      </caption>
       <thead
         v-if="showHeaders"
         class="border-t border-n-weak"
-        :class="{ 'sticky top-0 z-sticky bg-n-surface-1': stickyHeader }"
+        :class="{
+          'sticky top-0 z-sticky bg-n-surface-1 border-b border-n-weak':
+            stickyHeader,
+        }"
       >
         <tr>
           <th
             v-for="(header, index) in headers"
             :key="index"
             class="py-4 ltr:pr-4 rtl:pl-4 text-start text-heading-3 text-n-slate-12 capitalize"
+            :class="columnClasses[index]"
             :aria-sort="
               sortStateFor(index) === 'none'
                 ? null
@@ -141,6 +168,7 @@ const toggleSort = index => {
               v-for="column in columnCount"
               :key="column"
               class="py-3 ltr:pr-4 rtl:pl-4"
+              :class="columnClasses[column - 1]"
             >
               <Skeleton :width="column === 1 ? 'w-40' : 'w-24'" />
             </td>

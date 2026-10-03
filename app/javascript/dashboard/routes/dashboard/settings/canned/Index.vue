@@ -11,7 +11,6 @@ import { picoSearch } from '@chatwoot/pico-search';
 import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
 
 import Button from 'dashboard/components-next/button/Button.vue';
-import Icon from 'dashboard/components-next/icon/Icon.vue';
 import {
   BaseTable,
   BaseTableRow,
@@ -66,8 +65,11 @@ const deleteMessage = computed(() => {
   return ` ${activeResponse.value.short_code} ? `;
 });
 
-const toggleSort = () => {
-  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+// `getSortedCannedResponses` already sorts by short code, so the table drives that one getter.
+const SORTABLE_COLUMNS = ['short_code', null];
+
+const handleSort = ({ order }) => {
+  sortOrder.value = order;
 };
 
 const fetchCannedResponses = async () => {
@@ -140,9 +142,7 @@ const tableHeaders = computed(() => {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.fetchingList"
-    :loading-message="$t('CANNED_MGMT.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!uiFlags.fetchingList && !records.length"
     :no-records-message="$t('CANNED_MGMT.LIST.404')"
   >
     <template #header>
@@ -171,8 +171,15 @@ const tableHeaders = computed(() => {
 
     <template #body>
       <BaseTable
+        sticky-header
         :headers="tableHeaders"
         :items="filteredRecords"
+        :loading="uiFlags.fetchingList"
+        :loading-message="$t('CANNED_MGMT.LOADING')"
+        :loading-rows="3"
+        :sortable-columns="SORTABLE_COLUMNS"
+        sort-by="short_code"
+        :sort-order="sortOrder"
         :no-data-message="
           !records.length
             ? $t('CANNED_MGMT.LIST.404')
@@ -180,29 +187,8 @@ const tableHeaders = computed(() => {
               ? $t('CANNED_MGMT.NO_RESULTS')
               : ''
         "
+        @sort="handleSort"
       >
-        <template #header-0>
-          <button
-            class="flex items-center gap-2 p-0 cursor-pointer"
-            @click="toggleSort"
-          >
-            <span class="mb-0">
-              {{ tableHeaders[0] }}
-            </span>
-            <Icon
-              class="size-5 text-n-slate-11 flex-shrink-0"
-              :icon="
-                sortOrder === 'desc'
-                  ? 'i-woot-sort-descending'
-                  : 'i-woot-sort-ascending'
-              "
-            />
-          </button>
-        </template>
-        <template #header-1>
-          {{ tableHeaders[1] }}
-        </template>
-
         <template #row="{ items }">
           <BaseTableRow
             v-for="cannedItem in items"

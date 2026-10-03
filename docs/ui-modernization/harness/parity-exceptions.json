@@ -1,4 +1,17 @@
 {
   "_": "Controls that moved during the redesign. A control may move; it may not vanish. `surface` and `control` must match what parity.mjs prints, `to` says where the capability lives now, and `reason` says why the move is an improvement. An entry here is a claim a reviewer can check against the after-screenshots.",
-  "moved": []
+  "moved": [
+    {
+      "surface": "canned-list",
+      "control": "name:button:short code",
+      "to": "the same column heading, as BaseTable's sort button",
+      "reason": "The page's own sort control, moved onto BaseTable's. Same action, same place, same state (`getSortedCannedResponses`), but it gains aria-sort, an accessible name from TABLE.SORT_BY and the shared chevron triplet in place of the woot sort icons — so its identity in the inventory changes from its inner text to its label. It is reported as added on the same capture: \"Sort by Short code\"."
+    },
+    {
+      "surface": "canned-list",
+      "control": "name:button:كود مختصر",
+      "to": "the same column heading, as BaseTable's sort button",
+      "reason": "The page's own sort control, moved onto BaseTable's. Same action, same place, same state (`getSortedCannedResponses`), but it gains aria-sort, an accessible name from TABLE.SORT_BY and the shared chevron triplet in place of the woot sort icons — so its identity in the inventory changes from its inner text to its label. It is reported as added on the same capture: \"Sort by Short code\". (Arabic capture of the same control.)"
+    }
+  ]
 }

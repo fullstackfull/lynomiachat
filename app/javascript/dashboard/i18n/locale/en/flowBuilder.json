@@ -14,7 +14,9 @@
       "NO_INBOX": "Not connected",
       "OPEN": "Open builder",
       "DELETE": "Delete",
-      "DUPLICATE": "Duplicate"
+      "DUPLICATE": "Duplicate",
+      "TEMPLATES": "Templates",
+      "EMPTY_HINT": "Start from a ready-made template, or build one node by node. Either way it stays a draft until you publish it."
     },
     "DUPLICATE": {
       "TITLE": "Duplicate this flow?",

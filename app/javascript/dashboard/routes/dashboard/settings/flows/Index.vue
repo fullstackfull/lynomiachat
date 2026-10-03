@@ -14,6 +14,8 @@ import {
   BaseTableRow,
   BaseTableCell,
 } from 'dashboard/components-next/table';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { FLOW_TEMPLATES } from 'dashboard/recipes/flowTemplates';
 
 // The account's flows (Lynomia Flow Builder): each is a bot that answers its inboxes' conversations until it hands them
 // to humans. Created here, edited in the builder, connected to inboxes there.
@@ -24,6 +26,8 @@ const flows = ref([]);
 const isLoading = ref(true);
 const createDialogRef = ref(null);
 const deleteDialogRef = ref(null);
+const templateDialogRef = ref(null);
+const isCreatingFromTemplate = ref(false);
 const name = ref('');
 const description = ref('');
 const selected = ref(null);
@@ -97,6 +101,37 @@ const create = async () => {
   }
 };
 
+const openTemplates = () => templateDialogRef.value?.open();
+
+// A template is a prepared draft: the flow is created with the ordinary call, its graph saved as the draft with the
+// ordinary call, and the builder opens on it. It is unpublished and connected to no inbox, so nothing reaches a
+// customer until the user publishes it themselves.
+const createFromTemplate = async (flowTemplate, values) => {
+  isCreatingFromTemplate.value = true;
+  try {
+    const { data } = await FlowsAPI.create({
+      name: t(flowTemplate.name),
+      description: t('RECIPES.FLOW.PROVENANCE', {
+        name: t(flowTemplate.name),
+        version: flowTemplate.version,
+      }),
+    });
+    await FlowsAPI.saveDraft(data.id, flowTemplate.build(values));
+    templateDialogRef.value?.close();
+    openBuilder(data);
+  } catch {
+    useAlert(t('RECIPES.CREATE_ERROR'));
+    load();
+  } finally {
+    isCreatingFromTemplate.value = false;
+  }
+};
+
+const startFromScratch = () => {
+  templateDialogRef.value?.close();
+  openCreate();
+};
+
 const confirmDelete = flow => {
   selected.value = flow;
   deleteDialogRef.value.open();
@@ -129,8 +164,6 @@ onMounted(load);
   <SettingsLayout
     :is-loading="isLoading"
     :loading-message="t('FLOW_BUILDER.LIST.LOADING')"
-    :no-records-found="!flows.length"
-    :no-records-message="t('FLOW_BUILDER.LIST.EMPTY')"
   >
     <template #header>
       <BaseSettingsHeader
@@ -138,17 +171,54 @@ onMounted(load);
         :description="t('FLOW_BUILDER.DESCRIPTION')"
       >
         <template #actions>
-          <NextButton
-            :label="t('FLOW_BUILDER.LIST.NEW')"
-            size="sm"
-            data-test-id="flow-new-button"
-            @click="openCreate"
-          />
+          <div class="flex items-center gap-2">
+            <NextButton
+              :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              data-test-id="flow-templates-button"
+              @click="openTemplates"
+            />
+            <NextButton
+              :label="t('FLOW_BUILDER.LIST.NEW')"
+              size="sm"
+              data-test-id="flow-new-button"
+              @click="openCreate"
+            />
+          </div>
         </template>
       </BaseSettingsHeader>
     </template>
     <template #body>
-      <BaseTable :headers="headers" :items="flows">
+      <div
+        v-if="!flows.length"
+        class="flex flex-col items-center gap-3 py-16 text-center"
+        data-test-id="flow-empty-state"
+      >
+        <p class="m-0 text-base text-n-slate-12">
+          {{ t('FLOW_BUILDER.LIST.EMPTY') }}
+        </p>
+        <p class="m-0 max-w-md text-sm text-n-slate-11">
+          {{ t('FLOW_BUILDER.LIST.EMPTY_HINT') }}
+        </p>
+        <div class="flex items-center gap-2">
+          <NextButton
+            :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
+            size="sm"
+            data-test-id="flow-empty-templates"
+            @click="openTemplates"
+          />
+          <NextButton
+            :label="t('FLOW_BUILDER.LIST.NEW')"
+            size="sm"
+            color="slate"
+            variant="faded"
+            @click="openCreate"
+          />
+        </div>
+      </div>
+      <BaseTable v-else :headers="headers" :items="flows">
         <template #row="{ items }">
           <BaseTableRow v-for="flow in items" :key="flow.id" :item="flow">
             <template #default>
@@ -250,6 +320,15 @@ onMounted(load);
         />
       </div>
     </Dialog>
+    <RecipeDialog
+      ref="templateDialogRef"
+      :recipes="FLOW_TEMPLATES"
+      :title="t('RECIPES.FLOW.TITLE')"
+      :description="t('RECIPES.FLOW.DESCRIPTION')"
+      :is-creating="isCreatingFromTemplate"
+      @create="createFromTemplate"
+      @scratch="startFromScratch"
+    />
     <Dialog
       ref="deleteDialogRef"
       type="alert"

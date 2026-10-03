@@ -87,6 +87,35 @@
         "NAME": "All linked customers",
         "DESCRIPTION": "Contacts linked to a customer in any connected store."
       }
+    },
+    "FLOW": {
+      "TITLE": "Start from a flow template",
+      "DESCRIPTION": "A template creates a normal flow draft: every node, message and branch is yours to edit, and nothing reaches a customer until you publish it.",
+      "PROVENANCE": "Created from the {name} template (v{version}).",
+      "COMMERCE_ORDER_TRACKING": {
+        "NAME": "Order tracking bot",
+        "DESCRIPTION": "Offers to track an order, finds the customer's own latest order, asks for an order number when there is none, and hands anything else to your team."
+      },
+      "COMMERCE_AFTER_SALES": {
+        "NAME": "Order issue intake",
+        "DESCRIPTION": "Asks for the order number, finds the order, asks what went wrong, and hands the conversation over with the answer already noted."
+      },
+      "SUPPORT_DEPARTMENT_ROUTING": {
+        "NAME": "Department routing bot",
+        "DESCRIPTION": "Asks which topic the customer needs, acknowledges the choice, and hands the conversation to the team you mapped to it."
+      },
+      "VIP_PRIORITY_ROUTING": {
+        "NAME": "VIP priority routing",
+        "DESCRIPTION": "Checks whether the contact is in a shared audience, then sends them to your dedicated team or to the standard one."
+      },
+      "BILINGUAL_WELCOME": {
+        "NAME": "Arabic or English welcome",
+        "DESCRIPTION": "Asks which language the customer prefers, replies in that language, and routes them to the team that speaks it. No language detection."
+      },
+      "WHATSAPP_WELCOME_MENU": {
+        "NAME": "Welcome and collect the request",
+        "DESCRIPTION": "Greets the customer, asks what they need, confirms it has been received, and hands the conversation to your team with the request in view."
+      }
     }
   }
 }

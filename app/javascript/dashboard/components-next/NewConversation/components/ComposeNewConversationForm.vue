@@ -363,7 +363,7 @@ useKeyboardEvents({
 
 <template>
   <div
-    class="w-full md:w-[42rem] divide-y divide-n-strong overflow-visible transition-all duration-300 ease-in-out top-full flex flex-col bg-n-alpha-3 border border-n-strong shadow-sm backdrop-blur-[100px] rounded-xl min-w-0 max-h-[calc(100vh-8rem)]"
+    class="w-full md:w-[42rem] divide-y divide-n-strong overflow-visible transition-all duration-300 ease-in-out top-full flex flex-col bg-n-alpha-3 border border-n-strong shadow-sm backdrop-blur-panel rounded-xl min-w-0 max-h-[calc(100vh-8rem)]"
   >
     <div class="flex-1 overflow-y-auto divide-y divide-n-strong">
       <ContactSelector
@@ -431,7 +431,7 @@ useKeyboardEvents({
     <CopilotReplyBottomPanel
       v-if="isCopilotActive"
       :is-generating-content="copilot.isButtonDisabled.value"
-      class="h-[3.25rem] !px-4 !py-2"
+      class="h-13 !px-4 !py-2"
       @submit="onSubmitCopilotReply"
       @cancel="copilot.reset"
     />

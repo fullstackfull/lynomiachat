@@ -215,7 +215,7 @@ export default {
       ref="dropdown"
       v-on-clickaway="onOutsideClick"
       tabindex="0"
-      class="z-10 absolute h-60 w-[12.5rem] shadow-md overflow-y-auto top-10 rounded-lg px-0 pt-0 pb-1 bg-n-alpha-3 backdrop-blur-[100px]"
+      class="z-10 absolute h-60 w-[12.5rem] shadow-md overflow-y-auto top-10 rounded-lg px-0 pt-0 pb-1 bg-n-alpha-3 backdrop-blur-panel"
       @keydown.prevent.up="moveUp"
       @keydown.prevent.down="moveDown"
       @keydown.prevent.enter="
@@ -223,7 +223,7 @@ export default {
       "
     >
       <div
-        class="sticky top-0 p-1 bg-white dark:bg-transparent backdrop-blur-[100px]"
+        class="sticky top-0 p-1 bg-white dark:bg-transparent backdrop-blur-panel"
       >
         <input
           ref="searchbar"

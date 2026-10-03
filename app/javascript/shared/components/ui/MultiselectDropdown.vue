@@ -143,7 +143,7 @@ const selectedThumbnail = computed(
           'block visible': showSearchDropdown,
           'hidden invisible': !showSearchDropdown,
         }"
-        class="box-border top-[2.625rem] w-full border rounded-lg bg-n-alpha-3 backdrop-blur-[100px] absolute shadow-lg border-n-strong dark:border-n-strong p-2 z-[9999]"
+        class="box-border top-[2.625rem] w-full border rounded-lg bg-n-alpha-3 backdrop-blur-panel absolute shadow-lg border-n-strong dark:border-n-strong p-2 z-[9999]"
       >
         <div class="flex items-center justify-between mb-1">
           <h4

@@ -145,7 +145,7 @@ const selectEmoji = emoji => {
 <template>
   <div
     role="dialog"
-    class="absolute z-20 flex flex-col overflow-hidden shadow-xl w-[22rem] bg-n-surface-2 backdrop-blur-[100px] rounded-2xl outline outline-1 outline-n-weak dark:outline-n-strong/50"
+    class="absolute z-20 flex flex-col overflow-hidden shadow-xl w-[22rem] bg-n-surface-2 backdrop-blur-panel rounded-2xl outline outline-1 outline-n-weak dark:outline-n-strong/50"
   >
     <div v-if="showHeader" class="flex items-center justify-between gap-2 p-2">
       <div v-if="showTabs" class="flex gap-0.5 p-0.5 rounded-lg bg-n-alpha-1">

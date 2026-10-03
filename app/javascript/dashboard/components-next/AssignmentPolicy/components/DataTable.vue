@@ -49,7 +49,7 @@ const handleNavigate = item => {
     <div
       v-for="item in items"
       :key="item.id"
-      class="grid grid-cols-4 items-center gap-3 min-w-0 w-full justify-between h-[3.25rem] ltr:pr-2 rtl:pl-2"
+      class="grid grid-cols-4 items-center gap-3 min-w-0 w-full justify-between h-13 ltr:pr-2 rtl:pl-2"
     >
       <button
         type="button"

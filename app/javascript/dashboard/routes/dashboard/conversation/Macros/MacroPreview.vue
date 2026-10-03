@@ -16,7 +16,7 @@ const resolvedMacro = computed(() => resolveMacroActions(props.macro));
 
 <template>
   <div
-    class="macro-preview absolute border border-n-weak max-h-[22.5rem] z-50 w-64 rounded-md bg-n-alpha-3 backdrop-blur-[100px] shadow-lg bottom-8 end-8 overflow-y-auto p-4 text-start"
+    class="macro-preview absolute border border-n-weak max-h-[22.5rem] z-50 w-64 rounded-md bg-n-alpha-3 backdrop-blur-panel shadow-lg bottom-8 end-8 overflow-y-auto p-4 text-start"
   >
     <h6 class="mb-4 text-sm text-n-slate-12">
       {{ macro.name }}

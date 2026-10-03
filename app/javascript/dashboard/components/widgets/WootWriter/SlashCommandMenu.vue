@@ -198,7 +198,7 @@ defineExpose({ handleKeyDown });
   <div
     v-if="hasItems"
     ref="listContainerRef"
-    class="bg-n-alpha-3 backdrop-blur-[100px] outline outline-1 outline-n-container absolute rounded-xl z-50 flex flex-col min-w-[10rem] shadow-lg p-2 overflow-auto max-h-[15rem]"
+    class="bg-n-alpha-3 backdrop-blur-panel outline outline-1 outline-n-container absolute rounded-xl z-50 flex flex-col min-w-[10rem] shadow-lg p-2 overflow-auto max-h-[15rem]"
     :style="menuStyle"
   >
     <button

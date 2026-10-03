@@ -72,7 +72,7 @@ const toggleConversationLayout = () => {
 
 <template>
   <div
-    class="flex items-center justify-between gap-2 px-3 h-[3.25rem]"
+    class="flex items-center justify-between gap-2 px-3 h-13"
     :class="{
       'border-b border-n-strong': hasAppliedFiltersOrActiveFolders,
     }"

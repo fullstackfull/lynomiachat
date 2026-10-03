@@ -16,7 +16,7 @@ defineProps({
   >
     <header
       v-if="title || $slots.actions"
-      class="flex h-[3.25rem] shrink-0 items-center justify-between gap-3 px-5 pt-5"
+      class="flex h-13 shrink-0 items-center justify-between gap-3 px-5 pt-5"
     >
       <h2 v-if="title" class="text-heading-3 text-n-slate-12">
         {{ title }}

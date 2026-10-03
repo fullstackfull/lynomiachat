@@ -45,7 +45,7 @@ const selectEmoji = emoji => {
 <template>
   <div
     role="dialog"
-    class="absolute z-20 flex flex-col overflow-hidden shadow-xl w-[22rem] bg-n-surface-2 backdrop-blur-[100px] rounded-2xl outline outline-1 outline-n-weak dark:outline-n-strong/50"
+    class="absolute z-20 flex flex-col overflow-hidden shadow-xl w-[22rem] bg-n-surface-2 backdrop-blur-panel rounded-2xl outline outline-1 outline-n-weak dark:outline-n-strong/50"
   >
     <div class="flex flex-col gap-1.5 pt-2">
       <div class="relative px-2">

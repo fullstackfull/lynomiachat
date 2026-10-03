@@ -116,6 +116,39 @@
         "NAME": "Welcome and collect the request",
         "DESCRIPTION": "Greets the customer, asks what they need, confirms it has been received, and hands the conversation to your team with the request in view."
       }
+    },
+    "AUTOMATION": {
+      "TITLE": "Start from an automation recipe",
+      "DESCRIPTION": "A recipe creates a normal automation rule, switched off, for you to read and change before it runs.",
+      "PROVENANCE": "Created from the {name} recipe (v{version}).",
+      "COMMERCE_NEW_ORDER_ROUTING": {
+        "NAME": "New order goes to a team",
+        "DESCRIPTION": "When a store records a new order, label the customer's conversation and assign it to the team that handles orders."
+      },
+      "COMMERCE_ORDER_SHIPPED_LABEL": {
+        "NAME": "Label a shipped order",
+        "DESCRIPTION": "When a store marks an order shipped, add a label to the customer's conversation so your team can see it at a glance."
+      },
+      "COMMERCE_REFUND_ESCALATION": {
+        "NAME": "Refund gets escalated",
+        "DESCRIPTION": "When an order is refunded, raise the conversation's priority and send it to the team that handles refunds."
+      },
+      "COMMERCE_EVENT_WEBHOOK": {
+        "NAME": "Send an order event to another system",
+        "DESCRIPTION": "When the order event you choose happens, call an address of yours with the existing webhook action."
+      },
+      "VIP_AUDIENCE_PRIORITY": {
+        "NAME": "Audience gets priority",
+        "DESCRIPTION": "When someone in a shared audience starts a conversation, set its priority and send it to your dedicated team."
+      },
+      "HIGH_VALUE_SPEND_ROUTING": {
+        "NAME": "High-value customer routing",
+        "DESCRIPTION": "When someone whose visible spend in one currency is above an amount you choose starts a conversation, route it to a team of your choice."
+      },
+      "ACTIVE_ORDER_ROUTING": {
+        "NAME": "Customer with an open order",
+        "DESCRIPTION": "When someone who has an order still in progress starts a conversation, send it to the team that can answer about it."
+      }
     }
   }
 }

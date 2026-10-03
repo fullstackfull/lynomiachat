@@ -39,6 +39,8 @@ export const actions = {
     try {
       const response = await AutomationAPI.create(automationObj);
       commit(types.ADD_AUTOMATION, response.data);
+      // The created rule, so a caller can open it for review (a rule created from a recipe starts disabled).
+      return response.data;
     } catch (error) {
       throw new Error(error);
     } finally {

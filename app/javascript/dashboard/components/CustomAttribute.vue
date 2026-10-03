@@ -232,6 +232,7 @@ export default {
           <NextButton
             v-if="showActions && hasValue"
             v-tooltip.left="$t('CUSTOM_ATTRIBUTES.ACTIONS.DELETE')"
+            :aria-label="$t('CUSTOM_ATTRIBUTES.ACTIONS.DELETE')"
             slate
             sm
             link
@@ -296,6 +297,7 @@ export default {
           <NextButton
             v-if="showActions && hasValue"
             v-tooltip="$t('CUSTOM_ATTRIBUTES.ACTIONS.COPY')"
+            :aria-label="$t('CUSTOM_ATTRIBUTES.ACTIONS.COPY')"
             xs
             slate
             ghost
@@ -306,6 +308,7 @@ export default {
           <NextButton
             v-if="showActions"
             v-tooltip.right="$t('CUSTOM_ATTRIBUTES.ACTIONS.EDIT')"
+            :aria-label="$t('CUSTOM_ATTRIBUTES.ACTIONS.EDIT')"
             xs
             slate
             ghost

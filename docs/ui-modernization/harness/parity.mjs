@@ -20,24 +20,59 @@ const jsonOut = jsonFlag === -1 ? null : process.argv[jsonFlag + 1];
 
 const read = async dir => JSON.parse(await readFile(join(dir, 'inventory.json'), 'utf8'));
 
-// A control's identity, most stable first. `data-test-id` is explicit and survives restyling; an
-// accessible name survives a change of element; an icon is the last resort for the unnamed controls
-// that are themselves a finding.
-const identify = control => {
-  if (control.testId) return `testId:${control.testId}`;
-  if (control.name) return `name:${control.tag}:${control.name.toLowerCase()}`;
-  if (control.icon) return `icon:${control.tag}:${control.icon}`;
-  return `anon:${control.tag}:${control.role}:${control.type}`;
-};
+// Matching a before-control to an after-control. Four passes, strongest signal first, each pass
+// consuming what it matches. One key alone is not enough: an unnamed icon button that *gains* an
+// accessible name — the single most common improvement in this phase — would look like a loss and an
+// unrelated addition if identity were a single string. Matching on the icon in a later pass keeps it
+// recognisably the same control.
+const KEYS = [
+  control => (control.testId ? `testId:${control.testId}` : null),
+  control => (control.name ? `name:${control.tag}:${control.name.toLowerCase()}` : null),
+  control => (control.icon ? `icon:${control.tag}:${control.icon}` : null),
+  control => `anon:${control.tag}:${control.role}:${control.type}`,
+];
 
-// Same control, counted: two identical delete buttons in two rows are two features, not one.
-const census = controls => {
-  const counts = new Map();
-  for (const control of controls) {
-    const key = identify(control);
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  return counts;
+// The label a human reads in the report: whatever identifies the control most clearly.
+const describe = control =>
+  KEYS.map(key => key(control)).find(Boolean) || `anon:${control.tag}`;
+
+// Returns { lost, added, renamed } for one capture. `renamed` is a control matched on a weaker key
+// than its name — which is how a control that just gained an accessible name shows up.
+const diffControls = (beforeControls, afterControls) => {
+  const beforeTaken = new Array(beforeControls.length).fill(false);
+  const afterTaken = new Array(afterControls.length).fill(false);
+  const renamed = [];
+
+  KEYS.forEach((keyOf, pass) => {
+    const afterBuckets = new Map();
+    afterControls.forEach((control, index) => {
+      if (afterTaken[index]) return;
+      const key = keyOf(control);
+      if (!key) return;
+      if (!afterBuckets.has(key)) afterBuckets.set(key, []);
+      afterBuckets.get(key).push(index);
+    });
+
+    beforeControls.forEach((control, index) => {
+      if (beforeTaken[index]) return;
+      const key = keyOf(control);
+      if (!key) return;
+      const candidates = afterBuckets.get(key);
+      if (!candidates || !candidates.length) return;
+      const match = candidates.shift();
+      beforeTaken[index] = true;
+      afterTaken[match] = true;
+      if (pass > 1 && !control.name && afterControls[match].name) {
+        renamed.push({ control: describe(control), name: afterControls[match].name });
+      }
+    });
+  });
+
+  return {
+    lost: beforeControls.filter((_, index) => !beforeTaken[index]),
+    added: afterControls.filter((_, index) => !afterTaken[index]),
+    renamed,
+  };
 };
 
 const EXCEPTIONS_PATH = join(import.meta.dirname, 'parity-exceptions.json');
@@ -53,7 +88,7 @@ const after = await read(afterDir);
 
 const failures = [];
 const notes = [];
-const report = { lost: [], hidden: [], moved: [], added: [], regressions: [], surfaces: {} };
+const report = { lost: [], moved: [], added: [], renamed: [], regressions: [], surfaces: {} };
 
 for (const [key, beforeCapture] of Object.entries(before)) {
   const afterCapture = after[key];
@@ -63,27 +98,22 @@ for (const [key, beforeCapture] of Object.entries(before)) {
     continue;
   }
 
-  const beforeVisible = census(beforeCapture.controls);
-  const afterVisible = census(afterCapture.controls);
+  const { lost, added, renamed } = diffControls(beforeCapture.controls, afterCapture.controls);
 
-  for (const [control, count] of beforeVisible) {
-    const afterCount = afterVisible.get(control) || 0;
-    if (afterCount >= count) continue;
-    const excuse = excused.get(`${beforeCapture.surface}|${control}`);
-    const entry = { capture: key, control, before: count, after: afterCount };
+  for (const control of lost) {
+    const label = describe(control);
+    const excuse = excused.get(`${beforeCapture.surface}|${label}`);
+    const entry = { capture: key, control: label };
     if (excuse) {
       report.moved.push({ ...entry, to: excuse.to, reason: excuse.reason });
-      notes.push(`${key}: ${control} ×${count - afterCount} → ${excuse.to} (${excuse.reason})`);
+      notes.push(`${key}: ${label} → ${excuse.to} (${excuse.reason})`);
     } else {
       report.lost.push(entry);
-      failures.push(`${key}: lost ${control} (${count} before, ${afterCount} after)`);
+      failures.push(`${key}: lost ${label}`);
     }
   }
-
-  for (const [control, count] of afterVisible) {
-    const beforeCount = beforeVisible.get(control) || 0;
-    if (count > beforeCount) report.added.push({ capture: key, control, before: beforeCount, after: count });
-  }
+  for (const control of added) report.added.push({ capture: key, control: describe(control) });
+  for (const entry of renamed) report.renamed.push({ capture: key, ...entry });
 
   // Quality gates: a redesign may not make any of these worse.
   const unnamedBefore = beforeCapture.controls.filter(c => c.unnamed).length;
@@ -121,7 +151,9 @@ if (jsonOut) await writeFile(jsonOut, JSON.stringify(report, null, 2));
 
 const total = Object.keys(before).length;
 console.log(`compared ${total} captures`);
-console.log(`  lost ${report.lost.length}   moved-with-reason ${report.moved.length}   added ${report.added.length}   regressions ${report.regressions.length}`);
+console.log(
+  `  lost ${report.lost.length}   moved-with-reason ${report.moved.length}   added ${report.added.length}   newly-named ${report.renamed.length}   regressions ${report.regressions.length}`
+);
 for (const note of notes) console.log(`  note  ${note}`);
 for (const failure of failures) console.log(`  FAIL  ${failure}`);
 

@@ -315,6 +315,10 @@
         "NOTE": "Each contact receives the campaign once, and recipients are selected again when it is sent.",
         "FAILED": "The number of matching contacts could not be loaded."
       }
+    },
+    "CARD": {
+      "EDIT": "Edit campaign",
+      "DELETE": "Delete campaign"
     }
   }
 }

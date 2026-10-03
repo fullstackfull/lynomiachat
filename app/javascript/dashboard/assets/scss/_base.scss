@@ -76,6 +76,14 @@ textarea {
   .field-error {
     @apply outline outline-1 outline-n-ruby-8 dark:outline-n-ruby-8 hover:outline-n-ruby-9 dark:hover:outline-n-ruby-9 disabled:outline-n-ruby-8 dark:disabled:outline-n-ruby-8;
   }
+
+  // The one keyboard-focus treatment. There were five competing conventions and two places that
+  // removed the indicator without replacing it; this is the recipe from `Switch`, which was the only
+  // correct one, expressed as an outline rather than a ring so the offset needs no background colour
+  // and it works on any surface.
+  .focus-ring {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-n-brand;
+  }
 }
 
 $form-input-selector: "input[type]:not([type='file']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not([type='submit']):not([type='reset']):not([type='color']):not([type='image']):not([type='hidden']):not(.reset-base):not(.no-margin)";

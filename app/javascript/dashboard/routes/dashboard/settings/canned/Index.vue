@@ -225,6 +225,7 @@ const tableHeaders = computed(() => {
                 <div class="flex gap-3 justify-end flex-shrink-0">
                   <Button
                     v-tooltip.top="$t('CANNED_MGMT.EDIT.BUTTON_TEXT')"
+                    :aria-label="$t('CANNED_MGMT.EDIT.BUTTON_TEXT')"
                     icon="i-woot-edit-pen"
                     slate
                     sm
@@ -232,6 +233,7 @@ const tableHeaders = computed(() => {
                   />
                   <Button
                     v-tooltip.top="$t('CANNED_MGMT.DELETE.BUTTON_TEXT')"
+                    :aria-label="$t('CANNED_MGMT.DELETE.BUTTON_TEXT')"
                     icon="i-woot-bin"
                     slate
                     sm

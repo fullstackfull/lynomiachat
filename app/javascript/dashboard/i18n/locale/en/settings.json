@@ -422,7 +422,8 @@
     "SECURITY": "Security",
     "CAPTAIN_AI": "Captain",
     "CONVERSATION_WORKFLOW": "Conversation Workflow",
-    "SHARED_AUDIENCE": "{name} · Shared"
+    "SHARED_AUDIENCE": "{name} · Shared",
+    "COMPOSE_CONVERSATION": "New conversation"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

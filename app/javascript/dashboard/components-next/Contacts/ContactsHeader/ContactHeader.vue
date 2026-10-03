@@ -76,6 +76,11 @@ const emit = defineEmits([
                 :icon="
                   isSegmentsView ? 'i-lucide-pen-line' : 'i-lucide-list-filter'
                 "
+                :aria-label="
+                  isSegmentsView
+                    ? $t('CONTACTS_LAYOUT.FILTER.EDIT_SEGMENT')
+                    : $t('CONTACTS_LAYOUT.HEADER.ACTIONS.BUTTONS.FILTER')
+                "
                 color="slate"
                 size="sm"
                 class="relative w-8"
@@ -97,6 +102,11 @@ const emit = defineEmits([
                 !isActiveView
               "
               icon="i-lucide-save"
+              :aria-label="
+                $t(
+                  'CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.CONFIRM'
+                )
+              "
               color="slate"
               size="sm"
               variant="ghost"
@@ -110,6 +120,9 @@ const emit = defineEmits([
                 !isActiveView
               "
               icon="i-lucide-trash"
+              :aria-label="
+                $t('CONTACTS_LAYOUT.HEADER.ACTIONS.BUTTONS.DELETE_SEGMENT')
+              "
               color="slate"
               size="sm"
               variant="ghost"

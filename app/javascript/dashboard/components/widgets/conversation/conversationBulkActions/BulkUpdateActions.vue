@@ -79,6 +79,7 @@ const handleUpdate = item => {
   <div ref="containerRef" class="relative">
     <Button
       v-tooltip="$t('BULK_ACTION.UPDATE.CHANGE_STATUS')"
+      :aria-label="$t('BULK_ACTION.UPDATE.CHANGE_STATUS')"
       icon="i-lucide-circle-fading-arrow-up"
       slate
       xs

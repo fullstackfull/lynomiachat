@@ -169,6 +169,7 @@ export default {
         </div>
         <NextButton
           v-tooltip.left="$t('CONVERSATION_PARTICIPANTS.ADD_PARTICIPANTS')"
+          :aria-label="$t('CONVERSATION_PARTICIPANTS.ADD_PARTICIPANTS')"
           slate
           ghost
           sm

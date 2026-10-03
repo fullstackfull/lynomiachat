@@ -138,6 +138,7 @@ export default {
           />
           <NextButton
             v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.TOGGLE')"
+            :aria-label="$t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.TOGGLE')"
             type="button"
             :icon="secretVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
             slate
@@ -146,6 +147,7 @@ export default {
           />
           <NextButton
             v-tooltip.top="$t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.COPY')"
+            :aria-label="$t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.COPY')"
             type="button"
             icon="i-lucide-copy"
             slate

@@ -46,6 +46,11 @@ const toggleExpand = () => {
               ? t('CONVERSATION.REPLYBOX.QUOTED_REPLY.COLLAPSE')
               : t('CONVERSATION.REPLYBOX.QUOTED_REPLY.EXPAND')
           "
+          :aria-label="
+            isExpanded
+              ? t('CONVERSATION.REPLYBOX.QUOTED_REPLY.COLLAPSE')
+              : t('CONVERSATION.REPLYBOX.QUOTED_REPLY.EXPAND')
+          "
           ghost
           slate
           xs
@@ -54,6 +59,7 @@ const toggleExpand = () => {
         />
         <NextButton
           v-tooltip="t('CONVERSATION.REPLYBOX.QUOTED_REPLY.REMOVE_PREVIEW')"
+          :aria-label="t('CONVERSATION.REPLYBOX.QUOTED_REPLY.REMOVE_PREVIEW')"
           ghost
           slate
           xs

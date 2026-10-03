@@ -358,6 +358,7 @@ onBeforeUnmount(() => {
           </div>
           <Button
             v-tooltip.top="$t('DATA_IMPORTS.TABLE.VIEW')"
+            :aria-label="$t('DATA_IMPORTS.TABLE.VIEW')"
             icon="i-lucide-eye"
             slate
             sm

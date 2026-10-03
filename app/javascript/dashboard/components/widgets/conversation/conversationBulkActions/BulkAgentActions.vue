@@ -114,6 +114,7 @@ const handleToggleDropdown = () => {
   <div ref="containerRef" class="relative">
     <Button
       v-tooltip="$t('BULK_ACTION.ASSIGN_AGENT_TOOLTIP')"
+      :aria-label="$t('BULK_ACTION.ASSIGN_AGENT_TOOLTIP')"
       icon="i-lucide-user-round-check"
       slate
       xs

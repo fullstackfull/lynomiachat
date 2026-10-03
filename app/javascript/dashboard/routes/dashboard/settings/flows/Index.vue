@@ -266,6 +266,7 @@ onMounted(load);
                 <div class="flex justify-end gap-3">
                   <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.OPEN')"
+                    :aria-label="t('FLOW_BUILDER.LIST.OPEN')"
                     icon="i-lucide-workflow"
                     slate
                     sm
@@ -273,6 +274,7 @@ onMounted(load);
                   />
                   <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.DUPLICATE')"
+                    :aria-label="t('FLOW_BUILDER.LIST.DUPLICATE')"
                     icon="i-lucide-copy"
                     slate
                     sm
@@ -281,6 +283,7 @@ onMounted(load);
                   />
                   <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.DELETE')"
+                    :aria-label="t('FLOW_BUILDER.LIST.DELETE')"
                     icon="i-woot-bin"
                     slate
                     sm

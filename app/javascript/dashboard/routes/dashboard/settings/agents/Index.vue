@@ -257,6 +257,7 @@ const confirmDeletion = () => {
             <Button
               v-if="showEditAction(agent)"
               v-tooltip.top="$t('AGENT_MGMT.EDIT.BUTTON_TEXT')"
+              :aria-label="$t('AGENT_MGMT.EDIT.BUTTON_TEXT')"
               icon="i-woot-edit-pen"
               slate
               sm
@@ -265,6 +266,7 @@ const confirmDeletion = () => {
             <Button
               v-if="showDeleteAction(agent)"
               v-tooltip.top="$t('AGENT_MGMT.DELETE.BUTTON_TEXT')"
+              :aria-label="$t('AGENT_MGMT.DELETE.BUTTON_TEXT')"
               icon="i-woot-bin"
               slate
               sm

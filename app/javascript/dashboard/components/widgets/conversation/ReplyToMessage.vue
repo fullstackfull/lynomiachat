@@ -28,6 +28,7 @@ const emit = defineEmits(['dismiss']);
     </div>
     <Button
       v-tooltip="$t('CONVERSATION.REPLYBOX.DISMISS_REPLY')"
+      :aria-label="$t('CONVERSATION.REPLYBOX.DISMISS_REPLY')"
       ghost
       xs
       slate

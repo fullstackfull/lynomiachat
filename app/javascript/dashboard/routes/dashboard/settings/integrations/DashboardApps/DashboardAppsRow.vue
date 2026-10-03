@@ -39,6 +39,9 @@ defineEmits(['edit', 'delete']);
             v-tooltip.top="
               $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EDIT_TOOLTIP')
             "
+            :aria-label="
+              $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EDIT_TOOLTIP')
+            "
             icon="i-woot-edit-pen"
             slate
             sm
@@ -46,6 +49,9 @@ defineEmits(['edit', 'delete']);
           />
           <Button
             v-tooltip.top="
+              $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.DELETE_TOOLTIP')
+            "
+            :aria-label="
               $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.DELETE_TOOLTIP')
             "
             icon="i-woot-bin"

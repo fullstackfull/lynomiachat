@@ -98,6 +98,7 @@ const restart = () => {
       </h2>
       <NextButton
         v-tooltip.top="t('FLOW_BUILDER.TEST.RESTART')"
+        :aria-label="t('FLOW_BUILDER.TEST.RESTART')"
         icon="i-lucide-rotate-ccw"
         slate
         ghost

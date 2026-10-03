@@ -150,7 +150,7 @@ onMounted(() => {
         :placeholder="
           searchPlaceholder || t('DROPDOWN_MENU.SEARCH_PLACEHOLDER')
         "
-        class="reset-base w-full h-8 py-2 ltr:pl-10 ltr:pr-2 rtl:pl-2 rtl:pr-10 text-sm focus:outline-none border-none rounded-lg bg-n-alpha-black2 dark:bg-n-solid-1 text-n-slate-12"
+        class="focus-ring reset-base w-full h-8 py-2 ltr:pl-10 ltr:pr-2 rtl:pl-2 rtl:pr-10 text-sm focus:outline-none border-none rounded-lg bg-n-alpha-black2 dark:bg-n-solid-1 text-n-slate-12"
         @input="handleSearchInput"
       />
     </div>

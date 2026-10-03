@@ -1,4 +1,6 @@
 <script setup>
+import { computed, useAttrs } from 'vue';
+
 defineProps({
   indeterminate: {
     type: Boolean,
@@ -12,6 +14,11 @@ defineProps({
 
 const emit = defineEmits(['change']);
 
+// Attributes belong on the input, not the wrapper — without this a caller's `aria-label` lands on a
+// `div` and the checkbox has no accessible name. `class` is the exception: call sites use it to
+// position the whole control, so it stays on the wrapper.
+defineOptions({ inheritAttrs: false });
+
 const modelValue = defineModel('modelValue', {
   type: Boolean,
   default: false,
@@ -21,16 +28,23 @@ const handleChange = event => {
   modelValue.value = event.target.checked;
   emit('change', event);
 };
+
+const attrs = useAttrs();
+const inputAttrs = computed(() => {
+  const { class: _wrapperClass, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
-  <div class="relative w-4 h-4">
+  <div class="relative w-4 h-4" :class="attrs.class">
     <input
+      v-bind="inputAttrs"
       :checked="modelValue"
       :indeterminate="indeterminate"
       type="checkbox"
       :disabled="disabled"
-      class="peer absolute inset-0 z-10 h-4 w-4 disabled:opacity-50 appearance-none rounded border border-n-slate-6 ring-transparent transition-all duration-200 checked:border-n-brand checked:bg-n-brand dark:border-gray-600 dark:checked:border-n-brand indeterminate:border-n-brand indeterminate:bg-n-brand hover:enabled:bg-n-blue-border cursor-pointer"
+      class="focus-ring peer absolute inset-0 z-10 h-4 w-4 disabled:opacity-50 appearance-none rounded border border-n-slate-6 transition-all duration-200 checked:border-n-brand checked:bg-n-brand dark:border-n-slate-7 dark:checked:border-n-brand indeterminate:border-n-brand indeterminate:bg-n-brand hover:enabled:bg-n-blue-border cursor-pointer"
       @change="handleChange"
     />
     <!-- Checkmark SVG -->

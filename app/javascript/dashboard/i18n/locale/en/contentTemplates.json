@@ -47,6 +47,7 @@
     "FORM": {
       "BACK_BUTTON": "Back",
       "SEND_MESSAGE_BUTTON": "Send Message"
-    }
+    },
+    "TRIGGER_LABEL": "Content templates"
   }
 }

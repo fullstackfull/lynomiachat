@@ -81,6 +81,7 @@ const handleDismiss = () => {
   <div ref="containerRef" class="relative">
     <Button
       v-tooltip="$t('BULK_ACTION.ASSIGN_TEAM_TOOLTIP')"
+      :aria-label="$t('BULK_ACTION.ASSIGN_TEAM_TOOLTIP')"
       icon="i-lucide-users-round"
       slate
       xs

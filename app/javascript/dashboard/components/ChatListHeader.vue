@@ -113,6 +113,7 @@ const toggleConversationLayout = () => {
         <div class="relative">
           <NextButton
             v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.ADD.SAVE_BUTTON')"
+            :aria-label="$t('FILTER.CUSTOM_VIEWS.ADD.SAVE_BUTTON')"
             icon="i-lucide-save"
             slate
             xs
@@ -131,6 +132,7 @@ const toggleConversationLayout = () => {
           <NextButton
             id="toggleConversationFilterButton"
             v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.EDIT.EDIT_BUTTON')"
+            :aria-label="$t('FILTER.CUSTOM_VIEWS.EDIT.EDIT_BUTTON')"
             icon="i-lucide-pen-line"
             slate
             xs
@@ -146,6 +148,7 @@ const toggleConversationLayout = () => {
         <NextButton
           id="toggleConversationFilterButton"
           v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.DELETE.DELETE_BUTTON')"
+          :aria-label="$t('FILTER.CUSTOM_VIEWS.DELETE.DELETE_BUTTON')"
           icon="i-lucide-trash-2"
           ruby
           xs
@@ -157,6 +160,7 @@ const toggleConversationLayout = () => {
         <NextButton
           id="toggleConversationFilterButton"
           v-tooltip.right="$t('FILTER.TOOLTIP_LABEL')"
+          :aria-label="$t('FILTER.TOOLTIP_LABEL')"
           icon="i-lucide-list-filter"
           slate
           xs

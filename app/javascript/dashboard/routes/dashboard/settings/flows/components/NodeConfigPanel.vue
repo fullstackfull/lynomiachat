@@ -143,6 +143,7 @@ const attributeModel = computed(
       <NextButton
         v-if="type !== 'start'"
         v-tooltip.top="t('FLOW_BUILDER.CONFIG.DUPLICATE')"
+        :aria-label="t('FLOW_BUILDER.CONFIG.DUPLICATE')"
         icon="i-lucide-copy"
         slate
         ghost
@@ -152,6 +153,7 @@ const attributeModel = computed(
       <NextButton
         v-if="type !== 'start'"
         v-tooltip.top="t('FLOW_BUILDER.CONFIG.DELETE')"
+        :aria-label="t('FLOW_BUILDER.CONFIG.DELETE')"
         icon="i-lucide-trash-2"
         ruby
         ghost

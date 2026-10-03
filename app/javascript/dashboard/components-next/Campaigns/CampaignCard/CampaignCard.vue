@@ -135,6 +135,7 @@ const inboxIcon = computed(() => {
       <Button
         v-if="showAnalytics"
         v-tooltip.top="t('CAMPAIGN.WHATSAPP.CARD.ANALYTICS')"
+        :aria-label="t('CAMPAIGN.WHATSAPP.CARD.ANALYTICS')"
         variant="faded"
         size="sm"
         color="slate"
@@ -148,6 +149,7 @@ const inboxIcon = computed(() => {
         size="sm"
         color="slate"
         icon="i-lucide-sliders-vertical"
+        :aria-label="$t('CAMPAIGN.CARD.EDIT')"
         @click="emit('edit')"
       />
       <Button
@@ -155,6 +157,7 @@ const inboxIcon = computed(() => {
         color="ruby"
         size="sm"
         icon="i-lucide-trash"
+        :aria-label="$t('CAMPAIGN.CARD.DELETE')"
         @click="emit('delete')"
       />
     </div>

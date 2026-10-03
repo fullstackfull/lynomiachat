@@ -130,6 +130,7 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
                     v-tooltip.top="
                       $t('INTEGRATION_APPS.LIST.DELETE.BUTTON_TEXT')
                     "
+                    :aria-label="$t('INTEGRATION_APPS.LIST.DELETE.BUTTON_TEXT')"
                     icon="i-woot-bin"
                     slate
                     sm

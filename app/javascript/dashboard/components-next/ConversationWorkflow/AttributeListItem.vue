@@ -78,12 +78,14 @@ const attributeIcon = computed(() => {
       <div class="flex gap-3 justify-end flex-shrink-0">
         <Button
           icon="i-woot-edit-pen"
+          :aria-label="$t('ATTRIBUTES_MGMT.LIST.BUTTONS.EDIT')"
           slate
           sm
           @click="emit('edit', attribute)"
         />
         <Button
           icon="i-woot-bin"
+          :aria-label="$t('ATTRIBUTES_MGMT.LIST.BUTTONS.DELETE')"
           slate
           sm
           class="hover:enabled:text-n-ruby-11 hover:enabled:bg-n-ruby-2"

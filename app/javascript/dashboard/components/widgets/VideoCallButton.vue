@@ -62,6 +62,7 @@ export default {
     v-tooltip.top-end="
       $t('INTEGRATION_SETTINGS.DYTE.START_VIDEO_CALL_HELP_TEXT')
     "
+    :aria-label="$t('INTEGRATION_SETTINGS.DYTE.START_VIDEO_CALL_HELP_TEXT')"
     icon="i-ph-video-camera"
     slate
     faded

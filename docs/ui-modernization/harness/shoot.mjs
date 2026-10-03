@@ -90,6 +90,10 @@ const COLLECT = () => {
     return box.width > 0 && box.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
   };
 
+  // Deliberately out of the accessibility tree — e.g. the decorative button inside a named link, which
+  // would otherwise be a second, nameless control for exactly the same action.
+  const hiddenFromAT = node => !!node.closest('[aria-hidden="true"]');
+
   return [...document.querySelectorAll(SELECTOR)].map(node => ({
     tag: node.tagName.toLowerCase(),
     role: node.getAttribute('role') || '',
@@ -99,8 +103,13 @@ const COLLECT = () => {
     type: node.getAttribute('type') || '',
     disabled: node.disabled === true || node.getAttribute('aria-disabled') === 'true',
     visible: visible(node),
+    hiddenFromAT: hiddenFromAT(node),
     // A control with neither a name nor a tooltip is unusable by a screen reader; the audit counts these.
-    unnamed: !nameOf(node) && !node.getAttribute('aria-label') && !node.getAttribute('title'),
+    unnamed:
+      !hiddenFromAT(node) &&
+      !nameOf(node) &&
+      !node.getAttribute('aria-label') &&
+      !node.getAttribute('title'),
   }));
 };
 

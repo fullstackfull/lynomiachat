@@ -80,6 +80,7 @@ const openDatePicker = () => {
     <NextButton
       v-if="showMonthNavigation"
       v-tooltip.top="$t('DATE_PICKER.PREVIOUS_PERIOD')"
+      :aria-label="$t('DATE_PICKER.PREVIOUS_PERIOD')"
       slate
       faded
       sm
@@ -90,6 +91,7 @@ const openDatePicker = () => {
     <NextButton
       v-if="showMonthNavigation"
       v-tooltip.top="$t('DATE_PICKER.NEXT_PERIOD')"
+      :aria-label="$t('DATE_PICKER.NEXT_PERIOD')"
       slate
       faded
       sm

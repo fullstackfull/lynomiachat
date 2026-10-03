@@ -149,23 +149,27 @@ const confirmPlaceHolderText = computed(() =>
           </div>
           <div class="flex justify-end gap-3">
             <router-link
+              v-tooltip.top="$t('TEAMS_SETTINGS.LIST.EDIT_TEAM')"
               :to="{
                 name: 'settings_teams_edit',
                 params: { teamId: team.id },
               }"
+              :aria-label="$t('TEAMS_SETTINGS.LIST.EDIT_TEAM')"
             >
               <Button
                 v-if="isAdmin"
-                v-tooltip.top="$t('TEAMS_SETTINGS.LIST.EDIT_TEAM')"
                 icon="i-woot-settings"
                 slate
                 sm
+                tabindex="-1"
+                aria-hidden="true"
               />
             </router-link>
 
             <Button
               v-if="isAdmin"
               v-tooltip.top="$t('TEAMS_SETTINGS.DELETE.BUTTON_TEXT')"
+              :aria-label="$t('TEAMS_SETTINGS.DELETE.BUTTON_TEXT')"
               icon="i-woot-bin"
               slate
               sm

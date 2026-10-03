@@ -96,6 +96,7 @@ const handleOrderChange = value => {
   <div class="relative">
     <Button
       icon="i-lucide-arrow-down-up"
+      :aria-label="$t('CONTACTS_LAYOUT.HEADER.ACTIONS.SORT_BY.LABEL')"
       color="slate"
       size="sm"
       variant="ghost"

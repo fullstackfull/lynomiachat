@@ -22,10 +22,12 @@ import {
   ICON_REPEAT,
   ICON_SMILE,
   ICON_SQUARE_USER,
+  ICON_STORE,
   ICON_TAGS,
   ICON_TOY_BRICK,
   ICON_USERS,
   ICON_USER_PEN,
+  ICON_WORKFLOW,
 } from 'dashboard/helper/commandbar/icons';
 import { isUpgradePageBypassRoute } from 'dashboard/helper/routeHelpers';
 
@@ -189,6 +191,21 @@ const GO_TO_COMMANDS = [
     section: SECTION_SETTINGS,
     icon: ICON_REPEAT,
     routeName: 'automation_list',
+  },
+  // Lynomia's own settings pages: gated by their routes' feature flag and permissions like every entry here.
+  {
+    id: 'open_flow_builder_settings',
+    title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_FLOW_BUILDER',
+    section: SECTION_SETTINGS,
+    icon: ICON_WORKFLOW,
+    routeName: 'settings_flows_index',
+  },
+  {
+    id: 'open_commerce_settings',
+    title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_COMMERCE',
+    section: SECTION_SETTINGS,
+    icon: ICON_STORE,
+    routeName: 'settings_commerce_index',
   },
   {
     id: 'open_macro_settings',

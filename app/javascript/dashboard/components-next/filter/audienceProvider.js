@@ -234,7 +234,26 @@ export function useAudienceFilterTypes() {
       : 0
   );
 
-  return { audienceFilterTypes, loadAudienceFields, unreadContacts };
+  // The account's own Commerce options, for anything that needs them raw rather than as filter fields (the audience
+  // presets ask which store and which currency). Same single cached fetch; nothing extra is requested.
+  const commerceStores = computed(() =>
+    commerceFields.value?.accountId === accountId.value
+      ? commerceFields.value.stores
+      : []
+  );
+  const commerceCurrencies = computed(() =>
+    commerceFields.value?.accountId === accountId.value
+      ? commerceFields.value.currencies
+      : []
+  );
+
+  return {
+    audienceFilterTypes,
+    loadAudienceFields,
+    unreadContacts,
+    commerceStores,
+    commerceCurrencies,
+  };
 }
 
 /**

@@ -80,7 +80,7 @@ export default {
 
 <template>
   <div
-    class="flex items-center justify-between w-full gap-1 h-[3.25rem] ltr:pl-4 rtl:pr-4 ltr:pr-3 rtl:pl-3"
+    class="flex items-center justify-between w-full gap-1 h-13 ltr:pl-4 rtl:pr-4 ltr:pr-3 rtl:pl-3"
   >
     <div class="flex items-center gap-2 min-w-0 flex-1">
       <h1 class="text-heading-2 truncate text-n-slate-12 min-w-0">

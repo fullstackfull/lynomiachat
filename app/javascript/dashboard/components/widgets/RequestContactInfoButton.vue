@@ -77,6 +77,7 @@ const requestContactInfo = async () => {
   <NextButton
     v-if="showButton"
     v-tooltip.top-end="tooltip"
+    :aria-label="tooltip"
     icon="i-ph-address-book"
     slate
     faded

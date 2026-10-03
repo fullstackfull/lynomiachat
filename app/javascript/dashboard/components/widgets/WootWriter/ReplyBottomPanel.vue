@@ -288,6 +288,7 @@ export default {
       <NextButton
         v-if="!isEditorDisabled"
         v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_EMOJI_ICON')"
+        :aria-label="$t('CONVERSATION.REPLYBOX.TIP_EMOJI_ICON')"
         icon="i-ph-smiley-sticker"
         slate
         faded
@@ -313,6 +314,7 @@ export default {
         <NextButton
           v-if="showAttachButton"
           v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_ATTACH_ICON')"
+          :aria-label="$t('CONVERSATION.REPLYBOX.TIP_ATTACH_ICON')"
           icon="i-ph-paperclip"
           slate
           faded
@@ -322,6 +324,7 @@ export default {
       <NextButton
         v-if="showAudioRecorderButton"
         v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_AUDIORECORDER_ICON')"
+        :aria-label="$t('CONVERSATION.REPLYBOX.TIP_AUDIORECORDER_ICON')"
         :icon="!isRecordingAudio ? 'i-ph-microphone' : 'i-ph-microphone-slash'"
         slate
         faded
@@ -340,6 +343,7 @@ export default {
       <NextButton
         v-if="showMessageSignatureButton"
         v-tooltip.top-end="signatureToggleTooltip"
+        :aria-label="signatureToggleTooltip"
         icon="i-ph-signature"
         slate
         faded
@@ -349,6 +353,7 @@ export default {
       <NextButton
         v-if="showQuotedReplyToggle"
         v-tooltip.top-end="quotedReplyToggleTooltip"
+        :aria-label="quotedReplyToggleTooltip"
         icon="i-ph-quotes"
         :variant="quotedReplyEnabled ? 'solid' : 'faded'"
         color="slate"
@@ -359,6 +364,7 @@ export default {
       <NextButton
         v-if="enableWhatsAppTemplates"
         v-tooltip.top-end="$t('CONVERSATION.FOOTER.WHATSAPP_TEMPLATES')"
+        :aria-label="$t('CONVERSATION.FOOTER.WHATSAPP_TEMPLATES')"
         icon="i-ph-whatsapp-logo"
         slate
         faded
@@ -371,7 +377,8 @@ export default {
       />
       <NextButton
         v-if="enableContentTemplates"
-        v-tooltip.top-end="'Content Templates'"
+        v-tooltip.top-end="$t('CONTENT_TEMPLATES.TRIGGER_LABEL')"
+        :aria-label="$t('CONTENT_TEMPLATES.TRIGGER_LABEL')"
         icon="i-ph-whatsapp-logo"
         slate
         faded
@@ -400,6 +407,7 @@ export default {
       <NextButton
         v-if="enableInsertArticleInReply"
         v-tooltip.top-end="$t('HELP_CENTER.ARTICLE_SEARCH.OPEN_ARTICLE_SEARCH')"
+        :aria-label="$t('HELP_CENTER.ARTICLE_SEARCH.OPEN_ARTICLE_SEARCH')"
         icon="i-ph-article-ny-times"
         slate
         faded

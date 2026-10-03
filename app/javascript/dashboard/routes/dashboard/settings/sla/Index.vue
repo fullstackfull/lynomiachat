@@ -285,6 +285,7 @@ export default {
                 <div class="flex justify-end">
                   <NextButton
                     v-tooltip.top="$t('SLA.FORM.DELETE')"
+                    :aria-label="$t('SLA.FORM.DELETE')"
                     icon="i-woot-bin"
                     slate
                     sm

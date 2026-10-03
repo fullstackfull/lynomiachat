@@ -56,6 +56,7 @@ const getFormattedPermissions = role => {
         <div class="flex gap-3 justify-end flex-shrink-0">
           <Button
             v-tooltip.top="$t('CUSTOM_ROLE.EDIT.BUTTON_TEXT')"
+            :aria-label="$t('CUSTOM_ROLE.EDIT.BUTTON_TEXT')"
             icon="i-woot-edit-pen"
             slate
             sm
@@ -63,6 +64,7 @@ const getFormattedPermissions = role => {
           />
           <Button
             v-tooltip.top="$t('CUSTOM_ROLE.DELETE.BUTTON_TEXT')"
+            :aria-label="$t('CUSTOM_ROLE.DELETE.BUTTON_TEXT')"
             icon="i-woot-bin"
             slate
             sm

@@ -94,18 +94,22 @@ const editTooltip = computed(() =>
       <BaseTableCell align="end" class="w-24">
         <div class="flex gap-3 justify-end flex-shrink-0">
           <router-link
+            v-tooltip.top="editTooltip"
             :to="{ name: 'macros_edit', params: { macroId: macro.id } }"
+            :aria-label="editTooltip"
           >
             <Button
-              v-tooltip.top="editTooltip"
               icon="i-woot-edit-pen"
               slate
               sm
+              tabindex="-1"
+              aria-hidden="true"
             />
           </router-link>
           <Button
             v-if="canManageMacro"
             v-tooltip.top="$t('MACROS.DELETE.TOOLTIP')"
+            :aria-label="$t('MACROS.DELETE.TOOLTIP')"
             icon="i-woot-bin"
             slate
             sm

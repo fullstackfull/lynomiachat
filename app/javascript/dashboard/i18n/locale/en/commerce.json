@@ -48,7 +48,10 @@
         "NUMBER": "Your order #{orderNumber} is on its way. Tracking number: {number}."
       },
       "CANCEL": "Cancel",
-      "ORDER_NUMBER": "#{number}"
+      "ORDER_NUMBER": "#{number}",
+      "COPY_NUMBER": "Copy the order number",
+      "NUMBER_COPIED": "Order number copied",
+      "NUMBER_COPY_FAILED": "Couldn\u2019t copy the order number."
     },
     "OVERVIEW": {
       "TAB": "Overview",

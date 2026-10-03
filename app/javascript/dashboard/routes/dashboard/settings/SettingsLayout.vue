@@ -28,12 +28,15 @@ defineProps({
       <slot v-if="isLoading" name="loading">
         <woot-loading-state :message="loadingMessage" />
       </slot>
-      <p
-        v-else-if="noRecordsFound"
-        class="flex-1 py-20 text-n-slate-12 flex items-center justify-center text-base"
-      >
-        {{ noRecordsMessage }}
-      </p>
+      <!-- `emptyState` is a slot, not a prop, so a page can offer the action that fills the list
+           instead of only stating that it is empty. The message stays the default. -->
+      <slot v-else-if="noRecordsFound" name="emptyState">
+        <p
+          class="flex items-center justify-center flex-1 py-20 text-center text-body-para text-n-slate-11"
+        >
+          {{ noRecordsMessage }}
+        </p>
+      </slot>
       <slot v-else name="body" />
       <!-- Do not delete the slot below. It is required to render anything that is not defined in the above slots. -->
       <slot />

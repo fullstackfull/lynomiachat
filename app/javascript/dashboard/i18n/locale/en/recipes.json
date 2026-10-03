@@ -1,0 +1,153 @@
+{
+  "RECIPES": {
+    "USE": "Use this",
+    "CREATE": "Create",
+    "BACK": "Choose a different one",
+    "FROM_SCRATCH": "Start from scratch instead",
+    "REQUIRES": "Needs {what} first",
+    "NO_INPUTS": "Nothing to choose — this one is ready to create.",
+    "CREATED": "Created. Review it before you turn it on.",
+    "CREATE_ERROR": "Couldn’t create it. Check the values and try again.",
+    "LANGUAGES": {
+      "AR": "Arabic",
+      "EN": "English",
+      "BOTH": "Arabic and English"
+    },
+    "ERRORS": {
+      "REQUIRED": "Choose a value",
+      "OUT_OF_RANGE": "Enter a number between {min} and {max}",
+      "INVALID_URL": "Enter an http or https address"
+    },
+    "REQUIREMENTS": {
+      "CONTACT_FILTER": "contact filtering",
+      "COMMERCE": "Commerce",
+      "COMMERCE_STORE": "a connected store",
+      "COMMERCE_CURRENCY": "an order in at least one currency",
+      "FLOW_BUILDER": "Flow Builder",
+      "AUTOMATIONS": "Automation",
+      "SHARED_AUDIENCE": "a shared audience",
+      "TEAM": "a team",
+      "LABEL": "a label",
+      "WEBHOOKS": "API and webhooks"
+    },
+    "INPUTS": {
+      "CHOOSE": "Choose",
+      "OPTIONAL": "(optional)",
+      "NO_LABELS": "This account has no labels yet.",
+      "URL_PLACEHOLDER": "https://example.com/hook",
+      "CURRENCY": "Currency",
+      "AMOUNT": "Minimum visible spend",
+      "ORDERS": "More than this many visible orders",
+      "DAYS": "Bought within the last … days",
+      "STORE": "Store",
+      "TEAM": "Team",
+      "VIP_TEAM": "Team for this audience",
+      "STANDARD_TEAM": "Team for everyone else",
+      "ARABIC_TEAM": "Team for Arabic",
+      "ENGLISH_TEAM": "Team for English",
+      "ORDERS_TEAM": "Team for order questions",
+      "PRODUCTS_TEAM": "Team for product questions",
+      "OTHER_TEAM": "Team for anything else",
+      "LABELS": "Labels",
+      "AUDIENCE": "Shared audience",
+      "PRIORITY": "Priority",
+      "LANGUAGE": "Language of the bot's messages",
+      "EVENT": "Order event",
+      "URL": "Address to call"
+    },
+    "AUDIENCE": {
+      "TITLE": "Start from an audience preset",
+      "DESCRIPTION": "A preset saves a normal audience: its conditions stay editable and its members are worked out fresh every time it is opened.",
+      "HIGH_VALUE_BUYERS": {
+        "NAME": "High-value buyers",
+        "DESCRIPTION": "Contacts whose visible spend in one currency is above an amount you choose. Spend is never converted between currencies."
+      },
+      "REPEAT_BUYERS": {
+        "NAME": "Repeat buyers",
+        "DESCRIPTION": "Contacts with more than a given number of visible orders."
+      },
+      "RECENT_BUYERS": {
+        "NAME": "Recent buyers",
+        "DESCRIPTION": "Contacts whose last visible purchase was within the last few days."
+      },
+      "CUSTOMERS_WITH_ACTIVE_ORDER": {
+        "NAME": "Customers with an open order",
+        "DESCRIPTION": "Contacts who have at least one order that is not finished yet."
+      },
+      "CUSTOMERS_WITH_SHIPPED_ORDER": {
+        "NAME": "Customers with a shipped order",
+        "DESCRIPTION": "Contacts with an order the store has marked shipped."
+      },
+      "STORE_CUSTOMERS": {
+        "NAME": "Customers of one store",
+        "DESCRIPTION": "Contacts linked to a customer in the store you choose."
+      },
+      "LINKED_COMMERCE_CUSTOMERS": {
+        "NAME": "All linked customers",
+        "DESCRIPTION": "Contacts linked to a customer in any connected store."
+      }
+    },
+    "FLOW": {
+      "TITLE": "Start from a flow template",
+      "DESCRIPTION": "A template creates a normal flow draft: every node, message and branch is yours to edit, and nothing reaches a customer until you publish it.",
+      "PROVENANCE": "Created from the {name} template (v{version}).",
+      "COMMERCE_ORDER_TRACKING": {
+        "NAME": "Order tracking bot",
+        "DESCRIPTION": "Offers to track an order, finds the customer's own latest order, asks for an order number when there is none, and hands anything else to your team."
+      },
+      "COMMERCE_AFTER_SALES": {
+        "NAME": "Order issue intake",
+        "DESCRIPTION": "Asks for the order number, finds the order, asks what went wrong, and hands the conversation over with the answer already noted."
+      },
+      "SUPPORT_DEPARTMENT_ROUTING": {
+        "NAME": "Department routing bot",
+        "DESCRIPTION": "Asks which topic the customer needs, acknowledges the choice, and hands the conversation to the team you mapped to it."
+      },
+      "VIP_PRIORITY_ROUTING": {
+        "NAME": "VIP priority routing",
+        "DESCRIPTION": "Checks whether the contact is in a shared audience, then sends them to your dedicated team or to the standard one."
+      },
+      "BILINGUAL_WELCOME": {
+        "NAME": "Arabic or English welcome",
+        "DESCRIPTION": "Asks which language the customer prefers, replies in that language, and routes them to the team that speaks it. No language detection."
+      },
+      "WHATSAPP_WELCOME_MENU": {
+        "NAME": "Welcome and collect the request",
+        "DESCRIPTION": "Greets the customer, asks what they need, confirms it has been received, and hands the conversation to your team with the request in view."
+      }
+    },
+    "AUTOMATION": {
+      "TITLE": "Start from an automation recipe",
+      "DESCRIPTION": "A recipe creates a normal automation rule, switched off, for you to read and change before it runs.",
+      "PROVENANCE": "Created from the {name} recipe (v{version}).",
+      "COMMERCE_NEW_ORDER_ROUTING": {
+        "NAME": "New order goes to a team",
+        "DESCRIPTION": "When a store records a new order, label the customer's conversation and assign it to the team that handles orders."
+      },
+      "COMMERCE_ORDER_SHIPPED_LABEL": {
+        "NAME": "Label a shipped order",
+        "DESCRIPTION": "When a store marks an order shipped, add a label to the customer's conversation so your team can see it at a glance."
+      },
+      "COMMERCE_REFUND_ESCALATION": {
+        "NAME": "Refund gets escalated",
+        "DESCRIPTION": "When an order is refunded, raise the conversation's priority and send it to the team that handles refunds."
+      },
+      "COMMERCE_EVENT_WEBHOOK": {
+        "NAME": "Send an order event to another system",
+        "DESCRIPTION": "When the order event you choose happens, call an address of yours with the existing webhook action."
+      },
+      "VIP_AUDIENCE_PRIORITY": {
+        "NAME": "Audience gets priority",
+        "DESCRIPTION": "When someone in a shared audience starts a conversation, set its priority and send it to your dedicated team."
+      },
+      "HIGH_VALUE_SPEND_ROUTING": {
+        "NAME": "High-value customer routing",
+        "DESCRIPTION": "When someone whose visible spend in one currency is above an amount you choose starts a conversation, route it to a team of your choice."
+      },
+      "ACTIVE_ORDER_ROUTING": {
+        "NAME": "Customer with an open order",
+        "DESCRIPTION": "When someone who has an order still in progress starts a conversation, send it to the team that can answer about it."
+      }
+    }
+  }
+}

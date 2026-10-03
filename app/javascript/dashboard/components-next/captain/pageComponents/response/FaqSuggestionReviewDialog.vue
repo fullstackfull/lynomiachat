@@ -226,7 +226,7 @@ defineExpose({ dialogRef });
               </span>
               <span class="size-3.5 shrink-0 rounded-sm bg-n-alpha-2" />
             </span>
-            <span class="flex min-h-[2.5rem] flex-col text-xs leading-5">
+            <span class="flex min-h-10 flex-col text-xs leading-5">
               <span class="h-2 w-full rounded-sm bg-n-alpha-2" />
               <span class="mt-2 h-2 w-4/5 rounded-sm bg-n-alpha-2" />
             </span>
@@ -282,7 +282,7 @@ defineExpose({ dialogRef });
               />
             </span>
             <span
-              class="line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-n-slate-11"
+              class="line-clamp-2 min-h-10 text-xs leading-5 text-n-slate-11"
             >
               {{ observation.generated_question }}
             </span>

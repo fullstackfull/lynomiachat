@@ -79,5 +79,8 @@
     "UPLOAD_ERROR": "Only MP4 files can be uploaded",
     "ADD": "Embed",
     "CANCEL": "Cancel"
+  },
+  "TABLE": {
+    "SORT_BY": "Sort by {column}"
   }
 }

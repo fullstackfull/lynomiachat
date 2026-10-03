@@ -5,6 +5,7 @@ import EditAutomationRule from './EditAutomationRule.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { until } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import {
@@ -17,16 +18,22 @@ import AutomationRuleRow from './AutomationRuleRow.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import { BaseTable } from 'dashboard/components-next/table';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { audienceIdFromQuery } from 'dashboard/helper/audienceHelper';
+import { AUTOMATION_RECIPES } from 'dashboard/recipes/automationRecipes';
 import { DEFAULT_DELAY_MINUTES } from './constants';
 
 const getters = useStoreGetters();
 const store = useStore();
+const route = useRoute();
 const { t } = useI18n();
 const confirmDialog = ref(null);
 
 const loading = ref({});
 const addDialogRef = ref(null);
 const editDialogRef = ref(null);
+const recipeDialogRef = ref(null);
+const isCreatingFromRecipe = ref(false);
 const showDeleteConfirmationPopup = ref(false);
 const selectedAutomation = ref({});
 const searchQuery = ref('');
@@ -139,6 +146,14 @@ const showDelayDisabledBanner = computed(
     records.value.some(automation => automation.execution_delay)
 );
 
+// "Use in a new automation rule", from an audience: the route says which one, and the panel opens on it. The query
+// stays in the URL, so the link is shareable and a reload opens the same panel again. On mount is enough here:
+// SettingsWrapper keys this page by the route's full path, so arriving with a different audience remounts it.
+const openFromAudience = () => {
+  const audienceId = audienceIdFromQuery(route.query);
+  if (audienceId) addDialogRef.value?.open({ audienceId });
+};
+
 onMounted(() => {
   store.dispatch('inboxes/get');
   store.dispatch('agents/get');
@@ -147,13 +162,17 @@ onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('campaigns/get');
   store.dispatch('automations/get');
+  openFromAudience();
 });
 
 const openAddPopup = () => {
   const startsWithWait =
     isDelayedAutomationsEnabled.value && activeTab.value === 'delayed';
-  addDialogRef.value?.open(startsWithWait ? DEFAULT_DELAY_MINUTES : null);
+  addDialogRef.value?.open({
+    executionDelay: startsWithWait ? DEFAULT_DELAY_MINUTES : null,
+  });
 };
+
 const hideAddPopup = () => {
   addDialogRef.value?.close();
 };
@@ -169,6 +188,37 @@ const openEditPopup = async response => {
 };
 const hideEditPopup = () => {
   editDialogRef.value?.close();
+};
+
+const openRecipes = () => recipeDialogRef.value?.open();
+
+const startFromScratch = () => {
+  recipeDialogRef.value?.close();
+  openAddPopup();
+};
+
+// A recipe creates a real rule through the ordinary call, so the ordinary validation runs — including the checks that
+// an audience is a shared one of this account and a store is this account's. It is created disabled and opened for
+// review; turning it on stays the existing toggle, with its existing confirmation.
+const createFromRecipe = async (automationRecipe, values) => {
+  isCreatingFromRecipe.value = true;
+  try {
+    const created = await store.dispatch('automations/create', {
+      ...automationRecipe.build(values),
+      name: t(automationRecipe.name),
+      description: t('RECIPES.AUTOMATION.PROVENANCE', {
+        name: t(automationRecipe.name),
+        version: automationRecipe.version,
+      }),
+    });
+    recipeDialogRef.value?.close();
+    useAlert(t('RECIPES.CREATED'));
+    if (created) openEditPopup(created);
+  } catch {
+    useAlert(t('RECIPES.CREATE_ERROR'));
+  } finally {
+    isCreatingFromRecipe.value = false;
+  }
 };
 
 const openDeletePopup = response => {
@@ -276,8 +326,6 @@ const tableHeaders = computed(() => {
   <SettingsLayout
     :is-loading="uiFlags.isFetching"
     :loading-message="$t('AUTOMATION.LOADING')"
-    :no-records-found="!records.length"
-    :no-records-message="$t('AUTOMATION.LIST.404')"
   >
     <template #header>
       <BaseSettingsHeader
@@ -301,11 +349,21 @@ const tableHeaders = computed(() => {
           </span>
         </template>
         <template #actions>
-          <Button
-            :label="$t('AUTOMATION.HEADER_BTN_TXT')"
-            size="sm"
-            @click="openAddPopup"
-          />
+          <div class="flex items-center gap-2">
+            <Button
+              :label="$t('AUTOMATION.LIST.RECIPES')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              data-test-id="automation-recipes-button"
+              @click="openRecipes"
+            />
+            <Button
+              :label="$t('AUTOMATION.HEADER_BTN_TXT')"
+              size="sm"
+              @click="openAddPopup"
+            />
+          </div>
         </template>
       </BaseSettingsHeader>
     </template>
@@ -316,7 +374,35 @@ const tableHeaders = computed(() => {
       >
         {{ $t('AUTOMATION.LIST.DELAY_DISABLED_BANNER') }}
       </div>
+      <div
+        v-if="!records.length"
+        class="flex flex-col items-center gap-3 py-16 text-center"
+        data-test-id="automation-empty-state"
+      >
+        <p class="m-0 text-base text-n-slate-12">
+          {{ $t('AUTOMATION.LIST.404') }}
+        </p>
+        <p class="m-0 max-w-md text-sm text-n-slate-11">
+          {{ $t('AUTOMATION.LIST.EMPTY_HINT') }}
+        </p>
+        <div class="flex items-center gap-2">
+          <Button
+            :label="$t('AUTOMATION.LIST.RECIPES')"
+            size="sm"
+            data-test-id="automation-empty-recipes"
+            @click="openRecipes"
+          />
+          <Button
+            :label="$t('AUTOMATION.HEADER_BTN_TXT')"
+            size="sm"
+            color="slate"
+            variant="faded"
+            @click="openAddPopup"
+          />
+        </div>
+      </div>
       <BaseTable
+        v-else
         :headers="tableHeaders"
         :items="visibleRecords"
         :no-data-message="noDataMessage"
@@ -337,6 +423,16 @@ const tableHeaders = computed(() => {
     </template>
 
     <AddAutomationRule ref="addDialogRef" @save-automation="submitAutomation" />
+
+    <RecipeDialog
+      ref="recipeDialogRef"
+      :recipes="AUTOMATION_RECIPES"
+      :title="$t('RECIPES.AUTOMATION.TITLE')"
+      :description="$t('RECIPES.AUTOMATION.DESCRIPTION')"
+      :is-creating="isCreatingFromRecipe"
+      @create="createFromRecipe"
+      @scratch="startFromScratch"
+    />
 
     <woot-delete-modal
       v-model:show="showDeleteConfirmationPopup"

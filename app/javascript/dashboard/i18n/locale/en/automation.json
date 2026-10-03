@@ -93,7 +93,9 @@
         "DELAYED": "Runs after a wait"
       },
       "DELAY_BADGE": "Runs after {delay}",
-      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on."
+      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on.",
+      "RECIPES": "Recipes",
+      "EMPTY_HINT": "Start from a ready-made recipe, or build a rule condition by condition. A recipe arrives switched off, for you to read before it runs."
     },
     "DELETE": {
       "TITLE": "Delete Automation Rule",

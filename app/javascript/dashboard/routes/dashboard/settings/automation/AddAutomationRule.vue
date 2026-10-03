@@ -1,7 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useStore } from 'dashboard/composables/store';
+import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAutomation } from 'dashboard/composables/useAutomation';
+import {
+  audienceConditionFor,
+  findSharedAudience,
+} from 'dashboard/helper/audienceHelper';
 import AutomationRuleForm from './AutomationRuleForm.vue';
 
 const emit = defineEmits(['saveAutomation']);
@@ -30,6 +34,7 @@ const START_VALUE = {
 
 const store = useStore();
 const formRef = ref(null);
+const contactViews = useMapGetter('customViews/getContactCustomViews');
 
 const {
   automation,
@@ -47,13 +52,26 @@ const {
   loadLynomiaOptions,
 } = useAutomation(START_VALUE);
 
-const open = (executionDelay = null) => {
+/**
+ * Opens the panel on a new rule.
+ * @param {Object} [options] - Options.
+ * @param {?number} [options.executionDelay] - Minutes to wait, for a delayed rule.
+ * @param {?number} [options.audienceId] - A shared audience to start the rule's conditions from ("Use in a new
+ *   automation rule", from the audience itself). An id that is not one of this account's shared audiences is
+ *   ignored, so the panel simply opens on the usual blank condition.
+ */
+const open = async ({ executionDelay = null, audienceId = null } = {}) => {
   automation.value = structuredClone(START_VALUE);
   manifestCustomAttributes();
   manifestLynomiaConditions();
   formRef.value?.open(executionDelay);
   // Shared audiences and the Commerce options arrive after the panel opens.
-  loadLynomiaOptions().then(manifestLynomiaConditions);
+  await loadLynomiaOptions();
+  manifestLynomiaConditions();
+  if (!audienceId) return;
+
+  const audience = findSharedAudience(contactViews.value, audienceId);
+  if (audience) automation.value.conditions = [audienceConditionFor(audience)];
 };
 const close = () => formRef.value?.close();
 

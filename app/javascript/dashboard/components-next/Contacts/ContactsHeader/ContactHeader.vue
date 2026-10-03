@@ -18,6 +18,8 @@ defineProps({
   isLabelView: { type: Boolean, default: false },
   isActiveView: { type: Boolean, default: false },
   canManageSegment: { type: Boolean, default: true },
+  // The audience being viewed, passed through to the overflow menu where its actions live.
+  activeSegment: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -29,6 +31,11 @@ const emit = defineEmits([
   'export',
   'createSegment',
   'deleteSegment',
+  'duplicateSegment',
+  'useInAutomation',
+  'useInCampaign',
+  'copySegmentLink',
+  'audiencePreset',
 ]);
 </script>
 
@@ -69,6 +76,11 @@ const emit = defineEmits([
                 :icon="
                   isSegmentsView ? 'i-lucide-pen-line' : 'i-lucide-list-filter'
                 "
+                :aria-label="
+                  isSegmentsView
+                    ? $t('CONTACTS_LAYOUT.FILTER.EDIT_SEGMENT')
+                    : $t('CONTACTS_LAYOUT.HEADER.ACTIONS.BUTTONS.FILTER')
+                "
                 color="slate"
                 size="sm"
                 class="relative w-8"
@@ -90,6 +102,11 @@ const emit = defineEmits([
                 !isActiveView
               "
               icon="i-lucide-save"
+              :aria-label="
+                $t(
+                  'CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.CONFIRM'
+                )
+              "
               color="slate"
               size="sm"
               variant="ghost"
@@ -103,6 +120,9 @@ const emit = defineEmits([
                 !isActiveView
               "
               icon="i-lucide-trash"
+              :aria-label="
+                $t('CONTACTS_LAYOUT.HEADER.ACTIONS.BUTTONS.DELETE_SEGMENT')
+              "
               color="slate"
               size="sm"
               variant="ghost"
@@ -114,9 +134,15 @@ const emit = defineEmits([
               @update:sort="emit('update:sort', $event)"
             />
             <ContactMoreActions
+              :segment="activeSegment"
               @add="emit('add')"
               @import="emit('import')"
               @export="emit('export')"
+              @duplicate-segment="emit('duplicateSegment')"
+              @use-in-automation="emit('useInAutomation')"
+              @use-in-campaign="emit('useInCampaign')"
+              @copy-segment-link="emit('copySegmentLink')"
+              @audience-preset="emit('audiencePreset')"
             />
           </div>
           <div class="w-px h-4 bg-n-strong" />

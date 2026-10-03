@@ -91,7 +91,7 @@ defineExpose({ scrollSelectedIntoView });
 
 <template>
   <div
-    class="flex overflow-hidden border shadow-lg rounded-xl border-n-strong bg-n-alpha-3 backdrop-blur-[100px]"
+    class="flex overflow-hidden border shadow-lg rounded-xl border-n-strong bg-n-alpha-3 backdrop-blur-panel"
     :class="{ 'flex-col': isStacked }"
   >
     <div class="flex flex-col min-h-0" :class="listClass">

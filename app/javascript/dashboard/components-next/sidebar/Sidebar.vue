@@ -992,6 +992,7 @@ const menuItems = computed(() => {
           <template #trigger="{ isOpen }">
             <Button
               icon="i-lucide-pen-line"
+              :aria-label="t('SIDEBAR.COMPOSE_CONVERSATION')"
               color="slate"
               size="sm"
               class="sidebar-compose"

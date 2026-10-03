@@ -14,6 +14,8 @@ import {
   BaseTableRow,
   BaseTableCell,
 } from 'dashboard/components-next/table';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { FLOW_TEMPLATES } from 'dashboard/recipes/flowTemplates';
 
 // The account's flows (Lynomia Flow Builder): each is a bot that answers its inboxes' conversations until it hands them
 // to humans. Created here, edited in the builder, connected to inboxes there.
@@ -24,10 +26,14 @@ const flows = ref([]);
 const isLoading = ref(true);
 const createDialogRef = ref(null);
 const deleteDialogRef = ref(null);
+const templateDialogRef = ref(null);
+const isCreatingFromTemplate = ref(false);
 const name = ref('');
 const description = ref('');
 const selected = ref(null);
 const isCreating = ref(false);
+// The flow a new one is copied from, when the create dialog is being used to duplicate.
+const copyFrom = ref(null);
 
 const headers = computed(() => [
   t('FLOW_BUILDER.LIST.NAME'),
@@ -52,25 +58,78 @@ const openBuilder = flow =>
   router.push({ name: 'settings_flows_builder', params: { flowId: flow.id } });
 
 const openCreate = () => {
+  copyFrom.value = null;
   name.value = '';
   description.value = '';
+  createDialogRef.value.open();
+};
+
+// Duplicate: the copy is a new flow of this account with the source's graph as its draft. It starts unpublished and
+// connected to no inbox — an inbox holds one bot, so connecting the copy would take the inbox away from the original.
+const openDuplicate = flow => {
+  copyFrom.value = flow;
+  name.value = t('FLOW_BUILDER.DUPLICATE.NAME', { name: flow.name });
+  description.value = flow.description || '';
   createDialogRef.value.open();
 };
 
 const create = async () => {
   isCreating.value = true;
   try {
+    // The source graph is read first: a failure here creates nothing.
+    const graph = copyFrom.value
+      ? (await FlowsAPI.show(copyFrom.value.id)).data.graph
+      : null;
     const { data } = await FlowsAPI.create({
       name: name.value.trim(),
       description: description.value.trim(),
     });
+    if (graph) await FlowsAPI.saveDraft(data.id, graph);
     createDialogRef.value.close();
     openBuilder(data);
   } catch {
-    useAlert(t('FLOW_BUILDER.API.CREATE_ERROR'));
+    useAlert(
+      t(
+        copyFrom.value
+          ? 'FLOW_BUILDER.API.DUPLICATE_ERROR'
+          : 'FLOW_BUILDER.API.CREATE_ERROR'
+      )
+    );
+    if (copyFrom.value) load();
   } finally {
     isCreating.value = false;
   }
+};
+
+const openTemplates = () => templateDialogRef.value?.open();
+
+// A template is a prepared draft: the flow is created with the ordinary call, its graph saved as the draft with the
+// ordinary call, and the builder opens on it. It is unpublished and connected to no inbox, so nothing reaches a
+// customer until the user publishes it themselves.
+const createFromTemplate = async (flowTemplate, values) => {
+  isCreatingFromTemplate.value = true;
+  try {
+    const { data } = await FlowsAPI.create({
+      name: t(flowTemplate.name),
+      description: t('RECIPES.FLOW.PROVENANCE', {
+        name: t(flowTemplate.name),
+        version: flowTemplate.version,
+      }),
+    });
+    await FlowsAPI.saveDraft(data.id, flowTemplate.build(values));
+    templateDialogRef.value?.close();
+    openBuilder(data);
+  } catch {
+    useAlert(t('RECIPES.CREATE_ERROR'));
+    load();
+  } finally {
+    isCreatingFromTemplate.value = false;
+  }
+};
+
+const startFromScratch = () => {
+  templateDialogRef.value?.close();
+  openCreate();
 };
 
 const confirmDelete = flow => {
@@ -94,6 +153,10 @@ const status = flow =>
     ? t('FLOW_BUILDER.STATUS.PUBLISHED', { version: flow.published.version })
     : t('FLOW_BUILDER.STATUS.NOT_PUBLISHED');
 
+// Publishing turns the draft into the published version, so a flow that has both has edits that are saved but not
+// live yet. Not a guess: the API payload carries each version.
+const hasUnpublishedChanges = flow => Boolean(flow.published && flow.draft);
+
 onMounted(load);
 </script>
 
@@ -101,8 +164,6 @@ onMounted(load);
   <SettingsLayout
     :is-loading="isLoading"
     :loading-message="t('FLOW_BUILDER.LIST.LOADING')"
-    :no-records-found="!flows.length"
-    :no-records-message="t('FLOW_BUILDER.LIST.EMPTY')"
   >
     <template #header>
       <BaseSettingsHeader
@@ -110,17 +171,54 @@ onMounted(load);
         :description="t('FLOW_BUILDER.DESCRIPTION')"
       >
         <template #actions>
-          <NextButton
-            :label="t('FLOW_BUILDER.LIST.NEW')"
-            size="sm"
-            data-test-id="flow-new-button"
-            @click="openCreate"
-          />
+          <div class="flex items-center gap-2">
+            <NextButton
+              :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              data-test-id="flow-templates-button"
+              @click="openTemplates"
+            />
+            <NextButton
+              :label="t('FLOW_BUILDER.LIST.NEW')"
+              size="sm"
+              data-test-id="flow-new-button"
+              @click="openCreate"
+            />
+          </div>
         </template>
       </BaseSettingsHeader>
     </template>
     <template #body>
-      <BaseTable :headers="headers" :items="flows">
+      <div
+        v-if="!flows.length"
+        class="flex flex-col items-center gap-3 py-16 text-center"
+        data-test-id="flow-empty-state"
+      >
+        <p class="m-0 text-base text-n-slate-12">
+          {{ t('FLOW_BUILDER.LIST.EMPTY') }}
+        </p>
+        <p class="m-0 max-w-md text-sm text-n-slate-11">
+          {{ t('FLOW_BUILDER.LIST.EMPTY_HINT') }}
+        </p>
+        <div class="flex items-center gap-2">
+          <NextButton
+            :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
+            size="sm"
+            data-test-id="flow-empty-templates"
+            @click="openTemplates"
+          />
+          <NextButton
+            :label="t('FLOW_BUILDER.LIST.NEW')"
+            size="sm"
+            color="slate"
+            variant="faded"
+            @click="openCreate"
+          />
+        </div>
+      </div>
+      <BaseTable v-else :headers="headers" :items="flows">
         <template #row="{ items }">
           <BaseTableRow v-for="flow in items" :key="flow.id" :item="flow">
             <template #default>
@@ -143,6 +241,13 @@ onMounted(load);
                   {{ status(flow) }}
                 </span>
                 <span
+                  v-if="hasUnpublishedChanges(flow)"
+                  class="block text-xs text-n-amber-11"
+                  data-test-id="flow-unpublished"
+                >
+                  {{ t('FLOW_BUILDER.STATUS.UNPUBLISHED') }}
+                </span>
+                <span
                   v-if="flow.live_sessions"
                   class="block text-xs text-n-slate-11"
                 >
@@ -161,13 +266,24 @@ onMounted(load);
                 <div class="flex justify-end gap-3">
                   <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.OPEN')"
+                    :aria-label="t('FLOW_BUILDER.LIST.OPEN')"
                     icon="i-lucide-workflow"
                     slate
                     sm
                     @click="openBuilder(flow)"
                   />
                   <NextButton
+                    v-tooltip.top="t('FLOW_BUILDER.LIST.DUPLICATE')"
+                    :aria-label="t('FLOW_BUILDER.LIST.DUPLICATE')"
+                    icon="i-lucide-copy"
+                    slate
+                    sm
+                    :data-test-id="`flow-duplicate-${flow.id}`"
+                    @click="openDuplicate(flow)"
+                  />
+                  <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.DELETE')"
+                    :aria-label="t('FLOW_BUILDER.LIST.DELETE')"
                     icon="i-woot-bin"
                     slate
                     sm
@@ -185,7 +301,11 @@ onMounted(load);
 
     <Dialog
       ref="createDialogRef"
-      :title="t('FLOW_BUILDER.CREATE.TITLE')"
+      :title="
+        copyFrom
+          ? t('FLOW_BUILDER.DUPLICATE.TITLE')
+          : t('FLOW_BUILDER.CREATE.TITLE')
+      "
       :confirm-button-label="t('FLOW_BUILDER.CREATE.CONFIRM')"
       :disable-confirm-button="!name.trim()"
       :is-loading="isCreating"
@@ -203,6 +323,15 @@ onMounted(load);
         />
       </div>
     </Dialog>
+    <RecipeDialog
+      ref="templateDialogRef"
+      :recipes="FLOW_TEMPLATES"
+      :title="t('RECIPES.FLOW.TITLE')"
+      :description="t('RECIPES.FLOW.DESCRIPTION')"
+      :is-creating="isCreatingFromTemplate"
+      @create="createFromTemplate"
+      @scratch="startFromScratch"
+    />
     <Dialog
       ref="deleteDialogRef"
       type="alert"

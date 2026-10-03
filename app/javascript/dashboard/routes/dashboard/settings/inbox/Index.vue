@@ -181,22 +181,26 @@ const openDelete = inbox => {
           </div>
           <div class="flex gap-3 justify-end shrink-0">
             <router-link
+              v-tooltip.top="$t('INBOX_MGMT.SETTINGS')"
               :to="{
                 name: 'settings_inbox_show',
                 params: { inboxId: inbox.id },
               }"
+              :aria-label="$t('INBOX_MGMT.SETTINGS')"
             >
               <Button
                 v-if="isAdmin"
-                v-tooltip.top="$t('INBOX_MGMT.SETTINGS')"
                 icon="i-woot-settings"
                 slate
                 sm
+                tabindex="-1"
+                aria-hidden="true"
               />
             </router-link>
             <Button
               v-if="isAdmin"
               v-tooltip.top="$t('INBOX_MGMT.DELETE.BUTTON_TEXT')"
+              :aria-label="$t('INBOX_MGMT.DELETE.BUTTON_TEXT')"
               icon="i-woot-bin"
               slate
               sm

@@ -1,7 +1,8 @@
 <script setup>
 // [TODO] Use Teleport to move the modal to the end of the body
-import { ref, computed, onMounted } from 'vue';
-import { useEventListener } from '@vueuse/core';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useEventListener, useScrollLock } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 
 const { modalType, closeOnBackdropClick, onClose } = defineProps({
@@ -15,6 +16,15 @@ const { modalType, closeOnBackdropClick, onClose } = defineProps({
 
 const emit = defineEmits(['close']);
 const show = defineModel('show', { type: Boolean, default: false });
+
+const { t } = useI18n();
+
+// The page scrolled behind the legacy modal, which has no Teleport and no focus management either.
+// Locking the scroll is the part that can be fixed without restructuring all 52 call sites.
+const isPageScrollLocked = useScrollLock(document.body);
+watch(show, value => {
+  isPageScrollLocked.value = value;
+});
 
 const modalClassName = computed(() => {
   const modalClassNameMap = {
@@ -76,9 +86,11 @@ onMounted(() => {
       @mousedown="handleMouseDown"
     >
       <div
-        class="relative max-h-full overflow-auto bg-n-alpha-3 shadow-md modal-container rtl:text-right skip-context-menu"
+        role="dialog"
+        aria-modal="true"
+        class="relative max-h-full overflow-auto bg-n-alpha-3 shadow-modal modal-container rtl:text-right skip-context-menu"
         :class="{
-          'rounded-xl w-[37.5rem]': !fullWidth,
+          'rounded-overlay w-full max-w-[37.5rem]': !fullWidth,
           'items-center rounded-none flex h-full justify-center w-full':
             fullWidth,
           [size]: true,
@@ -91,6 +103,7 @@ onMounted(() => {
           ghost
           slate
           icon="i-lucide-x"
+          :aria-label="t('GENERAL.CLOSE')"
           class="absolute z-10 ltr:right-2 rtl:left-2 top-2"
           @click="close"
         />
@@ -102,7 +115,7 @@ onMounted(() => {
 
 <style lang="scss">
 .modal-mask {
-  @apply flex items-center justify-center bg-n-alpha-black2 backdrop-blur-[4px] z-[9990] h-full left-0 fixed top-0 w-full;
+  @apply flex items-center justify-center px-4 bg-n-alpha-black2 backdrop-blur-[4px] z-[9990] h-full left-0 fixed top-0 w-full;
 
   .modal-container {
     &.medium {

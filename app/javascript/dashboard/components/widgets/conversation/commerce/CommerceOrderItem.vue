@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
+import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -64,6 +65,17 @@ const canSendTracking = computed(
   () => props.canSend && hasTracking(props.order)
 );
 
+// The order number is what an agent moves by hand into the store's admin, a reply or a note, so it copies itself.
+// The number is the control: no fourth button on a row that already has three.
+const copyNumber = async () => {
+  try {
+    await copyTextToClipboard(props.order.order_number);
+    useAlert(t('COMMERCE.PANEL.NUMBER_COPIED'));
+  } catch {
+    useAlert(t('COMMERCE.PANEL.NUMBER_COPY_FAILED'));
+  }
+};
+
 const sendTracking = () => {
   emitter.emit(
     BUS_EVENTS.INSERT_INTO_RICH_EDITOR,
@@ -79,9 +91,16 @@ const sendTracking = () => {
     data-test-id="commerce-order"
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <span class="text-heading-3 text-n-slate-12" dir="ltr">
+      <button
+        v-tooltip.top="t('COMMERCE.PANEL.COPY_NUMBER')"
+        type="button"
+        class="text-heading-3 text-n-slate-12 text-start hover:underline"
+        dir="ltr"
+        data-test-id="commerce-order-number"
+        @click="copyNumber"
+      >
         {{ t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number }) }}
-      </span>
+      </button>
       <div class="flex items-center gap-1">
         <span class="text-body-main text-n-slate-12">{{ total }}</span>
         <CommerceOrderActions

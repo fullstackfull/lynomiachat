@@ -24,12 +24,17 @@ import CreateNewContactDialog from 'dashboard/components-next/Contacts/ContactsF
 import ContactExportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactExportDialog.vue';
 import ContactImportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactImportDialog.vue';
 import CreateSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/CreateSegmentDialog.vue';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { AUDIENCE_PRESETS } from 'dashboard/recipes/audiencePresets';
 import DeleteSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/DeleteSegmentDialog.vue';
 import ContactsFilter from 'dashboard/components-next/filter/ContactsFilter.vue';
 import {
   useAudienceFilterTypes,
   audienceValuesForEdit,
 } from 'dashboard/components-next/filter/audienceProvider.js';
+import { AUDIENCE_QUERY_PARAM } from 'dashboard/helper/audienceHelper';
+import { copyTextToClipboard } from 'shared/helpers/clipboard';
+import { frontendURL } from 'dashboard/helper/URLHelper';
 
 const props = defineProps({
   showSearch: { type: Boolean, default: true },
@@ -60,6 +65,7 @@ const contactExportDialogRef = ref(null);
 const contactImportDialogRef = ref(null);
 const createSegmentDialogRef = ref(null);
 const deleteSegmentDialogRef = ref(null);
+const presetDialogRef = ref(null);
 
 const showFiltersModal = ref(false);
 const appliedFilter = ref([]);
@@ -88,8 +94,7 @@ const openContactImportDialog = () =>
   contactImportDialogRef.value?.dialogRef.open();
 const openContactExportDialog = () =>
   contactExportDialogRef.value?.dialogRef.open();
-const openCreateSegmentDialog = () =>
-  createSegmentDialogRef.value?.dialogRef.open();
+const openCreateSegmentDialog = () => createSegmentDialogRef.value?.open();
 const openDeleteSegmentDialog = () =>
   deleteSegmentDialogRef.value?.dialogRef.open();
 
@@ -202,6 +207,67 @@ const onDeleteSegment = async payload => {
   }
 };
 
+// Cross-module audience actions (docs/usability/04-implemented-productivity-features.md). An audience is a saved
+// contact filter, so every one of these reuses what already exists: the same create API for a duplicate, the target
+// module's own route for "use it there", the dashboard's own clipboard helper for a link.
+const accountId = useMapGetter('getCurrentAccountId');
+
+const duplicateSegment = () => {
+  if (!props.activeSegment) return;
+  // The copy is saved from the audience's own conditions, through the same dialog and the same create call as
+  // "save these filters as an audience": the name, and whether the copy is shared, stay the user's choice.
+  segmentsQuery.value = props.activeSegment.query;
+  createSegmentDialogRef.value?.open({
+    name: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.DUPLICATE_NAME', {
+      name: props.activeSegment.name,
+    }),
+    // Only administrators may share an audience, and only they see the checkbox: defaulting it on for anyone else
+    // would send a `shared` the server refuses.
+    shared: isSharedSegment.value && isAdmin.value,
+    title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.DUPLICATE_TITLE'),
+  });
+};
+
+// An audience preset builds the conditions; naming it and deciding whether the account shares it stays the user's
+// explicit act, in the same dialog and through the same create call as saving a filter by hand.
+const openPresetDialog = () => presetDialogRef.value?.open();
+
+const createFromPreset = (preset, values) => {
+  segmentsQuery.value = preset.build(values);
+  presetDialogRef.value?.close();
+  createSegmentDialogRef.value?.open({
+    name: t(preset.name),
+    title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.TITLE'),
+  });
+};
+
+const segmentUrl = () =>
+  `${window.chatwootConfig.hostURL}${frontendURL(
+    `accounts/${accountId.value}/contacts/segments/${props.segmentsId}`
+  )}`;
+
+const useInAutomation = () =>
+  router.push({
+    name: 'automation_list',
+    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
+  });
+
+const useInCampaign = () =>
+  router.push({
+    name: 'campaigns_whatsapp_index',
+    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
+  });
+
+const copySegmentLink = async () => {
+  try {
+    await copyTextToClipboard(segmentUrl());
+    useAlert(t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.LINK_COPIED'));
+  } catch {
+    // A clipboard the browser refuses (no permission, an insecure origin): say so and stay where we are.
+    useAlert(t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.LINK_COPY_FAILED'));
+  }
+};
+
 const closeAdvanceFiltersModal = () => {
   showFiltersModal.value = false;
   appliedFilter.value = [];
@@ -292,6 +358,12 @@ const onToggleFilters = async () => {
   showFiltersModal.value = true;
 };
 
+// "Start from scratch instead", from the preset gallery: the ordinary filter builder.
+const buildAudienceFromScratch = () => {
+  presetDialogRef.value?.close();
+  onToggleFilters();
+};
+
 defineExpose({
   onToggleFilters,
 });
@@ -309,6 +381,7 @@ defineExpose({
     :is-label-view="isLabelView"
     :is-active-view="isActiveView"
     :has-active-filters="hasAppliedFilters"
+    :active-segment="hasActiveSegments ? activeSegment : null"
     :button-label="t('CONTACTS_LAYOUT.HEADER.MESSAGE_BUTTON')"
     @search="emit('search', $event)"
     @update:sort="emit('update:sort', $event)"
@@ -318,6 +391,11 @@ defineExpose({
     @filter="onToggleFilters"
     @create-segment="openCreateSegmentDialog"
     @delete-segment="openDeleteSegmentDialog"
+    @duplicate-segment="duplicateSegment"
+    @use-in-automation="useInAutomation"
+    @use-in-campaign="useInCampaign"
+    @copy-segment-link="copySegmentLink"
+    @audience-preset="openPresetDialog"
   >
     <template #filter>
       <div
@@ -344,5 +422,13 @@ defineExpose({
   <ContactExportDialog ref="contactExportDialogRef" @export="onExport" />
   <ContactImportDialog ref="contactImportDialogRef" @import="onImport" />
   <CreateSegmentDialog ref="createSegmentDialogRef" @create="onCreateSegment" />
+  <RecipeDialog
+    ref="presetDialogRef"
+    :recipes="AUDIENCE_PRESETS"
+    :title="t('RECIPES.AUDIENCE.TITLE')"
+    :description="t('RECIPES.AUDIENCE.DESCRIPTION')"
+    @create="createFromPreset"
+    @scratch="buildAudienceFromScratch"
+  />
   <DeleteSegmentDialog ref="deleteSegmentDialogRef" @delete="onDeleteSegment" />
 </template>

@@ -10,6 +10,11 @@ defineProps({
     type: String,
     required: true,
   },
+  // An icon above the title, for the surfaces that built their own card-shaped empty state to get one.
+  icon: {
+    type: String,
+    default: '',
+  },
   actionPerms: {
     type: Array,
     default: () => [],
@@ -48,12 +53,20 @@ defineProps({
           }"
         >
           <div class="flex flex-col items-center justify-center gap-3">
-            <h2 class="text-3xl font-medium text-center text-n-slate-12">
+            <slot name="icon">
+              <span
+                v-if="icon"
+                class="grid place-items-center rounded-overlay size-12 bg-n-alpha-2 text-n-slate-11"
+              >
+                <span :class="icon" class="size-6" />
+              </span>
+            </slot>
+            <h2 class="text-center text-display text-n-slate-12">
               {{ title }}
             </h2>
             <p
               v-if="subtitle"
-              class="max-w-xl text-base text-center text-n-slate-11 tracking-[0.3px]"
+              class="max-w-xl text-center text-body-para text-n-slate-11"
             >
               {{ subtitle }}
             </p>

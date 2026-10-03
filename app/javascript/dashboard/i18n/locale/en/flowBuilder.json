@@ -13,7 +13,14 @@
       "LIVE": "{n} conversation in the flow | {n} conversations in the flow",
       "NO_INBOX": "Not connected",
       "OPEN": "Open builder",
-      "DELETE": "Delete"
+      "DELETE": "Delete",
+      "DUPLICATE": "Duplicate",
+      "TEMPLATES": "Templates",
+      "EMPTY_HINT": "Start from a ready-made template, or build one node by node. Either way it stays a draft until you publish it."
+    },
+    "DUPLICATE": {
+      "TITLE": "Duplicate this flow?",
+      "NAME": "{name} copy"
     },
     "CREATE": {
       "TITLE": "New flow",
@@ -34,12 +41,14 @@
     "STATUS": {
       "PUBLISHED": "Published · version {version}",
       "NOT_PUBLISHED": "Not published",
-      "UNSAVED": "Unsaved changes"
+      "UNSAVED": "Unsaved changes",
+    "UNPUBLISHED": "Unpublished changes"
     },
     "ACTIONS": {
       "SESSIONS": "Sessions",
       "TEST": "Test",
       "SAVE": "Save draft",
+      "SAVE_HINT": "Save the draft (Ctrl/Cmd + S)",
       "DISABLE": "Disable",
       "PUBLISH": "Publish"
     },
@@ -56,6 +65,7 @@
       "CREATE_ERROR": "The flow could not be created.",
       "DELETED": "The flow is deleted.",
       "DELETE_ERROR": "The flow could not be deleted.",
+      "DUPLICATE_ERROR": "The flow could not be duplicated.",
       "LOAD_ERROR": "The flows could not be loaded."
     },
     "UNSAVED_CONFIRM": "You have unsaved changes. Leave without saving?",

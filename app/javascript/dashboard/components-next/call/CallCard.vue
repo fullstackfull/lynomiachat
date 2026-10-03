@@ -128,6 +128,7 @@ const channelIcon = computed(() => {
           <NextButton
             v-if="isIncoming"
             v-tooltip.top="$t('CONVERSATION.VOICE_WIDGET.DISMISS_CALL')"
+            :aria-label="$t('CONVERSATION.VOICE_WIDGET.DISMISS_CALL')"
             icon="i-ph-x-bold"
             slate
             ghost
@@ -171,6 +172,11 @@ const channelIcon = computed(() => {
                 ? $t('CONVERSATION.VOICE_WIDGET.UNMUTE')
                 : $t('CONVERSATION.VOICE_WIDGET.MUTE')
             "
+            :aria-label="
+              isMuted
+                ? $t('CONVERSATION.VOICE_WIDGET.UNMUTE')
+                : $t('CONVERSATION.VOICE_WIDGET.MUTE')
+            "
             :icon="
               isMuted ? 'i-ph-microphone-slash-bold' : 'i-ph-microphone-bold'
             "
@@ -184,6 +190,7 @@ const channelIcon = computed(() => {
           <NextButton
             v-if="isIncoming"
             v-tooltip.top="$t('CONVERSATION.VOICE_WIDGET.JOIN_CALL')"
+            :aria-label="$t('CONVERSATION.VOICE_WIDGET.JOIN_CALL')"
             icon="i-ph-phone-bold"
             teal
             class="!rounded-full"
@@ -193,6 +200,11 @@ const channelIcon = computed(() => {
           <!-- Reject / end call (all states) -->
           <NextButton
             v-tooltip.top="
+              isOngoing
+                ? $t('CONVERSATION.VOICE_WIDGET.END_CALL')
+                : $t('CONVERSATION.VOICE_WIDGET.REJECT_CALL')
+            "
+            :aria-label="
               isOngoing
                 ? $t('CONVERSATION.VOICE_WIDGET.END_CALL')
                 : $t('CONVERSATION.VOICE_WIDGET.REJECT_CALL')

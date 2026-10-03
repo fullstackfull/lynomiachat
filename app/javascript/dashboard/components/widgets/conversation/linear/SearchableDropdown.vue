@@ -53,7 +53,7 @@ const selectedItemId = computed(() => selectedItem.value?.id || null);
         trailing-icon
         icon="i-lucide-chevron-down"
         :button-text="selectedItemName"
-        class="justify-between w-full h-[2.5rem] py-1.5 px-3 rounded-xl bg-n-alpha-black2 outline outline-1 outline-n-weak dark:outline-n-weak hover:outline-n-slate-6 dark:hover:outline-n-slate-6"
+        class="justify-between w-full h-10 py-1.5 px-3 rounded-xl bg-n-alpha-black2 outline outline-1 outline-n-weak dark:outline-n-weak hover:outline-n-slate-6 dark:hover:outline-n-slate-6"
         @click="toggleDropdown"
       >
         <template v-if="shouldShowDropdown" #dropdown>

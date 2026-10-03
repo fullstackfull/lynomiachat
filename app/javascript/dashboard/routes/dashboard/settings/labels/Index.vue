@@ -166,6 +166,7 @@ onBeforeMount(() => {
                 <div class="flex gap-3 justify-end flex-shrink-0">
                   <Button
                     v-tooltip.top="$t('LABEL_MGMT.FORM.EDIT')"
+                    :aria-label="$t('LABEL_MGMT.FORM.EDIT')"
                     icon="i-woot-edit-pen"
                     slate
                     sm
@@ -174,6 +175,7 @@ onBeforeMount(() => {
                   />
                   <Button
                     v-tooltip.top="$t('LABEL_MGMT.FORM.DELETE')"
+                    :aria-label="$t('LABEL_MGMT.FORM.DELETE')"
                     icon="i-woot-bin"
                     slate
                     sm

@@ -116,16 +116,18 @@ export const formatTemplateDate = value => {
   }).format(new Date(value));
 };
 
-export const templateStatusClasses = status => {
-  const classes = {
-    approved: 'bg-n-teal-3 text-n-teal-11',
-    pending: 'bg-n-amber-3 text-n-amber-11',
-    rejected: 'bg-n-ruby-3 text-n-ruby-11',
-    paused: 'bg-n-amber-3 text-n-amber-11',
-    disabled: 'bg-n-alpha-2 text-n-slate-11',
+// The meaning of a template's status, for `Label` to paint. Returning the semantic rather than the
+// class string is what lets one badge component serve every status in the product.
+export const templateStatusTone = status => {
+  const tones = {
+    approved: { tone: 'success', variant: 'solid' },
+    pending: { tone: 'warning', variant: 'solid' },
+    rejected: { tone: 'danger', variant: 'solid' },
+    paused: { tone: 'warning', variant: 'solid' },
+    disabled: { tone: 'neutral', variant: 'subtle' },
   };
 
-  return classes[status?.toLowerCase()] || 'bg-n-alpha-2 text-n-slate-11';
+  return tones[status?.toLowerCase()] || { tone: 'neutral', variant: 'subtle' };
 };
 
 export const templateTypeKey = template => {

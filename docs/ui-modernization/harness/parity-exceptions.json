@@ -1,0 +1,4 @@
+{
+  "_": "Controls that moved during the redesign. A control may move; it may not vanish. `surface` and `control` must match what parity.mjs prints, `to` says where the capability lives now, and `reason` says why the move is an improvement. An entry here is a claim a reviewer can check against the after-screenshots.",
+  "moved": []
+}

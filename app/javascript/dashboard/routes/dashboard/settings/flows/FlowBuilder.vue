@@ -4,7 +4,9 @@ import { computed, onMounted, provide, ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { VueFlow, Panel, useVueFlow } from '@vue-flow/core';
+import { useEventListener } from '@vueuse/core';
 import { useAlert } from 'dashboard/composables';
+import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -110,8 +112,12 @@ const statusLabel = computed(() => {
         version: flow.value.published.version,
       })
     : t('FLOW_BUILDER.STATUS.NOT_PUBLISHED');
-  return isDirty.value
-    ? `${published} · ${t('FLOW_BUILDER.STATUS.UNSAVED')}`
+  if (isDirty.value) {
+    return `${published} · ${t('FLOW_BUILDER.STATUS.UNSAVED')}`;
+  }
+  // Saved, but publishing has not made it live: a flow keeps a draft only until it is published.
+  return flow.value.published && flow.value.draft
+    ? `${published} · ${t('FLOW_BUILDER.STATUS.UNPUBLISHED')}`
     : published;
 });
 
@@ -289,6 +295,26 @@ onBeforeRouteLeave(() =>
   isDirty.value ? window.confirm(t('FLOW_BUILDER.UNSAVED_CONFIRM')) : true
 );
 
+// A reload or a closed tab leaves the router out of it, so the route guard above never runs: the browser's own prompt
+// is the only thing that can still ask.
+useEventListener(window, 'beforeunload', event => {
+  if (!isDirty.value) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
+
+// Cmd/Ctrl+S is what anyone editing a graph reaches for; unbound, it opens the browser's save-page dialog instead.
+// Allowed while a config field has focus: that is exactly when the draft is worth keeping.
+useKeyboardEvents({
+  '$mod+KeyS': {
+    action: event => {
+      event.preventDefault();
+      if (isDirty.value && !isSaving.value) save();
+    },
+    allowOnFocusedInput: true,
+  },
+});
+
 // Labels, inboxes, teams and custom attributes are loaded by the dashboard's sidebar on every page; fetching the
 // cached ones again at the same moment made two cache refreshes collide in IndexedDB.
 onMounted(() => {
@@ -357,6 +383,7 @@ onMounted(() => {
           @click="openPanel(PANELS.TEST)"
         />
         <NextButton
+          v-tooltip.bottom="t('FLOW_BUILDER.ACTIONS.SAVE_HINT')"
           :label="t('FLOW_BUILDER.ACTIONS.SAVE')"
           slate
           sm

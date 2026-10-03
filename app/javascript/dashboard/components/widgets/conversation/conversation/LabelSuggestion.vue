@@ -192,6 +192,11 @@ export default {
               delay: { show: 600, hide: 0 },
               hideOnClick: true,
             }"
+            :aria-label="{
+              content: $t('LABEL_MGMT.SUGGESTIONS.TOOLTIP.DISMISS'),
+              delay: { show: 600, hide: 0 },
+              hideOnClick: true,
+            }"
             faded
             xs
             icon="i-lucide-x"
@@ -214,6 +219,11 @@ export default {
           />
           <NextButton
             v-tooltip.top="{
+              content: $t('LABEL_MGMT.SUGGESTIONS.TOOLTIP.DISMISS'),
+              delay: { show: 600, hide: 0 },
+              hideOnClick: true,
+            }"
+            :aria-label="{
               content: $t('LABEL_MGMT.SUGGESTIONS.TOOLTIP.DISMISS'),
               delay: { show: 600, hide: 0 },
               hideOnClick: true,

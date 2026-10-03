@@ -169,6 +169,7 @@ export default {
         </div>
         <NextButton
           v-tooltip.left="$t('CONVERSATION_PARTICIPANTS.ADD_PARTICIPANTS')"
+          :aria-label="$t('CONVERSATION_PARTICIPANTS.ADD_PARTICIPANTS')"
           slate
           ghost
           sm
@@ -208,7 +209,7 @@ export default {
         'block visible': showDropDown,
         'hidden invisible': !showDropDown,
       }"
-      class="border rounded-lg shadow-lg bg-n-alpha-3 absolute backdrop-blur-[100px] border-n-strong dark:border-n-strong p-2 z-[9999] box-border top-8 w-full"
+      class="border rounded-lg shadow-lg bg-n-alpha-3 absolute backdrop-blur-panel border-n-strong dark:border-n-strong p-2 z-[9999] box-border top-8 w-full"
     >
       <div class="flex items-center justify-between mb-1">
         <h4

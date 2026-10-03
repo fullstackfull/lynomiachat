@@ -64,6 +64,7 @@ const handleCopySecret = async () => {
             />
             <NextButton
               v-tooltip.top="t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.COPY')"
+              :aria-label="t('INTEGRATION_SETTINGS.WEBHOOK.SECRET.COPY')"
               icon="i-lucide-copy"
               slate
               faded

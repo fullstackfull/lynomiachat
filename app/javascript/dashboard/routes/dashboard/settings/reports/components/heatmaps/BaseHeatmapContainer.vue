@@ -322,6 +322,9 @@ onMounted(() => {
         </div>
         <Button
           v-tooltip="t('OVERVIEW_REPORTS.CONVERSATION_HEATMAP.DOWNLOAD_REPORT')"
+          :aria-label="
+            t('OVERVIEW_REPORTS.CONVERSATION_HEATMAP.DOWNLOAD_REPORT')
+          "
           sm
           slate
           faded

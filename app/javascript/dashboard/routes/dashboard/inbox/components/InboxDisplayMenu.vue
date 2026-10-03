@@ -115,7 +115,7 @@ export default {
 
 <template>
   <div
-    class="flex flex-col bg-n-alpha-3 backdrop-blur-[100px] border-0 outline outline-1 outline-n-container shadow-lg z-50 max-w-64 min-w-[170px] w-fit rounded-xl divide-y divide-n-weak dark:divide-n-strong"
+    class="flex flex-col bg-n-alpha-3 backdrop-blur-panel border-0 outline outline-1 outline-n-container shadow-lg z-50 max-w-64 min-w-[170px] w-fit rounded-xl divide-y divide-n-weak dark:divide-n-strong"
   >
     <div class="flex items-center gap-2 justify-between p-3 rounded-t-lg h-11">
       <div class="flex gap-1.5 min-w-0">
@@ -137,7 +137,7 @@ export default {
         />
         <div
           v-if="showSortMenu"
-          class="absolute flex flex-col gap-0.5 bg-n-alpha-3 backdrop-blur-[100px] z-60 rounded-lg p-0.5 w-fit min-w-20 max-w-32 top-px outline outline-1 outline-n-container dark:outline-n-strong"
+          class="absolute flex flex-col gap-0.5 bg-n-alpha-3 backdrop-blur-panel z-dropdown rounded-lg p-0.5 w-fit min-w-20 max-w-32 top-px outline outline-1 outline-n-container dark:outline-n-strong"
         >
           <div
             v-for="option in sortOptions"

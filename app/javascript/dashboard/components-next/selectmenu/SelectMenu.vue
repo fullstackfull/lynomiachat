@@ -58,7 +58,7 @@ const handleSelect = value => {
     />
     <div
       v-if="isOpen"
-      class="absolute select-none max-w-64 flex flex-col gap-1 bg-n-alpha-3 backdrop-blur-[100px] p-1 top-0 shadow-lg z-40 rounded-lg border border-n-weak dark:border-n-strong/50"
+      class="absolute select-none max-w-64 flex flex-col gap-1 bg-n-alpha-3 backdrop-blur-panel p-1 top-0 shadow-lg z-40 rounded-lg border border-n-weak dark:border-n-strong/50"
       :class="{
         'ltr:left-full rtl:right-full ltr:ml-1 rtl:mr-1':
           subMenuPosition === 'right',

@@ -132,6 +132,7 @@ const startCall = () => {
   <NextButton
     v-if="isVoiceCallInbox"
     v-tooltip.bottom="callButtonTooltip"
+    :aria-label="callButtonTooltip"
     sm
     ghost
     slate

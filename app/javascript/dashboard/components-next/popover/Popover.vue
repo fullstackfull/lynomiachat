@@ -150,7 +150,7 @@ defineExpose({ show, hide, toggle });
           { ignore: clickOutsideIgnore },
         ]"
         data-popover-content
-        class="relative flex flex-col w-full max-w-lg max-h-[calc(100vh-4rem)] mx-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-xl rounded-xl"
+        class="relative flex flex-col w-full max-w-lg max-h-[calc(100vh-4rem)] mx-4 bg-n-alpha-3 backdrop-blur-panel shadow-xl rounded-xl"
       >
         <div
           class="flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-xl"
@@ -168,7 +168,7 @@ defineExpose({ show, hide, toggle });
       data-popover-content
       :class="fixedPosition.class"
       :style="fixedPosition.style"
-      class="flex flex-col bg-n-alpha-3 backdrop-blur-[100px] shadow-xl rounded-xl"
+      class="flex flex-col bg-n-alpha-3 backdrop-blur-panel shadow-xl rounded-xl"
     >
       <div
         class="flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-xl"

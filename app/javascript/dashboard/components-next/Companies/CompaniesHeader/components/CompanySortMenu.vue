@@ -86,6 +86,7 @@ const handleOrderChange = value => {
   <div class="relative">
     <Button
       icon="i-lucide-arrow-down-up"
+      :aria-label="$t('COMPANIES.SORT_BY.LABEL')"
       color="slate"
       size="sm"
       variant="ghost"
@@ -95,7 +96,7 @@ const handleOrderChange = value => {
     <div
       v-if="isMenuOpen"
       v-on-clickaway="() => (isMenuOpen = false)"
-      class="absolute top-full mt-1 ltr:-right-32 rtl:-left-32 sm:ltr:right-0 sm:rtl:left-0 flex flex-col gap-4 bg-n-alpha-3 backdrop-blur-[100px] border border-n-weak w-72 rounded-xl p-4"
+      class="absolute top-full mt-1 ltr:-right-32 rtl:-left-32 sm:ltr:right-0 sm:rtl:left-0 flex flex-col gap-4 bg-n-alpha-3 backdrop-blur-panel border border-n-weak w-72 rounded-xl p-4"
     >
       <div class="flex items-center justify-between gap-2">
         <span class="text-sm text-n-slate-12">

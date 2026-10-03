@@ -174,6 +174,7 @@ onMounted(() => {
                   <Button
                     v-if="!bot.system_bot"
                     v-tooltip.top="t('AGENT_BOTS.EDIT.BUTTON_TEXT')"
+                    :aria-label="t('AGENT_BOTS.EDIT.BUTTON_TEXT')"
                     icon="i-woot-edit-pen"
                     slate
                     sm
@@ -183,6 +184,7 @@ onMounted(() => {
                   <Button
                     v-if="!bot.system_bot"
                     v-tooltip.top="t('AGENT_BOTS.DELETE.BUTTON_TEXT')"
+                    :aria-label="t('AGENT_BOTS.DELETE.BUTTON_TEXT')"
                     icon="i-woot-bin"
                     slate
                     sm

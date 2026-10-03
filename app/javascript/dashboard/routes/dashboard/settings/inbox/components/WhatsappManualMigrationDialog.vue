@@ -240,7 +240,7 @@ defineExpose({ open, close });
           <h3 class="m-0 text-xl font-semibold text-n-slate-12">
             {{ copy.title }}
           </h3>
-          <p class="mt-2 mb-0 text-sm text-n-slate-11 min-h-[2.5rem]">
+          <p class="mt-2 mb-0 text-sm text-n-slate-11 min-h-10">
             {{ replaceInstallationName(currentStepDetails.description) }}
           </p>
         </div>

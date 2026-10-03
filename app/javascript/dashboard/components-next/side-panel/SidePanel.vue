@@ -73,6 +73,40 @@ const onOverlayClick = () => {
   if (props.closeOnClickOutside) close();
 };
 
+// The panel focused itself and restored focus on close, but Tab walked straight out into the page
+// behind it. Cycling focus inside the panel is the missing half.
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+onKeyStroke('Tab', event => {
+  if (!isOpen.value || !panelRef.value) return;
+  // A dialog opened on top of the panel owns the focus trap while it is up.
+  if (document.querySelector('dialog[open]')) return;
+
+  const focusable = [...panelRef.value.querySelectorAll(FOCUSABLE)].filter(
+    node => node.offsetParent !== null
+  );
+  if (!focusable.length) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+
+  if (!panelRef.value.contains(active)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (
+    event.shiftKey &&
+    (active === first || active === panelRef.value)
+  ) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+
 onKeyStroke('Escape', event => {
   if (!isOpen.value) return;
   // A dialog opened on top of the panel (e.g. the editor's link prompt) handles Escape itself.

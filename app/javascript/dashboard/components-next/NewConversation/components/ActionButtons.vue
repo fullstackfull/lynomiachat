@@ -190,9 +190,7 @@ useEventListener(document, 'paste', onPaste);
 </script>
 
 <template>
-  <div
-    class="flex items-center justify-between w-full h-[3.25rem] gap-2 px-4 py-3"
-  >
+  <div class="flex items-center justify-between w-full h-13 gap-2 px-4 py-3">
     <div class="flex gap-2 items-center">
       <WhatsAppOptions
         v-if="isWhatsappInbox"

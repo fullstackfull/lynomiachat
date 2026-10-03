@@ -20,8 +20,11 @@ import { DEFAULT_SIDEBAR_SORT_PREFERENCES } from 'dashboard/helper/sidebarSort';
 
 const params = new URLSearchParams(window.location.search);
 const EMPTY = params.get('state') === 'empty';
+// `?state=loading` renders every list as if its first fetch were still in flight, so loading states
+// are capturable. While loading, the lists are empty — a skeleton drawn over stale rows would lie.
+const LOADING = params.get('state') === 'loading';
 const RTL = params.get('locale') === 'ar';
-const list = rows => (EMPTY ? [] : rows);
+const list = rows => (EMPTY || LOADING ? [] : rows);
 
 const USER = {
   id: 11,
@@ -52,7 +55,18 @@ const ACCOUNT = {
   custom_attributes: {},
 };
 
-const NO_FLAGS = {};
+// Pages read half a dozen different flag names for the same thing, so all of them are set.
+const NO_FLAGS = LOADING
+  ? {
+      isFetching: true,
+      isFetchingItems: true,
+      fetchingList: true,
+      isFetchingList: true,
+      isCreating: false,
+      isUpdating: false,
+      isDeleting: false,
+    }
+  : {};
 
 export const GETTERS = {
   getCurrentAccountId: () => ACCOUNT_ID,
@@ -84,17 +98,17 @@ export const GETTERS = {
   'customViews/getCustomViews': () => list(CONTACT_VIEWS),
   'customViews/getContactCustomViews': () => list(CONTACT_VIEWS),
   'customViews/getConversationCustomViews': () => [],
-  'customViews/getUIFlags': () => ({ isCreating: false, isFetching: false }),
+  'customViews/getUIFlags': () => ({ ...NO_FLAGS, isCreating: false }),
   'automations/getAutomations': () => list(AUTOMATIONS),
-  'automations/getUIFlags': () => ({ isFetching: false }),
+  'automations/getUIFlags': () => NO_FLAGS,
   'campaigns/getCampaigns': () => list(CAMPAIGNS),
   'campaigns/getAllCampaigns': () => list(CAMPAIGNS),
   'campaigns/getWhatsAppCampaigns': () => list(CAMPAIGNS),
   'campaigns/getSMSCampaigns': () => [],
-  'campaigns/getUIFlags': () => ({ isFetching: false }),
+  'campaigns/getUIFlags': () => NO_FLAGS,
   'contacts/getContactsList': () => list(CONTACTS),
   'contacts/getContact': () => () => list(CONTACTS)[0] || {},
-  'contacts/getUIFlags': () => ({ isFetching: false }),
+  'contacts/getUIFlags': () => NO_FLAGS,
   'contacts/getMeta': () => ({ count: list(CONTACTS).length, currentPage: 1, hasMore: false }),
   'contacts/getAppliedContactFilters': () => [],
   'contacts/getAppliedContactFiltersV4': () => [],

@@ -162,4 +162,25 @@ export const SURFACES = {
     frame: 'settings',
     state: 'empty',
   },
+  'labels-list-loading': {
+    title: 'Settings · Labels (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/labels/Index.vue'),
+    route: 'labels_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'automation-list-loading': {
+    title: 'Settings · Automation (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/automation/Index.vue'),
+    route: 'automation_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'canned-list-loading': {
+    title: 'Settings · Canned responses (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/canned/Index.vue'),
+    route: 'canned_list',
+    frame: 'settings',
+    state: 'loading',
+  },
 };

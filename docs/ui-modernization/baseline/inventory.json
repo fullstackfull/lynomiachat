@@ -23094,5 +23094,1205 @@
       }
     ],
     "hidden": 0
+  },
+  "labels-list-loading|en|390": {
+    "surface": "labels-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-list-loading|en|768": {
+    "surface": "labels-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-loading|en|1024": {
+    "surface": "labels-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-loading|en|1280": {
+    "surface": "labels-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-loading|ar|390": {
+    "surface": "labels-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-list-loading|ar|768": {
+    "surface": "labels-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-loading|ar|1024": {
+    "surface": "labels-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-loading|ar|1280": {
+    "surface": "labels-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-list-loading|en|390": {
+    "surface": "automation-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "automation-list-loading|en|768": {
+    "surface": "automation-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-list-loading|en|1024": {
+    "surface": "automation-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-list-loading|en|1280": {
+    "surface": "automation-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-list-loading|ar|390": {
+    "surface": "automation-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "automation-list-loading|ar|768": {
+    "surface": "automation-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-list-loading|ar|1024": {
+    "surface": "automation-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-list-loading|ar|1280": {
+    "surface": "automation-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "canned-list-loading|en|390": {
+    "surface": "canned-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CANNED RESPONSE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "canned-list-loading|en|768": {
+    "surface": "canned-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about canned responses",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CANNED RESPONSE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "canned-list-loading|en|1024": {
+    "surface": "canned-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about canned responses",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CANNED RESPONSE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "canned-list-loading|en|1280": {
+    "surface": "canned-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about canned responses",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CANNED RESPONSE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "canned-list-loading|ar|390": {
+    "surface": "canned-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة رد جاهز",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "canned-list-loading|ar|768": {
+    "surface": "canned-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد عن الاستجابات المعلبة",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة رد جاهز",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "canned-list-loading|ar|1024": {
+    "surface": "canned-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد عن الاستجابات المعلبة",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة رد جاهز",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "canned-list-loading|ar|1280": {
+    "surface": "canned-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد عن الاستجابات المعلبة",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search canned responses...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة رد جاهز",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
   }
 }

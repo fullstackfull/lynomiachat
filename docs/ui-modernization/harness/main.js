@@ -15,6 +15,7 @@ import constants from 'dashboard/constants/globals';
 
 import App from './App.vue';
 import WootModal from 'dashboard/components/Modal.vue';
+import WootLoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import { GETTERS } from './fixtures/vuexGetters';
 import { ROUTE_NAMES } from './fixtures/routeNames';
 import { attachRouter } from './fixtures/routerBridge';
@@ -79,7 +80,8 @@ app.use(FloatingVue, {
 // component graph and deadlocks on its circular imports, and none of these affect what is being measured.
 const Passthrough = { template: '<div><slot /></div>' };
 const Hidden = { template: '<div style="display:none"><slot /></div>' };
-app.component('woot-loading-state', { props: ['message'], template: '<div class="p-6 text-sm text-n-slate-11">{{ message }}</div>' });
+// The real one, so a loading capture shows the spinner a user actually sees.
+app.component('woot-loading-state', WootLoadingState);
 app.component('woot-delete-modal', Hidden);
 app.component('woot-confirm-modal', Hidden);
 // The real legacy modal, so the 29 settings dialogs still built on it can be captured and compared.

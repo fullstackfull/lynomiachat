@@ -21,8 +21,9 @@ import {
   WHATSAPP_TEMPLATES,
 } from './data';
 
-const EMPTY = new URLSearchParams(window.location.search).get('state') === 'empty';
-const list = rows => (EMPTY ? [] : rows);
+const STATE = new URLSearchParams(window.location.search).get('state');
+// `empty` and `loading` both answer with nothing: an empty account, and a first fetch still in flight.
+const list = rows => (STATE === 'empty' || STATE === 'loading' ? [] : rows);
 
 // Longest match wins, so a specific path beats its prefix.
 const ROUTES = [

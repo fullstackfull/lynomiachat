@@ -113,8 +113,17 @@ const openDelete = inbox => {
           </span>
         </template>
         <template #actions>
-          <router-link v-if="isAdmin" :to="{ name: 'settings_inbox_new' }">
-            <Button :label="$t('SETTINGS.INBOXES.NEW_INBOX')" size="sm" />
+          <router-link
+            v-if="isAdmin"
+            :to="{ name: 'settings_inbox_new' }"
+            :aria-label="$t('SETTINGS.INBOXES.NEW_INBOX')"
+          >
+            <Button
+              :label="$t('SETTINGS.INBOXES.NEW_INBOX')"
+              size="sm"
+              tabindex="-1"
+              aria-hidden="true"
+            />
           </router-link>
         </template>
       </BaseSettingsHeader>

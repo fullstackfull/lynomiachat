@@ -7,7 +7,10 @@ import {
   CANNED_RESPONSES,
   CONTACTS,
   CONTACT_NOTES,
+  AGENT_BOTS,
   APPLIED_CONTACT_FILTERS,
+  AUDIT_LOGS,
+  DASHBOARD_APPS,
   CONTACT_VIEWS,
   CONVERSATION,
   CUSTOM_ATTRIBUTES,
@@ -18,6 +21,7 @@ import {
   MACROS,
   SLA_POLICIES,
   TEAMS,
+  WEBHOOKS,
 } from './data';
 import camelcaseKeys from 'camelcase-keys';
 import { DEFAULT_SIDEBAR_SORT_PREFERENCES } from 'dashboard/helper/sidebarSort';
@@ -153,10 +157,24 @@ export const GETTERS = {
   'notifications/getMeta': () => ({ unreadCount: 3 }),
   'globalConfig/isOnChatwootCloud': () => false,
   'globalConfig/isACustomBrandedInstance': () => false,
-  'globalConfig/get': () => ({ installationName: 'Lynomia' }),
+  'globalConfig/get': () => ({
+    installationName: 'Lynomia',
+    appVersion: '4.18.0',
+    gitSha: '9f2c1ab7d4e55803c2f1',
+    displayManifest: true,
+    brandName: 'Lynomia',
+  }),
   'sla/getSLA': () => list(SLA_POLICIES),
   'sla/getUIFlags': () => NO_FLAGS,
-  'agentBots/getBots': () => [],
+  'agentBots/getBots': () => list(AGENT_BOTS),
+  'agentBots/getUIFlags': () => NO_FLAGS,
+  'webhooks/getWebhooks': () => list(WEBHOOKS),
+  'webhooks/getUIFlags': () => NO_FLAGS,
+  'dashboardApps/getRecords': () => list(DASHBOARD_APPS),
+  'dashboardApps/getUIFlags': () => NO_FLAGS,
+  'auditlogs/getAuditLogs': () => list(AUDIT_LOGS),
+  'auditlogs/getUIFlags': () => NO_FLAGS,
+  'auditlogs/getMeta': () => ({ currentPage: 1, totalEntries: list(AUDIT_LOGS).length, perPage: 15 }),
   'macros/getMacros': () => list(MACROS),
   'macros/getUIFlags': () => NO_FLAGS,
   // `cannedResponse` is not a namespaced Vuex module, so its getters live at the root.
@@ -194,7 +212,8 @@ export const GETTERS = {
   // Camel-cased exactly as the real getter does it, because the note item reads `note.createdAt`.
   'contactNotes/getAllNotesByContactId': () => () => camelcaseKeys(CONTACT_NOTES),
   'contactNotes/getUIFlags': () => NO_FLAGS,
-  'integrations/getIntegration': () => id => ({ id, enabled: id === 'linear', hooks: [] }),
+  'integrations/getIntegration': () => id =>
+    INTEGRATION_APPS.find(app => app.id === id) || { id, name: id, enabled: id === 'linear', hooks: [] },
   'conversationLabels/getConversationLabels': () => () => CONVERSATION.labels,
   'conversationLabels/getUIFlags': () => NO_FLAGS,
   'contactConversations/getContactConversation': () => () => [CONVERSATION],

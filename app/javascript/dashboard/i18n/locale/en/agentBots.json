@@ -39,7 +39,9 @@
         "DETAILS": "Bot Details",
         "URL": "Webhook URL",
         "ACTIONS": "Actions"
-      }
+      },
+      "EMPTY_DESCRIPTION": "Add a bot to answer first and hand the conversation to an agent when it cannot.",
+      "EMPTY_TITLE": "No bots yet"
     },
     "DELETE": {
       "BUTTON_TEXT": "Delete",

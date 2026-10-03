@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 
 import BillingSubscriptionAPI from 'dashboard/api/billingSubscription';
 import SettingsLayout from '../SettingsLayout.vue';
+import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import BillingCard from '../billing/components/BillingCard.vue';
 import DetailItem from '../billing/components/DetailItem.vue';
 import ButtonV4 from 'next/button/Button.vue';
@@ -351,10 +352,7 @@ onMounted(async () => {
     :no-records-message="loadError"
   >
     <template #header>
-      <div class="flex flex-col gap-1">
-        <h1 class="text-xl font-medium text-n-slate-12">{{ t('TITLE') }}</h1>
-        <p class="text-sm text-n-slate-11">{{ t('DESCRIPTION') }}</p>
-      </div>
+      <BaseSettingsHeader :title="t('TITLE')" :description="t('DESCRIPTION')" />
     </template>
 
     <template #body>

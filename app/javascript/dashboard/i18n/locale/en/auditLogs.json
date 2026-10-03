@@ -32,7 +32,7 @@
         "MACROS": "Macros",
         "AUDIENCES": "Audiences",
         "CONVERSATION_DELETIONS": "Conversation deletions",
-      "MESSAGE_DELETIONS": "Message deletions"
+        "MESSAGE_DELETIONS": "Message deletions"
       },
       "SORT": {
         "NEWEST": "Newest first",

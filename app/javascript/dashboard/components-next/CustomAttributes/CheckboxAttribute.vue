@@ -32,7 +32,11 @@ const handleChange = value => {
       'justify-end': !isEditingView,
     }"
   >
-    <Switch v-model="attributeValue" @change="handleChange" />
+    <Switch
+      v-model="attributeValue"
+      :label="attribute.attributeDisplayName"
+      @change="handleChange"
+    />
     <Button
       v-if="isEditingView"
       variant="faded"

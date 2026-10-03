@@ -61,8 +61,7 @@ const handleStoreUrlSubmit = async () => {
   try {
     storeUrlError.value = '';
     if (!validateStoreUrl(storeUrl.value)) {
-      storeUrlError.value =
-        'Please enter a valid Shopify store URL (e.g., your-store.myshopify.com)';
+      storeUrlError.value = t('INTEGRATION_SETTINGS.SHOPIFY.INVALID_URL');
       return;
     }
 
@@ -117,7 +116,6 @@ onMounted(() => {
         >
           <template #action>
             <Button
-              teal
               :label="t('INTEGRATION_SETTINGS.CONNECT.BUTTON_TEXT')"
               @click="openStoreUrlDialog"
             />

@@ -32,8 +32,13 @@ const { integration, isHookTypeInbox, hasConnectedHooks } = useIntegrationHook(
 const globalConfig = useMapGetter('globalConfig/get');
 const searchQuery = ref('');
 
+// `visible_properties` are the hook's own setting keys — `project_id`, `language_code`. They are the right
+// columns, but they are not words: the table says them the way the rest of the product says a heading.
+const humanize = key =>
+  key.replace(/[_-]+/g, ' ').replace(/^./, first => first.toUpperCase());
+
 const hookHeaders = computed(() => {
-  const headers = [...(integration.value.visible_properties || [])];
+  const headers = (integration.value.visible_properties || []).map(humanize);
   if (isHookTypeInbox.value) {
     headers.push(t('INTEGRATION_APPS.LIST.INBOX'));
   }

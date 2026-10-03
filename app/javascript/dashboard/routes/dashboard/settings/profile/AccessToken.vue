@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import ConfirmButton from 'dashboard/components-next/button/ConfirmButton.vue';
 
@@ -11,6 +12,8 @@ const props = defineProps({
 
 const emit = defineEmits(['onCopy', 'onReset']);
 
+const { t } = useI18n();
+
 const inputType = ref('password');
 
 const toggleMasked = () => {
@@ -20,6 +23,14 @@ const toggleMasked = () => {
 const maskIcon = computed(() => {
   return inputType.value === 'password' ? 'eye-hide' : 'eye-show';
 });
+
+const maskLabel = computed(() =>
+  t(
+    inputType.value === 'password'
+      ? 'PROFILE_SETTINGS.FORM.ACCESS_TOKEN.SHOW'
+      : 'PROFILE_SETTINGS.FORM.ACCESS_TOKEN.HIDE'
+  )
+);
 
 const onClick = () => {
   emit('onCopy', props.value);
@@ -34,12 +45,8 @@ const onReset = () => {
   <div class="flex flex-row justify-between gap-4">
     <woot-input
       name="access_token"
-      class="flex-1 [&>input]:!py-1.5 ltr:[&>input]:!pr-9 ltr:[&>input]:!pl-3 rtl:[&>input]:!pl-9 rtl:[&>input]:!pr-3 focus:[&>input]:!border-n-weak [&>input]:cursor-not-allowed relative"
-      :styles="{
-        borderRadius: '12px',
-        fontSize: '14px',
-        marginBottom: '2px',
-      }"
+      class="flex-1 [&>input]:!py-1.5 ltr:[&>input]:!pr-9 ltr:[&>input]:!pl-3 rtl:[&>input]:!pl-9 rtl:[&>input]:!pr-3 focus:[&>input]:!border-n-weak [&>input]:cursor-not-allowed [&>input]:!rounded-xl [&>input]:!text-sm [&>input]:!mb-0.5 relative"
+      :aria-label="$t('PROFILE_SETTINGS.FORM.ACCESS_TOKEN.LABEL')"
       :type="inputType"
       :model-value="value"
       :disabled="disabled"
@@ -47,8 +54,10 @@ const onReset = () => {
     >
       <template #masked>
         <button
+          v-tooltip.top="maskLabel"
           class="absolute top-0 bottom-0 ltr:right-0.5 rtl:left-0.5"
           type="button"
+          :aria-label="maskLabel"
           :disabled="disabled"
           @click="toggleMasked"
         >

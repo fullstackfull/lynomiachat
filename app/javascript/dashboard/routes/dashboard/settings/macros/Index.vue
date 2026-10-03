@@ -137,8 +137,16 @@ const tableHeaders = computed(() => {
           </span>
         </template>
         <template #actions>
-          <router-link :to="{ name: 'macros_new' }">
-            <Button :label="$t('MACROS.HEADER_BTN_TXT')" size="sm" />
+          <router-link
+            :to="{ name: 'macros_new' }"
+            :aria-label="$t('MACROS.HEADER_BTN_TXT')"
+          >
+            <Button
+              :label="$t('MACROS.HEADER_BTN_TXT')"
+              size="sm"
+              tabindex="-1"
+              aria-hidden="true"
+            />
           </router-link>
         </template>
       </BaseSettingsHeader>

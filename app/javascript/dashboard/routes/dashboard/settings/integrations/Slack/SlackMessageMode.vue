@@ -35,9 +35,9 @@ const onSelect = async messageMode => {
   <div
     class="flex-1 w-full px-6 py-5 mb-4 outline outline-n-container outline-1 bg-n-card rounded-xl"
   >
-    <h5 class="text-n-slate-12 text-heading-1 tracking-tight">
+    <h3 class="text-n-slate-12 text-heading-1 tracking-tight">
       {{ t('INTEGRATION_SETTINGS.SLACK.MESSAGE_MODE.TITLE') }}
-    </h5>
+    </h3>
     <p class="mt-1 mb-4 text-n-slate-11 text-body-main">
       {{ t('INTEGRATION_SETTINGS.SLACK.MESSAGE_MODE.DESCRIPTION') }}
     </p>

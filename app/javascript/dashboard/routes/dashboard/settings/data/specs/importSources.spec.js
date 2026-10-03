@@ -22,7 +22,7 @@ describe('importSources', () => {
     );
     expect(importSourceFor({ source_provider: null })).toMatchObject({
       value: 'file',
-      label: 'File import',
+      labelKey: 'DATA_IMPORTS.SOURCE.FILE',
     });
   });
 });

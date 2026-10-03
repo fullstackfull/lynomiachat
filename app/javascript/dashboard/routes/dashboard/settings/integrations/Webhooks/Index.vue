@@ -12,10 +12,12 @@ import WebhookRow from './WebhookRow.vue';
 import WebhookPaywall from './WebhookPaywall.vue';
 import BaseSettingsHeader from '../../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../../SettingsLayout.vue';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 
 export default {
   components: {
     SettingsLayout,
+    EmptyState,
     NextButton,
     BaseSettingsHeader,
     BaseTable,
@@ -173,13 +175,27 @@ export default {
         </template>
         <template v-if="apiAndWebhooksEnabled" #actions>
           <NextButton
-            blue
             :label="$t('INTEGRATION_SETTINGS.WEBHOOK.HEADER_BTN_TXT')"
             size="sm"
             @click="openAddPopup"
           />
         </template>
       </BaseSettingsHeader>
+    </template>
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-webhook"
+        :title="$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.EMPTY_TITLE')"
+        :description="$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.EMPTY_DESCRIPTION')"
+      >
+        <template #action>
+          <NextButton
+            :label="$t('INTEGRATION_SETTINGS.WEBHOOK.HEADER_BTN_TXT')"
+            size="sm"
+            @click="openAddPopup"
+          />
+        </template>
+      </EmptyState>
     </template>
     <template #body>
       <WebhookPaywall v-if="!apiAndWebhooksEnabled" />

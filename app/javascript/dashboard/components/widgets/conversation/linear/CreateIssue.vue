@@ -48,8 +48,6 @@ const statusDesiredOrder = [
 ];
 
 const isCreating = ref(false);
-const inputStyles = { borderRadius: '0.75rem', fontSize: '0.875rem' };
-
 const formState = reactive({
   title: '',
   description: '',
@@ -217,8 +215,7 @@ onMounted(getTeams);
     <woot-input
       v-model="formState.title"
       :class="{ error: v$.title.$error }"
-      class="w-full"
-      :styles="{ ...inputStyles, padding: '0.375rem 0.75rem' }"
+      class="w-full [&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
       :label="$t('INTEGRATION_SETTINGS.LINEAR.ADD_OR_LINK.FORM.TITLE.LABEL')"
       :placeholder="
         $t('INTEGRATION_SETTINGS.LINEAR.ADD_OR_LINK.FORM.TITLE.PLACEHOLDER')

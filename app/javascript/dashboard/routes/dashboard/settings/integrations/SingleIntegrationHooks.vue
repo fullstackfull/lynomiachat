@@ -42,7 +42,7 @@ const { replaceInstallationName } = useBranding();
           {{ replaceInstallationName(integration.description) }}
         </p>
       </div>
-      <div class="flex justify-center items-center mb-0 w-[15%]">
+      <div class="flex justify-center items-center mb-0 flex-shrink-0">
         <div v-if="hasConnectedHooks">
           <div @click="$emit('delete', integration.hooks[0])">
             <Button

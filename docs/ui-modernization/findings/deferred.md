@@ -200,3 +200,56 @@ not folded into a visual commit.
 - **An empty-value row rendering the wrong branch.** Reported as a defect; it does not reproduce. Every
   caller already gates `href` on the value, so a row with no value falls through to the non-link branch
   exactly as intended.
+
+## Five correctness defects on the settings surface, found while modernising it
+
+These are bugs, not presentation, so none of them is folded into a visual commit. Each is reproducible
+from the file and line given.
+
+- **A failed fetch renders as an empty list.** `data/Index.vue:81-84` `fetchImports` has no `catch`, and
+  `refresh` only resets flags in `finally`. If `DataImportsAPI.get()` rejects, `dataImports` stays `[]`
+  and the page shows "No imports yet" with a New import button — for a request that failed. `data/Show.vue`
+  has the same shape: a rejected `fetchImport` leaves a blank body.
+- **The MFA wizard advances past a rejected code.** `MfaSetupWizard.vue:79-88` wraps `emit('verify', …)`
+  in `try/catch`, but `emit` is synchronous and returns `undefined`; the parent's `async verifyCode`
+  rejects later on its own promise. So `setupStep.value = 'backup'` always runs: on a wrong code the user
+  is moved to step 2 and shown an empty backup-codes grid, while the error lands on a step-1 input that is
+  no longer rendered. The local `catch` is unreachable.
+- **Four silent swallows on paths where silence is wrong.** `MfaSettings.vue:50-52`, `account/Index.vue:126-128`,
+  `MfaSetupWizard.vue:61-63` and `NotificationPreferences.vue:102-104`. A failed MFA status read shows the
+  user the "not enabled" card as if MFA were simply off.
+- **Two downloads and one abandon cannot report failure.** `data/Show.vue:159-179` and `:120-130` use
+  `try/finally` with no `catch`, so a failed export or abandon just stops the spinner. The sibling
+  `retryImport` in the same file does catch and toast.
+- **Two nav items lead to billing and one leaves the product.** `billing_settings_index` is an `onMounted`
+  hard redirect to a hardcoded external URL with a bare spinner, no heading and no error path; the
+  adjacent "Subscription" item is the real in-app page. All three paywalls' Upgrade buttons point at the
+  redirecting one. Which of the two an admin should click, and whether the external URL belongs in
+  configuration, are product decisions.
+
+## Copy casing is inconsistent across the product, not only in webhooks
+
+The webhook event list reads "Conversation Created, Message created" because
+`INTEGRATION_SETTINGS.WEBHOOK.FORM.SUBSCRIPTIONS.EVENTS` mixes Title Case and sentence case across its
+eleven values. Fixing those eleven in isolation would make webhooks consistent with itself and
+inconsistent with everything around it: the same mixture runs through the settings strings generally.
+A casing convention is a copy decision for the whole product, and changing source strings retranslates
+them at Crowdin, so it belongs in one deliberate pass rather than in a visual batch.
+
+## FormKit styling in the new-hook modal is contained, not yet moved
+
+`integrations/NewHook.vue` shipped an unscoped global stylesheet: eight rules on `.formkit-*` class names
+that applied to every FormKit form in the application for as long as the component stayed loaded. Every
+selector is now prefixed with the modal's own root class, so it can no longer leak, and the one raw
+`margin-bottom: 0px !important` is a utility. The rules themselves still exist as CSS, which the project
+rules would rather they did not: FormKit renders its own wrapper markup, so the real fix is its `classes`
+configuration. That is a FormKit-level change whose blast radius covers every form built on it, and it
+wants its own verification pass.
+
+## The agent-bots list does not say what kind of bot a row is
+
+`agentBots/Index.vue` renders two columns: the bot's name and avatar, and "Webhook URL"
+(`bot.outgoing_url || bot.bot_config?.webhook_url`). A CSML bot has neither, so its row shows a name and an
+empty cell, and nothing on the page distinguishes a webhook bot from a CSML one — `bot_type` is in the
+payload and is rendered nowhere. Showing it would be useful and is a new piece of information on the
+surface, which the contract says to write down rather than add quietly.

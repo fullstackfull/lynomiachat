@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import { picoSearch } from '@chatwoot/pico-search';
@@ -125,6 +126,21 @@ onMounted(() => {
           />
         </template>
       </BaseSettingsHeader>
+    </template>
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-bot"
+        :title="t('AGENT_BOTS.LIST.EMPTY_TITLE')"
+        :description="t('AGENT_BOTS.LIST.EMPTY_DESCRIPTION')"
+      >
+        <template #action>
+          <Button
+            :label="$t('AGENT_BOTS.ADD.TITLE')"
+            size="sm"
+            @click="openAddModal"
+          />
+        </template>
+      </EmptyState>
     </template>
     <template #body>
       <BaseTable

@@ -303,12 +303,12 @@ export default {
         >
           <img
             :src="hotKey.lightImage"
-            :alt="`Light themed image for ${hotKey.title}`"
+            alt=""
             class="block object-cover w-full dark:hidden"
           />
           <img
             :src="hotKey.darkImage"
-            :alt="`Dark themed image for ${hotKey.title}`"
+            alt=""
             class="hidden object-cover w-full dark:block"
           />
         </RadioCard>

@@ -38,9 +38,9 @@ const formattedHelpText = computed(() => {
     class="flex-1 w-full px-6 py-5 outline outline-n-container outline-1 bg-n-card rounded-xl"
   >
     <div class="prose-lg max-w-5xl">
-      <h5 class="text-n-slate-12 text-heading-1 tracking-tight">
+      <h3 class="text-n-slate-12 text-heading-1 tracking-tight">
         {{ t('INTEGRATION_SETTINGS.SLACK.HELP_TEXT.TITLE') }}
-      </h5>
+      </h3>
       <div
         v-dompurify-html="formattedHelpText"
         class="text-n-slate-11 text-body-main"

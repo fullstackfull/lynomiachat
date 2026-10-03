@@ -67,7 +67,7 @@ const updateIntegration = async () => {
       <div class="flex-shrink-0">
         <div class="i-lucide-bell text-xl text-n-amber-11 mt-1" />
       </div>
-      <div class="ml-3">
+      <div class="ms-3">
         <p class="mb-1 text-heading-2 text-n-slate-12">
           {{
             $t('INTEGRATION_SETTINGS.SLACK.SELECT_CHANNEL.ATTENTION_REQUIRED')
@@ -78,7 +78,7 @@ const updateIntegration = async () => {
         </div>
       </div>
     </div>
-    <div v-if="!hasConnectedAChannel" class="mb-2 mt-1 ml-8">
+    <div v-if="!hasConnectedAChannel" class="mb-2 mt-1 ms-8">
       <Button
         v-if="!availableChannels.length"
         amber
@@ -91,7 +91,7 @@ const updateIntegration = async () => {
       <div v-else class="inline-flex">
         <select
           v-model="selectedChannelId"
-          class="h-8 py-1 mr-4 text-xs leading-4 border border-n-amber-10"
+          class="h-8 py-1 me-4 text-xs leading-4 border border-n-amber-10"
         >
           <option value="">
             {{ $t('INTEGRATION_SETTINGS.SLACK.SELECT_CHANNEL.OPTION_LABEL') }}

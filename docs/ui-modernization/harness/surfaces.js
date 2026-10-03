@@ -478,6 +478,98 @@ export const SURFACES = {
     frame: 'plain',
     state: 'empty',
   },
+  // Five settings pages were modernised in earlier batches and had no capture at all, so none of that work
+  // was ever verified. They go in before the batch that touches them again.
+  'webhooks-list': {
+    title: 'Settings · Webhooks',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue'),
+    route: 'settings_integrations_webhook',
+    frame: 'settings',
+  },
+  'dashboard-apps-list': {
+    title: 'Settings · Dashboard apps',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue'),
+    route: 'settings_integrations_dashboard_apps',
+    frame: 'settings',
+  },
+  'integration-hooks': {
+    title: 'Settings · Integration hooks (Dialogflow)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue'),
+    route: 'settings_applications_integration',
+    // The route passes the integration as a prop, so the harness does the same.
+    props: { integrationId: 'dialogflow' },
+    frame: 'settings',
+  },
+  'integrations-list': {
+    title: 'Settings · Integrations catalogue',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Index.vue'),
+    route: 'settings_applications',
+    frame: 'settings',
+  },
+  'account-settings': {
+    title: 'Settings · Account',
+    load: () => import('dashboard/routes/dashboard/settings/account/Index.vue'),
+    route: 'general_settings_index',
+    frame: 'settings',
+  },
+  'profile-settings': {
+    title: 'Settings · Profile',
+    load: () => import('dashboard/routes/dashboard/settings/profile/Index.vue'),
+    route: 'profile_settings_index',
+    frame: 'settings',
+  },
+  'security-settings': {
+    title: 'Settings · Security (SAML)',
+    load: () => import('dashboard/routes/dashboard/settings/security/Index.vue'),
+    route: 'security_settings_index',
+    frame: 'settings',
+  },
+  'data-imports': {
+    title: 'Settings · Data imports',
+    load: () => import('dashboard/routes/dashboard/settings/data/Index.vue'),
+    route: 'settings_data_imports',
+    frame: 'settings',
+  },
+  'webhooks-list-empty': {
+    title: 'Settings · Webhooks (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue'),
+    route: 'settings_integrations_webhook',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'dashboard-apps-list-empty': {
+    title: 'Settings · Dashboard apps (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue'),
+    route: 'settings_integrations_dashboard_apps',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'agent-bots-list-empty': {
+    title: 'Settings · Agent bots (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/agentBots/Index.vue'),
+    route: 'agent_bots',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'data-imports-empty': {
+    title: 'Settings · Data imports (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/data/Index.vue'),
+    route: 'settings_data_imports',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'agent-bots-list': {
+    title: 'Settings · Agent bots',
+    load: () => import('dashboard/routes/dashboard/settings/agentBots/Index.vue'),
+    route: 'agent_bots',
+    frame: 'settings',
+  },
+  'auditlogs-list': {
+    title: 'Settings · Audit logs',
+    load: () => import('dashboard/routes/dashboard/settings/auditlogs/Index.vue'),
+    route: 'auditlogs_list',
+    frame: 'settings',
+  },
   'campaigns-whatsapp-create': {
     title: 'Campaigns · WhatsApp · create dialog',
     load: () => import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignsPage.vue'),

@@ -16,11 +16,6 @@ export default {
         ],
       },
       component: SettingsWrapper,
-      props: {
-        headerTitle: 'SECURITY_SETTINGS.TITLE',
-        icon: 'i-lucide-shield',
-        showNewButton: false,
-      },
       children: [
         {
           path: '',

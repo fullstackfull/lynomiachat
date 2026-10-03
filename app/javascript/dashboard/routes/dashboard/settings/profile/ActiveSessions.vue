@@ -50,10 +50,13 @@ const sessionLabel = session => {
     );
   }
   if (!isUnknown(session.platform_name)) parts.push(session.platform_name);
-  return (
-    parts.join(' on ') ||
-    t('PROFILE_SETTINGS.FORM.SESSIONS_SECTION.UNKNOWN_DEVICE')
-  );
+  if (parts.length === 2) {
+    return t('PROFILE_SETTINGS.FORM.SESSIONS_SECTION.DEVICE', {
+      browser: parts[0],
+      platform: parts[1],
+    });
+  }
+  return parts[0] || t('PROFILE_SETTINGS.FORM.SESSIONS_SECTION.UNKNOWN_DEVICE');
 };
 
 const locationLabel = session => {

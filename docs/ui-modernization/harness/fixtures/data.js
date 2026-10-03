@@ -307,6 +307,36 @@ export const WHATSAPP_TEMPLATES = [
 export const INTEGRATION_APPS = [
   { id: 'slack', name: 'Slack', description: 'Send conversations to a Slack channel', enabled: false, hooks: [] },
   { id: 'webhook', name: 'Webhooks', description: 'Post events to your own endpoint', enabled: true, hooks: [] },
+  // Shaped on `_app.json.jbuilder` + `_hook.json.jbuilder`: the app carries its own `visible_properties` and a
+  // hook exposes only the settings named there. Dialogflow is the one `hook_type: inbox` app that also allows
+  // multiple hooks, so it is the app whose hooks table exercises both the property columns and the inbox column.
+  {
+    id: 'dialogflow',
+    name: 'Dialogflow',
+    description: 'Hand a conversation to a Dialogflow agent',
+    enabled: true,
+    hook_type: 'inbox',
+    allow_multiple_hooks: true,
+    visible_properties: ['project_id', 'region', 'language_code'],
+    hooks: [
+      {
+        id: 941,
+        app_id: 'dialogflow',
+        status: true,
+        hook_type: 'inbox',
+        inbox: { id: 5, name: 'WhatsApp Main' },
+        settings: { project_id: 'lynomia-prod-01', region: 'europe-west1', language_code: 'ar' },
+      },
+      {
+        id: 942,
+        app_id: 'dialogflow',
+        status: true,
+        hook_type: 'inbox',
+        inbox: { id: 2, name: 'Website' },
+        settings: { project_id: 'lynomia-prod-02', region: 'us-central1', language_code: 'en' },
+      },
+    ],
+  },
 ];
 
 // One open conversation, so the workspace surfaces (header, contact panel, Commerce) render against a real chat
@@ -617,3 +647,161 @@ export const CAMPAIGN_DELIVERIES = [
     error_message: null,
   },
 ];
+
+// The five settings pages that were modernised in earlier batches and had no capture to prove it.
+export const WEBHOOKS = [
+  { id: 901, url: 'https://hooks.example.com/lynomia', subscriptions: ['conversation_created', 'message_created'] },
+  { id: 902, url: 'https://ops.example.com/orders', subscriptions: ['conversation_status_changed'] },
+];
+
+export const DASHBOARD_APPS = [
+  { id: 911, title: 'Order lookup', content: [{ url: 'https://apps.example.com/orders' }] },
+  { id: 912, title: 'Returns desk', content: [{ url: 'https://apps.example.com/returns' }] },
+];
+
+export const AGENT_BOTS = [
+  { id: 921, name: 'Order tracking bot', description: 'Answers where-is-my-order', bot_type: 'webhook', outgoing_url: 'https://bots.example.com/track', access_token: 'tok_1' },
+  { id: 922, name: 'Triage bot', description: '', bot_type: 'csml', outgoing_url: '', access_token: 'tok_2' },
+];
+
+// Shaped on `enterprise/.../audit_logs/show.json.jbuilder`: `created_at` is unix seconds, and the row renders
+// `location || remote_address`. The three actions hit three different `translationKeys` entries.
+export const AUDIT_LOGS = [
+  {
+    id: 931,
+    action: 'update',
+    auditable_type: 'Inbox',
+    auditable_id: 5,
+    auditable: { id: 5, name: 'WhatsApp Main' },
+    associated_id: null,
+    associated_type: null,
+    user_id: 11,
+    user_type: 'User',
+    username: 'Dana Khalil',
+    audited_changes: { name: ['WhatsApp', 'WhatsApp Main'] },
+    version: 2,
+    created_at: 1759300000,
+    location: 'Kuwait City, KW',
+    remote_address: '41.23.xxx.xxx',
+  },
+  {
+    id: 932,
+    action: 'create',
+    auditable_type: 'AutomationRule',
+    auditable_id: 41,
+    auditable: { id: 41, name: 'Route refunds to billing' },
+    associated_id: null,
+    associated_type: null,
+    user_id: 12,
+    user_type: 'User',
+    username: 'Omar Said',
+    audited_changes: {},
+    version: 1,
+    created_at: 1759200000,
+    location: 'Dubai, AE',
+    remote_address: '87.11.xxx.xxx',
+  },
+  {
+    id: 933,
+    action: 'destroy',
+    auditable_type: 'Macro',
+    auditable_id: 3,
+    auditable: null,
+    associated_id: null,
+    associated_type: null,
+    user_id: 11,
+    user_type: 'User',
+    username: 'Dana Khalil',
+    audited_changes: {},
+    version: 1,
+    created_at: 1759100000,
+    location: null,
+    remote_address: '41.23.xxx.xxx',
+  },
+];
+
+// Shaped on `data_imports/_data_import.json.jbuilder`. Three rows for the three states the list renders
+// differently: one still processing (the live indicator), one completed, one failed with errors to open.
+export const DATA_IMPORTS = [
+  {
+    id: 951,
+    name: 'Intercom customers — October',
+    data_type: 'contacts',
+    source_type: 'provider',
+    source_provider: 'intercom',
+    import_types: ['contacts'],
+    status: 'processing',
+    stalled: false,
+    total_records: 4820,
+    processed_records: 2130,
+    stats: {},
+    cursor: {},
+    created_at: '2026-10-02T08:00:00.000Z',
+    updated_at: '2026-10-02T08:21:00.000Z',
+    started_at: '2026-10-02T08:01:00.000Z',
+    completed_at: null,
+    abandoned_at: null,
+    initiated_by: { id: 11, name: 'Dana Khalil', email: 'dana@example.com' },
+    import_errors_count: 0,
+    skip_logs_count: 0,
+  },
+  {
+    id: 952,
+    name: 'Contacts backfill.csv',
+    data_type: 'contacts',
+    source_type: 'file',
+    source_provider: null,
+    import_types: ['contacts'],
+    status: 'completed',
+    stalled: false,
+    total_records: 1200,
+    processed_records: 1200,
+    stats: {},
+    cursor: {},
+    created_at: '2026-09-28T10:00:00.000Z',
+    updated_at: '2026-09-28T10:14:00.000Z',
+    started_at: '2026-09-28T10:01:00.000Z',
+    completed_at: '2026-09-28T10:14:00.000Z',
+    abandoned_at: null,
+    initiated_by: { id: 12, name: 'Omar Said', email: 'omar@example.com' },
+    import_errors_count: 0,
+    skip_logs_count: 14,
+  },
+  {
+    id: 953,
+    name: 'Freshdesk tickets — September',
+    data_type: 'contacts',
+    source_type: 'provider',
+    source_provider: 'freshdesk',
+    import_types: ['contacts', 'conversations'],
+    status: 'failed',
+    stalled: false,
+    total_records: 900,
+    processed_records: 410,
+    stats: {},
+    cursor: {},
+    created_at: '2026-09-20T07:00:00.000Z',
+    updated_at: '2026-09-20T07:30:00.000Z',
+    started_at: '2026-09-20T07:01:00.000Z',
+    completed_at: null,
+    abandoned_at: null,
+    initiated_by: { id: 11, name: 'Dana Khalil', email: 'dana@example.com' },
+    import_errors_count: 37,
+    skip_logs_count: 3,
+  },
+];
+
+// Shaped on `_account_saml_settings.json.jbuilder`. The security page hides its whole form until
+// `sso_url` comes back non-empty, so an account with SAML already configured is the state that renders it.
+export const SAML_SETTINGS = {
+  id: 7,
+  account_id: ACCOUNT_ID,
+  sso_url: 'https://sso.lynomia.test/saml/sso',
+  certificate: '-----BEGIN CERTIFICATE-----\nMIICljCCAX4CCQD…\n-----END CERTIFICATE-----',
+  fingerprint: 'AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01',
+  idp_entity_id: 'https://sso.lynomia.test/saml',
+  sp_entity_id: 'https://app.lynomia.test/sp',
+  role_mappings: {},
+  created_at: '2026-09-01T09:00:00.000Z',
+  updated_at: '2026-09-20T11:30:00.000Z',
+};

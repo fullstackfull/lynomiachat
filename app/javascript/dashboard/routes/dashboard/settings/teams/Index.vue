@@ -102,8 +102,17 @@ const confirmPlaceHolderText = computed(() =>
           </span>
         </template>
         <template #actions>
-          <router-link v-if="isAdmin" :to="{ name: 'settings_teams_new' }">
-            <Button :label="$t('TEAMS_SETTINGS.NEW_TEAM')" size="sm" />
+          <router-link
+            v-if="isAdmin"
+            :to="{ name: 'settings_teams_new' }"
+            :aria-label="$t('TEAMS_SETTINGS.NEW_TEAM')"
+          >
+            <Button
+              :label="$t('TEAMS_SETTINGS.NEW_TEAM')"
+              size="sm"
+              tabindex="-1"
+              aria-hidden="true"
+            />
           </router-link>
         </template>
       </BaseSettingsHeader>

@@ -125,7 +125,7 @@ const handleModelChange = ({ feature, model }) => {
         <p class="text-sm text-n-slate-11 mt-0.5">{{ description }}</p>
       </div>
       <div v-if="isAllowed" class="flex-shrink-0">
-        <Switch v-model="isEnabled" @change="toggleFeature" />
+        <Switch v-model="isEnabled" :label="title" @change="toggleFeature" />
       </div>
     </div>
     <div

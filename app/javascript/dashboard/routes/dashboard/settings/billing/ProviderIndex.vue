@@ -25,7 +25,7 @@ const isShopifyEnabled = computed(
   <SettingsLayout
     v-if="!isAccountLoaded"
     is-loading
-    :loading-message="$t('ATTRIBUTES_MGMT.LOADING')"
+    :loading-message="$t('BILLING_SETTINGS.LOADING')"
   />
   <ShopifyBilling v-else-if="isShopifyBilling && isShopifyEnabled" />
   <SettingsLayout

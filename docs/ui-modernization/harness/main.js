@@ -16,6 +16,8 @@ import constants from 'dashboard/constants/globals';
 import App from './App.vue';
 import WootModal from 'dashboard/components/Modal.vue';
 import WootLoadingState from 'dashboard/components/widgets/LoadingState.vue';
+import WootInput from 'dashboard/components/widgets/forms/Input.vue';
+import WootCode from 'dashboard/components/Code.vue';
 import { SURFACES } from './surfaces';
 import { GETTERS } from './fixtures/vuexGetters';
 import { ROUTE_NAMES } from './fixtures/routeNames';
@@ -28,7 +30,22 @@ import 'dashboard/assets/scss/app.scss';
 const params = new URLSearchParams(window.location.search);
 const locale = params.get('locale') === 'ar' ? 'ar' : 'en';
 
-window.chatwootConfig = { hostURL: 'https://lynomia.test', apiHost: '' };
+window.chatwootConfig = {
+  hostURL: 'https://lynomia.test',
+  apiHost: '',
+  isEnterprise: 'true',
+  enterprisePlanName: 'enterprise',
+  isMfaEnabled: 'true',
+  inboxEventsEnabled: 'false',
+  selectedLocale: 'en',
+  allowedLoginMethods: ['email', 'saml'],
+  helpUrls: {},
+  enabledLanguages: [
+    { name: 'English', iso_639_1_code: 'en' },
+    { name: 'العربية', iso_639_1_code: 'ar' },
+    { name: 'Français', iso_639_1_code: 'fr' },
+  ],
+};
 window.globalConfig = { installationName: 'Lynomia' };
 window.WootConstants = constants;
 installFixtureAxios();
@@ -102,6 +119,10 @@ app.component('woot-modal', WootModal);
 app.component('woot-modal-header', Passthrough);
 // Gates a section on an account feature flag; the fixture account has every flag on, so it renders its slot.
 app.component('woot-feature-toggle', Passthrough);
+// The legacy input and code block, imported directly rather than through the UI kit's `install`: twelve
+// inputs across profile, SLA and the dashboard-app modal are built on it, and a stub renders none of them.
+app.component('woot-input', WootInput);
+app.component('woot-code', WootCode);
 app.component('woot-button', { template: '<button><slot /></button>' });
 app.component('fluent-icon', { props: ['icon'], template: '<span />' });
 app.directive('resize', vResizeObserver);

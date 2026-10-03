@@ -95,7 +95,8 @@
         "REVOKE_ERROR": "Unable to revoke session. Please try again.",
         "FETCH_ERROR": "Unable to fetch sessions. Please try again.",
         "LAST_ACTIVE": "Last active",
-        "UNKNOWN_DEVICE": "Unknown device"
+        "UNKNOWN_DEVICE": "Unknown device",
+        "DEVICE": "{browser} on {platform}"
       },
       "ACCESS_TOKEN": {
         "TITLE": "Access Token",
@@ -106,7 +107,10 @@
         "CONFIRM_RESET": "Are you sure?",
         "CONFIRM_HINT": "Click again to confirm",
         "RESET_SUCCESS": "Access token regenerated successfully",
-        "RESET_ERROR": "Unable to regenerate access token. Please try again"
+        "RESET_ERROR": "Unable to regenerate access token. Please try again",
+        "LABEL": "Access token",
+        "SHOW": "Show access token",
+        "HIDE": "Hide access token"
       },
       "AUDIO_NOTIFICATIONS_SECTION": {
         "TITLE": "Audio Alerts",
@@ -542,6 +546,9 @@
       "IMPORT_RETRY_FAILED": "Could not retry the import.",
       "IMPORT_ABANDONED": "Import has been abandoned.",
       "IMPORT_FAILED": "Could not start the import."
+    },
+    "SOURCE": {
+      "FILE": "File import"
     }
   },
   "CAPTAIN_SETTINGS": {
@@ -691,7 +698,8 @@
         "GO_BACK": "Go Back",
         "CONFIRM_PURCHASE": "Confirm Purchase"
       }
-    }
+    },
+    "LOADING": "Opening billing"
   },
   "SECURITY_SETTINGS": {
     "TITLE": "Security",
@@ -762,7 +770,8 @@
       "INFO_SECTION": {
         "TITLE": "Service Provider Information",
         "TOOLTIP": "Copy these values and configure them in your Identity Provider to establish the SAML connection"
-      }
+      },
+      "COPY": "Copy {field}"
     }
   },
   "CONVERSATION_WORKFLOW": {

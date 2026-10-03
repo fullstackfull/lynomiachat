@@ -34,12 +34,6 @@ export default {
       userName: this.name,
       userDisplayName: this.displayName,
       userEmail: this.email,
-      inputStyles: {
-        borderRadius: '0.75rem',
-        padding: '0.375rem 0.75rem',
-        fontSize: '0.875rem',
-        marginBottom: '0.125rem',
-      },
     };
   },
   validations: {
@@ -94,7 +88,7 @@ export default {
   <form class="flex flex-col gap-4" @submit.prevent="updateUser('profile')">
     <woot-input
       v-model="userName"
-      :styles="inputStyles"
+      class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
       :class="{ error: v$.userName.$error }"
       :label="$t('PROFILE_SETTINGS.FORM.NAME.LABEL')"
       :placeholder="$t('PROFILE_SETTINGS.FORM.NAME.PLACEHOLDER')"
@@ -106,7 +100,7 @@ export default {
     />
     <woot-input
       v-model="userDisplayName"
-      :styles="inputStyles"
+      class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
       :class="{ error: v$.userDisplayName.$error }"
       :label="$t('PROFILE_SETTINGS.FORM.DISPLAY_NAME.LABEL')"
       :placeholder="$t('PROFILE_SETTINGS.FORM.DISPLAY_NAME.PLACEHOLDER')"
@@ -121,7 +115,7 @@ export default {
     <woot-input
       v-if="emailEnabled"
       v-model="userEmail"
-      :styles="inputStyles"
+      class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
       :class="{ error: v$.userEmail.$error }"
       :label="$t('PROFILE_SETTINGS.FORM.EMAIL.LABEL')"
       :placeholder="$t('PROFILE_SETTINGS.FORM.EMAIL.PLACEHOLDER')"

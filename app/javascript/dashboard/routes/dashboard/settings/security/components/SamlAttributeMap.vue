@@ -31,10 +31,10 @@ const toggleExpanded = () => {
     </button>
 
     <div
-      class="transition-[height] duration-200 ease-in-out overflow-hidden"
-      :class="isExpanded ? 'h-auto' : 'h-0'"
+      class="grid transition-[grid-template-rows] duration-200 ease-in-out overflow-hidden motion-reduce:transition-none"
+      :class="isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
     >
-      <div class="px-4 pb-3">
+      <div class="min-h-0 overflow-hidden px-4 pb-3">
         <p class="text-n-slate-11 mb-2">
           {{ t('SECURITY_SETTINGS.SAML.ATTRIBUTE_MAPPING.DESCRIPTION') }}
         </p>

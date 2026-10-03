@@ -87,8 +87,9 @@ defineEmits(['toggle', 'download']);
           >
             {{ emptyMessage }}
           </p>
-          <div v-else class="overflow-x-auto">
+          <div v-else>
             <BaseTable
+              scrollable
               class="[&_td:first-child]:ps-4 [&_th:first-child]:ps-4 [&_th]:text-n-slate-11 [&_thead]:border-t-0"
               :headers="headers"
               :items="items"

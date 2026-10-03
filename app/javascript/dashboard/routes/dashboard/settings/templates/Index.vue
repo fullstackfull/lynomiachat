@@ -375,7 +375,7 @@ onDeactivated(abortTemplateRequest);
               <DropdownMenu
                 v-if="openFilterMenu === menu.key"
                 :menu-items="menu.items"
-                class="mt-2 min-w-52 top-full ltr:left-0 rtl:right-0"
+                class="mt-2 min-w-52 top-full start-0"
                 @action="handleFilterAction"
               />
             </div>

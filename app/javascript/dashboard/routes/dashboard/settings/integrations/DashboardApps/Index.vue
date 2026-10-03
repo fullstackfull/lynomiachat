@@ -7,12 +7,14 @@ import DashboardAppModal from './DashboardAppModal.vue';
 import DashboardAppsRow from './DashboardAppsRow.vue';
 import BaseSettingsHeader from '../../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../../SettingsLayout.vue';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   components: {
     BaseSettingsHeader,
     SettingsLayout,
+    EmptyState,
     BaseTable,
     DashboardAppModal,
     DashboardAppsRow,
@@ -153,6 +155,23 @@ export default {
           />
         </template>
       </BaseSettingsHeader>
+    </template>
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-layout-dashboard"
+        :title="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EMPTY_TITLE')"
+        :description="
+          $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EMPTY_DESCRIPTION')
+        "
+      >
+        <template #action>
+          <NextButton
+            :label="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.HEADER_BTN_TXT')"
+            size="sm"
+            @click="openCreatePopup"
+          />
+        </template>
+      </EmptyState>
     </template>
     <template #body>
       <BaseTable

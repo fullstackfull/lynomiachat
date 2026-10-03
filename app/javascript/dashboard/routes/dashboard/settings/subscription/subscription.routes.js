@@ -11,11 +11,6 @@ export default {
         permissions: ['administrator', 'agent'],
       },
       component: SettingsWrapper,
-      props: {
-        headerTitle: 'Subscription',
-        icon: 'credit-card-person',
-        showNewButton: false,
-      },
       children: [
         {
           path: '',

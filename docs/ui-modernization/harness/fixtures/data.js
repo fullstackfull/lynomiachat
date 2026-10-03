@@ -270,6 +270,8 @@ export const CUSTOM_ROLES = [
   { id: 702, name: 'Reporting only', description: 'Reports and nothing else', permissions: ['report_manage'] },
 ];
 
+// Three statuses on purpose: approved shows no chip, pending and rejected are the two tones the
+// status badge has to render, so a badge change is visible in the capture instead of invisible.
 export const WHATSAPP_TEMPLATES = [
   {
     id: 801,
@@ -282,10 +284,18 @@ export const WHATSAPP_TEMPLATES = [
   {
     id: 802,
     name: 'eid_offer',
-    status: 'approved',
+    status: 'pending',
     category: 'MARKETING',
     language: 'ar',
     components: [{ type: 'BODY', text: 'عرض العيد متاح الآن.' }],
+  },
+  {
+    id: 803,
+    name: 'cart_reminder',
+    status: 'rejected',
+    category: 'MARKETING',
+    language: 'en',
+    components: [{ type: 'BODY', text: 'You left something in your cart.' }],
   },
 ];
 

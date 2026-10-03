@@ -4,10 +4,11 @@ import { useI18n } from 'vue-i18n';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import ChannelIcon from 'dashboard/components-next/icon/ChannelIcon.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import {
   formatTemplateLabel,
   formatTemplateLanguage,
-  templateStatusClasses,
+  templateStatusTone,
   templateTypeKey,
 } from './templateUtils';
 
@@ -54,13 +55,13 @@ const statusLabel = computed(() =>
           <span class="truncate text-heading-3 text-n-slate-12">
             {{ template.name }}
           </span>
-          <span
+          <Label
             v-if="showStatus"
-            class="inline-flex shrink-0 px-2 py-0.5 text-xs font-medium rounded-md"
-            :class="templateStatusClasses(template.status)"
-          >
-            {{ statusLabel }}
-          </span>
+            compact
+            :label="statusLabel"
+            :tone="templateStatusTone(template.status).tone"
+            :variant="templateStatusTone(template.status).variant"
+          />
         </div>
         <div
           class="flex flex-wrap items-center gap-2 text-body-main text-n-slate-11"

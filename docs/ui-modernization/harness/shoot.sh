@@ -15,6 +15,7 @@ HARNESS_SURFACES=$(node -e "
   console.log(JSON.stringify(slugs.map(s=>({slug:s,route:route(s),state:state(s)}))));
 ")
 export HARNESS_SURFACES
+mkdir -p "$OUT"
 CHROMIUM_PATH=${CHROMIUM_PATH:-/opt/pw-browsers/chromium-1194/chrome-linux/chrome} \
   PLAYWRIGHT_MODULE=${PLAYWRIGHT_MODULE:-/opt/node-tools/node_modules/playwright} \
   node docs/ui-modernization/harness/shoot.mjs "$OUT" | tee "$OUT/capture.log"

@@ -9,10 +9,11 @@ import {
   TemplatePreview,
 } from 'dashboard/components-next/template-preview';
 import { PLATFORMS } from 'dashboard/services/TemplateConstants';
+import Label from 'dashboard/components-next/label/Label.vue';
 import {
   formatTemplateLabel,
   formatTemplateLanguage,
-  templateStatusClasses,
+  templateStatusTone,
   templateTypeKey,
 } from './templateUtils';
 
@@ -92,12 +93,12 @@ defineExpose({ open, close });
             {{ $t('WHATSAPP_TEMPLATE_MGMT.PREVIEW.STATUS') }}
           </dt>
           <dd>
-            <span
-              class="inline-flex px-2 py-0.5 text-xs font-medium rounded-md"
-              :class="templateStatusClasses(template.status)"
-            >
-              {{ statusLabel }}
-            </span>
+            <Label
+              compact
+              :label="statusLabel"
+              :tone="templateStatusTone(template.status).tone"
+              :variant="templateStatusTone(template.status).variant"
+            />
           </dd>
           <dt class="text-n-slate-10">
             {{ $t('WHATSAPP_TEMPLATE_MGMT.PREVIEW.TYPE') }}

@@ -253,3 +253,35 @@ wants its own verification pass.
 empty cell, and nothing on the page distinguishes a webhook bot from a CSML one — `bot_type` is in the
 payload and is rendered nowhere. Showing it would be useful and is a new piece of information on the
 surface, which the contract says to write down rather than add quietly.
+
+## 227 hand-written `ltr:`/`rtl:` pairs that one logical utility would say
+
+The RTL sweep rewrote the utilities that *mirror wrongly*. It did not touch the ones that are already
+correct but say it twice: 227 places across 134 files pair `ltr:pl-4` with `rtl:pr-4`, `ltr:ml-2` with
+`rtl:mr-2`, `ltr:rounded-l-md` with `rtl:rounded-r-md`, and so on, where `ps-4`, `ms-2` and
+`rounded-s-md` each say the same thing once.
+
+Collapsing them changes no behaviour at all, which is exactly why it does not belong in the same commit as
+148 correctness fixes: the diff would stop being reviewable. It halves the number of places a future edit
+can get half-right, so it is worth its own pass.
+
+Counts by utility: `end-` 47, `start-` 44, `pe-` 41, `me-` 29, `ps-` 23, `ms-` 14, `rounded-s` 9,
+`border-s` 8, `rounded-e` 6, `text-start` 4, `border-e` 2.
+
+## 29 chevron triggers with no `aria-expanded`
+
+The accessibility sweep added `aria-expanded` to the six disclosures on captured surfaces. These are the
+rest — a chevron button that opens something without announcing whether it is open:
+
+`DatePickerButton.vue:76`, `ContactDeleteSection.vue:36`, `ContactsCard.vue:197`, `ContactNoteItem.vue:109`,
+`HelpCenterLayout.vue:81`, `ArticleEditorHeader.vue:318`, `ArticleHeaderControls.vue:151` and `:169`,
+`CategoryHeaderControls.vue:144`, `SharedAttachments/Files.vue:105`, `SharedAttachments/Media.vue:174`,
+`captain/PageLayout.vue:146`, `DocumentFiltersBar.vue:140`, `PlaygroundTestSetup.vue:235` and `:236`,
+`captain/.../RangeSelector.vue:121`, `ResolutionTrendCard.vue:179`, `CopilotThinkingGroup.vue:33`,
+`PhoneNumberInput.vue:184`, `SidebarCollapsedPopover.vue:179`, `SidebarProfileMenuStatus.vue:91`,
+`SearchContactAgentSelector.vue:225`, `SearchDateRangeSelector.vue:202`, `SearchInboxSelector.vue:111`,
+`conversation/customAttributes/CustomAttributes.vue:320`, `CollaboratorsPage.vue:522`,
+`MultiselectDropdown.vue:88`.
+
+Most are in Help Center, Captain and the search module, which no surface captures. Adding the attribute
+without a capture to check it against is how a wrong `aria-expanded` ships — it needs those surfaces first.

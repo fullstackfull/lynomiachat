@@ -17,6 +17,18 @@ capture set in two locales at four widths.
 
 Nothing a user can reach moved, so this batch adds no entry to `parity-exceptions.json`.
 
+## Gate result
+
+```
+compared 536 captures
+  lost 0   moved-with-reason 8   added 586   newly-named 1402   regressions 0
+```
+
+The eight moved-with-reason entries are the pre-existing canned-responses exception from an earlier batch,
+not this one. The after capture reports **0 unnamed controls across all 67 surfaces**, against 1514 in the
+pre-phase baseline; also 0 horizontal overflow, 0 wrong direction and 0 page errors, in both locales at
+390 / 768 / 1024 / 1280.
+
 ## The coverage gap this batch opened with
 
 Five settings pages were modernised in earlier batches — tables, `align-last-column-end`, loading

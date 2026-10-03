@@ -26,7 +26,7 @@ const formatDate = timestamp =>
       <span
         v-for="item in items"
         :key="item.id"
-        class="text-sm font-normal text-n-slate-12 text-right tabular-nums"
+        class="text-sm font-normal text-n-slate-12 text-end tabular-nums"
       >
         {{ formatDate(item.created_at) }}
       </span>

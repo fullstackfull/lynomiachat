@@ -49,7 +49,7 @@ defineProps({
         class="no-underline text-n-brand text-sm font-medium"
       >
         <span>{{ linkText }}</span>
-        <span class="ml-2">{{ `→` }}</span>
+        <span class="ms-2">{{ `→` }}</span>
       </router-link>
     </div>
   </div>

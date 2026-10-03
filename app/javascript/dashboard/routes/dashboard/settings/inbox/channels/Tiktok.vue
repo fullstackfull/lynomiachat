@@ -80,7 +80,7 @@ const requestAuthorization = async () => {
             @click="requestAuthorization()"
           />
           <Banner v-if="isOnChatwootCloud" color="amber" class="w-full mt-6">
-            <div class="flex items-start gap-3 text-left">
+            <div class="flex items-start gap-3 text-start">
               <Icon
                 icon="i-lucide-triangle-alert"
                 class="flex-shrink-0 size-4 mt-0.5"

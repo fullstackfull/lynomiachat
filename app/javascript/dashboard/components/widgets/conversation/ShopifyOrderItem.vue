@@ -67,7 +67,7 @@ const getFulfillmentClass = status => {
           class="hover:underline text-n-slate-12 cursor-pointer truncate"
         >
           {{ $t('CONVERSATION_SIDEBAR.SHOPIFY.ORDER_ID', { id: order.id }) }}
-          <i class="i-lucide-external-link pl-5" />
+          <i class="i-lucide-external-link ps-5" />
         </a>
       </div>
       <Label
@@ -80,10 +80,10 @@ const getFulfillmentClass = status => {
       />
     </div>
     <div class="text-sm text-n-slate-12">
-      <span class="text-n-slate-11 border-r border-n-weak pr-2">
+      <span class="text-n-slate-11 border-e border-n-weak pe-2">
         {{ formatDate(order.created_at) }}
       </span>
-      <span class="text-n-slate-11 pl-2">
+      <span class="text-n-slate-11 ps-2">
         {{ formatCurrency(order.total_price, order.currency) }}
       </span>
     </div>

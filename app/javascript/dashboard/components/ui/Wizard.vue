@@ -36,11 +36,11 @@ const steps = computed(() =>
     <div
       v-for="step in steps"
       :key="step.route"
-      class="cursor-pointer flex items-start gap-6 relative after:content-[''] after:absolute after:w-0.5 after:h-full after:top-5 ltr:after:left-4 rtl:after:right-4 before:content-[''] before:absolute before:w-0.5 before:h-4 before:top-0 before:left-4 rtl:before:right-4 last:after:hidden last:before:hidden after:bg-n-slate-3 before:bg-n-slate-3"
+      class="cursor-pointer flex items-start gap-6 relative after:content-[''] after:absolute after:w-0.5 after:h-full after:top-5 after:start-4 before:content-[''] before:absolute before:w-0.5 before:h-4 before:top-0 before:start-4 last:after:hidden last:before:hidden after:bg-n-slate-3 before:bg-n-slate-3"
     >
       <!-- Circle -->
       <div
-        class="rounded-2xl flex-shrink-0 size-8 border-2 border-n-slate-3 flex items-center justify-center left-2 leading-4 z-10 top-5 transition-all duration-300 ease-in-out"
+        class="rounded-2xl flex-shrink-0 size-8 border-2 border-n-slate-3 flex items-center justify-center start-2 leading-4 z-10 top-5 transition-all duration-300 ease-in-out"
         :class="{
           'bg-n-slate-3': step.isActive || step.isOver,
           'bg-n-background': !step.isActive && !step.isOver,

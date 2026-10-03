@@ -99,7 +99,7 @@ const togglePortalSwitcher = () => {
 
             <template v-if="breadcrumbLabel">
               <div class="w-0.5 h-4 rounded-2xl bg-n-weak shrink-0" />
-              <span class="pl-1.5 text-lg font-medium truncate text-n-slate-12">
+              <span class="ps-1.5 text-lg font-medium truncate text-n-slate-12">
                 {{ breadcrumbLabel }}
               </span>
             </template>

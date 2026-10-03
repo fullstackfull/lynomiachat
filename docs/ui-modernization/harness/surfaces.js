@@ -564,6 +564,15 @@ export const SURFACES = {
     route: 'agent_bots',
     frame: 'settings',
   },
+  'auditlogs-date-range': {
+    title: 'Settings · Audit logs · date range picker',
+    load: () => import('dashboard/routes/dashboard/settings/auditlogs/Index.vue'),
+    route: 'auditlogs_list',
+    frame: 'settings',
+    // The widest overlay in the product is `DatePicker` at `w-[880px]`, and nothing captured it. The
+    // filter bar's calendar button is the only route to it.
+    interactions: ['[class*="i-lucide-calendar-range"]'],
+  },
   'auditlogs-list': {
     title: 'Settings · Audit logs',
     load: () => import('dashboard/routes/dashboard/settings/auditlogs/Index.vue'),

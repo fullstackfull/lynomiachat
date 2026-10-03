@@ -128,7 +128,7 @@ const closeMobileSidebar = () => {
     <!-- Desktop sidebar -->
     <div
       v-if="slots.sidebar"
-      class="hidden lg:flex flex-col min-w-52 w-full max-w-md border-l border-n-weak bg-n-solid-2"
+      class="hidden lg:flex flex-col min-w-52 w-full max-w-md border-s border-n-weak bg-n-solid-2"
     >
       <div class="shrink-0">
         <slot name="sidebarHeader" />

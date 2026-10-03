@@ -14,7 +14,7 @@ const isRTL = useMapGetter('accounts/isRTL');
 <template>
   <div
     class="overflow-hidden whitespace-nowrap text-ellipsis"
-    :class="{ 'text-right': isRTL }"
+    :class="{ 'text-end': isRTL }"
   >
     <slot v-if="$slots.default || content">
       <template v-if="content">{{ content }}</template>

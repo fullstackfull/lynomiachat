@@ -46,7 +46,7 @@ onMounted(async () => {
           <h5 class="text-sm text-n-slate-12">
             {{ $t('KEYBOARD_SHORTCUTS.TOGGLE_MODAL') }}
           </h5>
-          <div class="flex items-center gap-2 mb-1 ml-2">
+          <div class="flex items-center gap-2 mb-1 ms-2">
             <Hotkey custom-class="min-h-[28px] min-w-[60px] normal-case key">
               {{ KEYS.WIN }}
             </Hotkey>
@@ -66,7 +66,7 @@ onMounted(async () => {
           <h5 class="text-sm text-n-slate-12 min-w-[36px]">
             {{ title(shortcut) }}
           </h5>
-          <div class="flex items-center gap-2 mb-1 ml-2">
+          <div class="flex items-center gap-2 mb-1 ms-2">
             <template v-if="needsShiftKey(shortcut.keySet)">
               <Hotkey custom-class="min-h-[28px] min-w-[36px] key">
                 {{ KEYS.SHIFT }}

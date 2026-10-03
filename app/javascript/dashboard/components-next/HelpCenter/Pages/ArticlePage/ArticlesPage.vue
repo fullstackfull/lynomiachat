@@ -414,7 +414,7 @@ watch(
               />
             </template>
             <template #actions>
-              <div class="flex items-center gap-2 ml-auto">
+              <div class="flex items-center gap-2 ms-auto">
                 <Button
                   sm
                   faded
@@ -461,7 +461,7 @@ watch(
                       v-if="isCategoryMenuOpen"
                       :menu-items="categoryMenuItems"
                       show-search
-                      class="right-0 w-48 mt-2 top-full max-h-60"
+                      class="end-0 w-48 mt-2 top-full max-h-60"
                       @action="handleBulkUpdateCategory"
                     />
                   </OnClickOutside>

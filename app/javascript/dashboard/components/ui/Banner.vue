@@ -151,7 +151,7 @@ export default {
   }
 
   a {
-    @apply ml-1 underline text-n-amber-12 text-xs;
+    @apply ms-1 underline text-n-amber-12 text-xs;
   }
 
   .banner-message {
@@ -159,7 +159,7 @@ export default {
   }
 
   .actions {
-    @apply flex gap-1 right-3;
+    @apply flex gap-1 end-3;
   }
 }
 </style>

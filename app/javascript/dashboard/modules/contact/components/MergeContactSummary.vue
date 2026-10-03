@@ -22,9 +22,9 @@ export default {
     <h5 class="text-base font-medium text-n-slate-12">
       {{ $t('MERGE_CONTACTS.SUMMARY.TITLE') }}
     </h5>
-    <ul class="ml-0 list-none">
+    <ul class="ms-0 list-none">
       <li>
-        <span class="inline-block mr-1">❌</span>
+        <span class="inline-block me-1">❌</span>
         <span
           v-dompurify-html="
             $t('MERGE_CONTACTS.SUMMARY.DELETE_WARNING', {
@@ -34,7 +34,7 @@ export default {
         />
       </li>
       <li>
-        <span class="inline-block mr-1">✅</span>
+        <span class="inline-block me-1">✅</span>
         <span
           v-dompurify-html="
             $t('MERGE_CONTACTS.SUMMARY.ATTRIBUTE_WARNING', {

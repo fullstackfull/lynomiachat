@@ -12,10 +12,10 @@ defineProps({
     <div>
       <div>
         <div
-          class="items-end flex justify-end ml-auto mb-1 mt-0 max-w-[85%] text-right"
+          class="items-end flex justify-end ms-auto mb-1 mt-0 max-w-[85%] text-end"
         >
           <div
-            class="rounded-[1.25rem] rounded-br-[0.25rem] text-white dark:text-white text-sm px-4 py-3"
+            class="rounded-[1.25rem] rounded-ee-[0.25rem] text-white dark:text-white text-sm px-4 py-3"
             :style="{ background: config.color }"
           >
             <p class="m-0">
@@ -26,7 +26,7 @@ defineProps({
       </div>
 
       <div
-        class="shadow rounded-[1.25rem] rounded-bl-[0.25rem] px-4 py-3 inline-block text-sm text-n-slate-12 bg-n-background dark:bg-n-solid-3"
+        class="shadow rounded-[1.25rem] rounded-es-[0.25rem] px-4 py-3 inline-block text-sm text-n-slate-12 bg-n-background dark:bg-n-solid-3"
       >
         <div>
           <p class="m-0">

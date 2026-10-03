@@ -39,7 +39,6 @@ const onClick = event => {
   <component
     :is="to ? 'a' : 'div'"
     class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0"
-    role="button"
     draggable="false"
     :href="href"
     :title="label"

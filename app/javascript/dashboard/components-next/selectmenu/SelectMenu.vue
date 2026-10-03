@@ -54,6 +54,8 @@ const handleSelect = value => {
       class="!w-fit max-w-40"
       :class="{ 'dark:!bg-n-alpha-2 !bg-n-slate-9/20': isOpen }"
       :label="labelValue"
+      aria-haspopup="menu"
+      :aria-expanded="isOpen"
       @click="toggleMenu"
     />
     <div

@@ -229,7 +229,7 @@ const onPickInbox = async inbox => {
           v-for="inbox in voiceInboxes"
           :key="inbox.id"
           type="button"
-          class="flex items-center justify-between w-full px-4 py-2 text-left rounded-lg hover:bg-n-alpha-2"
+          class="flex items-center justify-between w-full px-4 py-2 text-start rounded-lg hover:bg-n-alpha-2"
           @click="onPickInbox(inbox)"
         >
           <div class="flex items-center gap-2">

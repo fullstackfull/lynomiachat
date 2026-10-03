@@ -100,7 +100,7 @@ defineExpose({ validate, resetValidation });
       >
         {{ note }}
       </p>
-      <p v-if="showResetMessage" class="pt-1 text-xs text-right text-n-teal-10">
+      <p v-if="showResetMessage" class="pt-1 text-xs text-end text-n-teal-10">
         {{ $t('AUTOMATION.FORM.RESET_MESSAGE') }}
       </p>
     </div>

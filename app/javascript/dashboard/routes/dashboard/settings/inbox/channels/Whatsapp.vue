@@ -231,7 +231,7 @@ const requestEmbeddedSignupAccess = () => {
     </div>
 
     <div v-else-if="showProviderSelection">
-      <div class="mb-10 text-left">
+      <div class="mb-10 text-start">
         <h1 class="mb-2 text-lg font-medium text-n-slate-12">
           {{ $t('INBOX_MGMT.ADD.WHATSAPP.SELECT_PROVIDER.TITLE') }}
         </h1>

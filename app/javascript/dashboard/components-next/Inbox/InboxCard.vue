@@ -157,9 +157,12 @@ onBeforeMount(contextMenuActions.close);
 <template>
   <div
     role="button"
-    class="flex flex-col w-full gap-1 p-3 transition-all duration-300 ease-in-out cursor-pointer"
+    tabindex="0"
+    class="flex flex-col w-full gap-1 p-3 transition-all duration-300 ease-in-out cursor-pointer focus-ring rounded-lg"
     @contextmenu="contextMenuActions.open($event)"
     @click="emit('click')"
+    @keydown.enter.prevent="emit('click')"
+    @keydown.space.prevent="emit('click')"
   >
     <div class="flex items-start gap-2">
       <Avatar

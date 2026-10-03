@@ -151,7 +151,7 @@ onMounted(async () => {
                 class="flex items-center rounded-lg text-n-slate-11 hover:bg-n-alpha-2 transition-colors duration-150 ease-out"
               >
                 <button
-                  class="flex flex-1 min-w-0 items-center gap-2 ps-2 py-1.5 text-left rtl:text-right"
+                  class="flex flex-1 min-w-0 items-center gap-2 ps-2 py-1.5 text-start"
                   @click="toggleSubGroup(child.name)"
                 >
                   <Icon
@@ -202,7 +202,7 @@ onMounted(async () => {
                   >
                     <router-link
                       :to="subChild.to"
-                      class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
+                      class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-start transition-colors duration-150 ease-out"
                       :class="{
                         'text-n-slate-12 bg-n-alpha-2': isActive(subChild),
                         'text-n-slate-11 hover:bg-n-alpha-2':
@@ -241,7 +241,7 @@ onMounted(async () => {
             <li v-else class="py-0.5">
               <router-link
                 :to="child.to"
-                class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
+                class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-start transition-colors duration-150 ease-out"
                 :class="{
                   'text-n-slate-12 bg-n-alpha-2': isActive(child),
                   'text-n-slate-11 hover:bg-n-alpha-2': !isActive(child),

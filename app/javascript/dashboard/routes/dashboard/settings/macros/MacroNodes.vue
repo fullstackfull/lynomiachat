@@ -123,7 +123,7 @@ export default {
 
 .macro__node:not(:last-child):not(.sortable-chosen):after,
 .macros__nodes-draggable:after {
-  @apply border-l dark:border-n-blue-11 border-n-blue-7 border-dashed ltr:ml-6 rtl:mr-6 absolute h-8 w-1 content-[""];
+  @apply border-s dark:border-n-blue-11 border-n-blue-7 border-dashed ltr:ml-6 rtl:mr-6 absolute h-8 w-1 content-[""];
 }
 
 .macros__nodes-draggable {

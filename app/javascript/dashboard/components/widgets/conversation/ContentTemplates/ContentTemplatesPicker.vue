@@ -95,7 +95,7 @@ const refreshTemplates = async () => {
         :key="template.content_sid"
       >
         <button
-          class="block p-2.5 w-full text-left rounded-lg cursor-pointer hover:bg-n-alpha-2 dark:hover:bg-n-solid-2"
+          class="block p-2.5 w-full text-start rounded-lg cursor-pointer hover:bg-n-alpha-2 dark:hover:bg-n-solid-2"
           @click="emit('onSelect', template)"
         >
           <div>

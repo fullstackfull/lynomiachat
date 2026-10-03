@@ -94,6 +94,8 @@ export default {
           slate
           xs
           :variant="showInboxDisplayMenu ? 'faded' : 'solid'"
+          aria-haspopup="menu"
+          :aria-expanded="showInboxDisplayMenu"
           @click="openInboxDisplayMenu"
         />
         <InboxDisplayMenu

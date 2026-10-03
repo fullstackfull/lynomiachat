@@ -166,7 +166,7 @@ export default {
   @apply border-b border-solid border-n-weak my-1 flex items-center gap-2;
 
   .input-group-label {
-    @apply border-transparent bg-transparent text-xs font-semibold pl-0;
+    @apply border-transparent bg-transparent text-xs font-semibold ps-0;
   }
 }
 

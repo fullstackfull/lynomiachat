@@ -159,11 +159,11 @@ const toggleSelected = option => {
     </template>
     <DropdownBody class="top-0 min-w-56 z-50" strong>
       <div v-if="!disableSearch" class="relative">
-        <Icon class="absolute size-4 left-2 top-2" icon="i-lucide-search" />
+        <Icon class="absolute size-4 start-2 top-2" icon="i-lucide-search" />
         <input
           v-model="searchTerm"
           v-focus
-          class="p-1.5 pl-8 text-n-slate-11 bg-n-alpha-1 rounded-lg w-full"
+          class="p-1.5 ps-8 text-n-slate-11 bg-n-alpha-1 rounded-lg w-full"
           :placeholder="searchPlaceholder || t('COMBOBOX.SEARCH_PLACEHOLDER')"
           @input="emit('search', $event.target.value)"
         />

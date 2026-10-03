@@ -203,7 +203,7 @@ watch(
         </div>
         <div
           v-if="shouldShowWhatsAppWebhookDetails"
-          class="w-[50%] max-w-[50%] ml-[25%]"
+          class="w-[50%] max-w-[50%] ms-[25%]"
         >
           <p class="mt-8 font-medium text-n-slate-11">
             {{ $t('INBOX_MGMT.ADD.WHATSAPP.API_CALLBACK.WEBHOOK_URL') }}
@@ -233,7 +233,7 @@ watch(
             @click="retryWhatsAppWebhookSetup"
           />
         </div>
-        <div class="w-[50%] max-w-[50%] ml-[25%]">
+        <div class="w-[50%] max-w-[50%] ms-[25%]">
           <woot-code
             v-if="isALineChannel"
             lang="html"
@@ -242,7 +242,7 @@ watch(
         </div>
         <div
           v-if="shouldShowBandwidthCallback"
-          class="w-[50%] max-w-[50%] ml-[25%]"
+          class="w-[50%] max-w-[50%] ms-[25%]"
         >
           <p class="mt-8 font-medium text-n-slate-11">
             {{ $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.API_CALLBACK.TITLE') }}
@@ -254,7 +254,7 @@ watch(
         </div>
         <div
           v-if="shouldShowTwilioCallbackFallback"
-          class="w-[50%] max-w-[50%] ml-[25%]"
+          class="w-[50%] max-w-[50%] ms-[25%]"
         >
           <p class="mt-8 font-medium text-n-slate-11">
             {{ $t('INBOX_MGMT.ADD.TWILIO.API_CALLBACK.TITLE') }}

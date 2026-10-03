@@ -209,7 +209,7 @@ export default {
           <div
             v-for="(type, typeIndex) in ['email', 'push']"
             :key="typeIndex"
-            class="flex items-start gap-2 px-0 text-sm tracking-[0.5] text-left rtl:text-right"
+            class="flex items-start gap-2 px-0 text-sm tracking-[0.5] text-start"
             :class="type === 'push' ? 'col-span-3' : 'col-span-2'"
           >
             <CheckBox

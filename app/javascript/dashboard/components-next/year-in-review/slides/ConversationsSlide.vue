@@ -72,7 +72,7 @@ const performanceHelperText = computed(() => {
           <img
             :src="cloudImage"
             alt="Cloud"
-            class="w-auto h-32 md:h-56 lg:h-80 -mr-2"
+            class="w-auto h-32 md:h-56 lg:h-80 -me-2"
           />
         </div>
       </div>

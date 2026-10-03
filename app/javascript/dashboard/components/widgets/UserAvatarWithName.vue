@@ -18,7 +18,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex items-center gap-1.5 text-left">
+  <div class="flex items-center gap-1.5 text-start">
     <Avatar
       :src="user.thumbnail"
       :size="size"

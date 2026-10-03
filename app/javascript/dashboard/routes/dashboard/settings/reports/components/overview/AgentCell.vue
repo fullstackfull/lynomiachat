@@ -16,7 +16,7 @@ const isRTL = useMapGetter('accounts/isRTL');
 <template>
   <BaseCell>
     <div
-      class="items-center flex text-left"
+      class="items-center flex text-start"
       :class="{ 'flex-row-reverse': isRTL }"
     >
       <Avatar

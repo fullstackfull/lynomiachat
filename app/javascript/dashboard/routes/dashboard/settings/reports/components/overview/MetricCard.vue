@@ -32,9 +32,7 @@ defineProps({
           <span
             class="flex flex-row items-center py-0.5 px-2 rounded bg-n-teal-3 text-xs"
           >
-            <span
-              class="bg-n-teal-9 h-1 w-1 rounded-full mr-1 rtl:mr-0 rtl:ml-0"
-            />
+            <span class="bg-n-teal-9 h-1 w-1 rounded-full me-1" />
             <span class="text-xs text-n-teal-11">
               {{ $t('OVERVIEW_REPORTS.LIVE') }}
             </span>
@@ -47,7 +45,7 @@ defineProps({
     </div>
     <div
       v-if="!isLoading"
-      class="card-body max-w-full w-full ml-auto mr-auto justify-between flex"
+      class="card-body max-w-full w-full ms-auto me-auto justify-between flex"
     >
       <slot />
     </div>

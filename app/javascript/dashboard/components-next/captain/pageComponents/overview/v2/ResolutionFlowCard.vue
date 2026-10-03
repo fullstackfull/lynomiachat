@@ -110,7 +110,7 @@ const formatCount = value => Number(value).toLocaleString();
         </div>
       </div>
       <div
-        class="flex flex-col justify-center w-full gap-3 lg:self-stretch lg:w-[18.375rem] lg:pl-4 lg:pr-2"
+        class="flex flex-col justify-center w-full gap-3 lg:self-stretch lg:w-[18.375rem] lg:ps-4 lg:pe-2"
       >
         <h2 class="text-heading-3 text-n-slate-12">
           {{ $t('CAPTAIN.OVERVIEW.V2.HANDOFF_REASONS.TITLE') }}

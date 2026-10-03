@@ -290,9 +290,12 @@ const handleViewConversations = () => {
             </span>
             <span
               v-else-if="documentable.type === 'Conversation'"
-              class="hover:underline truncate cursor-pointer"
+              class="hover:underline truncate cursor-pointer focus-ring rounded-control"
               role="button"
+              tabindex="0"
               @click="handleDocumentableClick"
+              @keydown.enter.prevent="handleDocumentableClick"
+              @keydown.space.prevent="handleDocumentableClick"
             >
               {{
                 t(`CAPTAIN.RESPONSES.DOCUMENTABLE.CONVERSATION`, {

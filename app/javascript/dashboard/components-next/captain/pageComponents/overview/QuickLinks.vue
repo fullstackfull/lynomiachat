@@ -78,7 +78,7 @@ const links = computed(() =>
         :class="
           link.href ? 'i-lucide-arrow-up-right' : 'i-lucide-chevron-right'
         "
-        class="ml-auto transition-opacity opacity-0 size-4 text-n-slate-10 group-hover/link:opacity-100"
+        class="ms-auto transition-opacity opacity-0 size-4 text-n-slate-10 group-hover/link:opacity-100"
       />
     </component>
   </div>

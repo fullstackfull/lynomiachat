@@ -106,10 +106,7 @@ const emitNewAccount = () => {
           @click="onChangeAccount(account.id)"
         >
           <template #label>
-            <div
-              :for="account.name"
-              class="text-left rtl:text-right flex gap-2 items-center"
-            >
+            <div :for="account.name" class="text-start flex gap-2 items-center">
               <span
                 class="text-n-slate-12 max-w-36 truncate min-w-0"
                 :title="account.name"

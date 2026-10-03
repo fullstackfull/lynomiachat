@@ -677,7 +677,7 @@ onMounted(() => {
         <h3 class="text-lg font-medium text-n-slate-12 mb-4">
           {{ $t('INBOX_MGMT.ASSIGNMENT_POLICY.DELETE_CONFIRM_TITLE') }}
         </h3>
-        <p class="text-sm text-n-slate-11 mb-6 ml-13">
+        <p class="text-sm text-n-slate-11 mb-6 ms-13">
           {{ $t('INBOX_MGMT.ASSIGNMENT_POLICY.DELETE_CONFIRM_MESSAGE') }}
         </p>
         <div class="flex justify-end gap-2">

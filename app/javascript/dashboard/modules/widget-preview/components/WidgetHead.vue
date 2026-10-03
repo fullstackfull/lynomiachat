@@ -35,7 +35,7 @@ const isDefaultScreen = computed(() => {
         <img
           v-if="config.logo"
           :src="config.logo"
-          class="mr-2 rounded-full logo"
+          class="me-2 rounded-full logo"
           :class="!isDefaultScreen ? 'h-8 w-8 mb-1' : 'h-12 w-12 mb-2'"
         />
         <div v-if="!isDefaultScreen">

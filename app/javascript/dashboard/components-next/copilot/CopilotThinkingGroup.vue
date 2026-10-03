@@ -26,7 +26,7 @@ watch(
 <template>
   <div class="flex flex-col gap-2">
     <button
-      class="group flex items-center gap-2 text-xs text-n-slate-10 hover:text-n-slate-11 transition-colors duration-200 -ml-3"
+      class="group flex items-center gap-2 text-xs text-n-slate-10 hover:text-n-slate-11 transition-colors duration-200 -ms-3"
       @click="isExpanded = !isExpanded"
     >
       <Icon

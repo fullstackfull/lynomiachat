@@ -52,7 +52,7 @@ const starRatingValue = computed(() => {
         {{ t(rating.translationKey) }}
       </dd>
       <dd v-else class="flex mt-1">
-        <span v-for="n in 5" :key="n" class="text-2xl mr-1">
+        <span v-for="n in 5" :key="n" class="text-2xl me-1">
           <i
             :class="[
               n <= starRatingValue

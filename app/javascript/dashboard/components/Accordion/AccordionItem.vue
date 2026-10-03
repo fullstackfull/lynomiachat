@@ -40,7 +40,7 @@ const onToggle = () => {
     <button
       type="button"
       class="flex items-center select-none w-full rounded-surface bg-n-slate-2 outline outline-1 outline-n-weak m-0 cursor-grab justify-between py-2 px-4 accordion-drag-handle focus-ring"
-      :class="{ 'rounded-bl-none rounded-br-none': isOpen }"
+      :class="{ 'rounded-es-none rounded-ee-none': isOpen }"
       :aria-expanded="isOpen"
       :aria-controls="panelId"
       @click.stop="onToggle"
@@ -62,7 +62,7 @@ const onToggle = () => {
     <div
       v-if="isOpen"
       :id="panelId"
-      class="outline outline-1 outline-n-weak -mt-[-1px] border-t-0 rounded-br-surface rounded-bl-surface"
+      class="outline outline-1 outline-n-weak -mt-[-1px] border-t-0 rounded-ee-surface rounded-es-surface"
       :class="compact ? 'p-0' : 'px-2 py-4'"
     >
       <slot />

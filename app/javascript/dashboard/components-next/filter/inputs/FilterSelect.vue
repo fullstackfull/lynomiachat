@@ -119,11 +119,11 @@ const toggleDropdown = toggle => {
       strong
     >
       <div v-if="showSearch" class="relative">
-        <Icon class="absolute size-4 left-2 top-2" icon="i-lucide-search" />
+        <Icon class="absolute size-4 start-2 top-2" icon="i-lucide-search" />
         <input
           v-model="searchTerm"
           v-focus
-          class="w-full p-1.5 pl-8 rounded-lg text-n-slate-11 bg-n-alpha-1"
+          class="w-full p-1.5 ps-8 rounded-lg text-n-slate-11 bg-n-alpha-1"
           :placeholder="t('COMBOBOX.SEARCH_PLACEHOLDER')"
         />
       </div>

@@ -28,7 +28,7 @@ export default {
 .dropdown-menu__item {
   :deep(a),
   :deep(.button) {
-    @apply inline-flex whitespace-nowrap w-full text-left rtl:text-right;
+    @apply inline-flex whitespace-nowrap w-full text-start;
   }
 }
 

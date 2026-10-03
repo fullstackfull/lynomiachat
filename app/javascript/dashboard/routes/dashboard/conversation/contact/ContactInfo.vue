@@ -191,7 +191,7 @@ export default {
 
 <template>
   <div class="relative items-center w-full p-4">
-    <div class="flex flex-col w-full gap-2 text-left rtl:text-right">
+    <div class="flex flex-col w-full gap-2 text-start">
       <div class="flex flex-row justify-between">
         <Avatar
           v-if="showAvatar"

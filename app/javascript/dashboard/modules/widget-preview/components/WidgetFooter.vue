@@ -44,10 +44,10 @@ const getStatusText = computed(() => {
       </div>
       <button
         v-if="config.isDefaultScreen"
-        class="inline-flex items-center justify-between px-2 py-1 mt-1 -ml-2 font-medium leading-6 bg-transparent rounded-md text-n-slate-12 dark:bg-transparent"
+        class="inline-flex items-center justify-between px-2 py-1 mt-1 -ms-2 font-medium leading-6 bg-transparent rounded-md text-n-slate-12 dark:bg-transparent"
         :style="{ color: config.color }"
       >
-        <span class="pr-2 text-xs">
+        <span class="pe-2 text-xs">
           {{
             $t(
               'INBOX_MGMT.WIDGET_BUILDER.FOOTER.START_CONVERSATION_BUTTON_TEXT'

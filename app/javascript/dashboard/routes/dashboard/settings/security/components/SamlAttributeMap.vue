@@ -17,7 +17,8 @@ const toggleExpanded = () => {
   >
     <button
       type="button"
-      class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-n-solid-2 transition-colors"
+      class="w-full px-4 py-3 flex items-center justify-between text-start hover:bg-n-solid-2 transition-colors"
+      :aria-expanded="isExpanded"
       @click="toggleExpanded"
     >
       <h4 class="font-medium text-n-slate-12">

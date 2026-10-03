@@ -121,6 +121,7 @@ const handleDismiss = () => {
   <div ref="containerRef" class="relative">
     <NextButton
       v-tooltip="tooltipLabel"
+      :aria-label="tooltipLabel"
       :label="buttonLabel"
       :icon="isRemoveAction ? 'i-woot-tag-remove' : 'i-lucide-tag'"
       slate

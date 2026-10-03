@@ -65,6 +65,12 @@ RSpec.describe Campaign do
       expect(campaign.audience_contacts.count).to eq(2)
     end
 
+    it 'keeps the audience\'s members when a listed label no longer exists' do
+      campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Label', id: 0 }, { type: 'Audience', id: vips.id }])
+
+      expect(campaign.audience_contacts).to contain_exactly(vip)
+    end
+
     it 'resolves audiences when asked, not when the campaign was created' do
       campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Audience', id: vips.id }])
       newcomer = create(:contact, account: account, email: 'noor@vip.example')

@@ -61,17 +61,20 @@ export class DataManager {
     return this.push({ modelName, data });
   }
 
+  // Writes upsert: two fetches of the same model can race (the sidebar and a page both refetch an invalidated cache),
+  // and `add` would throw "Key already exists in the object store" on the second one and abort its transaction, leaving
+  // the store empty. `put` keeps the last write and the collection intact.
   async push({ modelName, data }) {
     this.validateModel(modelName);
 
     if (Array.isArray(data)) {
       const tx = this.db.transaction(modelName, 'readwrite');
       data.forEach(item => {
-        tx.store.add(item);
+        tx.store.put(item);
       });
       await tx.done;
     } else {
-      await this.db.add(modelName, data);
+      await this.db.put(modelName, data);
     }
   }
 

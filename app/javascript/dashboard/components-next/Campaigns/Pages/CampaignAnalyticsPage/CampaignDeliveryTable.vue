@@ -3,7 +3,6 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
-import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import DeliveryStatusBadge from './DeliveryStatusBadge.vue';
 import {
   BaseTable,
@@ -61,32 +60,28 @@ const isEmpty = computed(() => props.deliveries.length === 0);
 </script>
 
 <template>
-  <div class="w-full border rounded-xl border-n-weak bg-n-solid-1">
+  <div class="w-full border rounded-overlay border-n-weak bg-n-solid-1">
     <div
       class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
     >
       <span class="text-heading-2 text-n-slate-12">
         {{ t('CAMPAIGN.WHATSAPP.ANALYTICS.TABLE.TITLE') }}
       </span>
-      <div class="min-w-0 p-1 -m-1 overflow-x-auto no-scrollbar">
+      <div class="min-w-0 p-1 -m-1 overflow-x-auto md:no-scrollbar">
         <slot name="filters" />
       </div>
     </div>
     <div
-      v-if="loading"
-      class="flex items-center justify-center py-20 border-t text-n-slate-11 border-n-weak"
-    >
-      <Spinner />
-    </div>
-    <div
-      v-else
-      class="overflow-x-auto [&_th:first-child]:ps-5 [&_td:first-child]:ps-5 [&_th:last-child]:pe-5 [&_td:last-child]:pe-5"
-      :class="{ 'border-t border-n-weak': isEmpty }"
+      class="[&_th:first-child]:ps-5 [&_td:first-child]:ps-5 [&_th:last-child]:pe-5 [&_td:last-child]:pe-5"
+      :class="{ 'border-t border-n-weak': isEmpty && !loading }"
     >
       <BaseTable
         :headers="headers"
         :items="deliveries"
         :no-data-message="noDataMessage"
+        :loading="loading"
+        :loading-message="t('CAMPAIGN.WHATSAPP.ANALYTICS.TABLE.LOADING')"
+        stack-on-mobile
       >
         <template #row="{ items }">
           <BaseTableRow
@@ -109,7 +104,7 @@ const isEmpty = computed(() => props.deliveries.length === 0);
                     </span>
                     <span
                       aria-hidden="true"
-                      class="i-lucide-arrow-up-right size-3.5 shrink-0"
+                      class="i-lucide-arrow-up-right size-3.5 shrink-0 rtl:-scale-x-100"
                     />
                   </RouterLink>
                   <span
@@ -124,7 +119,8 @@ const isEmpty = computed(() => props.deliveries.length === 0);
               </BaseTableCell>
               <BaseTableCell>
                 <span
-                  class="block max-w-48 lg:max-w-md whitespace-pre-line line-clamp-2 text-body-main"
+                  dir="auto"
+                  class="block md:max-w-48 lg:max-w-md whitespace-pre-line md:line-clamp-2 text-body-main"
                   :class="
                     delivery.message_content
                       ? 'text-n-slate-11'
@@ -137,9 +133,9 @@ const isEmpty = computed(() => props.deliveries.length === 0);
               <BaseTableCell>
                 <div
                   v-if="errorReason(delivery)"
-                  class="flex flex-col gap-0.5 max-w-40 lg:max-w-56"
+                  class="flex flex-col gap-0.5 md:max-w-40 lg:max-w-56"
                 >
-                  <span class="line-clamp-2 text-body-main text-n-slate-11">
+                  <span class="md:line-clamp-2 text-body-main text-n-slate-11">
                     {{ errorReason(delivery) }}
                   </span>
                   <span

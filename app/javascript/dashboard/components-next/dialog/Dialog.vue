@@ -130,7 +130,9 @@ defineExpose({ open, close });
     <dialog
       ref="dialogRef"
       :aria-labelledby="title ? titleId : undefined"
-      :aria-describedby="description ? descriptionId : undefined"
+      :aria-describedby="
+        description || $slots.description ? descriptionId : undefined
+      "
       class="w-full transition-all duration-300 ease-in-out shadow-modal rounded-overlay"
       :class="[
         maxWidthClass,
@@ -146,14 +148,17 @@ defineExpose({ open, close });
           @submit.prevent="confirm"
           @click.stop
         >
-          <div v-if="title || description" class="flex flex-col gap-2">
+          <div
+            v-if="title || description || $slots.description"
+            class="flex flex-col gap-2"
+          >
             <h3
               :id="titleId"
               class="text-base font-medium leading-6 text-n-slate-12"
             >
               {{ title }}
             </h3>
-            <slot name="description">
+            <slot name="description" :description-id="descriptionId">
               <p
                 v-if="description"
                 :id="descriptionId"

@@ -62,10 +62,10 @@ const ROUTES = [
   [/\/commerce\/stores$/, () => ({ payload: list(COMMERCE_STORES) })],
   [/\/commerce\/carts$/, () => ({ payload: [] })],
   [/\/custom_filters/, () => list(CONTACT_VIEWS)],
-  [/\/campaigns\/\d+\/analytics\/metrics$/, () => (STATE === 'empty' ? { status_counts: {} } : CAMPAIGN_METRICS)],
+  [/\/campaigns\/\d+\/analytics\/metrics$/, () => (STATE === 'empty' ? { audience: 0, sent: 0, delivered: 0, read: 0, failed: 0, skipped: 0, status_counts: {} } : CAMPAIGN_METRICS)],
   [/\/campaigns\/\d+\/analytics\/contacts/, () => ({
     payload: list(CAMPAIGN_DELIVERIES),
-    meta: { current_page: 1, total_count: list(CAMPAIGN_DELIVERIES).length },
+    meta: { current_page: 1, total_pages: 1, total_count: list(CAMPAIGN_DELIVERIES).length },
   })],
   [/\/campaigns$/, () => list(CAMPAIGNS)],
   [/\/labels$/, () => ({ payload: list(LABELS) })],

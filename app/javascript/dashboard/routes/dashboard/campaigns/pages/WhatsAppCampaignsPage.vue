@@ -97,7 +97,10 @@ const handleAnalytics = campaign => {
     <div
       v-if="isFetchingCampaigns"
       class="flex items-center justify-center py-10 text-n-slate-11"
+      role="status"
+      aria-live="polite"
     >
+      <span class="sr-only">{{ t('CAMPAIGN.LOADING') }}</span>
       <Spinner />
     </div>
     <CampaignList
@@ -110,7 +113,6 @@ const handleAnalytics = campaign => {
       v-else
       :title="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.SUBTITLE')"
-      class="pt-14"
     />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"

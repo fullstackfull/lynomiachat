@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
@@ -34,24 +35,23 @@ const { t, locale } = useI18n();
 const { orderStatus, paymentStatus, shipmentStatus, providerName } =
   useCommerceLabels();
 
-const STATUS_CLASSES = {
-  completed: 'bg-n-teal-3 text-n-teal-11',
-  processing: 'bg-n-blue-3 text-n-blue-11',
-  shipped: 'bg-n-blue-3 text-n-blue-11',
-  delivered: 'bg-n-teal-3 text-n-teal-11',
-  pending: 'bg-n-amber-3 text-n-amber-11',
-  on_hold: 'bg-n-amber-3 text-n-amber-11',
-  cancelled: 'bg-n-slate-3 text-n-slate-11',
-  refunded: 'bg-n-slate-3 text-n-slate-11',
-  failed: 'bg-n-ruby-3 text-n-ruby-11',
+const STATUS_TONES = {
+  completed: 'success',
+  delivered: 'success',
+  processing: 'info',
+  shipped: 'info',
+  pending: 'warning',
+  on_hold: 'warning',
+  cancelled: 'neutral',
+  refunded: 'neutral',
+  failed: 'danger',
 };
-const PAYMENT_CLASSES = {
-  paid: 'bg-n-teal-3 text-n-teal-11',
-  unpaid: 'bg-n-amber-3 text-n-amber-11',
-  partially_paid: 'bg-n-amber-3 text-n-amber-11',
-  failed: 'bg-n-ruby-3 text-n-ruby-11',
+const PAYMENT_TONES = {
+  paid: 'success',
+  unpaid: 'warning',
+  partially_paid: 'warning',
+  failed: 'danger',
 };
-const NEUTRAL_BADGE = 'bg-n-slate-3 text-n-slate-11';
 
 const total = computed(() =>
   formatAmount(props.order.total, props.order.currency, locale.value)
@@ -94,7 +94,8 @@ const sendTracking = () => {
       <button
         v-tooltip.top="t('COMMERCE.PANEL.COPY_NUMBER')"
         type="button"
-        class="text-heading-3 text-n-slate-12 text-start hover:underline"
+        :aria-label="t('COMMERCE.PANEL.COPY_NUMBER')"
+        class="text-heading-3 text-n-slate-12 text-start underline decoration-dotted decoration-n-slate-8 underline-offset-4 hover:decoration-n-slate-11 focus-ring rounded-control"
         dir="ltr"
         data-test-id="commerce-order-number"
         @click="copyNumber"
@@ -102,7 +103,7 @@ const sendTracking = () => {
         {{ t('COMMERCE.PANEL.ORDER_NUMBER', { number: order.order_number }) }}
       </button>
       <div class="flex items-center gap-1">
-        <span class="text-body-main text-n-slate-12">{{ total }}</span>
+        <span class="text-heading-3 text-n-slate-12">{{ total }}</span>
         <CommerceOrderActions
           v-if="actionsStoreId && conversationId"
           :conversation-id="conversationId"
@@ -125,18 +126,18 @@ const sendTracking = () => {
       }}
     </span>
     <div class="flex flex-wrap items-center gap-1.5">
-      <span
-        class="px-1.5 py-0.5 rounded-md text-label-small"
-        :class="STATUS_CLASSES[order.status] || NEUTRAL_BADGE"
-      >
-        {{ orderStatus(order.status) }}
-      </span>
-      <span
-        class="px-1.5 py-0.5 rounded-md text-label-small"
-        :class="PAYMENT_CLASSES[order.payment_status] || NEUTRAL_BADGE"
-      >
-        {{ paymentStatus(order.payment_status) }}
-      </span>
+      <Label
+        compact
+        variant="solid"
+        :tone="STATUS_TONES[order.status] || 'neutral'"
+        :label="orderStatus(order.status)"
+      />
+      <Label
+        compact
+        variant="solid"
+        :tone="PAYMENT_TONES[order.payment_status] || 'neutral'"
+        :label="paymentStatus(order.payment_status)"
+      />
     </div>
     <div
       class="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-main text-n-slate-11"
@@ -165,7 +166,7 @@ const sendTracking = () => {
         :href="adminUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-label-small text-n-blue-11 hover:underline"
+        class="text-label-small text-n-blue-11 hover:underline focus-ring rounded-control"
       >
         {{ t('COMMERCE.PANEL.VIEW_ORDER') }}
       </a>
@@ -174,7 +175,7 @@ const sendTracking = () => {
         :href="trackingUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="text-label-small text-n-blue-11 hover:underline"
+        class="text-label-small text-n-blue-11 hover:underline focus-ring rounded-control"
       >
         {{ t('COMMERCE.PANEL.TRACK_SHIPMENT') }}
       </a>

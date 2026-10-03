@@ -419,7 +419,7 @@ onBeforeUnmount(stopPolling);
 
       <div
         v-if="state.isFetchingMetrics"
-        class="flex min-h-64 items-center justify-center rounded-xl border border-n-weak bg-n-solid-2 px-6 py-12"
+        class="flex min-h-64 items-center justify-center rounded-overlay border border-n-weak bg-n-solid-2 px-6 py-12"
         role="status"
         aria-live="polite"
       >
@@ -434,7 +434,7 @@ onBeforeUnmount(stopPolling);
 
       <div
         v-else-if="analyticsEmptyState"
-        class="flex min-h-64 items-center justify-center rounded-xl border border-n-weak bg-n-solid-2 px-6 py-12 text-center"
+        class="flex min-h-64 items-center justify-center rounded-overlay border border-n-weak bg-n-solid-2 px-6 py-12 text-center"
       >
         <div class="flex max-w-md flex-col items-center gap-3">
           <div
@@ -455,7 +455,7 @@ onBeforeUnmount(stopPolling);
 
       <div
         v-else
-        class="grid grid-cols-1 gap-px overflow-hidden border rounded-xl sm:grid-cols-2 lg:grid-cols-3 bg-n-weak border-n-weak"
+        class="grid grid-cols-1 gap-px overflow-hidden border rounded-overlay sm:grid-cols-2 lg:grid-cols-3 bg-n-weak border-n-weak"
       >
         <CampaignMetricCard
           v-for="metric in metrics"

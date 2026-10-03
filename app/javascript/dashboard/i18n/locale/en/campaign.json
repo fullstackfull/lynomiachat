@@ -284,7 +284,8 @@
           "MESSAGE": "Message",
           "MESSAGE_NOT_GENERATED": "Not generated",
           "REASON": "Reason",
-          "ERROR_CODE": "Code {code}"
+          "ERROR_CODE": "Code {code}",
+          "LOADING": "Loading deliveries"
         }
       }
     },
@@ -319,6 +320,7 @@
     "CARD": {
       "EDIT": "Edit campaign",
       "DELETE": "Delete campaign"
-    }
+    },
+    "LOADING": "Loading campaigns"
   }
 }

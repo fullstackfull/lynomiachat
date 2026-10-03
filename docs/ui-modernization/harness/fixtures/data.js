@@ -178,7 +178,7 @@ export const CAMPAIGNS = [
     campaign_type: 'one_off',
     campaign_status: 'active',
     message: 'Our Eid hours are now live.',
-    scheduled_at: '2026-10-20T09:00:00.000Z',
+    scheduled_at: 1792486800, // 2026-10-20T09:00:00Z — unix seconds, as `scheduled_at.to_i` serialises it
     inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
     audience: [{ type: 'Audience', id: 7 }],
     enabled: true,
@@ -189,7 +189,7 @@ export const CAMPAIGNS = [
     campaign_type: 'one_off',
     campaign_status: 'completed',
     message: 'The winter range is back in stock.',
-    scheduled_at: '2026-09-01T09:00:00.000Z',
+    scheduled_at: 1788253200, // 2026-09-01T09:00:00Z
     inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
     audience: [{ type: 'Label', id: 1 }],
     enabled: true,
@@ -568,24 +568,30 @@ export const FLOW_NODE_TYPES = {
   end: { outputs: [], data: ['resolve'] },
 };
 
-// A WhatsApp campaign's analytics: the counts the six metric tiles read, and three delivery rows that
-// between them cover a clean send, a failure with a reason, and a skip — the three states the delivery
-// table styles differently.
+// A WhatsApp campaign's analytics, shaped exactly as
+// `enterprise/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb#delivery_metrics` renders
+// it: the six tile counts at the top level — the page reads `state.metrics[key]`, not `status_counts[key]`
+// — plus `status_counts` keyed by every `CampaignRecipient` status, which the processing banner reads for
+// `queued` and `sent`. `delivered` is delivered + read, as the controller computes it.
 export const CAMPAIGN_METRICS = {
+  audience: 240,
+  sent: 207,
+  delivered: 171,
+  read: 118,
+  failed: 9,
+  skipped: 12,
   status_counts: {
-    audience: 240,
     queued: 12,
+    skipped: 12,
     sent: 36,
-    delivered: 171,
+    delivered: 53,
     read: 118,
     failed: 9,
-    skipped: 12,
   },
 };
 
 export const CAMPAIGN_DELIVERIES = [
   {
-    id: 1,
     contact: { id: 101, name: 'Rania Mansour', phone_number: '+966500000001' },
     status: 'read',
     message_content: 'Our Eid hours are now live.',
@@ -594,7 +600,6 @@ export const CAMPAIGN_DELIVERIES = [
     error_title: null,
   },
   {
-    id: 2,
     contact: { id: 102, name: 'Khaled Aziz', phone_number: '+966500000002' },
     status: 'failed',
     message_content: 'Our Eid hours are now live.',
@@ -604,7 +609,6 @@ export const CAMPAIGN_DELIVERIES = [
       'More than 24 hours have passed since the contact last replied, so this template could not be delivered.',
   },
   {
-    id: 3,
     contact: { id: 103, name: 'Noor Al-Sayed', phone_number: '+966500000003' },
     status: 'skipped',
     message_content: null,

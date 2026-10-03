@@ -45,6 +45,7 @@ const closeContactPanel = () => {
       () => closeContactPanel(),
       {
         ignore: [
+          'dialog[open]',
           'dialog.ProseMirror-prompt-backdrop',
           '[data-popover-content]',
           '[data-popover-backdrop]',

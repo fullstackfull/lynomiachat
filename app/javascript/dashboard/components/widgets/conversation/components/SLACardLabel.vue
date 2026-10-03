@@ -129,7 +129,7 @@ const togglePopover = () => {
     <SLAPopoverCard
       v-if="showSlaPopoverCard"
       :sla-missed-events="slaEvents"
-      class="start-0 xl:start-auto xl:end-0 top-7 group-hover:flex group-focus-within:flex"
+      class="start-0 lg:start-auto lg:end-0 top-7 group-hover:flex group-focus-within:flex"
       :class="isPopoverOpen ? 'flex' : 'hidden'"
     />
   </div>

@@ -148,4 +148,18 @@ export const SURFACES = {
     frame: 'settings',
     interactions: ['text:Add label'],
   },
+  'labels-list-empty': {
+    title: 'Settings · Labels (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/labels/Index.vue'),
+    route: 'labels_list',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'teams-list-empty': {
+    title: 'Settings · Teams (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/teams/Index.vue'),
+    route: 'settings_teams_list',
+    frame: 'settings',
+    state: 'empty',
+  },
 };

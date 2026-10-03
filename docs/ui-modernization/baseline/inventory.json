@@ -22342,5 +22342,757 @@
       }
     ],
     "hidden": 0
+  },
+  "labels-list-empty|en|390": {
+    "surface": "labels-list-empty",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-list-empty|en|768": {
+    "surface": "labels-list-empty",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-empty|en|1024": {
+    "surface": "labels-list-empty",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-empty|en|1280": {
+    "surface": "labels-list-empty",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-empty|ar|390": {
+    "surface": "labels-list-empty",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-list-empty|ar|768": {
+    "surface": "labels-list-empty",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-empty|ar|1024": {
+    "surface": "labels-list-empty",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-list-empty|ar|1280": {
+    "surface": "labels-list-empty",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|en|390": {
+    "surface": "teams-list-empty",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "teams-list-empty|en|768": {
+    "surface": "teams-list-empty",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|en|1024": {
+    "surface": "teams-list-empty",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|en|1280": {
+    "surface": "teams-list-empty",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|ar|390": {
+    "surface": "teams-list-empty",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "teams-list-empty|ar|768": {
+    "surface": "teams-list-empty",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|ar|1024": {
+    "surface": "teams-list-empty",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-empty|ar|1280": {
+    "surface": "teams-list-empty",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
   }
 }

@@ -73,6 +73,7 @@ body {
    *
    * | Class              | Use Case                                           |
    * |--------------------|----------------------------------------------------|
+   * | .text-display      | Hero titles on full-page empty states              |
    * | .text-body-main    | <p>, <span>, general body text                     |
    * | .text-body-para    | <p> for paragraphs, larger text blocks             |
    * | .text-heading-1    | <h1>, page titles, panel headers                   |
@@ -83,6 +84,14 @@ body {
    * | .text-button       | <button>, standard button text                     |
    * | .text-button-small | <button>, small/compact button text                |
    */
+
+  /* display: The one step above heading-1, for a full-page empty state's hero title. It existed as a
+     hand-rolled `text-3xl font-medium` before the scale had a step for it. */
+  .text-display {
+    @apply font-inter text-3xl font-medium;
+    line-height: 36px; /* 120% */
+    letter-spacing: -0.6px;
+  }
 
   /* body-text-main: Main text style for general body text */
   .text-body-main {

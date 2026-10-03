@@ -56,3 +56,13 @@ Per the phase's scope rule, these are written down and left alone:
 - **Conversations has no active-filter chips and no numeric filter count** — Contacts has both.
 - **The sidebar's Segments and Tagged-with sub-groups have no sort menu**, while the four parallel sub-groups rendered by the same component do.
 - **Empty sub-groups vanish silently** in the sidebar: an account with no teams has no Teams section at all, and the `SIDEBAR.NEW_TEAM` / `NEW_INBOX` / `NEW_LABEL` strings that would populate an empty state sit unused.
+
+## 5. Settings list pages still have a bare-sentence empty state
+
+`SettingsLayout` now exposes an `emptyState` slot, so a page can offer the action that fills the list
+instead of only stating that it is empty — but no page uses it yet. Eighteen settings lists still fall
+through to the default message. Giving each one an icon, a sentence and its primary action is page
+work with an information-architecture decision attached (which action, and whether the search box
+should still be there when there is nothing to search).
+
+**Lands in:** the settings commit, against the parity manifest in `audit/surface-settings-crud.md`.

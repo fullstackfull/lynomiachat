@@ -126,7 +126,16 @@ const problems = [];
 for (const surface of SURFACES) {
   for (const locale of ['en', 'ar']) {
     for (const [widthName, viewport] of VIEWPORTS) {
-      const context = await browser.newContext({ viewport });
+      // Reduced motion plus a hard freeze: without it an in-flight entry animation lands in the
+      // screenshot and two identical runs differ, which makes visual regression useless. This also
+      // exercises the product's own `prefers-reduced-motion` path.
+      const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+      await context.addInitScript(() => {
+        const style = document.createElement('style');
+        style.textContent =
+          '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}';
+        document.addEventListener('DOMContentLoaded', () => document.head.append(style));
+      });
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', error => errors.push(String(error.message).slice(0, 200)));

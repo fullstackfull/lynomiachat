@@ -136,6 +136,7 @@ export const CONTACTS = [
     thumbnail: '',
     availability_status: 'offline',
     last_activity_at: 1759400000,
+    created_at: 1757000000,
     additional_attributes: { city: 'Riyadh', country: 'Saudi Arabia', country_code: 'SA', company_name: 'Mansour Trading' },
     custom_attributes: {},
     labels: ['vip'],
@@ -148,6 +149,7 @@ export const CONTACTS = [
     thumbnail: '',
     availability_status: 'online',
     last_activity_at: 1759300000,
+    created_at: 1757100000,
     additional_attributes: { city: 'Jeddah', country: 'Saudi Arabia', country_code: 'SA' },
     custom_attributes: {},
     labels: [],
@@ -160,6 +162,7 @@ export const CONTACTS = [
     thumbnail: '',
     availability_status: 'offline',
     last_activity_at: 1759200000,
+    created_at: 1757200000,
     additional_attributes: {},
     custom_attributes: {},
     labels: ['refund'],
@@ -302,4 +305,178 @@ export const WHATSAPP_TEMPLATES = [
 export const INTEGRATION_APPS = [
   { id: 'slack', name: 'Slack', description: 'Send conversations to a Slack channel', enabled: false, hooks: [] },
   { id: 'webhook', name: 'Webhooks', description: 'Post events to your own endpoint', enabled: true, hooks: [] },
+];
+
+// One open conversation, so the workspace surfaces (header, contact panel, Commerce) render against a real chat
+// instead of an empty object: a VIP buyer on WhatsApp, assigned, labelled, with an SLA applied.
+export const CONVERSATION = {
+  id: 91,
+  account_id: ACCOUNT_ID,
+  inbox_id: 5,
+  status: 'open',
+  priority: 'high',
+  unread_count: 2,
+  can_reply: true,
+  muted: false,
+  snoozed_until: null,
+  labels: ['vip', 'refund'],
+  agent_last_seen_at: 1759400000,
+  last_activity_at: 1759400000,
+  created_at: 1759300000,
+  waiting_since: 1759399000,
+  first_reply_created_at: 1759350000,
+  timestamp: 1759400000,
+  applied_sla: { id: 601, name: 'VIP first reply', first_response_time_threshold: 900 },
+  sla_events: [],
+  custom_attributes: { order_number: '1234' },
+  additional_attributes: { browser: { browser_name: 'Chrome' } },
+  meta: {
+    channel: 'Channel::Whatsapp',
+    sender: CONTACTS[0],
+    assignee: AGENTS[0],
+    team: TEAMS[1],
+    hmac_verified: true,
+  },
+  messages: [
+    {
+      id: 9101,
+      content: 'Where is my order 1234?',
+      message_type: 0,
+      content_type: 'text',
+      created_at: 1759399000,
+      conversation_id: 91,
+      inbox_id: 5,
+      status: 'sent',
+      private: false,
+      sender: CONTACTS[0],
+      attachments: [],
+    },
+    {
+      id: 9102,
+      content: 'It shipped this morning — here is the tracking link.',
+      message_type: 1,
+      content_type: 'text',
+      created_at: 1759399500,
+      conversation_id: 91,
+      inbox_id: 5,
+      status: 'delivered',
+      private: false,
+      sender: AGENTS[0],
+      attachments: [],
+    },
+  ],
+};
+
+export const CONTACT_NOTES = [
+  {
+    id: 1001,
+    content: 'Prefers Arabic. Calls before 11am.',
+    created_at: 1759200000,
+    user: { id: 11, name: 'Lina Haddad', available_name: 'Lina', thumbnail: '' },
+  },
+];
+
+const COMMERCE_ORDER = (number, attributes = {}) => ({
+  provider: 'woocommerce',
+  external_order_id: number,
+  order_number: number,
+  status: 'processing',
+  provider_status: 'processing',
+  payment_status: 'paid',
+  shipment_status: null,
+  currency: 'SAR',
+  total: '420.00',
+  created_at: '2026-09-29T08:00:00.000Z',
+  updated_at: '2026-09-29T08:00:00.000Z',
+  items: [{ name: 'Rose water toner', quantity: 2, total: '120.00' }],
+  item_count: 2,
+  customer: { external_id: '2', name: 'Rania Mansour' },
+  shipping: null,
+  shipments: [],
+  tracking: null,
+  admin_order_url: `https://shop.example.com/wp-admin/order/${number}`,
+  customer_order_url: null,
+  ...attributes,
+});
+
+const COMMERCE_STORE_REF = { id: 4, name: 'Syria Cosmetics', provider: 'woocommerce' };
+
+// Both stores linked, so the panel opens on Customer 360 and the store view is one click away: every control of
+// both views lands in the inventory.
+export const COMMERCE_CONVERSATION_STORES = [
+  { ...COMMERCE_STORE_REF, linked: true, actions: true, carts: true },
+  { id: 9, name: 'Damascus Outlet', provider: 'woocommerce', linked: true, actions: false, carts: false },
+];
+
+export const COMMERCE_PANEL = {
+  store: COMMERCE_STORE_REF,
+  state: 'linked',
+  link: { match_source: 'verified_phone', customer_type: 'registered', linked_at: '2026-09-20T08:00:00.000Z', confirmed_by: null },
+  orders: [COMMERCE_ORDER('1234'), COMMERCE_ORDER('1198', { status: 'completed', shipment_status: 'delivered' })],
+  candidates: [],
+  fetched_at: '2026-09-29T08:30:00.000Z',
+  stale: false,
+  error: null,
+};
+
+export const COMMERCE_OVERVIEW = {
+  contact: { id: 101 },
+  stores_count: 2,
+  linked_stores_count: 2,
+  orders_count_visible: 3,
+  total_spend_visible: [
+    { currency: 'SAR', amount: '2450.00' },
+    { currency: 'AED', amount: '380.00' },
+  ],
+  currencies: CURRENCIES,
+  last_order_at: '2026-09-29T08:00:00.000Z',
+  active_orders_count: 1,
+  shipped_orders_count: 1,
+  latest_orders: [
+    { ...COMMERCE_ORDER('1234'), store: COMMERCE_STORE_REF },
+    { ...COMMERCE_ORDER('8891', { currency: 'AED', total: '95.00', status: 'shipped' }), store: COMMERCE_CONVERSATION_STORES[1] },
+  ],
+  stores: [
+    {
+      store: COMMERCE_STORE_REF,
+      state: 'linked',
+      link: { match_source: 'verified_phone', customer_type: 'registered' },
+      fetched_at: '2026-09-29T08:30:00.000Z',
+      stale: false,
+      error: null,
+      orders_count: 2,
+    },
+    {
+      store: { id: 9, name: 'Damascus Outlet', provider: 'woocommerce' },
+      state: 'linked',
+      link: { match_source: 'manual', customer_type: 'guest' },
+      fetched_at: '2026-09-29T08:10:00.000Z',
+      stale: false,
+      error: null,
+      orders_count: 1,
+    },
+  ],
+  partial: false,
+};
+
+// One abandoned cart with recovery still open, so the cart section and its recovery control are captured.
+export const COMMERCE_CARTS = [
+  {
+    store: COMMERCE_STORE_REF,
+    state: 'ok',
+    error: null,
+    carts: [
+      {
+        external_cart_id: 'c0ffee01',
+        created_at: '2026-09-29T06:00:00.000Z',
+        updated_at: '2026-09-29T07:00:00.000Z',
+        currency: 'SAR',
+        total: '120.50',
+        items: [{ name: 'Oud perfume', quantity: 2 }],
+        status: 'abandoned',
+        match: 'verified_phone',
+        recovery: { prepared_at: null, sent_at: null, cooldown_until: null },
+      },
+    ],
+  },
 ];

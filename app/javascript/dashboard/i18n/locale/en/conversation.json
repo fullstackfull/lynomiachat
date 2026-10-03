@@ -163,7 +163,8 @@
         "RT": "RT {status}",
         "MISSED": "missed",
         "DUE": "due"
-      }
+      },
+      "COPY_ID": "Copy conversation ID"
     },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "Mark as pending",
@@ -173,7 +174,8 @@
         "NEXT_REPLY": "Next reply",
         "TOMORROW": "Tomorrow",
         "NEXT_WEEK": "Next week"
-      }
+      },
+      "TRIGGER_LABEL": "More status actions"
     },
     "MENTION": {
       "AGENTS": "Agents",
@@ -336,7 +338,8 @@
         "REMOVE_PREVIEW": "Remove quoted email thread",
         "COLLAPSE": "Collapse preview",
         "EXPAND": "Expand preview"
-      }
+      },
+      "TIP_EXPAND_EDITOR": "Expand the editor"
     },
     "VISIBLE_TO_AGENTS": "Private Note: Only visible to you and your team",
     "CHANGE_STATUS": "Conversation status changed",
@@ -414,7 +417,8 @@
       "UNMUTE": "Unmute mic",
       "VIEW_CHAT_HISTORY": "View chat history",
       "GO_TO_CONVERSATION": "Go to conversation thread"
-    }
+    },
+    "TYPING_INDICATOR_ALT": "Someone is typing"
   },
   "EMAIL_TRANSCRIPT": {
     "TITLE": "Send conversation transcript",

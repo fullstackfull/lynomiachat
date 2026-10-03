@@ -251,10 +251,12 @@ export default {
               class="i-lucide-info text-sm text-n-slate-10"
             />
             <a
+              v-tooltip.top="$t('CONTACT_PANEL.VIEW_PROFILE')"
               :href="contactProfileLink"
+              :aria-label="$t('CONTACT_PANEL.VIEW_PROFILE')"
               target="_blank"
               rel="noopener nofollow noreferrer"
-              class="leading-3"
+              class="leading-3 focus-ring rounded-control"
             >
               <span class="i-lucide-external-link text-sm text-n-slate-10" />
             </a>

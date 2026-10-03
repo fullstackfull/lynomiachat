@@ -32,7 +32,7 @@ const buttonStyleClass = props.compact ? 'text-sm' : 'text-base';
     :class="buttonStyleClass"
     @click.capture="goBack"
   >
-    <i class="i-lucide-chevron-left -ml-1 text-lg" />
+    <i class="i-lucide-chevron-left -ms-1 text-lg rtl:rotate-180" />
     {{ buttonLabel || $t('GENERAL_SETTINGS.BACK') }}
   </button>
 </template>

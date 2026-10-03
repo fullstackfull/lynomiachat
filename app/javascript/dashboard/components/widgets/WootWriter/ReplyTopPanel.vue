@@ -167,8 +167,8 @@ export default {
         </span>
       </div>
     </div>
-    <div v-if="captainTasksEnabled" class="flex items-center gap-2">
-      <div class="relative">
+    <div class="flex items-center gap-2">
+      <div v-if="captainTasksEnabled" class="relative">
         <NextButton
           ref="copilotToggleRef"
           ghost
@@ -195,6 +195,8 @@ export default {
         />
       </div>
       <NextButton
+        v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_EXPAND_EDITOR')"
+        :aria-label="$t('CONVERSATION.REPLYBOX.TIP_EXPAND_EDITOR')"
         ghost
         class="text-n-slate-11"
         sm

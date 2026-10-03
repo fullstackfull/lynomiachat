@@ -83,11 +83,13 @@ onMounted(() => {
       </div>
       <Button
         v-if="allowDelete"
+        v-tooltip.top="t('CONTACTS_LAYOUT.SIDEBAR.NOTES.DELETE')"
+        :aria-label="t('CONTACTS_LAYOUT.SIDEBAR.NOTES.DELETE')"
         variant="faded"
         color="ruby"
         size="xs"
         icon="i-lucide-trash"
-        class="opacity-0 group-hover/note:opacity-100"
+        class="opacity-0 group-hover/note:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         @click="handleDelete"
       />
     </div>

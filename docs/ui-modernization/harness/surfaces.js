@@ -4,6 +4,8 @@
 //
 // `interactions` are selectors clicked before capture, so controls behind a menu or dialog land in the inventory
 // too: a feature that exists only inside an unopened menu still has to survive a redesign.
+import { CONVERSATION } from './fixtures/data';
+
 export const SURFACES = {
   sidebar: {
     title: 'Main sidebar',
@@ -218,5 +220,192 @@ export const SURFACES = {
     route: 'custom_roles_list',
     frame: 'settings',
     state: 'loading',
+  },
+  'conversation-header': {
+    title: 'Conversation · header',
+    load: () => import('dashboard/components/widgets/conversation/ConversationHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header',
+    props: { chat: CONVERSATION, showBackButton: true },
+    // The header's overflow menu carries mute/unmute and send-transcript: without opening it those three
+    // actions are invisible to parity. The handle is the icon rather than the (new) test id, so the same
+    // selector opens the menu in the pre-phase tree the baseline is captured from.
+    interactions: ['[class*="i-lucide-more-vertical"]'],
+  },
+  'conversation-panel': {
+    title: 'Conversation · contact panel',
+    load: () => import('dashboard/routes/dashboard/conversation/ContactPanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, inboxId: 5 },
+  },
+  'commerce-panel': {
+    title: 'Conversation · Commerce panel',
+    load: () => import('dashboard/components/widgets/conversation/commerce/CommercePanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, contactId: 101 },
+  },
+  'commerce-panel-store': {
+    title: 'Conversation · Commerce panel (one store)',
+    load: () => import('dashboard/components/widgets/conversation/commerce/CommercePanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, contactId: 101 },
+    interactions: ['[data-test-id="commerce-view-store"]'],
+  },
+  'conversation-list-header': {
+    title: 'Conversation list · header and filters',
+    load: () => import('dashboard/components/ChatListHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header-panel',
+    props: {
+      pageTitle: 'All conversations',
+      hasAppliedFilters: false,
+      hasActiveFolders: false,
+      activeStatus: 'open',
+      isOnExpandedLayout: false,
+      conversationStats: { allCount: 12, mineCount: 4, unassignedCount: 3 },
+      isListLoading: false,
+    },
+  },
+  'conversation-card': {
+    title: 'Conversation list · card',
+    load: () => import('dashboard/components/widgets/conversation/ConversationCard.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+    },
+  },
+  'conversation-card-selected': {
+    title: 'Conversation list · card (selected)',
+    load: () => import('dashboard/components/widgets/conversation/ConversationCard.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+      // The card's own checkbox is otherwise revealed by hover, which a capture cannot express, so without
+      // this entry the entry point to every bulk action is absent from the inventory.
+      selected: true,
+    },
+  },
+  'conversation-card-expanded': {
+    title: 'Conversation list · card (expanded layout)',
+    load: () =>
+      import('dashboard/components-next/Conversation/ConversationCard/ConversationCardExpanded.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel-wide',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+    },
+  },
+  'conversation-context-menu': {
+    title: 'Conversation list · row context menu',
+    load: () => import('dashboard/components/widgets/conversation/contextMenu/Index.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chatId: 91,
+      status: 'open',
+      hasUnreadMessages: true,
+      inboxId: 5,
+      priority: 'high',
+      conversationLabels: ['vip'],
+      conversationUrl: '/app/accounts/1/conversations/91',
+    },
+  },
+  'conversation-bulk-actions': {
+    title: 'Conversation list · bulk action bar',
+    load: () => import('dashboard/components/widgets/conversation/conversationBulkActions/Index.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel-wide',
+    props: {
+      conversations: [91, 92],
+      allConversationsSelected: false,
+      selectedInboxes: [5],
+      showOpenAction: false,
+      showResolvedAction: true,
+      showSnoozedAction: true,
+    },
+  },
+  'conversation-header-resolve-menu': {
+    title: 'Conversation · header · status menu',
+    load: () => import('dashboard/components/widgets/conversation/ConversationHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header',
+    props: { chat: CONVERSATION, showBackButton: true },
+    // Snooze-until and mark-pending live only inside this menu. The chevron is the one `chevron-down` in
+    // this surface, so the icon is a handle that works in the pre-phase tree too.
+    interactions: ['[class*="i-lucide-chevron-down"]'],
+  },
+  'conversation-list-header-filtered': {
+    title: 'Conversation list · header (filter applied)',
+    load: () => import('dashboard/components/ChatListHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header-panel',
+    props: {
+      pageTitle: 'All conversations',
+      hasAppliedFilters: true,
+      hasActiveFolders: false,
+      activeStatus: 'open',
+      isOnExpandedLayout: false,
+      conversationStats: { allCount: 12, mineCount: 4, unassignedCount: 3 },
+      isListLoading: false,
+    },
+  },
+  'campaigns-livechat': {
+    title: 'Campaigns · Live chat',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/LiveChatCampaignsPage.vue'),
+    route: 'campaigns_livechat_index',
+    frame: 'plain',
+  },
+  'campaigns-sms': {
+    title: 'Campaigns · SMS',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/SMSCampaignsPage.vue'),
+    route: 'campaigns_sms_index',
+    frame: 'plain',
+  },
+  'campaigns-whatsapp-empty': {
+    title: 'Campaigns · WhatsApp (empty)',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignsPage.vue'),
+    route: 'campaigns_whatsapp_index',
+    frame: 'plain',
+    state: 'empty',
+  },
+  'contacts-header-filter': {
+    title: 'Contacts · audience filter panel',
+    load: () => import('dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue'),
+    route: 'contacts_dashboard_segments_index',
+    frame: 'plain',
+    props: {
+      headerTitle: 'VIP buyers',
+      segmentsId: 7,
+      activeSegment: {
+        id: 7,
+        name: 'VIP buyers',
+        shared: true,
+        query: { payload: [] },
+        active_automation_rules_count: 2,
+        campaigns_count: 1,
+      },
+    },
+    // Segments view: the filter control is the "edit segment" pen, which opens the audience filter panel.
+    interactions: ['[class*="i-lucide-pen-line"]'],
   },
 };

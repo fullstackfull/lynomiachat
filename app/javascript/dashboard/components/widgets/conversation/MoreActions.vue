@@ -102,6 +102,9 @@ onUnmounted(() => {
     >
       <ButtonV4
         v-tooltip="$t('CONVERSATION.HEADER.MORE_ACTIONS')"
+        :aria-label="$t('CONVERSATION.HEADER.MORE_ACTIONS')"
+        :aria-expanded="showActionsDropdown"
+        data-test-id="conversation-more-actions"
         size="sm"
         variant="ghost"
         color="slate"

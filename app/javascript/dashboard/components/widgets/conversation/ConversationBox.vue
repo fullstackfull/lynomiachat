@@ -22,10 +22,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    isContactPanelOpen: {
-      type: Boolean,
-      default: true,
-    },
     isOnExpandedLayout: {
       type: Boolean,
       default: true,
@@ -52,9 +48,6 @@ export default {
           name: dashboardApp.title,
         })),
       ];
-    },
-    showContactPanel() {
-      return this.isContactPanelOpen && this.currentChat.id;
     },
   },
   watch: {

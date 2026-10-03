@@ -532,7 +532,7 @@ export default {
           class="list-none flex justify-center items-center"
         >
           <span
-            class="shadow-lg rounded-full bg-n-brand text-white text-xs font-medium my-2.5 mx-auto px-2.5 py-1.5"
+            class="shadow-raised rounded-full bg-n-teal-9 text-white text-xs font-medium my-2.5 mx-auto px-2.5 py-1.5"
           >
             {{ unreadMessageLabel }}
           </span>
@@ -565,7 +565,7 @@ export default {
           <img
             class="w-6 ltr:ml-2 rtl:mr-2"
             src="assets/images/typing.gif"
-            alt="Someone is typing"
+            :alt="$t('CONVERSATION.TYPING_INDICATOR_ALT')"
           />
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useChatListKeyboardEvents } from 'dashboard/composables/chatlist/useCha
 import ConversationItem from './ConversationItem.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import IntersectionObserver from 'dashboard/components/IntersectionObserver.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 
 import wootConstants from 'dashboard/constants/globals';
 
@@ -63,6 +64,27 @@ defineExpose({ conversationListRef });
     class="flex-1 min-h-0 overflow-y-auto conversations-list"
     :class="{ '!overflow-hidden': isContextMenuOpen }"
   >
+    <!-- The first fetch used to show a blank panel with one spinner pinned to the bottom. These rows are
+         `aria-hidden` and deliberately do NOT carry the `conversation` class: `div.conversations-list
+         div.conversation` is a load-bearing selector for Alt+J / Alt+K and for resolve-and-next, and a
+         placeholder answering it would silently make those keys navigate to nothing. -->
+    <div
+      v-if="isLoading && !conversationList.length"
+      class="flex flex-col"
+      aria-hidden="true"
+    >
+      <div
+        v-for="row in 6"
+        :key="`conversation-skeleton-${row}`"
+        class="flex items-start gap-2 px-3 py-3 border-b border-n-slate-3"
+      >
+        <Skeleton width="w-8" height="h-8" shape="circle" />
+        <div class="flex flex-col flex-1 gap-2 min-w-0 pt-1">
+          <Skeleton width="w-24" height="h-3" />
+          <Skeleton width="w-full" height="h-3" />
+        </div>
+      </div>
+    </div>
     <Virtualizer
       ref="virtualListRef"
       v-slot="{ item }"
@@ -79,14 +101,20 @@ defineExpose({ conversationListRef });
         :show-expanded="showExpandedCards"
       />
     </Virtualizer>
-    <div v-if="isLoading" class="flex justify-center my-4">
+    <div
+      v-if="isLoading && conversationList.length"
+      class="flex justify-center my-4"
+    >
       <Spinner class="text-n-brand" />
     </div>
-    <p v-else-if="showEndOfListMessage" class="p-4 text-center text-n-slate-11">
+    <p
+      v-else-if="!isLoading && showEndOfListMessage"
+      class="p-4 text-center text-n-slate-11"
+    >
       {{ $t('CHAT_LIST.EOF') }}
     </p>
     <IntersectionObserver
-      v-else
+      v-else-if="!isLoading"
       :options="intersectionObserverOptions"
       @observed="loadMoreConversations"
     />

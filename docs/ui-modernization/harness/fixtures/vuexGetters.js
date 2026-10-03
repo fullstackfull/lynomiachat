@@ -6,7 +6,9 @@ import {
   CAMPAIGNS,
   CANNED_RESPONSES,
   CONTACTS,
+  CONTACT_NOTES,
   CONTACT_VIEWS,
+  CONVERSATION,
   CUSTOM_ATTRIBUTES,
   CUSTOM_ROLES,
   INBOXES,
@@ -16,6 +18,7 @@ import {
   SLA_POLICIES,
   TEAMS,
 } from './data';
+import camelcaseKeys from 'camelcase-keys';
 import { DEFAULT_SIDEBAR_SORT_PREFERENCES } from 'dashboard/helper/sidebarSort';
 
 const params = new URLSearchParams(window.location.search);
@@ -68,6 +71,22 @@ const NO_FLAGS = LOADING
     }
   : {};
 
+const OPEN_SIDEBAR_SECTIONS = {
+  is_contact_sidebar_open: true,
+  is_conv_actions_open: true,
+  is_conv_details_open: true,
+  is_conv_participants_open: true,
+  is_contact_attributes_open: true,
+  is_contact_notes_open: true,
+  is_contact_labels_open: true,
+  is_previous_conv_open: true,
+  is_shared_files_open: true,
+  is_macro_open: true,
+  is_commerce_open: true,
+  is_linear_issues_open: true,
+  is_shopify_orders_open: true,
+};
+
 export const GETTERS = {
   getCurrentAccountId: () => ACCOUNT_ID,
   getCurrentUser: () => USER,
@@ -75,8 +94,15 @@ export const GETTERS = {
   getCurrentRole: () => 'administrator',
   getCurrentAccount: () => ACCOUNT,
   isLoggedIn: () => true,
-  getUISettings: () => ({}),
-  getSelectedChat: () => ({}),
+  // Every conversation-sidebar accordion open, so the panel's own controls are inside the inventory rather than
+  // behind a collapsed heading. An agent's real preference is per-section; open is the state worth measuring.
+  getUISettings: () => OPEN_SIDEBAR_SECTIONS,
+  getSelectedChat: () => CONVERSATION,
+  getSelectedInbox: () => INBOXES[0],
+  getSelectedChatAttachments: () => [],
+  getSelectedChatAttachmentsLoaded: () => true,
+  getConversationById: () => () => CONVERSATION,
+  getAppliedContactFilter: () => null,
   'accounts/getAccount': () => () => ACCOUNT,
   'accounts/isRTL': () => RTL,
   'accounts/getUIFlags': () => NO_FLAGS,
@@ -105,9 +131,10 @@ export const GETTERS = {
   'campaigns/getAllCampaigns': () => list(CAMPAIGNS),
   'campaigns/getWhatsAppCampaigns': () => list(CAMPAIGNS),
   'campaigns/getSMSCampaigns': () => [],
+  'campaigns/getLiveChatCampaigns': () => [],
   'campaigns/getUIFlags': () => NO_FLAGS,
   'contacts/getContactsList': () => list(CONTACTS),
-  'contacts/getContact': () => () => list(CONTACTS)[0] || {},
+  'contacts/getContact': () => id => CONTACTS.find(contact => contact.id === Number(id)) || CONTACTS[0],
   'contacts/getUIFlags': () => NO_FLAGS,
   'contacts/getMeta': () => ({ count: list(CONTACTS).length, currentPage: 1, hasMore: false }),
   'contacts/getAppliedContactFilters': () => [],
@@ -154,4 +181,27 @@ export const GETTERS = {
   'conversationUnreadCounts/getTeamUnreadCount': () => () => 0,
   'contacts/getContactById': () => () => list(CONTACTS)[0] || {},
   'contactConversations/getUIFlags': () => NO_FLAGS,
+  // Conversation workspace
+  'inboxes/getInbox': () => id => INBOXES.find(inbox => inbox.id === Number(id)) || {},
+  'inboxes/getInboxById': () => id => INBOXES.find(inbox => inbox.id === Number(id)) || {},
+  'conversationMetadata/getConversationMetadata': () => () => CONVERSATION.additional_attributes,
+  'conversationWatchers/getByConversationId': () => () => ({ showAddButton: true, uiFlags: {}, watchers: [AGENTS[0]] }),
+  'contactConversations/get': () => () => [],
+  // Camel-cased exactly as the real getter does it, because the note item reads `note.createdAt`.
+  'contactNotes/getAllNotesByContactId': () => () => camelcaseKeys(CONTACT_NOTES),
+  'contactNotes/getUIFlags': () => NO_FLAGS,
+  'integrations/getIntegration': () => id => ({ id, enabled: id === 'linear', hooks: [] }),
+  'conversationLabels/getConversationLabels': () => () => CONVERSATION.labels,
+  'conversationLabels/getUIFlags': () => NO_FLAGS,
+  'contactConversations/getContactConversation': () => () => [CONVERSATION],
+  'contactConversations/getConversationNeighbours': () => () => ({ prevConversationId: null, nextConversationId: null }),
+  'inboxAssignableAgents/getAssignableAgents': () => () => AGENTS,
+  'inboxAssignableAgents/getUIFlags': () => NO_FLAGS,
+  // The row context menu and the bulk bar
+  'bulkActions/getUIFlags': () => ({ isUpdating: false }),
+  'bulkActions/getSelectedConversationIds': () => [91, 92],
+  // Not namespaced: the conversation list's own filter and sort live at the store root.
+  getChatStatusFilter: () => 'open',
+  getChatSortFilter: () => 'last_activity_at_desc',
+  getAllConversations: () => [CONVERSATION],
 };

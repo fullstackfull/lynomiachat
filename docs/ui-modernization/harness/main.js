@@ -87,6 +87,8 @@ app.component('woot-confirm-modal', Hidden);
 // The real legacy modal, so the 29 settings dialogs still built on it can be captured and compared.
 app.component('woot-modal', WootModal);
 app.component('woot-modal-header', Passthrough);
+// Gates a section on an account feature flag; the fixture account has every flag on, so it renders its slot.
+app.component('woot-feature-toggle', Passthrough);
 app.component('woot-button', { template: '<button><slot /></button>' });
 app.component('fluent-icon', { props: ['icon'], template: '<span />' });
 app.directive('resize', vResizeObserver);

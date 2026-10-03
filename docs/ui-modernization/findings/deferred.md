@@ -83,3 +83,89 @@ Two were unambiguous and are fixed: `automation` passed a `linkText` that was tr
 rendered, and **custom roles linked to the canned-responses help page** while its link read "Learn
 more about custom roles". Both now have entries following the file's own slug pattern — worth a
 confirmation that `chwt.app/hc/automations` and `chwt.app/hc/custom-roles` resolve.
+
+## Status and priority icons carry hard-coded hex with no dark-mode form
+
+`theme/icons.js:216-250` fills the four `priority-*` glyphs and `status-resolved` /
+`status-snoozed` with literal hex (`#e5484d`, `#ffc53d`, `#e4e4e9`, `#0D9B8A`, `#FFBA1A`)
+rather than `currentColor`. Only `priority-empty` uses `currentColor`. Two consequences:
+
+- The status and priority columns of the conversation list keep their light-mode colours in
+  dark mode, while every token-driven neighbour re-tones around them.
+- A component cannot influence them, which is why `CardPriorityIcon.vue`'s `text-n-slate-5`
+  has no effect on a real priority (and why audit finding H4 was withdrawn).
+
+Not done in this phase: the fix is to replace the fills with `currentColor` in the icon set and
+move the colour decision into the two components, which changes how these glyphs look on every
+surface that renders them — the conversation list in both card forms, the conversation header,
+search results and the reports. That needs its own before/after pass with captures of all of
+them, and `conversation-card-expanded` is not in the capture set yet.
+
+## Reachability gaps in the conversation workspace that are capability work, not presentation
+
+Found while modernising the workspace. Each is a feature a mouse user has and a keyboard or touch user
+does not. The ones that could be fixed without inventing new behaviour were fixed in that commit — the
+row context menu's submenus now open on click and Enter, the SLA chip is a real button, the composer's
+expand control is no longer behind the Captain flag, the bulk-select checkbox is revealed where there is
+no hover, and the contact-field pencils are visible on touch. These three are what is left.
+
+### Focusable conversation rows
+
+`ConversationCard.vue` and `ConversationCardExpanded.vue` are `<div>`s with `@click` and no `tabindex`,
+`role` or `@keydown`, so a keyboard user cannot Tab into the list at all. The product's answer today is
+Alt+J / Alt+K, which navigate by querying `div.conversations-list div.conversation` and calling
+`.click()` on the result. Giving a virtualised list a focus model has to be designed together with that
+layer — two systems moving the same selection — and it is a new capability rather than a restyle.
+
+### A real error state for the conversation list
+
+Every fetch failure in `ChatList.vue` ends in a transient toast and the list then falls through to "There
+are no active conversations in this group", so a failed load is indistinguishable from an empty inbox and
+there is no retry anywhere in the panel. New copy and a new control.
+
+### Telling "nothing matches your filter" from "this inbox is empty"
+
+`CHAT_LIST.LIST.404` is one fixed string whatever the tab, folder or five advanced filters. The empty
+state now renders through `EmptyStateLayout` so it is centred and has an icon, but the branch and a
+second entry point to `resetAndFetchData` are new content and a new control, and the back chevron in the
+header is the existing route to clearing a filter.
+
+## Column headers for the expanded conversation list
+
+`ConversationCardExpanded.vue` lays out ten semantic columns — three of them identical 16px icon slots —
+with no header row anywhere, so the list cannot say what its columns are and cannot be sorted from them.
+Whether that becomes a `BaseTable` is the open question, and answering it needs
+`conversation-card-expanded` in the capture set first.
+
+## A second design system in `_woot.scss`, keyed off Tailwind utility names
+
+**Found while planning the Commerce panel; the blast radius is the whole product.**
+
+`app/javascript/dashboard/assets/scss/_woot.scss` ends with ~120 hand-written lines inside the
+`@layer utilities` block that attach styling to Tailwind's own class names and to bare element
+selectors. Four of its five rules are defects whatever the brand intent, because they reach things that
+never opted in:
+
+| Selector | What it does | What it actually hits |
+|---|---|---|
+| `.bg-n-brand\/10` | `!important` navy→blue gradient, `text-transform: uppercase`, `color: white`, `display: block`, `margin: 10px`, `box-shadow: 0 0 20px #eee` | `components-next/button/Button.vue:106` — the **faded blue variant of the shared Button component** — plus the Captain FAQ chip, the inbox sort menu's active row and the context-menu hover tint. A 10%-alpha brand tint is a *subtle background*; it is being rendered as an uppercase white-on-gradient block. |
+| `.bg-n-brand\/20:hover` | background-position + `color: #fff` | the same Button variant's hover state |
+| `main` | `border: 2px solid`, `margin: 1rem`, `border-radius: 10px`, a 28px drop shadow | every `<main>` in the product — Help Center, Companies (list and detail), Campaigns (list and analytics), Contacts (list and detail), the gallery view |
+| `button:has(span.sr-only)` | `background: #111 !important`, `width: 27px`, `height: 17px` | **any button in the product containing a screen-reader-only label.** Adding an `sr-only` name to a button — exactly what the accessibility work in this phase does — squashes it to 27×17px and paints it black. |
+
+The fifth rule, `button.bg-n-brand, .bg-n-brand button`, is the "Lynomia brand gradient for primary
+buttons" the comment names: a navy→blue gradient, white text, `font-family: Arial`, `font-size: 16px`,
+`font-weight: bold`, `text-transform: uppercase`, `border-radius: 10px`, a sweeping `::before` overlay
+and `transform: scale(1.05)` on hover.
+
+**Not done in this phase, and deliberately not done silently.** The four defect rules are a
+straightforward fix. The brand gradient is a product decision: it is plainly intentional, and it equally
+plainly overrides the typography scale this phase is built on (`font-inter`, `text-button`, the nine
+type utilities) and the radius, colour and elevation tokens. The right shape is a `brand` variant on
+`components-next/button/Button.vue` that an author opts into, rather than a global rule triggered by a
+background utility — but which primary buttons should carry it, and whether uppercase Arial is the
+intended brand voice, is not mine to decide.
+
+**Needs:** a yes/no from the product owner on the gradient, then one commit that removes the four defect
+rules and moves whatever survives into the Button component. Its before/after is visible on nearly every
+surface in the capture set, so it wants its own capture pass rather than riding inside another batch.

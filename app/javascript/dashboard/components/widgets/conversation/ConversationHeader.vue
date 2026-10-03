@@ -110,10 +110,10 @@ const copyConversationId = async () => {
 <template>
   <div
     ref="conversationHeader"
-    class="flex flex-col gap-3 items-center justify-between flex-1 w-full min-w-0 xl:flex-row px-3 pt-3 pb-2 h-24 xl:h-12"
+    class="flex flex-col gap-3 items-center justify-between flex-1 w-full min-w-0 lg:flex-row px-3 pt-3 pb-2 h-24 lg:h-13"
   >
     <div
-      class="flex items-center justify-start w-full xl:w-auto max-w-full min-w-0 xl:flex-1"
+      class="flex items-center justify-start w-full lg:w-auto max-w-full min-w-0 lg:flex-1"
     >
       <BackButton
         v-if="showBackButton"
@@ -138,7 +138,7 @@ const copyConversationId = async () => {
             v-if="!isHMACVerified"
             v-tooltip="$t('CONVERSATION.UNVERIFIED_SESSION')"
             size="14"
-            class="text-n-amber-10 my-0 mx-0 min-w-[14px] flex-shrink-0"
+            class="text-n-amber-10 my-0 mx-0 min-w-3.5 flex-shrink-0"
             icon="warning"
           />
         </div>
@@ -147,8 +147,10 @@ const copyConversationId = async () => {
           class="flex items-center gap-1 overflow-hidden text-xs conversation--header--actions text-n-slate-11 text-ellipsis whitespace-nowrap"
         >
           <button
+            v-tooltip="$t('CONVERSATION.HEADER.COPY_ID')"
             type="button"
-            class="truncate text-label-small text-n-slate-11 hover:text-n-slate-12 !p-0 cucursor-pointer"
+            class="truncate text-label-small text-n-slate-11 hover:text-n-slate-12 !p-0 cursor-pointer focus-ring rounded-control"
+            :aria-label="$t('CONVERSATION.HEADER.COPY_ID')"
             @click="copyConversationId"
           >
             {{ `#${chat.id}` }}
@@ -163,7 +165,7 @@ const copyConversationId = async () => {
       </div>
     </div>
     <div
-      class="flex flex-row items-center justify-start xl:justify-end flex-shrink-0 gap-2 w-full xl:w-auto header-actions-wrap"
+      class="flex flex-row items-center justify-start lg:justify-end flex-shrink-0 gap-2 w-full lg:w-auto"
     >
       <SLACardLabel
         v-if="hasSlaPolicyId"

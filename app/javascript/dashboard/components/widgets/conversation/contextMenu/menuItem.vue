@@ -12,10 +12,20 @@ defineProps({
     default: 'default',
   },
 });
+
+// The row's own click handler belongs to whoever placed it, so Enter and Space dispatch a real click rather
+// than a second event the parent would have to listen for. Without this the menu is mouse-only.
+const activate = event => event.currentTarget.click();
 </script>
 
 <template>
-  <div class="menu group text-n-slate-12 min-h-7 min-w-0" role="button">
+  <div
+    class="group text-n-slate-12 focus-ring flex items-center flex-nowrap gap-2 p-1 min-h-7 min-w-[12.5rem] max-w-[18rem] rounded-md overflow-hidden cursor-pointer hover:bg-n-brand hover:text-white"
+    role="button"
+    tabindex="0"
+    @keydown.enter.prevent="activate"
+    @keydown.space.prevent="activate"
+  >
     <fluent-icon
       v-if="variant === 'icon' && option.icon"
       :icon="option.icon"
@@ -26,7 +36,7 @@ defineProps({
       v-if="
         (variant === 'label' || variant === 'label-assigned') && option.color
       "
-      class="label-pill flex-shrink-0"
+      class="flex-shrink-0 w-4 h-4 rounded-full border border-solid border-n-strong"
       :style="{ backgroundColor: option.color }"
     />
     <Avatar
@@ -46,7 +56,12 @@ defineProps({
         </div>
       </template>
     </Avatar>
-    <p class="menu-label truncate min-w-0 flex-1">
+    <!-- Truncates instead of being cut off by the row's fixed width, and carries the full text as a tooltip:
+         agent, team and label names are routinely longer than 200px of row. -->
+    <p
+      :title="option.label"
+      class="my-0 text-label-small truncate min-w-0 flex-1"
+    >
       {{ option.label }}
     </p>
     <Icon
@@ -56,26 +71,3 @@ defineProps({
     />
   </div>
 </template>
-
-<style scoped lang="scss">
-.menu {
-  width: calc(6.25rem * 2);
-  @apply flex items-center flex-nowrap p-1 rounded-md overflow-hidden cursor-pointer;
-
-  .menu-label {
-    @apply my-0 mx-2 text-xs flex-shrink-0;
-  }
-
-  &:hover {
-    @apply bg-n-brand text-white;
-  }
-}
-
-.agent-thumbnail {
-  margin-top: 0 !important;
-}
-
-.label-pill {
-  @apply w-4 h-4 rounded-full border border-n-strong border-solid flex-shrink-0;
-}
-</style>

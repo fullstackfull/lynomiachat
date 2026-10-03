@@ -84,7 +84,7 @@ const toggleConversationLayout = () => {
         v-tooltip.right="$t('FILTER.CLEAR_BUTTON_LABEL')"
         :aria-label="$t('FILTER.CLEAR_BUTTON_LABEL')"
         icon="i-lucide-chevron-left"
-        class="shrink-0 -ms-2 !h-6 !w-6 me-1"
+        class="shrink-0 -ms-2 !h-6 !w-6 me-1 rtl:rotate-180"
         slate
         sm
         ghost
@@ -97,7 +97,7 @@ const toggleConversationLayout = () => {
         v-if="
           allCount > 0 && hasAppliedFiltersOrActiveFolders && !isListLoading
         "
-        class="px-2 py-1 my-0.5 mx-1 rounded-md capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
+        class="inline-flex items-center px-2 mx-1 h-control-xs rounded-control capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
         :title="allCount"
       >
         {{ formattedAllCount }}
@@ -125,7 +125,7 @@ const toggleConversationLayout = () => {
           />
           <div
             id="saveFilterTeleportTarget"
-            class="absolute z-50 mt-2"
+            class="absolute z-dropdown mt-2"
             :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
           />
         </div>
@@ -144,7 +144,7 @@ const toggleConversationLayout = () => {
           />
           <div
             id="conversationFilterTeleportTarget"
-            class="absolute z-50 mt-2"
+            class="absolute z-dropdown mt-2"
             :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
           />
         </div>
@@ -172,7 +172,7 @@ const toggleConversationLayout = () => {
         />
         <div
           id="conversationFilterTeleportTarget"
-          class="absolute z-50 mt-2"
+          class="absolute z-dropdown mt-2"
           :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
         />
       </div>

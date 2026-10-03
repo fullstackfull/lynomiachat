@@ -31,10 +31,6 @@ const props = defineProps({
     type: [Number, String],
     required: true,
   },
-  inboxId: {
-    type: Number,
-    default: undefined,
-  },
 });
 
 const {
@@ -175,10 +171,7 @@ onMounted(() => {
                 value => toggleSidebarUIState('is_conv_actions_open', value)
               "
             >
-              <ConversationAction
-                :conversation-id="conversationId"
-                :inbox-id="inboxId"
-              />
+              <ConversationAction :conversation-id="conversationId" />
             </AccordionItem>
           </div>
           <div
@@ -193,10 +186,7 @@ onMounted(() => {
                   toggleSidebarUIState('is_conv_participants_open', value)
               "
             >
-              <ConversationParticipant
-                :conversation-id="conversationId"
-                :inbox-id="inboxId"
-              />
+              <ConversationParticipant :conversation-id="conversationId" />
             </AccordionItem>
           </div>
           <div v-else-if="element.name === 'conversation_info'">

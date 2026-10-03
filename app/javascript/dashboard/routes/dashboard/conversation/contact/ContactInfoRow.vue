@@ -78,14 +78,14 @@ export default {
 </script>
 
 <template>
-  <div class="group/row w-full h-5 ltr:-ml-1 rtl:-mr-1">
+  <div class="group/row w-full min-h-control-xs">
     <!-- Inline edit mode -->
     <div v-if="isEditing" class="flex items-center w-full min-w-0 gap-2">
       <EmojiOrIcon
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <InlineInput
         ref="editInput"
@@ -107,7 +107,7 @@ export default {
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <span
         v-if="value"
@@ -149,7 +149,7 @@ export default {
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <span
         v-if="value"

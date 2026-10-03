@@ -36,6 +36,8 @@ export default {
       v-for="profile in availableProfiles"
       :key="profile.key"
       :href="`${profile.link}${socialProfiles[profile.key]}`"
+      :aria-label="profile.key"
+      :title="profile.key"
       target="_blank"
       rel="noopener noreferrer nofollow"
     >

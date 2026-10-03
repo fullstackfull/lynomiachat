@@ -207,6 +207,7 @@ const onPickInbox = async inbox => {
       v-if="shouldRender"
       v-tooltip.top-end="tooltipLabel || null"
       v-bind="attrs"
+      :aria-label="attrs['aria-label'] || tooltipLabel || label || undefined"
       :disabled="isCallButtonDisabled"
       :is-loading="isInitiatingCall"
       :label="label"

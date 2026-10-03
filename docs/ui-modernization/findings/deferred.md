@@ -169,3 +169,27 @@ intended brand voice, is not mine to decide.
 **Needs:** a yes/no from the product owner on the gradient, then one commit that removes the four defect
 rules and moves whatever survives into the Button component. Its before/after is visible on nearly every
 surface in the capture set, so it wants its own capture pass rather than riding inside another batch.
+
+## Deleting a contact from the conversation panel leaves the panel open on a deleted record
+
+`ContactInfo.vue` declared `emits: ['panelClose']` and fired it from `ContactDeleteModal`'s `@deleted`,
+but no parent ever listened — `@panel-close` appears nowhere in the repository. The emit was removed as
+dead code, and this is the gap it was reaching for: after a successful delete the panel keeps rendering
+the contact that no longer exists until the agent navigates away.
+
+Closing the panel, or re-rendering it in an empty state, is new behaviour on a destructive path, so it is
+not folded into a visual commit.
+
+## Three contact-panel items from the plan that were not taken
+
+- **Default-open sidebar sections.** `isContactSidebarItemOpen` is `key => !!uiSettings.value[key]`, so
+  every one of the eleven sections starts collapsed for a new agent. Making conversation actions,
+  conversation info and contact attributes default to open would help, but it changes the default of a
+  persisted per-user preference, which is product behaviour rather than presentation.
+- **Widening when an attribute row can be dragged.** The reorder handle is disabled unless the "show all"
+  state is on, which also disables it for an account with five attributes or fewer that never needs the
+  toggle. Changing the gate needs a decision about what the handle means when there is nothing to
+  collapse.
+- **An empty-value row rendering the wrong branch.** Reported as a defect; it does not reproduce. Every
+  caller already gates `href` on the value, so a row with no value falls through to the non-link branch
+  exactly as intended.

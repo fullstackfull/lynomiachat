@@ -23,7 +23,7 @@ const handleButtonClick = button => {
     class="flex items-center justify-between px-4 py-2 border-b border-n-weak h-13"
   >
     <div class="flex items-center justify-between gap-2 flex-1">
-      <span class="font-medium text-sm text-n-slate-12">{{ title }}</span>
+      <h2 class="text-heading-3 text-n-slate-12">{{ title }}</h2>
       <div class="flex items-center">
         <Button
           v-for="button in buttons"

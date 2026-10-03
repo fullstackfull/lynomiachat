@@ -38,7 +38,8 @@ const onToggle = () => {
 <template>
   <div class="text-sm">
     <button
-      class="flex items-center select-none w-full rounded-surface bg-n-slate-2 outline outline-1 outline-n-weak m-0 cursor-grab justify-between py-2 px-4 drag-handle focus-ring"
+      type="button"
+      class="flex items-center select-none w-full rounded-surface bg-n-slate-2 outline outline-1 outline-n-weak m-0 cursor-grab justify-between py-2 px-4 accordion-drag-handle focus-ring"
       :class="{ 'rounded-bl-none rounded-br-none': isOpen }"
       :aria-expanded="isOpen"
       :aria-controls="panelId"
@@ -46,15 +47,15 @@ const onToggle = () => {
     >
       <div class="flex justify-between">
         <EmojiOrIcon class="inline-block w-5" :icon="icon" :emoji="emoji" />
-        <h5 class="text-n-slate-12 text-sm mb-0 py-0 pe-2 ps-0">
+        <h3 class="text-heading-3 text-n-slate-12 mb-0 py-0 pe-2 ps-0">
           {{ title }}
-        </h5>
+        </h3>
       </div>
       <div class="flex flex-row">
         <slot name="button" />
-        <div class="flex justify-end w-3 text-n-blue-11 cursor-pointer">
-          <fluent-icon v-if="isOpen" size="24" icon="subtract" type="solid" />
-          <fluent-icon v-else size="24" icon="add" type="solid" />
+        <div class="flex items-center justify-end size-4 text-n-slate-11">
+          <fluent-icon v-if="isOpen" size="16" icon="subtract" type="solid" />
+          <fluent-icon v-else size="16" icon="add" type="solid" />
         </div>
       </div>
     </button>

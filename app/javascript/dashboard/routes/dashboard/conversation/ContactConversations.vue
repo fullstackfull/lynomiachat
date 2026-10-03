@@ -6,7 +6,7 @@ import { useConversationRoutePath } from 'dashboard/composables/useConversationR
 import ConversationCard from 'dashboard/components/widgets/conversation/ConversationCard.vue';
 import ContextMenu from 'dashboard/components/ui/ContextMenu.vue';
 import ConversationContextMenu from 'dashboard/components/widgets/conversation/contextMenu/Index.vue';
-import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 
 const props = defineProps({
   contactId: { type: [String, Number], required: true },
@@ -142,8 +142,22 @@ onMounted(() => {
       />
     </ContextMenu>
   </div>
-  <div v-else class="flex items-center justify-center py-5">
-    <Spinner />
+  <div v-else class="flex flex-col gap-3 py-3" role="status" aria-busy="true">
+    <span class="sr-only">
+      {{ $t('CONVERSATION.LOADING_CONVERSATIONS') }}
+    </span>
+    <div
+      v-for="row in 3"
+      :key="`previous-conversation-skeleton-${row}`"
+      class="flex items-start gap-2"
+      aria-hidden="true"
+    >
+      <Skeleton width="w-8" height="h-8" shape="circle" />
+      <div class="flex flex-col flex-1 gap-2 min-w-0 pt-1">
+        <Skeleton width="w-24" height="h-3" />
+        <Skeleton width="w-full" height="h-3" />
+      </div>
+    </div>
   </div>
 </template>
 

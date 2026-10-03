@@ -43,7 +43,6 @@ export default {
       default: true,
     },
   },
-  emits: ['panelClose'],
   setup() {
     const { isAdmin } = useAdmin();
     return {
@@ -328,7 +327,7 @@ export default {
           <SocialIcons :social-profiles="socialProfiles" />
         </div>
       </div>
-      <div class="flex items-center w-full mt-0.5 gap-2">
+      <div class="flex flex-wrap items-center w-full mt-0.5 gap-x-2 gap-y-2">
         <ComposeConversation :contact-id="String(contact.id)">
           <template #trigger>
             <NextButton
@@ -374,11 +373,7 @@ export default {
             />
           </template>
         </ContactMergeModal>
-        <ContactDeleteModal
-          v-if="isAdmin"
-          :contact="contact"
-          @deleted="$emit('panelClose')"
-        >
+        <ContactDeleteModal v-if="isAdmin" :contact="contact" class="ms-auto">
           <template #trigger>
             <NextButton
               v-tooltip.top-end="$t('DELETE_CONTACT.BUTTON_LABEL')"

@@ -22,6 +22,7 @@ const emit = defineEmits([
   'useInAutomation',
   'useInCampaign',
   'copySegmentLink',
+  'audiencePreset',
 ]);
 
 const { t } = useI18n();
@@ -82,8 +83,7 @@ const usageLabel = computed(() => {
   });
 });
 
-const audienceItems = computed(() => {
-  if (!props.segment) return [];
+const segmentActions = computed(() => {
   return [
     ...(usageLabel.value
       ? [
@@ -136,6 +136,19 @@ const audienceItems = computed(() => {
   ];
 });
 
+const audienceItems = computed(() => {
+  const segmentItems = props.segment ? segmentActions.value : [];
+  return [
+    ...segmentItems,
+    {
+      label: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.FROM_PRESET'),
+      action: 'audiencePreset',
+      value: 'audience-preset',
+      icon: 'i-lucide-sparkles',
+    },
+  ];
+});
+
 const contactItems = computed(() => [
   {
     label: t('CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION.ADD_CONTACT'),
@@ -165,18 +178,13 @@ const contactItems = computed(() => [
     : []),
 ]);
 
-// Sections only once there is an audience to act on; otherwise this stays the plain contact menu it was.
-const menuSections = computed(() =>
-  audienceItems.value.length
-    ? [
-        {
-          title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.SECTION'),
-          items: audienceItems.value,
-        },
-        { items: contactItems.value },
-      ]
-    : []
-);
+const menuSections = computed(() => [
+  {
+    title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.SECTION'),
+    items: audienceItems.value,
+  },
+  { items: contactItems.value },
+]);
 
 const showActionsDropdown = ref(false);
 
@@ -189,6 +197,7 @@ const handleContactAction = ({ action }) => {
   else if (action === 'useInAutomation') emit('useInAutomation');
   else if (action === 'useInCampaign') emit('useInCampaign');
   else if (action === 'copySegmentLink') emit('copySegmentLink');
+  else if (action === 'audiencePreset') emit('audiencePreset');
 };
 </script>
 
@@ -206,7 +215,6 @@ const handleContactAction = ({ action }) => {
     />
     <DropdownMenu
       v-if="showActionsDropdown"
-      :menu-items="menuSections.length ? [] : contactItems"
       :menu-sections="menuSections"
       class="ltr:right-0 rtl:left-0 mt-1 w-60 top-full"
       @action="handleContactAction($event)"

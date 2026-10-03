@@ -319,6 +319,7 @@
         "DUPLICATE_TITLE": "Duplicate this audience?",
         "DUPLICATE_NAME": "{name} copy",
         "COPY_LINK": "Copy link to this audience",
+        "FROM_PRESET": "New audience from a preset",
         "LINK_COPIED": "Link copied",
         "LINK_COPY_FAILED": "Couldn\u2019t copy the link. Copy it from the address bar instead."
       },

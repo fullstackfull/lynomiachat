@@ -1,0 +1,92 @@
+{
+  "RECIPES": {
+    "USE": "Use this",
+    "CREATE": "Create",
+    "BACK": "Choose a different one",
+    "FROM_SCRATCH": "Start from scratch instead",
+    "REQUIRES": "Needs {what} first",
+    "NO_INPUTS": "Nothing to choose — this one is ready to create.",
+    "CREATED": "Created. Review it before you turn it on.",
+    "CREATE_ERROR": "Couldn’t create it. Check the values and try again.",
+    "LANGUAGES": {
+      "AR": "Arabic",
+      "EN": "English",
+      "BOTH": "Arabic and English"
+    },
+    "ERRORS": {
+      "REQUIRED": "Choose a value",
+      "OUT_OF_RANGE": "Enter a number between {min} and {max}",
+      "INVALID_URL": "Enter an http or https address"
+    },
+    "REQUIREMENTS": {
+      "CONTACT_FILTER": "contact filtering",
+      "COMMERCE": "Commerce",
+      "COMMERCE_STORE": "a connected store",
+      "COMMERCE_CURRENCY": "an order in at least one currency",
+      "FLOW_BUILDER": "Flow Builder",
+      "AUTOMATIONS": "Automation",
+      "SHARED_AUDIENCE": "a shared audience",
+      "TEAM": "a team",
+      "LABEL": "a label",
+      "WEBHOOKS": "API and webhooks"
+    },
+    "INPUTS": {
+      "CHOOSE": "Choose",
+      "OPTIONAL": "(optional)",
+      "NO_LABELS": "This account has no labels yet.",
+      "URL_PLACEHOLDER": "https://example.com/hook",
+      "CURRENCY": "Currency",
+      "AMOUNT": "Minimum visible spend",
+      "ORDERS": "More than this many visible orders",
+      "DAYS": "Bought within the last … days",
+      "STORE": "Store",
+      "TEAM": "Team",
+      "VIP_TEAM": "Team for this audience",
+      "STANDARD_TEAM": "Team for everyone else",
+      "ARABIC_TEAM": "Team for Arabic",
+      "ENGLISH_TEAM": "Team for English",
+      "ORDERS_TEAM": "Team for order questions",
+      "PRODUCTS_TEAM": "Team for product questions",
+      "OTHER_TEAM": "Team for anything else",
+      "LABEL": "Label",
+      "LABELS": "Labels",
+      "AUDIENCE": "Shared audience",
+      "PRIORITY": "Priority",
+      "LANGUAGE": "Language of the bot's messages",
+      "EVENT": "Order event",
+      "URL": "Address to call"
+    },
+    "AUDIENCE": {
+      "TITLE": "Start from an audience preset",
+      "DESCRIPTION": "A preset saves a normal audience: its conditions stay editable and its members are worked out fresh every time it is opened.",
+      "HIGH_VALUE_BUYERS": {
+        "NAME": "High-value buyers",
+        "DESCRIPTION": "Contacts whose visible spend in one currency is above an amount you choose. Spend is never converted between currencies."
+      },
+      "REPEAT_BUYERS": {
+        "NAME": "Repeat buyers",
+        "DESCRIPTION": "Contacts with more than a given number of visible orders."
+      },
+      "RECENT_BUYERS": {
+        "NAME": "Recent buyers",
+        "DESCRIPTION": "Contacts whose last visible purchase was within the last few days."
+      },
+      "CUSTOMERS_WITH_ACTIVE_ORDER": {
+        "NAME": "Customers with an open order",
+        "DESCRIPTION": "Contacts who have at least one order that is not finished yet."
+      },
+      "CUSTOMERS_WITH_SHIPPED_ORDER": {
+        "NAME": "Customers with a shipped order",
+        "DESCRIPTION": "Contacts with an order the store has marked shipped."
+      },
+      "STORE_CUSTOMERS": {
+        "NAME": "Customers of one store",
+        "DESCRIPTION": "Contacts linked to a customer in the store you choose."
+      },
+      "LINKED_COMMERCE_CUSTOMERS": {
+        "NAME": "All linked customers",
+        "DESCRIPTION": "Contacts linked to a customer in any connected store."
+      }
+    }
+  }
+}

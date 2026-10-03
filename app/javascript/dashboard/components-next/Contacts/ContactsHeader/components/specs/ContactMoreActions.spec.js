@@ -64,13 +64,15 @@ describe('ContactMoreActions', () => {
     featureFlags.value = true;
   });
 
-  it('stays the plain contact menu when no audience is open', async () => {
+  it('offers only the preset shortcut, and the contact actions, when no audience is open', async () => {
     const wrapper = await mountMenu(null);
 
     expect(wrapper.text()).toContain('Add contact');
     expect(wrapper.text()).toContain('Import contacts');
+    expect(wrapper.text()).toContain('New audience from a preset');
     expect(wrapper.text()).not.toContain('Use in a new automation rule');
     expect(wrapper.text()).not.toContain('Duplicate this audience');
+    expect(wrapper.text()).not.toContain('Copy link to this audience');
   });
 
   it('offers the cross-module actions, the duplicate and the link for a shared audience', async () => {
@@ -80,6 +82,7 @@ describe('ContactMoreActions', () => {
     expect(wrapper.text()).toContain('Use in a new WhatsApp campaign');
     expect(wrapper.text()).toContain('Duplicate this audience');
     expect(wrapper.text()).toContain('Copy link to this audience');
+    expect(wrapper.text()).toContain('New audience from a preset');
     // Still the contact actions, below the audience ones.
     expect(wrapper.text()).toContain('Add contact');
   });

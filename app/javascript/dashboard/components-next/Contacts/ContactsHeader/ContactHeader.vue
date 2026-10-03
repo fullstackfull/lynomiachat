@@ -35,6 +35,7 @@ const emit = defineEmits([
   'useInAutomation',
   'useInCampaign',
   'copySegmentLink',
+  'audiencePreset',
 ]);
 </script>
 
@@ -128,6 +129,7 @@ const emit = defineEmits([
               @use-in-automation="emit('useInAutomation')"
               @use-in-campaign="emit('useInCampaign')"
               @copy-segment-link="emit('copySegmentLink')"
+              @audience-preset="emit('audiencePreset')"
             />
           </div>
           <div class="w-px h-4 bg-n-strong" />

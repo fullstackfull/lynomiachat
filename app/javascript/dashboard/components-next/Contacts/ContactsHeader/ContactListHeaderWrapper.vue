@@ -24,6 +24,8 @@ import CreateNewContactDialog from 'dashboard/components-next/Contacts/ContactsF
 import ContactExportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactExportDialog.vue';
 import ContactImportDialog from 'dashboard/components-next/Contacts/ContactsForm/ContactImportDialog.vue';
 import CreateSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/CreateSegmentDialog.vue';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { AUDIENCE_PRESETS } from 'dashboard/recipes/audiencePresets';
 import DeleteSegmentDialog from 'dashboard/components-next/Contacts/ContactsForm/DeleteSegmentDialog.vue';
 import ContactsFilter from 'dashboard/components-next/filter/ContactsFilter.vue';
 import {
@@ -63,6 +65,7 @@ const contactExportDialogRef = ref(null);
 const contactImportDialogRef = ref(null);
 const createSegmentDialogRef = ref(null);
 const deleteSegmentDialogRef = ref(null);
+const presetDialogRef = ref(null);
 
 const showFiltersModal = ref(false);
 const appliedFilter = ref([]);
@@ -225,6 +228,19 @@ const duplicateSegment = () => {
   });
 };
 
+// An audience preset builds the conditions; naming it and deciding whether the account shares it stays the user's
+// explicit act, in the same dialog and through the same create call as saving a filter by hand.
+const openPresetDialog = () => presetDialogRef.value?.open();
+
+const createFromPreset = (preset, values) => {
+  segmentsQuery.value = preset.build(values);
+  presetDialogRef.value?.close();
+  createSegmentDialogRef.value?.open({
+    name: t(preset.name),
+    title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.TITLE'),
+  });
+};
+
 const segmentUrl = () =>
   `${window.chatwootConfig.hostURL}${frontendURL(
     `accounts/${accountId.value}/contacts/segments/${props.segmentsId}`
@@ -342,6 +358,12 @@ const onToggleFilters = async () => {
   showFiltersModal.value = true;
 };
 
+// "Start from scratch instead", from the preset gallery: the ordinary filter builder.
+const buildAudienceFromScratch = () => {
+  presetDialogRef.value?.close();
+  onToggleFilters();
+};
+
 defineExpose({
   onToggleFilters,
 });
@@ -373,6 +395,7 @@ defineExpose({
     @use-in-automation="useInAutomation"
     @use-in-campaign="useInCampaign"
     @copy-segment-link="copySegmentLink"
+    @audience-preset="openPresetDialog"
   >
     <template #filter>
       <div
@@ -399,5 +422,13 @@ defineExpose({
   <ContactExportDialog ref="contactExportDialogRef" @export="onExport" />
   <ContactImportDialog ref="contactImportDialogRef" @import="onImport" />
   <CreateSegmentDialog ref="createSegmentDialogRef" @create="onCreateSegment" />
+  <RecipeDialog
+    ref="presetDialogRef"
+    :recipes="AUDIENCE_PRESETS"
+    :title="t('RECIPES.AUDIENCE.TITLE')"
+    :description="t('RECIPES.AUDIENCE.DESCRIPTION')"
+    @create="createFromPreset"
+    @scratch="buildAudienceFromScratch"
+  />
   <DeleteSegmentDialog ref="deleteSegmentDialogRef" @delete="onDeleteSegment" />
 </template>

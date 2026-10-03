@@ -28,6 +28,8 @@ const name = ref('');
 const description = ref('');
 const selected = ref(null);
 const isCreating = ref(false);
+// The flow a new one is copied from, when the create dialog is being used to duplicate.
+const copyFrom = ref(null);
 
 const headers = computed(() => [
   t('FLOW_BUILDER.LIST.NAME'),
@@ -52,22 +54,44 @@ const openBuilder = flow =>
   router.push({ name: 'settings_flows_builder', params: { flowId: flow.id } });
 
 const openCreate = () => {
+  copyFrom.value = null;
   name.value = '';
   description.value = '';
+  createDialogRef.value.open();
+};
+
+// Duplicate: the copy is a new flow of this account with the source's graph as its draft. It starts unpublished and
+// connected to no inbox — an inbox holds one bot, so connecting the copy would take the inbox away from the original.
+const openDuplicate = flow => {
+  copyFrom.value = flow;
+  name.value = t('FLOW_BUILDER.DUPLICATE.NAME', { name: flow.name });
+  description.value = flow.description || '';
   createDialogRef.value.open();
 };
 
 const create = async () => {
   isCreating.value = true;
   try {
+    // The source graph is read first: a failure here creates nothing.
+    const graph = copyFrom.value
+      ? (await FlowsAPI.show(copyFrom.value.id)).data.graph
+      : null;
     const { data } = await FlowsAPI.create({
       name: name.value.trim(),
       description: description.value.trim(),
     });
+    if (graph) await FlowsAPI.saveDraft(data.id, graph);
     createDialogRef.value.close();
     openBuilder(data);
   } catch {
-    useAlert(t('FLOW_BUILDER.API.CREATE_ERROR'));
+    useAlert(
+      t(
+        copyFrom.value
+          ? 'FLOW_BUILDER.API.DUPLICATE_ERROR'
+          : 'FLOW_BUILDER.API.CREATE_ERROR'
+      )
+    );
+    if (copyFrom.value) load();
   } finally {
     isCreating.value = false;
   }
@@ -178,6 +202,14 @@ onMounted(load);
                     @click="openBuilder(flow)"
                   />
                   <NextButton
+                    v-tooltip.top="t('FLOW_BUILDER.LIST.DUPLICATE')"
+                    icon="i-lucide-copy"
+                    slate
+                    sm
+                    :data-test-id="`flow-duplicate-${flow.id}`"
+                    @click="openDuplicate(flow)"
+                  />
+                  <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.DELETE')"
                     icon="i-woot-bin"
                     slate
@@ -196,7 +228,11 @@ onMounted(load);
 
     <Dialog
       ref="createDialogRef"
-      :title="t('FLOW_BUILDER.CREATE.TITLE')"
+      :title="
+        copyFrom
+          ? t('FLOW_BUILDER.DUPLICATE.TITLE')
+          : t('FLOW_BUILDER.CREATE.TITLE')
+      "
       :confirm-button-label="t('FLOW_BUILDER.CREATE.CONFIRM')"
       :disable-confirm-button="!name.trim()"
       :is-loading="isCreating"

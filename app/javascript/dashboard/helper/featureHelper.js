@@ -4,6 +4,8 @@ const FEATURE_HELP_URLS = {
   audit_logs: 'https://chwt.app/hc/audit-logs',
   campaigns: 'https://chwt.app/hc/campaigns',
   canned_responses: 'https://chwt.app/hc/canned',
+  automation: 'https://chwt.app/hc/automations',
+  custom_roles: 'https://chwt.app/hc/custom-roles',
   channel_email: 'https://chwt.app/hc/email',
   channel_facebook: 'https://chwt.app/hc/fb',
   custom_attributes: 'https://chwt.app/hc/custom-attributes',
@@ -26,6 +28,9 @@ const FEATURE_HELP_URLS = {
   shopify: 'https://chwt.app/hc/shopify',
 };
 
+// Call sites spell a few feature names with hyphens; the table is keyed with underscores, and a
+// mismatch silently removes the page's "Learn more" link rather than failing.
 export function getHelpUrlForFeature(featureName) {
-  return FEATURE_HELP_URLS[featureName];
+  if (!featureName) return undefined;
+  return FEATURE_HELP_URLS[String(featureName).replace(/-/g, '_')];
 }

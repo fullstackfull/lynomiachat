@@ -41,7 +41,6 @@ export default {
       props: () => {
         return {
           headerTitle: 'TEAMS_SETTINGS.HEADER',
-          icon: 'people-team',
           showBackButton: true,
         };
       },

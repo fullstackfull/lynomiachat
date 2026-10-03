@@ -160,7 +160,7 @@ const confirmDeletion = () => {
         :description="$t('CUSTOM_ROLE.DESCRIPTION')"
         :link-text="$t('CUSTOM_ROLE.LEARN_MORE')"
         :search-placeholder="$t('CUSTOM_ROLE.SEARCH_PLACEHOLDER')"
-        feature-name="canned_responses"
+        feature-name="custom_roles"
       >
         <template v-if="records?.length" #count>
           <span class="text-body-main text-n-slate-11">

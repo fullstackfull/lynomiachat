@@ -66,3 +66,20 @@ work with an information-architecture decision attached (which action, and wheth
 should still be there when there is nothing to search).
 
 **Lands in:** the settings commit, against the parity manifest in `audit/surface-settings-crud.md`.
+
+## 6. Six "Learn more" links have no help page to point at
+
+`BaseSettingsHeader` resolves its help link through `FEATURE_HELP_URLS`. Six values passed by call
+sites index nothing, so those pages silently have no link: `assignment-policy`,
+`conversation-workflow`, `slack_integration`, `linear_integration`, `notion_integration` and
+`shopify_integration` (the table has `shopify`, not `shopify_integration`).
+
+The helper now normalises hyphens to underscores, so `assignment_policy` and `conversation_workflow`
+will resolve the moment a URL exists for them; the four integration ones need a decision about whether
+each integration gets its own help page or they all point at the integrations guide. That is content,
+not code, so it is written down rather than guessed at.
+
+Two were unambiguous and are fixed: `automation` passed a `linkText` that was translated and never
+rendered, and **custom roles linked to the canned-responses help page** while its link read "Learn
+more about custom roles". Both now have entries following the file's own slug pattern — worth a
+confirmation that `chwt.app/hc/automations` and `chwt.app/hc/custom-roles` resolve.

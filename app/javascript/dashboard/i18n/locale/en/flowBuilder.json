@@ -34,12 +34,14 @@
     "STATUS": {
       "PUBLISHED": "Published · version {version}",
       "NOT_PUBLISHED": "Not published",
-      "UNSAVED": "Unsaved changes"
+      "UNSAVED": "Unsaved changes",
+    "UNPUBLISHED": "Unpublished changes"
     },
     "ACTIONS": {
       "SESSIONS": "Sessions",
       "TEST": "Test",
       "SAVE": "Save draft",
+      "SAVE_HINT": "Save the draft (Ctrl/Cmd + S)",
       "DISABLE": "Disable",
       "PUBLISH": "Publish"
     },

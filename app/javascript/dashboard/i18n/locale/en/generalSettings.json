@@ -193,6 +193,8 @@
       "GO_TO_SETTINGS_LABELS": "Go to Label Settings",
       "GO_TO_SETTINGS_CUSTOM_ATTRIBUTES": "Go to Custom Attributes",
       "GO_TO_SETTINGS_AUTOMATION": "Go to Automation",
+      "GO_TO_SETTINGS_FLOW_BUILDER": "Go to Flow Builder",
+      "GO_TO_SETTINGS_COMMERCE": "Go to Commerce",
       "GO_TO_SETTINGS_MACROS": "Go to Macros",
       "GO_TO_SETTINGS_CANNED_RESPONSES": "Go to Canned Response Settings",
       "GO_TO_SETTINGS_SLA": "Go to SLA Settings",

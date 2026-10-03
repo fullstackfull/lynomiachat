@@ -94,6 +94,10 @@ const status = flow =>
     ? t('FLOW_BUILDER.STATUS.PUBLISHED', { version: flow.published.version })
     : t('FLOW_BUILDER.STATUS.NOT_PUBLISHED');
 
+// Publishing turns the draft into the published version, so a flow that has both has edits that are saved but not
+// live yet. Not a guess: the API payload carries each version.
+const hasUnpublishedChanges = flow => Boolean(flow.published && flow.draft);
+
 onMounted(load);
 </script>
 
@@ -141,6 +145,13 @@ onMounted(load);
               <BaseTableCell>
                 <span class="text-body-main text-n-slate-12">
                   {{ status(flow) }}
+                </span>
+                <span
+                  v-if="hasUnpublishedChanges(flow)"
+                  class="block text-xs text-n-amber-11"
+                  data-test-id="flow-unpublished"
+                >
+                  {{ t('FLOW_BUILDER.STATUS.UNPUBLISHED') }}
                 </span>
                 <span
                   v-if="flow.live_sessions"

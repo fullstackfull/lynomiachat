@@ -37,11 +37,13 @@ const onClick = event => {
 
 <template>
   <component
-    :is="to ? 'a' : 'div'"
-    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0"
+    :is="to ? 'a' : 'button'"
+    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0 w-full focus-ring"
     draggable="false"
+    :type="to ? undefined : 'button'"
     :href="href"
     :title="label"
+    :aria-expanded="expandable ? isExpanded : undefined"
     :class="{
       'text-n-slate-12 bg-n-alpha-2 font-medium': isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,

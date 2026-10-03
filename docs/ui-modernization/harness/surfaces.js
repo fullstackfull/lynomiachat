@@ -191,7 +191,7 @@ export const SURFACES = {
     frame: 'sidebar',
     // The top-level Settings group header: a direct child of a top-level nav item, so this cannot
     // match the Help Center's own "Settings" leaf.
-    interactions: ['nav > ul > li > [role="button"][title="Settings"]'],
+    interactions: ['nav > ul > li > [title="Settings"]'],
   },
   'agents-list-loading': {
     title: 'Settings · Agents (loading)',

@@ -129,3 +129,36 @@ templates), the SAML attribute map, `SelectMenu`, and the inbox display and sort
 
 29 further chevron triggers have no `aria-expanded`, most of them in Help Center and Captain, which no
 surface captures yet. They are listed in `findings/deferred.md`.
+
+---
+
+## Gate result
+
+```
+compared 544 captures
+  lost 0   moved-with-reason 8   added 598   newly-named 1466   regressions 0
+```
+
+0 unnamed controls, 0 horizontal overflow, 0 wrong direction and 0 page errors across all 544 captures.
+The eight moved-with-reason entries are the canned-responses exception from an earlier batch.
+
+### Two things the gate caught before the sweep was done
+
+**32 unnamed controls, all on the surface the responsive sweep had just added.** `DatePicker`'s calendar
+navigation arrows were nameless icon buttons — a defect that had been there all along and that nothing
+measured, because no capture had ever opened the date picker. They are now named "Show earlier dates" /
+"Show later dates": the step is a month in the day grid and a year in the month grid, so a name saying
+"month" would be wrong in half the views.
+
+**80 lost controls on `sidebar-settings`** — the whole Settings navigation group. The accessibility sweep
+had removed `role="button"` from `SidebarGroupHeader`, and the capture surface reached the Settings group
+through exactly that attribute (`nav > ul > li > [role="button"][title="Settings"]`), so the group never
+expanded and twenty links went missing from the inventory.
+
+The harness selector was wrong to depend on an ARIA attribute, and it now matches on `title`. But the
+removal was half a fix too. The header is an `<a href>` whose plain click toggles the group and whose
+Cmd-click opens the page; `role="button"` hid the link role, so a screen reader never learned the group
+could be opened in a new tab. Removing the role fixed that branch and left the other one worse: when the
+group has no page behind it the element rendered a bare `div` with a click handler, announced as nothing
+and reachable by no keyboard. It now renders a real `<button>` in that branch, carries `aria-expanded` when
+it is expandable, and has a focus ring.

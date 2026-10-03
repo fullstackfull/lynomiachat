@@ -36,7 +36,9 @@ const attributeIcon = computed(() => {
 
 <template>
   <div class="flex flex-col py-4 min-w-0">
-    <div class="flex justify-between flex-row items-center gap-4 min-w-0">
+    <div
+      class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 min-w-0"
+    >
       <div class="flex items-center gap-4 min-w-0">
         <div
           class="flex items-center flex-shrink-0 size-10 justify-center rounded-xl outline outline-1 outline-n-weak -outline-offset-1"
@@ -44,7 +46,7 @@ const attributeIcon = computed(() => {
           <Icon :icon="attributeIcon" class="size-4 text-n-slate-11" />
         </div>
         <div class="flex flex-col gap-1.5 items-start min-w-0 overflow-hidden">
-          <div class="flex items-center gap-2 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 min-w-0">
             <h4 class="text-heading-3 truncate text-n-slate-12 min-w-0">
               {{ attribute.label }}
             </h4>
@@ -59,14 +61,16 @@ const attributeIcon = computed(() => {
           </div>
           <div class="grid grid-cols-[auto_1fr] items-center gap-1.5">
             <Icon icon="i-lucide-key-round" class="size-3.5 text-n-slate-11" />
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 min-w-0">
               <span class="text-body-main text-n-slate-11 truncate">
                 {{ attribute.value }}
               </span>
               <template
                 v-if="attribute.attribute_description || attribute.description"
               >
-                <div class="w-px h-3 rounded-lg bg-n-weak flex-shrink-0" />
+                <div
+                  class="hidden sm:block w-px h-3 rounded-lg bg-n-weak flex-shrink-0"
+                />
                 <span class="text-body-main text-n-slate-11 truncate">
                   {{ attribute.attribute_description || attribute.description }}
                 </span>
@@ -75,7 +79,7 @@ const attributeIcon = computed(() => {
           </div>
         </div>
       </div>
-      <div class="flex gap-3 justify-end flex-shrink-0">
+      <div class="flex gap-3 sm:justify-end flex-shrink-0">
         <Button
           icon="i-woot-edit-pen"
           :aria-label="$t('ATTRIBUTES_MGMT.LIST.BUTTONS.EDIT')"

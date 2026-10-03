@@ -26566,5 +26566,1413 @@
       }
     ],
     "hidden": 67
+  },
+  "agents-list-loading|en|390": {
+    "surface": "agents-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD AGENT",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "agents-list-loading|en|768": {
+    "surface": "agents-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn about user roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search agents...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD AGENT",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "agents-list-loading|en|1024": {
+    "surface": "agents-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn about user roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search agents...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD AGENT",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "agents-list-loading|en|1280": {
+    "surface": "agents-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn about user roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search agents...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD AGENT",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "agents-list-loading|ar|390": {
+    "surface": "agents-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وكيل",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "agents-list-loading|ar|768": {
+    "surface": "agents-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "تعرف على أدوار المستخدم",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن وكلاء...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وكيل",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "agents-list-loading|ar|1024": {
+    "surface": "agents-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "تعرف على أدوار المستخدم",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن وكلاء...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وكيل",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "agents-list-loading|ar|1280": {
+    "surface": "agents-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "تعرف على أدوار المستخدم",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن وكلاء...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وكيل",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|en|390": {
+    "surface": "teams-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "teams-list-loading|en|768": {
+    "surface": "teams-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|en|1024": {
+    "surface": "teams-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|en|1280": {
+    "surface": "teams-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about teams",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search teams...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE NEW TEAM",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|ar|390": {
+    "surface": "teams-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "teams-list-loading|ar|768": {
+    "surface": "teams-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|ar|1024": {
+    "surface": "teams-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "teams-list-loading|ar|1280": {
+    "surface": "teams-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "لمعرفة المزيد حول الفرق",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "البحث عن فريق...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إنشاء فريق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|en|390": {
+    "surface": "sla-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "sla-list-loading|en|768": {
+    "surface": "sla-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|en|1024": {
+    "surface": "sla-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|en|1280": {
+    "surface": "sla-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|ar|390": {
+    "surface": "sla-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "sla-list-loading|ar|768": {
+    "surface": "sla-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|ar|1024": {
+    "surface": "sla-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "sla-list-loading|ar|1280": {
+    "surface": "sla-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about SLA",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search SLA...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD SLA",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|en|390": {
+    "surface": "custom-roles-list-loading",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "custom-roles-list-loading|en|768": {
+    "surface": "custom-roles-list-loading",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|en|1024": {
+    "surface": "custom-roles-list-loading",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|en|1280": {
+    "surface": "custom-roles-list-loading",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|ar|390": {
+    "surface": "custom-roles-list-loading",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "custom-roles-list-loading|ar|768": {
+    "surface": "custom-roles-list-loading",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|ar|1024": {
+    "surface": "custom-roles-list-loading",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "custom-roles-list-loading|ar|1280": {
+    "surface": "custom-roles-list-loading",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about custom roles",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search custom roles...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD CUSTOM ROLE",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
   }
 }

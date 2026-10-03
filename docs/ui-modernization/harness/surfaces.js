@@ -191,4 +191,32 @@ export const SURFACES = {
     // match the Help Center's own "Settings" leaf.
     interactions: ['nav > ul > li > [role="button"][title="Settings"]'],
   },
+  'agents-list-loading': {
+    title: 'Settings · Agents (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/agents/Index.vue'),
+    route: 'agent_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'teams-list-loading': {
+    title: 'Settings · Teams (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/teams/Index.vue'),
+    route: 'settings_teams_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'sla-list-loading': {
+    title: 'Settings · SLA (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/sla/Index.vue'),
+    route: 'sla_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'custom-roles-list-loading': {
+    title: 'Settings · Custom roles (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/customRoles/Index.vue'),
+    route: 'custom_roles_list',
+    frame: 'settings',
+    state: 'loading',
+  },
 };

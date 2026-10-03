@@ -3,6 +3,7 @@ import { useAlert } from 'dashboard/composables';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 import { computed, ref } from 'vue';
 import { picoSearch } from '@chatwoot/pico-search';
 import { useMapGetter } from 'dashboard/composables/store.js';
@@ -83,7 +84,6 @@ const confirmPlaceHolderText = computed(() =>
 <template>
   <SettingsLayout
     :is-loading="uiFlags.isFetching"
-    :loading-message="$t('TEAMS_SETTINGS.LOADING')"
     :no-records-found="!teamsList.length"
     :no-records-message="$t('TEAMS_SETTINGS.LIST.404')"
   >
@@ -108,6 +108,33 @@ const confirmPlaceHolderText = computed(() =>
         </template>
       </BaseSettingsHeader>
     </template>
+    <template #loading>
+      <span role="status" class="sr-only">
+        {{ $t('TEAMS_SETTINGS.LOADING') }}
+      </span>
+      <div
+        class="divide-y divide-n-weak border-t border-n-weak"
+        aria-hidden="true"
+      >
+        <div
+          v-for="row in 4"
+          :key="`team-skeleton-${row}`"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
+        >
+          <div class="flex items-start gap-4">
+            <Skeleton width="w-10" height="h-10" shape="block" />
+            <div class="flex flex-col gap-2">
+              <Skeleton width="w-32" />
+              <Skeleton width="w-52" height="h-3" />
+            </div>
+          </div>
+          <div class="flex gap-3 justify-end">
+            <Skeleton width="w-8" height="h-8" shape="block" />
+            <Skeleton width="w-8" height="h-8" shape="block" />
+          </div>
+        </div>
+      </div>
+    </template>
     <template #body>
       <span
         v-if="!filteredTeamsList.length && searchQuery"
@@ -120,7 +147,7 @@ const confirmPlaceHolderText = computed(() =>
         <div
           v-for="team in filteredTeamsList"
           :key="team.id"
-          class="flex justify-between flex-row items-start gap-4 py-4"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
         >
           <div class="flex items-start gap-4">
             <div
@@ -149,6 +176,7 @@ const confirmPlaceHolderText = computed(() =>
           </div>
           <div class="flex justify-end gap-3">
             <router-link
+              v-if="isAdmin"
               v-tooltip.top="$t('TEAMS_SETTINGS.LIST.EDIT_TEAM')"
               :to="{
                 name: 'settings_teams_edit',
@@ -157,7 +185,6 @@ const confirmPlaceHolderText = computed(() =>
               :aria-label="$t('TEAMS_SETTINGS.LIST.EDIT_TEAM')"
             >
               <Button
-                v-if="isAdmin"
                 icon="i-woot-settings"
                 slate
                 sm

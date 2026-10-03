@@ -100,8 +100,13 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
       </template>
     </BaseSettingsHeader>
     <div class="w-full">
+      <!-- The columns come from the integration's own `visible_properties`, so neither their number
+           nor their width is knowable here: scrolling is the only honest answer, and the actions stay
+           pinned to the end edge so nothing needs a swipe to reach. -->
       <BaseTable
         v-if="hasConnectedHooks"
+        scrollable
+        sticky-actions
         :headers="hookHeaders"
         :items="filteredHooks"
         :no-data-message="searchQuery ? $t('INTEGRATION_APPS.NO_RESULTS') : ''"
@@ -110,8 +115,8 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
           <BaseTableRow v-for="hook in items" :key="hook.id" :item="hook">
             <template #default>
               <BaseTableCell
-                v-for="property in hook.properties"
-                :key="property"
+                v-for="(property, index) in hook.properties"
+                :key="index"
               >
                 <span class="text-body-main text-n-slate-12">
                   {{ property }}

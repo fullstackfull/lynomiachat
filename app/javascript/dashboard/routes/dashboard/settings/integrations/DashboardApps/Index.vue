@@ -26,6 +26,8 @@ export default {
       selectedApp: {},
       mode: 'CREATE',
       searchQuery: '',
+      sortBy: '',
+      sortOrder: 'asc',
     };
   },
   computed: {
@@ -49,11 +51,31 @@ export default {
         ),
       ];
     },
+    // Index-aligned with `tableHeaders`.
+    sortableColumns() {
+      return ['title', 'url', null];
+    },
+    // The endpoint is a URL: the longest column and the one a user scanning their apps needs least.
+    columnClasses() {
+      return ['', 'hidden sm:table-cell', ''];
+    },
+    sortedRecords() {
+      if (!this.sortBy) return this.filteredRecords;
+      const key = this.sortBy;
+      const direction = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredRecords].sort(
+        (a, b) => (a[key] ?? '').localeCompare(b[key] ?? '') * direction
+      );
+    },
   },
   mounted() {
     this.$store.dispatch('dashboardApps/get');
   },
   methods: {
+    onSort({ key, order }) {
+      this.sortBy = key;
+      this.sortOrder = order;
+    },
     toggleDashboardAppPopup() {
       this.showDashboardAppPopup = !this.showDashboardAppPopup;
       this.selectedApp = {};
@@ -99,9 +121,7 @@ export default {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!records.length && !uiFlags.isFetching"
     :no-records-message="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.404')"
   >
     <template #header>
@@ -135,13 +155,25 @@ export default {
       </BaseSettingsHeader>
     </template>
     <template #body>
-      <span
-        v-if="!filteredRecords.length && searchQuery"
-        class="flex-1 flex items-center justify-center py-20 text-center text-body-main !text-base text-n-slate-11"
+      <BaseTable
+        :headers="tableHeaders"
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching"
+        :loading-message="
+          $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.LOADING')
+        "
+        :loading-rows="3"
+        :sortable-columns="sortableColumns"
+        :column-classes="columnClasses"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
+        :no-data-message="
+          searchQuery
+            ? $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.NO_RESULTS')
+            : ''
+        "
+        @sort="onSort"
       >
-        {{ $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.NO_RESULTS') }}
-      </span>
-      <BaseTable v-else :headers="tableHeaders" :items="filteredRecords">
         <template #row="{ items }">
           <DashboardAppsRow
             v-for="(dashboardAppItem, index) in items"

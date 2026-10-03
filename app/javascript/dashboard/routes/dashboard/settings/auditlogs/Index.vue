@@ -76,6 +76,12 @@ const onPageChange = page => {
   updateQuery({ page });
 };
 
+// The time column is already sortable through the filter bar; the heading drives the same query
+// parameter, so the two controls can never disagree.
+const onSortChange = ({ order }) => {
+  onFiltersUpdate({ sort: order === 'asc' ? 'asc' : undefined });
+};
+
 const clearFilters = () => {
   pushedSearch.value = '';
   searchQuery.value = '';
@@ -150,9 +156,7 @@ onMounted(() => {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.fetchingList"
-    :loading-message="$t('AUDIT_LOGS.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!records.length && !uiFlags.fetchingList"
     :no-records-message="
       hasActiveFilters ? $t('AUDIT_LOGS.SEARCH_404') : $t('AUDIT_LOGS.LIST.404')
     "
@@ -195,7 +199,19 @@ onMounted(() => {
     </template>
     <template #body>
       <div class="flex flex-col">
-        <BaseTable :headers="tableHeaders" :items="records">
+        <BaseTable
+          sticky-header
+          :headers="tableHeaders"
+          :items="records"
+          :loading="uiFlags.fetchingList"
+          :loading-message="$t('AUDIT_LOGS.LOADING')"
+          :loading-rows="8"
+          :column-classes="['', '', 'hidden sm:table-cell']"
+          :sortable-columns="[null, 'created_at', null]"
+          sort-by="created_at"
+          :sort-order="filters.sort === 'asc' ? 'asc' : 'desc'"
+          @sort="onSortChange"
+        >
           <template #row="{ items }">
             <BaseTableRow
               v-for="auditLogItem in items"
@@ -224,7 +240,7 @@ onMounted(() => {
                   </span>
                 </BaseTableCell>
 
-                <BaseTableCell class="w-36">
+                <BaseTableCell class="w-36 hidden sm:table-cell">
                   <span class="text-body-main text-n-slate-11">
                     {{ auditLogItem.location || auditLogItem.remote_address }}
                   </span>

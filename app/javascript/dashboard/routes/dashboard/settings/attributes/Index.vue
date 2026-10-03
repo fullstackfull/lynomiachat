@@ -9,6 +9,7 @@ import EditAttribute from './EditAttribute.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 import AttributeListItem from 'dashboard/components-next/ConversationWorkflow/AttributeListItem.vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -161,10 +162,7 @@ const filteredAttributes = computed(() => {
 </script>
 
 <template>
-  <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('ATTRIBUTES_MGMT.LOADING')"
-  >
+  <SettingsLayout :is-loading="uiFlags.isFetching">
     <template #header>
       <BaseSettingsHeader
         v-model:search-query="searchQuery"
@@ -194,6 +192,27 @@ const filteredAttributes = computed(() => {
           />
         </template>
       </BaseSettingsHeader>
+    </template>
+    <template #loading>
+      <span role="status" class="sr-only">
+        {{ $t('ATTRIBUTES_MGMT.LOADING') }}
+      </span>
+      <div
+        class="flex flex-col divide-y divide-n-weak border-t border-n-weak"
+        aria-hidden="true"
+      >
+        <div
+          v-for="row in 5"
+          :key="`attribute-skeleton-${row}`"
+          class="flex items-center gap-4 py-4"
+        >
+          <Skeleton width="w-10" height="h-10" shape="block" />
+          <div class="flex flex-col gap-2">
+            <Skeleton width="w-44" />
+            <Skeleton width="w-60" height="h-3" />
+          </div>
+        </div>
+      </div>
     </template>
     <template #body>
       <div class="flex flex-col gap-4">

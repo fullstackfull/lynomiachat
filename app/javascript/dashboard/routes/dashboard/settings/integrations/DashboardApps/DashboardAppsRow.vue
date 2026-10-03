@@ -24,7 +24,7 @@ defineEmits(['edit', 'delete']);
         </span>
       </BaseTableCell>
 
-      <BaseTableCell>
+      <BaseTableCell class="hidden sm:table-cell">
         <span
           class="text-body-main text-n-slate-11 truncate block"
           :title="app.content[0].url"

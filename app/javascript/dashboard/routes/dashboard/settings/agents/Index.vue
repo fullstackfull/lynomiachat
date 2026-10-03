@@ -15,6 +15,8 @@ import EditAgent from './EditAgent.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 
 const getters = useStoreGetters();
 const store = useStore();
@@ -147,7 +149,6 @@ const confirmDeletion = () => {
 <template>
   <SettingsLayout
     :is-loading="uiFlags.isFetching"
-    :loading-message="$t('AGENT_MGMT.LOADING')"
     :no-records-found="!agentList.length"
     :no-records-message="$t('AGENT_MGMT.LIST.404')"
   >
@@ -174,6 +175,31 @@ const confirmDeletion = () => {
         </template>
       </BaseSettingsHeader>
     </template>
+    <template #loading>
+      <span role="status" class="sr-only">{{ $t('AGENT_MGMT.LOADING') }}</span>
+      <div
+        class="divide-y divide-n-weak border-t border-n-weak"
+        aria-hidden="true"
+      >
+        <div
+          v-for="row in 5"
+          :key="`agent-skeleton-${row}`"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
+        >
+          <div class="flex items-center gap-4">
+            <Skeleton width="w-10" height="h-10" shape="circle" />
+            <div class="flex flex-col gap-2">
+              <Skeleton width="w-40" />
+              <Skeleton width="w-56" height="h-3" />
+            </div>
+          </div>
+          <div class="flex gap-3 justify-end">
+            <Skeleton width="w-8" height="h-8" shape="block" />
+            <Skeleton width="w-8" height="h-8" shape="block" />
+          </div>
+        </div>
+      </div>
+    </template>
     <template #body>
       <span
         v-if="!filteredAgentList.length && searchQuery"
@@ -183,9 +209,9 @@ const confirmDeletion = () => {
       </span>
       <div v-else class="divide-y divide-n-weak border-t border-n-weak">
         <div
-          v-for="(agent, index) in filteredAgentList"
+          v-for="agent in filteredAgentList"
           :key="agent.email"
-          class="flex justify-between flex-row items-start gap-4 py-4"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
         >
           <div class="flex items-center gap-4">
             <Avatar
@@ -199,7 +225,7 @@ const confirmDeletion = () => {
               <span class="block text-heading-3 text-n-slate-12 capitalize">
                 {{ agent.name }}
               </span>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <span class="text-body-main text-n-slate-11">
                   {{ agent.email }}
                 </span>
@@ -237,19 +263,20 @@ const confirmDeletion = () => {
                     </div>
                   </div>
                 </span>
-                <div class="w-px h-3 bg-n-strong rounded-lg" />
-                <span
+                <Label
                   v-if="agent.confirmed"
-                  class="text-body-main text-n-slate-11"
-                >
-                  {{ $t('AGENT_MGMT.LIST.VERIFIED') }}
-                </span>
-                <span
-                  v-if="!agent.confirmed"
-                  class="text-body-main text-n-slate-11"
-                >
-                  {{ $t('AGENT_MGMT.LIST.VERIFICATION_PENDING') }}
-                </span>
+                  compact
+                  variant="solid"
+                  tone="success"
+                  :label="$t('AGENT_MGMT.LIST.VERIFIED')"
+                />
+                <Label
+                  v-else
+                  compact
+                  variant="solid"
+                  tone="warning"
+                  :label="$t('AGENT_MGMT.LIST.VERIFICATION_PENDING')"
+                />
               </div>
             </div>
           </div>
@@ -272,7 +299,7 @@ const confirmDeletion = () => {
               sm
               class="hover:enabled:text-n-ruby-11 hover:enabled:bg-n-ruby-2"
               :is-loading="loading[agent.id]"
-              @click="openDeletePopup(agent, index)"
+              @click="openDeletePopup(agent)"
             />
           </div>
         </div>

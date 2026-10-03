@@ -80,20 +80,24 @@ const pageInfo = computed(() => {
     </div>
     <div class="flex items-center gap-2">
       <Button
+        v-tooltip="t('PAGINATION_FOOTER.FIRST_PAGE')"
+        :aria-label="t('PAGINATION_FOOTER.FIRST_PAGE')"
         icon="i-lucide-chevrons-left"
         variant="ghost"
         size="sm"
         color="slate"
-        class="!w-8 !h-6"
+        class="!w-8 !h-6 rtl:rotate-180"
         :disabled="isFirstPage"
         @click="changePage(1)"
       />
       <Button
+        v-tooltip="t('PAGINATION_FOOTER.PREVIOUS_PAGE')"
+        :aria-label="t('PAGINATION_FOOTER.PREVIOUS_PAGE')"
         icon="i-lucide-chevron-left"
         variant="ghost"
         color="slate"
         size="sm"
-        class="!w-8 !h-6"
+        class="!w-8 !h-6 rtl:rotate-180"
         :disabled="isFirstPage"
         @click="changePage(currentPage - 1)"
       />
@@ -108,20 +112,24 @@ const pageInfo = computed(() => {
         </span>
       </div>
       <Button
+        v-tooltip="t('PAGINATION_FOOTER.NEXT_PAGE')"
+        :aria-label="t('PAGINATION_FOOTER.NEXT_PAGE')"
         icon="i-lucide-chevron-right"
         variant="ghost"
         color="slate"
         size="sm"
-        class="!w-8 !h-6"
+        class="!w-8 !h-6 rtl:rotate-180"
         :disabled="isLastPage"
         @click="changePage(currentPage + 1)"
       />
       <Button
+        v-tooltip="t('PAGINATION_FOOTER.LAST_PAGE')"
+        :aria-label="t('PAGINATION_FOOTER.LAST_PAGE')"
         icon="i-lucide-chevrons-right"
         variant="ghost"
         color="slate"
         size="sm"
-        class="!w-8 !h-6"
+        class="!w-8 !h-6 rtl:rotate-180"
         :disabled="isLastPage"
         @click="changePage(totalPages)"
       />

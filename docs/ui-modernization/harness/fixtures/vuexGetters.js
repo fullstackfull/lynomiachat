@@ -7,6 +7,7 @@ import {
   CANNED_RESPONSES,
   CONTACTS,
   CONTACT_NOTES,
+  APPLIED_CONTACT_FILTERS,
   CONTACT_VIEWS,
   CONVERSATION,
   CUSTOM_ATTRIBUTES,
@@ -27,6 +28,9 @@ const EMPTY = params.get('state') === 'empty';
 // are capturable. While loading, the lists are empty — a skeleton drawn over stale rows would lie.
 const LOADING = params.get('state') === 'loading';
 const RTL = params.get('locale') === 'ar';
+// `?state=filtered` is an ad-hoc contact filter with nothing saved: the one state in which the chip strip's
+// clear button and the header's save-as-audience button exist at all.
+const FILTERED = params.get('state') === 'filtered';
 const list = rows => (EMPTY || LOADING ? [] : rows);
 
 const USER = {
@@ -138,7 +142,7 @@ export const GETTERS = {
   'contacts/getUIFlags': () => NO_FLAGS,
   'contacts/getMeta': () => ({ count: list(CONTACTS).length, currentPage: 1, hasMore: false }),
   'contacts/getAppliedContactFilters': () => [],
-  'contacts/getAppliedContactFiltersV4': () => [],
+  'contacts/getAppliedContactFiltersV4': () => (FILTERED ? APPLIED_CONTACT_FILTERS : []),
   'attributes/getContactAttributes': () =>
     list(CUSTOM_ATTRIBUTES).filter(attribute => attribute.attribute_model === 'contact_attribute'),
   'attributes/getAttributes': () => list(CUSTOM_ATTRIBUTES),

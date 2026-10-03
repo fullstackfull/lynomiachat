@@ -54,7 +54,7 @@ const emit = defineEmits([
             type="search"
             :placeholder="$t('CONTACTS_LAYOUT.HEADER.SEARCH_PLACEHOLDER')"
             :custom-input-class="[
-              'h-8 [&:not(.focus)]:!border-transparent bg-n-alpha-2 dark:bg-n-solid-1 ltr:!pl-8 !py-1 rtl:!pr-8',
+              'h-8 [&:not(.focus)]:!border-transparent bg-n-alpha-2 dark:bg-n-solid-1 !ps-8 !py-1',
             ]"
             class="w-full"
             @input="emit('search', $event.target.value)"
@@ -62,7 +62,7 @@ const emit = defineEmits([
             <template #prefix>
               <Icon
                 icon="i-lucide-search"
-                class="absolute -translate-y-1/2 text-n-slate-11 size-4 top-1/2 ltr:left-2 rtl:right-2"
+                class="absolute -translate-y-1/2 text-n-slate-11 size-4 top-1/2 start-2"
               />
             </template>
           </Input>
@@ -89,7 +89,7 @@ const emit = defineEmits([
               >
                 <div
                   v-if="hasActiveFilters && !isSegmentsView"
-                  class="absolute top-0 right-0 w-2 h-2 rounded-full bg-n-brand"
+                  class="absolute top-0 end-0 size-2 rounded-full bg-n-brand"
                 />
               </Button>
               <slot name="filter" />
@@ -123,7 +123,7 @@ const emit = defineEmits([
               :aria-label="
                 $t('CONTACTS_LAYOUT.HEADER.ACTIONS.BUTTONS.DELETE_SEGMENT')
               "
-              color="slate"
+              color="ruby"
               size="sm"
               variant="ghost"
               @click="emit('deleteSegment')"

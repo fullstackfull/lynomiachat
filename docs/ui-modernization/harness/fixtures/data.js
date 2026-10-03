@@ -480,3 +480,35 @@ export const COMMERCE_CARTS = [
     ],
   },
 ];
+
+// The audience whose conditions the chip strip renders: three on purpose, so the strip shows two chips, the
+// `and` connector and its "+1 more" overflow — the three controls that pass is about.
+export const AUDIENCE_SEGMENT = {
+  ...CONTACT_VIEWS[0],
+  query: {
+    payload: [
+      { attribute_key: 'name', filter_operator: 'equal_to', attribute_model: 'standard', values: ['Rania'], query_operator: 'and' },
+      { attribute_key: 'conversation_status', filter_operator: 'equal_to', attribute_model: 'conversation', values: ['open'], query_operator: 'and' },
+      { attribute_key: 'commerce_spend_sar', filter_operator: 'is_greater_than', attribute_model: 'commerce', values: ['1000'], query_operator: null },
+    ],
+  },
+};
+
+// An ad-hoc filter, camel-cased the way `contacts/getAppliedContactFiltersV4` hands it over. This is the only
+// state in which the strip's clear-filters button and the header's save-as-audience button exist.
+export const APPLIED_CONTACT_FILTERS = [
+  {
+    attributeKey: 'company_name',
+    filterOperator: 'contains',
+    attributeModel: 'standard',
+    values: ['ACME Inc'],
+    queryOperator: 'and',
+  },
+  {
+    attributeKey: 'country',
+    filterOperator: 'equal_to',
+    attributeModel: 'standard',
+    values: [{ id: 'SA', name: 'Saudi Arabia' }],
+    queryOperator: 'and',
+  },
+];

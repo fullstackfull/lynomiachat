@@ -265,6 +265,8 @@ defineExpose({ validate, resetValidation });
           />
         </template>
         <Button
+          v-tooltip.bottom="t('FILTER.REMOVE_CONDITION')"
+          :aria-label="t('FILTER.REMOVE_CONDITION')"
           sm
           solid
           slate

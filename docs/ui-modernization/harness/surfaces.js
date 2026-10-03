@@ -4,7 +4,7 @@
 //
 // `interactions` are selectors clicked before capture, so controls behind a menu or dialog land in the inventory
 // too: a feature that exists only inside an unopened menu still has to survive a redesign.
-import { CONVERSATION } from './fixtures/data';
+import { AUDIENCE_SEGMENT, CONVERSATION } from './fixtures/data';
 
 export const SURFACES = {
   sidebar: {
@@ -407,5 +407,49 @@ export const SURFACES = {
     },
     // Segments view: the filter control is the "edit segment" pen, which opens the audience filter panel.
     interactions: ['[class*="i-lucide-pen-line"]'],
+  },
+  'audience-list': {
+    title: 'Audience · list with its conditions',
+    load: () => import('dashboard/components-next/Contacts/ContactsListLayout.vue'),
+    route: 'contacts_dashboard_segments_index',
+    frame: 'plain',
+    // The active-filter chip strip lives in this layout, not in the header wrapper, so neither contacts
+    // surface renders it. Page 2 of 3 is deliberate: it is the only way the first and previous pagination
+    // controls are captured in their enabled state.
+    props: {
+      headerTitle: 'VIP buyers',
+      segmentsId: 7,
+      activeSegment: AUDIENCE_SEGMENT,
+      currentPage: 2,
+      totalItems: 42,
+      itemsPerPage: 15,
+      activeSort: 'last_activity_at',
+      activeOrdering: '-',
+      hasAppliedFilters: false,
+      isFetchingList: false,
+      showPaginationFooter: true,
+      useInfiniteScroll: false,
+      hasMore: false,
+    },
+  },
+  'audience-list-adhoc': {
+    title: 'Audience · ad-hoc filter, nothing saved',
+    load: () => import('dashboard/components-next/Contacts/ContactsListLayout.vue'),
+    route: 'contacts_dashboard_index',
+    frame: 'plain',
+    state: 'filtered',
+    props: {
+      headerTitle: 'Contacts',
+      segmentsId: 0,
+      activeSegment: null,
+      currentPage: 1,
+      totalItems: 42,
+      itemsPerPage: 15,
+      activeSort: 'name',
+      activeOrdering: '',
+      hasAppliedFilters: true,
+      isFetchingList: false,
+      showPaginationFooter: true,
+    },
   },
 };

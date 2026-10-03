@@ -21,6 +21,9 @@ const uiFlags = useMapGetter('customViews/getUIFlags');
 const isCreating = computed(() => uiFlags.value.isCreating);
 
 const dialogRef = ref(null);
+// Duplicating an audience saves the same conditions under a new name, so this dialog is also the duplicate dialog:
+// it already asks for the name and, for administrators, whether the copy is shared.
+const customTitle = ref('');
 
 const state = reactive({
   name: '',
@@ -47,13 +50,31 @@ const handleDialogConfirm = async () => {
   v$.value.$reset();
 };
 
-defineExpose({ dialogRef });
+/**
+ * Opens the dialog, optionally prefilled.
+ * @param {Object} [options] - Options.
+ * @param {string} [options.name] - The name to start from.
+ * @param {boolean} [options.shared] - Whether "share with the account" starts ticked.
+ * @param {string} [options.title] - A title for this use of the dialog.
+ */
+const open = ({ name = '', shared = false, title = '' } = {}) => {
+  state.name = name;
+  state.shared = shared;
+  customTitle.value = title;
+  v$.value.$reset();
+  dialogRef.value?.open();
+};
+
+defineExpose({ dialogRef, open });
 </script>
 
 <template>
   <Dialog
     ref="dialogRef"
-    :title="t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.TITLE')"
+    :title="
+      customTitle ||
+      t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.TITLE')
+    "
     :confirm-button-label="
       t('CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.CONFIRM')
     "

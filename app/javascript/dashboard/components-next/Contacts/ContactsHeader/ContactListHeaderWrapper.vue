@@ -30,6 +30,9 @@ import {
   useAudienceFilterTypes,
   audienceValuesForEdit,
 } from 'dashboard/components-next/filter/audienceProvider.js';
+import { AUDIENCE_QUERY_PARAM } from 'dashboard/helper/audienceHelper';
+import { copyTextToClipboard } from 'shared/helpers/clipboard';
+import { frontendURL } from 'dashboard/helper/URLHelper';
 
 const props = defineProps({
   showSearch: { type: Boolean, default: true },
@@ -88,8 +91,7 @@ const openContactImportDialog = () =>
   contactImportDialogRef.value?.dialogRef.open();
 const openContactExportDialog = () =>
   contactExportDialogRef.value?.dialogRef.open();
-const openCreateSegmentDialog = () =>
-  createSegmentDialogRef.value?.dialogRef.open();
+const openCreateSegmentDialog = () => createSegmentDialogRef.value?.open();
 const openDeleteSegmentDialog = () =>
   deleteSegmentDialogRef.value?.dialogRef.open();
 
@@ -202,6 +204,54 @@ const onDeleteSegment = async payload => {
   }
 };
 
+// Cross-module audience actions (docs/usability/04-implemented-productivity-features.md). An audience is a saved
+// contact filter, so every one of these reuses what already exists: the same create API for a duplicate, the target
+// module's own route for "use it there", the dashboard's own clipboard helper for a link.
+const accountId = useMapGetter('getCurrentAccountId');
+
+const duplicateSegment = () => {
+  if (!props.activeSegment) return;
+  // The copy is saved from the audience's own conditions, through the same dialog and the same create call as
+  // "save these filters as an audience": the name, and whether the copy is shared, stay the user's choice.
+  segmentsQuery.value = props.activeSegment.query;
+  createSegmentDialogRef.value?.open({
+    name: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.DUPLICATE_NAME', {
+      name: props.activeSegment.name,
+    }),
+    // Only administrators may share an audience, and only they see the checkbox: defaulting it on for anyone else
+    // would send a `shared` the server refuses.
+    shared: isSharedSegment.value && isAdmin.value,
+    title: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.DUPLICATE_TITLE'),
+  });
+};
+
+const segmentUrl = () =>
+  `${window.chatwootConfig.hostURL}${frontendURL(
+    `accounts/${accountId.value}/contacts/segments/${props.segmentsId}`
+  )}`;
+
+const useInAutomation = () =>
+  router.push({
+    name: 'automation_list',
+    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
+  });
+
+const useInCampaign = () =>
+  router.push({
+    name: 'campaigns_whatsapp_index',
+    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
+  });
+
+const copySegmentLink = async () => {
+  try {
+    await copyTextToClipboard(segmentUrl());
+    useAlert(t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.LINK_COPIED'));
+  } catch {
+    // A clipboard the browser refuses (no permission, an insecure origin): say so and stay where we are.
+    useAlert(t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.LINK_COPY_FAILED'));
+  }
+};
+
 const closeAdvanceFiltersModal = () => {
   showFiltersModal.value = false;
   appliedFilter.value = [];
@@ -309,6 +359,7 @@ defineExpose({
     :is-label-view="isLabelView"
     :is-active-view="isActiveView"
     :has-active-filters="hasAppliedFilters"
+    :active-segment="hasActiveSegments ? activeSegment : null"
     :button-label="t('CONTACTS_LAYOUT.HEADER.MESSAGE_BUTTON')"
     @search="emit('search', $event)"
     @update:sort="emit('update:sort', $event)"
@@ -318,6 +369,10 @@ defineExpose({
     @filter="onToggleFilters"
     @create-segment="openCreateSegmentDialog"
     @delete-segment="openDeleteSegmentDialog"
+    @duplicate-segment="duplicateSegment"
+    @use-in-automation="useInAutomation"
+    @use-in-campaign="useInCampaign"
+    @copy-segment-link="copySegmentLink"
   >
     <template #filter>
       <div

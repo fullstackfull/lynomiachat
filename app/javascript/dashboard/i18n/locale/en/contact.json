@@ -307,7 +307,22 @@
         "CONTACTS": "Contacts"
       },
       "ACTIONS": {
-        "CONTACT_CREATION": {
+        "MORE": "More actions",
+      "AUDIENCE": {
+        "SECTION": "Audience",
+        "USED_BY": "Used by {usage}",
+        "USED_BY_RULES": "{n} automation rule | {n} automation rules",
+        "USED_BY_CAMPAIGNS": "{n} campaign | {n} campaigns",
+        "USE_IN_AUTOMATION": "Use in a new automation rule",
+        "USE_IN_CAMPAIGN": "Use in a new WhatsApp campaign",
+        "DUPLICATE": "Duplicate this audience",
+        "DUPLICATE_TITLE": "Duplicate this audience?",
+        "DUPLICATE_NAME": "{name} copy",
+        "COPY_LINK": "Copy link to this audience",
+        "LINK_COPIED": "Link copied",
+        "LINK_COPY_FAILED": "Couldn\u2019t copy the link. Copy it from the address bar instead."
+      },
+      "CONTACT_CREATION": {
           "ADD_CONTACT": "Add contact",
           "EXPORT_CONTACT": "Export contacts",
           "IMPORT_CONTACT": "Import contacts",

@@ -5,6 +5,7 @@ import EditAutomationRule from './EditAutomationRule.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { until } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import {
@@ -17,10 +18,13 @@ import AutomationRuleRow from './AutomationRuleRow.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import { BaseTable } from 'dashboard/components-next/table';
+import { audienceIdFromQuery } from 'dashboard/helper/audienceHelper';
 import { DEFAULT_DELAY_MINUTES } from './constants';
 
 const getters = useStoreGetters();
 const store = useStore();
+const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const confirmDialog = ref(null);
 
@@ -139,6 +143,15 @@ const showDelayDisabledBanner = computed(
     records.value.some(automation => automation.execution_delay)
 );
 
+// "Use in a new automation rule", from an audience: the route says which one, the panel opens on it, and the query is
+// dropped so a reload is an ordinary visit to this page.
+const openFromAudience = () => {
+  const audienceId = audienceIdFromQuery(route.query);
+  if (!audienceId) return;
+  router.replace({ name: route.name, params: route.params, query: {} });
+  addDialogRef.value?.open({ audienceId });
+};
+
 onMounted(() => {
   store.dispatch('inboxes/get');
   store.dispatch('agents/get');
@@ -147,13 +160,17 @@ onMounted(() => {
   store.dispatch('labels/get');
   store.dispatch('campaigns/get');
   store.dispatch('automations/get');
+  openFromAudience();
 });
 
 const openAddPopup = () => {
   const startsWithWait =
     isDelayedAutomationsEnabled.value && activeTab.value === 'delayed';
-  addDialogRef.value?.open(startsWithWait ? DEFAULT_DELAY_MINUTES : null);
+  addDialogRef.value?.open({
+    executionDelay: startsWithWait ? DEFAULT_DELAY_MINUTES : null,
+  });
 };
+
 const hideAddPopup = () => {
   addDialogRef.value?.close();
 };

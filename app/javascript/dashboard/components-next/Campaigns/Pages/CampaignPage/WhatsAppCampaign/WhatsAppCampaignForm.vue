@@ -12,6 +12,13 @@ import CampaignRecipients from 'dashboard/components-next/Campaigns/Pages/Campai
 import { buildCampaignAudience } from 'shared/constants/campaign';
 import WhatsAppTemplateParser from 'dashboard/components-next/whatsapp/WhatsAppTemplateParser.vue';
 
+const props = defineProps({
+  // Shared audiences this campaign starts with ("Use in a new WhatsApp campaign", from the audience itself). The
+  // picker, its server-side recipient count and the server's own check that each id is a shared audience of this
+  // account all stay exactly as they are.
+  initialSharedAudienceIds: { type: Array, default: () => [] },
+});
+
 const emit = defineEmits(['submit', 'cancel']);
 
 const { t } = useI18n();
@@ -33,7 +40,10 @@ const initialState = {
   selectedSharedAudiences: [],
 };
 
-const state = reactive({ ...initialState });
+const state = reactive({
+  ...initialState,
+  selectedSharedAudiences: [...props.initialSharedAudienceIds],
+});
 const templateParserRef = ref(null);
 
 const rules = {

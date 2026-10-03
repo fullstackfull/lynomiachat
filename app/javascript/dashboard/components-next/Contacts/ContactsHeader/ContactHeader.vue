@@ -18,6 +18,8 @@ defineProps({
   isLabelView: { type: Boolean, default: false },
   isActiveView: { type: Boolean, default: false },
   canManageSegment: { type: Boolean, default: true },
+  // The audience being viewed, passed through to the overflow menu where its actions live.
+  activeSegment: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -29,6 +31,10 @@ const emit = defineEmits([
   'export',
   'createSegment',
   'deleteSegment',
+  'duplicateSegment',
+  'useInAutomation',
+  'useInCampaign',
+  'copySegmentLink',
 ]);
 </script>
 
@@ -114,9 +120,14 @@ const emit = defineEmits([
               @update:sort="emit('update:sort', $event)"
             />
             <ContactMoreActions
+              :segment="activeSegment"
               @add="emit('add')"
               @import="emit('import')"
               @export="emit('export')"
+              @duplicate-segment="emit('duplicateSegment')"
+              @use-in-automation="emit('useInAutomation')"
+              @use-in-campaign="emit('useInCampaign')"
+              @copy-segment-link="emit('copySegmentLink')"
             />
           </div>
           <div class="w-px h-4 bg-n-strong" />

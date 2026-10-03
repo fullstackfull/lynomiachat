@@ -7,6 +7,10 @@ import { CAMPAIGNS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events.js';
 
 import WhatsAppCampaignForm from 'dashboard/components-next/Campaigns/Pages/CampaignPage/WhatsAppCampaign/WhatsAppCampaignForm.vue';
 
+defineProps({
+  initialSharedAudienceIds: { type: Array, default: () => [] },
+});
+
 const emit = defineEmits(['close']);
 
 const store = useStore();
@@ -44,7 +48,11 @@ const handleClose = () => emit('close');
       <h3 class="text-base font-medium text-n-slate-12 flex-shrink-0">
         {{ t(`CAMPAIGN.WHATSAPP.CREATE.TITLE`) }}
       </h3>
-      <WhatsAppCampaignForm @submit="handleSubmit" @cancel="handleClose" />
+      <WhatsAppCampaignForm
+        :initial-shared-audience-ids="initialSharedAudienceIds"
+        @submit="handleSubmit"
+        @cancel="handleClose"
+      />
     </div>
   </div>
 </template>

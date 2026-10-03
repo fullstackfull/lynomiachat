@@ -22,6 +22,9 @@ const loading = ref({});
 const showDeleteConfirmationPopup = ref(false);
 const activeResponse = ref({});
 const searchQuery = ref('');
+// Empty until a heading is clicked, so the default order is the store's own.
+const sortBy = ref('');
+const sortOrder = ref('asc');
 
 const records = useMapGetter('customRole/getCustomRoles');
 
@@ -31,6 +34,20 @@ const filteredRecords = computed(() => {
   return picoSearch(records.value, query, ['name', 'description']);
 });
 const uiFlags = useMapGetter('customRole/getUIFlags');
+
+const sortedRecords = computed(() => {
+  if (!sortBy.value) return filteredRecords.value;
+  const direction = sortOrder.value === 'asc' ? 1 : -1;
+  // Copy first: with an empty search box `filteredRecords` is the store's own array.
+  return [...filteredRecords.value].sort(
+    (a, b) => (a.name ?? '').localeCompare(b.name ?? '') * direction
+  );
+});
+
+const onSort = ({ key, order }) => {
+  sortBy.value = key;
+  sortOrder.value = order;
+};
 
 const deleteConfirmText = computed(
   () => `${t('CUSTOM_ROLE.DELETE.CONFIRM.YES')} ${activeResponse.value.name}`
@@ -131,9 +148,9 @@ const confirmDeletion = () => {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.fetchingList"
-    :loading-message="$t('CUSTOM_ROLE.LOADING')"
-    :no-records-found="!records.length && !isBehindAPaywall"
+    :no-records-found="
+      !uiFlags.fetchingList && !records.length && !isBehindAPaywall
+    "
     :no-records-message="$t('CUSTOM_ROLE.LIST.404')"
   >
     <template #header>
@@ -165,13 +182,21 @@ const confirmDeletion = () => {
       <CustomRolePaywall v-if="isBehindAPaywall" />
       <BaseTable
         v-else
+        stack-on-mobile
         :headers="tableHeaders"
-        :items="filteredRecords"
+        :items="sortedRecords"
+        :loading="uiFlags.fetchingList"
+        :loading-message="$t('CUSTOM_ROLE.LOADING')"
+        :loading-rows="3"
+        :sortable-columns="['name', null, null, null]"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="
           searchQuery
             ? $t('CUSTOM_ROLE.NO_RESULTS')
             : $t('CUSTOM_ROLE.LIST.404')
         "
+        @sort="onSort"
       >
         <template #row="{ items }">
           <CustomRoleTableBody

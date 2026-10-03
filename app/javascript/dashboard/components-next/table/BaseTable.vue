@@ -67,6 +67,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Pins the last column — by convention the actions — to the end edge while the data scrolls under
+  // it. This is what makes `scrollable` safe on a phone: the row's controls never leave the viewport,
+  // so nothing a user could tap at 1280 needs a horizontal swipe to find at 390.
+  stickyActions: {
+    type: Boolean,
+    default: false,
+  },
+  // Below `md`, each row becomes a block and the headings are hidden. For tables whose cells are
+  // sentences rather than values, where no column is droppable and scrolling sideways through prose
+  // is worse than reading it stacked. Cells that need their heading back give themselves one.
+  stackOnMobile: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['sort']);
@@ -102,6 +116,12 @@ const toggleSort = index => {
   <div class="w-full" :class="{ 'overflow-x-auto': scrollable }">
     <table
       class="min-w-full table-auto divide-y divide-n-weak"
+      :class="[
+        stickyActions &&
+          '[&_tbody_tr>td:last-child]:sticky [&_tbody_tr>td:last-child]:end-0 [&_tbody_tr>td:last-child]:bg-n-surface-1 [&_tbody_tr>td:last-child]:border-s [&_tbody_tr>td:last-child]:border-n-weak [&_thead_th:last-child]:sticky [&_thead_th:last-child]:end-0 [&_thead_th:last-child]:bg-n-surface-1 [&_thead_th:last-child]:border-s [&_thead_th:last-child]:border-n-weak',
+        stackOnMobile &&
+          '[&_thead]:hidden md:[&_thead]:table-header-group [&_tbody_tr]:block md:[&_tbody_tr]:table-row [&_tbody_td]:block md:[&_tbody_td]:table-cell [&_tbody_td]:py-1 md:[&_tbody_td]:py-3 [&_tbody_tr]:py-3 md:[&_tbody_tr]:py-0',
+      ]"
       :aria-busy="loading"
     >
       <caption v-if="loading && loadingMessage" class="sr-only">

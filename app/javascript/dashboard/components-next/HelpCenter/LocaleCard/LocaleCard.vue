@@ -134,7 +134,7 @@ const handleAction = ({ action, value }) => {
           <DropdownMenu
             v-if="showDropdownMenu"
             :menu-items="localeMenuItems"
-            class="ltr:right-0 rtl:left-0 mt-1 top-full z-60 min-w-[150px]"
+            class="ltr:right-0 rtl:left-0 mt-1 top-full z-dropdown min-w-[150px]"
             @action="handleAction"
           />
         </div>

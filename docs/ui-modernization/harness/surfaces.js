@@ -127,4 +127,25 @@ export const SURFACES = {
     route: 'campaigns_whatsapp_index',
     frame: 'plain',
   },
+  'automation-recipes-dialog': {
+    title: 'Settings · Automation · recipe dialog',
+    load: () => import('dashboard/routes/dashboard/settings/automation/Index.vue'),
+    route: 'automation_list',
+    frame: 'settings',
+    interactions: ['[data-test-id="automation-recipes-button"]'],
+  },
+  'flows-templates-dialog': {
+    title: 'Settings · Flow Builder · template dialog',
+    load: () => import('dashboard/routes/dashboard/settings/flows/Index.vue'),
+    route: 'settings_flows_index',
+    frame: 'settings',
+    interactions: ['[data-test-id="flow-templates-button"]'],
+  },
+  'labels-add-modal': {
+    title: 'Settings · Labels · add (legacy modal)',
+    load: () => import('dashboard/routes/dashboard/settings/labels/Index.vue'),
+    route: 'labels_list',
+    frame: 'settings',
+    interactions: ['text:Add label'],
+  },
 };

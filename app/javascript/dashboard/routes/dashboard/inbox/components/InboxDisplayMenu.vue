@@ -137,7 +137,7 @@ export default {
         />
         <div
           v-if="showSortMenu"
-          class="absolute flex flex-col gap-0.5 bg-n-alpha-3 backdrop-blur-[100px] z-60 rounded-lg p-0.5 w-fit min-w-20 max-w-32 top-px outline outline-1 outline-n-container dark:outline-n-strong"
+          class="absolute flex flex-col gap-0.5 bg-n-alpha-3 backdrop-blur-panel z-dropdown rounded-lg p-0.5 w-fit min-w-20 max-w-32 top-px outline outline-1 outline-n-container dark:outline-n-strong"
         >
           <div
             v-for="option in sortOptions"

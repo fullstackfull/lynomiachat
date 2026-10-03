@@ -14,6 +14,7 @@ import i18nMessages from 'dashboard/i18n';
 import constants from 'dashboard/constants/globals';
 
 import App from './App.vue';
+import WootModal from 'dashboard/components/Modal.vue';
 import { GETTERS } from './fixtures/vuexGetters';
 import { ROUTE_NAMES } from './fixtures/routeNames';
 import { attachRouter } from './fixtures/routerBridge';
@@ -81,7 +82,8 @@ const Hidden = { template: '<div style="display:none"><slot /></div>' };
 app.component('woot-loading-state', { props: ['message'], template: '<div class="p-6 text-sm text-n-slate-11">{{ message }}</div>' });
 app.component('woot-delete-modal', Hidden);
 app.component('woot-confirm-modal', Hidden);
-app.component('woot-modal', Hidden);
+// The real legacy modal, so the 29 settings dialogs still built on it can be captured and compared.
+app.component('woot-modal', WootModal);
 app.component('woot-modal-header', Passthrough);
 app.component('woot-button', { template: '<button><slot /></button>' });
 app.component('fluent-icon', { props: ['icon'], template: '<span />' });

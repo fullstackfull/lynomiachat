@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, getCurrentInstance } from 'vue';
 import { OnClickOutside } from '@vueuse/components';
+import { useScrollLock } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -68,6 +69,14 @@ const dialogRef = ref(null);
 const dialogContentRef = ref(null);
 const isOpen = ref(false);
 
+// The page scrolled behind an open dialog; `SidePanel` already locked it and `Dialog` did not.
+const isPageScrollLocked = useScrollLock(document.body);
+
+// The native `<dialog>` has no accessible name unless something points at the title.
+const { uid } = getCurrentInstance();
+const titleId = `dialog-title-${uid}`;
+const descriptionId = `dialog-description-${uid}`;
+
 const maxWidthClass = computed(() => {
   const classesMap = {
     '3xl': 'max-w-3xl',
@@ -87,6 +96,7 @@ const positionClass = computed(() =>
 
 const open = () => {
   isOpen.value = true;
+  isPageScrollLocked.value = true;
   dialogRef.value?.showModal();
 };
 
@@ -94,6 +104,7 @@ const close = () => {
   emit('close');
   dialogRef.value?.close();
   isOpen.value = false;
+  isPageScrollLocked.value = false;
 };
 
 // Only close if the close event originated from this dialog,
@@ -118,7 +129,9 @@ defineExpose({ open, close });
   <TeleportWithDirection to="body">
     <dialog
       ref="dialogRef"
-      class="w-full transition-all duration-300 ease-in-out shadow-xl rounded-xl"
+      :aria-labelledby="title ? titleId : undefined"
+      :aria-describedby="description ? descriptionId : undefined"
+      class="w-full transition-all duration-300 ease-in-out shadow-modal rounded-overlay"
       :class="[
         maxWidthClass,
         positionClass,
@@ -129,16 +142,23 @@ defineExpose({ open, close });
       <OnClickOutside @trigger="handleClickOutside">
         <form
           ref="dialogContentRef"
-          class="flex flex-col w-full h-auto gap-6 p-6 overflow-visible text-start align-middle transition-all duration-300 ease-in-out transform bg-n-alpha-3 backdrop-blur-[100px] shadow-xl rounded-xl"
+          class="flex flex-col w-full h-auto gap-6 p-6 overflow-visible text-start align-middle transition-all duration-300 ease-in-out transform bg-n-alpha-3 backdrop-blur-panel shadow-modal rounded-overlay"
           @submit.prevent="confirm"
           @click.stop
         >
           <div v-if="title || description" class="flex flex-col gap-2">
-            <h3 class="text-base font-medium leading-6 text-n-slate-12">
+            <h3
+              :id="titleId"
+              class="text-base font-medium leading-6 text-n-slate-12"
+            >
               {{ title }}
             </h3>
             <slot name="description">
-              <p v-if="description" class="mb-0 text-sm text-n-slate-11">
+              <p
+                v-if="description"
+                :id="descriptionId"
+                class="mb-0 text-sm text-n-slate-11"
+              >
                 {{ description }}
               </p>
             </slot>

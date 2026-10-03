@@ -6020,7 +6020,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 8
+    "hidden": 2
   },
   "labels-list|en|768": {
     "surface": "labels-list",
@@ -6139,7 +6139,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "labels-list|en|1024": {
     "surface": "labels-list",
@@ -6258,7 +6258,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "labels-list|en|1280": {
     "surface": "labels-list",
@@ -6377,7 +6377,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "labels-list|ar|390": {
     "surface": "labels-list",
@@ -6472,7 +6472,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 8
+    "hidden": 2
   },
   "labels-list|ar|768": {
     "surface": "labels-list",
@@ -6591,7 +6591,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "labels-list|ar|1024": {
     "surface": "labels-list",
@@ -6710,7 +6710,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "labels-list|ar|1280": {
     "surface": "labels-list",
@@ -6829,7 +6829,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "teams-list|en|390": {
     "surface": "teams-list",
@@ -8188,7 +8188,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 7
+    "hidden": 2
   },
   "agents-list|en|768": {
     "surface": "agents-list",
@@ -8283,7 +8283,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "agents-list|en|1024": {
     "surface": "agents-list",
@@ -8378,7 +8378,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "agents-list|en|1280": {
     "surface": "agents-list",
@@ -8473,7 +8473,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "agents-list|ar|390": {
     "surface": "agents-list",
@@ -8544,7 +8544,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 7
+    "hidden": 2
   },
   "agents-list|ar|768": {
     "surface": "agents-list",
@@ -8639,7 +8639,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "agents-list|ar|1024": {
     "surface": "agents-list",
@@ -8734,7 +8734,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "agents-list|ar|1280": {
     "surface": "agents-list",
@@ -8829,7 +8829,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "contacts-header|en|390": {
     "surface": "contacts-header",
@@ -10464,7 +10464,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 7
+    "hidden": 2
   },
   "canned-list|en|768": {
     "surface": "canned-list",
@@ -10595,7 +10595,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "canned-list|en|1024": {
     "surface": "canned-list",
@@ -10726,7 +10726,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "canned-list|en|1280": {
     "surface": "canned-list",
@@ -10857,7 +10857,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "canned-list|ar|390": {
     "surface": "canned-list",
@@ -10964,7 +10964,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 7
+    "hidden": 2
   },
   "canned-list|ar|768": {
     "surface": "canned-list",
@@ -11095,7 +11095,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "canned-list|ar|1024": {
     "surface": "canned-list",
@@ -11226,7 +11226,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "canned-list|ar|1280": {
     "surface": "canned-list",
@@ -11357,7 +11357,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 5
+    "hidden": 0
   },
   "macros-list|en|390": {
     "surface": "macros-list",
@@ -12428,7 +12428,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 2
   },
   "attributes-list|en|768": {
     "surface": "attributes-list",
@@ -12523,7 +12523,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "attributes-list|en|1024": {
     "surface": "attributes-list",
@@ -12618,7 +12618,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "attributes-list|en|1280": {
     "surface": "attributes-list",
@@ -12713,7 +12713,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "attributes-list|ar|390": {
     "surface": "attributes-list",
@@ -12784,7 +12784,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 2
   },
   "attributes-list|ar|768": {
     "surface": "attributes-list",
@@ -12879,7 +12879,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "attributes-list|ar|1024": {
     "surface": "attributes-list",
@@ -12974,7 +12974,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "attributes-list|ar|1280": {
     "surface": "attributes-list",
@@ -13069,7 +13069,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 4
+    "hidden": 0
   },
   "sla-list|en|390": {
     "surface": "sla-list",
@@ -13116,7 +13116,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 8
+    "hidden": 2
   },
   "sla-list|en|768": {
     "surface": "sla-list",
@@ -13187,7 +13187,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "sla-list|en|1024": {
     "surface": "sla-list",
@@ -13258,7 +13258,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "sla-list|en|1280": {
     "surface": "sla-list",
@@ -13329,7 +13329,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "sla-list|ar|390": {
     "surface": "sla-list",
@@ -13376,7 +13376,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 8
+    "hidden": 2
   },
   "sla-list|ar|768": {
     "surface": "sla-list",
@@ -13447,7 +13447,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "sla-list|ar|1024": {
     "surface": "sla-list",
@@ -13518,7 +13518,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "sla-list|ar|1280": {
     "surface": "sla-list",
@@ -13589,7 +13589,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 6
+    "hidden": 0
   },
   "custom-roles-list|en|390": {
     "surface": "custom-roles-list",
@@ -13660,7 +13660,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 13
+    "hidden": 2
   },
   "custom-roles-list|en|768": {
     "surface": "custom-roles-list",
@@ -13755,7 +13755,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "custom-roles-list|en|1024": {
     "surface": "custom-roles-list",
@@ -13850,7 +13850,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "custom-roles-list|en|1280": {
     "surface": "custom-roles-list",
@@ -13945,7 +13945,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "custom-roles-list|ar|390": {
     "surface": "custom-roles-list",
@@ -14016,7 +14016,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 13
+    "hidden": 2
   },
   "custom-roles-list|ar|768": {
     "surface": "custom-roles-list",
@@ -14111,7 +14111,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "custom-roles-list|ar|1024": {
     "surface": "custom-roles-list",
@@ -14206,7 +14206,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "custom-roles-list|ar|1280": {
     "surface": "custom-roles-list",
@@ -14301,7 +14301,7 @@
         "unnamed": true
       }
     ],
-    "hidden": 11
+    "hidden": 0
   },
   "templates-list|en|390": {
     "surface": "templates-list",
@@ -16870,5 +16870,5477 @@
       }
     ],
     "hidden": 2
+  },
+  "automation-recipes-dialog|en|390": {
+    "surface": "automation-recipes-dialog",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-recipes-dialog|en|768": {
+    "surface": "automation-recipes-dialog",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-recipes-dialog|en|1024": {
+    "surface": "automation-recipes-dialog",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-recipes-dialog|en|1280": {
+    "surface": "automation-recipes-dialog",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-recipes-dialog|ar|390": {
+    "surface": "automation-recipes-dialog",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 1
+  },
+  "automation-recipes-dialog|ar|768": {
+    "surface": "automation-recipes-dialog",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-recipes-dialog|ar|1024": {
+    "surface": "automation-recipes-dialog",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "automation-recipes-dialog|ar|1280": {
+    "surface": "automation-recipes-dialog",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs instantly (2)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Runs after a wait (1)",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search automation rules...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "automation-recipes-button",
+        "name": "Recipes",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE AUTOMATION",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "Toggle switch",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "switch",
+        "testId": "",
+        "name": "TOGGLE SWITCH",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-clone",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_new_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_shipped_label-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_refund_escalation-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_event_webhook-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-high_value_spend_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-active_order_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_audience_priority-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "flows-templates-dialog|en|390": {
+    "surface": "flows-templates-dialog",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "NEW FLOW",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|en|768": {
+    "surface": "flows-templates-dialog",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "NEW FLOW",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|en|1024": {
+    "surface": "flows-templates-dialog",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "NEW FLOW",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|en|1280": {
+    "surface": "flows-templates-dialog",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "NEW FLOW",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|ar|390": {
+    "surface": "flows-templates-dialog",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "تدفق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|ar|768": {
+    "surface": "flows-templates-dialog",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "تدفق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|ar|1024": {
+    "surface": "flows-templates-dialog",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "تدفق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "flows-templates-dialog|ar|1280": {
+    "surface": "flows-templates-dialog",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-templates-button",
+        "name": "Templates",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-new-button",
+        "name": "تدفق جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Order tracking bot Created from the Order tracking bot template (v1).",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-1",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Department routing bot Routes to the team that owns the topic.",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-2",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Arabic or English welcome",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-workflow",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "flow-duplicate-3",
+        "name": "",
+        "icon": "i-lucide-copy",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_order_tracking-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-commerce_after_sales-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-vip_priority_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-support_department_routing-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-bilingual_welcome-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-whatsapp_welcome_menu-use",
+        "name": "Use this",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "recipe-from-scratch",
+        "name": "Start from scratch instead",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إلغاء",
+        "icon": "",
+        "type": "button",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 4
+  },
+  "labels-add-modal|en|390": {
+    "surface": "labels-add-modal",
+    "locale": "en",
+    "width": "390",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-x",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "true",
+        "icon": "",
+        "type": "checkbox",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "reset",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE",
+        "icon": "",
+        "type": "submit",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-add-modal|en|768": {
+    "surface": "labels-add-modal",
+    "locale": "en",
+    "width": "768",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-x",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "true",
+        "icon": "",
+        "type": "checkbox",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "reset",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE",
+        "icon": "",
+        "type": "submit",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-add-modal|en|1024": {
+    "surface": "labels-add-modal",
+    "locale": "en",
+    "width": "1024",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-x",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "true",
+        "icon": "",
+        "type": "checkbox",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "reset",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE",
+        "icon": "",
+        "type": "submit",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-add-modal|en|1280": {
+    "surface": "labels-add-modal",
+    "locale": "en",
+    "width": "1280",
+    "direction": "ltr",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "Learn more about labels",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "Search labels...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "ADD LABEL",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-lucide-x",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "true",
+        "icon": "",
+        "type": "checkbox",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "Cancel",
+        "icon": "",
+        "type": "reset",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "CREATE",
+        "icon": "",
+        "type": "submit",
+        "disabled": true,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-add-modal|ar|390": {
+    "surface": "labels-add-modal",
+    "locale": "ar",
+    "width": "390",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      }
+    ],
+    "hidden": 2
+  },
+  "labels-add-modal|ar|768": {
+    "surface": "labels-add-modal",
+    "locale": "ar",
+    "width": "768",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-add-modal|ar|1024": {
+    "surface": "labels-add-modal",
+    "locale": "ar",
+    "width": "1024",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      }
+    ],
+    "hidden": 0
+  },
+  "labels-add-modal|ar|1280": {
+    "surface": "labels-add-modal",
+    "locale": "ar",
+    "width": "1280",
+    "direction": "rtl",
+    "overflow": 0,
+    "errors": [],
+    "controls": [
+      {
+        "tag": "a",
+        "role": "",
+        "testId": "",
+        "name": "معرفة المزيد حول التسميات",
+        "icon": "i-lucide-chevron-right",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "input",
+        "role": "",
+        "testId": "",
+        "name": "ابحث عن تصنيفات...",
+        "icon": "",
+        "type": "search",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "إضافة وسم جديد",
+        "icon": "",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": false
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-edit-pen",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      },
+      {
+        "tag": "button",
+        "role": "",
+        "testId": "",
+        "name": "",
+        "icon": "i-woot-bin",
+        "type": "",
+        "disabled": false,
+        "visible": true,
+        "hiddenFromAT": false,
+        "unnamed": true
+      }
+    ],
+    "hidden": 0
   }
 }

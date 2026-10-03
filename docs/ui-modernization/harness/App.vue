@@ -25,7 +25,14 @@ const settle = async () => {
     setTimeout(resolve, 150);
   });
   for (const selector of entry.value?.interactions || []) {
-    const node = document.querySelector(selector);
+    // `text:Add label` finds a control by the words on it, for the buttons that carry no test id.
+    const node = selector.startsWith('text:')
+      ? [...document.querySelectorAll('button, a[href], [role="button"]')].find(
+          candidate =>
+            candidate.innerText.trim().toLowerCase() ===
+            selector.slice(5).trim().toLowerCase()
+        )
+      : document.querySelector(selector);
     if (node) {
       node.click();
       // eslint-disable-next-line no-await-in-loop

@@ -120,7 +120,7 @@ const handleAction = ({ action, value }) => {
           <DropdownMenu
             v-if="showActionsDropdown"
             :menu-items="categoryMenuItems"
-            class="mt-1 ltr:right-0 rtl:left-0 xl:ltr:left-0 xl:rtl:right-0 top-full z-60"
+            class="mt-1 ltr:right-0 rtl:left-0 xl:ltr:left-0 xl:rtl:right-0 top-full z-dropdown"
             @action="handleAction"
           />
         </div>

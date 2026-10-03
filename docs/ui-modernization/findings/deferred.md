@@ -23,13 +23,21 @@ each table sits on.
 **Lands in:** the responsive commit, where the settings list pages get a designed mobile treatment and
 a per-page parity table.
 
-## 2. `z-60` generates no CSS
+## 2. The z-index ladder is migrated piecemeal, not in one sweep
 
-Tailwind's default `zIndex` scale stops at 50, so the `z-60` written at `DropdownMenu.vue:186,243`,
-`LocaleCard.vue:137`, `CategoryCard.vue:123` and `InboxDisplayMenu.vue:140` resolves to nothing — those
-menus have shipped with no z-index at all. Fixing it changes real stacking order.
+**Done:** `z-60` generated no CSS — Tailwind's default scale stops at 50 — so the three menu *bodies*
+written with it (`LocaleCard.vue:137`, `CategoryCard.vue:123`, `InboxDisplayMenu.vue:140`) had shipped
+with no z-index at all, and now use `z-dropdown`. The two on `DropdownMenu`'s menu *items* were dead
+either way and are deleted.
 
-**Lands in:** the overlay commit, where those surfaces have a before-capture to compare against.
+**Not done:** the rest of the ladder — `z-40 → z-50 → z-[100] → z-[1000] → z-[9990] → z-[9999] →
+z-[10001]` — still runs on raw values. Collapsing it onto the five named steps means changing relative
+order in at least one real case: a dropdown teleported to the body at `z-[1000]` currently paints
+*above* a drawer, and would paint below it afterwards. Proving that is safe needs captures of an
+overlay opened inside another overlay, which the harness does not have yet.
+
+**Lands in:** a commit that first adds nested-overlay surfaces (a dropdown inside a drawer, a dialog
+over a popover) to the capture set.
 
 ## 3. Two token-layer defects that change appearance when fixed
 

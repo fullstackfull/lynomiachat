@@ -217,6 +217,7 @@ Regression cover: `mutations.spec.js` asserts `SET_CONTACT_RECORD` leaves `sortO
 | Gate | Result |
 |---|---|
 | Backend, contacts + labels + model | **117 examples, 0 failures** — `contacts_controller_spec.rb` (74), `contacts/labels_controller_spec.rb` (4), `labels_controller_spec.rb` (10), `contact_spec.rb` (29); the new "when the request carries labels" context is 10 of them |
+| Backend, full suite, HEAD against `968aef48` | **10495 examples, 6 failures** against **10479 examples, 6 failures** — the same six, and sixteen more examples, which is exactly what this phase adds |
 | Frontend, full suite | **478 files, 4942 tests, 0 failures** |
 | ESLint, repo gate (`pnpm eslint`) | **0 errors**, 483 warnings — against 0 errors, 488 warnings at `968aef48`, so five fewer |
 | RuboCop, changed files | **4 files inspected, no offenses** |
@@ -229,6 +230,34 @@ phase's diff alone rather than the UI/UX phase's. Details in [parity/](parity/).
 
 The Rails environment was built for this phase — Ruby 3.4.4, 356 gems, Postgres 16 with `pgvector`, Redis — so
 the backend numbers are real integration runs, not fixtures.
+
+The two full-suite runs were taken side by side under the same environment, each against its own database
+(`chatwoot_test` for HEAD, `chatwoot_test_preb` for the base, schema loaded from the `/tmp/pre-b` worktree with
+gems shared through `BUNDLE_PATH`). Their failing-example lists are **identical**:
+
+```
+spec/builders/agent_builder_spec.rb:47                  Incorrect arguments passed to Devise::Mailer
+spec/controllers/slack_uploads_controller_spec.rb  ×4   UnsafeRedirectError
+spec/enterprise/services/voice/call_transcription_service_spec.rb:77
+                                                        Message "does not implement: reindex"
+```
+
+All six fail the same way at `968aef48`, so none is this phase's. The four `slack_uploads` ones are the
+environment artefact below; the other two were not investigated past establishing that they predate this
+phase, since neither touches contacts.
+
+Worth recording about this suite either way: `$alfred` is a **`MockRedis` in test**
+(`config/initializers/01_redis.rb:10`) — in-process and never reset between examples, while
+`use_transactional_fixtures` rolls the rows underneath it back. So `GlobalConfig`'s cache, and anything else
+keyed in Redis, outlives the data it was derived from, which makes a full run's result depend on which files
+ran before it. A pre-existing hazard, not something this phase introduced or relies on.
+
+An earlier full run during this phase reported 44 failures in the Commerce provider specs. They reproduce in
+none of five groupings since — the five files together (83 examples, 0 failures), `spec/services` entire
+(2458, 0), those files after this phase's own contacts spec (157, 0), `spec/controllers spec/services`
+(4558, and only the four `slack_uploads` ones), or either full run above. That run's error text is not
+recoverable: the command piped through `tail`, so only the trailing example addresses were kept. Recorded as
+unreproduced rather than explained.
 
 One artefact of that environment, worth knowing before reading a full-suite run here:
 `spec/controllers/slack_uploads_controller_spec.rb` fails four examples whenever `FRONTEND_URL` names a host

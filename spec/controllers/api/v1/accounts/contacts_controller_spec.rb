@@ -601,6 +601,34 @@ RSpec.describe 'Contacts API', type: :request do
           expect(account.contacts.tagged_with('vip', any: true)).to include(contact)
         end
 
+        # The reported workflow, end to end over HTTP: create on the label page, then read the label page back.
+        it 'is returned by the label-filtered list the contact was created from' do
+          post "/api/v1/accounts/#{account.id}/contacts", headers: admin.create_new_auth_token,
+                                                          params: valid_params.merge(phone_number: '+96522201234',
+                                                                                     labels: [label.title])
+          expect(response).to have_http_status(:success)
+          created_id = response.parsed_body['payload']['contact']['id']
+
+          get "/api/v1/accounts/#{account.id}/contacts", headers: admin.create_new_auth_token,
+                                                         params: { labels: [label.title] }
+
+          expect(response).to have_http_status(:success)
+          expect(response.parsed_body['payload'].pluck('id')).to include(created_id)
+        end
+
+        it 'is not returned by a different label\'s list' do
+          other = create(:label, account: account, title: 'cold')
+          post "/api/v1/accounts/#{account.id}/contacts", headers: admin.create_new_auth_token,
+                                                          params: valid_params.merge(phone_number: '+96522201235',
+                                                                                     labels: [label.title])
+          created_id = response.parsed_body['payload']['contact']['id']
+
+          get "/api/v1/accounts/#{account.id}/contacts", headers: admin.create_new_auth_token,
+                                                         params: { labels: [other.title] }
+
+          expect(response.parsed_body['payload'].pluck('id')).not_to include(created_id)
+        end
+
         it 'writes a Contact tagging, not a Conversation one' do
           post "/api/v1/accounts/#{account.id}/contacts", headers: admin.create_new_auth_token,
                                                           params: valid_params.merge(labels: [label.title])

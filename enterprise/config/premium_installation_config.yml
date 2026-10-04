@@ -1,6 +1,18 @@
 # ------- Branding Related Config ------- #
+# These MUST stay byte-identical to the branding block in config/installation_config.yml:17-58.
+#
+# `Internal::ReconcilePlanConfigService#reconcile_premium_config` writes every value here over the live
+# InstallationConfig rows whenever ChatwootHub.pricing_plan == 'community' — the seeded default — driven daily
+# by Internal::TriggerDailyScheduledItemsJob. While these said 'Chatwoot' the product silently rebranded itself
+# back to Chatwoot every day. The rebrand that set the Lynomia values in config/installation_config.yml did not
+# touch this overlay.
+#
+# Because the service skips a key whose stored value already equals its own
+# (reconcile_plan_config_service.rb:42), keeping these equal to the OSS values means the service has nothing to
+# write, so ConfigLoader stays the single authoritative writer. Premium FEATURE gating
+# (reconcile_premium_features / premium_features.yml) is untouched.
 - name: INSTALLATION_NAME
-  value: 'Chatwoot'
+  value: 'Lynomia chat'
 - name: LOGO_THUMBNAIL
   value: '/brand-assets/logo_thumbnail.svg'
 - name: LOGO
@@ -8,15 +20,15 @@
 - name: LOGO_DARK
   value: '/brand-assets/logo_dark.svg'
 - name: BRAND_URL
-  value: 'https://www.chatwoot.com'
+  value: 'https://www.chat.lynomia.com'
 - name: WIDGET_BRAND_URL
-  value: 'https://www.chatwoot.com'
+  value: 'https://www.chat.lynomia.com'
 - name: BRAND_NAME
-  value: 'Chatwoot'
+  value: 'Lynomia chat'
 - name: TERMS_URL
-  value: 'https://www.chatwoot.com/terms-of-service'
+  value: 'https://chat.lynomia.com/#terms'
 - name: PRIVACY_URL
-  value: 'https://www.chatwoot.com/privacy-policy'
+  value: 'https://chat.lynomia.com/#privacy'
 - name: DISPLAY_MANIFEST
   value: true
 # ------- End of Branding Related Config ------- #

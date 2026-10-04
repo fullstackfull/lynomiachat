@@ -1,11 +1,12 @@
 # Contacts Reliability & Bulk Workflows — Phase 1
 
-Phase A is **discovery and the reuse map only**. No product code changed.
+Phase A was discovery. Phase B fixed the proven defect. C1–C5 are not started.
 
 ## Read this first
 
 | | |
 |---|---|
+| [`03-phase-b.md`](03-phase-b.md) | **what changed**: create-with-label is durable, the real validation shows next to its field in both languages, duplicate recovery, phone normalization, and the end of false list membership — with what each is proved by |
 | [`02-discovery-checkpoint.md`](02-discovery-checkpoint.md) | the twelve answers Phase A had to produce, including the exact cause of the reported label-page failure and the smallest production-safe plan |
 
 ## The trace
@@ -51,4 +52,9 @@ counts above are measured from the matrix, not asserted. Nothing here rests on a
 
 ## Status
 
-**STOP.** Phase B is not started and must not start until this checkpoint has been reviewed.
+Phase A and Phase B are done. **C1–C5 are not started** and must not start until Phase B has been reviewed.
+
+Two things Phase B had to correct in Phase A's own account of the defect, both proved by test:
+`/contacts` is itself a server-filtered view, so the false-row defect was never limited to label pages; and
+the E.164 rule is structural, so a dial code concatenated onto a trunk-prefixed number is usually *accepted*
+rather than rejected — it stored a wrong number silently.

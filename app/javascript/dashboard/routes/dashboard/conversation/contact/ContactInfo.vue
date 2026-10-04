@@ -1,10 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
+import { contactErrorMessage } from 'dashboard/helper/contactErrors';
 import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import ContactInfoRow from './ContactInfoRow.vue';
@@ -164,25 +161,7 @@ export default {
         useAlert(this.$t('CONTACT_FORM.SUCCESS_MESSAGE'));
         await this.$store.dispatch('contacts/fetchContactableInbox', contactId);
       } catch (error) {
-        if (error instanceof DuplicateContactException) {
-          const detail = error.contactErrorDetail;
-          if (detail) {
-            useAlert(detail);
-          } else {
-            const invalidAttrs = Array.isArray(error.data) ? error.data : [];
-            if (invalidAttrs.includes('email')) {
-              useAlert(this.$t('CONTACT_FORM.FORM.EMAIL_ADDRESS.DUPLICATE'));
-            } else if (invalidAttrs.includes('phone_number')) {
-              useAlert(this.$t('CONTACT_FORM.FORM.PHONE_NUMBER.DUPLICATE'));
-            } else {
-              useAlert(this.$t('CONTACT_FORM.ERROR_MESSAGE'));
-            }
-          }
-        } else if (error instanceof ExceptionWithMessage) {
-          useAlert(error.data);
-        } else {
-          useAlert(error.message || this.$t('CONTACT_FORM.ERROR_MESSAGE'));
-        }
+        useAlert(contactErrorMessage(error, this.$t.bind(this)));
       }
     },
   },

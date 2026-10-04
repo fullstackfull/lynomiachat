@@ -1,5 +1,6 @@
 class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   include Sift
+  include ContactLabelParams
   sort_on :email, type: :string
   sort_on :name, internal_name: :order_on_name, type: :scope, scope_params: [:direction]
   sort_on :phone_number, type: :string
@@ -85,6 +86,10 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def create
     ActiveRecord::Base.transaction do
       @contact = Current.account.contacts.new(permitted_params.except(:avatar_url))
+      # Assigned before the insert, not written with a second `update!` afterwards: `label_list=` is the same
+      # acts-as-taggable-on writer `Labelable#update_labels` uses, and the gem persists the taggings from its
+      # own `after_save`, so one save covers both and the contact is never briefly label-less.
+      @contact.label_list = requested_label_titles(@contact)
       @contact.save!
       @contact_inbox = build_contact_inbox
       process_avatar_from_url

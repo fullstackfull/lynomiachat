@@ -112,6 +112,8 @@ ar:
         invalid: إيميل غير صالح
       phone_number:
         invalid: يجب أن يكون بصيغة e164
+      labels:
+        not_found: 'غير موجودة في هذا الحساب: %{labels}'
     companies:
       domain:
         invalid: must be a valid domain name

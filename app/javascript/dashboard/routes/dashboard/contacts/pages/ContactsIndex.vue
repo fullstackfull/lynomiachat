@@ -425,8 +425,19 @@ const handleSort = async ({ sort, order }) => {
     : fetchContacts());
 };
 
-const createContact = async contact => {
-  await store.dispatch('contacts/create', contact);
+// A created contact is in the store's `records` but deliberately not in the rendered list: only the server
+// knows whether it belongs in this view and where it sorts. /contacts itself returns only contacts that have
+// an email, phone or identifier, a label page only those carrying the label, and a new contact has no
+// last_activity_at so it sorts last. So the list is re-read rather than guessed at.
+const onContactCreated = async () => {
+  // A search view is paged by infinite scroll, and re-reading it would discard every page after the first.
+  if (isSearchView.value) return;
+  // A segment whose definition has not loaded would fall through to the unfiltered list.
+  if (activeSegmentId.value && !activeSegment.value?.query) return;
+
+  await fetchContactsBasedOnContext(pageNumber.value, {
+    clearSelection: false,
+  });
 };
 
 watch(hasSelection, value => {
@@ -520,6 +531,7 @@ onMounted(async () => {
       @apply-filter="fetchSavedOrAppliedFilteredContact"
       @clear-filters="fetchContacts"
       @load-more="loadMoreSearchResults"
+      @contact-created="onContactCreated"
     >
       <div
         v-if="isFetchingList && !(isSearchView && hasContacts)"
@@ -546,7 +558,7 @@ onMounted(async () => {
           :title="t('CONTACTS_LAYOUT.EMPTY_STATE.TITLE')"
           :subtitle="t('CONTACTS_LAYOUT.EMPTY_STATE.SUBTITLE')"
           :button-label="t('CONTACTS_LAYOUT.EMPTY_STATE.BUTTON_LABEL')"
-          @create="createContact"
+          @created="onContactCreated"
         />
 
         <div

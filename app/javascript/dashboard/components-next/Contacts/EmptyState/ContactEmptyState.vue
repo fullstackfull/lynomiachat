@@ -26,7 +26,7 @@ defineProps({
   },
 });
 
-const emit = defineEmits(['create']);
+const emit = defineEmits(['created']);
 
 const createNewContactDialogRef = ref(null);
 
@@ -58,7 +58,7 @@ const onClick = () => {
         <Button :label="buttonLabel" icon="i-lucide-plus" @click="onClick" />
         <CreateNewContactDialog
           ref="createNewContactDialogRef"
-          @create="emit('create', $event)"
+          @created="emit('created', $event)"
         />
       </div>
     </template>

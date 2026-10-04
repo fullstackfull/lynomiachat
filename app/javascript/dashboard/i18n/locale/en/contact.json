@@ -697,5 +697,31 @@
         "SEND": "Send ({keyCode})"
       }
     }
+  },
+  "CONTACT_ERRORS": {
+    "PHONE_NUMBER": {
+      "TAKEN": "This phone number already belongs to another contact in this account.",
+      "INVALID": "Enter the number in international format, for example +96522201234.",
+      "NEEDS_COUNTRY": "Select the country, or enter the number in international format."
+    },
+    "EMAIL": {
+      "TAKEN": "This email address already belongs to another contact in this account.",
+      "INVALID": "Enter a valid email address."
+    },
+    "IDENTIFIER": {
+      "TAKEN": "This identifier already belongs to another contact in this account."
+    },
+    "LABELS": {
+      "NOT_IN_ACCOUNT": "That label no longer exists in this account."
+    },
+    "GENERIC": "This contact could not be saved. Check the details and try again.",
+    "DUPLICATE": {
+      "TITLE": "A contact with these details already exists",
+      "OPEN": "Open {name}",
+      "ADD_LABEL": "Add “{label}” to {name}",
+      "LABEL_ADDED": "“{label}” added to {name}",
+      "LABEL_FAILED": "Could not add “{label}” to {name}",
+      "UNNAMED": "the existing contact"
+    }
   }
 }

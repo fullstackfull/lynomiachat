@@ -6,10 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { useMessageContext } from '../provider.js';
 import BaseAttachmentBubble from './BaseAttachment.vue';
 
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
+import { contactErrorMessage } from 'dashboard/helper/contactErrors';
 
 const { attachments } = useMessageContext();
 
@@ -75,22 +72,14 @@ function openContactNewTab(contactId) {
 
 async function addContact() {
   try {
-    let contact = await filterContactByNumber(rawPhoneNumber);
+    let contact = await filterContactByNumber(rawPhoneNumber.value);
     if (!contact) {
       contact = await $store.dispatch('contacts/create', getContactObject());
       useAlert(t('CONTACT_FORM.SUCCESS_MESSAGE'));
     }
     openContactNewTab(contact.id);
   } catch (error) {
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('phone_number')) {
-        useAlert(t('CONTACT_FORM.FORM.PHONE_NUMBER.DUPLICATE'));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t('CONTACT_FORM.ERROR_MESSAGE'));
-    }
+    useAlert(contactErrorMessage(error, t));
   }
 }
 

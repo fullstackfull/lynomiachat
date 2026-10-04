@@ -57,10 +57,22 @@ module RequestExceptionHandler
 
   def render_record_invalid(exception)
     log_handled_error(exception)
+    errors = exception.record.errors
     render json: {
-      message: exception.record.errors.full_messages.join(', '),
-      attributes: exception.record.errors.attribute_names
+      message: errors.full_messages.join(', '),
+      attributes: errors.attribute_names,
+      # `message` joins every error with a comma, which a client cannot split back onto attributes: one
+      # attribute can carry several errors, and a message can itself contain a comma. Keyed by attribute, a
+      # form can put each message next to its own field.
+      errors: errors_grouped_by_attribute(errors, &:full_message),
+      # The validator that rejected it, so a client can tell "already taken" from "wrong format" — both of
+      # which land on `phone_number` — and show its own localized sentence instead of an English one.
+      error_types: errors_grouped_by_attribute(errors) { |error| error.type.to_s }
     }, status: :unprocessable_entity
+  end
+
+  def errors_grouped_by_attribute(errors, &)
+    errors.group_by(&:attribute).transform_values { |attribute_errors| attribute_errors.map(&) }
   end
 
   def render_error_response(exception)

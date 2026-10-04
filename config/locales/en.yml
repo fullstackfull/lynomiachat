@@ -128,6 +128,8 @@ en:
         invalid: Invalid email
       phone_number:
         invalid: should be in e164 format
+      labels:
+        not_found: 'do not exist in this account: %{labels}'
     companies:
       domain:
         invalid: must be a valid domain name

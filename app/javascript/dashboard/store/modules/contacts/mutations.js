@@ -57,6 +57,18 @@ export const mutations = {
     }
   },
 
+  // The same write without joining the rendered list. `sortOrder` IS the list (getters.js:5), and it is the
+  // server that decides both whether a contact belongs in the current view — /contacts itself only returns
+  // contacts with an email, phone or identifier (Contact.resolved_contacts) — and where it sorts, since a new
+  // contact has no last_activity_at and the order is NULLS LAST. So a contact the client has just learned
+  // about goes into `records`, and the list is refreshed from the server rather than guessed at.
+  [types.SET_CONTACT_RECORD]: ($state, data) => {
+    $state.records[data.id] = {
+      ...($state.records[data.id] || {}),
+      ...data,
+    };
+  },
+
   [types.EDIT_CONTACT]: ($state, data) => {
     const existingAttachments = $state.records[data.id]?.attachments;
     $state.records[data.id] = existingAttachments

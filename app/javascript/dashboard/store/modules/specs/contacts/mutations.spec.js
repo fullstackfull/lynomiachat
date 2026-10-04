@@ -47,6 +47,44 @@ describe('#mutations', () => {
     });
   });
 
+  describe('#SET_CONTACT_RECORD', () => {
+    // The guard against a contact appearing in a list it does not belong to: the label page, a segment, a
+    // search, and /contacts itself are all server-filtered, so a created contact is cached by id only.
+    it('records the contact without joining the rendered list', () => {
+      const state = {
+        records: {
+          1: { id: 1, name: 'contact1', email: 'contact1@chatwoot.com' },
+        },
+        sortOrder: [1],
+      };
+
+      mutations[types.SET_CONTACT_RECORD](state, {
+        id: 2,
+        name: 'contact2',
+        labels: [],
+      });
+
+      expect(state.records[2]).toEqual({ id: 2, name: 'contact2', labels: [] });
+      expect(state.sortOrder).toEqual([1]);
+    });
+
+    it('merges into a contact the store already knows', () => {
+      const state = {
+        records: { 1: { id: 1, name: 'contact1', email: 'a@b.com' } },
+        sortOrder: [1],
+      };
+
+      mutations[types.SET_CONTACT_RECORD](state, { id: 1, name: 'renamed' });
+
+      expect(state.records[1]).toEqual({
+        id: 1,
+        name: 'renamed',
+        email: 'a@b.com',
+      });
+      expect(state.sortOrder).toEqual([1]);
+    });
+  });
+
   describe('#EDIT_CONTACT', () => {
     it('update contact', () => {
       const state = {

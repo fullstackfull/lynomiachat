@@ -8,10 +8,6 @@ import { useAdmin } from 'dashboard/composables/useAdmin';
 import { CONTACTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import filterQueryGenerator from 'dashboard/helper/filterQueryGenerator';
 import contactFilterItems from 'dashboard/routes/dashboard/contacts/contactFilterItems';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
 import countries from 'shared/constants/countries';
 import {
@@ -54,6 +50,7 @@ const emit = defineEmits([
   'search',
   'applyFilter',
   'clearFilters',
+  'contactCreated',
 ]);
 
 const { t } = useI18n();
@@ -98,27 +95,9 @@ const openCreateSegmentDialog = () => createSegmentDialogRef.value?.open();
 const openDeleteSegmentDialog = () =>
   deleteSegmentDialogRef.value?.dialogRef.open();
 
-const onCreate = async contact => {
-  try {
-    await store.dispatch('contacts/create', contact);
-    createNewContactDialogRef.value?.onSuccess();
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION.SUCCESS_MESSAGE')
-    );
-  } catch (error) {
-    const i18nPrefix = 'CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION';
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('email')) {
-        useAlert(t(`${i18nPrefix}.EMAIL_ADDRESS_DUPLICATE`));
-      } else if (error.data.includes('phone_number')) {
-        useAlert(t(`${i18nPrefix}.PHONE_NUMBER_DUPLICATE`));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t(`${i18nPrefix}.ERROR_MESSAGE`));
-    }
-  }
+// The dialog owns the create, the errors and the duplicate recovery; the list only needs to know it happened.
+const onCreated = contact => {
+  emit('contactCreated', contact);
 };
 
 const onImport = async file => {
@@ -418,7 +397,10 @@ defineExpose({
     </template>
   </ContactsHeader>
 
-  <CreateNewContactDialog ref="createNewContactDialogRef" @create="onCreate" />
+  <CreateNewContactDialog
+    ref="createNewContactDialogRef"
+    @created="onCreated"
+  />
   <ContactExportDialog ref="contactExportDialogRef" @export="onExport" />
   <ContactImportDialog ref="contactImportDialogRef" @import="onImport" />
   <CreateSegmentDialog ref="createSegmentDialogRef" @create="onCreateSegment" />

@@ -44,6 +44,12 @@ export const handleContactOperationErrors = error => {
       error.response.data.attributes
     );
     exception.message = error.response.data.message || exception.message;
+    // `message` joins every error with a comma, which cannot be split back onto attributes. The server also
+    // sends them keyed by attribute, which is what lets a form put each one next to its own field, and the
+    // validator that rejected each one, which is what lets the client tell "already taken" from "wrong
+    // format" on the same field and show its own localized sentence.
+    exception.fieldErrors = error.response.data.errors ?? {};
+    exception.fieldErrorTypes = error.response.data.error_types ?? {};
     throw exception;
   } else if (error.response?.data?.message) {
     throw new ExceptionWithMessage(error.response.data.message);
@@ -167,7 +173,11 @@ export const actions = {
       );
 
       AnalyticsHelper.track(CONTACTS_EVENTS.CREATE_CONTACT);
-      commit(types.SET_CONTACT_ITEM, response.data.payload.contact);
+      // Deliberately not SET_CONTACT_ITEM: appending the new id to `sortOrder` put it into whatever list was
+      // on screen without the server ever agreeing it belonged there — a label page it carried no label for,
+      // a segment it did not match, even /contacts itself, which only returns contacts that have an email,
+      // phone or identifier. The page refreshes the list from the server instead.
+      commit(types.SET_CONTACT_RECORD, response.data.payload.contact);
       commit(types.SET_CONTACT_UI_FLAG, { isCreating: false });
       return response.data.payload.contact;
     } catch (error) {

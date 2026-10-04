@@ -12940,6 +12940,16 @@
             "type": "object",
             "description": "An object where you can store custom attributes for contact. example {\"type\":\"customer\", \"age\":30}, this should have a valid custom attribute definition.",
             "example": {}
+          },
+          "labels": {
+            "type": "array",
+            "description": "Titles of labels to apply to the contact. Each must already exist in the account, otherwise the request is rejected.",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "vip"
+            ]
           }
         }
       },
@@ -14893,6 +14903,13 @@
                   "offline"
                 ],
                 "description": "Availability status of the user"
+              },
+              "labels": {
+                "type": "array",
+                "description": "Titles of the labels applied to the contact. Returned by the create endpoint.",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }

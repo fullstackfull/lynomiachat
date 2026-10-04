@@ -140,6 +140,17 @@ RSpec.describe Contacts::FilterService do
       expect(run.call(condition.call('conversation_labels', 'equal_to', ['refund']))).to contain_exactly(small)
     end
 
+    # The exact payload the "Has contacted us" / "Has never contacted us" audience presets build
+    # (docs/contacts/08-recipes-and-presets.md). Every status at once is how "a conversation at all" is asked,
+    # because this condition offers equality only.
+    it 'answers whether a contact has any conversation at all, over every status at once' do
+      statuses = %w[open pending resolved snoozed]
+      create(:conversation, account: account, inbox: inbox, contact: unread, status: :resolved)
+
+      expect(run.call(condition.call('conversation_status', 'equal_to', statuses))).to contain_exactly(buyer, small, unread)
+      expect(run.call(condition.call('conversation_status', 'not_equal_to', statuses))).to contain_exactly(nobody)
+    end
+
     it 'only sees the conversations the user may see' do
       found = described_class.new(account, agent, { payload: [condition.call('conversation_status', 'equal_to', ['open'])] }).perform[:contacts]
 

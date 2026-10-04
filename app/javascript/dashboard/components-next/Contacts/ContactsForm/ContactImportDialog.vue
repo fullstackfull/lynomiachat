@@ -315,6 +315,9 @@ defineExpose({ dialogRef, resetState });
             t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.NO_LABELS')
           "
         />
+        <p class="mb-0 text-xs text-n-slate-10">
+          {{ t('CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.LABELS_HINT') }}
+        </p>
       </div>
 
       <div class="grid gap-4 sm:grid-cols-2">

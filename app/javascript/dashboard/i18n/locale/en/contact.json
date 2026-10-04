@@ -398,7 +398,8 @@
           "ERRORS": {
             "NOT_A_CSV": "Choose a .csv file.",
             "PREVIEW_FAILED": "Could not check the file. Please try again."
-          }
+          },
+          "LABELS_HINT": "A label is a durable classification you keep: VIP, wholesale, needs follow-up. Membership that works itself out — recent buyers, open orders — belongs in an audience instead."
         },
         "EXPORT_CONTACT": {
           "TITLE": "Export contacts",

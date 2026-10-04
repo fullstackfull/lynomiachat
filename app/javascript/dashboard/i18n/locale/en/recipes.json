@@ -85,6 +85,14 @@
       "LINKED_COMMERCE_CUSTOMERS": {
         "NAME": "All linked customers",
         "DESCRIPTION": "Contacts linked to a customer in any connected store."
+      },
+      "CONTACTED_US": {
+        "NAME": "Has contacted us",
+        "DESCRIPTION": "Contacts who have at least one conversation, in any status. Membership is worked out fresh every time, so it is never out of date."
+      },
+      "NEVER_CONTACTED_US": {
+        "NAME": "Has never contacted us",
+        "DESCRIPTION": "Contacts with no conversation at all — the people an imported list is usually meant to reach."
       }
     },
     "FLOW": {

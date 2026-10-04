@@ -187,10 +187,7 @@ export function useBulkActions() {
 
       if (skippedCount > 0 && validIds.length === 0) {
         // All conversations have missing attributes
-        useAlert(
-          t('BULK_ACTION.RESOLVE.ALL_MISSING_ATTRIBUTES') ||
-            'Cannot resolve conversations due to missing required attributes'
-        );
+        useAlert(t('BULK_ACTION.RESOLVE.ALL_MISSING_ATTRIBUTES'));
         return;
       }
     }

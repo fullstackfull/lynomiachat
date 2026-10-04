@@ -26,6 +26,10 @@ const showEditPopup = ref(false);
 const showDeleteConfirmationPopup = ref(false);
 const selectedLabel = ref({});
 const searchQuery = ref('');
+// Empty on purpose: until a heading is clicked the rows keep the order the store returns, so the
+// default view is unchanged.
+const sortBy = ref('');
+const sortOrder = ref('asc');
 
 const records = computed(() => getters['labels/getLabels'].value);
 
@@ -38,6 +42,20 @@ const filteredRecords = computed(() => {
   ]);
 });
 const uiFlags = computed(() => getters['labels/getUIFlags'].value);
+
+const sortedRecords = computed(() => {
+  if (!sortBy.value) return filteredRecords.value;
+  const direction = sortOrder.value === 'asc' ? 1 : -1;
+  // Copy first: with an empty search box `filteredRecords` is the store's own array by reference.
+  return [...filteredRecords.value].sort(
+    (a, b) => a.title.localeCompare(b.title) * direction
+  );
+});
+
+const handleSort = ({ key, order }) => {
+  sortBy.value = key;
+  sortOrder.value = order;
+};
 
 const deleteMessage = computed(() => ` ${selectedLabel.value.title}?`);
 
@@ -83,6 +101,11 @@ const confirmDeletion = () => {
   deleteLabel(selectedLabel.value.id);
 };
 
+// Index-aligned with `tableHeaders`: only the name can be sorted client-side from what the page holds.
+// The colour column keeps its swatch at every width and drops only the hex text below `sm`, which is
+// the one datum the swatch already carries — so no column needs hiding here.
+const SORTABLE_COLUMNS = ['title', null, null, null];
+
 const tableHeaders = computed(() => {
   return [
     t('LABEL_MGMT.LIST.TABLE_HEADER.NAME'),
@@ -99,9 +122,7 @@ onBeforeMount(() => {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('LABEL_MGMT.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!uiFlags.isFetching && !records.length"
     :no-records-message="$t('LABEL_MGMT.LIST.404')"
   >
     <template #header>
@@ -129,11 +150,19 @@ onBeforeMount(() => {
     </template>
     <template #body>
       <BaseTable
+        sticky-header
         :headers="tableHeaders"
-        :items="filteredRecords"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching"
+        :loading-message="$t('LABEL_MGMT.LOADING')"
+        :sortable-columns="SORTABLE_COLUMNS"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="
           searchQuery ? $t('LABEL_MGMT.NO_RESULTS') : $t('LABEL_MGMT.LIST.404')
         "
+        @sort="handleSort"
       >
         <template #row="{ items }">
           <BaseTableRow v-for="label in items" :key="label.title" :item="label">
@@ -151,12 +180,12 @@ onBeforeMount(() => {
               </BaseTableCell>
 
               <BaseTableCell>
-                <div class="flex items-center">
+                <div class="flex items-center gap-2">
                   <span
-                    class="w-4 h-4 ltr:mr-2 rtl:ml-2 border border-solid rounded border-n-weak"
+                    class="w-4 h-4 border border-solid rounded border-n-weak"
                     :style="{ backgroundColor: label.color }"
                   />
-                  <span class="text-body-main text-n-slate-12">
+                  <span class="hidden sm:inline text-body-main text-n-slate-12">
                     {{ label.color }}
                   </span>
                 </div>

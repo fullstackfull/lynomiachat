@@ -27,10 +27,12 @@ defineProps({
   <div class="flex flex-col gap-3 p-5 group bg-n-solid-1">
     <div class="flex items-center gap-1.5">
       <span class="text-sm font-medium text-n-slate-11">{{ label }}</span>
-      <span
+      <button
         v-if="hint"
         v-tooltip="hint"
-        class="transition-opacity opacity-0 cursor-help i-lucide-info size-3.5 text-n-slate-10 group-hover:opacity-100"
+        type="button"
+        :aria-label="hint"
+        class="i-lucide-info size-3.5 p-1 -m-1 text-n-slate-10 focus-ring rounded-control"
       />
     </div>
     <div v-if="loading" class="flex items-end justify-between gap-2">

@@ -464,10 +464,18 @@ Severity: medium. `ResolveAction.vue:184-212` renders Resolve/Reopen/Open as
 action on the surface is indistinguishable from its neighbours, while the composer's Send
 button one panel below is `color="blue"` (`ReplyBottomPanel.vue:415`).
 
-**H4 — Priority icons are rendered at the lowest usable contrast step.** Severity: medium.
-`CardPriorityIcon.vue:61` applies `text-n-slate-5` unconditionally — including to urgent. In
-the condensed card the priority indicator sits at `!size-3.5`
-(`ConversationCard.vue:177`), i.e. a 14px glyph at slate-5, next to a 12px timestamp.
+**H4 — WITHDRAWN. Not a defect as written; the real one is next to it.** The claim was that
+`CardPriorityIcon.vue:61`'s unconditional `text-n-slate-5` renders urgent at the lowest
+contrast step. It does not: every priority glyph but `priority-empty` carries its own hard-coded
+`fill` in `theme/icons.js` (`priority-urgent` `#e5484d`, `priority-high`/`-medium`/`-low`
+`#ffc53d` over `#e4e4e9`), so the text colour only ever tinted the empty placeholder. Changing
+the class is a no-op for real priorities and was reverted.
+
+The defect those lines do have is that the fills are raw hex outside the token system with no
+dark-mode form (`theme/icons.js:216-250`, status and priority both), so the status and priority
+columns do not re-tone in dark mode while everything around them does. Recorded in
+`findings/deferred.md`; it belongs in the icon set, not in the component. The condensed card's
+`!size-3.5` (`ConversationCard.vue:177`) stands as written.
 
 **H5 — Two different colours mean "unread".** Severity: low. The card badge is
 `bg-n-teal-9` (`UnreadBadge.vue:20`); the in-thread divider for the same count is

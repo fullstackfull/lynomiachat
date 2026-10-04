@@ -7,14 +7,22 @@ class Contacts::BulkActionService
 
   def perform
     return delete_contacts if delete_requested?
-    return assign_labels if labels_to_add.any?
-    return remove_labels if labels_to_remove.any?
+    return label_results if labels_to_add.any? || labels_to_remove.any?
 
     Rails.logger.warn("Unknown contact bulk operation payload: #{@params.keys}")
     { success: false, error: 'unknown_operation' }
   end
 
   private
+
+  # Removals before additions, as the conversation bulk job does, so a payload that moves a contact from one label
+  # to another lands on the added one. A payload carrying both used to apply only the additions, because this
+  # returned on the first match.
+  def label_results
+    removed = labels_to_remove.any? ? remove_labels : nil
+    added = labels_to_add.any? ? assign_labels : nil
+    added || removed
+  end
 
   def assign_labels
     Contacts::BulkAssignLabelsService.new(

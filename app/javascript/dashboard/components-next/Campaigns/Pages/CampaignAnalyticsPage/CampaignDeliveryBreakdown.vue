@@ -86,7 +86,7 @@ const deliveryRate = computed(() =>
 
 <template>
   <div
-    class="flex flex-col gap-4 p-5 border rounded-xl bg-n-solid-1 border-n-weak"
+    class="flex flex-col gap-4 p-5 border rounded-overlay bg-n-solid-1 border-n-weak"
   >
     <div class="flex items-center justify-between gap-3">
       <span class="text-sm font-medium text-n-slate-12">

@@ -7,7 +7,7 @@ import { useStore, useMapGetter } from 'dashboard/composables/store';
 import Editor from 'dashboard/components-next/Editor/Editor.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import ContactNoteItem from 'next/Contacts/ContactsSidebar/components/ContactNoteItem.vue';
-import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 
 const props = defineProps({
   contactId: { type: [String, Number], required: true },
@@ -111,13 +111,26 @@ watch(
 
     <div
       v-if="isFetchingNotes"
-      class="flex items-center justify-center py-8 text-n-slate-11"
+      class="flex flex-col gap-4 px-4 py-4"
+      role="status"
+      aria-busy="true"
     >
-      <Spinner />
+      <span class="sr-only">
+        {{ t('CONTACTS_LAYOUT.SIDEBAR.NOTES.LOADING') }}
+      </span>
+      <div
+        v-for="row in 3"
+        :key="`note-skeleton-${row}`"
+        class="flex flex-col gap-2"
+        aria-hidden="true"
+      >
+        <Skeleton width="w-32" height="h-3" />
+        <Skeleton width="w-full" height="h-3" />
+      </div>
     </div>
     <div
       v-else-if="notes.length"
-      class="flex flex-col max-h-[300px] overflow-y-auto"
+      class="flex flex-col max-h-[18.75rem] overflow-y-auto overscroll-contain"
     >
       <ContactNoteItem
         v-for="note in notes"

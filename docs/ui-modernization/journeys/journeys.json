@@ -1,0 +1,1700 @@
+{
+  "runs": [
+    {
+      "id": "J1",
+      "title": "Reach every Settings destination from the sidebar, by keyboard",
+      "context": "en-desktop",
+      "surface": "sidebar",
+      "outcome": 20
+    },
+    {
+      "id": "J1",
+      "title": "Reach every Settings destination from the sidebar, by keyboard",
+      "context": "ar-desktop",
+      "surface": "sidebar",
+      "outcome": 20
+    },
+    {
+      "id": "J1",
+      "title": "Reach every Settings destination from the sidebar, by keyboard",
+      "context": "en-390px",
+      "surface": "sidebar",
+      "outcome": 20
+    },
+    {
+      "id": "J1",
+      "title": "Reach every Settings destination from the sidebar, by keyboard",
+      "context": "ar-390px",
+      "surface": "sidebar",
+      "outcome": 20
+    },
+    {
+      "id": "J2",
+      "title": "Filter and sort the conversation list",
+      "context": "en-desktop",
+      "surface": "conversation-list-header",
+      "outcome": 3
+    },
+    {
+      "id": "J2",
+      "title": "Filter and sort the conversation list",
+      "context": "ar-desktop",
+      "surface": "conversation-list-header",
+      "outcome": 3
+    },
+    {
+      "id": "J2",
+      "title": "Filter and sort the conversation list",
+      "context": "en-390px",
+      "surface": "conversation-list-header",
+      "outcome": 2
+    },
+    {
+      "id": "J2",
+      "title": "Filter and sort the conversation list",
+      "context": "ar-390px",
+      "surface": "conversation-list-header",
+      "outcome": 2
+    },
+    {
+      "id": "J3",
+      "title": "Act on a conversation from its row menu",
+      "context": "en-desktop",
+      "surface": "conversation-context-menu",
+      "outcome": 11
+    },
+    {
+      "id": "J3",
+      "title": "Act on a conversation from its row menu",
+      "context": "ar-desktop",
+      "surface": "conversation-context-menu",
+      "outcome": 11
+    },
+    {
+      "id": "J3",
+      "title": "Act on a conversation from its row menu",
+      "context": "en-390px",
+      "surface": "conversation-context-menu",
+      "outcome": 11
+    },
+    {
+      "id": "J3",
+      "title": "Act on a conversation from its row menu",
+      "context": "ar-390px",
+      "surface": "conversation-context-menu",
+      "outcome": 11
+    },
+    {
+      "id": "J4",
+      "title": "Reach a bulk action after selecting conversations",
+      "context": "en-desktop",
+      "surface": "conversation-bulk-actions",
+      "outcome": 6
+    },
+    {
+      "id": "J4",
+      "title": "Reach a bulk action after selecting conversations",
+      "context": "ar-desktop",
+      "surface": "conversation-bulk-actions",
+      "outcome": 6
+    },
+    {
+      "id": "J4",
+      "title": "Reach a bulk action after selecting conversations",
+      "context": "en-390px",
+      "surface": "conversation-bulk-actions",
+      "outcome": 6
+    },
+    {
+      "id": "J4",
+      "title": "Reach a bulk action after selecting conversations",
+      "context": "ar-390px",
+      "surface": "conversation-bulk-actions",
+      "outcome": 6
+    },
+    {
+      "id": "J5",
+      "title": "Resolve a conversation with its status options",
+      "context": "en-desktop",
+      "surface": "conversation-header",
+      "outcome": 2
+    },
+    {
+      "id": "J5",
+      "title": "Resolve a conversation with its status options",
+      "context": "ar-desktop",
+      "surface": "conversation-header",
+      "outcome": 2
+    },
+    {
+      "id": "J5",
+      "title": "Resolve a conversation with its status options",
+      "context": "en-390px",
+      "surface": "conversation-header",
+      "outcome": 2
+    },
+    {
+      "id": "J5",
+      "title": "Resolve a conversation with its status options",
+      "context": "ar-390px",
+      "surface": "conversation-header",
+      "outcome": 2
+    },
+    {
+      "id": "J6",
+      "title": "Start a WhatsApp campaign",
+      "context": "en-desktop",
+      "surface": "campaigns-whatsapp",
+      "outcome": 6
+    },
+    {
+      "id": "J6",
+      "title": "Start a WhatsApp campaign",
+      "context": "ar-desktop",
+      "surface": "campaigns-whatsapp",
+      "outcome": 6
+    },
+    {
+      "id": "J6",
+      "title": "Start a WhatsApp campaign",
+      "context": "en-390px",
+      "surface": "campaigns-whatsapp",
+      "outcome": 6
+    },
+    {
+      "id": "J6",
+      "title": "Start a WhatsApp campaign",
+      "context": "ar-390px",
+      "surface": "campaigns-whatsapp",
+      "outcome": 6
+    },
+    {
+      "id": "J7",
+      "title": "Read a campaign’s delivery analytics",
+      "context": "en-desktop",
+      "surface": "campaigns-whatsapp-analytics",
+      "outcome": 3
+    },
+    {
+      "id": "J7",
+      "title": "Read a campaign’s delivery analytics",
+      "context": "ar-desktop",
+      "surface": "campaigns-whatsapp-analytics",
+      "outcome": 3
+    },
+    {
+      "id": "J7",
+      "title": "Read a campaign’s delivery analytics",
+      "context": "en-390px",
+      "surface": "campaigns-whatsapp-analytics",
+      "outcome": 3
+    },
+    {
+      "id": "J7",
+      "title": "Read a campaign’s delivery analytics",
+      "context": "ar-390px",
+      "surface": "campaigns-whatsapp-analytics",
+      "outcome": 3
+    },
+    {
+      "id": "J8",
+      "title": "Add the first webhook from the empty state",
+      "context": "en-desktop",
+      "surface": "webhooks-list-empty",
+      "outcome": 13
+    },
+    {
+      "id": "J8",
+      "title": "Add the first webhook from the empty state",
+      "context": "ar-desktop",
+      "surface": "webhooks-list-empty",
+      "outcome": 13
+    },
+    {
+      "id": "J8",
+      "title": "Add the first webhook from the empty state",
+      "context": "en-390px",
+      "surface": "webhooks-list-empty",
+      "outcome": 13
+    },
+    {
+      "id": "J8",
+      "title": "Add the first webhook from the empty state",
+      "context": "ar-390px",
+      "surface": "webhooks-list-empty",
+      "outcome": 13
+    },
+    {
+      "id": "J9",
+      "title": "Narrow the audit log to a date range",
+      "context": "en-desktop",
+      "surface": "auditlogs-list",
+      "outcome": 20
+    },
+    {
+      "id": "J9",
+      "title": "Narrow the audit log to a date range",
+      "context": "ar-desktop",
+      "surface": "auditlogs-list",
+      "outcome": 20
+    },
+    {
+      "id": "J9",
+      "title": "Narrow the audit log to a date range",
+      "context": "en-390px",
+      "surface": "auditlogs-list",
+      "outcome": 20
+    },
+    {
+      "id": "J9",
+      "title": "Narrow the audit log to a date range",
+      "context": "ar-390px",
+      "surface": "auditlogs-list",
+      "outcome": 20
+    },
+    {
+      "id": "J10",
+      "title": "Reach every contact-panel section as a control",
+      "context": "en-desktop",
+      "surface": "conversation-panel",
+      "outcome": 13
+    },
+    {
+      "id": "J10",
+      "title": "Reach every contact-panel section as a control",
+      "context": "ar-desktop",
+      "surface": "conversation-panel",
+      "outcome": 13
+    },
+    {
+      "id": "J10",
+      "title": "Reach every contact-panel section as a control",
+      "context": "en-390px",
+      "surface": "conversation-panel",
+      "outcome": 13
+    },
+    {
+      "id": "J10",
+      "title": "Reach every contact-panel section as a control",
+      "context": "ar-390px",
+      "surface": "conversation-panel",
+      "outcome": 13
+    }
+  ],
+  "checks": [
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: the Settings group header is a control",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: Enter reveals the settings destinations",
+      "pass": true,
+      "detail": "13 -> 33"
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: the header announces that it is open",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: every destination announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J1 (en-desktop)",
+      "name": "J1: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: the Settings group header is a control",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: Enter reveals the settings destinations",
+      "pass": true,
+      "detail": "13 -> 33"
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: the header announces that it is open",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: every destination announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J1 (ar-desktop)",
+      "name": "J1: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: the Settings group header is a control",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: Enter reveals the settings destinations",
+      "pass": true,
+      "detail": "12 -> 32"
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: the header announces that it is open",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: every destination announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J1 (en-390px)",
+      "name": "J1: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: the Settings group header is a control",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: Enter reveals the settings destinations",
+      "pass": true,
+      "detail": "12 -> 32"
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: the header announces that it is open",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: every destination announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J1 (ar-390px)",
+      "name": "J1: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J2 (en-desktop)",
+      "name": "J2: filter, sort and layout are all present and named",
+      "pass": true,
+      "detail": "Filter conversations | Sort conversations | Switch the layout"
+    },
+    {
+      "run": "J2 (en-desktop)",
+      "name": "J2: every list control takes keyboard focus",
+      "pass": true,
+      "detail": "3 of 3"
+    },
+    {
+      "run": "J2 (en-desktop)",
+      "name": "J2: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J2 (en-desktop)",
+      "name": "J2: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J2 (en-desktop)",
+      "name": "J2: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J2 (ar-desktop)",
+      "name": "J2: filter, sort and layout are all present and named",
+      "pass": true,
+      "detail": "تصفية المحادثات | ترتيب المحادثات | تبديل التصميم"
+    },
+    {
+      "run": "J2 (ar-desktop)",
+      "name": "J2: every list control takes keyboard focus",
+      "pass": true,
+      "detail": "3 of 3"
+    },
+    {
+      "run": "J2 (ar-desktop)",
+      "name": "J2: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J2 (ar-desktop)",
+      "name": "J2: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J2 (ar-desktop)",
+      "name": "J2: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J2 (en-390px)",
+      "name": "J2: filter, sort and layout are all present and named",
+      "pass": true,
+      "detail": "Filter conversations | Sort conversations"
+    },
+    {
+      "run": "J2 (en-390px)",
+      "name": "J2: every list control takes keyboard focus",
+      "pass": true,
+      "detail": "2 of 2"
+    },
+    {
+      "run": "J2 (en-390px)",
+      "name": "J2: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J2 (en-390px)",
+      "name": "J2: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J2 (en-390px)",
+      "name": "J2: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J2 (ar-390px)",
+      "name": "J2: filter, sort and layout are all present and named",
+      "pass": true,
+      "detail": "تصفية المحادثات | ترتيب المحادثات"
+    },
+    {
+      "run": "J2 (ar-390px)",
+      "name": "J2: every list control takes keyboard focus",
+      "pass": true,
+      "detail": "2 of 2"
+    },
+    {
+      "run": "J2 (ar-390px)",
+      "name": "J2: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J2 (ar-390px)",
+      "name": "J2: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J2 (ar-390px)",
+      "name": "J2: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: the row menu offers its full set of actions",
+      "pass": true,
+      "detail": "11: Mark as read | Mark as resolved | Mark as pending | Snooze | Priority | Assign label | Assign agent | Assign team | Open in new tab | Copy conversation link | Delete conv"
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: every menu action announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: every menu action takes keyboard focus",
+      "pass": true,
+      "detail": "11 of 11"
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J3 (en-desktop)",
+      "name": "J3: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: the row menu offers its full set of actions",
+      "pass": true,
+      "detail": "11: تحديد كمقروء | تحديد كمحلولة | تحديد كمعلق | تأجيل | الأولوية | إضافة وسم | تعيين وكيل | تعيين فريق | Open in new tab | Copy conversation link | Delete conversation"
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: every menu action announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: every menu action takes keyboard focus",
+      "pass": true,
+      "detail": "11 of 11"
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J3 (ar-desktop)",
+      "name": "J3: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: the row menu offers its full set of actions",
+      "pass": true,
+      "detail": "11: Mark as read | Mark as resolved | Mark as pending | Snooze | Priority | Assign label | Assign agent | Assign team | Open in new tab | Copy conversation link | Delete conv"
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: every menu action announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: every menu action takes keyboard focus",
+      "pass": true,
+      "detail": "11 of 11"
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J3 (en-390px)",
+      "name": "J3: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: the row menu offers its full set of actions",
+      "pass": true,
+      "detail": "11: تحديد كمقروء | تحديد كمحلولة | تحديد كمعلق | تأجيل | الأولوية | إضافة وسم | تعيين وكيل | تعيين فريق | Open in new tab | Copy conversation link | Delete conversation"
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: every menu action announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: every menu action takes keyboard focus",
+      "pass": true,
+      "detail": "11 of 11"
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J3 (ar-390px)",
+      "name": "J3: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J4 (en-desktop)",
+      "name": "J4: the bulk bar carries its selection state and its actions",
+      "pass": true,
+      "detail": "6: Clear | Assign labels | Remove labels | Change status | Assign agent | Assign team"
+    },
+    {
+      "run": "J4 (en-desktop)",
+      "name": "J4: every bulk control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (en-desktop)",
+      "name": "J4: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (en-desktop)",
+      "name": "J4: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J4 (en-desktop)",
+      "name": "J4: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J4 (ar-desktop)",
+      "name": "J4: the bulk bar carries its selection state and its actions",
+      "pass": true,
+      "detail": "6: مسح | إضافة وسم | Remove labels | تغيير الحالة | تعيين وكيل | تعيين فريق"
+    },
+    {
+      "run": "J4 (ar-desktop)",
+      "name": "J4: every bulk control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (ar-desktop)",
+      "name": "J4: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (ar-desktop)",
+      "name": "J4: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J4 (ar-desktop)",
+      "name": "J4: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J4 (en-390px)",
+      "name": "J4: the bulk bar carries its selection state and its actions",
+      "pass": true,
+      "detail": "6: Clear | Assign labels | Remove labels | Change status | Assign agent | Assign team"
+    },
+    {
+      "run": "J4 (en-390px)",
+      "name": "J4: every bulk control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (en-390px)",
+      "name": "J4: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (en-390px)",
+      "name": "J4: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J4 (en-390px)",
+      "name": "J4: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J4 (ar-390px)",
+      "name": "J4: the bulk bar carries its selection state and its actions",
+      "pass": true,
+      "detail": "6: مسح | إضافة وسم | Remove labels | تغيير الحالة | تعيين وكيل | تعيين فريق"
+    },
+    {
+      "run": "J4 (ar-390px)",
+      "name": "J4: every bulk control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (ar-390px)",
+      "name": "J4: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J4 (ar-390px)",
+      "name": "J4: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J4 (ar-390px)",
+      "name": "J4: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: the status menu has a named trigger",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: the status options open",
+      "pass": true,
+      "detail": "Back/Copy conversation ID/Resolve/More status actions/More actions/Block Contact/Send Transcript -> Back/Copy conversation ID/Resolve/More status actions/Snooze/Mark as pending/More actions"
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: the options that open are named",
+      "pass": true,
+      "detail": "Snooze, Mark as pending"
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J5 (en-desktop)",
+      "name": "J5: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: the status menu has a named trigger",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: the status options open",
+      "pass": true,
+      "detail": "العودة/Copy conversation ID/حل المحادثة/More status actions/More actions/احجب جهة الاتصال/إرسال النص -> العودة/Copy conversation ID/حل المحادثة/More status actions/غفوة/تحديد كمعلق/More actions"
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: the options that open are named",
+      "pass": true,
+      "detail": "غفوة, تحديد كمعلق"
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J5 (ar-desktop)",
+      "name": "J5: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: the status menu has a named trigger",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: the status options open",
+      "pass": true,
+      "detail": "Back/Copy conversation ID/Resolve/More status actions/More actions/Block Contact/Send Transcript -> Back/Copy conversation ID/Resolve/More status actions/Snooze/Mark as pending/More actions"
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: the options that open are named",
+      "pass": true,
+      "detail": "Snooze, Mark as pending"
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J5 (en-390px)",
+      "name": "J5: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: the status menu has a named trigger",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: the status options open",
+      "pass": true,
+      "detail": "العودة/Copy conversation ID/حل المحادثة/More status actions/More actions/احجب جهة الاتصال/إرسال النص -> العودة/Copy conversation ID/حل المحادثة/More status actions/غفوة/تحديد كمعلق/More actions"
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: the options that open are named",
+      "pass": true,
+      "detail": "غفوة, تحديد كمعلق"
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J5 (ar-390px)",
+      "name": "J5: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J6 (en-desktop)",
+      "name": "J6: the page offers its primary action",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J6 (en-desktop)",
+      "name": "J6: the create panel opens with its fields",
+      "pass": true,
+      "detail": "6 fields"
+    },
+    {
+      "run": "J6 (en-desktop)",
+      "name": "J6: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J6 (en-desktop)",
+      "name": "J6: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J6 (en-desktop)",
+      "name": "J6: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J6 (ar-desktop)",
+      "name": "J6: the page offers its primary action",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J6 (ar-desktop)",
+      "name": "J6: the create panel opens with its fields",
+      "pass": true,
+      "detail": "6 fields"
+    },
+    {
+      "run": "J6 (ar-desktop)",
+      "name": "J6: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J6 (ar-desktop)",
+      "name": "J6: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J6 (ar-desktop)",
+      "name": "J6: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J6 (en-390px)",
+      "name": "J6: the page offers its primary action",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J6 (en-390px)",
+      "name": "J6: the create panel opens with its fields",
+      "pass": true,
+      "detail": "6 fields"
+    },
+    {
+      "run": "J6 (en-390px)",
+      "name": "J6: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J6 (en-390px)",
+      "name": "J6: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J6 (en-390px)",
+      "name": "J6: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J6 (ar-390px)",
+      "name": "J6: the page offers its primary action",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J6 (ar-390px)",
+      "name": "J6: the create panel opens with its fields",
+      "pass": true,
+      "detail": "6 fields"
+    },
+    {
+      "run": "J6 (ar-390px)",
+      "name": "J6: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J6 (ar-390px)",
+      "name": "J6: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J6 (ar-390px)",
+      "name": "J6: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: the delivery tiles render numbers, not an error",
+      "pass": true,
+      "detail": "Campaigns WhatsApp Eid announcement WhatsApp Sent on Oct 20, 9:00 AM Audience 240 Submitted to WhatsApp 207 86"
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: the status breakdown is offered as filters",
+      "pass": true,
+      "detail": "All (240), Awaiting delivery update (36), Delivered (53), Read (118), Failed (9), Skipped (12)"
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: the recipient rows render",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J7 (en-desktop)",
+      "name": "J7: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: the delivery tiles render numbers, not an error",
+      "pass": true,
+      "detail": "الحملات واتساب Eid announcement WhatsApp Sent on Oct 20, 9:00 AM الجمهور 240 Submitted to WhatsApp 207 86% of "
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: the status breakdown is offered as filters",
+      "pass": true,
+      "detail": "الكل (240), Awaiting delivery update (36), Delivered (53), قراءة (118), Failed (9), Skipped (12)"
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: the recipient rows render",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J7 (ar-desktop)",
+      "name": "J7: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: the delivery tiles render numbers, not an error",
+      "pass": true,
+      "detail": "Campaigns WhatsApp Eid announcement WhatsApp Sent on Oct 20, 9:00 AM Audience 240 Submitted to WhatsApp 207 86"
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: the status breakdown is offered as filters",
+      "pass": true,
+      "detail": "All (240), Awaiting delivery update (36), Delivered (53), Read (118), Failed (9), Skipped (12)"
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: the recipient rows render",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J7 (en-390px)",
+      "name": "J7: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: the delivery tiles render numbers, not an error",
+      "pass": true,
+      "detail": "الحملات واتساب Eid announcement WhatsApp Sent on Oct 20, 9:00 AM الجمهور 240 Submitted to WhatsApp 207 86% of "
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: the status breakdown is offered as filters",
+      "pass": true,
+      "detail": "الكل (240), Awaiting delivery update (36), Delivered (53), قراءة (118), Failed (9), Skipped (12)"
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: the recipient rows render",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J7 (ar-390px)",
+      "name": "J7: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J8 (en-desktop)",
+      "name": "J8: the empty state offers the action that fills it",
+      "pass": true,
+      "detail": "Integrations · Learn more about webhooks · Search webhooks... · Add new webhook · Add new webhook"
+    },
+    {
+      "run": "J8 (en-desktop)",
+      "name": "J8: the add dialog opens",
+      "pass": true,
+      "detail": "13 fields"
+    },
+    {
+      "run": "J8 (en-desktop)",
+      "name": "J8: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J8 (en-desktop)",
+      "name": "J8: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J8 (en-desktop)",
+      "name": "J8: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J8 (ar-desktop)",
+      "name": "J8: the empty state offers the action that fills it",
+      "pass": true,
+      "detail": "خيارات الربط · Learn more about webhooks · Search webhooks... · إضافة webhook جديد · إضافة webhook جديد"
+    },
+    {
+      "run": "J8 (ar-desktop)",
+      "name": "J8: the add dialog opens",
+      "pass": true,
+      "detail": "13 fields"
+    },
+    {
+      "run": "J8 (ar-desktop)",
+      "name": "J8: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J8 (ar-desktop)",
+      "name": "J8: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J8 (ar-desktop)",
+      "name": "J8: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J8 (en-390px)",
+      "name": "J8: the empty state offers the action that fills it",
+      "pass": true,
+      "detail": "Integrations · Learn more about webhooks · Search webhooks... · Add new webhook · Add new webhook"
+    },
+    {
+      "run": "J8 (en-390px)",
+      "name": "J8: the add dialog opens",
+      "pass": true,
+      "detail": "13 fields"
+    },
+    {
+      "run": "J8 (en-390px)",
+      "name": "J8: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J8 (en-390px)",
+      "name": "J8: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J8 (en-390px)",
+      "name": "J8: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J8 (ar-390px)",
+      "name": "J8: the empty state offers the action that fills it",
+      "pass": true,
+      "detail": "خيارات الربط · Learn more about webhooks · Search webhooks... · إضافة webhook جديد · إضافة webhook جديد"
+    },
+    {
+      "run": "J8 (ar-390px)",
+      "name": "J8: the add dialog opens",
+      "pass": true,
+      "detail": "13 fields"
+    },
+    {
+      "run": "J8 (ar-390px)",
+      "name": "J8: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J8 (ar-390px)",
+      "name": "J8: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J8 (ar-390px)",
+      "name": "J8: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: the filter bar offers a date range",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: the date picker opens",
+      "pass": true,
+      "detail": "10 -> 30"
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: its navigation arrows announce what they do",
+      "pass": true,
+      "detail": "Show earlier dates, Show later dates, Show earlier dates, Show later dates"
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: every control in the picker is named",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J9 (en-desktop)",
+      "name": "J9: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: the filter bar offers a date range",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: the date picker opens",
+      "pass": true,
+      "detail": "10 -> 30"
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: its navigation arrows announce what they do",
+      "pass": true,
+      "detail": "Show earlier dates, Show later dates, Show earlier dates, Show later dates"
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: every control in the picker is named",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J9 (ar-desktop)",
+      "name": "J9: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: the filter bar offers a date range",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: the date picker opens",
+      "pass": true,
+      "detail": "10 -> 30"
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: its navigation arrows announce what they do",
+      "pass": true,
+      "detail": "Show earlier dates, Show later dates, Show earlier dates, Show later dates"
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: every control in the picker is named",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J9 (en-390px)",
+      "name": "J9: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: the filter bar offers a date range",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: the date picker opens",
+      "pass": true,
+      "detail": "10 -> 30"
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: its navigation arrows announce what they do",
+      "pass": true,
+      "detail": "Show earlier dates, Show later dates, Show earlier dates, Show later dates"
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: every control in the picker is named",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J9 (ar-390px)",
+      "name": "J9: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: the panel sections are controls that announce their state",
+      "pass": true,
+      "detail": "13"
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: every control in the panel announces a name",
+      "pass": true,
+      "detail": "54 controls"
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: every section header takes keyboard focus",
+      "pass": true,
+      "detail": "13 of 13"
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J10 (en-desktop)",
+      "name": "J10: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: the panel sections are controls that announce their state",
+      "pass": true,
+      "detail": "13"
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: every control in the panel announces a name",
+      "pass": true,
+      "detail": "54 controls"
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: every section header takes keyboard focus",
+      "pass": true,
+      "detail": "13 of 13"
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J10 (ar-desktop)",
+      "name": "J10: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: the panel sections are controls that announce their state",
+      "pass": true,
+      "detail": "13"
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: every control in the panel announces a name",
+      "pass": true,
+      "detail": "54 controls"
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: every section header takes keyboard focus",
+      "pass": true,
+      "detail": "13 of 13"
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J10 (en-390px)",
+      "name": "J10: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: the panel sections are controls that announce their state",
+      "pass": true,
+      "detail": "13"
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: every control in the panel announces a name",
+      "pass": true,
+      "detail": "54 controls"
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: every section header takes keyboard focus",
+      "pass": true,
+      "detail": "13 of 13"
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J10 (ar-390px)",
+      "name": "J10: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    }
+  ],
+  "shots": [
+    "J1-en-desktop.png",
+    "J1-ar-desktop.png",
+    "J2-en-desktop.png",
+    "J2-ar-desktop.png",
+    "J3-en-desktop.png",
+    "J3-ar-desktop.png",
+    "J4-en-desktop.png",
+    "J4-ar-desktop.png",
+    "J5-en-desktop.png",
+    "J5-ar-desktop.png",
+    "J6-en-desktop.png",
+    "J6-ar-desktop.png",
+    "J7-en-desktop.png",
+    "J7-ar-desktop.png",
+    "J8-en-desktop.png",
+    "J8-ar-desktop.png",
+    "J9-en-desktop.png",
+    "J9-ar-desktop.png",
+    "J10-en-desktop.png",
+    "J10-ar-desktop.png"
+  ]
+}

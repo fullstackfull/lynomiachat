@@ -124,7 +124,7 @@ const linkIssue = async () => {
           :input-placeholder="$t('INTEGRATION_SETTINGS.LINEAR.LINK.SEARCH')"
           :loading-placeholder="$t('INTEGRATION_SETTINGS.LINEAR.LINK.LOADING')"
           enable-search
-          class="left-0 flex flex-col w-full overflow-y-auto h-fit !max-h-[160px] md:left-auto md:right-0 top-10"
+          class="left-0 flex flex-col w-full overflow-y-auto h-fit !max-h-[160px] md:start-auto md:right-0 top-10"
           @on-search="onSearch"
           @select="onSelectIssue"
         />

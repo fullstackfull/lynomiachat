@@ -1,5 +1,5 @@
 <script setup>
-import { useSlots } from 'vue';
+import { computed, useSlots } from 'vue';
 import CustomBrandPolicyWrapper from 'dashboard/components/CustomBrandPolicyWrapper.vue';
 import { getHelpUrlForFeature } from '../../../../helper/featureHelper';
 import BackButton from '../../../../components/widgets/BackButton.vue';
@@ -37,7 +37,9 @@ const slots = useSlots();
 
 const searchQuery = defineModel('searchQuery', { type: String, default: '' });
 
-const helpURL = getHelpUrlForFeature(props.featureName);
+// Reactive: several pages bind `featureName` to data that arrives after setup, and a one-shot read
+// left those pages permanently without their help link.
+const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
 </script>
 
 <template>
@@ -60,7 +62,10 @@ const helpURL = getHelpUrlForFeature(props.featureName);
     </div>
     <div
       v-if="
-        description || $slots.description || linkText || helpURL || $slots.meta
+        description ||
+        $slots.description ||
+        (linkText && helpURL) ||
+        $slots.meta
       "
       class="flex flex-col w-full gap-1.5 text-n-slate-11"
     >
@@ -76,7 +81,7 @@ const helpURL = getHelpUrlForFeature(props.featureName);
           :href="helpURL"
           target="_blank"
           rel="noopener noreferrer"
-          class="items-center hidden gap-1 text-sm font-medium sm:inline-flex w-fit text-n-blue-11 hover:underline mb-2"
+          class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-blue-11 hover:underline mb-2"
         >
           {{ linkText }}
           <Icon
@@ -90,21 +95,18 @@ const helpURL = getHelpUrlForFeature(props.featureName);
   </div>
   <div
     v-if="searchPlaceholder || slots.actions || slots.tabs"
-    class="gap-3 flex flex-wrap sm:flex-nowrap justify-between sm:mt-4 min-w-0"
+    class="gap-3 flex flex-wrap sm:flex-nowrap justify-between mt-3 sm:mt-4 min-w-0"
   >
     <div
       v-if="slots.tabs || searchPlaceholder"
-      class="flex items-center gap-3 min-w-0"
-      :class="{
-        'hidden sm:flex': !slots.tabs,
-      }"
+      class="flex items-center gap-3 min-w-0 w-full sm:w-auto"
     >
       <slot name="tabs" />
       <Input
         v-if="searchPlaceholder"
         v-model="searchQuery"
         :placeholder="searchPlaceholder"
-        class="group w-56 min-w-0 hidden sm:flex [&>input]:ltr:!pl-8 [&>input]:rtl:!pr-8 [&>input]:!rounded-[0.625rem]"
+        class="group w-full sm:w-56 min-w-0 flex [&>input]:ltr:!pl-8 [&>input]:rtl:!pr-8 [&>input]:!rounded-[0.625rem]"
         size="sm"
         type="search"
       >

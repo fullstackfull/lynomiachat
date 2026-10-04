@@ -120,7 +120,7 @@ describe('recipe catalogues', () => {
   });
 
   it('has the sizes the phase set out to deliver', () => {
-    expect(AUDIENCE_PRESETS).toHaveLength(7);
+    expect(AUDIENCE_PRESETS).toHaveLength(9);
     expect(AUTOMATION_RECIPES).toHaveLength(7);
     expect(FLOW_TEMPLATES).toHaveLength(6);
   });

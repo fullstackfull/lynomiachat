@@ -88,6 +88,61 @@ watch(surface, value => value && setTimeout(settle, 400));
     </div>
   </div>
 
+  <!-- The right-hand conversation sidebar at its real width, so what the panel has to fit into is what it gets. -->
+  <div
+    v-else-if="entry.frame === 'panel'"
+    class="flex h-screen bg-n-background"
+  >
+    <div class="hidden md:block flex-1 bg-n-solid-1" />
+    <div
+      class="w-full md:w-80 2xl:w-[22.5rem] shrink-0 h-screen overflow-auto border-s border-n-weak bg-n-background"
+    >
+      <KeepAlive>
+        <component :is="surface" v-if="surface && shown" v-bind="entry.props || {}" />
+      </KeepAlive>
+    </div>
+  </div>
+
+  <!-- The centre pane at its real width, for the rows and bars that only exist there. -->
+  <div
+    v-else-if="entry.frame === 'panel-wide'"
+    class="flex flex-col w-full h-screen bg-n-background"
+  >
+    <div class="relative flex-1 w-full overflow-auto bg-n-background">
+      <KeepAlive>
+        <component :is="surface" v-if="surface && shown" v-bind="entry.props || {}" />
+      </KeepAlive>
+    </div>
+  </div>
+
+  <!-- The conversation list's own column, so its header is measured in 340px and not in 1280. -->
+  <div
+    v-else-if="entry.frame === 'header-panel'"
+    class="flex h-screen bg-n-background"
+  >
+    <div
+      class="w-full md:w-[21.25rem] shrink-0 bg-n-surface-1 border-b border-n-weak"
+    >
+      <KeepAlive>
+        <component :is="surface" v-if="surface && shown" v-bind="entry.props || {}" />
+      </KeepAlive>
+    </div>
+    <div class="hidden md:block flex-1 bg-n-solid-1" />
+  </div>
+
+  <!-- A header strip above the conversation or the list, where those headers really sit. -->
+  <div
+    v-else-if="entry.frame === 'header'"
+    class="flex flex-col w-full h-screen bg-n-background"
+  >
+    <div class="flex w-full border-b border-n-weak bg-n-background">
+      <KeepAlive>
+        <component :is="surface" v-if="surface && shown" v-bind="entry.props || {}" />
+      </KeepAlive>
+    </div>
+    <div class="flex-1 bg-n-solid-1" />
+  </div>
+
   <div v-else class="w-full min-h-screen bg-n-background">
     <KeepAlive>
       <component :is="surface" v-if="surface && shown" v-bind="entry.props || {}" />

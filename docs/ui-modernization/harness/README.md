@@ -1,9 +1,13 @@
 # The visual harness
 
-The Rails app cannot run in this container (no Docker daemon, a Ruby version mismatch, Postgres down),
-so browser verification happens here instead: a Vite app that mounts the **real** page components
-against a fixture Vuex store, a fixture axios and a memory router built from the product's own route
-names. The components are not stubs — `flows/Index.vue` here is the file that ships.
+Browser verification happens here: a Vite app that mounts the **real** page components against a fixture
+Vuex store, a fixture axios and a memory router built from the product's own route names. The components
+are not stubs — `flows/Index.vue` here is the file that ships.
+
+This harness is not a substitute for backend tests. When it was written the Rails app could not run in
+this container; since Contacts phase B it can (Ruby 3.4.4, Postgres 16 with `pgvector`, Redis — see
+`docs/contacts/03-phase-b.md`), so API behaviour belongs in RSpec and this harness stays what it is: a
+check that no control disappears from a page.
 
 ```
 harness/

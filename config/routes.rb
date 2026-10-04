@@ -229,6 +229,7 @@ Rails.application.routes.draw do
               get :search
               post :filter
               post :import
+              post :import_preview
               post :export
             end
             member do

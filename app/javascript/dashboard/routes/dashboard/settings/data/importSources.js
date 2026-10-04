@@ -15,9 +15,11 @@ export const IMPORT_SOURCES = [
 export const importSourceConfigFor = provider =>
   IMPORT_SOURCES.find(source => source.value === provider);
 
+// Intercom and Freshdesk are product names and stay as they are; the file fallback is a phrase, so it
+// carries a key for the caller to translate instead of a baked-in English label.
 const DEFAULT_IMPORT_SOURCE = {
   value: 'file',
-  label: 'File import',
+  labelKey: 'DATA_IMPORTS.SOURCE.FILE',
   iconClass: 'i-lucide-file-text',
 };
 

@@ -58,7 +58,7 @@ const routerParams = computed(() => ({
       />
     </div>
     <div
-      class="flex items-center capitalize py-2 px-0 text-sm tracking-[0.5] text-n-slate-12 text-left rtl:text-right col-span-2"
+      class="flex items-center capitalize py-2 px-0 text-sm tracking-[0.5] text-n-slate-12 text-start col-span-2"
     >
       {{ slaName }}
     </div>

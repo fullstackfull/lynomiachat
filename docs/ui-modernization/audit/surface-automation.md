@@ -337,11 +337,17 @@ see §3.11) and nothing replaces them.
 
 ### 3.1 Hierarchy
 
-**3.1.1 The same two actions carry inverted visual priority in the header and the empty state.** In the
-header, "Recipes" is `color=slate variant=faded` and "Create Automation" is the default solid blue
-(`Index.vue:353-365`). In the empty state the pair is swapped: "Recipes" is solid blue (primary) and
-"Create Automation" is faded slate (`Index.vue:389-401`). A user who learns the header's hierarchy meets
-the opposite one the first time they see the page. Severity: medium.
+**3.1.1 DECLINED — the inversion is the point, not a defect.** The finding as written: in the header
+"Recipes" is `color=slate variant=faded` and "Create Automation" is solid (`Index.vue:353-365`), while the
+empty state swaps them (`Index.vue:389-401`).
+
+Both states are captured (`automation-list`, `automation-list-empty`) and the inversion is deliberate. On
+an account with no rules, a pre-built recipe is the shorter path to a working automation than an empty
+builder, which is why the empty state was given that emphasis in the first place. With rules on the page,
+creating another is the primary action and recipes are the secondary one. That is contextual priority,
+and flattening it would make the empty state worse to serve a consistency rule.
+
+Nothing is hidden in either state: both buttons are present, labelled and adjacent in both. Left as is.
 
 **3.1.2 Three section labels are rendered as `<label>` elements with no control.** "Conditions"
 (`AutomationInstantTrigger.vue:108-110`), "Actions" (`AutomationActions.vue:54-56`), "Wait condition"

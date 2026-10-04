@@ -4,6 +4,7 @@ import { messageStamp } from 'shared/helpers/timeHelper';
 import { formatDelay } from 'dashboard/helper/automationHelper';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ToggleSwitch from 'dashboard/components-next/switch/Switch.vue';
+import WootLabel from 'dashboard/components-next/label/Label.vue';
 import { BaseTableRow, BaseTableCell } from 'dashboard/components-next/table';
 
 const props = defineProps({
@@ -40,32 +41,50 @@ const automationActive = computed({
   <BaseTableRow :item="automation">
     <template #default>
       <BaseTableCell class="max-w-0 w-full">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="text-body-main text-n-slate-12 truncate">
-            {{ automation.name }}
-          </span>
-          <span
-            v-if="automation.execution_delay"
-            class="text-xs px-1.5 py-0.5 rounded-md bg-n-alpha-2 text-n-slate-11 whitespace-nowrap flex-shrink-0"
+        <div
+          class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 min-w-0"
+        >
+          <div
+            class="flex items-center gap-2 min-w-0 sm:shrink-0 sm:max-w-[65%]"
           >
-            {{
-              $t('AUTOMATION.LIST.DELAY_BADGE', {
-                delay: formatDelay(automation.execution_delay),
-              })
-            }}
-          </span>
-          <div class="w-px h-3 rounded-lg bg-n-weak flex-shrink-0" />
-          <span class="text-body-main text-n-slate-11 truncate">
+            <span class="text-body-main text-n-slate-12 truncate">
+              {{ automation.name }}
+            </span>
+            <WootLabel
+              v-if="automation.execution_delay"
+              compact
+              variant="subtle"
+              :label="
+                $t('AUTOMATION.LIST.DELAY_BADGE', {
+                  delay: formatDelay(automation.execution_delay),
+                })
+              "
+            />
+          </div>
+          <div class="hidden sm:block w-px h-3 rounded-lg bg-n-weak shrink-0" />
+          <span
+            class="text-body-main text-n-slate-11 truncate sm:min-w-0 sm:flex-1"
+          >
             {{ automation.description }}
           </span>
         </div>
+        <!-- What the hidden column says, where it says it on a phone. -->
+        <span
+          class="block md:hidden mt-1 text-label-small text-n-slate-11 whitespace-nowrap"
+          :title="readableDateWithTime(automation.created_on)"
+        >
+          {{ readableDate(automation.created_on) }}
+        </span>
       </BaseTableCell>
 
       <BaseTableCell>
         <ToggleSwitch v-model="automationActive" />
       </BaseTableCell>
 
-      <BaseTableCell :title="readableDateWithTime(automation.created_on)">
+      <BaseTableCell
+        class="hidden md:table-cell"
+        :title="readableDateWithTime(automation.created_on)"
+      >
         <span class="text-body-main text-n-slate-12 whitespace-nowrap">
           {{ readableDate(automation.created_on) }}
         </span>

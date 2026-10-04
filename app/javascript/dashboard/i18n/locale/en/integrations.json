@@ -19,7 +19,8 @@
         "TITLE": "How to use the Shopify Integration?",
         "BODY": "With this integration, your Shopify store ***{storeDomain}*** is connected to your Chatwoot workspace. Here's what you can do:\n\n**Track orders in conversations:** When you open a conversation, the Shopify sidebar will automatically display recent orders for the customer based on their email address. This gives your support team instant context without switching tabs.\n\n**Access order details:** View order status, fulfillment status, and total amount directly within the conversation panel."
       },
-      "ERROR": "There was an error connecting to Shopify. Please try again or contact support if the issue persists."
+      "ERROR": "There was an error connecting to Shopify. Please try again or contact support if the issue persists.",
+      "INVALID_URL": "Please enter a valid Shopify store URL (e.g., your-store.myshopify.com)"
     },
     "HEADER": "Integrations",
     "DESCRIPTION": "Chatwoot integrates with multiple tools and services to improve your team's efficiency. Explore the list below to configure your favorite apps.",
@@ -98,7 +99,9 @@
         "TABLE_HEADER": {
           "WEBHOOK_ENDPOINT": "Webhook endpoint",
           "ACTIONS": "Actions"
-        }
+        },
+        "EMPTY_DESCRIPTION": "Add an endpoint and the events you subscribe to are posted to it as they happen.",
+        "EMPTY_TITLE": "No webhooks yet"
       },
       "EDIT": {
         "BUTTON_TEXT": "Edit",
@@ -279,7 +282,9 @@
           "ACTIONS": "Actions"
         },
         "EDIT_TOOLTIP": "Edit app",
-        "DELETE_TOOLTIP": "Delete app"
+        "DELETE_TOOLTIP": "Delete app",
+        "EMPTY_DESCRIPTION": "Add an app and it appears beside every conversation, with the contact and conversation passed to it.",
+        "EMPTY_TITLE": "No dashboard apps yet"
       },
       "FORM": {
         "TITLE_LABEL": "Name",
@@ -1237,7 +1242,6 @@
         "SUCCESS_MESSAGE": "The document has been successfully deleted",
         "ERROR_MESSAGE": "There was an error deleting the document, please try again."
       },
-
       "OPTIONS": {
         "VIEW_DETAILS": "View details",
         "SYNC_NOW": "Refresh now",

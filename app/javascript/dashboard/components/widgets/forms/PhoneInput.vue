@@ -183,7 +183,7 @@ export default {
       "
     >
       <div
-        class="cursor-pointer py-2 pr-1.5 pl-2 rounded-tl-lg rounded-bl-lg flex items-center justify-center gap-1.5 bg-n-solid-3 h-10 w-14"
+        class="cursor-pointer py-2 pe-1.5 ps-2 rounded-ss-lg rounded-es-lg flex items-center justify-center gap-1.5 bg-n-solid-3 h-10 w-14"
         @click.prevent="toggleCountryDropdown"
       >
         <h5 v-if="activeCountry" class="mb-0">
@@ -202,7 +202,7 @@ export default {
         ref="phoneNumberInput"
         :value="phoneNumber"
         type="tel"
-        class="no-margin !rounded-tl-none !rounded-bl-none !outline-none !border-0 font-normal !w-full !bg-transparent text-base !px-1.5 placeholder:font-normal"
+        class="no-margin !rounded-ss-none !rounded-es-none !outline-none !border-0 font-normal !w-full !bg-transparent text-base !px-1.5 placeholder:font-normal"
         :placeholder="placeholder"
         :readonly="readonly"
         :style="styles"
@@ -245,14 +245,14 @@ export default {
         }"
         @click="onSelectCountry(country)"
       >
-        <span class="mr-1 text-base">{{ country.emoji }}</span>
+        <span class="me-1 text-base">{{ country.emoji }}</span>
 
         <span
           class="max-w-[7.5rem] overflow-hidden text-ellipsis whitespace-nowrap"
         >
           {{ country.name }}
         </span>
-        <span class="ml-1 text-xs text-n-slate-11">
+        <span class="ms-1 text-xs text-n-slate-11">
           {{ country.dial_code }}
         </span>
       </div>

@@ -106,7 +106,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <div v-else class="max-h-[300px] overflow-y-auto">
+    <div v-else class="max-h-[18.75rem] overflow-y-auto overscroll-contain">
       <LinearIssueItem
         v-for="linkedIssue in linkedIssues"
         :key="linkedIssue.id"

@@ -53,7 +53,7 @@ const handleNavigate = item => {
     >
       <button
         type="button"
-        class="flex items-center gap-2 col-span-2 hover:bg-n-alpha-1 dark:hover:bg-n-alpha-2 rounded-lg py-1 px-1.5 -ml-1.5 transition-colors cursor-pointer group"
+        class="flex items-center gap-2 col-span-2 hover:bg-n-alpha-1 dark:hover:bg-n-alpha-2 rounded-lg py-1 px-1.5 -ms-1.5 transition-colors cursor-pointer group"
         @click="handleNavigate(item)"
       >
         <Icon

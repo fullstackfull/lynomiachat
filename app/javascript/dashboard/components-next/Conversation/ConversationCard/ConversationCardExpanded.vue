@@ -85,7 +85,12 @@ const selectedModel = computed({
     <!-- LEFT SECTION -->
     <div class="flex items-center gap-2 min-w-0 flex-1">
       <div class="flex items-center justify-center flex-shrink-0" @click.stop>
-        <Checkbox v-model="selectedModel" />
+        <Checkbox
+          v-model="selectedModel"
+          :aria-label="
+            $t('CHAT_LIST.SELECT_CONVERSATION', { name: currentContact.name })
+          "
+        />
       </div>
 
       <div class="w-px h-3 bg-n-slate-6 flex-shrink-0" />
@@ -153,7 +158,7 @@ const selectedModel = computed({
       />
 
       <h4
-        class="text-heading-3 my-0 capitalize truncate text-n-slate-12 font-medium w-32 flex-shrink-0"
+        class="text-heading-3 my-0 capitalize truncate text-n-slate-12 font-medium min-w-24 max-w-56 flex-1"
       >
         {{ currentContact.name }}
       </h4>

@@ -192,6 +192,12 @@ const STYLE_CONFIG = {
     end: 'justify-end',
   },
   base: 'focus-ring inline-flex items-center min-w-0 gap-2 transition-all duration-100 ease-out border-0 rounded-lg outline-1 outline disabled:opacity-50',
+  // Lynomia's gradient, on the brand token and the product's own elevation rather than hard-coded hex.
+  // Colour-independent on purpose: the gradient is the fill, so crossing it with the five colours would
+  // mean nothing. It keeps the shared size scale, the shared radius and `font-inter` — a button, not a
+  // separate design language.
+  brand:
+    'bg-gradient-to-r from-n-blue-10 to-n-brand text-white shadow-raised hover:enabled:brightness-110 focus-visible:brightness-110 outline-transparent',
 };
 
 const variantClasses = computed(() => {
@@ -201,6 +207,7 @@ const variantClasses = computed(() => {
     outline: STYLE_CONFIG.colors[computedColor.value].outline,
     faded: STYLE_CONFIG.colors[computedColor.value].faded,
     solid: STYLE_CONFIG.colors[computedColor.value].solid,
+    brand: STYLE_CONFIG.brand,
   };
 
   return variantMap[computedVariant.value];

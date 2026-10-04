@@ -95,7 +95,7 @@ onMounted(() => {
         v-for="(search, index) in recentSearches"
         :key="search"
         type="button"
-        class="w-full flex items-center gap-2.5 text-left text-base text-n-slate-12 rounded-lg transition-all duration-150 group p-0"
+        class="w-full flex items-center gap-2.5 text-start text-base text-n-slate-12 rounded-lg transition-all duration-150 group p-0"
         @mousedown.prevent
         @click="onSelectSearch(search)"
       >

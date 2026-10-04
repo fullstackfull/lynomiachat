@@ -1,10 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
+import { contactErrorMessage } from 'dashboard/helper/contactErrors';
 import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import ContactInfoRow from './ContactInfoRow.vue';
@@ -43,7 +40,6 @@ export default {
       default: true,
     },
   },
-  emits: ['panelClose'],
   setup() {
     const { isAdmin } = useAdmin();
     return {
@@ -165,25 +161,7 @@ export default {
         useAlert(this.$t('CONTACT_FORM.SUCCESS_MESSAGE'));
         await this.$store.dispatch('contacts/fetchContactableInbox', contactId);
       } catch (error) {
-        if (error instanceof DuplicateContactException) {
-          const detail = error.contactErrorDetail;
-          if (detail) {
-            useAlert(detail);
-          } else {
-            const invalidAttrs = Array.isArray(error.data) ? error.data : [];
-            if (invalidAttrs.includes('email')) {
-              useAlert(this.$t('CONTACT_FORM.FORM.EMAIL_ADDRESS.DUPLICATE'));
-            } else if (invalidAttrs.includes('phone_number')) {
-              useAlert(this.$t('CONTACT_FORM.FORM.PHONE_NUMBER.DUPLICATE'));
-            } else {
-              useAlert(this.$t('CONTACT_FORM.ERROR_MESSAGE'));
-            }
-          }
-        } else if (error instanceof ExceptionWithMessage) {
-          useAlert(error.data);
-        } else {
-          useAlert(error.message || this.$t('CONTACT_FORM.ERROR_MESSAGE'));
-        }
+        useAlert(contactErrorMessage(error, this.$t.bind(this)));
       }
     },
   },
@@ -192,7 +170,7 @@ export default {
 
 <template>
   <div class="relative items-center w-full p-4">
-    <div class="flex flex-col w-full gap-2 text-left rtl:text-right">
+    <div class="flex flex-col w-full gap-2 text-start">
       <div class="flex flex-row justify-between">
         <Avatar
           v-if="showAvatar"
@@ -251,10 +229,12 @@ export default {
               class="i-lucide-info text-sm text-n-slate-10"
             />
             <a
+              v-tooltip.top="$t('CONTACT_PANEL.VIEW_PROFILE')"
               :href="contactProfileLink"
+              :aria-label="$t('CONTACT_PANEL.VIEW_PROFILE')"
               target="_blank"
               rel="noopener nofollow noreferrer"
-              class="leading-3"
+              class="leading-3 focus-ring rounded-control"
             >
               <span class="i-lucide-external-link text-sm text-n-slate-10" />
             </a>
@@ -326,7 +306,7 @@ export default {
           <SocialIcons :social-profiles="socialProfiles" />
         </div>
       </div>
-      <div class="flex items-center w-full mt-0.5 gap-2">
+      <div class="flex flex-wrap items-center w-full mt-0.5 gap-x-2 gap-y-2">
         <ComposeConversation :contact-id="String(contact.id)">
           <template #trigger>
             <NextButton
@@ -372,11 +352,7 @@ export default {
             />
           </template>
         </ContactMergeModal>
-        <ContactDeleteModal
-          v-if="isAdmin"
-          :contact="contact"
-          @deleted="$emit('panelClose')"
-        >
+        <ContactDeleteModal v-if="isAdmin" :contact="contact" class="ms-auto">
           <template #trigger>
             <NextButton
               v-tooltip.top-end="$t('DELETE_CONTACT.BUTTON_LABEL')"

@@ -178,11 +178,6 @@ export default {
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       uiFlags: 'integrations/getUIFlags',
     }),
-    wrapClass() {
-      return {
-        'is-note-mode': this.isNote,
-      };
-    },
     showAttachButton() {
       if (this.isEditorDisabled) return false;
       return this.showFileUpload || this.isNote;
@@ -283,8 +278,8 @@ export default {
 </script>
 
 <template>
-  <div class="flex justify-between p-3" :class="wrapClass">
-    <div class="left-wrap">
+  <div class="flex flex-wrap items-center justify-between gap-2 p-3">
+    <div class="flex flex-wrap items-center gap-2 min-w-0">
       <NextButton
         v-if="!isEditorDisabled"
         v-tooltip.top-end="$t('CONVERSATION.REPLYBOX.TIP_EMOJI_ICON')"
@@ -379,7 +374,7 @@ export default {
         v-if="enableContentTemplates"
         v-tooltip.top-end="$t('CONTENT_TEMPLATES.TRIGGER_LABEL')"
         :aria-label="$t('CONTENT_TEMPLATES.TRIGGER_LABEL')"
-        icon="i-ph-whatsapp-logo"
+        icon="i-ph-cards-three"
         slate
         faded
         sm
@@ -415,7 +410,7 @@ export default {
         @click="toggleInsertArticle"
       />
     </div>
-    <div class="right-wrap">
+    <div class="flex ms-auto">
       <NextButton
         :label="sendButtonText"
         type="submit"
@@ -430,14 +425,6 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-.left-wrap {
-  @apply items-center flex gap-2;
-}
-
-.right-wrap {
-  @apply flex;
-}
-
 :deep(.file-uploads) {
   label {
     @apply cursor-pointer;

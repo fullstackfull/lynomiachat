@@ -1,5 +1,4 @@
 <script>
-import { useAdmin } from 'dashboard/composables/useAdmin';
 import BackButton from '../../../components/widgets/BackButton.vue';
 
 export default {
@@ -8,10 +7,6 @@ export default {
   },
   props: {
     headerTitle: {
-      default: '',
-      type: String,
-    },
-    icon: {
       default: '',
       type: String,
     },
@@ -25,25 +20,14 @@ export default {
       default: '',
     },
   },
-  setup() {
-    const { isAdmin } = useAdmin();
-    return {
-      isAdmin,
-    };
-  },
-  computed: {
-    iconClass() {
-      return `icon ${this.icon} header--icon`;
-    },
-  },
 };
 </script>
 
 <template>
   <div
-    class="flex justify-between items-center h-20 min-h-[3.5rem] px-6 py-2 bg-n-surface-1"
+    class="flex justify-between items-center h-20 min-h-14 px-6 py-2 bg-n-surface-1"
   >
-    <h1 class="flex items-center mb-0 text-2xl text-n-slate-12">
+    <h1 class="flex items-center mb-0 text-n-slate-12">
       <BackButton
         v-if="showBackButton"
         :button-label="backButtonLabel"
@@ -52,7 +36,7 @@ export default {
       />
 
       <slot />
-      <span class="text-xl font-medium text-n-slate-12">
+      <span class="text-heading-1 text-n-slate-12">
         {{ headerTitle }}
       </span>
     </h1>

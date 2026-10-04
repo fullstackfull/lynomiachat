@@ -48,5 +48,25 @@ RSpec.describe Contacts::BulkActionService do
         service.perform
       end
     end
+
+    context 'when one payload both adds and removes labels' do
+      let(:params) { { ids: [10, 20], labels: { add: %w[vip], remove: %w[prospect] } } }
+
+      it 'applies both, removing before adding' do
+        calls = []
+        allow(Contacts::BulkRemoveLabelsService).to receive(:new) do
+          calls << :remove
+          instance_double(Contacts::BulkRemoveLabelsService, perform: true)
+        end
+        allow(Contacts::BulkAssignLabelsService).to receive(:new) do
+          calls << :add
+          instance_double(Contacts::BulkAssignLabelsService, perform: true)
+        end
+
+        service.perform
+
+        expect(calls).to eq(%i[remove add])
+      end
+    end
   end
 end

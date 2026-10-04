@@ -120,6 +120,14 @@ describe('AUDIENCE_PRESETS', () => {
       commerce_order_status: ['equal_to', 'not_equal_to'],
       commerce_payment_status: ['equal_to', 'not_equal_to'],
       commerce_shipment_status: ['equal_to', 'not_equal_to'],
+      // Audience::ConversationCondition::FIELDS, with its own OPERATORS — equality only, compiled into an
+      // EXISTS subquery over the contact's conversations.
+      conversation_status: ['equal_to', 'not_equal_to'],
+      conversation_priority: ['equal_to', 'not_equal_to'],
+      conversation_inbox: ['equal_to', 'not_equal_to'],
+      conversation_assignee: ['equal_to', 'not_equal_to'],
+      conversation_team: ['equal_to', 'not_equal_to'],
+      conversation_labels: ['equal_to', 'not_equal_to'],
     };
     const SPEND_OPERATORS = ['is_greater_than', 'is_less_than'];
     const sample = {
@@ -140,6 +148,34 @@ describe('AUDIENCE_PRESETS', () => {
         expect(allowed, condition.attribute_key).toBeDefined();
         expect(allowed).toContain(condition.filter_operator);
       });
+    });
+  });
+
+  it('asks about conversation history on the conversation model, over every status', () => {
+    expect(build('contacted_us')).toEqual([
+      {
+        attribute_key: 'conversation_status',
+        filter_operator: 'equal_to',
+        attribute_model: 'conversation',
+        values: ['open', 'pending', 'resolved', 'snoozed'],
+        query_operator: null,
+      },
+    ]);
+    // The mirror image, so "never" really is every status rather than one of them.
+    expect(build('never_contacted_us')[0]).toMatchObject({
+      filter_operator: 'not_equal_to',
+      values: ['open', 'pending', 'resolved', 'snoozed'],
+    });
+  });
+
+  it('needs nothing of the account for the conversation presets but a contact filter', () => {
+    const conversationPresets = AUDIENCE_PRESETS.filter(preset =>
+      ['contacted_us', 'never_contacted_us'].includes(preset.id)
+    );
+
+    conversationPresets.forEach(preset => {
+      expect(preset.requires).toEqual(['contact_filter']);
+      expect(preset.inputs).toEqual([]);
     });
   });
 

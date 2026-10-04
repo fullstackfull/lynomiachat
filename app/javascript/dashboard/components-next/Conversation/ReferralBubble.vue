@@ -74,7 +74,7 @@ watch(
   <li class="px-4 pt-3 pb-1 list-none" data-clarity-mask="True">
     <div class="flex justify-start">
       <div
-        class="w-full max-w-md overflow-hidden border border-dashed rounded-xl rounded-bl-sm bg-n-alpha-1 border-n-amber-7"
+        class="w-full max-w-md overflow-hidden border border-dashed rounded-xl rounded-es-sm bg-n-alpha-1 border-n-amber-7"
       >
         <div
           class="flex items-center gap-2 px-3 py-2 bg-n-amber-3 border-b border-n-amber-7/40"
@@ -150,7 +150,7 @@ watch(
     </div>
 
     <div
-      class="flex items-center gap-1.5 mt-2 mb-1 text-xs text-n-slate-10 ml-2"
+      class="flex items-center gap-1.5 mt-2 mb-1 text-xs text-n-slate-10 ms-2"
     >
       <span class="i-lucide-corner-down-right size-3" />
       <span>{{ t('CONVERSATION.REFERRAL.REPLIED_BELOW') }}</span>

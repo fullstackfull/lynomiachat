@@ -165,7 +165,7 @@ export default {
       >
         <TableHeaderCell
           :span="7"
-          label="`${$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.TYPE_TITLE')}`"
+          :label="$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.TYPE_TITLE')"
         >
           <span class="text-heading-3 normal-case text-n-slate-12">
             {{ $t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.TYPE_TITLE') }}
@@ -173,7 +173,7 @@ export default {
         </TableHeaderCell>
         <TableHeaderCell
           :span="2"
-          label="`${$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.EMAIL')}`"
+          :label="$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.EMAIL')"
         >
           <span class="text-heading-3 normal-case text-n-slate-12">
             {{ $t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.EMAIL') }}
@@ -181,7 +181,7 @@ export default {
         </TableHeaderCell>
         <TableHeaderCell
           :span="3"
-          label="`${$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.PUSH')}`"
+          :label="$t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.PUSH')"
         >
           <div class="flex items-center justify-between gap-1">
             <span
@@ -209,11 +209,16 @@ export default {
           <div
             v-for="(type, typeIndex) in ['email', 'push']"
             :key="typeIndex"
-            class="flex items-start gap-2 px-0 text-sm tracking-[0.5] text-left rtl:text-right"
-            :class="`col-span-${type === 'push' ? 3 : 2}`"
+            class="flex items-start gap-2 px-0 text-sm tracking-[0.5] text-start"
+            :class="type === 'push' ? 'col-span-3' : 'col-span-2'"
           >
             <CheckBox
               :value="`${type}_${notification.value}`"
+              :label="`${$t(notification.label)} — ${
+                type === 'push'
+                  ? $t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.PUSH')
+                  : $t('PROFILE_SETTINGS.FORM.NOTIFICATIONS.EMAIL')
+              }`"
               :is-checked="
                 checkFlagStatus(type, notification.value, selectedPushFlags)
               "
@@ -237,6 +242,9 @@ export default {
           <CheckBox
             :id="`email_${notification.value}`"
             :value="`email_${notification.value}`"
+            :label="`${$t(notification.label)} — ${$t(
+              'PROFILE_SETTINGS.FORM.NOTIFICATIONS.EMAIL'
+            )}`"
             :is-checked="checkFlagStatus('email', notification.value)"
             @update="handleEmailInput"
           />
@@ -261,6 +269,9 @@ export default {
           <CheckBox
             :id="`push_${notification.value}`"
             :value="`push_${notification.value}`"
+            :label="`${$t(notification.label)} — ${$t(
+              'PROFILE_SETTINGS.FORM.NOTIFICATIONS.PUSH'
+            )}`"
             :is-checked="checkFlagStatus('push', notification.value)"
             @update="handlePushInput"
           />

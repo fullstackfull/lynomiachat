@@ -2,16 +2,12 @@
 import { ref, computed, unref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAlert, useTrack } from 'dashboard/composables';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { CONTACTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import filterQueryGenerator from 'dashboard/helper/filterQueryGenerator';
 import contactFilterItems from 'dashboard/routes/dashboard/contacts/contactFilterItems';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
 import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHelper';
 import countries from 'shared/constants/countries';
 import {
@@ -32,7 +28,10 @@ import {
   useAudienceFilterTypes,
   audienceValuesForEdit,
 } from 'dashboard/components-next/filter/audienceProvider.js';
-import { AUDIENCE_QUERY_PARAM } from 'dashboard/helper/audienceHelper';
+import {
+  AUDIENCE_QUERY_PARAM,
+  LABEL_QUERY_PARAM,
+} from 'dashboard/helper/audienceHelper';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { frontendURL } from 'dashboard/helper/URLHelper';
 
@@ -54,10 +53,12 @@ const emit = defineEmits([
   'search',
   'applyFilter',
   'clearFilters',
+  'contactCreated',
 ]);
 
 const { t } = useI18n();
 const store = useStore();
+const route = useRoute();
 const router = useRouter();
 
 const createNewContactDialogRef = ref(null);
@@ -76,6 +77,14 @@ const { audienceFilterTypes, loadAudienceFields } = useAudienceFilterTypes();
 onMounted(() => loadAudienceFields());
 const contactAttributes = useMapGetter('attributes/getContactAttributes');
 const labels = useMapGetter('labels/getLabels');
+
+// The label the list is filtered by, as its own record. Read off the route rather than threaded through as a
+// prop, the way the create dialog reads it (docs/contacts/03-phase-b.md §B1).
+const activeLabel = computed(
+  () =>
+    (labels.value ?? []).find(label => label.title === route.params.label) ??
+    null
+);
 const hasActiveSegments = computed(
   () => props.activeSegment && props.segmentsId !== 0
 );
@@ -98,27 +107,9 @@ const openCreateSegmentDialog = () => createSegmentDialogRef.value?.open();
 const openDeleteSegmentDialog = () =>
   deleteSegmentDialogRef.value?.dialogRef.open();
 
-const onCreate = async contact => {
-  try {
-    await store.dispatch('contacts/create', contact);
-    createNewContactDialogRef.value?.onSuccess();
-    useAlert(
-      t('CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION.SUCCESS_MESSAGE')
-    );
-  } catch (error) {
-    const i18nPrefix = 'CONTACTS_LAYOUT.HEADER.ACTIONS.CONTACT_CREATION';
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('email')) {
-        useAlert(t(`${i18nPrefix}.EMAIL_ADDRESS_DUPLICATE`));
-      } else if (error.data.includes('phone_number')) {
-        useAlert(t(`${i18nPrefix}.PHONE_NUMBER_DUPLICATE`));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t(`${i18nPrefix}.ERROR_MESSAGE`));
-    }
-  }
+// The dialog owns the create, the errors and the duplicate recovery; the list only needs to know it happened.
+const onCreated = contact => {
+  emit('contactCreated', contact);
 };
 
 const onImport = async file => {
@@ -252,10 +243,14 @@ const useInAutomation = () =>
     query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
   });
 
+// Both recipient sources a campaign accepts, each carried the same way. A label page has no active segment and a
+// segment page has no label in its route, so exactly one of these applies.
 const useInCampaign = () =>
   router.push({
     name: 'campaigns_whatsapp_index',
-    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
+    query: activeLabel.value
+      ? { [LABEL_QUERY_PARAM]: activeLabel.value.id }
+      : { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
   });
 
 const copySegmentLink = async () => {
@@ -382,6 +377,7 @@ defineExpose({
     :is-active-view="isActiveView"
     :has-active-filters="hasAppliedFilters"
     :active-segment="hasActiveSegments ? activeSegment : null"
+    :active-label="activeLabel"
     :button-label="t('CONTACTS_LAYOUT.HEADER.MESSAGE_BUTTON')"
     @search="emit('search', $event)"
     @update:sort="emit('update:sort', $event)"
@@ -418,7 +414,10 @@ defineExpose({
     </template>
   </ContactsHeader>
 
-  <CreateNewContactDialog ref="createNewContactDialogRef" @create="onCreate" />
+  <CreateNewContactDialog
+    ref="createNewContactDialogRef"
+    @created="onCreated"
+  />
   <ContactExportDialog ref="contactExportDialogRef" @export="onExport" />
   <ContactImportDialog ref="contactImportDialogRef" @import="onImport" />
   <CreateSegmentDialog ref="createSegmentDialogRef" @create="onCreateSegment" />

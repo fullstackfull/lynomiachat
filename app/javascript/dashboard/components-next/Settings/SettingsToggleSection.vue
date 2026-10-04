@@ -37,7 +37,7 @@ const modelValue = defineModel({ type: Boolean, default: false });
             <div class="size-2" />
           </slot>
         </template>
-        <ToggleSwitch v-else v-model="modelValue" />
+        <ToggleSwitch v-else v-model="modelValue" :label="header" />
       </div>
       <span v-if="description" class="text-body-main text-n-slate-11 px-4">
         {{ description }}

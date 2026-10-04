@@ -60,7 +60,7 @@ const onCopy = async e => {
 </script>
 
 <template>
-  <div class="relative text-left">
+  <div class="relative text-start">
     <div
       class="top-1.5 absolute ltr:right-1.5 rtl:left-1.5 flex backdrop-blur-sm rounded-lg items-center gap-1"
     >

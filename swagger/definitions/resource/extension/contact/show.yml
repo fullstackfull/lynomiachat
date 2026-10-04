@@ -7,3 +7,8 @@ properties:
     type: string
     enum: ['online', 'offline']
     description: Availability status of the user
+  labels:
+    type: array
+    description: Titles of the labels applied to the contact. Returned by the create endpoint.
+    items:
+      type: string

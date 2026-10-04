@@ -6,6 +6,10 @@ export class DuplicateContactException extends Error {
     super(DuplicateContactException.DEFAULT_MESSAGE);
     this.data = data;
     this.name = 'DuplicateContactException';
+    /** Attribute name -> the server's messages for it, from the 422 `errors` map. */
+    this.fieldErrors = {};
+    /** Attribute name -> the validators that rejected it (`taken`, `invalid`, …), from `error_types`. */
+    this.fieldErrorTypes = {};
   }
 
   /** Server or client may assign `message` after construction; otherwise still DEFAULT_MESSAGE. */

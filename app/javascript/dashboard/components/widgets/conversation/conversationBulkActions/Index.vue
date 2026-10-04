@@ -147,7 +147,7 @@ onUnmounted(() => {
     <div
       v-if="conversations.length > 0"
       v-bind="attrs"
-      class="px-2 absolute bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-30 w-full origin-bottom"
+      class="px-2 absolute bottom-20 sm:bottom-4 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 z-30 w-full origin-bottom"
     >
       <div
         v-if="allConversationsSelected"
@@ -156,7 +156,7 @@ onUnmounted(() => {
         {{ $t('BULK_ACTION.ALL_CONVERSATIONS_SELECTED_ALERT') }}
       </div>
       <div
-        class="flex items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-[10px] outline-n-weak shadow-[0_0_12px_0_rgba(27,40,59,0.08)]"
+        class="flex items-center justify-between gap-2 p-2 bg-n-button-color outline outline-1 -outline-offset-1 rounded-overlay outline-n-weak shadow-overlay"
       >
         <div class="ms-0.5 flex items-center gap-1 min-w-0">
           <label class="cursor-pointer flex items-center gap-1.5 min-w-0">

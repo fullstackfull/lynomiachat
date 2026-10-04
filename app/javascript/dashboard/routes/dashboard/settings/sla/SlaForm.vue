@@ -163,12 +163,7 @@ export default {
       <woot-input
         v-model="name"
         :class="{ error: v$.name.$error }"
-        class="w-full"
-        :styles="{
-          borderRadius: '0.75rem',
-          padding: '0.375rem 0.75rem',
-          fontSize: '0.875rem',
-        }"
+        class="w-full [&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
         :label="$t('SLA.FORM.NAME.LABEL')"
         :placeholder="$t('SLA.FORM.NAME.PLACEHOLDER')"
         :error="slaNameErrorMessage"
@@ -177,12 +172,7 @@ export default {
       />
       <woot-input
         v-model="description"
-        class="w-full"
-        :styles="{
-          borderRadius: '0.75rem',
-          padding: '0.375rem 0.75rem',
-          fontSize: '0.875rem',
-        }"
+        class="w-full [&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
         :label="$t('SLA.FORM.DESCRIPTION.LABEL')"
         :placeholder="$t('SLA.FORM.DESCRIPTION.PLACEHOLDER')"
       />
@@ -205,7 +195,11 @@ export default {
         <span for="sla_bh" class="text-n-slate-11">
           {{ $t('SLA.FORM.BUSINESS_HOURS.PLACEHOLDER') }}
         </span>
-        <ToggleSwitch id="sla_bh" v-model="onlyDuringBusinessHours" />
+        <ToggleSwitch
+          id="sla_bh"
+          v-model="onlyDuringBusinessHours"
+          :label="$t('SLA.FORM.BUSINESS_HOURS.LABEL')"
+        />
       </div>
 
       <div class="flex items-center justify-end w-full gap-2 mt-8">

@@ -33,7 +33,6 @@ export default {
       props: () => {
         return {
           headerTitle: 'MACROS.HEADER',
-          icon: 'flash-settings',
           showBackButton: true,
         };
       },

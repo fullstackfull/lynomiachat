@@ -57,6 +57,8 @@ const tooltipContent = computed(() => {
       content: tooltipContent,
       delay: { show: 500, hide: 0 },
     }"
+    role="img"
+    :aria-label="tooltipContent"
     :icon="iconName"
     class="size-4 text-n-slate-5"
   />

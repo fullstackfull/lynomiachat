@@ -131,11 +131,27 @@ onMounted(async () => {
           <template v-for="child in accessibleChildren" :key="child.name">
             <!-- SubGroup with children -->
             <li v-if="child.children" class="group/sidebar-section py-0.5">
+              <!-- A section that cannot be collapsed is a heading, not a control: it reads the same
+                   here as it does in the expanded sidebar, and its items stay in view. -->
               <div
+                v-if="child.collapsible === false"
+                class="flex items-center gap-2 px-2 py-1.5 text-n-slate-10 select-none"
+              >
+                <Icon
+                  v-if="child.icon"
+                  :icon="child.icon"
+                  class="size-4 flex-shrink-0"
+                />
+                <span class="flex-1 truncate text-sm font-medium">
+                  {{ child.label }}
+                </span>
+              </div>
+              <div
+                v-else
                 class="flex items-center rounded-lg text-n-slate-11 hover:bg-n-alpha-2 transition-colors duration-150 ease-out"
               >
                 <button
-                  class="flex flex-1 min-w-0 items-center gap-2 ps-2 py-1.5 text-left rtl:text-right"
+                  class="flex flex-1 min-w-0 items-center gap-2 ps-2 py-1.5 text-start"
                   @click="toggleSubGroup(child.name)"
                 >
                   <Icon
@@ -170,8 +186,14 @@ onMounted(async () => {
               </div>
               <Transition v-bind="transition">
                 <ul
-                  v-if="expandedSubGroup === child.name"
-                  class="m-0 p-0 list-none ltr:pl-4 rtl:pr-4 mt-1 overflow-hidden"
+                  v-if="
+                    child.collapsible === false ||
+                    expandedSubGroup === child.name
+                  "
+                  class="m-0 p-0 list-none mt-1 overflow-hidden"
+                  :class="
+                    child.collapsible === false ? '' : 'ltr:pl-4 rtl:pr-4'
+                  "
                 >
                   <li
                     v-for="subChild in getAccessibleSubChildren(child.children)"
@@ -180,7 +202,7 @@ onMounted(async () => {
                   >
                     <router-link
                       :to="subChild.to"
-                      class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
+                      class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-start transition-colors duration-150 ease-out"
                       :class="{
                         'text-n-slate-12 bg-n-alpha-2': isActive(subChild),
                         'text-n-slate-11 hover:bg-n-alpha-2':
@@ -219,7 +241,7 @@ onMounted(async () => {
             <li v-else class="py-0.5">
               <router-link
                 :to="child.to"
-                class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-left rtl:text-right transition-colors duration-150 ease-out"
+                class="flex items-center gap-2 px-2 py-1.5 w-full rounded-lg text-sm text-start transition-colors duration-150 ease-out"
                 :class="{
                   'text-n-slate-12 bg-n-alpha-2': isActive(child),
                   'text-n-slate-11 hover:bg-n-alpha-2': !isActive(child),

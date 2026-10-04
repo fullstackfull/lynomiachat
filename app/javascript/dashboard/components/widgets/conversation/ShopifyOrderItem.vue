@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import { format } from 'date-fns';
 import { useI18n } from 'vue-i18n';
 
@@ -21,13 +22,6 @@ const formatCurrency = (amount, currency) => {
     style: 'currency',
     currency: currency || 'USD',
   }).format(amount);
-};
-
-const getStatusClass = status => {
-  const classes = {
-    paid: 'bg-n-teal-5 text-n-teal-12',
-  };
-  return classes[status] || 'bg-n-solid-3 text-n-slate-12';
 };
 
 const getStatusI18nKey = (type, status = '') => {
@@ -73,22 +67,23 @@ const getFulfillmentClass = status => {
           class="hover:underline text-n-slate-12 cursor-pointer truncate"
         >
           {{ $t('CONVERSATION_SIDEBAR.SHOPIFY.ORDER_ID', { id: order.id }) }}
-          <i class="i-lucide-external-link pl-5" />
+          <i class="i-lucide-external-link ps-5" />
         </a>
       </div>
-      <div
-        :class="getStatusClass(order.financial_status)"
-        class="text-xs px-2 py-1 rounded capitalize truncate"
+      <Label
+        :label="financialStatus"
+        :tone="order.financial_status === 'paid' ? 'success' : 'neutral'"
+        variant="solid"
+        compact
         :title="financialStatus"
-      >
-        {{ financialStatus }}
-      </div>
+        class="min-w-0 shrink [&>span]:truncate"
+      />
     </div>
     <div class="text-sm text-n-slate-12">
-      <span class="text-n-slate-11 border-r border-n-weak pr-2">
+      <span class="text-n-slate-11 border-e border-n-weak pe-2">
         {{ formatDate(order.created_at) }}
       </span>
-      <span class="text-n-slate-11 pl-2">
+      <span class="text-n-slate-11 ps-2">
         {{ formatCurrency(order.total_price, order.currency) }}
       </span>
     </div>

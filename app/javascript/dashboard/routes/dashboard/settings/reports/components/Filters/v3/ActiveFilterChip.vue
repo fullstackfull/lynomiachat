@@ -69,7 +69,7 @@ const closeDropdown = () => emit('closeDropdown');
         :active-filter-id="id"
         :input-placeholder="placeholder"
         :enable-search="enableSearch"
-        class="flex flex-col w-[240px] overflow-y-auto left-0 md:left-auto md:right-0 top-10"
+        class="flex flex-col w-[240px] overflow-y-auto left-0 md:start-auto md:right-0 top-10"
         @select="addFilter"
         @remove-filter="removeFilter"
       />

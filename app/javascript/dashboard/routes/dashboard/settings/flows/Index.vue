@@ -9,6 +9,7 @@ import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import WootLabel from 'dashboard/components-next/label/Label.vue';
 import {
   BaseTable,
   BaseTableRow,
@@ -41,6 +42,21 @@ const headers = computed(() => [
   t('FLOW_BUILDER.LIST.INBOXES'),
   t('FLOW_BUILDER.LIST.ACTIONS'),
 ]);
+
+// Index-aligned with `headers`.
+const SORTABLE_COLUMNS = ['name', 'published', 'inboxes', null];
+
+// Four columns do not fit a 390px card: the actions alone need 120px of it. Status and the inbox list
+// move into the name cell below those breakpoints rather than disappearing — see the template.
+const COLUMN_CLASSES = ['', 'hidden sm:table-cell', 'hidden md:table-cell', ''];
+
+const sortBy = ref('');
+const sortOrder = ref('asc');
+
+const onSort = ({ key, order }) => {
+  sortBy.value = key;
+  sortOrder.value = order;
+};
 
 const load = async () => {
   isLoading.value = true;
@@ -157,14 +173,34 @@ const status = flow =>
 // live yet. Not a guess: the API payload carries each version.
 const hasUnpublishedChanges = flow => Boolean(flow.published && flow.draft);
 
+// One source for the inbox list: the column, its narrow-width copy and the sort key cannot drift.
+const inboxNames = flow =>
+  flow.inboxes.map(inbox => inbox.name).join(', ') ||
+  t('FLOW_BUILDER.LIST.NO_INBOX');
+
+const SORT_VALUES = {
+  name: flow => flow.name ?? '',
+  published: flow =>
+    flow.published
+      ? `1${String(flow.published.version).padStart(6, '0')}`
+      : '0',
+  inboxes: flow => inboxNames(flow),
+};
+
+const sortedFlows = computed(() => {
+  const read = SORT_VALUES[sortBy.value];
+  if (!read) return flows.value;
+  const direction = sortOrder.value === 'asc' ? 1 : -1;
+  return [...flows.value].sort(
+    (a, b) => read(a).localeCompare(read(b)) * direction
+  );
+});
+
 onMounted(load);
 </script>
 
 <template>
-  <SettingsLayout
-    :is-loading="isLoading"
-    :loading-message="t('FLOW_BUILDER.LIST.LOADING')"
-  >
+  <SettingsLayout>
     <template #header>
       <BaseSettingsHeader
         :title="t('FLOW_BUILDER.HEADER')"
@@ -191,8 +227,12 @@ onMounted(load);
       </BaseSettingsHeader>
     </template>
     <template #body>
+      <!-- The skeleton rows are aria-hidden, so this is what a screen reader hears during the fetch. -->
+      <span v-if="isLoading" role="status" class="sr-only">
+        {{ t('FLOW_BUILDER.LIST.LOADING') }}
+      </span>
       <div
-        v-if="!flows.length"
+        v-if="!flows.length && !isLoading"
         class="flex flex-col items-center gap-3 py-16 text-center"
         data-test-id="flow-empty-state"
       >
@@ -218,14 +258,26 @@ onMounted(load);
           />
         </div>
       </div>
-      <BaseTable v-else :headers="headers" :items="flows">
+      <BaseTable
+        v-else
+        :headers="headers"
+        align-last-column-end
+        :items="sortedFlows"
+        :loading="isLoading"
+        :loading-rows="3"
+        :sortable-columns="SORTABLE_COLUMNS"
+        :column-classes="COLUMN_CLASSES"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
+        @sort="onSort"
+      >
         <template #row="{ items }">
           <BaseTableRow v-for="flow in items" :key="flow.id" :item="flow">
             <template #default>
-              <BaseTableCell class="max-w-0">
+              <BaseTableCell class="max-w-0 w-full">
                 <button
                   type="button"
-                  class="flex flex-col min-w-0 text-start"
+                  class="flex flex-col w-full min-w-0 text-start"
                   @click="openBuilder(flow)"
                 >
                   <span class="text-body-main text-n-slate-12 truncate">
@@ -235,34 +287,59 @@ onMounted(load);
                     {{ flow.description }}
                   </span>
                 </button>
-              </BaseTableCell>
-              <BaseTableCell>
-                <span class="text-body-main text-n-slate-12">
-                  {{ status(flow) }}
-                </span>
+                <!-- What the hidden columns say, where they say it on a phone. Outside the button, so
+                     the flow's accessible name is the same at every width. -->
+                <div class="flex flex-wrap items-center gap-1 mt-1 sm:hidden">
+                  <WootLabel
+                    compact
+                    variant="solid"
+                    :label="status(flow)"
+                    :tone="flow.published ? 'success' : 'neutral'"
+                  />
+                  <WootLabel
+                    v-if="hasUnpublishedChanges(flow)"
+                    compact
+                    variant="solid"
+                    tone="warning"
+                    :label="t('FLOW_BUILDER.STATUS.UNPUBLISHED')"
+                  />
+                </div>
                 <span
-                  v-if="hasUnpublishedChanges(flow)"
-                  class="block text-xs text-n-amber-11"
-                  data-test-id="flow-unpublished"
+                  class="block md:hidden mt-1 text-label-small text-n-slate-11 truncate"
                 >
-                  {{ t('FLOW_BUILDER.STATUS.UNPUBLISHED') }}
-                </span>
-                <span
-                  v-if="flow.live_sessions"
-                  class="block text-xs text-n-slate-11"
-                >
-                  {{ t('FLOW_BUILDER.LIST.LIVE', { n: flow.live_sessions }) }}
+                  {{ inboxNames(flow) }}
                 </span>
               </BaseTableCell>
-              <BaseTableCell class="max-w-0">
+              <BaseTableCell class="hidden sm:table-cell">
+                <div class="flex flex-col items-start gap-1">
+                  <WootLabel
+                    compact
+                    variant="solid"
+                    :label="status(flow)"
+                    :tone="flow.published ? 'success' : 'neutral'"
+                  />
+                  <WootLabel
+                    v-if="hasUnpublishedChanges(flow)"
+                    compact
+                    variant="solid"
+                    tone="warning"
+                    data-test-id="flow-unpublished"
+                    :label="t('FLOW_BUILDER.STATUS.UNPUBLISHED')"
+                  />
+                  <span
+                    v-if="flow.live_sessions"
+                    class="text-label-small text-n-slate-11"
+                  >
+                    {{ t('FLOW_BUILDER.LIST.LIVE', { n: flow.live_sessions }) }}
+                  </span>
+                </div>
+              </BaseTableCell>
+              <BaseTableCell class="max-w-0 hidden md:table-cell">
                 <span class="text-body-main text-n-slate-11 truncate block">
-                  {{
-                    flow.inboxes.map(inbox => inbox.name).join(', ') ||
-                    t('FLOW_BUILDER.LIST.NO_INBOX')
-                  }}
+                  {{ inboxNames(flow) }}
                 </span>
               </BaseTableCell>
-              <BaseTableCell align="end" class="w-24">
+              <BaseTableCell align="end" class="w-32">
                 <div class="flex justify-end gap-3">
                   <NextButton
                     v-tooltip.top="t('FLOW_BUILDER.LIST.OPEN')"

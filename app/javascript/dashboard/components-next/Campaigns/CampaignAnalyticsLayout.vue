@@ -13,7 +13,7 @@ const emit = defineEmits(['breadcrumbClick']);
 
 <template>
   <section class="flex flex-col w-full h-full overflow-hidden bg-n-surface-1">
-    <header class="sticky top-0 z-10 px-6">
+    <header class="px-6">
       <div class="w-full max-w-5xl mx-auto">
         <div class="flex items-center justify-between w-full h-20 gap-4">
           <Breadcrumb

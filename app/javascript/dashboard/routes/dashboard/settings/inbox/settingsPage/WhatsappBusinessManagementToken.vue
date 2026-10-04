@@ -115,7 +115,7 @@ const updateToken = async () => {
         <woot-input
           v-model="businessManagementToken"
           type="password"
-          class="flex-1 mr-2 [&>input]:!mb-0"
+          class="flex-1 me-2 [&>input]:!mb-0"
           :placeholder="
             t(
               'INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_UPDATE_PLACEHOLDER'

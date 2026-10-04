@@ -13,7 +13,7 @@ const addLabel = () => {
     faded
     xs
     icon="i-lucide-plus"
-    class="mb-0.5 ltr:mr-0.5 rtl:ml-0.5 !rounded-[4px]"
+    class="mb-0.5 me-0.5 !rounded-sm"
     :label="$t('CONTACT_PANEL.LABELS.CONVERSATION.ADD_BUTTON')"
     @click="addLabel"
   />

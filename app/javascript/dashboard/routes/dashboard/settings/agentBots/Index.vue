@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
 import { picoSearch } from '@chatwoot/pico-search';
@@ -9,6 +10,7 @@ import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import Label from 'dashboard/components-next/label/Label.vue';
 import AgentBotModal from './components/AgentBotModal.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import {
@@ -125,9 +127,25 @@ onMounted(() => {
         </template>
       </BaseSettingsHeader>
     </template>
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-bot"
+        :title="t('AGENT_BOTS.LIST.EMPTY_TITLE')"
+        :description="t('AGENT_BOTS.LIST.EMPTY_DESCRIPTION')"
+      >
+        <template #action>
+          <Button
+            :label="$t('AGENT_BOTS.ADD.TITLE')"
+            size="sm"
+            @click="openAddModal"
+          />
+        </template>
+      </EmptyState>
+    </template>
     <template #body>
       <BaseTable
         :headers="tableHeaders"
+        align-last-column-end
         :items="filteredAgentBots"
         :no-data-message="
           searchQuery ? t('AGENT_BOTS.NO_RESULTS') : t('AGENT_BOTS.LIST.404')
@@ -149,12 +167,13 @@ onMounted(() => {
                       <span class="text-body-main text-n-slate-12 truncate">
                         {{ bot.name }}
                       </span>
-                      <span
+                      <Label
                         v-if="bot.system_bot"
-                        class="text-xs text-n-slate-12 bg-n-blue-5 rounded-md py-0.5 px-1 flex-shrink-0"
-                      >
-                        {{ $t('AGENT_BOTS.GLOBAL_BOT_BADGE') }}
-                      </span>
+                        compact
+                        variant="solid"
+                        tone="info"
+                        :label="$t('AGENT_BOTS.GLOBAL_BOT_BADGE')"
+                      />
                     </div>
                     <span class="text-body-main text-n-slate-11 block truncate">
                       {{ bot.description }}

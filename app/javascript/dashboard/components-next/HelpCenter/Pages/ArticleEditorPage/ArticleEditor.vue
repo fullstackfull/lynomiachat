@@ -212,7 +212,7 @@ const handleCreateArticle = event => {
       <ArticleDiffPanel ref="diffPanelRef" :article="article" />
     </template>
     <template #content>
-      <div class="flex flex-col gap-3 pl-4 mb-3 rtl:pr-3 rtl:pl-0">
+      <div class="flex flex-col gap-3 ps-4 rtl:ps-3 mb-3">
         <TextArea
           v-model="articleTitle"
           auto-height
@@ -234,7 +234,7 @@ const handleCreateArticle = event => {
         ref="editorRef"
         v-model="articleContent"
         :editor-id="editorSessionId"
-        class="py-0 pb-10 pl-4 rtl:pr-4 rtl:pl-0 h-fit"
+        class="py-0 pb-10 ps-4 h-fit"
         :placeholder="
           t('HELP_CENTER.EDIT_ARTICLE_PAGE.EDIT_ARTICLE.EDITOR_PLACEHOLDER')
         "
@@ -267,7 +267,7 @@ const handleCreateArticle = event => {
   }
 
   .ProseMirror-menubar {
-    @apply rounded-lg !px-3 !py-1.5 z-50 bg-n-background items-center gap-4 ml-0 mb-0 shadow-md outline outline-1 outline-n-weak;
+    @apply rounded-lg !px-3 !py-1.5 z-50 bg-n-background items-center gap-4 ms-0 mb-0 shadow-md outline outline-1 outline-n-weak;
     display: flex;
     top: var(--selection-top, auto) !important;
     left: var(--selection-left, 0) !important;

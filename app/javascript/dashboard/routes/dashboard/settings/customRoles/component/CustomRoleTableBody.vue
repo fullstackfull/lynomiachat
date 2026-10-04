@@ -35,19 +35,23 @@ const getFormattedPermissions = role => {
   >
     <template #default>
       <BaseTableCell>
-        <span class="text-body-main text-n-slate-12 truncate block">
+        <span class="block text-body-main text-n-slate-12 md:truncate">
           {{ customRole.name }}
         </span>
       </BaseTableCell>
 
       <BaseTableCell>
-        <span class="text-body-main text-n-slate-11 truncate block">
+        <span class="block text-body-main text-n-slate-11 md:truncate">
           {{ customRole.description }}
         </span>
       </BaseTableCell>
 
       <BaseTableCell>
-        <span class="text-body-main text-n-slate-11 block">
+        <!-- Stacked rows hide the headings, so the cell names itself. -->
+        <span class="block md:hidden text-heading-3 text-n-slate-11">
+          {{ $t('CUSTOM_ROLE.LIST.TABLE_HEADER.PERMISSIONS') }}
+        </span>
+        <span class="block text-body-main text-n-slate-11">
           {{ getFormattedPermissions(customRole) }}
         </span>
       </BaseTableCell>

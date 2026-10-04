@@ -16,6 +16,7 @@ import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import DataImportsAPI from 'dashboard/api/dataImports';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 import NewImportDialog from './NewImportDialog.vue';
 import { importSourceFor } from './importSources';
 import {
@@ -265,30 +266,21 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
-      <div
+      <EmptyState
         v-else-if="!dataImports.length"
-        class="flex min-h-80 flex-col items-center justify-center gap-4 rounded-xl border border-n-weak bg-n-solid-1 px-6 py-16 text-center"
+        icon="i-lucide-database"
+        :title="$t('DATA_IMPORTS.TABLE.EMPTY')"
+        :description="$t('DATA_IMPORTS.TABLE.EMPTY_DESCRIPTION')"
       >
-        <span
-          class="flex size-12 items-center justify-center rounded-full bg-n-alpha-2"
-        >
-          <Icon icon="i-lucide-database" class="size-5 text-n-slate-11" />
-        </span>
-        <div class="flex flex-col gap-1">
-          <h3 class="text-heading-2 text-n-slate-12">
-            {{ $t('DATA_IMPORTS.TABLE.EMPTY') }}
-          </h3>
-          <p class="max-w-sm text-body-main text-n-slate-11">
-            {{ $t('DATA_IMPORTS.TABLE.EMPTY_DESCRIPTION') }}
-          </p>
-        </div>
-        <Button
-          size="sm"
-          icon="i-lucide-download"
-          :label="$t('DATA_IMPORTS.TABLE.NEW_IMPORT')"
-          @click="openImportDrawer"
-        />
-      </div>
+        <template #action>
+          <Button
+            size="sm"
+            icon="i-lucide-download"
+            :label="$t('DATA_IMPORTS.TABLE.NEW_IMPORT')"
+            @click="openImportDrawer"
+          />
+        </template>
+      </EmptyState>
 
       <div v-else class="divide-y divide-n-weak border-t border-n-weak">
         <div

@@ -19,6 +19,8 @@
       "THIS_WEEK": "This week",
       "MONTH_TO_DATE": "This month",
       "CUSTOM_RANGE": "Custom date range"
-    }
+    },
+    "SHOW_EARLIER_DATES": "Show earlier dates",
+    "SHOW_LATER_DATES": "Show later dates"
   }
 }

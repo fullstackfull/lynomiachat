@@ -45,13 +45,14 @@ const closeContactPanel = () => {
       () => closeContactPanel(),
       {
         ignore: [
+          'dialog[open]',
           'dialog.ProseMirror-prompt-backdrop',
           '[data-popover-content]',
           '[data-popover-backdrop]',
         ],
       },
     ]"
-    class="bg-n-surface-2 h-full overflow-hidden flex flex-col fixed top-0 z-40 w-full max-w-sm transition-transform duration-300 ease-in-out ltr:right-0 rtl:left-0 md:static md:w-[320px] md:min-w-[320px] ltr:border-l rtl:border-r border-n-weak 2xl:min-w-[360px] 2xl:w-[360px] shadow-lg md:shadow-none"
+    class="bg-n-surface-2 h-full overflow-hidden flex flex-col fixed top-0 z-drawer w-full max-w-sm transition-transform duration-300 ease-in-out ltr:right-0 rtl:left-0 md:static md:w-80 md:min-w-80 ltr:border-l rtl:border-r border-n-weak 2xl:min-w-[22.5rem] 2xl:w-[22.5rem] shadow-modal md:shadow-none"
     :class="[
       {
         'md:flex': activeTab === 0,
@@ -63,7 +64,6 @@ const closeContactPanel = () => {
       <ContactPanel
         v-show="activeTab === 0"
         :conversation-id="currentChat.id"
-        :inbox-id="currentChat.inbox_id"
       />
     </div>
   </div>

@@ -234,7 +234,7 @@ defineExpose({ state, isSubmitDisabled });
               </Button>
               <EmojiIconPicker
                 v-if="isEmojiPickerOpen"
-                class="left-0 top-16"
+                class="start-0 top-16"
                 :value="state.icon"
                 :color="state.iconColor"
                 show-remove-button

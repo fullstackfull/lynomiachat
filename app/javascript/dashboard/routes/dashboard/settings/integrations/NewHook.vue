@@ -170,36 +170,38 @@ export default {
 </template>
 
 <style lang="css">
-.formkit-outer {
+/* FormKit renders its own wrapper markup, which Tailwind classes in this template cannot reach. Every rule
+   is prefixed with this modal's own root class: unprefixed, they applied to every FormKit form in the
+   application for as long as this component stayed loaded. */
+.integration-hooks .formkit-outer {
   @apply mt-2;
 }
 
-.formkit-form > .formkit-wrapper > ul.formkit-messages {
+.integration-hooks .formkit-form > .formkit-wrapper > ul.formkit-messages {
   @apply hidden;
 }
 
-.formkit-form .formkit-help {
+.integration-hooks .formkit-form .formkit-help {
   @apply text-n-slate-10 text-sm font-normal mt-2 w-full;
 }
 
-/* equivalent of .reset-base */
-.formkit-input {
-  margin-bottom: 0px !important;
+.integration-hooks .formkit-input {
+  @apply !mb-0;
 }
 
-[data-invalid] .formkit-message {
+.integration-hooks [data-invalid] .formkit-message {
   @apply text-n-ruby-9 block text-xs font-normal my-1 w-full;
 }
 
-.formkit-outer[data-type='checkbox'] .formkit-wrapper {
+.integration-hooks .formkit-outer[data-type='checkbox'] .formkit-wrapper {
   @apply flex items-center gap-2 px-0.5;
 }
 
-.formkit-messages {
+.integration-hooks .formkit-messages {
   @apply list-none m-0 p-0;
 }
 
-.formkit-actions {
+.integration-hooks .formkit-actions {
   @apply hidden;
 }
 </style>

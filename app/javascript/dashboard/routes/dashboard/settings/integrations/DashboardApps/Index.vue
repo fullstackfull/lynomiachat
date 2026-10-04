@@ -7,12 +7,14 @@ import DashboardAppModal from './DashboardAppModal.vue';
 import DashboardAppsRow from './DashboardAppsRow.vue';
 import BaseSettingsHeader from '../../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../../SettingsLayout.vue';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   components: {
     BaseSettingsHeader,
     SettingsLayout,
+    EmptyState,
     BaseTable,
     DashboardAppModal,
     DashboardAppsRow,
@@ -26,6 +28,8 @@ export default {
       selectedApp: {},
       mode: 'CREATE',
       searchQuery: '',
+      sortBy: '',
+      sortOrder: 'asc',
     };
   },
   computed: {
@@ -49,11 +53,31 @@ export default {
         ),
       ];
     },
+    // Index-aligned with `tableHeaders`.
+    sortableColumns() {
+      return ['title', 'url', null];
+    },
+    // The endpoint is a URL: the longest column and the one a user scanning their apps needs least.
+    columnClasses() {
+      return ['', 'hidden sm:table-cell', ''];
+    },
+    sortedRecords() {
+      if (!this.sortBy) return this.filteredRecords;
+      const key = this.sortBy;
+      const direction = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredRecords].sort(
+        (a, b) => (a[key] ?? '').localeCompare(b[key] ?? '') * direction
+      );
+    },
   },
   mounted() {
     this.$store.dispatch('dashboardApps/get');
   },
   methods: {
+    onSort({ key, order }) {
+      this.sortBy = key;
+      this.sortOrder = order;
+    },
     toggleDashboardAppPopup() {
       this.showDashboardAppPopup = !this.showDashboardAppPopup;
       this.selectedApp = {};
@@ -99,9 +123,7 @@ export default {
 
 <template>
   <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.LOADING')"
-    :no-records-found="!records.length"
+    :no-records-found="!records.length && !uiFlags.isFetching"
     :no-records-message="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.404')"
   >
     <template #header>
@@ -134,14 +156,44 @@ export default {
         </template>
       </BaseSettingsHeader>
     </template>
-    <template #body>
-      <span
-        v-if="!filteredRecords.length && searchQuery"
-        class="flex-1 flex items-center justify-center py-20 text-center text-body-main !text-base text-n-slate-11"
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-layout-dashboard"
+        :title="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EMPTY_TITLE')"
+        :description="
+          $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.EMPTY_DESCRIPTION')
+        "
       >
-        {{ $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.NO_RESULTS') }}
-      </span>
-      <BaseTable v-else :headers="tableHeaders" :items="filteredRecords">
+        <template #action>
+          <NextButton
+            :label="$t('INTEGRATION_SETTINGS.DASHBOARD_APPS.HEADER_BTN_TXT')"
+            size="sm"
+            @click="openCreatePopup"
+          />
+        </template>
+      </EmptyState>
+    </template>
+    <template #body>
+      <BaseTable
+        :headers="tableHeaders"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching"
+        :loading-message="
+          $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.LIST.LOADING')
+        "
+        :loading-rows="3"
+        :sortable-columns="sortableColumns"
+        :column-classes="columnClasses"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
+        :no-data-message="
+          searchQuery
+            ? $t('INTEGRATION_SETTINGS.DASHBOARD_APPS.NO_RESULTS')
+            : ''
+        "
+        @sort="onSort"
+      >
         <template #row="{ items }">
           <DashboardAppsRow
             v-for="(dashboardAppItem, index) in items"

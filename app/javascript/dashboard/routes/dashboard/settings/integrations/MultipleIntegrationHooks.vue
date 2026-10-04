@@ -32,8 +32,13 @@ const { integration, isHookTypeInbox, hasConnectedHooks } = useIntegrationHook(
 const globalConfig = useMapGetter('globalConfig/get');
 const searchQuery = ref('');
 
+// `visible_properties` are the hook's own setting keys — `project_id`, `language_code`. They are the right
+// columns, but they are not words: the table says them the way the rest of the product says a heading.
+const humanize = key =>
+  key.replace(/[_-]+/g, ' ').replace(/^./, first => first.toUpperCase());
+
 const hookHeaders = computed(() => {
-  const headers = [...(integration.value.visible_properties || [])];
+  const headers = (integration.value.visible_properties || []).map(humanize);
   if (isHookTypeInbox.value) {
     headers.push(t('INTEGRATION_APPS.LIST.INBOX'));
   }
@@ -100,9 +105,15 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
       </template>
     </BaseSettingsHeader>
     <div class="w-full">
+      <!-- The columns come from the integration's own `visible_properties`, so neither their number
+           nor their width is knowable here: scrolling is the only honest answer, and the actions stay
+           pinned to the end edge so nothing needs a swipe to reach. -->
       <BaseTable
         v-if="hasConnectedHooks"
+        scrollable
+        sticky-actions
         :headers="hookHeaders"
+        align-last-column-end
         :items="filteredHooks"
         :no-data-message="searchQuery ? $t('INTEGRATION_APPS.NO_RESULTS') : ''"
       >
@@ -110,8 +121,8 @@ const inboxName = hook => (hook.inbox ? hook.inbox.name : '');
           <BaseTableRow v-for="hook in items" :key="hook.id" :item="hook">
             <template #default>
               <BaseTableCell
-                v-for="property in hook.properties"
-                :key="property"
+                v-for="(property, index) in hook.properties"
+                :key="index"
               >
                 <span class="text-body-main text-n-slate-12">
                   {{ property }}

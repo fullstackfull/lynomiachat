@@ -19,12 +19,6 @@ export default {
       passwordConfirmation: '',
       isPasswordChanging: false,
       errorMessage: '',
-      inputStyles: {
-        borderRadius: '0.75rem',
-        padding: '0.375rem 0.75rem',
-        fontSize: '0.875rem',
-        marginBottom: '0.125rem',
-      },
     };
   },
   validations: {
@@ -85,7 +79,7 @@ export default {
       <woot-input
         v-model="currentPassword"
         type="password"
-        :styles="inputStyles"
+        class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
         :class="{ error: v$.currentPassword.$error }"
         :label="$t('PROFILE_SETTINGS.FORM.CURRENT_PASSWORD.LABEL')"
         :placeholder="$t('PROFILE_SETTINGS.FORM.CURRENT_PASSWORD.PLACEHOLDER')"
@@ -101,7 +95,7 @@ export default {
       <woot-input
         v-model="password"
         type="password"
-        :styles="inputStyles"
+        class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
         :class="{ error: v$.password.$error }"
         :label="$t('PROFILE_SETTINGS.FORM.PASSWORD.LABEL')"
         :placeholder="$t('PROFILE_SETTINGS.FORM.PASSWORD.PLACEHOLDER')"
@@ -115,7 +109,7 @@ export default {
       <woot-input
         v-model="passwordConfirmation"
         type="password"
-        :styles="inputStyles"
+        class="[&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
         :class="{ error: v$.passwordConfirmation.$error }"
         :label="$t('PROFILE_SETTINGS.FORM.PASSWORD_CONFIRMATION.LABEL')"
         :placeholder="

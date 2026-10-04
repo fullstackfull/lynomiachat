@@ -8,7 +8,7 @@ defineProps({
   },
   subtitle: {
     type: String,
-    required: true,
+    default: '',
   },
   // An icon above the title, for the surfaces that built their own card-shaped empty state to get one.
   icon: {
@@ -22,6 +22,12 @@ defineProps({
   showBackdrop: {
     type: Boolean,
     default: true,
+  },
+  // For an empty state inside a narrow column rather than a full page: no bottom reserve, no top offset, and a
+  // heading at the panel's own scale instead of the page display size.
+  compact: {
+    type: Boolean,
+    default: false,
   },
 });
 </script>
@@ -40,16 +46,19 @@ defineProps({
         <slot name="empty-state-item" />
       </div>
       <div
-        class="flex flex-col items-center justify-end w-full h-full pb-20"
-        :class="{
-          'absolute inset-x-0 bottom-0 bg-gradient-to-t from-n-surface-1 from-25% to-transparent':
-            showBackdrop,
-        }"
+        class="flex flex-col items-center w-full h-full"
+        :class="[
+          compact ? 'justify-center' : 'justify-end pb-20',
+          {
+            'absolute inset-x-0 bottom-0 bg-gradient-to-t from-n-surface-1 from-25% to-transparent':
+              showBackdrop,
+          },
+        ]"
       >
         <div
           class="flex flex-col items-center justify-center gap-6"
           :class="{
-            'mt-48': !showBackdrop,
+            'mt-48': !showBackdrop && !compact,
           }"
         >
           <div class="flex flex-col items-center justify-center gap-3">
@@ -61,7 +70,10 @@ defineProps({
                 <span :class="icon" class="size-6" />
               </span>
             </slot>
-            <h2 class="text-center text-display text-n-slate-12">
+            <h2
+              class="text-center text-n-slate-12"
+              :class="compact ? 'text-heading-3' : 'text-display'"
+            >
               {{ title }}
             </h2>
             <p

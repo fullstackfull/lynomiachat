@@ -4,6 +4,8 @@
 //
 // `interactions` are selectors clicked before capture, so controls behind a menu or dialog land in the inventory
 // too: a feature that exists only inside an unopened menu still has to survive a redesign.
+import { AUDIENCE_SEGMENT, CONVERSATION } from './fixtures/data';
+
 export const SURFACES = {
   sidebar: {
     title: 'Main sidebar',
@@ -76,6 +78,19 @@ export const SURFACES = {
         active_automation_rules_count: 2,
         campaigns_count: 1,
       },
+    },
+    interactions: ['[data-test-id="contact-more-actions"]'],
+  },
+  // The same header on a label page rather than on an audience. A label is a campaign recipient source in its own
+  // right, so this surface is what makes that action visible to a capture (docs/contacts/06-campaign-bridge.md).
+  'contacts-header-label': {
+    title: 'Contacts · header on a label page',
+    load: () => import('dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue'),
+    route: 'contacts_dashboard_labels_index',
+    params: { label: 'vip' },
+    frame: 'plain',
+    props: {
+      headerTitle: 'vip',
     },
     interactions: ['[data-test-id="contact-more-actions"]'],
   },
@@ -161,5 +176,429 @@ export const SURFACES = {
     route: 'settings_teams_list',
     frame: 'settings',
     state: 'empty',
+  },
+  'labels-list-loading': {
+    title: 'Settings · Labels (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/labels/Index.vue'),
+    route: 'labels_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'automation-list-loading': {
+    title: 'Settings · Automation (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/automation/Index.vue'),
+    route: 'automation_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'canned-list-loading': {
+    title: 'Settings · Canned responses (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/canned/Index.vue'),
+    route: 'canned_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'sidebar-settings': {
+    title: 'Main sidebar · Settings expanded',
+    load: () => import('dashboard/components-next/sidebar/Sidebar.vue'),
+    frame: 'sidebar',
+    // The top-level Settings group header: a direct child of a top-level nav item, so this cannot
+    // match the Help Center's own "Settings" leaf.
+    interactions: ['nav > ul > li > [title="Settings"]'],
+  },
+  'agents-list-loading': {
+    title: 'Settings · Agents (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/agents/Index.vue'),
+    route: 'agent_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'teams-list-loading': {
+    title: 'Settings · Teams (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/teams/Index.vue'),
+    route: 'settings_teams_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'sla-list-loading': {
+    title: 'Settings · SLA (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/sla/Index.vue'),
+    route: 'sla_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'custom-roles-list-loading': {
+    title: 'Settings · Custom roles (loading)',
+    load: () => import('dashboard/routes/dashboard/settings/customRoles/Index.vue'),
+    route: 'custom_roles_list',
+    frame: 'settings',
+    state: 'loading',
+  },
+  'conversation-header': {
+    title: 'Conversation · header',
+    load: () => import('dashboard/components/widgets/conversation/ConversationHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header',
+    props: { chat: CONVERSATION, showBackButton: true },
+    // The header's overflow menu carries mute/unmute and send-transcript: without opening it those three
+    // actions are invisible to parity. The handle is the icon rather than the (new) test id, so the same
+    // selector opens the menu in the pre-phase tree the baseline is captured from.
+    interactions: ['[class*="i-lucide-more-vertical"]'],
+  },
+  'conversation-panel': {
+    title: 'Conversation · contact panel',
+    load: () => import('dashboard/routes/dashboard/conversation/ContactPanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, inboxId: 5 },
+  },
+  'commerce-panel': {
+    title: 'Conversation · Commerce panel',
+    load: () => import('dashboard/components/widgets/conversation/commerce/CommercePanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, contactId: 101 },
+  },
+  'commerce-panel-store': {
+    title: 'Conversation · Commerce panel (one store)',
+    load: () => import('dashboard/components/widgets/conversation/commerce/CommercePanel.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: { conversationId: 91, contactId: 101 },
+    interactions: ['[data-test-id="commerce-view-store"]'],
+  },
+  'conversation-list-header': {
+    title: 'Conversation list · header and filters',
+    load: () => import('dashboard/components/ChatListHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header-panel',
+    props: {
+      pageTitle: 'All conversations',
+      hasAppliedFilters: false,
+      hasActiveFolders: false,
+      activeStatus: 'open',
+      isOnExpandedLayout: false,
+      conversationStats: { allCount: 12, mineCount: 4, unassignedCount: 3 },
+      isListLoading: false,
+    },
+  },
+  'conversation-card': {
+    title: 'Conversation list · card',
+    load: () => import('dashboard/components/widgets/conversation/ConversationCard.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+    },
+  },
+  'conversation-card-selected': {
+    title: 'Conversation list · card (selected)',
+    load: () => import('dashboard/components/widgets/conversation/ConversationCard.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+      // The card's own checkbox is otherwise revealed by hover, which a capture cannot express, so without
+      // this entry the entry point to every bulk action is absent from the inventory.
+      selected: true,
+    },
+  },
+  'conversation-card-expanded': {
+    title: 'Conversation list · card (expanded layout)',
+    load: () =>
+      import('dashboard/components-next/Conversation/ConversationCard/ConversationCardExpanded.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel-wide',
+    props: {
+      chat: CONVERSATION,
+      currentContact: CONVERSATION.meta.sender,
+      assignee: CONVERSATION.meta.assignee,
+      inbox: { id: 5, name: 'WhatsApp', channel_type: 'Channel::Whatsapp' },
+      showAssignee: true,
+      showInboxName: true,
+    },
+  },
+  'conversation-context-menu': {
+    title: 'Conversation list · row context menu',
+    load: () => import('dashboard/components/widgets/conversation/contextMenu/Index.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel',
+    props: {
+      chatId: 91,
+      status: 'open',
+      hasUnreadMessages: true,
+      inboxId: 5,
+      priority: 'high',
+      conversationLabels: ['vip'],
+      conversationUrl: '/app/accounts/1/conversations/91',
+    },
+  },
+  'conversation-bulk-actions': {
+    title: 'Conversation list · bulk action bar',
+    load: () => import('dashboard/components/widgets/conversation/conversationBulkActions/Index.vue'),
+    route: 'inbox_conversation',
+    frame: 'panel-wide',
+    props: {
+      conversations: [91, 92],
+      allConversationsSelected: false,
+      selectedInboxes: [5],
+      showOpenAction: false,
+      showResolvedAction: true,
+      showSnoozedAction: true,
+    },
+  },
+  'conversation-header-resolve-menu': {
+    title: 'Conversation · header · status menu',
+    load: () => import('dashboard/components/widgets/conversation/ConversationHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header',
+    props: { chat: CONVERSATION, showBackButton: true },
+    // Snooze-until and mark-pending live only inside this menu. The chevron is the one `chevron-down` in
+    // this surface, so the icon is a handle that works in the pre-phase tree too.
+    interactions: ['[class*="i-lucide-chevron-down"]'],
+  },
+  'conversation-list-header-filtered': {
+    title: 'Conversation list · header (filter applied)',
+    load: () => import('dashboard/components/ChatListHeader.vue'),
+    route: 'inbox_conversation',
+    frame: 'header-panel',
+    props: {
+      pageTitle: 'All conversations',
+      hasAppliedFilters: true,
+      hasActiveFolders: false,
+      activeStatus: 'open',
+      isOnExpandedLayout: false,
+      conversationStats: { allCount: 12, mineCount: 4, unassignedCount: 3 },
+      isListLoading: false,
+    },
+  },
+  'campaigns-livechat': {
+    title: 'Campaigns · Live chat',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/LiveChatCampaignsPage.vue'),
+    route: 'campaigns_livechat_index',
+    frame: 'plain',
+  },
+  'campaigns-sms': {
+    title: 'Campaigns · SMS',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/SMSCampaignsPage.vue'),
+    route: 'campaigns_sms_index',
+    frame: 'plain',
+  },
+  'campaigns-whatsapp-empty': {
+    title: 'Campaigns · WhatsApp (empty)',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignsPage.vue'),
+    route: 'campaigns_whatsapp_index',
+    frame: 'plain',
+    state: 'empty',
+  },
+  'contacts-header-filter': {
+    title: 'Contacts · audience filter panel',
+    load: () => import('dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue'),
+    route: 'contacts_dashboard_segments_index',
+    frame: 'plain',
+    props: {
+      headerTitle: 'VIP buyers',
+      segmentsId: 7,
+      activeSegment: {
+        id: 7,
+        name: 'VIP buyers',
+        shared: true,
+        query: { payload: [] },
+        active_automation_rules_count: 2,
+        campaigns_count: 1,
+      },
+    },
+    // Segments view: the filter control is the "edit segment" pen, which opens the audience filter panel.
+    interactions: ['[class*="i-lucide-pen-line"]'],
+  },
+  'audience-list': {
+    title: 'Audience · list with its conditions',
+    load: () => import('dashboard/components-next/Contacts/ContactsListLayout.vue'),
+    route: 'contacts_dashboard_segments_index',
+    frame: 'plain',
+    // The active-filter chip strip lives in this layout, not in the header wrapper, so neither contacts
+    // surface renders it. Page 2 of 3 is deliberate: it is the only way the first and previous pagination
+    // controls are captured in their enabled state.
+    props: {
+      headerTitle: 'VIP buyers',
+      segmentsId: 7,
+      activeSegment: AUDIENCE_SEGMENT,
+      currentPage: 2,
+      totalItems: 42,
+      itemsPerPage: 15,
+      activeSort: 'last_activity_at',
+      activeOrdering: '-',
+      hasAppliedFilters: false,
+      isFetchingList: false,
+      showPaginationFooter: true,
+      useInfiniteScroll: false,
+      hasMore: false,
+    },
+  },
+  'audience-list-adhoc': {
+    title: 'Audience · ad-hoc filter, nothing saved',
+    load: () => import('dashboard/components-next/Contacts/ContactsListLayout.vue'),
+    route: 'contacts_dashboard_index',
+    frame: 'plain',
+    state: 'filtered',
+    props: {
+      headerTitle: 'Contacts',
+      segmentsId: 0,
+      activeSegment: null,
+      currentPage: 1,
+      totalItems: 42,
+      itemsPerPage: 15,
+      activeSort: 'name',
+      activeOrdering: '',
+      hasAppliedFilters: true,
+      isFetchingList: false,
+      showPaginationFooter: true,
+    },
+  },
+  'flow-builder': {
+    title: 'Settings · Flow Builder canvas',
+    load: () => import('dashboard/routes/dashboard/settings/flows/FlowBuilder.vue'),
+    route: 'settings_flows_builder',
+    // The page reads the flow off the route, so the harness has to supply it: `params` are appended to that
+    // route's path as optional segments, because `router.push` drops a param the path does not declare.
+    params: { flowId: '1' },
+    frame: 'plain',
+  },
+  'campaigns-whatsapp-analytics': {
+    title: 'Campaigns · WhatsApp analytics',
+    load: () =>
+      import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignAnalyticsPage.vue'),
+    route: 'campaigns_whatsapp_analytics',
+    params: { campaignId: '201' },
+    frame: 'plain',
+  },
+  'campaigns-whatsapp-analytics-empty': {
+    title: 'Campaigns · WhatsApp analytics (nothing sent yet)',
+    load: () =>
+      import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignAnalyticsPage.vue'),
+    route: 'campaigns_whatsapp_analytics',
+    params: { campaignId: '201' },
+    frame: 'plain',
+    state: 'empty',
+  },
+  // Five settings pages were modernised in earlier batches and had no capture at all, so none of that work
+  // was ever verified. They go in before the batch that touches them again.
+  'webhooks-list': {
+    title: 'Settings · Webhooks',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue'),
+    route: 'settings_integrations_webhook',
+    frame: 'settings',
+  },
+  'dashboard-apps-list': {
+    title: 'Settings · Dashboard apps',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue'),
+    route: 'settings_integrations_dashboard_apps',
+    frame: 'settings',
+  },
+  'integration-hooks': {
+    title: 'Settings · Integration hooks (Dialogflow)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue'),
+    route: 'settings_applications_integration',
+    // The route passes the integration as a prop, so the harness does the same.
+    props: { integrationId: 'dialogflow' },
+    frame: 'settings',
+  },
+  'integrations-list': {
+    title: 'Settings · Integrations catalogue',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Index.vue'),
+    route: 'settings_applications',
+    frame: 'settings',
+  },
+  'account-settings': {
+    title: 'Settings · Account',
+    load: () => import('dashboard/routes/dashboard/settings/account/Index.vue'),
+    route: 'general_settings_index',
+    frame: 'settings',
+  },
+  'profile-settings': {
+    title: 'Settings · Profile',
+    load: () => import('dashboard/routes/dashboard/settings/profile/Index.vue'),
+    route: 'profile_settings_index',
+    frame: 'settings',
+  },
+  'security-settings': {
+    title: 'Settings · Security (SAML)',
+    load: () => import('dashboard/routes/dashboard/settings/security/Index.vue'),
+    route: 'security_settings_index',
+    frame: 'settings',
+  },
+  'data-imports': {
+    title: 'Settings · Data imports',
+    load: () => import('dashboard/routes/dashboard/settings/data/Index.vue'),
+    route: 'settings_data_imports',
+    frame: 'settings',
+  },
+  'webhooks-list-empty': {
+    title: 'Settings · Webhooks (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue'),
+    route: 'settings_integrations_webhook',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'dashboard-apps-list-empty': {
+    title: 'Settings · Dashboard apps (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/integrations/DashboardApps/Index.vue'),
+    route: 'settings_integrations_dashboard_apps',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'agent-bots-list-empty': {
+    title: 'Settings · Agent bots (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/agentBots/Index.vue'),
+    route: 'agent_bots',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'data-imports-empty': {
+    title: 'Settings · Data imports (empty)',
+    load: () => import('dashboard/routes/dashboard/settings/data/Index.vue'),
+    route: 'settings_data_imports',
+    frame: 'settings',
+    state: 'empty',
+  },
+  'agent-bots-list': {
+    title: 'Settings · Agent bots',
+    load: () => import('dashboard/routes/dashboard/settings/agentBots/Index.vue'),
+    route: 'agent_bots',
+    frame: 'settings',
+  },
+  'auditlogs-date-range': {
+    title: 'Settings · Audit logs · date range picker',
+    load: () => import('dashboard/routes/dashboard/settings/auditlogs/Index.vue'),
+    route: 'auditlogs_list',
+    frame: 'settings',
+    // The widest overlay in the product is `DatePicker` at `w-[880px]`, and nothing captured it. The
+    // filter bar's calendar button is the only route to it.
+    interactions: ['[class*="i-lucide-calendar-range"]'],
+  },
+  'auditlogs-list': {
+    title: 'Settings · Audit logs',
+    load: () => import('dashboard/routes/dashboard/settings/auditlogs/Index.vue'),
+    route: 'auditlogs_list',
+    frame: 'settings',
+  },
+  'campaigns-whatsapp-create': {
+    title: 'Campaigns · WhatsApp · create dialog',
+    load: () => import('dashboard/routes/dashboard/campaigns/pages/WhatsAppCampaignsPage.vue'),
+    route: 'campaigns_whatsapp_index',
+    frame: 'plain',
+    // The create panel is the page's primary action and is captured by nothing. The trigger carries no
+    // test id, so the plus icon is the handle that also works in the pre-phase tree.
+    interactions: ['[class*="i-lucide-plus"]'],
   },
 };

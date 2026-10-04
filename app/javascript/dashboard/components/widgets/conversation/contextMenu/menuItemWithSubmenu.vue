@@ -1,6 +1,11 @@
 <script setup>
-import { computed, useTemplateRef } from 'vue';
-import { useWindowSize, useElementBounding } from '@vueuse/core';
+import { computed, ref, useTemplateRef } from 'vue';
+import {
+  useWindowSize,
+  useElementBounding,
+  onClickOutside,
+} from '@vueuse/core';
+import { useMapGetter } from 'dashboard/composables/store';
 
 defineProps({
   option: {
@@ -14,8 +19,16 @@ defineProps({
 });
 
 const menuRef = useTemplateRef('menuRef');
+const isRTL = useMapGetter('accounts/isRTL');
 const { width: windowWidth, height: windowHeight } = useWindowSize();
-const { bottom, right } = useElementBounding(menuRef);
+const { bottom, right, left } = useElementBounding(menuRef);
+
+// Hover alone used to be the only thing that opened the submenu, which left priority, label, agent and team
+// assignment with no keyboard or touch path at all. A click or Enter now latches it open as well.
+const isOpen = ref(false);
+onClickOutside(menuRef, () => {
+  isOpen.value = false;
+});
 
 // Vertical position
 const verticalPosition = computed(() => {
@@ -24,11 +37,12 @@ const verticalPosition = computed(() => {
   return spaceBelow < SUBMENU_HEIGHT ? 'bottom-0' : 'top-0';
 });
 
-// Horizontal position
+// Horizontal position. The submenu opens along the reading direction and flips only when that side is out of
+// room; measuring `windowWidth - right` in both directions sent every Arabic submenu the wrong way.
 const horizontalPosition = computed(() => {
   const SUBMENU_WIDTH = 240;
-  const spaceRight = windowWidth.value - right.value;
-  return spaceRight < SUBMENU_WIDTH ? 'right-full' : 'left-full';
+  const spaceAhead = isRTL.value ? left.value : windowWidth.value - right.value;
+  return spaceAhead < SUBMENU_WIDTH ? 'end-full' : 'start-full';
 });
 
 const submenuPosition = computed(() => [
@@ -40,32 +54,30 @@ const submenuPosition = computed(() => [
 <template>
   <div
     ref="menuRef"
-    class="text-n-slate-12 menu-with-submenu min-width-calc w-full p-1 flex items-center h-7 rounded-md relative bg-n-alpha-3/50 backdrop-blur-panel justify-between hover:bg-n-brand/10 cursor-pointer dark:hover:bg-n-solid-3"
+    role="menuitem"
+    :tabindex="subMenuAvailable ? 0 : -1"
+    :aria-haspopup="subMenuAvailable ? 'true' : undefined"
+    :aria-expanded="subMenuAvailable ? isOpen : undefined"
+    class="text-n-slate-12 group focus-ring min-w-[12.5rem] max-w-[18rem] w-full p-1 flex items-center h-7 rounded-md relative bg-n-alpha-3/50 backdrop-blur-panel justify-between hover:bg-n-brand/10 cursor-pointer dark:hover:bg-n-solid-3"
     :class="!subMenuAvailable ? 'opacity-50 cursor-not-allowed' : ''"
+    @click="subMenuAvailable && (isOpen = !isOpen)"
+    @keydown.enter.prevent="subMenuAvailable && (isOpen = !isOpen)"
+    @keydown.space.prevent="subMenuAvailable && (isOpen = !isOpen)"
+    @keydown.esc="isOpen = false"
   >
-    <div class="flex items-center h-4">
-      <fluent-icon :icon="option.icon" size="14" class="menu-icon" />
-      <p class="my-0 mx-2 text-xs">{{ option.label }}</p>
+    <div class="flex items-center h-4 min-w-0">
+      <fluent-icon :icon="option.icon" size="14" />
+      <p :title="option.label" class="my-0 mx-2 text-xs truncate">
+        {{ option.label }}
+      </p>
     </div>
-    <fluent-icon icon="chevron-right" size="12" />
+    <fluent-icon icon="chevron-right" size="12" class="rtl:rotate-180" />
     <div
       v-if="subMenuAvailable"
-      class="submenu bg-n-alpha-3 backdrop-blur-panel p-1 shadow-lg rounded-md absolute hidden max-h-[15rem] overflow-y-auto overflow-x-hidden cursor-pointer"
-      :class="submenuPosition"
+      class="submenu bg-n-alpha-3 backdrop-blur-panel p-1 shadow-overlay rounded-md absolute max-h-[15rem] overflow-y-auto overflow-x-hidden cursor-pointer group-hover:block group-focus-within:block"
+      :class="[submenuPosition, isOpen ? 'block' : 'hidden']"
     >
       <slot />
     </div>
   </div>
 </template>
-
-<style scoped lang="scss">
-.menu-with-submenu {
-  min-width: calc(6.25rem * 2);
-
-  &:hover {
-    .submenu {
-      @apply block;
-    }
-  }
-}
-</style>

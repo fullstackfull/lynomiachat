@@ -11,6 +11,11 @@ class ContactPolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  # Whoever may run an import may see what one would do; the preview creates nothing either way.
+  def import_preview?
+    import?
+  end
+
   def export?
     @account_user.administrator?
   end

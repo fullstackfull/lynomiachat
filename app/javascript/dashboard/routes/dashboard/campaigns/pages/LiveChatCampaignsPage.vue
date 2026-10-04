@@ -59,7 +59,10 @@ const handleDelete = campaign => {
     <div
       v-if="isFetchingCampaigns"
       class="flex justify-center items-center py-10 text-n-slate-11"
+      role="status"
+      aria-live="polite"
     >
+      <span class="sr-only">{{ t('CAMPAIGN.LOADING') }}</span>
       <Spinner />
     </div>
     <CampaignList
@@ -73,7 +76,6 @@ const handleDelete = campaign => {
       v-else
       :title="t('CAMPAIGN.LIVE_CHAT.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.LIVE_CHAT.EMPTY_STATE.SUBTITLE')"
-      class="pt-14"
     />
     <EditLiveChatCampaignDialog
       ref="editLiveChatCampaignDialogRef"

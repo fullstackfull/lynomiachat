@@ -101,7 +101,7 @@ const handleRemoveLabels = labels => {
         />
       </template>
       <template #actions>
-        <div class="flex items-center gap-2 ml-auto">
+        <div class="flex items-center gap-2 ms-auto">
           <BulkLabelActions
             type="contact"
             :is-loading="isLoading"

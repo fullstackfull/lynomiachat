@@ -107,7 +107,7 @@ export default {
             'block visible': showSearchDropdownLabel,
             'hidden invisible': !showSearchDropdownLabel,
           }"
-          class="border rounded-lg bg-n-alpha-3 top-6 backdrop-blur-panel absolute w-full shadow-lg border-n-strong dark:border-n-strong p-2 box-border z-[9999]"
+          class="border rounded-lg bg-n-alpha-3 top-6 backdrop-blur-panel absolute w-full shadow-lg border-n-strong dark:border-n-strong p-2 box-border z-dropdown"
         >
           <LabelDropdown
             v-if="showSearchDropdownLabel"

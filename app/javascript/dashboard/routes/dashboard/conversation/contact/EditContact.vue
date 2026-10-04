@@ -43,7 +43,7 @@ useKeyboardEvents({
   >
     <div
       v-if="show"
-      class="fixed inset-y-0 ltr:right-0 rtl:left-0 z-50 flex flex-col w-[30rem] max-w-full h-full bg-n-surface-2 ltr:border-l rtl:border-r border-n-weak shadow-lg overflow-auto"
+      class="fixed inset-y-0 ltr:right-0 rtl:left-0 z-drawer flex flex-col w-[30rem] max-w-full h-full bg-n-surface-2 ltr:border-l rtl:border-r border-n-weak shadow-modal overflow-auto"
     >
       <div class="flex items-center justify-between px-8 pt-8 pb-2">
         <div>
@@ -56,7 +56,15 @@ useKeyboardEvents({
             {{ $t('EDIT_CONTACT.DESC') }}
           </p>
         </div>
-        <Button icon="i-lucide-x" slate ghost sm @click="onCancel" />
+        <Button
+          v-tooltip="$t('GENERAL.CLOSE')"
+          :aria-label="$t('GENERAL.CLOSE')"
+          icon="i-lucide-x"
+          slate
+          ghost
+          sm
+          @click="onCancel"
+        />
       </div>
       <ContactForm
         :contact="contact"

@@ -13,11 +13,6 @@ defineProps({
 
 const emit = defineEmits(['clearFilters', 'openFilter']);
 
-const shouldCapitalizeFirstLetter = key => {
-  const lowercaseKeys = ['email'];
-  return !lowercaseKeys.includes(key);
-};
-
 const formatOperatorLabel = operator => {
   const operators = {
     equal_to: 'is',
@@ -55,8 +50,9 @@ const formatFilterValue = value => {
         v-if="index < maxVisibleFilters"
         class="inline-flex items-center gap-2 h-7"
       >
-        <div
-          class="flex items-center h-full min-w-0 gap-1 px-2 py-1 text-xs border rounded-lg hover:bg-n-solid-2 max-w-72 border-n-weak hover:cursor-pointer"
+        <button
+          type="button"
+          class="flex items-center h-full min-w-0 gap-1 px-2 py-1 text-xs text-start border rounded-control focus-ring hover:bg-n-solid-2 max-w-72 border-n-weak cursor-pointer"
           @click="emit('openFilter')"
         >
           <span
@@ -76,16 +72,11 @@ const formatFilterValue = value => {
           <span
             v-if="filter.values"
             :title="formatFilterValue(filter.values)"
-            class="lowercase truncate text-n-slate-12"
-            :class="{
-              'first-letter:capitalize': shouldCapitalizeFirstLetter(
-                filter.attributeKey
-              ),
-            }"
+            class="truncate text-n-slate-12"
           >
             {{ formatFilterValue(filter.values) }}
           </span>
-        </div>
+        </button>
         <template
           v-if="
             index < maxVisibleFilters - 1 && index < appliedFilters.length - 1
@@ -99,13 +90,14 @@ const formatFilterValue = value => {
         </template>
       </div>
     </template>
-    <div
+    <button
       v-if="appliedFilters.length > maxVisibleFilters"
-      class="inline-flex items-center content-center px-1 text-xs rounded-lg text-n-slate-10 hover:text-n-slate-11 h-7 hover:cursor-pointer"
+      type="button"
+      class="inline-flex items-center content-center px-1 text-xs rounded-control focus-ring text-n-slate-10 hover:text-n-slate-11 h-7 cursor-pointer"
       @click="emit('openFilter')"
     >
       {{ moreFiltersLabel }}
-    </div>
+    </button>
     <div v-if="showClearButton" class="w-px h-3 rounded-lg bg-n-strong" />
     <Button
       v-if="showClearButton"

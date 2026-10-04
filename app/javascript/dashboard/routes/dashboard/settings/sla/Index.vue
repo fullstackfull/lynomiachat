@@ -37,6 +37,9 @@ export default {
       showDeleteConfirmationPopup: false,
       selectedResponse: {},
       searchQuery: '',
+      // Empty until a heading is clicked, so the default order is the store's own.
+      sortBy: '',
+      sortOrder: 'asc',
     };
   },
   computed: {
@@ -78,11 +81,43 @@ export default {
       if (!query) return this.records;
       return picoSearch(this.records, query, ['name', 'description']);
     },
+    // Index-aligned with `tableHeaders`. The three thresholds are seconds, so they sort numerically.
+    sortableColumns() {
+      return [
+        'name',
+        null,
+        'first_response_time_threshold',
+        'next_response_time_threshold',
+        'resolution_time_threshold',
+        null,
+      ];
+    },
+    sortedRecords() {
+      if (!this.sortBy) return this.filteredRecords;
+      const direction = this.sortOrder === 'asc' ? 1 : -1;
+      const byName = this.sortBy === 'name';
+      // Copy first: with an empty search box `filteredRecords` is the store's own array.
+      return [...this.filteredRecords].sort((a, b) => {
+        if (byName)
+          return (a.name ?? '').localeCompare(b.name ?? '') * direction;
+        // A null threshold means "not set"; it sorts after every set value in either direction.
+        const left = a[this.sortBy];
+        const right = b[this.sortBy];
+        if (left == null && right == null) return 0;
+        if (left == null) return 1;
+        if (right == null) return -1;
+        return (left - right) * direction;
+      });
+    },
   },
   mounted() {
     this.$store.dispatch('sla/get');
   },
   methods: {
+    onSort({ key, order }) {
+      this.sortBy = key;
+      this.sortOrder = order;
+    },
     openAddPopup() {
       if (this.isBehindAPaywall) {
         return;
@@ -137,10 +172,7 @@ export default {
 </script>
 
 <template>
-  <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('SLA.LOADING')"
-  >
+  <SettingsLayout>
     <template #header>
       <BaseSettingsHeader
         v-model:search-query="searchQuery"
@@ -175,8 +207,17 @@ export default {
       />
       <BaseTable
         v-else
+        scrollable
+        sticky-actions
         :headers="tableHeaders"
-        :items="filteredRecords"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching"
+        :loading-message="$t('SLA.LOADING')"
+        :loading-rows="4"
+        :sortable-columns="sortableColumns"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="
           !records.length
             ? $t('SLA.LIST.404')
@@ -184,6 +225,7 @@ export default {
               ? $t('SLA.SEARCH.NO_RESULTS')
               : ''
         "
+        @sort="onSort"
       >
         <template #header-2>
           <div class="flex items-center gap-1">
@@ -242,7 +284,7 @@ export default {
                       ? $t('SLA.LIST.BUSINESS_HOURS_ON')
                       : $t('SLA.LIST.BUSINESS_HOURS_OFF')
                   "
-                  :color="sla.only_during_business_hours ? 'teal' : 'slate'"
+                  :tone="sla.only_during_business_hours ? 'success' : 'neutral'"
                   compact
                 >
                   <template #icon>

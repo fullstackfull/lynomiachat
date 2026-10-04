@@ -78,14 +78,14 @@ export default {
 </script>
 
 <template>
-  <div class="group/row w-full h-5 ltr:-ml-1 rtl:-mr-1">
+  <div class="group/row w-full min-h-control-xs">
     <!-- Inline edit mode -->
     <div v-if="isEditing" class="flex items-center w-full min-w-0 gap-2">
       <EmojiOrIcon
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <InlineInput
         ref="editInput"
@@ -107,7 +107,7 @@ export default {
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <span
         v-if="value"
@@ -121,6 +121,8 @@ export default {
       </span>
       <NextButton
         v-if="showCopy"
+        v-tooltip.top="$t('CONTACT_PANEL.COPY_FIELD', { field: title })"
+        :aria-label="$t('CONTACT_PANEL.COPY_FIELD', { field: title })"
         ghost
         xs
         slate
@@ -130,10 +132,12 @@ export default {
       />
       <NextButton
         v-if="editable"
+        v-tooltip.top="$t('CONTACT_PANEL.EDIT_FIELD', { field: title })"
+        :aria-label="$t('CONTACT_PANEL.EDIT_FIELD', { field: title })"
         ghost
         xs
         slate
-        class="ltr:-ml-1 rtl:-mr-1 opacity-0 group-hover/row:opacity-100 transition-opacity"
+        class="ltr:-ml-1 rtl:-mr-1 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
         icon="i-lucide-pencil"
         @click.prevent="startEditing"
       />
@@ -145,7 +149,7 @@ export default {
         :icon="icon"
         :emoji="emoji"
         icon-size="14"
-        class="flex-shrink-0 ltr:ml-1 rtl:mr-1"
+        class="flex-shrink-0"
       />
       <span
         v-if="value"
@@ -157,6 +161,8 @@ export default {
       </span>
       <NextButton
         v-if="showCopy"
+        v-tooltip.top="$t('CONTACT_PANEL.COPY_FIELD', { field: title })"
+        :aria-label="$t('CONTACT_PANEL.COPY_FIELD', { field: title })"
         ghost
         xs
         slate
@@ -166,10 +172,12 @@ export default {
       />
       <NextButton
         v-if="editable"
+        v-tooltip.top="$t('CONTACT_PANEL.EDIT_FIELD', { field: title })"
+        :aria-label="$t('CONTACT_PANEL.EDIT_FIELD', { field: title })"
         ghost
         xs
         slate
-        class="ltr:-ml-1 rtl:-mr-1 opacity-0 group-hover/row:opacity-100 transition-opacity"
+        class="ltr:-ml-1 rtl:-mr-1 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
         icon="i-lucide-pencil"
         @click="startEditing"
       />

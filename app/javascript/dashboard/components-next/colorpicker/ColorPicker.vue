@@ -80,7 +80,7 @@ const pickerRef = ref(null);
 
       .vc-chrome-toggle-btn {
         .vc-chrome-toggle-icon svg {
-          @apply [&>path]:fill-n-slate-10 dark:[&>path]:fill-n-slate-10 left-3 relative;
+          @apply [&>path]:fill-n-slate-10 dark:[&>path]:fill-n-slate-10 start-3 relative;
         }
         .vc-chrome-toggle-icon-highlight {
           @apply bg-n-background;

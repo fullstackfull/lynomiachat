@@ -36,7 +36,7 @@ const onInsert = e => {
         @click="onBack"
       />
     </div>
-    <div class="-ml-4 h-full overflow-y-auto">
+    <div class="-ms-4 h-full overflow-y-auto">
       <div class="w-full h-full min-h-0">
         <IframeLoader :url="url" :is-rtl="isRTL" is-dir-applied />
       </div>

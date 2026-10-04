@@ -1,9 +1,6 @@
 <script>
 import { useAlert } from 'dashboard/composables';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
+import { contactErrorMessage } from 'dashboard/helper/contactErrors';
 import { required, email } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import countries from 'shared/constants/countries.js';
@@ -262,17 +259,7 @@ export default {
         this.onSuccess();
         useAlert(this.$t('CONTACT_FORM.SUCCESS_MESSAGE'));
       } catch (error) {
-        if (error instanceof DuplicateContactException) {
-          if (error.data.includes('email')) {
-            useAlert(this.$t('CONTACT_FORM.FORM.EMAIL_ADDRESS.DUPLICATE'));
-          } else if (error.data.includes('phone_number')) {
-            useAlert(this.$t('CONTACT_FORM.FORM.PHONE_NUMBER.DUPLICATE'));
-          }
-        } else if (error instanceof ExceptionWithMessage) {
-          useAlert(error.data);
-        } else {
-          useAlert(this.$t('CONTACT_FORM.ERROR_MESSAGE'));
-        }
+        useAlert(contactErrorMessage(error, this.$t.bind(this)));
       }
     },
     handleImageUpload({ file, url }) {

@@ -171,7 +171,7 @@ export default {
             type="checkbox"
             :value="event"
             name="subscriptions"
-            class="mr-2"
+            class="me-2"
           />
           <label :for="event" class="text-sm">
             {{

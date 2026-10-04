@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue';
-import { useStore } from 'dashboard/composables/store';
+import { computed, ref } from 'vue';
+import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 
@@ -17,6 +17,7 @@ const { t } = useI18n();
 const store = useStore();
 
 const dialogRef = ref(null);
+const uiFlags = useMapGetter('campaigns/getUIFlags');
 
 const deleteCampaign = async id => {
   if (!id) return;
@@ -34,6 +35,8 @@ const handleDialogConfirm = async () => {
   dialogRef.value?.close();
 };
 
+const isDeleting = computed(() => uiFlags.value.isDeleting);
+
 defineExpose({ dialogRef });
 </script>
 
@@ -42,8 +45,21 @@ defineExpose({ dialogRef });
     ref="dialogRef"
     type="alert"
     :title="t('CAMPAIGN.CONFIRM_DELETE.TITLE')"
-    :description="t('CAMPAIGN.CONFIRM_DELETE.DESCRIPTION')"
     :confirm-button-label="t('CAMPAIGN.CONFIRM_DELETE.CONFIRM')"
+    :is-loading="isDeleting"
+    :disable-confirm-button="isDeleting"
     @confirm="handleDialogConfirm"
-  />
+  >
+    <template #description="{ descriptionId }">
+      <p
+        v-if="selectedCampaign?.title"
+        class="mb-1 text-heading-3 text-n-slate-12"
+      >
+        {{ selectedCampaign.title }}
+      </p>
+      <p :id="descriptionId" class="mb-0 text-sm text-n-slate-11">
+        {{ t('CAMPAIGN.CONFIRM_DELETE.DESCRIPTION') }}
+      </p>
+    </template>
+  </Dialog>
 </template>

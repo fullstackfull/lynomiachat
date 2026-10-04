@@ -17,7 +17,8 @@ const toggleExpanded = () => {
   >
     <button
       type="button"
-      class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-n-solid-2 transition-colors"
+      class="w-full px-4 py-3 flex items-center justify-between text-start hover:bg-n-solid-2 transition-colors"
+      :aria-expanded="isExpanded"
       @click="toggleExpanded"
     >
       <h4 class="font-medium text-n-slate-12">
@@ -31,10 +32,10 @@ const toggleExpanded = () => {
     </button>
 
     <div
-      class="transition-[height] duration-200 ease-in-out overflow-hidden"
-      :class="isExpanded ? 'h-auto' : 'h-0'"
+      class="grid transition-[grid-template-rows] duration-200 ease-in-out overflow-hidden motion-reduce:transition-none"
+      :class="isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
     >
-      <div class="px-4 pb-3">
+      <div class="min-h-0 overflow-hidden px-4 pb-3">
         <p class="text-n-slate-11 mb-2">
           {{ t('SECURITY_SETTINGS.SAML.ATTRIBUTE_MAPPING.DESCRIPTION') }}
         </p>

@@ -5,20 +5,44 @@
 // own permissions, its own validation and the server's.
 
 export const AUDIENCE_QUERY_PARAM = 'audience';
+// A label is the other recipient source a campaign accepts (`{ type: 'Label', id }`), so "use this over there"
+// works the same way for one: the target page's route carries the id, reads it, prefills its own form and keeps
+// its own permissions and validation. Nothing is created on the way.
+export const LABEL_QUERY_PARAM = 'label';
 
-/**
- * The audience id a route query names, when it names one at all.
- * @param {Object} query - A route query object.
- * @returns {number|null} The id, or null when the query has none or it is not a positive integer.
- */
-export const audienceIdFromQuery = query => {
-  const raw = query?.[AUDIENCE_QUERY_PARAM];
+const idFromQuery = (query, key) => {
+  const raw = query?.[key];
   // A repeated query parameter arrives as an array, and `Number(['3'])` is 3: only a single value counts.
   if (typeof raw !== 'string' && typeof raw !== 'number') return null;
 
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
 };
+
+/**
+ * The audience id a route query names, when it names one at all.
+ * @param {Object} query - A route query object.
+ * @returns {number|null} The id, or null when the query has none or it is not a positive integer.
+ */
+export const audienceIdFromQuery = query =>
+  idFromQuery(query, AUDIENCE_QUERY_PARAM);
+
+/**
+ * The label id a route query names, when it names one at all.
+ * @param {Object} query - A route query object.
+ * @returns {number|null} The id, or null when the query has none or it is not a positive integer.
+ */
+export const labelIdFromQuery = query => idFromQuery(query, LABEL_QUERY_PARAM);
+
+/**
+ * One label of this account by id. An id that is not one of its labels resolves to undefined, so a prefill built
+ * from it simply does not happen and the campaign form opens empty.
+ * @param {Array} labels - The `labels/getLabels` records.
+ * @param {number} id - The label id.
+ * @returns {Object|undefined} The label.
+ */
+export const findAccountLabel = (labels, id) =>
+  (labels || []).find(label => label.id === id);
 
 /**
  * The account's shared audiences, from the contact filters the store already holds.

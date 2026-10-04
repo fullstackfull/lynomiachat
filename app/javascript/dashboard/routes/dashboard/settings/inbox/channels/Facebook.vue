@@ -272,7 +272,7 @@ export default {
               </span>
             </label>
           </div>
-          <div class="w-full text-right">
+          <div class="w-full text-end">
             <NextButton :label="$t('INBOX_MGMT.ADD.FB.CREATE_INBOX')" />
           </div>
         </div>

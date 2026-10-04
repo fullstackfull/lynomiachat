@@ -231,7 +231,7 @@ onMounted(() => {
           v-if="openCategoryList && hasCategoryMenuItems"
           :menu-items="categoryList"
           show-search
-          class="w-48 mt-2 z-[100] left-0 top-full max-h-60"
+          class="w-48 mt-2 z-[100] start-0 top-full max-h-60"
           @action="handleArticleAction"
         />
       </OnClickOutside>

@@ -41,6 +41,8 @@ const onClickSetView = (type, mode) => {
 <template>
   <div class="flex items-start justify-between w-full h-9">
     <NextButton
+      v-tooltip.top="$t('DATE_PICKER.SHOW_EARLIER_DATES')"
+      :aria-label="$t('DATE_PICKER.SHOW_EARLIER_DATES')"
       slate
       ghost
       xs
@@ -66,6 +68,8 @@ const onClickSetView = (type, mode) => {
       </button>
     </div>
     <NextButton
+      v-tooltip.top="$t('DATE_PICKER.SHOW_LATER_DATES')"
+      :aria-label="$t('DATE_PICKER.SHOW_LATER_DATES')"
       slate
       ghost
       xs

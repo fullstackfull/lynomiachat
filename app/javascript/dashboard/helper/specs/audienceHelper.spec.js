@@ -1,8 +1,11 @@
 import {
   AUDIENCE_QUERY_PARAM,
+  LABEL_QUERY_PARAM,
   audienceConditionFor,
   audienceIdFromQuery,
+  findAccountLabel,
   findSharedAudience,
+  labelIdFromQuery,
   sharedAudiences,
 } from '../audienceHelper';
 
@@ -57,6 +60,48 @@ describe('audienceHelper', () => {
         query_operator: 'and',
         custom_attribute_type: '',
       });
+    });
+  });
+
+  describe('labelIdFromQuery', () => {
+    it('reads a label id the query names', () => {
+      expect(labelIdFromQuery({ [LABEL_QUERY_PARAM]: '4' })).toBe(4);
+    });
+
+    it('is null when the query names none', () => {
+      expect(labelIdFromQuery({})).toBeNull();
+      expect(labelIdFromQuery(undefined)).toBeNull();
+    });
+
+    it('refuses anything that is not a single positive integer', () => {
+      expect(labelIdFromQuery({ [LABEL_QUERY_PARAM]: ['4'] })).toBeNull();
+      expect(labelIdFromQuery({ [LABEL_QUERY_PARAM]: '0' })).toBeNull();
+      expect(labelIdFromQuery({ [LABEL_QUERY_PARAM]: '-4' })).toBeNull();
+      expect(labelIdFromQuery({ [LABEL_QUERY_PARAM]: 'vip' })).toBeNull();
+    });
+
+    it('does not read the audience parameter, and vice versa', () => {
+      expect(labelIdFromQuery({ [AUDIENCE_QUERY_PARAM]: '4' })).toBeNull();
+      expect(audienceIdFromQuery({ [LABEL_QUERY_PARAM]: '4' })).toBeNull();
+    });
+  });
+
+  describe('findAccountLabel', () => {
+    const LABELS = [
+      { id: 4, title: 'vip' },
+      { id: 9, title: 'wholesale' },
+    ];
+
+    it("finds one of the account's labels by id", () => {
+      expect(findAccountLabel(LABELS, 9)).toEqual({
+        id: 9,
+        title: 'wholesale',
+      });
+    });
+
+    it('finds nothing for an id the account does not have', () => {
+      expect(findAccountLabel(LABELS, 11)).toBeUndefined();
+      expect(findAccountLabel(undefined, 4)).toBeUndefined();
     });
   });
 });

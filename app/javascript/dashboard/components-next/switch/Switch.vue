@@ -1,6 +1,12 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 
+const props = defineProps({
+  // What this switch turns on. A switch named only "Toggle switch" tells a screen reader nothing about
+  // which of a page's eight toggles it has landed on.
+  label: { type: String, default: '' },
+});
+
 const emit = defineEmits(['change']);
 
 const { t } = useI18n();
@@ -23,9 +29,10 @@ const updateValue = () => {
     :class="modelValue ? 'bg-n-brand' : 'bg-n-slate-6'"
     role="switch"
     :aria-checked="modelValue"
+    :aria-label="props.label || undefined"
     @click="updateValue"
   >
-    <span class="sr-only">{{ t('SWITCH.TOGGLE') }}</span>
+    <span v-if="!props.label" class="sr-only">{{ t('SWITCH.TOGGLE') }}</span>
     <span
       class="absolute top-1/2 ltr:left-0.5 rtl:right-0.5 -translate-y-1/2 transition-transform duration-[350ms] ease-[cubic-bezier(0.34,1.56,0.64,1)]"
       :class="

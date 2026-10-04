@@ -19,6 +19,9 @@ const { isAdmin } = useAdmin();
 const showDeleteConfirmationPopup = ref(false);
 const selectedMacro = ref({});
 const searchQuery = ref('');
+// Empty until a heading is clicked, so the default order is the store's own.
+const sortBy = ref('');
+const sortOrder = ref('asc');
 
 const records = computed(() => getters['macros/getMacros'].value);
 const uiFlags = computed(() => getters['macros/getUIFlags'].value);
@@ -28,6 +31,31 @@ const filteredRecords = computed(() => {
   if (!query) return records.value;
   return picoSearch(records.value, query, ['name']);
 });
+
+// The same resolution the row renders, so the arrow and the column never disagree.
+const personName = person => person?.available_name ?? person?.email ?? '';
+
+const SORT_VALUES = {
+  name: macro => macro.name ?? '',
+  created_by: macro => personName(macro.created_by),
+  updated_by: macro => personName(macro.updated_by),
+  visibility: macro => macro.visibility ?? '',
+};
+
+const sortedRecords = computed(() => {
+  const read = SORT_VALUES[sortBy.value];
+  if (!read) return filteredRecords.value;
+  const direction = sortOrder.value === 'asc' ? 1 : -1;
+  // Copy first: with an empty search box `filteredRecords` is the store's own array by reference.
+  return [...filteredRecords.value].sort(
+    (a, b) => read(a).localeCompare(read(b)) * direction
+  );
+});
+
+const handleSort = ({ key, order }) => {
+  sortBy.value = key;
+  sortOrder.value = order;
+};
 
 const deleteMessage = computed(() => ` ${selectedMacro.value.name}?`);
 
@@ -58,6 +86,26 @@ const confirmDeletion = () => {
   deleteMacro(selectedMacro.value.id);
 };
 
+// Index-aligned with `tableHeaders`.
+const SORTABLE_COLUMNS = [
+  'name',
+  'created_by',
+  'updated_by',
+  'visibility',
+  null,
+];
+
+// Five columns do not fit a phone. Who made it and who last touched it are the two a user scanning
+// their macro library can do without there; both stay in full from `sm` up, and neither is the only
+// place that information lives — the macro editor shows both.
+const COLUMN_CLASSES = [
+  null,
+  'hidden sm:table-cell',
+  'hidden sm:table-cell',
+  null,
+  null,
+];
+
 const tableHeaders = computed(() => {
   return [
     t('MACROS.LIST.TABLE_HEADER.NAME'),
@@ -72,10 +120,7 @@ const tableHeaders = computed(() => {
 <template>
   <SettingsLayout
     :no-records-message="$t('MACROS.LIST.404')"
-    :no-records-found="!records.length"
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('MACROS.LOADING')"
-    feature-name="macros"
+    :no-records-found="!uiFlags.isFetching && !records.length"
   >
     <template #header>
       <BaseSettingsHeader
@@ -92,19 +137,36 @@ const tableHeaders = computed(() => {
           </span>
         </template>
         <template #actions>
-          <router-link :to="{ name: 'macros_new' }">
-            <Button :label="$t('MACROS.HEADER_BTN_TXT')" size="sm" />
+          <router-link
+            :to="{ name: 'macros_new' }"
+            :aria-label="$t('MACROS.HEADER_BTN_TXT')"
+          >
+            <Button
+              :label="$t('MACROS.HEADER_BTN_TXT')"
+              size="sm"
+              tabindex="-1"
+              aria-hidden="true"
+            />
           </router-link>
         </template>
       </BaseSettingsHeader>
     </template>
     <template #body>
       <BaseTable
+        sticky-header
         :headers="tableHeaders"
-        :items="filteredRecords"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching"
+        :loading-message="$t('MACROS.LOADING')"
+        :sortable-columns="SORTABLE_COLUMNS"
+        :column-classes="COLUMN_CLASSES"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="
           searchQuery ? $t('MACROS.NO_RESULTS') : $t('MACROS.LIST.404')
         "
+        @sort="handleSort"
       >
         <template #row="{ items }">
           <MacrosTableRow

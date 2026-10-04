@@ -1,4 +1,7 @@
-import contactAPI, { buildContactParams } from '../contacts';
+import contactAPI, {
+  buildContactParams,
+  buildImportFormData,
+} from '../contacts';
 import ApiClient from '../ApiClient';
 
 describe('#ContactsAPI', () => {
@@ -188,6 +191,73 @@ describe('#buildContactParams', () => {
       sort: 'name',
       q: 'message-content',
       labels: ['customer-support'],
+    });
+  });
+
+  describe('buildImportFormData', () => {
+    const entries = formData => [...formData.entries()];
+
+    it('sends a file when one was chosen', () => {
+      const file = new File(['a,b'], 'contacts.csv', { type: 'text/csv' });
+
+      expect(entries(buildImportFormData({ file }))).toEqual([
+        ['import_file', file],
+      ]);
+    });
+
+    it('sends pasted numbers when no file was chosen', () => {
+      expect(
+        entries(buildImportFormData({ phoneNumbers: '+96551112233' }))
+      ).toEqual([['phone_numbers', '+96551112233']]);
+    });
+
+    it('prefers the file, so the two sources never arrive together', () => {
+      const file = new File(['a,b'], 'contacts.csv', { type: 'text/csv' });
+      const keys = entries(
+        buildImportFormData({ file, phoneNumbers: '+96551112233' })
+      ).map(([key]) => key);
+
+      expect(keys).toEqual(['import_file']);
+    });
+
+    it('sends each label separately, so Rails reads an array', () => {
+      expect(
+        entries(
+          buildImportFormData({
+            phoneNumbers: '+96551112233',
+            labels: ['vip', 'wholesale'],
+          })
+        )
+      ).toEqual([
+        ['phone_numbers', '+96551112233'],
+        ['labels[]', 'vip'],
+        ['labels[]', 'wholesale'],
+      ]);
+    });
+
+    it('leaves out the choices nobody made, so the server applies its own defaults', () => {
+      const keys = entries(
+        buildImportFormData({ phoneNumbers: '+96551112233' })
+      ).map(([key]) => key);
+
+      expect(keys).not.toContain('default_country');
+      expect(keys).not.toContain('duplicate_policy');
+    });
+
+    it('sends the choices that were made', () => {
+      expect(
+        entries(
+          buildImportFormData({
+            phoneNumbers: '+96551112233',
+            defaultCountry: 'SA',
+            duplicatePolicy: 'keep',
+          })
+        )
+      ).toEqual([
+        ['phone_numbers', '+96551112233'],
+        ['default_country', 'SA'],
+        ['duplicate_policy', 'keep'],
+      ]);
     });
   });
 });

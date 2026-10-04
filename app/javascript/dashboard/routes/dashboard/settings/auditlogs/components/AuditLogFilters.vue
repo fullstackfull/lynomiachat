@@ -198,6 +198,8 @@ const handleFilterAction = ({ action, value }) => {
         color="slate"
         size="sm"
         :class="{ 'bg-n-slate-9/10': openFilterMenu === menu.key }"
+        aria-haspopup="menu"
+        :aria-expanded="openFilterMenu === menu.key"
         @click="toggleFilterMenu(menu.key)"
       >
         <span class="min-w-0 truncate">{{ menu.label }}</span>

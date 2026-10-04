@@ -12,6 +12,8 @@ const props = defineProps({
   // The audience being viewed, when the list is one (`contacts_dashboard_segments_index`). Its actions belong in this
   // menu rather than in more header buttons.
   segment: { type: Object, default: null },
+  // The label the list is filtered by, when it is one. A label is a campaign recipient source in its own right.
+  activeLabel: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -136,8 +138,28 @@ const segmentActions = computed(() => {
   ];
 });
 
+// A label page's actions. "Use in a new WhatsApp campaign" only: `Campaign#audience_contacts` resolves
+// `{ type: 'Label', id }`, so a label genuinely is a recipient source. There is deliberately no "use in a new
+// automation rule" beside it — the one audience-shaped automation condition is `contact_audience`, which names a
+// shared audience, and no condition means "the contact carries label X". Offering it for symmetry would open a
+// rule builder that cannot express what the menu implied.
+const labelActions = computed(() => {
+  if (!props.activeLabel || !canReach('campaigns_whatsapp_index')) return [];
+
+  return [
+    {
+      label: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.USE_IN_CAMPAIGN'),
+      action: 'useInCampaign',
+      value: 'use-in-campaign',
+      icon: 'i-lucide-megaphone',
+    },
+  ];
+});
+
 const audienceItems = computed(() => {
-  const segmentItems = props.segment ? segmentActions.value : [];
+  const segmentItems = props.segment
+    ? segmentActions.value
+    : labelActions.value;
   return [
     ...segmentItems,
     {

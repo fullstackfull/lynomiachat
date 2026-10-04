@@ -123,7 +123,10 @@ function changeAvailabilityStatus(availability) {
             class="inline-block align-middle ms-1 size-4 text-n-slate-10"
           />
         </div>
-        <ToggleSwitch v-model="autoOfflineToggle" />
+        <ToggleSwitch
+          v-model="autoOfflineToggle"
+          :label="$t('SIDEBAR.SET_AVAILABILITY_TITLE')"
+        />
       </DropdownItem>
     </div>
   </DropdownSection>

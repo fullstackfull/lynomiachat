@@ -145,7 +145,7 @@ onMounted(() => {
     />
     <p
       v-if="message"
-      class="min-w-0 mt-1 mb-0 text-label-small truncate transition-all duration-500 ease-in-out"
+      class="min-w-0 mt-1 mb-0 text-label-small whitespace-normal break-words transition-all duration-500 ease-in-out"
       :class="messageClass"
     >
       {{ message }}

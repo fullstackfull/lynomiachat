@@ -55,10 +55,12 @@ const actionURL = computed(() =>
     <div class="flex items-start justify-between">
       <div class="flex h-12 w-12 mb-2">
         <img
+          alt=""
           :src="`/dashboard/images/integrations/${id}.png`"
           class="max-w-full rounded-md border border-n-weak shadow-sm block dark:hidden bg-n-alpha-3 dark:bg-n-alpha-2"
         />
         <img
+          alt=""
           :src="`/dashboard/images/integrations/${id}-dark.png`"
           class="max-w-full rounded-md border border-n-weak shadow-sm hidden dark:block bg-n-alpha-3 dark:bg-n-alpha-2"
         />
@@ -74,12 +76,17 @@ const actionURL = computed(() =>
         class="font-medium mb-2 text-n-slate-12 flex justify-between items-center"
       >
         <span class="text-heading-3 text-n-slate-12">{{ name }}</span>
-        <router-link :to="actionURL">
+        <router-link
+          :to="actionURL"
+          :aria-label="`${$t('INTEGRATION_APPS.CONFIGURE')} ${name}`"
+        >
           <Button
             :label="$t('INTEGRATION_APPS.CONFIGURE')"
             icon="i-woot-settings"
             link
             xs
+            tabindex="-1"
+            aria-hidden="true"
           />
         </router-link>
       </div>

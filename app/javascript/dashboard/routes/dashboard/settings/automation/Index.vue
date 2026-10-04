@@ -312,6 +312,38 @@ const toggleAutomation = async ({ id, name, status }) => {
   }
 };
 
+// Index-aligned with `tableHeaders`.
+const SORTABLE_COLUMNS = ['name', 'active', 'created_on', null];
+
+// Four columns against a ~294px card at 390px: Active, Created on and the three row actions alone
+// claim 280 of it, which is why the rule name renders as a single letter today. Created on moves into
+// the name cell below `md` rather than disappearing.
+const COLUMN_CLASSES = ['', '', 'hidden md:table-cell', ''];
+
+const sortBy = ref('');
+const sortOrder = ref('asc');
+
+const onSort = ({ key, order }) => {
+  sortBy.value = key;
+  sortOrder.value = order;
+};
+
+const SORT_VALUES = {
+  name: rule => rule.name ?? '',
+  active: rule => (rule.active ? '1' : '0'),
+  created_on: rule => String(rule.created_on ?? ''),
+};
+
+const sortedRecords = computed(() => {
+  const read = SORT_VALUES[sortBy.value];
+  if (!read) return visibleRecords.value;
+  const direction = sortOrder.value === 'asc' ? 1 : -1;
+  // Copy first: `getAutomations` hands back the store's own array, which it already sorts in place.
+  return [...visibleRecords.value].sort(
+    (a, b) => read(a).localeCompare(read(b)) * direction
+  );
+});
+
 const tableHeaders = computed(() => {
   return [
     t('AUTOMATION.LIST.TABLE_HEADER.NAME'),
@@ -323,10 +355,7 @@ const tableHeaders = computed(() => {
 </script>
 
 <template>
-  <SettingsLayout
-    :is-loading="uiFlags.isFetching"
-    :loading-message="$t('AUTOMATION.LOADING')"
-  >
+  <SettingsLayout>
     <template #header>
       <BaseSettingsHeader
         v-model:search-query="searchQuery"
@@ -368,6 +397,10 @@ const tableHeaders = computed(() => {
       </BaseSettingsHeader>
     </template>
     <template #body>
+      <!-- The skeleton rows are aria-hidden, so this is what a screen reader hears during the fetch. -->
+      <span v-if="uiFlags.isFetching" role="status" class="sr-only">
+        {{ $t('AUTOMATION.LOADING') }}
+      </span>
       <div
         v-if="showDelayDisabledBanner"
         class="px-4 py-3 mb-4 text-sm rounded-lg bg-n-amber-3 text-n-amber-12"
@@ -375,7 +408,7 @@ const tableHeaders = computed(() => {
         {{ $t('AUTOMATION.LIST.DELAY_DISABLED_BANNER') }}
       </div>
       <div
-        v-if="!records.length"
+        v-if="!records.length && !uiFlags.isFetching"
         class="flex flex-col items-center gap-3 py-16 text-center"
         data-test-id="automation-empty-state"
       >
@@ -403,9 +436,17 @@ const tableHeaders = computed(() => {
       </div>
       <BaseTable
         v-else
+        sticky-header
         :headers="tableHeaders"
-        :items="visibleRecords"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.isFetching && !visibleRecords.length"
+        :sortable-columns="SORTABLE_COLUMNS"
+        :column-classes="COLUMN_CLASSES"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="noDataMessage"
+        @sort="onSort"
       >
         <template #row="{ items }">
           <AutomationRuleRow

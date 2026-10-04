@@ -51,7 +51,7 @@ const modelValue = defineModel({
       v-model="modelValue"
       :disabled="disabled"
       :aria-label="ariaLabel || undefined"
-      class="appearance-none bg-none rounded-lg border-0 outline-1 outline -outline-offset-1 transition-all duration-200 bg-n-surface-1 !mb-0 py-2 px-3 pr-10 text-sm"
+      class="appearance-none bg-none rounded-lg border-0 outline-1 outline -outline-offset-1 transition-all duration-200 bg-n-surface-1 !mb-0 py-2 px-3 pe-10 text-sm"
       :class="{
         'outline-n-weak hover:outline-n-slate-6 focus:outline-n-blue-9':
           !error && !disabled,
@@ -90,7 +90,7 @@ const modelValue = defineModel({
       </template>
     </select>
     <div
-      class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+      class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none"
     >
       <Icon
         icon="i-lucide-chevron-down"

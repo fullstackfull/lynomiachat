@@ -42,7 +42,6 @@ export default {
         const fullWidth = params.name === 'settings_inbox_show';
         return {
           headerTitle: 'INBOX_MGMT.HEADER',
-          icon: 'mail-inbox-all',
           showBackButton,
           fullWidth,
         };

@@ -20,6 +20,10 @@ const emit = defineEmits(['update:sort']);
 
 const { t } = useI18n();
 
+const isDefaultSort = computed(
+  () => props.activeSort === 'last_activity_at' && props.activeOrdering === '-'
+);
+
 const isMenuOpen = ref(false);
 
 const sortMenus = [
@@ -100,13 +104,19 @@ const handleOrderChange = value => {
       color="slate"
       size="sm"
       variant="ghost"
+      class="relative w-8"
       :class="isMenuOpen ? 'bg-n-alpha-2' : ''"
       @click="isMenuOpen = !isMenuOpen"
-    />
+    >
+      <div
+        v-if="!isDefaultSort"
+        class="absolute top-0 end-0 size-2 rounded-full bg-n-brand"
+      />
+    </Button>
     <div
       v-if="isMenuOpen"
       v-on-clickaway="() => (isMenuOpen = false)"
-      class="absolute top-full mt-1 ltr:-right-32 rtl:-left-32 sm:ltr:right-0 sm:rtl:left-0 flex flex-col gap-4 bg-n-alpha-3 backdrop-blur-panel border border-n-weak w-72 rounded-xl p-4 z-50"
+      class="absolute top-full mt-1 end-0 flex flex-col gap-4 bg-n-alpha-3 backdrop-blur-panel border border-n-weak w-[min(18rem,calc(100vw-2rem))] rounded-overlay shadow-overlay p-4 z-dropdown"
     >
       <div class="flex items-center justify-between gap-2">
         <span class="text-sm text-n-slate-12">

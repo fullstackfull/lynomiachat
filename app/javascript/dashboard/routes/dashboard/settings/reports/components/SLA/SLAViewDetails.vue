@@ -47,7 +47,7 @@ export default {
       <SLAPopoverCard
         v-if="showSlaPopoverCard"
         :sla-missed-events="slaEvents"
-        class="right-0"
+        class="end-0"
       />
     </div>
   </div>

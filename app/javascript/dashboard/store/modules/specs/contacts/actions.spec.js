@@ -185,11 +185,57 @@ describe('#actions', () => {
           contactParams: contactList[0],
         }
       );
+      // SET_CONTACT_RECORD, not SET_CONTACT_ITEM: a created contact must not join the rendered list until
+      // the server says it belongs there and where it sorts.
       expect(commit.mock.calls).toEqual([
         [types.SET_CONTACT_UI_FLAG, { isCreating: true }],
-        [types.SET_CONTACT_ITEM, contactList[0]],
+        [types.SET_CONTACT_RECORD, contactList[0]],
         [types.SET_CONTACT_UI_FLAG, { isCreating: false }],
       ]);
+    });
+
+    it('carries the per-field errors and their validators off a 422', async () => {
+      axios.post.mockRejectedValue({
+        response: {
+          status: 422,
+          data: {
+            message: 'Phone number has already been taken',
+            attributes: ['phone_number'],
+            errors: { phone_number: ['Phone number has already been taken'] },
+            error_types: { phone_number: ['taken'] },
+          },
+        },
+      });
+
+      await expect(actions.create({ commit }, contactList[0])).rejects.toThrow(
+        DuplicateContactException
+      );
+
+      const error = await actions
+        .create({ commit }, contactList[0])
+        .catch(caught => caught);
+      expect(error.fieldErrors).toEqual({
+        phone_number: ['Phone number has already been taken'],
+      });
+      expect(error.fieldErrorTypes).toEqual({ phone_number: ['taken'] });
+      expect(error.contactErrorDetail).toBe(
+        'Phone number has already been taken'
+      );
+    });
+
+    it('leaves the error maps empty when the server sends none', async () => {
+      axios.post.mockRejectedValue({
+        response: {
+          status: 422,
+          data: { message: 'Nope', attributes: ['email'] },
+        },
+      });
+
+      const error = await actions
+        .create({ commit }, contactList[0])
+        .catch(caught => caught);
+      expect(error.fieldErrors).toEqual({});
+      expect(error.fieldErrorTypes).toEqual({});
     });
     it('sends correct actions if API is error', async () => {
       axios.post.mockRejectedValue({ message: 'Incorrect header' });

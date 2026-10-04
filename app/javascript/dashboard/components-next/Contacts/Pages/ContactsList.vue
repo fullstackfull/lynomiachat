@@ -2,12 +2,10 @@
 import { ref, computed } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
+import { contactDetailRoute } from 'dashboard/helper/contactRoutes';
+import { contactErrorMessage } from 'dashboard/helper/contactErrors';
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
-import {
-  DuplicateContactException,
-  ExceptionWithMessage,
-} from 'shared/helpers/CustomErrors';
 import ContactsCard from 'dashboard/components-next/Contacts/ContactsCard/ContactsCard.vue';
 
 const props = defineProps({
@@ -37,33 +35,12 @@ const updateContact = async updatedData => {
     await store.dispatch('contacts/update', updatedData);
     useAlert(t('CONTACTS_LAYOUT.CARD.EDIT_DETAILS_FORM.SUCCESS_MESSAGE'));
   } catch (error) {
-    const i18nPrefix = 'CONTACTS_LAYOUT.CARD.EDIT_DETAILS_FORM.FORM';
-    if (error instanceof DuplicateContactException) {
-      if (error.data.includes('email')) {
-        useAlert(t(`${i18nPrefix}.EMAIL_ADDRESS.DUPLICATE`));
-      } else if (error.data.includes('phone_number')) {
-        useAlert(t(`${i18nPrefix}.PHONE_NUMBER.DUPLICATE`));
-      }
-    } else if (error instanceof ExceptionWithMessage) {
-      useAlert(error.data);
-    } else {
-      useAlert(t(`${i18nPrefix}.ERROR_MESSAGE`));
-    }
+    useAlert(contactErrorMessage(error, t));
   }
 };
 
 const onClickViewDetails = async id => {
-  const routeTypes = {
-    contacts_dashboard_segments_index: ['contacts_edit_segment', 'segmentId'],
-    contacts_dashboard_labels_index: ['contacts_edit_label', 'label'],
-  };
-  const [name, paramKey] = routeTypes[route.name] || ['contacts_edit'];
-  const params = {
-    contactId: id,
-    ...(paramKey && { [paramKey]: route.params[paramKey] }),
-  };
-
-  await router.push({ name, params, query: route.query });
+  await router.push(contactDetailRoute(id, route));
 };
 
 const toggleExpanded = id => {

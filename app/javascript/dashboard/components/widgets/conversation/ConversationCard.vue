@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { getLastMessage } from 'dashboard/helper/conversationHelper';
 import Avatar from 'next/avatar/Avatar.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
@@ -32,8 +32,6 @@ const emit = defineEmits([
   'selectConversation',
   'deSelectConversation',
 ]);
-
-const hovered = ref(false);
 
 const unreadCount = computed(() => props.chat.unread_count);
 const hasUnread = computed(() => unreadCount.value > 0);
@@ -78,14 +76,6 @@ const messagePreviewClass = computed(() => {
   ];
 });
 
-const onThumbnailHover = () => {
-  hovered.value = !props.hideThumbnail;
-};
-
-const onThumbnailLeave = () => {
-  hovered.value = false;
-};
-
 const onSelectConversation = checked => {
   if (checked) {
     emit('selectConversation', props.chat.id, props.inbox.id);
@@ -98,13 +88,6 @@ const selectedModel = computed({
   get: () => props.selected,
   set: value => onSelectConversation(value),
 });
-
-watch(
-  () => props.chat.id,
-  () => {
-    hovered.value = false;
-  }
-);
 </script>
 
 <template>
@@ -120,11 +103,7 @@ watch(
     @click="$emit('click', $event)"
     @contextmenu="$emit('contextmenu', $event)"
   >
-    <div
-      class="relative"
-      @mouseenter="onThumbnailHover"
-      @mouseleave="onThumbnailLeave"
-    >
+    <div class="relative">
       <Avatar
         v-if="!hideThumbnail"
         :name="currentContact.name"
@@ -135,13 +114,22 @@ watch(
         hide-offline-status
       >
         <template #overlay="{ size }">
+          <!-- Revealed by hover, by keyboard focus, and always where there is no hover at all: gating it on a
+               `mouseenter` left bulk selection with no path on a phone or a tablet, which render this card. -->
           <label
-            v-if="hovered || selected"
-            class="flex items-center justify-center rounded-full cursor-pointer absolute inset-0 z-10 backdrop-blur-[2px]"
+            class="flex items-center justify-center rounded-full cursor-pointer absolute inset-0 z-10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+            :class="{ '!opacity-100': selected }"
             :style="{ width: `${size}px`, height: `${size}px` }"
             @click.stop
           >
-            <Checkbox v-model="selectedModel" />
+            <Checkbox
+              v-model="selectedModel"
+              :aria-label="
+                $t('CHAT_LIST.SELECT_CONVERSATION', {
+                  name: currentContact.name,
+                })
+              "
+            />
           </label>
         </template>
       </Avatar>
@@ -217,7 +205,7 @@ watch(
         class="absolute flex flex-col ltr:right-3 rtl:left-3"
         :class="showMetaSection ? 'top-8' : 'top-4'"
       >
-        <span class="ml-auto font-normal leading-4 text-xxs">
+        <span class="ms-auto font-normal leading-4 text-xxs">
           <TimeAgo
             :last-activity-timestamp="chat.timestamp"
             :created-at-timestamp="chat.created_at"

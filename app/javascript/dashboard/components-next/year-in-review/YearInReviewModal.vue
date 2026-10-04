@@ -358,7 +358,7 @@ watch(
           </div>
 
           <button
-            class="absolute top-4 left-4 px-4 py-2 flex items-center gap-2 rounded-full text-n-slate-12 dark:text-n-slate-1 bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors"
+            class="absolute top-4 start-4 px-4 py-2 flex items-center gap-2 rounded-full text-n-slate-12 dark:text-n-slate-1 bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors"
             @click="shareCurrentSlide"
           >
             <i class="i-lucide-share-2 w-5 h-5" />
@@ -368,7 +368,7 @@ watch(
           </button>
 
           <button
-            class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full text-n-slate-12 dark:text-n-slate-1 hover:bg-white hover:bg-opacity-20 transition-colors"
+            class="absolute top-4 end-4 w-10 h-10 flex items-center justify-center rounded-full text-n-slate-12 dark:text-n-slate-1 hover:bg-white hover:bg-opacity-20 transition-colors"
             @click="close"
           >
             <i class="i-lucide-x w-6 h-6" />

@@ -133,17 +133,21 @@ export default {
           xs
           outline
           class="w-fit min-w-20 max-w-32"
+          aria-haspopup="menu"
+          :aria-expanded="showSortMenu"
           @click="openSortMenu"
         />
         <div
           v-if="showSortMenu"
           class="absolute flex flex-col gap-0.5 bg-n-alpha-3 backdrop-blur-panel z-dropdown rounded-lg p-0.5 w-fit min-w-20 max-w-32 top-px outline outline-1 outline-n-container dark:outline-n-strong"
         >
-          <div
+          <button
             v-for="option in sortOptions"
             :key="option.key"
-            role="button"
-            class="flex rounded-md h-5 w-full items-center justify-between px-1.5 py-0.5 gap-2 whitespace-nowrap"
+            type="button"
+            role="menuitemradio"
+            :aria-checked="activeSort === option.key"
+            class="flex rounded-md h-5 w-full items-center justify-between px-1.5 py-0.5 gap-2 whitespace-nowrap focus-ring"
             :class="{
               'bg-n-brand/10 dark:bg-n-brand/10': activeSort === option.key,
             }"
@@ -162,7 +166,7 @@ export default {
               v-if="activeSort === option.key"
               class="i-lucide-check size-2.5 flex-shrink-0 text-n-blue-11"
             />
-          </div>
+          </button>
         </div>
       </div>
     </div>

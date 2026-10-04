@@ -10,11 +10,6 @@ export default {
         permissions: ['administrator'],
       },
       component: SettingsWrapper,
-      props: {
-        headerTitle: 'BILLING_SETTINGS.TITLE',
-        icon: 'credit-card-person',
-        showNewButton: false,
-      },
       children: [
         {
           path: '',

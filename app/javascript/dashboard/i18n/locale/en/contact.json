@@ -61,7 +61,9 @@
       "CONTACT_LABELS": "Contact Labels",
       "PREVIOUS_CONVERSATIONS": "Previous Conversations",
       "NO_RECORDS_FOUND": "No attributes found"
-    }
+    },
+    "COPY_FIELD": "Copy {field}",
+    "EDIT_FIELD": "Edit {field}"
   },
   "EDIT_CONTACT": {
     "BUTTON_LABEL": "Edit Contact",
@@ -338,7 +340,7 @@
         "UNBLOCK_ERROR_MESSAGE": "Unable to unblock contact. Please try again later.",
         "IMPORT_CONTACT": {
           "TITLE": "Import contacts",
-          "DESCRIPTION": "Import contacts through a CSV file.",
+          "DESCRIPTION": "Import contacts from a CSV file, or paste a list of phone numbers.",
           "DOWNLOAD_LABEL": "Download a sample csv.",
           "LABEL": "CSV File:",
           "CHOOSE_FILE": "Choose file",
@@ -346,7 +348,58 @@
           "CANCEL": "Cancel",
           "IMPORT": "Import",
           "SUCCESS_MESSAGE": "You will be notified via email when the import is complete.",
-          "ERROR_MESSAGE": "There was an error, please try again"
+          "ERROR_MESSAGE": "There was an error, please try again",
+          "SOURCES": {
+            "FILE": "CSV file",
+            "PASTE": "Paste numbers"
+          },
+          "PASTE_LABEL": "Phone numbers",
+          "PASTE_PLACEHOLDER": "+96551112233\n00966551112233\n+971501234567",
+          "PASTE_HINT": "One per line, or separated by commas. Spaces inside a number are fine.",
+          "LABELS_LABEL": "Labels for every contact in this import",
+          "LABELS_PLACEHOLDER": "Choose labels",
+          "NO_LABELS": "This account has no labels yet",
+          "COUNTRY_LABEL": "Country for local numbers",
+          "COUNTRY_PLACEHOLDER": "No country chosen",
+          "COUNTRY_HINT": "Used only for rows that do not give their own country, and only for numbers written without a country code.",
+          "DUPLICATES_LABEL": "Contacts this account already has",
+          "DUPLICATES_HINT": "Labels are added either way, and never replace the labels a contact already has.",
+          "DUPLICATES": {
+            "UPDATE": "Update their details",
+            "KEEP": "Keep their details"
+          },
+          "CONTINUE": "Continue",
+          "BACK": "Back",
+          "COUNTS": {
+            "NEW_CONTACT": "New contacts",
+            "UPDATE_EXISTING": "To update",
+            "SKIP_EXISTING": "Left as they are",
+            "DUPLICATE_IN_FILE": "Repeated rows",
+            "NO_IDENTITY": "No way to reach",
+            "INVALID": "Will be skipped"
+          },
+          "FULL_PREVIEW": "Checked all {total} rows.",
+          "PARTIAL_PREVIEW": "Checked the first {previewed} of {total} rows. The rest will be imported the same way.",
+          "CHOICES": "Local numbers will be read as {country}. Labels: {labels}.",
+          "NO_COUNTRY": "no country",
+          "NO_LABELS_CHOSEN": "none",
+          "ROW": "Row",
+          "ROW_CONTACT": "Contact",
+          "ROW_REASON": "What will happen",
+          "REASONS": {
+            "UNKNOWN_LABELS": "Skipped: labels not in this account ({detail})",
+            "PHONE_COUNTRY_REQUIRED": "Skipped: a local number needs a country",
+            "PHONE_INVALID": "Skipped: not a phone number that can be stored",
+            "MISSING_IDENTITY": "Created, but with no email, phone or identifier it will not appear in the contacts list",
+            "DUPLICATE_IN_FILE": "Same contact as row {detail}; its labels are added to that one",
+            "EXISTING_CONTACT": "Already in this account",
+            "INVALID_RECORD": "Skipped: {detail}"
+          },
+          "ERRORS": {
+            "NOT_A_CSV": "Choose a .csv file.",
+            "PREVIEW_FAILED": "Could not check the file. Please try again."
+          },
+          "LABELS_HINT": "A label is a durable classification you keep: VIP, wholesale, needs follow-up. Membership that works itself out — recent buyers, open orders — belongs in an audience instead."
         },
         "EXPORT_CONTACT": {
           "TITLE": "Export contacts",
@@ -598,7 +651,9 @@
         "COLLAPSE": "Collapse",
         "NO_NOTES": "No notes, you can add notes from the contact details page.",
         "EMPTY_STATE": "There are no notes associated to this contact. You can add a note by typing in the box above.",
-        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one."
+        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
+        "DELETE": "Delete note",
+        "LOADING": "Loading notes"
       }
     },
     "EMPTY_STATE": {
@@ -692,6 +747,32 @@
         "DISCARD": "Discard",
         "SEND": "Send ({keyCode})"
       }
+    }
+  },
+  "CONTACT_ERRORS": {
+    "PHONE_NUMBER": {
+      "TAKEN": "This phone number already belongs to another contact in this account.",
+      "INVALID": "Enter the number in international format, for example +96522201234.",
+      "NEEDS_COUNTRY": "Select the country, or enter the number in international format."
+    },
+    "EMAIL": {
+      "TAKEN": "This email address already belongs to another contact in this account.",
+      "INVALID": "Enter a valid email address."
+    },
+    "IDENTIFIER": {
+      "TAKEN": "This identifier already belongs to another contact in this account."
+    },
+    "LABELS": {
+      "NOT_IN_ACCOUNT": "That label no longer exists in this account."
+    },
+    "GENERIC": "This contact could not be saved. Check the details and try again.",
+    "DUPLICATE": {
+      "TITLE": "A contact with these details already exists",
+      "OPEN": "Open {name}",
+      "ADD_LABEL": "Add “{label}” to {name}",
+      "LABEL_ADDED": "“{label}” added to {name}",
+      "LABEL_FAILED": "Could not add “{label}” to {name}",
+      "UNNAMED": "the existing contact"
     }
   }
 }

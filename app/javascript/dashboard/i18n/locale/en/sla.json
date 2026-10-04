@@ -29,12 +29,6 @@
         "SLA": "SLA",
         "BUSINESS_HOURS": "Business hours"
       },
-      "EMPTY": {
-        "TITLE_1": "Enterprise P0",
-        "DESC_1": "Issues raised by enterprise customers, that require immediate attention.",
-        "TITLE_2": "Enterprise P1",
-        "DESC_2": "Issues raised by enterprise customers, that needs to be acknowledged quickly."
-      },
       "BUSINESS_HOURS_ON": "Turned on",
       "BUSINESS_HOURS_OFF": "Turned off",
       "RESPONSE_TYPES": {
@@ -82,7 +76,12 @@
       "EDIT": "Edit",
       "CREATE": "Create",
       "DELETE": "Delete",
-      "CANCEL": "Cancel"
+      "CANCEL": "Cancel",
+      "UNITS": {
+        "MINUTES": "minutes",
+        "HOURS": "hours",
+        "DAYS": "days"
+      }
     },
     "ADD": {
       "TITLE": "Add SLA",

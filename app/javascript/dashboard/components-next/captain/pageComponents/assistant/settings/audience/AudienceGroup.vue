@@ -99,7 +99,7 @@ defineExpose({ validate });
         ghost
         slate
         icon="i-lucide-trash"
-        class="ml-auto flex-shrink-0 opacity-0 transition-opacity group-hover/audience-group:opacity-100"
+        class="ms-auto flex-shrink-0 opacity-0 transition-opacity group-hover/audience-group:opacity-100"
         @click="emit('remove')"
       />
     </div>

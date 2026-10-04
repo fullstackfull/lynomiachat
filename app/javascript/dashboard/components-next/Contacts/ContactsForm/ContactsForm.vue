@@ -26,6 +26,12 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Attribute name -> message, as the server rejected them. Attributes with no field here are shown by the
+  // caller instead, so none is silently dropped.
+  serverErrors: {
+    type: Object,
+    default: () => ({}),
+  },
 });
 
 const emit = defineEmits(['update']);
@@ -42,6 +48,14 @@ const FORM_CONFIG = {
   COUNTRY: { field: 'additionalAttributes.countryCode' },
   BIO: { field: 'additionalAttributes.description' },
   COMPANY_NAME: { field: 'additionalAttributes.companyName' },
+};
+
+// The server names ActiveModel attributes; the form is keyed on its own camelCase paths. `name` has no field
+// of its own — it is split into first and last — so its error belongs on the first name.
+const SERVER_ATTRIBUTE_FIELDS = {
+  phone_number: 'PHONE_NUMBER',
+  email: 'EMAIL_ADDRESS',
+  name: 'FIRST_NAME',
 };
 
 const SOCIAL_CONFIG = {
@@ -237,10 +251,15 @@ const getFormBinding = key => {
   });
 };
 
+const serverErrorFor = key =>
+  Object.entries(props.serverErrors).find(
+    ([attribute]) => SERVER_ATTRIBUTE_FIELDS[attribute] === key
+  )?.[1] ?? '';
+
 const getMessageType = key => {
-  return isValidationField(key) && v$.value[getValidationKey(key)]?.$error
-    ? 'error'
-    : 'info';
+  const hasLocalError =
+    isValidationField(key) && v$.value[getValidationKey(key)]?.$error;
+  return hasLocalError || serverErrorFor(key) ? 'error' : 'info';
 };
 
 const handleCountrySelection = value => {
@@ -316,6 +335,8 @@ defineExpose({
             v-model="getFormBinding(item.key).value"
             :placeholder="item.placeholder"
             :show-border="isDetailsView"
+            :error-message="serverErrorFor('PHONE_NUMBER')"
+            :region-code="state.additionalAttributes.countryCode"
           />
           <CompanySelector
             v-else-if="item.key === 'COMPANY_NAME' && showCompanySelector"
@@ -328,6 +349,7 @@ defineExpose({
             v-else
             v-model="getFormBinding(item.key).value"
             :placeholder="item.placeholder"
+            :message="serverErrorFor(item.key)"
             :message-type="getMessageType(item.key)"
             :custom-input-class="`h-8 !pt-1 !pb-1 ${
               !isDetailsView

@@ -15,6 +15,10 @@ import constants from 'dashboard/constants/globals';
 
 import App from './App.vue';
 import WootModal from 'dashboard/components/Modal.vue';
+import WootLoadingState from 'dashboard/components/widgets/LoadingState.vue';
+import WootInput from 'dashboard/components/widgets/forms/Input.vue';
+import WootCode from 'dashboard/components/Code.vue';
+import { SURFACES } from './surfaces';
 import { GETTERS } from './fixtures/vuexGetters';
 import { ROUTE_NAMES } from './fixtures/routeNames';
 import { attachRouter } from './fixtures/routerBridge';
@@ -26,7 +30,22 @@ import 'dashboard/assets/scss/app.scss';
 const params = new URLSearchParams(window.location.search);
 const locale = params.get('locale') === 'ar' ? 'ar' : 'en';
 
-window.chatwootConfig = { hostURL: 'https://lynomia.test', apiHost: '' };
+window.chatwootConfig = {
+  hostURL: 'https://lynomia.test',
+  apiHost: '',
+  isEnterprise: 'true',
+  enterprisePlanName: 'enterprise',
+  isMfaEnabled: 'true',
+  inboxEventsEnabled: 'false',
+  selectedLocale: 'en',
+  allowedLoginMethods: ['email', 'saml'],
+  helpUrls: {},
+  enabledLanguages: [
+    { name: 'English', iso_639_1_code: 'en' },
+    { name: 'العربية', iso_639_1_code: 'ar' },
+    { name: 'Français', iso_639_1_code: 'fr' },
+  ],
+};
 window.globalConfig = { installationName: 'Lynomia' };
 window.WootConstants = constants;
 installFixtureAxios();
@@ -42,13 +61,25 @@ store.dispatch = () => Promise.resolve(true);
 
 // Every real route name, so each `accountScopedRoute(...)` and `router.resolve({ name })` a component makes
 // resolves. The components are real; only the destinations are inert.
+//
+// A surface can declare `params`, for the pages that read one off the route — a flow builder needs
+// `flowId`, a contact detail needs `contactId`. Those names are appended to that route's path as optional
+// segments, because `router.push` drops a param the path does not declare and the page would then read
+// `undefined`. Every other route keeps the bare path.
 const Blank = { template: '<div />' };
+const paramsFor = name =>
+  Object.keys(
+    Object.values(SURFACES).find(entry => entry.route === name)?.params || {}
+  );
 const router = createRouter({
   history: createMemoryHistory(),
   routes: [
     { path: '/app/accounts/:accountId', name: 'harness_root', component: Blank },
     ...ROUTE_NAMES.map(name => ({
-      path: `/app/accounts/:accountId/_r/${name}`,
+      path: [
+        `/app/accounts/:accountId/_r/${name}`,
+        ...paramsFor(name).map(param => `:${param}?`),
+      ].join('/'),
       name,
       component: Blank,
       meta: { permissions: ['administrator', 'agent', 'custom_role'] },
@@ -79,12 +110,19 @@ app.use(FloatingVue, {
 // component graph and deadlocks on its circular imports, and none of these affect what is being measured.
 const Passthrough = { template: '<div><slot /></div>' };
 const Hidden = { template: '<div style="display:none"><slot /></div>' };
-app.component('woot-loading-state', { props: ['message'], template: '<div class="p-6 text-sm text-n-slate-11">{{ message }}</div>' });
+// The real one, so a loading capture shows the spinner a user actually sees.
+app.component('woot-loading-state', WootLoadingState);
 app.component('woot-delete-modal', Hidden);
 app.component('woot-confirm-modal', Hidden);
 // The real legacy modal, so the 29 settings dialogs still built on it can be captured and compared.
 app.component('woot-modal', WootModal);
 app.component('woot-modal-header', Passthrough);
+// Gates a section on an account feature flag; the fixture account has every flag on, so it renders its slot.
+app.component('woot-feature-toggle', Passthrough);
+// The legacy input and code block, imported directly rather than through the UI kit's `install`: twelve
+// inputs across profile, SLA and the dashboard-app modal are built on it, and a stub renders none of them.
+app.component('woot-input', WootInput);
+app.component('woot-code', WootCode);
 app.component('woot-button', { template: '<button><slot /></button>' });
 app.component('fluent-icon', { props: ['icon'], template: '<span />' });
 app.directive('resize', vResizeObserver);
@@ -93,7 +131,10 @@ app.directive('on-clickaway', onClickaway);
 const surface = params.get('surface') || 'flows-list';
 const routeName = params.get('route');
 const target = routeName
-  ? { name: routeName, params: { accountId: '1' } }
+  ? {
+      name: routeName,
+      params: { accountId: '1', ...(SURFACES[surface]?.params || {}) },
+    }
   : { name: 'harness_root', params: { accountId: '1' } };
 
 router

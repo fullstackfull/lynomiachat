@@ -33,9 +33,11 @@ export default {
       type: Boolean,
       default: false,
     },
-    styles: {
-      type: Object,
-      default: () => {},
+    // For the one field that carries no visible `label`: the root element here is the wrapping `<label>`,
+    // so an `aria-label` passed from outside lands there instead of on the input.
+    ariaLabel: {
+      type: String,
+      default: '',
     },
   },
   emits: ['update:modelValue', 'input', 'blur'],
@@ -66,8 +68,8 @@ export default {
       :value="modelValue"
       :type="type"
       :placeholder="placeholder"
+      :aria-label="ariaLabel || undefined"
       :readonly="readonly"
-      :style="styles"
       @input="onChange"
       @blur="onBlur"
     />

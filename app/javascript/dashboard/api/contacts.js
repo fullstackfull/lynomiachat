@@ -1,6 +1,31 @@
 /* global axios */
 import ApiClient from './ApiClient';
 
+/**
+ * The body of an import or of its preview. The two take exactly the same payload, so whatever the preview
+ * classified is what the import then performs (docs/contacts/04-bulk-import.md).
+ * @param {Object} payload - `{ file, phoneNumbers, labels, defaultCountry, duplicatePolicy }`.
+ * @returns {FormData} The multipart body. A file and pasted numbers are alternatives; the file wins.
+ */
+export const buildImportFormData = ({
+  file,
+  phoneNumbers = '',
+  labels = [],
+  defaultCountry = '',
+  duplicatePolicy = '',
+} = {}) => {
+  const formData = new FormData();
+  if (file) {
+    formData.append('import_file', file);
+  } else if (phoneNumbers) {
+    formData.append('phone_numbers', phoneNumbers);
+  }
+  labels.forEach(label => formData.append('labels[]', label));
+  if (defaultCountry) formData.append('default_country', defaultCountry);
+  if (duplicatePolicy) formData.append('duplicate_policy', duplicatePolicy);
+  return formData;
+};
+
 export const buildContactParams = (page, sortAttr, label, search) => ({
   include_contact_inboxes: false,
   page,
@@ -8,6 +33,11 @@ export const buildContactParams = (page, sortAttr, label, search) => ({
   ...(search ? { q: search } : {}),
   ...(label ? { labels: [label] } : {}),
 });
+
+const normalizeImportPayload = payload =>
+  payload instanceof File || payload instanceof Blob
+    ? { file: payload }
+    : payload;
 
 class ContactAPI extends ApiClient {
   constructor() {
@@ -80,12 +110,25 @@ class ContactAPI extends ApiClient {
     });
   }
 
-  importContacts(file) {
-    const formData = new FormData();
-    formData.append('import_file', file);
-    return axios.post(`${this.url}/import`, formData, {
+  importContacts(payload) {
+    // A bare File keeps the old single-argument contract working.
+    const body =
+      payload instanceof FormData
+        ? payload
+        : buildImportFormData(normalizeImportPayload(payload));
+    return axios.post(`${this.url}/import`, body, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+  }
+
+  previewImport(payload) {
+    return axios.post(
+      `${this.url}/import_preview`,
+      buildImportFormData(normalizeImportPayload(payload)),
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
   }
 
   destroyCustomAttributes(contactId, customAttributes) {

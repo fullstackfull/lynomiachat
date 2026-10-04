@@ -201,7 +201,7 @@ export default {
 }
 
 .label-action--button {
-  @apply flex mr-1;
+  @apply flex me-1;
 }
 
 .label-color-dot {

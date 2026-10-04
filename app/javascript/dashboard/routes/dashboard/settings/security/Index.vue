@@ -31,7 +31,7 @@ const showPaywall = computed(() => shouldShowPaywall('saml'));
 </script>
 
 <template>
-  <SettingsLayout :loading-message="$t('ATTRIBUTES_MGMT.LOADING')">
+  <SettingsLayout>
     <template #header>
       <BaseSettingsHeader
         :title="$t('SECURITY_SETTINGS.TITLE')"
@@ -43,7 +43,7 @@ const showPaywall = computed(() => shouldShowPaywall('saml'));
     <template #body>
       <SamlPaywall v-if="showPaywall" />
       <SamlSettings v-else-if="shouldShowSaml" />
-      <div v-else class="mt-6 text-sm text-slate-600">
+      <div v-else class="mt-6 text-body-main text-n-slate-11">
         {{ $t('SECURITY_SETTINGS.SAML_DISABLED_MESSAGE') }}
       </div>
     </template>

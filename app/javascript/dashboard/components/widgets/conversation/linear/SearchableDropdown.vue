@@ -64,7 +64,7 @@ const selectedItemId = computed(() => selectedItem.value?.id || null);
             :active-filter-id="selectedItemId"
             :input-placeholder="placeholder"
             enable-search
-            class="left-0 flex flex-col w-full overflow-y-auto h-fit !max-h-[160px] md:left-auto md:right-0 top-10"
+            class="left-0 flex flex-col w-full overflow-y-auto h-fit !max-h-[160px] md:start-auto md:right-0 top-10"
             @select="onSelect"
           />
         </template>

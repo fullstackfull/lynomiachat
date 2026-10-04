@@ -113,7 +113,7 @@ const selectModel = model => {
     </button>
     <DropdownBody
       v-if="isOpen"
-      class="absolute right-0 top-full mt-1 min-w-64 z-50 max-h-96 [&>ul]:max-h-96 [&>ul]:overflow-y-scroll"
+      class="absolute end-0 top-full mt-1 min-w-64 z-50 max-h-96 [&>ul]:max-h-96 [&>ul]:overflow-y-scroll"
     >
       <DropdownItem
         v-for="model in availableModels"
@@ -127,7 +127,7 @@ const selectModel = model => {
       >
         <div class="flex gap-2 w-full">
           <Icon :icon="iconForModel(model)" class="size-4 flex-shrink-0" />
-          <div class="flex flex-col w-full text-left gap-1">
+          <div class="flex flex-col w-full text-start gap-1">
             <div
               class="text-sm w-full font-medium leading-none text-n-slate-12 flex items-baseline justify-between"
             >

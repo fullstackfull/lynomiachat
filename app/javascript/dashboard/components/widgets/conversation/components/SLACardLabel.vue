@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSlaStatus } from 'dashboard/composables/useSlaStatus';
 import SLAPopoverCard from './SLAPopoverCard.vue';
@@ -69,14 +69,33 @@ const groupClass = computed(() => {
 const slaPopoverClass = computed(() => {
   return props.showExtendedInfo ? 'pe-1.5 border-e border-n-strong' : '';
 });
+
+// The chip read as clickable and opened its breach history on hover alone, so the history was unreachable
+// without a mouse — and on a chip with no history the pointer cursor promised something that was not there.
+const isPopoverOpen = ref(false);
+const togglePopover = () => {
+  if (!showSlaPopoverCard.value) return;
+  isPopoverOpen.value = !isPopoverOpen.value;
+};
 </script>
 
 <!-- eslint-disable-next-line vue/no-root-v-if -->
 <template>
   <div
     v-if="hasSlaThreshold"
-    class="relative flex items-center cursor-pointer min-w-fit group"
-    :class="groupClass"
+    class="relative flex items-center min-w-fit group"
+    :class="[
+      groupClass,
+      showSlaPopoverCard && 'cursor-pointer focus-ring rounded-control',
+    ]"
+    :role="showSlaPopoverCard ? 'button' : undefined"
+    :tabindex="showSlaPopoverCard ? 0 : undefined"
+    :aria-expanded="showSlaPopoverCard ? isPopoverOpen : undefined"
+    :aria-label="showSlaPopoverCard ? slaStatusText : undefined"
+    @click="togglePopover"
+    @keydown.enter.prevent="togglePopover"
+    @keydown.space.prevent="togglePopover"
+    @keydown.esc="isPopoverOpen = false"
   >
     <div
       class="flex items-center w-full truncate px-1.5"
@@ -110,7 +129,8 @@ const slaPopoverClass = computed(() => {
     <SLAPopoverCard
       v-if="showSlaPopoverCard"
       :sla-missed-events="slaEvents"
-      class="start-0 xl:start-auto xl:end-0 top-7 hidden group-hover:flex"
+      class="start-0 lg:start-auto lg:end-0 top-7 group-hover:flex group-focus-within:flex"
+      :class="isPopoverOpen ? 'flex' : 'hidden'"
     />
   </div>
 </template>

@@ -188,7 +188,11 @@ Every desktop capability has a reachable mobile path, or is documented as deskto
 
 - **Nothing is hidden at a breakpoint without a replacement.** Today settings search and the help link simply vanish below `sm` on 18 pages. Either they adapt, or they move — they do not disappear.
 - **Overlays adapt**: a dialog becomes a sheet, a wide drawer becomes full-width, a hover popover becomes a tap target.
-- **Tables adapt**: horizontal scroll with a sticky first column, or a stacked row — not a clipped grid.
+- **Tables adapt**, and which way depends on the table. Four strategies, chosen per table from its actual columns, never applied wholesale:
+  - **priority columns** — hide what is tertiary at a breakpoint and re-render it inside the primary cell, so nothing is lost (macros, automation, flows)
+  - **stacked rows** — each row becomes a card when its cells are sentences rather than values and no column is droppable (custom roles)
+  - **horizontal scroll with a sticky action column** — only where the columns are a genuine numeric grid, and only with the actions pinned to the end edge so no control needs a swipe to reach (SLA)
+  - **no change** — where the table already fits (canned responses)
 - **Tap targets ≥ 40px**, and hover is never the only way to reach anything.
 - **Navigating closes the mobile navigation**, which it currently does not.
 

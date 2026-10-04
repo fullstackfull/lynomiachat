@@ -291,9 +291,7 @@ export default {
         >
           {{ displayValue }}
         </p>
-        <div
-          class="flex items-center max-w-[2rem] gap-1 ml-1 rtl:mr-1 rtl:ml-0"
-        >
+        <div class="flex items-center max-w-[2rem] gap-1 ms-1">
           <NextButton
             v-if="showActions && hasValue"
             v-tooltip="$t('CUSTOM_ATTRIBUTES.ACTIONS.COPY')"
@@ -346,11 +344,11 @@ export default {
   @apply m-0 top-1;
 
   .selector-name {
-    @apply ml-0;
+    @apply ms-0;
   }
 }
 
 :deep(.name) {
-  @apply ml-0;
+  @apply ms-0;
 }
 </style>

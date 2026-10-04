@@ -89,11 +89,15 @@ const handleCopy = async text => {
           <span class="flex-1">{{ item.value }}</span>
         </div>
         <NextButton
+          v-tooltip.top="
+            $t('SECURITY_SETTINGS.SAML.COPY', { field: item.label })
+          "
           type="button"
           ghost
           sm
           slate
           icon="i-lucide-copy"
+          :aria-label="$t('SECURITY_SETTINGS.SAML.COPY', { field: item.label })"
           @click="handleCopy(item.value)"
         />
       </div>

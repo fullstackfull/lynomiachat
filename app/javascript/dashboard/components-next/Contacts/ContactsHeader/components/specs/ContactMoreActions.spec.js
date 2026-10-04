@@ -43,9 +43,9 @@ const SHARED = {
   campaigns_count: 1,
 };
 
-const mountMenu = async segment => {
+const mountMenu = async (segment, activeLabel = null) => {
   const wrapper = mount(ContactMoreActions, {
-    props: { segment },
+    props: { segment, activeLabel },
     global: {
       plugins: [
         createI18n({ legacy: false, locale: 'en', messages: { en: contact } }),
@@ -114,6 +114,31 @@ describe('ContactMoreActions', () => {
     expect(wrapper.text()).not.toContain('Use in a new WhatsApp campaign');
     expect(wrapper.text()).toContain('Duplicate this audience');
     expect(wrapper.text()).toContain('Copy link to this audience');
+  });
+
+  it('offers a campaign from a label page, and deliberately not an automation rule', async () => {
+    const wrapper = await mountMenu(null, { id: 4, title: 'vip' });
+
+    expect(wrapper.text()).toContain('Use in a new WhatsApp campaign');
+    // `Campaign#audience_contacts` resolves `{ type: 'Label', id }`, so a label is a recipient source. No
+    // automation condition means "the contact carries label X", so there is nothing to offer there.
+    expect(wrapper.text()).not.toContain('Use in a new automation rule');
+  });
+
+  it('offers nothing about the label to a user whose campaign route refuses them', async () => {
+    permissions.value = ['agent'];
+    const wrapper = await mountMenu(null, { id: 4, title: 'vip' });
+
+    expect(wrapper.text()).not.toContain('Use in a new WhatsApp campaign');
+  });
+
+  it('prefers the audience actions when an audience is open, label or not', async () => {
+    const wrapper = await mountMenu(SHARED, { id: 4, title: 'vip' });
+
+    expect(wrapper.text()).toContain('Duplicate this audience');
+    expect(
+      wrapper.text().match(/Use in a new WhatsApp campaign/g)
+    ).toHaveLength(1);
   });
 
   it('withholds the cross-module actions from an agent, whose target routes refuse them', async () => {

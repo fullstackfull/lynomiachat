@@ -46,12 +46,17 @@ const runDuration = computed(() => {
   return formatDistanceStrict(new Date(startedAt), new Date(finishedAt));
 });
 
+const sourceLabel = computed(() => {
+  const source = importSourceFor(props.dataImport);
+  return source.labelKey ? t(source.labelKey) : source.label;
+});
+
 const items = computed(() => [
   {
     key: 'source',
     icon: 'i-lucide-plug',
     label: t('DATA_IMPORTS.DETAIL.SOURCE'),
-    value: importSourceFor(props.dataImport).label,
+    value: sourceLabel.value,
   },
   {
     key: 'import_types',

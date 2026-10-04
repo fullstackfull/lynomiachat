@@ -29,15 +29,18 @@ export default {
     return {
       thresholdTime: this.threshold || '',
       thresholdUnitValue: this.thresholdUnit,
-      options: [
-        { value: 'Minutes', label: 'minutes' },
-        { value: 'Hours', label: 'hours' },
-        { value: 'Days', label: 'days' },
-      ],
     };
   },
   validations,
   computed: {
+    // The values are the API's own enum and stay as they are; only the words beside them are translated.
+    options() {
+      return [
+        { value: 'Minutes', label: this.$t('SLA.FORM.UNITS.MINUTES') },
+        { value: 'Hours', label: this.$t('SLA.FORM.UNITS.HOURS') },
+        { value: 'Days', label: this.$t('SLA.FORM.UNITS.DAYS') },
+      ];
+    },
     thresholdTimeErrorMessage() {
       let errorMessage = '';
       if (this.v$.thresholdTime.$error) {
@@ -89,22 +92,16 @@ export default {
       v-model="thresholdTime"
       type="number"
       :class="{ error: v$.thresholdTime.$error }"
-      class="flex-grow"
-      :styles="{
-        borderRadius: '0.75rem',
-        padding: '0.375rem 0.75rem',
-        fontSize: '0.875rem',
-      }"
+      class="flex-grow [&>input]:!rounded-xl [&>input]:!px-3 [&>input]:!py-1.5 [&>input]:!text-sm [&>input]:!mb-0.5"
       :label="label"
       :placeholder="placeholder"
       :error="thresholdTimeErrorMessage"
       @update:model-value="onThresholdTimeChange"
     />
-    <!-- the mt-7 handles the label offset -->
-    <div class="mt-7">
+    <div class="self-end">
       <select
         v-model="thresholdUnitValue"
-        class="px-4 py-1.5 min-w-[6.5rem] h-10 text-sm font-medium border-0 rounded-xl hover:cursor-pointer pr-7"
+        class="ps-4 pe-7 py-1.5 min-w-[6.5rem] h-control-md text-sm font-medium border-0 rounded-xl hover:cursor-pointer"
         @change="onThresholdUnitChange"
       >
         <option

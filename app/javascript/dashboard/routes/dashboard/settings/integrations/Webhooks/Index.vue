@@ -12,10 +12,12 @@ import WebhookRow from './WebhookRow.vue';
 import WebhookPaywall from './WebhookPaywall.vue';
 import BaseSettingsHeader from '../../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../../SettingsLayout.vue';
+import { EmptyState } from 'dashboard/components-next/empty-state';
 
 export default {
   components: {
     SettingsLayout,
+    EmptyState,
     NextButton,
     BaseSettingsHeader,
     BaseTable,
@@ -36,6 +38,8 @@ export default {
       showDeleteConfirmationPopup: false,
       selectedWebHook: {},
       searchQuery: '',
+      sortBy: '',
+      sortOrder: 'asc',
     };
   },
   computed: {
@@ -71,6 +75,17 @@ export default {
         this.$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.TABLE_HEADER.ACTIONS'),
       ];
     },
+    // Index-aligned with `tableHeaders`.
+    sortableColumns() {
+      return ['url', null];
+    },
+    sortedRecords() {
+      if (!this.sortBy) return this.filteredRecords;
+      const direction = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredRecords].sort(
+        (a, b) => (a.url ?? '').localeCompare(b.url ?? '') * direction
+      );
+    },
   },
   watch: {
     apiAndWebhooksEnabled: {
@@ -84,6 +99,10 @@ export default {
     this.$store.dispatch('integrations/get', 'webhook');
   },
   methods: {
+    onSort({ key, order }) {
+      this.sortBy = key;
+      this.sortOrder = order;
+    },
     openAddPopup() {
       this.showAddPopup = true;
     },
@@ -127,10 +146,10 @@ export default {
 
 <template>
   <SettingsLayout
-    :is-loading="apiAndWebhooksEnabled && uiFlags.fetchingList"
-    :loading-message="$t('INTEGRATION_SETTINGS.WEBHOOK.LOADING')"
     :no-records-message="$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.404')"
-    :no-records-found="apiAndWebhooksEnabled && !records.length"
+    :no-records-found="
+      apiAndWebhooksEnabled && !records.length && !uiFlags.fetchingList
+    "
   >
     <template #header>
       <BaseSettingsHeader
@@ -156,7 +175,6 @@ export default {
         </template>
         <template v-if="apiAndWebhooksEnabled" #actions>
           <NextButton
-            blue
             :label="$t('INTEGRATION_SETTINGS.WEBHOOK.HEADER_BTN_TXT')"
             size="sm"
             @click="openAddPopup"
@@ -164,15 +182,38 @@ export default {
         </template>
       </BaseSettingsHeader>
     </template>
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-webhook"
+        :title="$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.EMPTY_TITLE')"
+        :description="$t('INTEGRATION_SETTINGS.WEBHOOK.LIST.EMPTY_DESCRIPTION')"
+      >
+        <template #action>
+          <NextButton
+            :label="$t('INTEGRATION_SETTINGS.WEBHOOK.HEADER_BTN_TXT')"
+            size="sm"
+            @click="openAddPopup"
+          />
+        </template>
+      </EmptyState>
+    </template>
     <template #body>
       <WebhookPaywall v-if="!apiAndWebhooksEnabled" />
       <BaseTable
         v-else
         :headers="tableHeaders"
-        :items="filteredRecords"
+        align-last-column-end
+        :items="sortedRecords"
+        :loading="uiFlags.fetchingList"
+        :loading-message="$t('INTEGRATION_SETTINGS.WEBHOOK.LOADING')"
+        :loading-rows="4"
+        :sortable-columns="sortableColumns"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
         :no-data-message="
           searchQuery ? $t('INTEGRATION_SETTINGS.WEBHOOK.NO_RESULTS') : ''
         "
+        @sort="onSort"
       >
         <template #row="{ items }">
           <WebhookRow

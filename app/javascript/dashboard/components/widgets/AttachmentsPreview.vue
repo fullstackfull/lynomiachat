@@ -58,7 +58,7 @@ const fileName = file => {
           class="object-cover w-6 h-6 rounded-sm"
           :src="attachment.thumb"
         />
-        <span v-else class="relative w-6 h-6 text-lg text-left -top-px">
+        <span v-else class="relative w-6 h-6 text-lg text-start -top-px">
           📄
         </span>
       </div>

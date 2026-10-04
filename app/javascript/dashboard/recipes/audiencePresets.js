@@ -20,6 +20,18 @@ const commerceCondition = (attributeKey, filterOperator, values = []) => ({
   values,
 });
 
+// Every status a conversation can be in, which is how "this contact has a conversation at all" is expressed:
+// `Audience::ConversationCondition` offers `equal_to` and `not_equal_to` only, and compiles either into an
+// `EXISTS` subquery over the contact's own conversations. There is no `is_present` to ask more directly.
+const CONVERSATION_STATUSES = ['open', 'pending', 'resolved', 'snoozed'];
+
+const conversationCondition = filterOperator => ({
+  attribute_key: 'conversation_status',
+  filter_operator: filterOperator,
+  attribute_model: 'conversation',
+  values: CONVERSATION_STATUSES,
+});
+
 const preset = ({ id, category, requires, inputs = [], conditions }) => ({
   id,
   type: 'audience',
@@ -33,6 +45,21 @@ const preset = ({ id, category, requires, inputs = [], conditions }) => ({
 });
 
 export const AUDIENCE_PRESETS = [
+  // The two conversation-history presets. "Has this contact ever written to us" is the question the import →
+  // label → campaign workflow asks first, and it is dynamic membership, so it belongs here rather than in a label
+  // somebody has to keep up to date (docs/contacts/07-label-vs-audience.md).
+  preset({
+    id: 'contacted_us',
+    category: CATEGORIES.SUPPORT,
+    requires: [],
+    conditions: () => [conversationCondition('equal_to')],
+  }),
+  preset({
+    id: 'never_contacted_us',
+    category: CATEGORIES.SUPPORT,
+    requires: [],
+    conditions: () => [conversationCondition('not_equal_to')],
+  }),
   preset({
     id: 'high_value_buyers',
     category: CATEGORIES.RETENTION,

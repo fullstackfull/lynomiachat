@@ -8,8 +8,10 @@ import {
   ARTICLE_MENU_ITEMS,
   ARTICLE_MENU_OPTIONS,
   ARTICLE_STATUSES,
+  articleStatusChip,
   getArticleStatus,
 } from 'dashboard/helper/portalHelper';
+import Label from 'dashboard/components-next/label/Label.vue';
 import ArticlePendingChangesPopover from 'dashboard/components-next/HelpCenter/Pages/ArticleEditorPage/ArticlePendingChangesPopover.vue';
 
 import { useMapGetter } from 'dashboard/composables/store.js';
@@ -132,27 +134,9 @@ const articleMenuItems = computed(() => {
   return [...statusItems, ...draftItems, commonItems.delete];
 });
 
-const statusTextColor = computed(() => {
-  switch (props.status) {
-    case 'archived':
-      return 'text-n-slate-12';
-    case 'draft':
-      return 'text-n-amber-11';
-    default:
-      return 'text-n-teal-11';
-  }
-});
+const statusChip = computed(() => articleStatusChip(props.status));
 
-const statusText = computed(() => {
-  switch (props.status) {
-    case 'archived':
-      return t('HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.ARCHIVED');
-    case 'draft':
-      return t('HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.DRAFT');
-    default:
-      return t('HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.STATUS.PUBLISHED');
-  }
-});
+const statusText = computed(() => t(statusChip.value.labelKey));
 
 const categoryName = computed(() => {
   if (props.category?.slug) {
@@ -226,12 +210,12 @@ const handleClick = id => {
           <span class="rounded-full size-1.5 bg-n-amber-9 shrink-0" />
           {{ t('HELP_CENTER.ARTICLES_PAGE.ARTICLE_CARD.CARD.PENDING_EDITS') }}
         </span>
-        <span
-          class="text-xs font-medium inline-flex items-center h-6 px-2 py-0.5 rounded-md bg-n-alpha-2"
-          :class="statusTextColor"
-        >
-          {{ statusText }}
-        </span>
+        <Label
+          compact
+          variant="subtle"
+          :tone="statusChip.tone"
+          :label="statusText"
+        />
         <div
           v-on-clickaway="() => toggleDropdown(false)"
           class="relative flex items-center group"

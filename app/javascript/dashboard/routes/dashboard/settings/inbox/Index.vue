@@ -14,6 +14,7 @@ import {
 import ChannelName from './components/ChannelName.vue';
 import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import { Skeleton } from 'dashboard/components-next/skeleton';
 import { getInboxIdentifier, searchInboxes } from 'dashboard/helper/inbox';
 
 const IDENTIFIER_SEPARATOR = '·';
@@ -95,7 +96,7 @@ const openDelete = inbox => {
   <SettingsLayout
     :no-records-found="!inboxesList.length"
     :no-records-message="$t('INBOX_MGMT.LIST.404')"
-    :is-loading="uiFlags.isFetching"
+    :is-loading="uiFlags.isFetching && !inboxesList.length"
   >
     <template #header>
       <BaseSettingsHeader
@@ -112,11 +113,47 @@ const openDelete = inbox => {
           </span>
         </template>
         <template #actions>
-          <router-link v-if="isAdmin" :to="{ name: 'settings_inbox_new' }">
-            <Button :label="$t('SETTINGS.INBOXES.NEW_INBOX')" size="sm" />
+          <router-link
+            v-if="isAdmin"
+            :to="{ name: 'settings_inbox_new' }"
+            :aria-label="$t('SETTINGS.INBOXES.NEW_INBOX')"
+          >
+            <Button
+              :label="$t('SETTINGS.INBOXES.NEW_INBOX')"
+              size="sm"
+              tabindex="-1"
+              aria-hidden="true"
+            />
           </router-link>
         </template>
       </BaseSettingsHeader>
+    </template>
+    <template #loading>
+      <span role="status" class="sr-only">
+        {{ $t('INBOX_MGMT.LIST.LOADING_MESSAGE') }}
+      </span>
+      <div
+        class="divide-y divide-n-weak border-t border-n-weak"
+        aria-hidden="true"
+      >
+        <div
+          v-for="row in 4"
+          :key="`inbox-skeleton-${row}`"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
+        >
+          <div class="flex items-center gap-4">
+            <Skeleton width="w-10" height="h-10" shape="block" />
+            <div class="flex flex-col gap-2">
+              <Skeleton width="w-36" />
+              <Skeleton width="w-48" height="h-3" />
+            </div>
+          </div>
+          <div class="flex gap-3 justify-end">
+            <Skeleton width="w-8" height="h-8" shape="block" />
+            <Skeleton width="w-8" height="h-8" shape="block" />
+          </div>
+        </div>
+      </div>
     </template>
     <template #body>
       <span
@@ -129,7 +166,7 @@ const openDelete = inbox => {
         <div
           v-for="inbox in filteredInboxesList"
           :key="inbox.id"
-          class="flex justify-between flex-row items-start gap-4 py-4"
+          class="flex flex-col sm:flex-row justify-between sm:items-start gap-4 py-4"
         >
           <div class="flex items-center gap-4 min-w-0 flex-1">
             <div
@@ -157,7 +194,7 @@ const openDelete = inbox => {
                 {{ inbox.name }}
               </span>
               <div
-                class="flex items-center gap-1 min-w-0 max-w-full text-body-main text-n-slate-11"
+                class="flex flex-wrap items-center gap-1 min-w-0 max-w-full text-body-main text-n-slate-11"
               >
                 <ChannelName
                   :channel-type="inbox.channel_type"
@@ -181,6 +218,7 @@ const openDelete = inbox => {
           </div>
           <div class="flex gap-3 justify-end shrink-0">
             <router-link
+              v-if="isAdmin"
               v-tooltip.top="$t('INBOX_MGMT.SETTINGS')"
               :to="{
                 name: 'settings_inbox_show',
@@ -189,7 +227,6 @@ const openDelete = inbox => {
               :aria-label="$t('INBOX_MGMT.SETTINGS')"
             >
               <Button
-                v-if="isAdmin"
                 icon="i-woot-settings"
                 slate
                 sm

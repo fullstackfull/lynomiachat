@@ -82,10 +82,10 @@ input[type='file'] {
   @apply flex h-8 bg-n-background py-1 px-2 items-center text-xs cursor-pointer rounded-lg border border-dashed border-n-strong;
 }
 .success-icon {
-  @apply text-n-teal-9 mr-2;
+  @apply text-n-teal-9 me-2;
 }
 .error-icon {
-  @apply text-n-ruby-9 mr-2;
+  @apply text-n-ruby-9 me-2;
 }
 
 .processing {

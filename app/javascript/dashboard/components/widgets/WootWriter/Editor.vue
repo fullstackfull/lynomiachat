@@ -1041,7 +1041,7 @@ useEmitter(BUS_EVENTS.INSERT_INTO_RICH_EDITOR, content => {
     }
 
     .ProseMirror-menuitem {
-      @apply mr-0 size-4 flex items-center justify-center;
+      @apply me-0 size-4 flex items-center justify-center;
 
       .ProseMirror-icon {
         @apply size-4 flex items-center justify-center flex-shrink-0;
@@ -1189,7 +1189,7 @@ useEmitter(BUS_EVENTS.INSERT_INTO_RICH_EDITOR, content => {
     }
 
     .ProseMirror-menubar {
-      @apply rounded-lg !px-3 !py-1.5 z-50 bg-n-background items-center gap-4 ml-0 mb-0 shadow-md outline outline-1 outline-n-weak;
+      @apply rounded-lg !px-3 !py-1.5 z-50 bg-n-background items-center gap-4 ms-0 mb-0 shadow-md outline outline-1 outline-n-weak;
       display: flex;
       width: fit-content !important;
       position: absolute !important;
@@ -1205,7 +1205,7 @@ useEmitter(BUS_EVENTS.INSERT_INTO_RICH_EDITOR, content => {
       }
 
       .ProseMirror-menuitem {
-        @apply mr-0 size-4 flex items-center;
+        @apply me-0 size-4 flex items-center;
 
         .ProseMirror-icon {
           @apply p-0.5 flex-shrink-0;

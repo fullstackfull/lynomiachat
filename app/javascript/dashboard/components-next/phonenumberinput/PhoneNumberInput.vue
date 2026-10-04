@@ -4,11 +4,16 @@ import parsePhoneNumber from 'libphonenumber-js';
 import { useI18n } from 'vue-i18n';
 import countries from 'shared/constants/countries.js';
 import { useVuelidate } from '@vuelidate/core';
-import { required, minLength, numeric } from '@vuelidate/validators';
+import { required, minLength } from '@vuelidate/validators';
 import {
   getActiveCountryCode,
   getActiveDialCode,
 } from 'shared/components/PhoneInput/helper';
+import {
+  hasUnresolvedTrunkPrefix,
+  stripPhoneFormatting,
+  toE164,
+} from 'shared/helpers/phoneNumber';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -27,6 +32,20 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  /** A validation message from outside the component, e.g. what the server said about this field. */
+  errorMessage: {
+    type: String,
+    default: '',
+  },
+  /**
+   * An ISO 3166-1 alpha-2 region the user chose for this contact, used to read a local number. The country
+   * this component pre-fills from the browser timezone is deliberately not one: it is a visible default, not
+   * a statement about the contact, and reading a trunk-prefixed number against it would be guessing.
+   */
+  regionCode: {
+    type: String,
+    default: '',
+  },
 });
 
 const modelValue = defineModel({
@@ -41,11 +60,19 @@ const searchQuery = ref('');
 const activeCountryCode = ref(getActiveCountryCode());
 const activeDialCode = ref(getActiveDialCode());
 const phoneNumber = ref('');
+// Set only by the country picker and by parsing a number that already carries its own country — never by the
+// timezone pre-fill.
+const pickedRegion = ref('');
+// What this component last wrote to the model. Normalizing can make the emitted number differ from what was
+// typed ("0551112233" in SA becomes +966551112233), and without this the watcher below would write the
+// normalized national part straight back into the field, moving the caret while someone is still typing.
+const lastEmitted = ref(null);
 
 const rules = {
   phoneNumber: {
     minLength: minLength(2),
-    numeric,
+    // Spaces, hyphens and parentheses are how people write phone numbers; they are stripped on the way out.
+    formattedNumber: value => !value || /^[\d\s\u00a0()./+-]+$/.test(value),
   },
   activeDialCode: {
     required,
@@ -60,7 +87,14 @@ const v$ = useVuelidate(rules, {
   activeDialCode,
 });
 
-const hasError = computed(() => v$.value.$invalid);
+/** The region a local number may be read against, or null when there is none and nothing may be assumed. */
+const explicitRegion = computed(
+  () => pickedRegion.value || props.regionCode || null
+);
+
+const hasError = computed(
+  () => v$.value.$invalid || Boolean(props.errorMessage)
+);
 
 const countryList = computed(() => {
   return countries.map(country => ({
@@ -106,15 +140,39 @@ const inputBorderClass = computed(() => {
 });
 
 const phoneNumberError = computed(() => {
+  if (props.errorMessage) return props.errorMessage;
   if (!v$.value.$dirty) return '';
-  return v$.value.activeDialCode.$invalid
-    ? t('PHONE_INPUT.DIAL_CODE_ERROR')
-    : v$.value.phoneNumber.$invalid && t('PHONE_INPUT.ERROR');
+  if (v$.value.activeDialCode.$invalid) return t('PHONE_INPUT.DIAL_CODE_ERROR');
+  if (v$.value.phoneNumber.$invalid) return t('PHONE_INPUT.ERROR');
+  // A trunk-prefixed number means something different in every country, so rather than prefix a dial code
+  // onto the zero and store a number that does not exist, ask which country it is.
+  if (hasUnresolvedTrunkPrefix(phoneNumber.value, explicitRegion.value)) {
+    return t('CONTACT_ERRORS.PHONE_NUMBER.NEEDS_COUNTRY');
+  }
+  return '';
 });
 
 const emitPhoneNumber = value => {
-  const newValue = value ? `${activeDialCode.value}${value}` : '';
-  modelValue.value = newValue;
+  if (!value) {
+    lastEmitted.value = '';
+    modelValue.value = '';
+    return;
+  }
+
+  const typed = stripPhoneFormatting(value);
+  // A number pasted in international form carries its own country, which beats the picker.
+  if (typed.startsWith('+')) {
+    lastEmitted.value = toE164(typed) ?? typed;
+    modelValue.value = lastEmitted.value;
+    return;
+  }
+
+  // With a region the user actually chose, libphonenumber resolves the national prefix properly: "0551112233"
+  // in SA is +966551112233, not +9660551112233. Without one, the dial code is still prefixed as before — the
+  // server has the last word on whether that is a real number.
+  lastEmitted.value =
+    toE164(typed, explicitRegion.value) ?? `${activeDialCode.value}${typed}`;
+  modelValue.value = lastEmitted.value;
 };
 
 const onSelectCountry = async ({ value, dialCode }) => {
@@ -122,6 +180,8 @@ const onSelectCountry = async ({ value, dialCode }) => {
 
   activeCountryCode.value = value;
   activeDialCode.value = dialCode;
+  // Choosing from the picker is the explicit answer a local number needs.
+  pickedRegion.value = value;
   searchQuery.value = '';
   showDropdown.value = false;
   if (!v$.value.$invalid && phoneNumber.value) {
@@ -147,8 +207,13 @@ watch(phoneNumber, async value => {
 watch(
   modelValue,
   newValue => {
+    // Our own emit: the field already shows what the user typed, so leave it alone.
+    if (newValue === lastEmitted.value) return;
+
     const number = parsePhoneNumber(newValue);
     if (number) {
+      // A number that parses states its own country, so it answers the region question by itself.
+      if (number?.country) pickedRegion.value = number.country;
       if (number?.country) activeCountryCode.value = number.country;
       if (number?.countryCallingCode)
         activeDialCode.value = `+${number.countryCallingCode}`;
@@ -198,7 +263,7 @@ watch(
             </Button>
             <span
               v-if="activeCountry"
-              class="text-sm left-[38px] top-2.5 text-n-slate-11 ltr:!pl-1 rtl:!pr-1"
+              class="text-sm start-[38px] top-2.5 text-n-slate-11 ltr:!pl-1 rtl:!pr-1"
             >
               {{ activeDialCode }}
             </span>
@@ -213,13 +278,11 @@ watch(
         @action="onSelectCountry"
       />
     </div>
-    <template v-if="phoneNumberError">
-      <p
-        v-if="phoneNumberError"
-        class="min-w-0 mt-1 mb-0 text-xs truncate transition-all duration-500 ease-in-out text-n-ruby-9 dark:text-n-ruby-9"
-      >
-        {{ phoneNumberError }}
-      </p>
-    </template>
+    <p
+      v-if="phoneNumberError"
+      class="min-w-0 mt-1 mb-0 text-xs whitespace-normal break-words transition-all duration-500 ease-in-out text-n-ruby-9 dark:text-n-ruby-9"
+    >
+      {{ phoneNumberError }}
+    </p>
   </div>
 </template>

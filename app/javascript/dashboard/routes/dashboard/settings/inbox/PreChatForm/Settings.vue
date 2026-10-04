@@ -157,7 +157,7 @@ onMounted(() => {
   @apply px-3;
 
   :deep(.ProseMirror-menubar) {
-    @apply rounded-tl-[4px];
+    @apply rounded-ss-[4px];
   }
 }
 </style>

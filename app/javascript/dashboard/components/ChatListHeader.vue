@@ -7,6 +7,7 @@ import wootConstants from 'dashboard/constants/globals';
 import ConversationBasicFilter from './widgets/conversation/ConversationBasicFilter.vue';
 import SwitchLayout from 'dashboard/routes/dashboard/conversation/search/SwitchLayout.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import WootLabel from 'dashboard/components-next/label/Label.vue';
 
 const props = defineProps({
   pageTitle: { type: String, required: true },
@@ -83,7 +84,7 @@ const toggleConversationLayout = () => {
         v-tooltip.right="$t('FILTER.CLEAR_BUTTON_LABEL')"
         :aria-label="$t('FILTER.CLEAR_BUTTON_LABEL')"
         icon="i-lucide-chevron-left"
-        class="shrink-0 -ms-2 !h-6 !w-6 me-1"
+        class="shrink-0 -ms-2 !h-6 !w-6 me-1 rtl:rotate-180"
         slate
         sm
         ghost
@@ -96,17 +97,19 @@ const toggleConversationLayout = () => {
         v-if="
           allCount > 0 && hasAppliedFiltersOrActiveFolders && !isListLoading
         "
-        class="px-2 py-1 my-0.5 mx-1 rounded-md capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
+        class="inline-flex items-center px-2 mx-1 h-control-xs rounded-control capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
         :title="allCount"
       >
         {{ formattedAllCount }}
       </span>
-      <span
+      <WootLabel
         v-if="!hasAppliedFiltersOrActiveFolders"
-        class="px-2 py-1 my-0.5 mx-1 rounded-md capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
-      >
-        {{ $t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${activeStatus}.TEXT`) }}
-      </span>
+        compact
+        variant="subtle"
+        tone="neutral"
+        class="mx-1 my-0.5 capitalize"
+        :label="$t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${activeStatus}.TEXT`)"
+      />
     </div>
     <div class="flex items-center gap-1">
       <template v-if="hasAppliedFilters && !hasActiveFolders">
@@ -122,7 +125,7 @@ const toggleConversationLayout = () => {
           />
           <div
             id="saveFilterTeleportTarget"
-            class="absolute z-50 mt-2"
+            class="absolute z-dropdown mt-2"
             :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
           />
         </div>
@@ -141,7 +144,7 @@ const toggleConversationLayout = () => {
           />
           <div
             id="conversationFilterTeleportTarget"
-            class="absolute z-50 mt-2"
+            class="absolute z-dropdown mt-2"
             :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
           />
         </div>
@@ -169,7 +172,7 @@ const toggleConversationLayout = () => {
         />
         <div
           id="conversationFilterTeleportTarget"
-          class="absolute z-50 mt-2"
+          class="absolute z-dropdown mt-2"
           :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
         />
       </div>

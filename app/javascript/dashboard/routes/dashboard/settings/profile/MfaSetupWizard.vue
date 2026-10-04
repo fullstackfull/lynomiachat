@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useMapGetter } from 'dashboard/composables/store';
 import QRCode from 'qrcode';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { useAlert } from 'dashboard/composables';
@@ -38,6 +39,8 @@ const props = defineProps({
 const emit = defineEmits(['cancel', 'verify', 'complete']);
 
 const { t } = useI18n();
+const globalConfig = useMapGetter('globalConfig/get');
+const installationName = computed(() => globalConfig.value.installationName);
 
 // Local state
 const setupStep = ref('qr');
@@ -99,12 +102,14 @@ const copyBackupCodes = async () => {
 };
 
 const downloadBackupCodes = () => {
-  const codesText = `Chatwoot Two-Factor Authentication Backup Codes\n\n${props.backupCodes.join('\n')}\n\nKeep these codes in a safe place.`;
+  const codesText = `${t('MFA_SETTINGS.BACKUP.EXPORT_HEADING', {
+    installationName: installationName.value,
+  })}\n\n${props.backupCodes.join('\n')}\n\n${t('MFA_SETTINGS.BACKUP.EXPORT_FOOTER')}`;
   const blob = new Blob([codesText], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'chatwoot-backup-codes.txt';
+  a.download = `${installationName.value.toLowerCase().replace(/\s+/g, '-')}-backup-codes.txt`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -169,7 +174,7 @@ defineExpose({
             <img
               v-if="qrCodeUrl"
               :src="qrCodeUrl"
-              alt="MFA QR Code"
+              :alt="$t('MFA_SETTINGS.SETUP.QR_ALT')"
               class="w-48 h-48 dark:invert-0"
             />
             <div

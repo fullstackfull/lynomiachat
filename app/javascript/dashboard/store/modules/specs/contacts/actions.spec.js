@@ -555,4 +555,48 @@ describe('#actions', () => {
       ]);
     });
   });
+
+  // P0/D2. The server resolves the export's scope from the whole view description, so a field dropped here is a
+  // field the server never sees - and a view it cannot see is a view it falls back from, to the whole account.
+  describe('#export', () => {
+    it('forwards the whole view, not only the filters and label', async () => {
+      axios.post.mockResolvedValue({ data: {} });
+      const query = {
+        payload: filterQueryData.payload,
+        label: '',
+        q: 'zuhayr',
+        active: false,
+      };
+
+      await actions.export({ commit }, query);
+
+      expect(axios.post).toHaveBeenCalledWith('/api/v1/contacts/export', query);
+      const sent = axios.post.mock.calls.at(-1)[1];
+      expect(sent).toHaveProperty('q', 'zuhayr');
+      expect(sent).toHaveProperty('active', false);
+    });
+
+    it('forwards the online-list view', async () => {
+      axios.post.mockResolvedValue({ data: {} });
+
+      await actions.export(
+        { commit },
+        { payload: [], label: '', q: '', active: true }
+      );
+
+      expect(axios.post.mock.calls.at(-1)[1]).toHaveProperty('active', true);
+    });
+
+    it('sets and clears the exporting flag', async () => {
+      axios.post.mockResolvedValue({ data: {} });
+      commit.mockClear();
+
+      await actions.export({ commit }, { payload: [], label: '' });
+
+      expect(commit.mock.calls).toEqual([
+        [types.SET_CONTACT_UI_FLAG, { isExporting: true }],
+        [types.SET_CONTACT_UI_FLAG, { isExporting: false }],
+      ]);
+    });
+  });
 });

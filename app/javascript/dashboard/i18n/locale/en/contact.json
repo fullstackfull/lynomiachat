@@ -680,6 +680,8 @@
     "CLEAR_SELECTION": "Clear selection",
     "SELECT_ALL": "Select all ({count})",
     "SELECT_ALL_MATCHING": "Select all {count} in this view",
+    "SELECT_ALL_MATCHING_UNCOUNTED": "Select all results in this view",
+    "SELECTED_ALL_MATCHING": "All results in this view selected",
     "TOO_MANY_MATCHING": "This view has too many contacts to act on at once. Narrow it first.",
     "DELETE_CONTACTS": "Delete",
     "DELETE_SUCCESS": "Contacts deleted successfully.",

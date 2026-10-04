@@ -199,10 +199,13 @@ export const actions = {
     }
   },
 
-  export: async ({ commit }, { payload, label }) => {
+  // The whole view description is forwarded, not a chosen pair of its fields. Destructuring `{ payload, label }`
+  // here dropped `q` and `active`, so exporting from a search or the online list reached the server with no view
+  // at all and `Contacts::ViewScope` resolved it to the entire account (docs/product-enablement/12-proposed-phases.md D2).
+  export: async ({ commit }, query) => {
     commit(types.SET_CONTACT_UI_FLAG, { isExporting: true });
     try {
-      await ContactAPI.exportContacts({ payload, label });
+      await ContactAPI.exportContacts(query);
 
       commit(types.SET_CONTACT_UI_FLAG, { isExporting: false });
     } catch (error) {

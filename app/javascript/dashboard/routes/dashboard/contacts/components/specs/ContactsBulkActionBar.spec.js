@@ -47,6 +47,7 @@ const mountBar = ({
   policy = true,
   totalCount = 0,
   isWholeViewSelected = false,
+  hasMore = false,
 } = {}) =>
   mount(ContactsBulkActionBar, {
     props: {
@@ -54,6 +55,7 @@ const mountBar = ({
       selectedContactIds: selected,
       totalCount,
       isWholeViewSelected,
+      hasMore,
     },
     global: {
       plugins: [
@@ -171,6 +173,68 @@ describe('ContactsBulkActionBar', () => {
         totalCount: 3,
       });
 
+      expect(selectAllMatching(wrapper)).toBeUndefined();
+    });
+
+    // P0/D6. On a search view the server reports the page size as its count, by design, so gating purely on the
+    // total meant this whole feature was silently unreachable there.
+    it('is offered on a search view, where the total IS the page size', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+      });
+      const button = wrapper
+        .findAll('button')
+        .find(
+          b => b.attributes('data-label') === 'Select all results in this view'
+        );
+
+      expect(button).toBeDefined();
+    });
+
+    it('shows no number when the server did not give a usable one', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+      });
+      const labels = wrapper
+        .findAll('button')
+        .map(b => b.attributes('data-label'));
+
+      expect(labels).toContain('Select all results in this view');
+      expect(labels.some(l => l?.includes('Select all 3'))).toBe(false);
+    });
+
+    it('counts without a number once an uncounted view is selected', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+        isWholeViewSelected: true,
+      });
+
+      expect(wrapper.find('[data-test-id="count"]').text()).toBe(
+        'All results in this view selected'
+      );
+    });
+
+    it('is still not offered when the page is the whole view and there is no more', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: false,
+      });
+      const labels = wrapper
+        .findAll('button')
+        .map(b => b.attributes('data-label'));
+
+      expect(labels).not.toContain('Select all results in this view');
       expect(selectAllMatching(wrapper)).toBeUndefined();
     });
 

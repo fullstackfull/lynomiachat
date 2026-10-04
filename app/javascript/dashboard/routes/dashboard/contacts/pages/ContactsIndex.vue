@@ -76,9 +76,18 @@ const selectedContactIds = ref([]);
 const isWholeViewSelected = ref(false);
 const isBulkActionLoading = ref(false);
 const bulkDeleteDialogRef = ref(null);
+const visibleContactIds = computed(() =>
+  contacts.value.map(contact => contact.id)
+);
+
+// On a search view the server's count IS the page size (D6), so a whole-view selection there has no honest
+// number to show. Fall back to the ids actually held rather than reporting the page size as a total.
+const hasUsableTotal = computed(
+  () => (totalItems.value ?? 0) > visibleContactIds.value.length
+);
 const selectedCount = computed(() =>
-  isWholeViewSelected.value
-    ? (totalItems.value ?? selectedContactIds.value.length)
+  isWholeViewSelected.value && hasUsableTotal.value
+    ? totalItems.value
     : selectedContactIds.value.length
 );
 const bulkDeleteDialogTitle = computed(() =>
@@ -145,10 +154,6 @@ const emptyStateMessage = computed(() => {
     return t('CONTACTS_LAYOUT.EMPTY_STATE.LIST_EMPTY_STATE_TITLE');
   return t('CONTACTS_LAYOUT.EMPTY_STATE.SEARCH_EMPTY_STATE_TITLE');
 });
-
-const visibleContactIds = computed(() =>
-  contacts.value.map(contact => contact.id)
-);
 
 const clearSelection = () => {
   selectedContactIds.value = [];
@@ -579,6 +584,7 @@ onMounted(async () => {
           :selected-contact-ids="selectedContactIds"
           :is-loading="isBulkActionLoading"
           :total-count="totalItems ?? 0"
+          :has-more="hasMore"
           :is-whole-view-selected="isWholeViewSelected"
           @toggle-all="toggleSelectAll"
           @select-all-matching="selectAllMatching"

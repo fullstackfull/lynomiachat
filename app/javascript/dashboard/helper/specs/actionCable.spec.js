@@ -1,6 +1,8 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import ActionCableConnector from '../actionCable';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { BUS_EVENTS } from 'shared/constants/busEvents';
+import { emitter } from 'shared/helpers/mitt';
 
 vi.mock('shared/helpers/mitt', () => ({
   emitter: {
@@ -375,6 +377,29 @@ describe('ActionCableConnector - Copilot Tests', () => {
 
       vi.advanceTimersByTime(4000);
       expect(mockDispatch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('contact bulk action completion', () => {
+    it('should register the contact.bulk_action_completed event handler', () => {
+      expect(actionCable.events['contact.bulk_action_completed']).toBe(
+        actionCable.onContactBulkActionCompleted
+      );
+    });
+
+    // The page that asked for the bulk action is waiting on this before it refetches, so the push has to
+    // reach the bus rather than the store.
+    it('should put the completion on the bus for the page that is waiting', () => {
+      actionCable.onReceived({
+        event: 'contact.bulk_action_completed',
+        data: { account_id: 1 },
+      });
+
+      expect(emitter.emit).toHaveBeenCalledWith(
+        BUS_EVENTS.CONTACT_BULK_ACTION_COMPLETED,
+        { account_id: 1 }
+      );
+      expect(mockDispatch).not.toHaveBeenCalled();
     });
   });
 });

@@ -15,6 +15,7 @@ import ContactsList from 'dashboard/components-next/Contacts/Pages/ContactsList.
 import ContactsBulkActionBar from '../components/ContactsBulkActionBar.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import BulkActionsAPI from 'dashboard/api/bulkActions';
+import { waitForBulkActionCompletion } from 'dashboard/helper/bulkActionCompletion';
 
 // Only order backed by index_contacts_on_account_id_and_last_activity_at
 const DEFAULT_SORT = '-last_activity_at';
@@ -330,72 +331,64 @@ const fetchContactsBasedOnContext = async (page, options = {}) => {
 const onPageChange = page =>
   fetchContactsBasedOnContext(page, { clearSelection: false });
 
-const assignLabels = async labels => {
-  if (!labels.length || !selectedContactIds.value.length) {
-    return;
-  }
-
-  isBulkActionLoading.value = true;
-  try {
-    await BulkActionsAPI.create({
-      type: 'Contact',
-      ids: selectedContactIds.value,
-      labels: { add: labels },
-    });
-    useAlert(t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_SUCCESS'));
-    clearSelection();
-    await fetchContactsBasedOnContext(pageNumber.value);
-  } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_FAILED'));
-  } finally {
-    isBulkActionLoading.value = false;
-  }
-};
-
-const removeLabels = async labels => {
-  if (!labels.length || !selectedContactIds.value.length) {
-    return;
-  }
-
-  isBulkActionLoading.value = true;
-  try {
-    await BulkActionsAPI.create({
-      type: 'Contact',
-      ids: selectedContactIds.value,
-      labels: { remove: labels },
-    });
-    useAlert(t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_SUCCESS'));
-    clearSelection();
-    await fetchContactsBasedOnContext(pageNumber.value);
-  } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_FAILED'));
-  } finally {
-    isBulkActionLoading.value = false;
-  }
-};
-
-const deleteContacts = async () => {
+const runBulkAction = async ({ payload, success, failure, onDone }) => {
   if (!selectedContactIds.value.length) {
     return;
   }
 
   isBulkActionLoading.value = true;
+  // Listening before the request is sent: a small selection can finish before the response lands.
+  const completed = waitForBulkActionCompletion();
   try {
     await BulkActionsAPI.create({
       type: 'Contact',
       ids: selectedContactIds.value,
-      action_name: 'delete',
+      ...payload,
     });
-    useAlert(t('CONTACTS_BULK_ACTIONS.DELETE_SUCCESS'));
+    await completed;
+    useAlert(success);
+    // Cleared only now — until the server has acted, the selection is what the user can retry with.
     clearSelection();
     await fetchContactsBasedOnContext(pageNumber.value);
-    bulkDeleteDialogRef.value?.close?.();
+    onDone?.();
   } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.DELETE_FAILED'));
+    useAlert(failure);
   } finally {
     isBulkActionLoading.value = false;
   }
 };
+
+const assignLabels = async labels => {
+  if (!labels.length) {
+    return;
+  }
+
+  await runBulkAction({
+    payload: { labels: { add: labels } },
+    success: t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_FAILED'),
+  });
+};
+
+const removeLabels = async labels => {
+  if (!labels.length) {
+    return;
+  }
+
+  await runBulkAction({
+    payload: { labels: { remove: labels } },
+    success: t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_FAILED'),
+  });
+};
+
+const deleteContacts = () =>
+  runBulkAction({
+    payload: { action_name: 'delete' },
+    success: t('CONTACTS_BULK_ACTIONS.DELETE_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.DELETE_FAILED'),
+    onDone: () => bulkDeleteDialogRef.value?.close?.(),
+  });
 
 const handleSort = async ({ sort, order }) => {
   Object.assign(sortState, { activeSort: sort, activeOrdering: order });

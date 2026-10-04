@@ -69,11 +69,15 @@ export const mutations = {
     };
   },
 
+  // Merged, not replaced. This mutation is driven by the `contact.updated` websocket push, whose payload is
+  // `Contact#push_event_data` — which carries no `last_activity_at`, no `availability_status`, no `created_at`
+  // and no `labels`. Replacing the record wholesale therefore deleted all four from a row the list was already
+  // showing, so a labelled contact lost its sort timestamp the moment anything touched it.
   [types.EDIT_CONTACT]: ($state, data) => {
-    const existingAttachments = $state.records[data.id]?.attachments;
-    $state.records[data.id] = existingAttachments
-      ? { ...data, attachments: existingAttachments }
-      : data;
+    $state.records[data.id] = {
+      ...($state.records[data.id] || {}),
+      ...data,
+    };
   },
 
   [types.SET_CONTACT_ATTACHMENTS]: ($state, { id, data }) => {
@@ -82,8 +86,11 @@ export const mutations = {
   },
 
   [types.DELETE_CONTACT]: ($state, id) => {
-    const index = $state.sortOrder.findIndex(item => item === id);
-    $state.sortOrder.splice(index, 1);
+    // `findIndex` returns -1 for a contact that is not in the rendered list, and `splice(-1, 1)` removes the
+    // LAST entry — so deleting a contact the current page does not show used to silently drop an unrelated row
+    // from it. A websocket `contact.deleted` for any contact in the account reaches this.
+    const index = $state.sortOrder.indexOf(id);
+    if (index !== -1) $state.sortOrder.splice(index, 1);
     delete $state.records[id];
   },
 

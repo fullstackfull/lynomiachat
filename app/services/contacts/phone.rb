@@ -10,6 +10,10 @@
 #
 # This is the same rule `shared/helpers/phoneNumber.js` applies in the browser, kept in one place server-side so
 # the two cannot drift: `Commerce::Phone.e164` delegates here.
+#
+# Not every phone code in the app: `Whatsapp::PhoneNormalizers::*` reconcile provider-specific quirks of an
+# already-international WhatsApp id (Argentina's 9, Brazil's ninth digit, Mexico's 1) for contact lookup. That is
+# a different question from "what did this person type", and they are deliberately untouched.
 module Contacts::Phone
   # E.164 as `Contact` enforces it: structural, not a check that the number exists. It lives here because three
   # places ask the same question — the model's validation, its `phone_number_format` guard, and the CSV importer,

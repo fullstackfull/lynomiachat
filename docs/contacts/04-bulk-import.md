@@ -78,10 +78,15 @@ something an import may do to a thousand rows on its own — and the brief forbi
 
 ## Phone numbers
 
-`Contacts::Phone.e164(raw, region)` is now the server's single rule, and `Commerce::Phone.e164` delegates to it,
-so the count of normalizers went **down**. The rule is phase B's, unchanged: a number that names its own country
-parses alone, a local number parses only with a region somebody stated, and there is no default region — not the
-account's locale, not its timezone, not an inbox, not a business number.
+`Contacts::Phone.e164(raw, region)` is now the server's single rule for turning what a person typed or a file
+carried into a stored `phone_number`, and `Commerce::Phone.e164` delegates to it — so for that question the count
+of normalizers went **down**. The rule is phase B's, unchanged: a number that names its own country parses alone,
+a local number parses only with a region somebody stated, and there is no default region — not the account's
+locale, not its timezone, not an inbox, not a business number.
+
+`Whatsapp::PhoneNormalizers::*` are deliberately not part of this. They reconcile provider-specific quirks of an
+already-international WhatsApp id — Argentina's 9, Brazil's ninth digit, Mexico's 1 — for contact lookup, which
+is a different question, and they are untouched.
 
 The importer applies it and then falls back to the shape it has always produced:
 

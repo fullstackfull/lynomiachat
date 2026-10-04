@@ -509,6 +509,65 @@ Already built and documented; repeated here only as the reuse surface.
 | Audience → Campaign / Automation (UI) | `dashboard/helper/audienceHelper.js` — `AUDIENCE_QUERY_PARAM = 'audience'`, `audienceIdFromQuery`, `sharedAudiences`, `findSharedAudience`, `audienceConditionFor` (the `contact_audience` automation condition) |
 | Automation conditions | `AutomationRules::ConditionsFilterService` + `Custom::AutomationRules::ConditionsFilterService` |
 
+### 5.1 How an Audience resolves to contacts
+
+One method: `Custom::CustomFilter#members` (`custom/app/models/custom/custom_filter.rb:13-16`) —
+`Contacts::FilterService.new(account, nil, { payload: })` **`.relation`**, an unexecuted relation evaluated with
+`user = nil`, i.e. account scope with no per-member inbox filter. The same prepended module adds
+`validates :user, presence: true, unless: :shared?`, `shared_only_for_contacts` and the
+`visible_to(user)` scope (`:5-9`, `:20-22`): only **contact** filters can be shared; conversation folders stay
+personal.
+
+`Custom::CampaignAudience` is prepended at `app/models/campaign.rb:174`. `POST /campaigns/audience_preview`
+(`config/routes/campaign_audiences.rb:8`, drawn at `config/routes.rb:784`) returns **only `{ count }`** — a
+deduplicated count, never a list — under `CampaignPolicy#create?`. Shared audiences also carry
+`automation_rules_count`, `active_automation_rules_count` and `campaigns_count` in their JSON
+(`app/views/api/v1/models/_custom_filter.json.jbuilder:7-15`), and deletion / un-sharing is blocked while in use
+(`custom/app/services/audience/usage.rb:8-22`, `custom/app/controllers/custom/api/v1/accounts/custom_filters_controller.rb`).
+Contact filters are audited (`custom/app/models/custom/audit/custom_filter.rb`, loaded via
+`app/models/custom_filter.rb:55`) — unlike `Contact` and `Label`.
+
+A fourth consumer of shared audiences is the Flow Builder's Audience Condition node
+(`custom/app/services/flows/nodes/audience_condition.rb`).
+
+### 5.2 Where the cross-module actions actually are
+
+"Use in Automation" and "Use in Campaign" live in `ContactMoreActions.vue:98-119`, each gated on
+**`isShared.value`** plus a route-reachability check. `isShared` is true only when an **open, shared segment** is
+being viewed. So they are present on an Audience page and **absent from the plain Contacts list and from the Label
+page** — `contacts_dashboard_labels_index` sets no `segmentId` (`routes.js:29-34`), so `activeSegment` is
+`undefined` (`ContactsIndex.vue:94-96`) and the menu entries never render. That is precisely C3's gap, and it is a
+menu-visibility gap, not a missing mechanism.
+
+### 5.3 Automation: the constraint that shapes C4
+
+**There is no contact-scoped automation trigger.** `AutomationRuleListener` defines exactly
+`conversation_updated`, `conversation_created`, `conversation_opened`, `conversation_resolved` and
+`message_created` (`app/listeners/automation_rule_listener.rb:2-18`). `contact_created` / `contact_updated` exist
+only on `webhook_listener.rb:54,60`, `action_cable_listener.rb:155,160` and `hook_listener.rb:14,19` — **not** on
+the automation listener. The Lynomia overlay adds seven `commerce_order_*` events
+(`custom/app/listeners/custom/automation_rule_listener.rb:5-7`), and even those resolve to **the contact's latest
+conversation** and log `no_conversation` when there is none (`:16-17`).
+
+**Automation label *conditions* are conversation-only too.** `apply_filter` tests `@conversation_filters` before
+`@contact_filters` (`conditions_filter_service.rb:63-70`), `conversation_query_string` routes `labels` to
+`tag_filter_query` (`:153`), and `filter_config` is `{ entity: 'Conversation', table_name: 'conversations' }`
+(`:167-172`). `contact_query_string` handles only `additional_attributes` and `standard` and has **no `labels`
+branch at all** — it even carries the comment *"This will be used in future for contact automation rule"*
+(`:130-145`). A contact label therefore cannot be matched by an automation rule today.
+
+What does exist on the contact side: the `contact_audience` condition — "is in / is not in this shared audience" —
+evaluated per contact as a bound boolean by `Automation::LynomiaCondition`
+(`custom/app/services/automation/lynomia_condition.rb:17-18,51-58`), plus conditions over contact columns and
+contact custom attributes (`conditions_filter_service.rb:131-145`, `filter_keys.yml:130-191`).
+
+There are no "entered audience" / "left audience" events and no audience-membership snapshot table.
+
+**Consequence for C4:** a contact-label automation action can only be driven from a conversation-scoped (or
+Commerce-order) rule, acting on *that conversation's contact*. "Label every contact matching criteria X" is not
+expressible as an automation rule at all — that is what a Shared Audience already is. This matches the product rule
+and should be stated in the UI rather than worked around.
+
 **Automation / flow label actions are conversation-only.** `ActionService#add_label` (`app/services/action_service.rb:37-41`)
 and `#remove_label` (`:57-62`) both operate on `@conversation`; the service is constructed as `ActionService.new(conversation)`
 (`:4-7`). The Lynomia flow nodes delegate straight to it: `Flows::Nodes::AddLabel#enter` is
@@ -534,6 +593,31 @@ The contract already has the vocabulary a Contacts recipe needs: `REQUIREMENTS.L
 `REQUIREMENTS.CONTACT_FILTER` (`index.js:40,43`), `INPUT_TYPES.LABEL` / `LABELS` / `AUDIENCE` (`index.js:49-52`),
 `CATEGORIES.OPERATIONS` (`index.js:29`), and `joinConditions` (`index.js:73-77`). Adding entries is data, not
 architecture.
+
+Surrounding machinery, all reusable as it is:
+
+| | |
+|---|---|
+| Requirement evaluation | `useRecipeContext.js:40` builds a `satisfied` map from feature flags and store data |
+| Relevance ordering | `useRecipeContext.js:85` `describeAll` — available before unavailable |
+| Smart prefill | `useRecipeContext.js:118` `presetValues` seeds declared defaults, then fills an unambiguous team / store / audience |
+| Gating | `RecipeDialog.vue:144` renders "Use this" only when `status === available`, else names the missing requirement |
+| Validation | `RecipeDialog.vue:67` `validate()` on `required` inputs |
+| Input rendering | `RecipeInputs.vue:30` `optionsFor(input)` per `INPUT_TYPES` |
+| Contract tests | `recipes/specs/{catalogue,audiencePresets,automationRecipes,flowTemplates}.spec.js` — a new entry cannot drift from the backend without failing |
+
+Instantiation differs per type, which is worth knowing before adding a Contacts recipe:
+
+- **Flow**: `POST /flows` then `PUT /flows/:id/draft`, then open the builder (`settings/flows/Index.vue:125`).
+- **Automation**: one `POST /automation_rules` with `active: false`, then open the edit panel
+  (`settings/automation/Index.vue:203`).
+- **Audience preset**: creates **nothing** by itself — `createFromPreset`
+  (`ContactListHeaderWrapper.vue:235`) only fills the page's pending filter query and reopens the existing
+  name-and-share dialog, which does the `POST /custom_filters`.
+
+Coverage gaps relevant to Contacts: no catalogue entry uses a conversation-history condition (a "contacted us"
+audience), and **no recipe in any catalogue uses `remove_label`** — label *maintenance* is add-only
+(`automationRecipes.js:89` and the optional helper at `:29-30`).
 
 ---
 
@@ -561,9 +645,22 @@ dashboard create/update path never calls it.
 | Intercom / Freshdesk import | its own pair of regexes: `E164_REGEX` (`app/services/data_imports/importer.rb:17`) and `normalized_phone` (`:850-854`) — prefix `+` when it matches `PHONE_WITHOUT_PLUS_REGEX`, else **drop the number to `nil`**. No country awareness |
 | Elsewhere in Chatwoot | `TelephoneNumber.parse(...).international_number` in `app/services/sms/incoming_message_service.rb:36`, `twilio/incoming_message_service.rb:78,212`, `whatsapp/incoming_message_base_service.rb:213`, `whatsapp/contact_info_response_service.rb:93`, `whatsapp/user_id_rotation_service.rb:122`, `crm/leadsquared/mappers/contact_mapper.rb:34` |
 
-So there are **three independent phone implementations for contact writes** — the CSV importer's `+` prefix, the
-integration importer's regex pair, and `Commerce::Phone` — and the dashboard create path has none at all. Only the
-third is country-aware, and only the third refuses to guess.
+| WhatsApp inbound matching | `Whatsapp::PhoneNumberNormalizationService` + `phone_normalizers/{base,brazil,argentina,mexico}_phone_normalizer.rb` — country-specific **variant matching** (trunk zeros, Argentina's mobile 9) used to find an existing `contact_inbox`, not to produce E.164 | yes, for three countries |
+
+So there are **four independent phone implementations on the server** — the CSV importer's `+` prefix, the
+integration importer's regex pair, `Commerce::Phone`, and the WhatsApp variant normalizers — and the dashboard
+create path has none at all. Only `Commerce::Phone` turns a local number into E.164 with a region, and only it
+refuses to guess.
+
+**There is no server-side region source.** `db/schema.rb:62-78`: the `accounts` table has `locale` (a *language*
+enum, `account.rb:109`), `settings` (holding `reporting_timezone`, `account.rb:60`) and `custom_attributes` (a
+Clearbit-sourced `timezone`) — **no country or default-region column**. No channel carries one either
+(`channel_whatsapp` has no country column), and nothing anywhere derives a region from an inbox's own business
+number. The only region signal that reaches the server on a contact write is what the client puts in
+`additional_attributes.country_code` (written by `ContactsForm.vue:42,303`).
+
+That is the fact that decides B3: a server-side normalizer has **no fallback region to guess with**, so "if the
+region is ambiguous, do not guess" is not a policy choice — it is the only correct behaviour available.
 
 Dependencies already in the repo: **`telephone_number` gem** (`Gemfile:22`, `Gemfile.lock:968` → 1.4.20) and
 **`libphonenumber-js`** (`package.json:86` → ^1.11.9).
@@ -635,6 +732,10 @@ Nothing in the create path carries the active label. `ContactsIndex.vue` holds
 `components-next/Contacts/ContactsForm/`, the only reference to `route.params.label` is
 `ContactExportDialog.vue:40` — export. The create dialog and form never see it.
 
+The dialog is label-unaware by construction, not by omission: `CreateNewContactDialog.vue` declares **no props**
+and `ContactsForm.vue` has **no label field**, so there is nowhere for a label to enter. `ContactAPI` has no
+`create` override at all — create falls through to `ApiClient#create`.
+
 **So even a fully successful create from the label page attaches no label.** This is a missing capability, not a broken
 one, and it is why `ActsAsTaggableOn::Tagging.group(:taggable_type, :context).count` showed zero `Contact`/`labels`
 rows while `Contact#update_labels(["test-lynomia"])` worked from the console: the write path was never exercised by
@@ -675,6 +776,11 @@ told the number is taken. The format error is never shown anywhere in the produc
 And when the invalid attribute is something else — say `name` — both branches are false and **no alert is raised at
 all**, while `onSuccess()` is not called either, so the dialog stays open with no explanation.
 
+There is also no field-level place to put the error even if one wanted to: `Dialog.vue` has no error prop or slot,
+and neither `CreateNewContactDialog.vue` nor `ContactsForm.vue` renders a server-side message. The dialog does
+correctly stay open with the typed values preserved (`Dialog.vue:121-123,145-150,171`), so a fix that shows the real
+message is enough — the user does not have to retype.
+
 ### 8.3 One create path has no error handling at all
 
 `ContactsIndex.vue:428-430`:
@@ -692,10 +798,20 @@ state throws an unhandled rejection on any failure. The same file handles its bu
 
 ### 8.4 Why the label page then looks like a silent failure
 
-The sidebar's "Tagged With" group lists **every** label in the account, not the labels that have contact taggings
-(`Sidebar.vue:575-591`). Clicking one navigates to `/contacts/labels/:title`, which filters correctly through
-`tagged_with` (`contacts_controller.rb:125`) and finds nothing, because §8.1 means nothing ever tagged a contact from
-the UI. The page renders its ordinary empty state — indistinguishable, to the user, from "my contact disappeared".
+Two mechanisms, and the second is the one the report describes.
+
+**The created contact appears in the label-filtered list, then vanishes.** On success the store commits
+`SET_CONTACT_ITEM` (`store/modules/contacts/actions.js:170`), and that mutation pushes the new id into
+`sortOrder` unconditionally (`store/modules/contacts/mutations.js:49-58`). Nothing refetches
+(`ContactListHeaderWrapper.vue:101-107` closes the dialog and alerts; it does not call back into the list). So the
+contact renders on `/contacts/labels/:title` as though it had been labelled — until the next fetch sends
+`labels[]=<label>` (`api/contacts.js:9` → `contacts_controller.rb:125`) and it is correctly absent. To the user
+that reads as "it saved, then disappeared".
+
+**And the label page is empty to begin with.** The sidebar's "Tagged With" group lists **every** label in the
+account, not the labels that have contact taggings (`Sidebar.vue:575-591`). Clicking one navigates to
+`/contacts/labels/:title`, which filters correctly and finds nothing, because §8.1 means nothing ever tagged a
+contact from the UI. The page renders its ordinary empty state.
 
 ---
 
@@ -746,6 +862,9 @@ a new phone-validation framework.
 | `BulkDeleteService` skips the online-presence guard that single delete enforces | consistency |
 | No transaction, no payload cap and no partial-failure reporting on contact bulk actions | robustness |
 | No extension point (`prepend_mod_with` / `include_mod_with`) anywhere on the bulk-action path | extensibility |
+| No automation rule event fires on a Contact; even `commerce_order_*` resolves to the contact's latest conversation and logs `no_conversation` otherwise | capability |
+| Campaign senders do not exclude `blocked` contacts or any opt-out (`sms`/`twilio`/`whatsapp` one-off services and the Enterprise WhatsApp one) | compliance |
+| No recipe in any catalogue uses `remove_label`; label maintenance is add-only | capability |
 | CSV import is not feature-gated while the integration import is; upload validation is blankness only | robustness |
 | `contact.save` (not `save!`) in `ContactManager#update_contact_with_merged_attributes:56` swallows a failed update of a matched row | correctness |
 | `Contacts::BulkActionService:9-11` applies only `add` when a payload carries both `add` and `remove`, and the caller cannot detect it | correctness |

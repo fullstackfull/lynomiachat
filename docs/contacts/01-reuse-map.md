@@ -122,6 +122,9 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | Server message reaching the client | yes | `contacts/actions.js:39-51`, `CustomErrors.js:11-16` | **REUSE** |
 | Honest 422 display on create | partly | `ContactInfo.vue:167-186` correct; `ContactListHeaderWrapper.vue:110-120`, `ContactsList.vue:41-51`, `ContactForm.vue:265-275`, `message/bubbles/Contact.vue:85-93` wrong | **PATCH** |
 | Error handling on the empty-state create | no | `ContactsIndex.vue:428-430` | **PATCH** |
+| Dialog keeps its values open on a 422 | yes | `Dialog.vue:121-123,145-150,171` | **REUSE** — a fix need only show the real message, not preserve input |
+| Field-level server-error display in the create dialog | no | `Dialog.vue` has no error prop or slot | **NOT PRESENT** — an alert is sufficient for B1 |
+| List refetch after a successful create | no | `ContactListHeaderWrapper.vue:101-107`; `SET_CONTACT_ITEM` pushes into `sortOrder` (`mutations.js:49-58`) | **PATCH** — this is why a new contact appears on a label page and then vanishes |
 | Explicit merge | yes | `contact_merge_action.rb`, `ContactMergeForm.vue` | **REUSE** |
 | Merge preserving the mergee's labels | no | `contact_merge_action.rb:55,62` | **NOT PRESENT** (finding; outside the brief) |
 | Identify-time merge | yes | `contact_identify_action.rb` | **REUSE** — do not touch |
@@ -214,6 +217,16 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | Campaign recipients from labels | yes | `campaign.rb:69-72` | **REUSE** |
 | Campaign recipients from shared audiences | yes | `custom/app/models/custom/campaign_audience.rb` | **REUSE** |
 | Audience → Campaign / Automation prefill | yes | `dashboard/helper/audienceHelper.js` | **REUSE** |
+| Audience → contacts, one entry point | yes | `Custom::CustomFilter#members` (`custom/app/models/custom/custom_filter.rb:13-16`) — `FilterService#relation`, `user = nil` | **REUSE** |
+| Recipient count preview | yes | `POST /campaigns/audience_preview` → `{ count }` only (`config/routes/campaign_audiences.rb:8`) | **REUSE** |
+| Audience usage counts + delete blocking | yes | `_custom_filter.json.jbuilder:7-15`; `custom/app/services/audience/usage.rb:8-22` | **REUSE** |
+| Audience audit trail | yes | `custom/app/models/custom/audit/custom_filter.rb` | **REUSE** |
+| "Use in Campaign" / "Use in Automation" on the Contacts list and Label page | no | `ContactMoreActions.vue:98-119` gates both on `isShared` (an open shared segment) | **NOT PRESENT** — C3's gap; a menu-visibility gap, not a missing mechanism |
+| Automation condition on **contact** labels | no | `apply_filter` matches `@conversation_filters` first (`conditions_filter_service.rb:63-70`); `contact_query_string:130-145` has no `labels` branch | **NOT PRESENT** |
+| Automation condition `contact_audience` | yes | `custom/app/services/automation/lynomia_condition.rb:17-18,51-58` | **REUSE** |
+| Automation event on a Contact | no | `automation_rule_listener.rb:2-18` is conversation + message only; `commerce_order_*` resolves to the contact's latest conversation | **NOT PRESENT** — shapes what C4 can be |
+| "Entered / left audience" events, membership snapshots | no | — | **DO NOT CREATE** — a Shared Audience is evaluated on read by design |
+| `blocked` / opt-out exclusion in campaign sends | no | the four one-off senders | **NOT PRESENT** (compliance finding) |
 | Automation / flow **conversation** label actions | yes | `action_service.rb:37-41,57-62`; `flows/nodes/add_label.rb`, `remove_label.rb` | **REUSE** |
 | Automation / flow **contact** label actions | no | `ActionService.new(conversation)` only | **NOT PRESENT** → extend via `include_mod_with` |
 | A new audience engine / recipient system / automation engine | — | — | **DO NOT CREATE** |
@@ -226,6 +239,10 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | `REQUIREMENTS.LABEL`, `CONTACT_FILTER` | yes | `recipes/index.js:40,43` | **REUSE** |
 | `INPUT_TYPES.LABEL` / `LABELS` / `AUDIENCE` | yes | `recipes/index.js:49-52` | **REUSE** |
 | Three catalogues (7 / 7 / 6 entries) | yes | `audiencePresets.js`, `automationRecipes.js`, `flowTemplates.js` | **EXTEND** (data only) |
+| Requirement evaluation, ordering, prefill, gating, validation, input rendering | yes | `useRecipeContext.js:40,85,118`; `RecipeDialog.vue:67,144`; `RecipeInputs.vue:30` | **REUSE** |
+| Contract tests that catch catalogue drift | yes | `recipes/specs/*.spec.js` | **REUSE** |
+| A `remove_label` recipe anywhere | no | `automationRecipes.js:29-30,89` is add-only | **NOT PRESENT** |
+| A conversation-history ("contacted us") audience preset | no | no catalogue entry uses a conversation condition | **NOT PRESENT** |
 | A recipes table or endpoint | — | — | **DO NOT CREATE** |
 
 ### A8 — Phone numbers and duplicates
@@ -246,7 +263,12 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | Duplicate → 422 with the real message | yes | `request_exception_handler.rb:58-64` | **REUSE** |
 | Route from a duplicate 422 to the existing contact | no | — | **NOT PRESENT** |
 | Silent auto-merge on dashboard create | no (by design) | — | **DO NOT CREATE** |
-| Normalization in the integration importer | yes, its own | `data_imports/importer.rb:17,850-854` | **REUSE** as is — third implementation, but it refuses bad numbers |
+| Normalization in the integration importer | yes, its own | `data_imports/importer.rb:17,850-854` | **REUSE** as is — it refuses bad numbers |
+| Country-specific variant matching | yes | `Whatsapp::PhoneNumberNormalizationService` + `phone_normalizers/{base,brazil,argentina,mexico}_*.rb` | **REUSE** — prior art for country logic; do not duplicate it |
+| **An account-level default country / region** | **no** | `db/schema.rb:62-78` — `locale` is a *language* enum; no country column; no channel country either | **NOT PRESENT** — and this is why a server normalizer must refuse rather than guess |
+| A region signal reaching the server on a contact write | partly | only `additional_attributes.country_code`, written by `ContactsForm.vue:42,303` | **REUSE** — the one input B3 has |
+| A JS E.164 helper | no | every `parsePhoneNumber()` call in the repo is single-argument | **NOT PRESENT** |
+| A `custom/` overlay for frontend code | no | `custom/` has no `app/javascript` tree at all | **NOT PRESENT** — frontend work lands in `app/javascript`; the overlay pattern is Ruby-only |
 | A new phone-validation framework | — | — | **DO NOT CREATE** |
 
 ---
@@ -324,6 +346,13 @@ Sequenced so each step is independently shippable and verifiable. **Not started 
    client, validate what the user typed against the selected country with the already-imported `libphonenumber-js`
    instead of concatenating in `PhoneNumberInput.vue:115-118`. The model's E.164 rule and all uniqueness constraints
    stay exactly as they are.
+
+   **The region has to come from the request.** There is no account or channel country column
+   (`db/schema.rb:62-78`), so the only region a server normalizer can use is the client's
+   `additional_attributes.country_code`. When it is absent and the number has no `+`, refusing with the existing 422
+   is the only correct outcome — there is nothing to guess with, which is why the brief's rule and the code agree.
+   The browser-timezone default (`shared/components/PhoneInput/helper.js`) stays a visible UI pre-fill, never a
+   silent server-side assumption. Four server-side phone implementations already exist; B3 adds none.
 4. **B4 — tests** for the above.
 
 ### Phase C — the actual gaps
@@ -342,12 +371,23 @@ Sequenced so each step is independently shippable and verifiable. **Not started 
    importer's batched tagging insert (`data_import_job.rb:85-86`) and the service should gain a payload cap, since a
    filter can select far more than 15 rows. If a contact list should *show* labels, preload taggings for the page the
    way `contacts_export_job.rb:43-53` does rather than adding a column or a request per row.
-3. **C3 — Contact / Label → Campaign.** The smallest cross-module action on top of
-   `Campaign#audience_contacts` and the `audienceHelper.js` prefill pattern.
+3. **C3 — Contact / Label → Campaign.** The mechanism exists; only the menu gating is missing.
+   `ContactMoreActions.vue:98-119` shows "Use in Campaign" / "Use in Automation" only when `isShared` is true, i.e.
+   on an open shared audience. Extending that to the Label page means reusing the same `audienceHelper.js` prefill
+   with a label instead of an audience id, and `Campaign#audience_contacts` already accepts
+   `{ type: 'Label', id }` (`campaign.rb:69-72`), so the recipient side needs nothing.
 4. **C4 — automatic classification.** A **contact** label action for Automation and the Flow Builder, added through
-   `ActionService.include_mod_with` and a new flow node beside `flows/nodes/add_label.rb`. No background
-   label-maintenance engine: labels stay manual and persistent, dynamic membership stays a Shared Audience.
-5. **C5 — recipes.** Entries in the three existing catalogues. Data only.
+   `ActionService.include_mod_with` (`action_service.rb:122`) and a new node beside `flows/nodes/add_label.rb`.
+   **The trigger side constrains what this can be:** no automation event fires on a Contact
+   (`automation_rule_listener.rb:2-18`), and even the Lynomia `commerce_order_*` events resolve to the contact's
+   latest conversation. So the action can only be "label *this* conversation's contact", driven from a
+   conversation-scoped or Commerce-order rule. "Label every contact matching criteria X" is not an automation rule —
+   it is what a Shared Audience already is, and the UI should say so rather than work around it. Contact labels are
+   also not matchable as an automation *condition* today (`contact_query_string:130-145` has no `labels` branch),
+   which is a separate, smaller addition. No background label-maintenance engine.
+5. **C5 — recipes.** Entries in the three existing catalogues. Data only, and the contract tests in
+   `recipes/specs/` will catch an entry that does not match the backend. Two gaps the catalogues already imply: no
+   entry uses `remove_label`, and none uses a conversation-history condition.
 
 Order matters: B1 is a prerequisite for everything else, because until the real error is visible every later failure
 still looks like a silent one.

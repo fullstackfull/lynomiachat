@@ -104,9 +104,17 @@ attribute outside those two keys produces silence with the dialog still open.
 It is bound to `ContactEmptyState`'s `@create` (`:543-549`), so the account's first contact fails as an unhandled
 rejection. The same file handles its bulk actions correctly (`:333-399`).
 
-**Why it then looks silent.** The sidebar's "Tagged With" group lists **every** account label, not labels with contact
-taggings (`Sidebar.vue:575-591`). The label page filters correctly and finds nothing, rendering its ordinary empty
-state — indistinguishable from "my contact vanished".
+**Why it then looks silent.** Two mechanisms. On success the store commits `SET_CONTACT_ITEM`
+(`contacts/actions.js:170`) and that mutation pushes the new id into `sortOrder` unconditionally
+(`contacts/mutations.js:49-58`), while nothing refetches (`ContactListHeaderWrapper.vue:101-107`). So the contact
+renders on the label page as though it had been labelled, and disappears at the next fetch, which correctly sends
+`labels[]=<label>`. Separately, the sidebar's "Tagged With" group lists **every** account label, not labels with
+contact taggings (`Sidebar.vue:575-591`), so the label page is empty to begin with.
+
+The dialog is label-unaware by construction: `CreateNewContactDialog.vue` declares no props, `ContactsForm.vue` has
+no label field, and `ContactAPI` has no `create` override. And there is no field-level place to show a server error
+— `Dialog.vue` has no error prop or slot — though it does keep the typed values on a 422
+(`Dialog.vue:121-123,145-150,171`), so showing the real message is a sufficient fix.
 
 ## 4. Existing phone normalization behaviour
 
@@ -118,11 +126,19 @@ state — indistinguishable from "my contact vanished".
 | Legacy CSV import | `"+#{phone}"` when `+` is missing (`contact_manager.rb:47-49`); a leading `0` survives and the row is rejected | no |
 | Intercom / Freshdesk import | prefix `+`, then drop to `nil` unless it matches `E164_REGEX` (`data_imports/importer.rb:17,850-854`) | no |
 | **`Commerce::Phone.e164(raw, country)`** | `00` → `+`; international parses alone; **a local number only with an explicit country**; returns nothing otherwise — *"No country and no '+' means no match, never a guess"* (`custom/app/services/commerce/phone.rb:1-11`) | **yes** |
+| WhatsApp inbound matching | `Whatsapp::PhoneNumberNormalizationService` + `phone_normalizers/{base,brazil,argentina,mexico}_*.rb` — country-specific **variant** matching to find an existing `contact_inbox`, not E.164 production | yes, 3 countries |
 | Frontend | `` `${activeDialCode}${value}` `` raw concatenation (`PhoneNumberInput.vue:115-118`); validation is `minLength(2)` + `numeric` (`:45-56`); `libphonenumber-js` is imported but used only to parse an incoming value (`:147-159`); the default dial code is guessed from the **browser timezone** (`shared/components/PhoneInput/helper.js`) | no |
 
-Three independent server-side implementations exist; only `Commerce::Phone` is country-aware and only it refuses to
-guess. Dependencies already in the repo: `telephone_number` (`Gemfile:22`) and `libphonenumber-js`
-(`package.json:86`).
+**Four** independent server-side implementations exist; only `Commerce::Phone` turns a local number into E.164 with
+a region, and only it refuses to guess. Dependencies already in the repo: `telephone_number` (`Gemfile:22`) and
+`libphonenumber-js` (`package.json:86`); every `parsePhoneNumber()` call in the repo is single-argument.
+
+**And there is no server-side region source.** The `accounts` table has `locale` (a *language* enum),
+`settings.reporting_timezone` and a Clearbit `custom_attributes.timezone` — **no country column**
+(`db/schema.rb:62-78`); no channel carries one; nothing derives a region from an inbox's own business number. The
+only region signal reaching the server on a contact write is the client's `additional_attributes.country_code`
+(`ContactsForm.vue:42,303`). So "if the region is ambiguous, do not guess" is not a policy choice — there is
+nothing to guess with.
 
 ## 5. Existing duplicate behaviour
 
@@ -235,6 +251,25 @@ contact-label action in Automation or in the Flow Builder.** The extension point
 `ActionService.include_mod_with('ActionService')` (`:122`), already used by
 `Enterprise::ActionService` (`add_sla`) and `Custom::AutomationRules::ActionService`.
 
+Two further constraints decide what C4 can be:
+
+- **No automation event fires on a Contact.** `AutomationRuleListener` defines only `conversation_updated`,
+  `conversation_created`, `conversation_opened`, `conversation_resolved` and `message_created` (`:2-18`);
+  `contact_created` / `contact_updated` exist on the webhook, ActionCable and hook listeners but **not** the
+  automation one. Even Lynomia's seven `commerce_order_*` events resolve to the contact's latest conversation and log
+  `no_conversation` otherwise (`custom/app/listeners/custom/automation_rule_listener.rb:16-17`).
+- **Contact labels are not matchable as a condition either.** `apply_filter` tests `@conversation_filters` before
+  `@contact_filters` (`conditions_filter_service.rb:63-70`), `conversation_query_string` routes `labels` to
+  `tag_filter_query` under `filter_config = { entity: 'Conversation' }` (`:153`, `:167-172`), and
+  `contact_query_string` has no `labels` branch at all — it still carries the comment *"This will be used in future
+  for contact automation rule"* (`:130-145`).
+
+So a contact-label action can only mean "label *this* conversation's contact". "Label every contact matching
+criteria X" is not an automation rule — it is what a Shared Audience already is, and the UI should say so. What does
+exist on the contact side is the `contact_audience` condition
+(`custom/app/services/automation/lynomia_condition.rb:17-18,51-58`) plus conditions over contact columns and custom
+attributes (`conditions_filter_service.rb:131-145`).
+
 ## 10. What is actually missing
 
 1. Honest 422 display on contact create and update — the message, the getter and one correct implementation all
@@ -262,15 +297,15 @@ new phone-validation framework.
 
 ## 11. REUSE / EXTEND / PATCH / NOT PRESENT matrix
 
-The full matrix, by sub-area, is [01 §Reuse matrix](01-reuse-map.md): **103 classified capabilities** across A1, A2,
-A3, A4, A5, A6 and A8.
+The full matrix, by sub-area, is [01 §Reuse matrix](01-reuse-map.md): **125 classified capabilities** across A1, A2,
+A3, A4, A5, A6 and A8, after reconciling eight independent read-only verification passes against the first trace.
 
 | Class | Rows | Examples |
 |---|---|---|
-| **REUSE** | 53 | the Contact model and every create path, `Labelable`, the per-contact label endpoint, label rename and delete propagation to Contact taggings, the bulk endpoint and its three services, the CSV importer's `labels` column, the CSV exporter's `labels` column, `Commerce::Phone`, `telephone_number`, `libphonenumber-js`, the 422 `{ message, attributes }` shape, `contactErrorDetail`, the recipe contract, `CustomFilter` audiences, `Campaign#audience_contacts`, `Custom::CampaignAudience`, `audienceHelper.js`, every policy, account scoping everywhere |
-| **NOT PRESENT** | 34 | label on create; contact-label action in Automation and the Flow Builder; **bulk action over "all contacts matching this filter"**; labels in the contact serializer; in-product import feedback; a duplicate-recovery route; labels on merge; the label widget in the conversation sidebar; the `#active` label filter; label changes in websocket and webhook payloads; a single-label DELETE; catalogue validation on `update_labels`; `add`+`remove` in one bulk payload; per-record permission filtering; a recorded acting user; a transaction, payload cap or partial-failure report on bulk actions; the online-presence guard on bulk delete; any extension point on the bulk path; within-file duplicate phone detection; callbacks on bulk-imported contacts; a column whitelist; dry run / preview / column mapping; upload content-type and size validation; feature gating on CSV import; streaming parse; a unique phone index; `cached_label_list`; a Platform Contact API |
-| **PATCH** | 8 | the four wrong 422 handlers (counted as one row) and `ContactsIndex.vue:428-430`; `ContactManager#format_phone_number`; `PhoneNumberInput.vue` client validation; `ContactLabels.vue:84-86`; the two authorization gaps |
-| **DO NOT CREATE** | 7 | a second tag engine, a second CSV importer, a second bulk framework, a new audience engine / recipient system / automation engine, a new phone-validation framework, a recipes table, silent auto-merge |
+| **REUSE** | 63 | the Contact model and every create path, `Labelable`, the per-contact label endpoint, label rename and delete propagation to Contact taggings, the bulk endpoint and its three services, the CSV importer's `labels` column, the CSV exporter's `labels` column, `Commerce::Phone`, `telephone_number`, `libphonenumber-js`, the 422 `{ message, attributes }` shape, `contactErrorDetail`, the recipe contract, `CustomFilter` audiences, `Campaign#audience_contacts`, `Custom::CampaignAudience`, `audienceHelper.js`, every policy, account scoping everywhere |
+| **NOT PRESENT** | 44 | label on create; contact-label action in Automation and the Flow Builder; **bulk action over "all contacts matching this filter"**; labels in the contact serializer; in-product import feedback; a duplicate-recovery route; labels on merge; the label widget in the conversation sidebar; the `#active` label filter; label changes in websocket and webhook payloads; a single-label DELETE; catalogue validation on `update_labels`; `add`+`remove` in one bulk payload; per-record permission filtering; a recorded acting user; a transaction, payload cap or partial-failure report on bulk actions; the online-presence guard on bulk delete; any extension point on the bulk path; within-file duplicate phone detection; callbacks on bulk-imported contacts; a column whitelist; dry run / preview / column mapping; upload content-type and size validation; feature gating on CSV import; streaming parse; a unique phone index; `cached_label_list`; a Platform Contact API |
+| **PATCH** | 9 | the four wrong 422 handlers (counted as one row) and `ContactsIndex.vue:428-430`; `ContactManager#format_phone_number`; `PhoneNumberInput.vue` client validation; `ContactLabels.vue:84-86`; the two authorization gaps |
+| **DO NOT CREATE** | 8 | a second tag engine, a second CSV importer, a second bulk framework, a new audience engine / recipient system / automation engine, a new phone-validation framework, a recipes table, silent auto-merge |
 | **EXTEND** | 1 | the three recipe catalogues (data only) |
 
 Two gaps classified **NOT PRESENT** are closed by *extending* rather than adding: `permitted_params` accepting
@@ -297,9 +332,12 @@ stay exactly as they are. **B4** tests.
 **C2** the batch path and its UI exist, so the only thing worth adding is selection by filter, copying `#export`'s
 `{ payload:, label: }` shape (`contacts_controller.rb:45-50`) — with a payload cap and the importer's batched tagging
 insert, since a filter selects more than a page; preload taggings for a page if labels should be shown.
-**C3** the smallest cross-module action on `Campaign#audience_contacts` plus the `audienceHelper.js` prefill pattern.
-**C4** a **contact** label action via `ActionService.include_mod_with` and one new flow node — no background
-label-maintenance engine; labels stay manual and persistent, dynamic membership stays a Shared Audience.
+**C3** the mechanism already exists — `Campaign#audience_contacts` accepts `{ type: 'Label', id }` and
+`audienceHelper.js` does the prefill; only the menu gating is missing, since `ContactMoreActions.vue:98-119` shows
+"Use in Campaign" / "Use in Automation" solely when an open **shared audience** is in view.
+**C4** a **contact** label action via `ActionService.include_mod_with` and one new flow node — but only as "label
+this conversation's contact", because no automation event fires on a Contact; no background label-maintenance
+engine, labels stay manual and persistent, dynamic membership stays a Shared Audience.
 **C5** entries in the three existing catalogues.
 
 **Zero migrations.** Two candidates were considered and declined with reasons recorded in

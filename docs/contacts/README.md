@@ -13,7 +13,7 @@ Phase A is **discovery and the reuse map only**. No product code changed.
 | | |
 |---|---|
 | [`00-existing-system-discovery.md`](00-existing-system-discovery.md) | what the product already has — Contact lifecycle, labels, import, bulk actions, the Audience/Campaign/Automation bridges, recipes, phone and duplicates — with `file:line` for every conclusion, across `app/`, `enterprise/` and `custom/` |
-| [`01-reuse-map.md`](01-reuse-map.md) | **EXISTING SYSTEM TO EXTEND**, the 103-row REUSE / EXTEND / PATCH / NOT PRESENT matrix, what is deliberately not created, the zero-migration assessment with two declined candidates, and the sequenced plan |
+| [`01-reuse-map.md`](01-reuse-map.md) | **EXISTING SYSTEM TO EXTEND**, the 125-row REUSE / EXTEND / PATCH / NOT PRESENT matrix, what is deliberately not created, the zero-migration assessment with two declined candidates, and the sequenced plan |
 
 ## The three headlines
 
@@ -32,11 +32,22 @@ Phase A is **discovery and the reuse map only**. No product code changed.
 3. **The real scale gap is selection.** Bulk actions take an explicit id list, the list shows 15 rows at a time, and
    `contacts#export` already accepts a filter. That asymmetry — not a missing engine — is what limits bulk workflows.
 
+Two constraints shape what later phases can be, and neither was obvious from outside the code: **no automation event
+fires on a Contact**, so "label every contact matching X" is not an automation rule — it is what a Shared Audience
+already is. And there is **no account- or channel-level country column**, so a server-side phone normalizer has no
+region to fall back on; refusing an ambiguous number is the only correct behaviour, not a policy preference.
+
 ## Where the Contacts surfaces are
 
 `app/javascript/dashboard/routes/dashboard/contacts/routes.js` — seven routes. Note the filename: a
 `**/*.routes.js` glob does **not** match it, which is how the UI/UX phase first undercounted them. They are
 enumerated by hand in [00 §0](00-existing-system-discovery.md).
+
+## How this was verified
+
+The first trace was written by reading the code directly. Eight independent read-only agents then re-traced the
+same eight areas; every fact they added was re-verified against the source before being written down, and the
+counts above are measured from the matrix, not asserted. Nothing here rests on a single pass.
 
 ## Status
 

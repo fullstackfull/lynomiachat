@@ -21,13 +21,13 @@ class Whatsapp::BusinessManagementTokenValidationService
 
   def permissions_url
     base_path = ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
-    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
     "#{base_path}/#{api_version}/me/permissions"
   end
 
   def business_account_templates_url
     base_path = ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
-    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
     "#{base_path}/#{api_version}/#{@business_account_id}/message_templates?limit=1"
   end
 

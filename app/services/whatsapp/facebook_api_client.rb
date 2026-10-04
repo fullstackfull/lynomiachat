@@ -1,11 +1,16 @@
 class Whatsapp::FacebookApiClient
   BASE_URI = 'https://graph.facebook.com'.freeze
+  # The one Graph version this installation talks, overridable per installation via the WHATSAPP_API_VERSION
+  # config. v24.0 and not lower because `Whatsapp::HealthService` requires at least 24.0 for
+  # `whatsapp_business_manager_messaging_limit` and clamps to it anyway — a lower default would leave two
+  # versions in play. Expires 2028-02-18 (docs/product-enablement/12-proposed-phases.md D3).
+  DEFAULT_API_VERSION = 'v24.0'.freeze
   # Base webhook fields resent on every subscribe so Meta won't reset to defaults. `calls` is added by callers only when voice is enabled.
   WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes].freeze
 
   def initialize(access_token = nil)
     @access_token = access_token
-    @api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+    @api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', DEFAULT_API_VERSION)
   end
 
   def exchange_code_for_token(code)

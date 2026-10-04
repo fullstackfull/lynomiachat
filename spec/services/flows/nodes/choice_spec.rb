@@ -92,7 +92,7 @@ RSpec.describe Flows::Nodes::Choice do
     menu = bot_messages.call.last
     expect(menu.content_attributes).to include('interactive_type' => 'list', 'list_button' => 'Choose')
 
-    stub = stub_request(:post, 'https://graph.facebook.com/v13.0/123456789/messages').with do |request|
+    stub = stub_request(:post, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/messages").with do |request|
       interactive = JSON.parse(request.body)['interactive']
       action = JSON.parse(interactive['action'])
       rows = action.dig('sections', 0, 'rows').pluck('id')

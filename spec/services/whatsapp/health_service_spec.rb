@@ -138,7 +138,7 @@ RSpec.describe Whatsapp::HealthService do
     end
 
     it 'uses a newer configured API version' do
-      allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', 'v22.0').and_return('v25.0')
+      allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).and_return('v25.0')
       stub_request(:get, %r{graph\.facebook\.com/v25\.0/test_phone_number_id})
         .to_return(status: 200, body: phone_health_response.to_json, headers: { 'Content-Type' => 'application/json' })
       stub_request(:get, %r{graph\.facebook\.com/v25\.0/test_waba_id})

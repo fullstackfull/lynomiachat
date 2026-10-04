@@ -17,7 +17,7 @@ describe Whatsapp::MediaUploadService do
     attachment.save!
     attachment
   end
-  let(:upload_url) { 'https://graph.facebook.com/v22.0/123456789/media' }
+  let(:upload_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/media" }
 
   describe '#perform' do
     it 'uploads the file as multipart form data and returns the media object' do

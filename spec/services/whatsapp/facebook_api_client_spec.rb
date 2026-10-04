@@ -8,7 +8,8 @@ describe Whatsapp::FacebookApiClient do
   let(:app_secret) { 'test_app_secret' }
 
   before do
-    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', 'v22.0').and_return(api_version)
+    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION',
+                                                      Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).and_return(api_version)
     allow(GlobalConfigService).to receive(:load).with('WHATSAPP_APP_ID', '').and_return(app_id)
     allow(GlobalConfigService).to receive(:load).with('WHATSAPP_APP_SECRET', '').and_return(app_secret)
   end

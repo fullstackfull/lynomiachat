@@ -26,7 +26,7 @@ class Whatsapp::Providers::WhatsappCloudContactInfoRequestService < Whatsapp::Pr
   private
 
   def phone_id_path
-    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+    api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
     base_url = ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
     "#{base_url}/#{api_version}/#{whatsapp_channel.provider_config['phone_number_id']}"
   end

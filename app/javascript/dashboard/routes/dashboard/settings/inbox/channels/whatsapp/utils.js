@@ -1,5 +1,9 @@
 import { loadScript } from 'dashboard/helper/DOMHelpers';
 
+// Only reached when the server did not supply WHATSAPP_API_VERSION. Kept equal to
+// Whatsapp::FacebookApiClient::DEFAULT_API_VERSION so the SDK and the server never disagree.
+const DEFAULT_FACEBOOK_SDK_VERSION = 'v24.0';
+
 export const loadFacebookSdk = async () => {
   return loadScript('https://connect.facebook.net/en_US/sdk.js', {
     async: true,
@@ -9,7 +13,7 @@ export const loadFacebookSdk = async () => {
 };
 
 export const initializeFacebook = (appId, apiVersion) => {
-  const version = apiVersion || 'v22.0';
+  const version = apiVersion || DEFAULT_FACEBOOK_SDK_VERSION;
   return new Promise(resolve => {
     const init = () => {
       window.FB.init({
@@ -141,7 +145,7 @@ export const initWhatsAppEmbeddedSignup = configId => {
 };
 
 export const setupFacebookSdk = async (appId, apiVersion) => {
-  const version = apiVersion || 'v22.0';
+  const version = apiVersion || DEFAULT_FACEBOOK_SDK_VERSION;
   await loadFacebookSdk();
   await initializeFacebook(appId, version);
 };

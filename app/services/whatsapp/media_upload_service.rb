@@ -5,7 +5,6 @@ require 'faraday/multipart'
 # destination ASN and returns intermittent 131053 errors when instances share a hosting provider.
 # ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media#upload-media
 class Whatsapp::MediaUploadService
-  WHATSAPP_API_VERSION_FALLBACK = 'v22.0'.freeze
   OPEN_TIMEOUT = 60
   TIMEOUT = 300
 
@@ -60,7 +59,7 @@ class Whatsapp::MediaUploadService
 
   def upload_url
     base_path = ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
-    version = GlobalConfigService.load('WHATSAPP_API_VERSION', WHATSAPP_API_VERSION_FALLBACK)
+    version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
     "#{base_path}/#{version}/#{@whatsapp_channel.provider_config['phone_number_id']}/media"
   end
 

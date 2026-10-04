@@ -8,7 +8,7 @@ RSpec.describe 'WhatsApp Business (Coexistence) onboarding', type: :request do
   let(:agent) { create(:user, account: account, role: :agent) }
   let(:other_account) { create(:account) }
   let(:other_administrator) { create(:user, account: other_account, role: :administrator) }
-  let(:graph) { 'https://graph.facebook.com/v22.0' }
+  let(:graph) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}" }
   let(:coexistence_params) { { code: 'coex-code', waba_id: 'waba-coex', is_coexistence: true } }
   let(:phone_numbers) do
     { data: [{ id: '3330001', display_phone_number: '+1 555-000-3001', verified_name: 'Lynomia Shop', code_verification_status: 'VERIFIED' }] }

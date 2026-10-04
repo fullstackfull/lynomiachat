@@ -332,54 +332,45 @@ const JOURNEYS = [
     // Contacts phase B rewrote this dialog so it owns the create, the validation errors and the duplicate
     // recovery. Unit tests mock the store and the router; this is the only check that mounts it against the
     // real ones, where a wiring mistake would throw rather than merely render differently.
+    //
+    // Harness note: this surface renders with the header's more-actions menu already open, so its items are
+    // in the inventory. Clicking the trigger would close it — the menu item is clicked directly.
     id: 'J11',
     title: 'Open the create-contact dialog from the contacts header',
     surface: 'contacts-header',
     run: async ({ page }, ctx, id) => {
-      const trigger = page
-        .locator('[data-test-id="contact-more-actions"]')
-        .first();
-      const hasTrigger = await trigger.count();
-      check(
-        `${id}: the contacts header has a more-actions trigger`,
-        hasTrigger > 0,
-        `${hasTrigger}`
-      );
-      if (!hasTrigger) return 0;
+      const inputsBefore = await page.locator('input:visible').count();
 
-      await trigger.click();
-      await page.waitForTimeout(250);
       const addItem = page.getByText(/add contact/i).first();
       const hasAdd = await addItem.count();
-      check(`${id}: the menu offers adding a contact`, hasAdd > 0, `${hasAdd}`);
+      check(`${id}: the header menu offers adding a contact`, hasAdd > 0, `${hasAdd}`);
       if (!hasAdd) return 0;
 
       await addItem.click();
       await page.waitForTimeout(400);
 
-      // The dialog renders its slot only while open, so finding the form's own fields proves it opened and
-      // that nothing in the rewritten component threw on the way.
-      const inputs = await page.locator('input:visible').count();
+      // The dialog renders its slot only while open, so the form's own fields appearing proves both that it
+      // opened and that nothing in the rewritten component threw on the way.
+      const inputsAfter = await page.locator('input:visible').count();
       check(
-        `${id}: the create dialog opens with its fields`,
-        inputs >= 4,
-        `${inputs} inputs`
+        `${id}: the create dialog opens with its form`,
+        inputsAfter > inputsBefore + 3,
+        `${inputsBefore} -> ${inputsAfter} visible inputs`
       );
 
       const all = await names(page);
-      const save = all.filter(n => /save contact|حفظ/i.test(n || ''));
-      const cancel = all.filter(n => /cancel|إلغاء/i.test(n || ''));
       check(
         `${id}: the dialog keeps its save control`,
-        save.length > 0,
-        all.join(' | ').slice(0, 160)
+        all.some(n => /save contact|حفظ/i.test(n || '')),
+        all.join(' | ').slice(0, 170)
       );
       check(
         `${id}: the dialog keeps its cancel control`,
-        cancel.length > 0,
-        all.join(' | ').slice(0, 160)
+        all.some(n => /cancel|إلغاء/i.test(n || '')),
+        all.join(' | ').slice(0, 170)
       );
-      return inputs;
+      check(`${id}: every dialog control announces a name`, all.every(Boolean), '');
+      return inputsAfter;
     },
   },
   {

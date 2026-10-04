@@ -47,6 +47,18 @@ The dialog itself is now exercised in a real browser too: journey **J11**
 store and memory router, which is the only check that would catch a wiring mistake in the rewritten component
 rather than a rendering difference. The ten pre-existing journeys cover no Contacts surface.
 
+```
+journeys: 44  checks: 264  failed: 0
+J11 · 32 checks, 32 passed, in all four contexts (en/ar × desktop/390px)
+     the dialog opens from 1 to 15 visible inputs, keeps its save and cancel controls,
+     every control announces a name, no page error
+```
+
+`journeys.json` and `J11-*.png` in [`../journeys/`](../journeys/) are that run's own output. One thing the
+first attempt got wrong, worth knowing before editing J11: this surface renders with the header's
+more-actions menu **already open**, so clicking the trigger closes it. The journey clicks the menu item
+directly.
+
 ## Re-running
 
 ```bash

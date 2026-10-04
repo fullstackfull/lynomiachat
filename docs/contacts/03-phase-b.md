@@ -220,7 +220,12 @@ Regression cover: `mutations.spec.js` asserts `SET_CONTACT_RECORD` leaves `sortO
 | Frontend, full suite | **478 files, 4941 tests, 0 failures** |
 | ESLint, changed files | 0 errors, 4 warnings (`no-dynamic-keys`, the repo's existing pattern) |
 | RuboCop, changed files | 0 offenses |
-| Production build | see the closeout |
+| Production build | **built in 1m30s, exit 0** |
+| Feature parity, 544 captures before and after | **5678 controls both sides; 0 lost, 0 moved, 0 added, 0 newly unnamed, 0 regressions** ([parity/](parity/)) |
+| Browser journeys | **44 runs, 264 checks, 0 failed**, including the new Contacts one ([journeys/](journeys/)) |
+
+The baseline for parity was re-captured at `968aef48` in a separate worktree, so the comparison is this
+phase's diff alone rather than the UI/UX phase's. Details in [parity/](parity/).
 
 The Rails environment was built for this phase — Ruby 3.4.4, 356 gems, Postgres 16 with `pgvector`, Redis — so
 the backend numbers are real integration runs, not fixtures.

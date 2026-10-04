@@ -1,5 +1,8 @@
 # ------- Branding Related Config ------- #
-# These MUST stay byte-identical to the branding block in config/installation_config.yml:17-58.
+# Every key here MUST hold the same value as its counterpart in the branding block of
+# config/installation_config.yml. Keys absent here (DOCUMENTATION_URL, SUPPORT_URL, CHANGELOG_URL) are
+# deliberately not subject to the plan reset -- listing them would make this file overwrite an operator's
+# configured links, which is the defect described below.
 #
 # `Internal::ReconcilePlanConfigService#reconcile_premium_config` writes every value here over the live
 # InstallationConfig rows whenever ChatwootHub.pricing_plan == 'community' — the seeded default — driven daily

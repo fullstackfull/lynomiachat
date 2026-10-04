@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -20,6 +21,7 @@ import { relativeTime } from 'dashboard/components/widgets/conversation/commerce
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 const { t, locale } = useI18n();
+const { installationName } = useBranding();
 const route = useRoute();
 const router = useRouter();
 const { apiErrorMessage, errorMessage, providerName, storeStatus } =
@@ -99,17 +101,25 @@ const providerTexts = store =>
   ({
     salla: {
       off: t('COMMERCE.SETTINGS.SALLA.PROVIDER_OFF'),
-      reauth: t('COMMERCE.SETTINGS.SALLA.REAUTH_HINT'),
-      disconnect: t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP'),
+      reauth: t('COMMERCE.SETTINGS.SALLA.REAUTH_HINT', {
+        installationName: installationName.value,
+      }),
+      disconnect: t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION_APP', {
+        installationName: installationName.value,
+      }),
     },
     zid: {
       off: t('COMMERCE.SETTINGS.ZID.PROVIDER_OFF'),
-      reauth: t('COMMERCE.SETTINGS.ZID.REAUTH_HINT'),
+      reauth: t('COMMERCE.SETTINGS.ZID.REAUTH_HINT', {
+        installationName: installationName.value,
+      }),
       disconnect: t('COMMERCE.SETTINGS.ZID.DISCONNECT_DESCRIPTION'),
     },
     shopify: {
       off: t('COMMERCE.SETTINGS.SHOPIFY.PROVIDER_OFF'),
-      reauth: t('COMMERCE.SETTINGS.SHOPIFY.REAUTH_HINT'),
+      reauth: t('COMMERCE.SETTINGS.SHOPIFY.REAUTH_HINT', {
+        installationName: installationName.value,
+      }),
       disconnect: t('COMMERCE.SETTINGS.SHOPIFY.DISCONNECT_DESCRIPTION'),
     },
   })[store.provider] || {};
@@ -271,7 +281,7 @@ onMounted(() => {
     <template #header>
       <BaseSettingsHeader
         :title="t('COMMERCE.SETTINGS.HEADER')"
-        :description="t('COMMERCE.SETTINGS.DESCRIPTION')"
+        :description="t('COMMERCE.SETTINGS.DESCRIPTION', { installationName })"
       >
         <template #actions>
           <Button

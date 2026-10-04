@@ -1,6 +1,6 @@
 class AdministratorNotifications::AccountNotificationMailer < AdministratorNotifications::BaseMailer
   def account_deletion_user_initiated(account, reason)
-    subject = 'Your Chatwoot account deletion has been scheduled'
+    subject = "Your #{brand_name} account deletion has been scheduled"
     action_url = settings_url('general')
     meta = {
       'account_name' => account.name,
@@ -12,7 +12,7 @@ class AdministratorNotifications::AccountNotificationMailer < AdministratorNotif
   end
 
   def account_deletion_for_inactivity(account, reason)
-    subject = 'Your Chatwoot account is scheduled for deletion due to inactivity'
+    subject = "Your #{brand_name} account is scheduled for deletion due to inactivity"
     action_url = settings_url('general')
     meta = {
       'account_name' => account.name,
@@ -59,6 +59,11 @@ class AdministratorNotifications::AccountNotificationMailer < AdministratorNotif
   end
 
   private
+
+  # The subject names the product, so it reads the configured brand name the same way the mailer layout does.
+  def brand_name
+    GlobalConfig.get_value('BRAND_NAME').presence || 'Chatwoot'
+  end
 
   def format_deletion_date(deletion_date_str)
     return 'Unknown' if deletion_date_str.blank?

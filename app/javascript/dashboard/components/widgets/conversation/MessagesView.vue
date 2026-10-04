@@ -3,6 +3,7 @@ import { ref, provide, useTemplateRef } from 'vue';
 import { useElementSize } from '@vueuse/core';
 // composable
 import { useLabelSuggestions } from 'dashboard/composables/useLabelSuggestions';
+import { useBranding } from 'shared/composables/useBranding';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
 import { useContactConversationNavigation } from 'dashboard/composables/useContactConversationNavigation';
 
@@ -71,6 +72,8 @@ export default {
     const { olderConversation, newerConversation, buildConversationPath } =
       useContactConversationNavigation();
 
+    const { brandLink } = useBranding();
+
     provide('contextMenuElementTarget', conversationPanelRef);
 
     return {
@@ -86,6 +89,7 @@ export default {
       topBannerRef,
       containerHeight,
       topBannerHeight,
+      brandLink,
     };
   },
   data() {
@@ -190,8 +194,10 @@ export default {
     isInstagramRestrictionBannerVisible() {
       return this.isMetaMessageSendingDisabled && this.isAnInstagramChannel;
     },
+    // Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded
+    // one gets its configured SUPPORT_URL, and no link at all when it has none.
     instagramRestrictionStatusUrl() {
-      return META_RESTRICTION_STATUS_URL;
+      return this.brandLink('support', META_RESTRICTION_STATUS_URL);
     },
     replyWindowBannerMessage() {
       if (this.isAWhatsAppChannel) {

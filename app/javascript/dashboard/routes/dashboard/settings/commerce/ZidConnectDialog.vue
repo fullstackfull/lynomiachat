@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import CommerceAPI from 'dashboard/api/commerce';
@@ -16,6 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const { apiErrorMessage } = useCommerceLabels();
 const dialogRef = ref(null);
 const errorMessage = ref('');
@@ -52,7 +54,7 @@ watch(
   <Dialog
     ref="dialogRef"
     :title="t('COMMERCE.SETTINGS.ZID.TITLE')"
-    :description="t('COMMERCE.SETTINGS.ZID.DESCRIPTION')"
+    :description="t('COMMERCE.SETTINGS.ZID.DESCRIPTION', { installationName })"
     :show-confirm-button="false"
     :cancel-button-label="t('COMMERCE.SETTINGS.FORM.CANCEL')"
     width="md"
@@ -60,7 +62,7 @@ watch(
   >
     <div class="flex flex-col gap-4">
       <p class="text-body-main text-n-slate-12">
-        {{ t('COMMERCE.SETTINGS.ZID.STEPS') }}
+        {{ t('COMMERCE.SETTINGS.ZID.STEPS', { installationName }) }}
       </p>
       <p
         v-if="errorMessage"

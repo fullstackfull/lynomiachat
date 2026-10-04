@@ -614,7 +614,7 @@ en:
   automation:
     system_name: 'Automation System'
     lynomia:
-      extensions_disabled: "Lynomia automation extensions are turned off on this installation."
+      extensions_disabled: "%{installation_name} automation extensions are turned off on this installation."
       too_many_conditions: "A rule can have at most %{count} audience and Commerce conditions."
       invalid_operator: "This operator is not available for %{key}."
       invalid_values: "The values of %{key} are not valid."

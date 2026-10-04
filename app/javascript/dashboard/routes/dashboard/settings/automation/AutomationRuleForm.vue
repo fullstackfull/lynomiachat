@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, shallowRef, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useAccount } from 'dashboard/composables/useAccount';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SidePanel from 'dashboard/components-next/side-panel/SidePanel.vue';
@@ -72,6 +73,7 @@ const emit = defineEmits(['save']);
 const automation = defineModel('automation', { type: Object, default: null });
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const { isCloudFeatureEnabled } = useAccount();
 const lynomia = useLynomiaAutomation();
 
@@ -344,7 +346,9 @@ defineExpose({ open, close });
         :show-reset-message="!isEditMode && hasAutomationMutated"
         :note="
           isCommerceTrigger
-            ? $t('AUTOMATION.LYNOMIA.COMMERCE_TRIGGER_NOTE')
+            ? $t('AUTOMATION.LYNOMIA.COMMERCE_TRIGGER_NOTE', {
+                installationName,
+              })
             : ''
         "
         :append-new-condition="appendNewCondition"

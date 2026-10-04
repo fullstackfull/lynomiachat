@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import CommerceAPI from 'dashboard/api/commerce';
@@ -23,6 +24,7 @@ const ACCESS = {
 };
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const { apiErrorMessage } = useCommerceLabels();
 const dialogRef = ref(null);
 const baseUrl = ref('');
@@ -37,7 +39,9 @@ const accessOptions = computed(() => [
   {
     value: ACCESS.READ_WRITE,
     label: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_WRITE'),
-    hint: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_WRITE_HINT'),
+    hint: t('COMMERCE.SETTINGS.FORM.ACCESS_READ_WRITE_HINT', {
+      installationName: installationName.value,
+    }),
   },
   {
     value: ACCESS.READ,
@@ -110,7 +114,7 @@ watch(
         ? t('COMMERCE.SETTINGS.FORM.ROTATE_TITLE')
         : t('COMMERCE.SETTINGS.FORM.TITLE')
     "
-    :description="t('COMMERCE.SETTINGS.FORM.DESCRIPTION')"
+    :description="t('COMMERCE.SETTINGS.FORM.DESCRIPTION', { installationName })"
     :confirm-button-label="
       isRotation
         ? t('COMMERCE.SETTINGS.FORM.SAVE')
@@ -127,7 +131,7 @@ watch(
     <div class="flex flex-col gap-4">
       <fieldset class="flex flex-col gap-2">
         <legend class="mb-2 text-heading-3 text-n-slate-12">
-          {{ t('COMMERCE.SETTINGS.FORM.ACCESS') }}
+          {{ t('COMMERCE.SETTINGS.FORM.ACCESS', { installationName }) }}
         </legend>
         <button
           v-for="option in accessOptions"

@@ -1,11 +1,22 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import ar from 'dashboard/i18n/locale/ar/commerce.json';
 import CommerceAPI from 'dashboard/api/commerce';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import CommercePanel from '../CommercePanel.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 vi.mock('dashboard/api/commerce', () => ({
   default: {
@@ -84,7 +95,10 @@ const mountPanel = (locale = 'en') => {
   const wrapper = mount(CommercePanel, {
     props: { conversationId: 7, contactId: 3 },
     global: {
-      plugins: [createI18n({ legacy: false, locale, messages: { en, ar } })],
+      plugins: [
+        createI18n({ legacy: false, locale, messages: { en, ar } }),
+        brandingStore,
+      ],
       stubs,
     },
   });
@@ -271,7 +285,7 @@ describe('CommercePanel', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain(
-      "The store rejected Lynomia's credentials."
+      "The store rejected Acme Desk's credentials."
     );
   });
 

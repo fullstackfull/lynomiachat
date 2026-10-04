@@ -79,7 +79,7 @@
       "YES": "Yes",
       "NO": "No",
       "CONVERSATION_NOTE": "Conversation conditions match contacts with at least one such conversation (Equal to) or none (Not equal to), among the conversations you can see.",
-      "COMMERCE_NOTE": "Commerce conditions use the latest orders Lynomia has read for each linked store, so figures are visible orders and spend, not lifetime totals. Spend is per currency.",
+      "COMMERCE_NOTE": "Commerce conditions use the latest orders {installationName} has read for each linked store, so figures are visible orders and spend, not lifetime totals. Spend is per currency.",
       "UNREAD": "Orders haven’t been read yet for {count} linked contacts, so order conditions can’t match them. They’re read when an agent opens the contact’s conversation or the store sends an update.",
       "SHARED": {
         "READ_ONLY": "This is a shared audience. Only administrators can change it; you can still adjust the filters and apply them.",

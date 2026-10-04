@@ -14,6 +14,7 @@ import { useRoute } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { convertToCategorySlug } from 'dashboard/helper/commons.js';
+import { getHostNameFromURL } from 'dashboard/helper/URLHelper';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import TextArea from 'dashboard/components-next/textarea/TextArea.vue';
@@ -103,9 +104,17 @@ const slugError = computed(() =>
     : ''
 );
 
+// The worked example in the slug help text used to be hosted Chatwoot's own help-centre host, which is
+// neither this installation nor where the category will actually live.
+const helpCenterDomain = computed(() => {
+  const { hostURL, helpCenterURL } = window?.chatwootConfig || {};
+  return getHostNameFromURL(helpCenterURL) || getHostNameFromURL(hostURL) || '';
+});
+
 const slugHelpText = computed(() => {
   const { portalSlug, locale } = route.params;
   return t('HELP_CENTER.CATEGORY_PAGE.CATEGORY_DIALOG.FORM.SLUG.HELP_TEXT', {
+    domain: helpCenterDomain.value,
     portalSlug,
     localeCode: locale,
     categorySlug: state.slug,

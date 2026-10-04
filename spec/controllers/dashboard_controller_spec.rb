@@ -18,6 +18,25 @@ describe '/app/login', type: :request do
     end
   end
 
+  context 'with branding' do
+    it 'titles the page with the installation name rather than a hard-coded product name' do
+      InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
+      GlobalConfig.clear_cache
+
+      get '/app/login'
+
+      expect(response.body).to include '<title>Acme Desk</title>'
+    end
+
+    it 'ships the configurable product links to the dashboard' do
+      get '/app/login'
+
+      expect(response.body).to include 'DOCUMENTATION_URL'
+      expect(response.body).to include 'SUPPORT_URL'
+      expect(response.body).to include 'CHANGELOG_URL'
+    end
+  end
+
   context 'with non-HTML format' do
     it 'returns not acceptable for JSON with error message' do
       get '/app/login', headers: { 'Accept' => 'application/json' }

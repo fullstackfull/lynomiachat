@@ -712,6 +712,11 @@ Rails.application.routes.draw do
   get 'tiktok/callback', to: 'tiktok/callbacks#show'
   get 'notion/callback', to: 'notion/callbacks#show'
   # ----------------------------------------------------------------------
+  # The web app manifest carries the installation's own name onto a user's home screen, so it is rendered
+  # from INSTALLATION_NAME rather than served as a static file with the name baked in.
+  get '/manifest.json' => 'web_manifest#show'
+
+  # ----------------------------------------------------------------------
   # Routes for external service verifications
   get '.well-known/assetlinks.json' => 'android_app#assetlinks'
   get '.well-known/apple-app-site-association' => 'apple_app#site_association'

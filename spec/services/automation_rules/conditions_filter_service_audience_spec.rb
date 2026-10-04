@@ -128,4 +128,17 @@ RSpec.describe AutomationRules::ConditionsFilterService do
                                           actions: [])).not_to be_valid
     end
   end
+
+  it 'names the installation, not a hard-coded product, when it refuses a rule because the extensions are off' do
+    InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
+    GlobalConfig.clear_cache
+    invalid_rule = account.automation_rules.new(name: 'x', event_name: 'conversation_created', actions: [],
+                                                conditions: [condition('equal_to', [shared.id])])
+
+    with_modified_env LYNOMIA_AUTOMATION_EXTENSIONS_ENABLED: 'false' do
+      invalid_rule.valid?
+    end
+
+    expect(invalid_rule.errors[:conditions].join).to include('Acme Desk')
+  end
 end

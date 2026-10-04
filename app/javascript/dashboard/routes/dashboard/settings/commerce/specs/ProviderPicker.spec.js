@@ -1,7 +1,18 @@
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import ProviderPicker from '../ProviderPicker.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 const DialogStub = {
   setup(_, { expose }) {
@@ -14,7 +25,10 @@ const mountPicker = providers =>
   mount(ProviderPicker, {
     props: { show: true, providers },
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'en', messages: { en } })],
+      plugins: [
+        createI18n({ legacy: false, locale: 'en', messages: { en } }),
+        brandingStore,
+      ],
       stubs: { Dialog: DialogStub, Icon: true },
     },
   });
@@ -36,7 +50,7 @@ describe('ProviderPicker', () => {
     const wrapper = mountPicker(['woocommerce', 'salla', 'zid']);
 
     expect(wrapper.text()).toContain('Zid');
-    expect(wrapper.text()).toContain('Authorize the Lynomia app on Zid.');
+    expect(wrapper.text()).toContain('Authorize the Acme Desk app on Zid.');
     await wrapper
       .find('[data-test-id="commerce-provider-zid"]')
       .trigger('click');
@@ -49,7 +63,7 @@ describe('ProviderPicker', () => {
 
     expect(wrapper.text()).toContain('Shopify');
     expect(wrapper.text()).toContain(
-      'Authorize the Lynomia Commerce app on your Shopify store.'
+      'Authorize the Acme Desk Commerce app on your Shopify store.'
     );
     await wrapper
       .find('[data-test-id="commerce-provider-shopify"]')

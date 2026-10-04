@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Label from 'dashboard/components-next/label/Label.vue';
@@ -17,6 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'select']);
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const { providerName } = useCommerceLabels();
 const dialogRef = ref(null);
 
@@ -30,17 +32,23 @@ const options = computed(() =>
     {
       provider: 'salla',
       icon: 'i-lucide-store',
-      hint: t('COMMERCE.SETTINGS.PICKER.SALLA_HINT'),
+      hint: t('COMMERCE.SETTINGS.PICKER.SALLA_HINT', {
+        installationName: installationName.value,
+      }),
     },
     {
       provider: 'zid',
       icon: 'i-lucide-store',
-      hint: t('COMMERCE.SETTINGS.PICKER.ZID_HINT'),
+      hint: t('COMMERCE.SETTINGS.PICKER.ZID_HINT', {
+        installationName: installationName.value,
+      }),
     },
     {
       provider: 'shopify',
       icon: 'i-lucide-shopping-cart',
-      hint: t('COMMERCE.SETTINGS.PICKER.SHOPIFY_HINT'),
+      hint: t('COMMERCE.SETTINGS.PICKER.SHOPIFY_HINT', {
+        installationName: installationName.value,
+      }),
     },
   ].map(option => ({
     ...option,

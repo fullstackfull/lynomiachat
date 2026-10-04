@@ -21,8 +21,16 @@ import { useDetectedChannels } from './inbox-setup/useDetectedChannels';
 import { DIALOG_CHANNELS } from './inbox-setup/constants';
 import Banner from 'dashboard/components-next/banner/Banner.vue';
 import { META_RESTRICTION_STATUS_URL } from 'dashboard/constants/globals';
+import { useBranding } from 'shared/composables/useBranding';
 
 const { t } = useI18n();
+const { brandLink } = useBranding();
+
+// Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded one
+// gets its configured SUPPORT_URL, and no link at all when it has none.
+const metaRestrictionStatusUrl = computed(() =>
+  brandLink('support', META_RESTRICTION_STATUS_URL)
+);
 const store = useStore();
 const router = useRouter();
 const {
@@ -143,7 +151,8 @@ const connectChannel = channel => {
             <span>
               {{ t('ONBOARDING_INBOX_SETUP.META_RESTRICTION.MESSAGE') }}
               <a
-                :href="META_RESTRICTION_STATUS_URL"
+                v-if="metaRestrictionStatusUrl"
+                :href="metaRestrictionStatusUrl"
                 class="link underline"
                 rel="noopener noreferrer nofollow"
                 target="_blank"

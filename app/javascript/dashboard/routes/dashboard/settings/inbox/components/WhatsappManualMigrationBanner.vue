@@ -1,13 +1,21 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import Banner from 'dashboard/components-next/banner/Banner.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 
 const emit = defineEmits(['start']);
 const { t } = useI18n();
+const { brandLink } = useBranding();
 
-const WHATSAPP_MANUAL_MIGRATION_GUIDE_URL = 'https://chwt.app/migrate-whatsapp';
+// These point at upstream Chatwoot's own documentation, which is the right destination only on an upstream
+// installation. A branded one gets its configured DOCUMENTATION_URL, and no link at all when it has none.
+const UPSTREAM_MANUAL_MIGRATION_GUIDE_URL = 'https://chwt.app/migrate-whatsapp';
+
+const guideUrl = computed(() =>
+  brandLink('documentation', UPSTREAM_MANUAL_MIGRATION_GUIDE_URL)
+);
 
 const copy = computed(() => ({
   title: t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_MANUAL_MIGRATION.BANNER.TITLE'),
@@ -31,7 +39,8 @@ const copy = computed(() => ({
         <span>
           {{ copy.description }}
           <a
-            :href="WHATSAPP_MANUAL_MIGRATION_GUIDE_URL"
+            v-if="guideUrl"
+            :href="guideUrl"
             target="_blank"
             rel="noopener noreferrer"
             class="underline link underline-offset-2"

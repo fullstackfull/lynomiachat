@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useAlert } from 'dashboard/composables';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -22,6 +23,7 @@ const POLL_INTERVAL_MS = 5000;
 const PENDING = ['waiting', 'claimed'];
 
 const { t, locale } = useI18n();
+const { installationName } = useBranding();
 const { apiErrorMessage } = useCommerceLabels();
 const dialogRef = ref(null);
 const connection = ref(null);
@@ -44,7 +46,9 @@ const statusMessage = computed(
       waiting: t('COMMERCE.SETTINGS.SALLA.STATUS.WAITING'),
       claimed: t('COMMERCE.SETTINGS.SALLA.STATUS.CLAIMED'),
       connected: t('COMMERCE.SETTINGS.SALLA.STATUS.CONNECTED'),
-      conflict: t('COMMERCE.SETTINGS.SALLA.STATUS.CONFLICT'),
+      conflict: t('COMMERCE.SETTINGS.SALLA.STATUS.CONFLICT', {
+        installationName: installationName.value,
+      }),
       expired: t('COMMERCE.SETTINGS.SALLA.STATUS.EXPIRED'),
       limit_reached: t('COMMERCE.SETTINGS.SALLA.STATUS.LIMIT_REACHED'),
     })[status.value] || ''
@@ -121,7 +125,9 @@ onBeforeUnmount(stopPolling);
   <Dialog
     ref="dialogRef"
     :title="t('COMMERCE.SETTINGS.SALLA.TITLE')"
-    :description="t('COMMERCE.SETTINGS.SALLA.DESCRIPTION')"
+    :description="
+      t('COMMERCE.SETTINGS.SALLA.DESCRIPTION', { installationName })
+    "
     :show-confirm-button="false"
     :cancel-button-label="t('COMMERCE.SETTINGS.SALLA.CLOSE')"
     width="md"
@@ -132,8 +138,12 @@ onBeforeUnmount(stopPolling);
         class="flex list-decimal flex-col gap-1.5 ps-5 text-body-main text-n-slate-12"
       >
         <li>{{ t('COMMERCE.SETTINGS.SALLA.STEP_CODE') }}</li>
-        <li>{{ t('COMMERCE.SETTINGS.SALLA.STEP_INSTALL') }}</li>
-        <li>{{ t('COMMERCE.SETTINGS.SALLA.STEP_SETTINGS') }}</li>
+        <li>
+          {{ t('COMMERCE.SETTINGS.SALLA.STEP_INSTALL', { installationName }) }}
+        </li>
+        <li>
+          {{ t('COMMERCE.SETTINGS.SALLA.STEP_SETTINGS', { installationName }) }}
+        </li>
       </ol>
 
       <div

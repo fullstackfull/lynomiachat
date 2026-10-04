@@ -255,7 +255,7 @@
       "IS_NOT_IN": "Is not in",
       "EVENT_STORE": "Order store",
       "EVENT_PROVIDER": "Order store platform",
-      "COMMERCE_TRIGGER_NOTE": "Runs when Lynomia reads a change in a linked customer's orders (a store update, or an agent opening the conversation), on the contact's latest conversation. Messages to the customer aren't available on Commerce triggers."
+      "COMMERCE_TRIGGER_NOTE": "Runs when {installationName} reads a change in a linked customer's orders (a store update, or an agent opening the conversation), on the contact's latest conversation. Messages to the customer aren't available on Commerce triggers."
     }
   }
 }

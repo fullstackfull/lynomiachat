@@ -1,6 +1,7 @@
 <script setup>
 import { useTemplateRef, onBeforeUnmount, onMounted, computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useTrack } from 'dashboard/composables';
 import { useStore } from 'dashboard/composables/store';
 import { vOnClickOutside } from '@vueuse/components';
@@ -50,6 +51,7 @@ const DEFAULT_FILTER = {
 };
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const store = useStore();
 
 const resetFilter = () => {
@@ -210,7 +212,7 @@ const outsideClickHandler = [
         {{ t('CONTACTS_FILTER.AUDIENCE.CONVERSATION_NOTE') }}
       </p>
       <p v-if="usesCommerce">
-        {{ t('CONTACTS_FILTER.AUDIENCE.COMMERCE_NOTE') }}
+        {{ t('CONTACTS_FILTER.AUDIENCE.COMMERCE_NOTE', { installationName }) }}
       </p>
       <p
         v-if="unreadNote"

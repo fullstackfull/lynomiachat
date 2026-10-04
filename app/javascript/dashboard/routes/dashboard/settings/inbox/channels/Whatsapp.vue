@@ -20,7 +20,13 @@ import { useBranding } from 'shared/composables/useBranding';
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const { replaceInstallationName } = useBranding();
+const { replaceInstallationName, brandLink } = useBranding();
+
+// Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded one
+// gets its configured SUPPORT_URL, and no link at all when it has none.
+const metaRestrictionStatusUrl = computed(() =>
+  brandLink('support', META_RESTRICTION_STATUS_URL)
+);
 const accessRequestDialogRef = ref(null);
 const {
   isCloudFeatureEnabled,
@@ -217,7 +223,8 @@ const requestEmbeddedSignupAccess = () => {
           <span>
             {{ $t('INBOX_MGMT.ADD.WHATSAPP.API.MANUAL_RESTRICTION_WARNING') }}
             <a
-              :href="META_RESTRICTION_STATUS_URL"
+              v-if="metaRestrictionStatusUrl"
+              :href="metaRestrictionStatusUrl"
               class="link underline"
               rel="noopener noreferrer nofollow"
               target="_blank"
@@ -258,7 +265,7 @@ const requestEmbeddedSignupAccess = () => {
           <WhatsappEmbeddedSignup
             :is-disabled="isWhatsappEmbeddedSignupDisabled"
             :show-restriction-alert="isWhatsappEmbeddedSignupDisabled"
-            :restriction-status-url="META_RESTRICTION_STATUS_URL"
+            :restriction-status-url="metaRestrictionStatusUrl"
           />
 
           <!-- Manual setup fallback option -->
@@ -290,7 +297,7 @@ const requestEmbeddedSignupAccess = () => {
           variant="business_app"
           :is-disabled="isWhatsappEmbeddedSignupDisabled"
           :show-restriction-alert="isWhatsappEmbeddedSignupDisabled"
-          :restriction-status-url="META_RESTRICTION_STATUS_URL"
+          :restriction-status-url="metaRestrictionStatusUrl"
         />
 
         <!-- Other providers -->

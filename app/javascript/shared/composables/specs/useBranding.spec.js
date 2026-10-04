@@ -8,6 +8,15 @@ vi.mock('dashboard/composables/store.js', () => ({
 
 describe('useBranding', () => {
   let mockGlobalConfig;
+  let mockIsACustomBrandedInstance;
+
+  const wireGetters = () => {
+    useMapGetter.mockImplementation(getter =>
+      getter === 'globalConfig/isACustomBrandedInstance'
+        ? mockIsACustomBrandedInstance
+        : mockGlobalConfig
+    );
+  };
 
   beforeEach(() => {
     mockGlobalConfig = {
@@ -15,12 +24,29 @@ describe('useBranding', () => {
         installationName: 'MyCompany',
       },
     };
+    mockIsACustomBrandedInstance = { value: true };
 
-    useMapGetter.mockReturnValue(mockGlobalConfig);
+    wireGetters();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('installationName', () => {
+    it('should expose the installation name for use as an i18n parameter', () => {
+      const { installationName } = useBranding();
+
+      expect(installationName.value).toBe('MyCompany');
+    });
+
+    it('should be undefined when globalConfig is not available', () => {
+      mockGlobalConfig.value = undefined;
+
+      const { installationName } = useBranding();
+
+      expect(installationName.value).toBeUndefined();
+    });
   });
 
   describe('replaceInstallationName', () => {
@@ -91,6 +117,68 @@ describe('useBranding', () => {
       const result = replaceInstallationName('Welcome to Chatwoot');
 
       expect(result).toBe('Welcome to My-Company & Co.');
+    });
+  });
+
+  describe('brandLink', () => {
+    it('keeps the upstream link on an installation that has not been rebranded', () => {
+      mockIsACustomBrandedInstance = { value: false };
+      mockGlobalConfig.value = {
+        installationName: 'Chatwoot',
+        documentationURL: '',
+      };
+      wireGetters();
+
+      const { brandLink } = useBranding();
+
+      expect(brandLink('documentation', 'https://upstream.example/docs')).toBe(
+        'https://upstream.example/docs'
+      );
+    });
+
+    it('returns the configured link instead of the upstream one on a branded installation', () => {
+      mockGlobalConfig.value = {
+        installationName: 'MyCompany',
+        documentationURL: 'https://docs.mycompany.example',
+        supportURL: 'https://help.mycompany.example',
+        changelogURL: 'https://mycompany.example/changelog',
+      };
+      wireGetters();
+
+      const { brandLink } = useBranding();
+
+      expect(brandLink('documentation', 'https://upstream.example/docs')).toBe(
+        'https://docs.mycompany.example'
+      );
+      expect(brandLink('support', 'https://upstream.example/status')).toBe(
+        'https://help.mycompany.example'
+      );
+      expect(brandLink('changelog', 'https://upstream.example/changelog')).toBe(
+        'https://mycompany.example/changelog'
+      );
+    });
+
+    it('returns an empty string on a branded installation with nothing configured, so callers render no link', () => {
+      const { brandLink } = useBranding();
+
+      expect(brandLink('documentation', 'https://upstream.example/docs')).toBe(
+        ''
+      );
+      expect(brandLink('support', 'https://upstream.example/status')).toBe('');
+      expect(brandLink('changelog', 'https://upstream.example/changelog')).toBe(
+        ''
+      );
+    });
+
+    it('never leaks the upstream link when globalConfig is unavailable on a branded installation', () => {
+      mockGlobalConfig.value = undefined;
+      wireGetters();
+
+      const { brandLink } = useBranding();
+
+      expect(brandLink('documentation', 'https://upstream.example/docs')).toBe(
+        ''
+      );
     });
   });
 });

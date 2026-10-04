@@ -179,5 +179,26 @@ RSpec.describe Account::ContactsExportJob do
       # since there are only 8 contacts with 'looped' in email
       expect(csv_data.length).to eq(8)
     end
+
+    # D4 (docs/contacts/10-phase-d.md). A search and the online list carry neither a payload nor a label, so the
+    # old payload-else-label-else-everything fall-through exported the whole account from either of them.
+    it 'exports what a search matched, not the whole account' do
+      create(:contact, account: account, name: 'Zuhayr Only', email: 'zuhayr@example.com')
+      described_class.perform_now(account.id, user.id, %w[id name], { q: 'zuhayr' })
+      csv_data = CSV.parse(account.contacts_export.download, headers: true)
+
+      expect(csv_data.length).to eq(1)
+      expect(csv_data.first['name']).to eq('Zuhayr Only')
+    end
+
+    it 'exports who is online, not the whole account' do
+      online = create(:contact, account: account, email: 'online@example.com')
+      allow(OnlineStatusTracker).to receive(:get_available_contact_ids).with(account.id).and_return([online.id])
+
+      described_class.perform_now(account.id, user.id, %w[id email], { active: true })
+      csv_data = CSV.parse(account.contacts_export.download, headers: true)
+
+      expect(csv_data.map { |row| row['email'] }).to eq(['online@example.com'])
+    end
   end
 end

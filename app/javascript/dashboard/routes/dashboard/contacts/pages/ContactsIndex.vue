@@ -71,9 +71,16 @@ const hasMore = computed(() => meta.value?.hasMore ?? false);
 const isSearchView = computed(() => !!searchQuery.value);
 
 const selectedContactIds = ref([]);
+// Set only by the bar's "select all N in this view". The ids then stop being the target: the server resolves
+// the view itself, because the browser is holding one page of it (docs/contacts/10-phase-d.md §D4).
+const isWholeViewSelected = ref(false);
 const isBulkActionLoading = ref(false);
 const bulkDeleteDialogRef = ref(null);
-const selectedCount = computed(() => selectedContactIds.value.length);
+const selectedCount = computed(() =>
+  isWholeViewSelected.value
+    ? (totalItems.value ?? selectedContactIds.value.length)
+    : selectedContactIds.value.length
+);
 const bulkDeleteDialogTitle = computed(() =>
   selectedCount.value > 1
     ? t('CONTACTS_BULK_ACTIONS.DELETE_DIALOG.TITLE')
@@ -145,6 +152,11 @@ const visibleContactIds = computed(() =>
 
 const clearSelection = () => {
   selectedContactIds.value = [];
+  isWholeViewSelected.value = false;
+};
+
+const selectAllMatching = () => {
+  isWholeViewSelected.value = true;
 };
 
 const openBulkDeleteDialog = () => {
@@ -153,6 +165,8 @@ const openBulkDeleteDialog = () => {
 };
 
 const toggleSelectAll = shouldSelect => {
+  // Any hand-made change to the selection means it is no longer "everything this view matches".
+  isWholeViewSelected.value = false;
   const currentSelection = new Set(selectedContactIds.value);
   if (shouldSelect) {
     visibleContactIds.value.forEach(id => currentSelection.add(id));
@@ -163,6 +177,7 @@ const toggleSelectAll = shouldSelect => {
 };
 
 const toggleContactSelection = ({ id, value }) => {
+  isWholeViewSelected.value = false;
   const isAlreadySelected = selectedContactIds.value.includes(id);
   const shouldSelect = value ?? !isAlreadySelected;
 
@@ -331,6 +346,29 @@ const fetchContactsBasedOnContext = async (page, options = {}) => {
 const onPageChange = page =>
   fetchContactsBasedOnContext(page, { clearSelection: false });
 
+// What the server needs to resolve this view for itself, branch for branch the same way
+// `fetchContactsBasedOnContext` above decides which list to fetch — so the rows a bulk action reaches are the
+// rows the list is showing, and not a second opinion about them (docs/contacts/10-phase-d.md §D4).
+const viewDescription = computed(() => {
+  if (searchQuery.value) return { q: searchQuery.value };
+  if (isActiveView.value) return { active: true };
+  if (
+    (hasAppliedFilters.value || activeSegment.value?.query) &&
+    !activeLabel.value
+  ) {
+    const query =
+      activeSegment.value?.query || filterQueryGenerator(appliedFilters.value);
+    return { payload: query.payload ?? [] };
+  }
+  return { label: activeLabel.value || '' };
+});
+
+const bulkTarget = computed(() =>
+  isWholeViewSelected.value
+    ? { all_matching: viewDescription.value }
+    : { ids: selectedContactIds.value }
+);
+
 const runBulkAction = async ({ payload, success, failure, onDone }) => {
   if (!selectedContactIds.value.length) {
     return;
@@ -342,7 +380,7 @@ const runBulkAction = async ({ payload, success, failure, onDone }) => {
   try {
     await BulkActionsAPI.create({
       type: 'Contact',
-      ids: selectedContactIds.value,
+      ...bulkTarget.value,
       ...payload,
     });
     await completed;
@@ -352,7 +390,8 @@ const runBulkAction = async ({ payload, success, failure, onDone }) => {
     await fetchContactsBasedOnContext(pageNumber.value);
     onDone?.();
   } catch (error) {
-    useAlert(failure);
+    // The one refusal worth quoting: a view with more contacts than one action may touch.
+    useAlert(error.response?.data?.message ?? failure);
   } finally {
     isBulkActionLoading.value = false;
   }
@@ -539,7 +578,10 @@ onMounted(async () => {
           :visible-contact-ids="visibleContactIds"
           :selected-contact-ids="selectedContactIds"
           :is-loading="isBulkActionLoading"
+          :total-count="totalItems ?? 0"
+          :is-whole-view-selected="isWholeViewSelected"
           @toggle-all="toggleSelectAll"
+          @select-all-matching="selectAllMatching"
           @clear-selection="clearSelection"
           @assign-labels="assignLabels"
           @remove-labels="removeLabels"

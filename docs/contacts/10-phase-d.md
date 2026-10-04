@@ -201,3 +201,85 @@ is not the first path to leave one.
 `ButtonStub` in that dialog spec re-emitted a click Vue had already passed through to its root element as a
 native listener, so every `clickLabel` ran its handler twice. Harmless for the assertions that were there, but
 it makes the order of a component's calls unreadable, which the new tests need. Removed.
+
+---
+
+## D4 — "select all" meant "select all fifteen"
+
+### What was wrong
+
+A bulk action could only ever reach the rows the browser was holding. "Select all" selected the current page —
+fifteen contacts — and said so: `SELECT_ALL` is "Select all ({count})" with the *page's* count in it. An account
+with four thousand contacts carrying a label had no way to act on them other than paging through two hundred and
+sixty-seven pages, fifteen at a time.
+
+The reason is real and does not go away by being ignored: the ids are what the endpoint takes, and the browser
+does not have the ids. Only the server can enumerate a view.
+
+### What changed
+
+The bulk endpoint now accepts a description of the view instead of a list of ids, resolves it, and sends on what
+it resolved.
+
+- `Contacts::ViewScope` answers "which contacts is this view showing" from `{ q, active, payload, label }` —
+  the same four parameters the list endpoints already take. Every branch is one of those endpoints' own scopes:
+  `Contacts::FilterService` for a filter or a saved segment, `OnlineStatusTracker` for the online list, the
+  search endpoint's own predicate for a search, `resolved_contacts` and `tagged_with` for the list itself.
+- `ContactsController`'s `index`, `search` and `active` go through it too, so there is one definition rather
+  than a copy that can drift. A bulk action over "all the results" that resolved to a different set than the
+  list showed would be worse than no feature at all.
+- `BulkActionsController` resolves `all_matching` to ids and passes them to the existing
+  `Contacts::BulkActionJob`. The job, `Contacts::BulkActionService`, the three label/delete services and the
+  policy are untouched: what the user was told would happen is exactly what the queue is given.
+- `ContactsIndex.vue` builds the description branch for branch the same way `fetchContactsBasedOnContext`
+  decides which list to fetch — the same conditions in the same order, reading the same state. The bar offers
+  "Select all N in this view" only once every row on the page is already selected and the view has more, and it
+  then reads "All N selected" rather than "15 selected".
+
+### The rules this had to respect
+
+- **An empty payload is never "everything".** The opt-in is `all_matching` being *present*, not `ids` being
+  absent. A request that forgot its ids reaches no contacts at all, which a spec holds in place.
+  `all_matching: {}` is the unfiltered list, because somebody asked for that in so many words — and it resolves
+  to `resolved_contacts`, so a row with no identity is no more reachable than it is on the page.
+- **An explicit bound.** `CONTACT_VIEW_LIMIT = 10_000`, the same number the pasted-numbers importer uses. Over
+  it the request is refused with `too_many_contacts` and nothing is enqueued. It refuses rather than truncating:
+  an action that silently did 10,000 of 40,000 contacts would be worse than one that did nothing, and the
+  dialog shows the server's own reason.
+- **No `Contacts::FilterService` in the browser.** The client sends the filter query it already sends to
+  `/contacts/filter`; it resolves nothing.
+- **No cross-account reach.** Every branch starts from `@current_account.contacts`, and a spec checks a search
+  that matches a contact of the same name in another account.
+- **Authorization unchanged.** `authorize(Contact, :update?)` / `:destroy?` and the label-catalogue check run
+  before anything is resolved, so a whole-view delete from a non-admin is refused exactly as a fifteen-row one
+  is.
+- **No migration, no new endpoint, no new job, no new queue.**
+
+### The adjacent bug this exposed, and fixed
+
+`Account::ContactsExportJob` asked the same question and answered it itself:
+
+```ruby
+if @params[:payload].present? then filter
+elsif @params[:label].present? then label
+else the whole account
+```
+
+A search view and the online list carry neither a payload nor a label. So "Export" from a search for one person
+exported **every contact in the account**, by email, silently. The export dialog was sending only `payload` and
+`label`, and the controller was forwarding only those two.
+
+The job now resolves its view with `Contacts::ViewScope`, the controller forwards `q` and `active` as well, and
+the dialog sends the view it is actually showing. Two specs cover the two cases that were wrong.
+
+The export is also handed plain hashes now rather than `ActionController::Parameters`, which is what a job
+argument should be.
+
+### Tests
+
+| | |
+|---|---|
+| `spec/services/contacts/view_scope_spec.rb` | each of the four views; the account boundary; precedence when a description names more than one; and that `{ q: '', active: false, payload: [], label: '' }` — what a quiet view sends — names no view at all |
+| `spec/controllers/api/v1/accounts/bulk_actions_controller_spec.rb` | a label view, a search view and a filter view each resolve to the right contacts; another account is never reached; an empty description is the unfiltered list; **a missing description reaches nothing**; over the bound it refuses and enqueues nothing; and an unknown label and a non-admin delete are still refused |
+| `spec/jobs/account/contacts_export_job_spec.rb` | a search exports what it matched, and the online list exports who is online — neither exports the account |
+| `ContactsBulkActionBar.spec.js` | offered only when the page is exhausted and the view has more; not offered when the page *is* the view; emits the request; and counts the view rather than the ids once taken |

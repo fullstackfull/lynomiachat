@@ -50,25 +50,25 @@ to remove — refusing it would trap an off-catalogue tag applied before the rul
 
 ## All of the current filter's results
 
-Not implemented. Documented, as the brief allows.
+**Shipped in phase D** ([10-phase-d.md](10-phase-d.md) §D4). Left out of phase C, for the reasons below.
 
-Selection is client-side and page-scoped: `ContactsIndex.vue` holds `selectedContactIds`, "Select all (N)" names
-the loaded page (`RESULTS_PER_PAGE = 15`), and the selection accumulates as the user pages because
-`onPageChange` passes `clearSelection: false`. There is no "select all 900 contacts matching this filter".
+In phase C, selection was client-side and page-scoped: `ContactsIndex.vue` holds `selectedContactIds`,
+"Select all (N)" named the loaded page (`RESULTS_PER_PAGE = 15`), and the selection accumulated as the user
+paged because `onPageChange` passes `clearSelection: false`. There was no "select all 900 contacts matching
+this filter".
 
-The server side for it does exist — `Custom::Contacts::FilterService#relation` resolves a filter to a contacts
-relation without counting it, and two shipped operations already take a filter payload instead of an id list
-(`POST /contacts/export` → `Account::ContactsExportJob`, and a campaign's audience). So a filter-targeted bulk
-action would be an extension of the existing endpoint rather than a new one.
+The server side for it already existed — two shipped operations take a filter payload instead of an id list
+(`POST /contacts/export` → `Account::ContactsExportJob`, and a campaign's audience) — so it was always an
+extension of the existing endpoint rather than a new one, and that is how phase D did it: the bulk endpoint
+takes `all_matching`, `Contacts::ViewScope` resolves it with the list endpoints' own scopes, and the ids it
+resolves to go to the unchanged job.
 
-It is not done here because it is a bigger change than C2's remit: the endpoint would have to accept a filter
-payload and re-resolve it inside the job, which means deciding what happens when the filter's results change
-between the request and the job, how a per-record permission filter applies to records the user never saw, and
-what an unbounded label write does to the taggings table. Faking it client-side by paging through results and
-sending ids would duplicate `Contacts::FilterService` in the browser, which the brief forbids.
-
-What is verified instead: the existing selection works on the ordinary contacts list, on a label page, in a
-search view and in a segment, because selection is independent of how the list was fetched — it holds ids.
+The three open questions this section named were answered rather than inherited. *Results changing between the
+request and the job*: they cannot, because the view is resolved in the request and the job is handed ids.
+*Permissions over records the user never saw*: unchanged, because `authorize(Contact, :update?)`/`:destroy?`
+runs before anything is resolved and every branch starts from the current account. *An unbounded label write*:
+bounded at `CONTACT_VIEW_LIMIT = 10_000`, refused rather than truncated. And `Contacts::FilterService` is still
+only ever called on the server.
 
 ---
 
@@ -76,8 +76,8 @@ search view and in a segment, because selection is independent of how the list w
 
 | | |
 |---|---|
-| The list is refetched immediately after an enqueued job returns | `BulkActionsAPI.create` returns `head :ok` once the job is *queued*, and `ContactsIndex` refetches at once, so with Sidekiq the refetch can race the work and show labels as they were. The websocket corrects each row's attributes afterwards (`contact.updated` → `contacts/updateContact`), but not its membership of a filtered list — the mirror of phase B's `EDIT_CONTACT` note. Making this exact needs the client to learn when the job finished, which the endpoint does not tell it. |
-| `Limits::BULK_ACTIONS_LIMIT = 100` is not applied here | Deliberate. Both label services use `find_each`, so a large id list is already batched, and the selection legitimately accumulates past 100 as a user pages. Applying the cap would remove capability rather than protect anything; the practical bound is the request body size. |
+| ~~The list is refetched immediately after an enqueued job returns~~ | Fixed in phase D: the job announces completion to the agent who asked for it and the page waits for that before refetching ([10-phase-d.md](10-phase-d.md) §D2). |
+| `Limits::BULK_ACTIONS_LIMIT = 100` is not applied here | Deliberate. Both label services use `find_each`, so a large id list is already batched, and the selection legitimately accumulates past 100 as a user pages. Applying the cap would remove capability rather than protect anything. Phase D added the bound that a whole-view action does need: `CONTACT_VIEW_LIMIT = 10_000`. |
 | The Remove-labels menu offers every account label, not only the ones the selection carries | A narrowing, not a correctness problem. The data for it exists (`contactLabels` store, `GET /contacts/:id/labels`), but computing the union across a selection means a request per contact today. |
 | Bulk contact actions are not audited | `Contact` is not in the audited model set at all (`enterprise/app/models/enterprise/audit/*`), so this is a property of contacts generally rather than of bulk actions. |
 | No partial-failure report | The job's return value is discarded and the services report `{ success: true, updated_contact_ids: [...] }` to nobody. A contact that fails to save is skipped silently. Reporting it would need somewhere to put the outcome — which is what `DataImportError` does for imports, and would be the model to follow. |

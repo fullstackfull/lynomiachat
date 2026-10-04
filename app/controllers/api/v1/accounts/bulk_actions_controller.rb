@@ -1,6 +1,14 @@
 class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseController
   include ContactLabelParams
 
+  # A contact bulk action over a whole view, rather than over the rows the browser has, is resolved here and
+  # then sent on as the ids it resolved to — so the job, the service and the policy are untouched, and what the
+  # user was told would happen is exactly what the queue is given (docs/contacts/10-phase-d.md §D4).
+  #
+  # The bound is the same 10,000 the pasted-numbers importer uses, and it refuses rather than truncating: a bulk
+  # action that silently did 10,000 of 40,000 contacts would be worse than one that did nothing.
+  CONTACT_VIEW_LIMIT = 10_000
+
   def create
     case normalized_type
     when 'Conversation'
@@ -37,6 +45,35 @@ class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseControll
     )
   end
 
+  # `all_matching` present is the opt-in, not `ids` being absent: a request that forgot its ids must never mean
+  # every contact in the account. `all_matching: {}` is the unfiltered list, which somebody asked for in so
+  # many words.
+  def whole_view_requested?
+    !params[:all_matching].nil?
+  end
+
+  def contact_ids_in_view
+    scope = ::Contacts::ViewScope.new(
+      account: @current_account,
+      user: current_user,
+      # `payload` is a filter query, whose shape is the client's; `ContactsController#filter` permits it the
+      # same way.
+      params: params[:all_matching].permit!.to_h
+    ).perform
+
+    ids = scope.limit(CONTACT_VIEW_LIMIT + 1).pluck(:id)
+    return ids if ids.size <= CONTACT_VIEW_LIMIT
+
+    too_many_contacts!
+  end
+
+  def too_many_contacts!
+    contact = @current_account.contacts.new
+    contact.errors.add(:base, :too_many_contacts,
+                       message: I18n.t('errors.contacts.bulk_action.too_many', count: CONTACT_VIEW_LIMIT))
+    raise ActiveRecord::RecordInvalid, contact
+  end
+
   def delete_contact_action?
     params[:action_name] == 'delete'
   end
@@ -70,7 +107,10 @@ class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseControll
   def contact_params
     # TODO: remove this method in favor of a common params method.
     # once legacy conversation payloads are migrated.
-    append_common_bulk_attributes({})
+    base = append_common_bulk_attributes({})
+    return base unless whole_view_requested?
+
+    base.merge('ids' => contact_ids_in_view)
   end
 
   def append_common_bulk_attributes(base_params)

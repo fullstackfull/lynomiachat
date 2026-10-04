@@ -20,6 +20,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // Everything the current view matches, not only what is on screen.
+  totalCount: {
+    type: Number,
+    default: 0,
+  },
+  isWholeViewSelected: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits([
@@ -27,6 +36,7 @@ const emit = defineEmits([
   'assignLabels',
   'removeLabels',
   'toggleAll',
+  'selectAllMatching',
   'deleteSelected',
 ]);
 
@@ -46,9 +56,25 @@ const selectAllLabel = computed(() => {
 });
 
 const selectedCountLabel = computed(() =>
-  t('CONTACTS_BULK_ACTIONS.SELECTED_COUNT', {
-    count: selectedCount.value,
-  })
+  props.isWholeViewSelected
+    ? t('CONTACTS_BULK_ACTIONS.SELECTED_ALL_MATCHING_COUNT', {
+        count: props.totalCount,
+      })
+    : t('CONTACTS_BULK_ACTIONS.SELECTED_COUNT', { count: selectedCount.value })
+);
+
+// Offered once the page itself is exhausted, which is the moment "select all" stops meaning what it says: the
+// view has more rows than the browser is holding, and only the server can enumerate them.
+const canSelectAllMatching = computed(
+  () =>
+    !props.isWholeViewSelected &&
+    totalVisibleContacts.value > 0 &&
+    props.totalCount > totalVisibleContacts.value &&
+    selectedCount.value >= totalVisibleContacts.value
+);
+
+const selectAllMatchingLabel = computed(() =>
+  t('CONTACTS_BULK_ACTIONS.SELECT_ALL_MATCHING', { count: props.totalCount })
 );
 
 const allItems = computed(() =>
@@ -91,6 +117,15 @@ const handleRemoveLabels = labels => {
       class="py-2 ltr:!pr-3 rtl:!pl-3 justify-between"
     >
       <template #primaryActions>
+        <Button
+          v-if="canSelectAllMatching"
+          sm
+          ghost
+          blue
+          :label="selectAllMatchingLabel"
+          class="!px-1"
+          @click="emit('selectAllMatching')"
+        />
         <Button
           sm
           ghost

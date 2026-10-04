@@ -35,9 +35,13 @@ const exportContacts = async () => {
     query = filterQueryGenerator(appliedFilters.value);
   }
 
+  // The whole view, not just its filters: exporting from a search or from the online list used to send neither,
+  // which the server read as "the whole account" (docs/contacts/10-phase-d.md §D4).
   emit('export', {
     ...query,
     label: route.params.label || '',
+    q: route.query?.search || '',
+    active: route.name === 'contacts_dashboard_active',
   });
 };
 

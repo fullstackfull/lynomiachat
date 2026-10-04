@@ -19,18 +19,14 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   before_action :set_include_contact_inboxes, only: [:index, :active, :search, :filter, :show, :update]
 
   def index
-    @contacts = fetch_contacts(resolved_contacts)
+    @contacts = fetch_contacts(contacts_in_view)
     @contacts_count = @contacts.total_count
   end
 
   def search
     render json: { error: 'Specify search string with parameter q' }, status: :unprocessable_entity if params[:q].blank? && return
 
-    contacts = Current.account.contacts.where(
-      'name ILIKE :search OR email ILIKE :search OR phone_number ILIKE :search OR contacts.identifier LIKE :search',
-      search: "%#{params[:q].strip}%"
-    )
-    @contacts = fetch_contacts_with_has_more(contacts)
+    @contacts = fetch_contacts_with_has_more(contacts_in_view)
   end
 
   def import
@@ -51,16 +47,17 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   def export
     column_names = params['column_names']
-    filter_params = { :payload => params.permit!['payload'], :label => params.permit!['label'] }
+    permitted = params.permit!
+    # The whole view, not only its filters: the export job resolves it with `Contacts::ViewScope`, and dropping
+    # `q` and `active` here is what made exporting from a search export the whole account.
+    filter_params = permitted.slice('payload', 'label', 'q', 'active').to_h.symbolize_keys
     Account::ContactsExportJob.perform_later(Current.account.id, Current.user.id, column_names, filter_params)
     head :ok, message: I18n.t('errors.contacts.export.success')
   end
 
   # returns online contacts
   def active
-    contacts = Current.account.contacts.where(id: ::OnlineStatusTracker
-                  .get_available_contact_ids(Current.account.id))
-    @contacts = fetch_contacts(contacts)
+    @contacts = fetch_contacts(contacts_in_view(active: true))
     @contacts_count = @contacts.total_count
   end
 
@@ -128,13 +125,11 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   private
 
   # TODO: Move this to a finder class
-  def resolved_contacts
-    return @resolved_contacts if @resolved_contacts
-
-    @resolved_contacts = Current.account.contacts.resolved_contacts(use_crm_v2: Current.account.feature_enabled?('crm_v2'))
-
-    @resolved_contacts = @resolved_contacts.tagged_with(params[:labels], any: true) if params[:labels].present?
-    @resolved_contacts
+  # The view this request describes. A bulk action over every result in a view, and the CSV export, ask
+  # `Contacts::ViewScope` the same question with the same description, so none of the three can drift from
+  # the others (docs/contacts/10-phase-d.md §D4).
+  def contacts_in_view(description = params.permit(:q, :active, :label, labels: []))
+    ::Contacts::ViewScope.new(account: Current.account, user: Current.user, params: description.to_h).perform
   end
 
   def set_current_page

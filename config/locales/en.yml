@@ -120,6 +120,8 @@ en:
       data_type:
         invalid: Invalid data type
     contacts:
+      bulk_action:
+        too_many: matches more than %{count} contacts. Narrow the filter, or work through it a page at a time.
       import:
         failed: File is blank
         phone_country_required: A local phone number needs a country. Add a country_code column or choose one for this import.

@@ -9,6 +9,7 @@ import WhatsAppCampaignForm from 'dashboard/components-next/Campaigns/Pages/Camp
 
 defineProps({
   initialSharedAudienceIds: { type: Array, default: () => [] },
+  initialLabelIds: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['close']);
@@ -50,6 +51,7 @@ const handleClose = () => emit('close');
       </h3>
       <WhatsAppCampaignForm
         :initial-shared-audience-ids="initialSharedAudienceIds"
+        :initial-label-ids="initialLabelIds"
         @submit="handleSubmit"
         @cancel="handleClose"
       />

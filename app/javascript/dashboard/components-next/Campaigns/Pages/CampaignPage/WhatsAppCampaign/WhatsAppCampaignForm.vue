@@ -17,6 +17,9 @@ const props = defineProps({
   // picker, its server-side recipient count and the server's own check that each id is a shared audience of this
   // account all stay exactly as they are.
   initialSharedAudienceIds: { type: Array, default: () => [] },
+  // Labels this campaign starts with ("Use in a new WhatsApp campaign", from a label page). The same picker, the
+  // same server-side recipient count and the same server-side validation apply.
+  initialLabelIds: { type: Array, default: () => [] },
 });
 
 const emit = defineEmits(['submit', 'cancel']);
@@ -42,6 +45,7 @@ const initialState = {
 
 const state = reactive({
   ...initialState,
+  selectedAudience: [...props.initialLabelIds],
   selectedSharedAudiences: [...props.initialSharedAudienceIds],
 });
 const templateParserRef = ref(null);

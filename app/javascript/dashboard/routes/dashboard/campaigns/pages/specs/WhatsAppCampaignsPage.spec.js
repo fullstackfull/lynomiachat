@@ -10,6 +10,7 @@ import WhatsAppCampaignsPage from '../WhatsAppCampaignsPage.vue';
 const dispatch = vi.fn();
 const query = ref({});
 const contactViews = ref([]);
+const accountLabels = ref([]);
 
 vi.mock('dashboard/composables/store', () => ({
   useStore: () => ({ dispatch }),
@@ -17,7 +18,12 @@ vi.mock('dashboard/composables/store', () => ({
     'campaigns/getWhatsAppCampaigns': computed(() => []),
     'customViews/getContactCustomViews': computed(() => contactViews.value),
   }),
-  useMapGetter: () => computed(() => ({ isFetching: false })),
+  useMapGetter: getter =>
+    computed(() =>
+      getter === 'labels/getLabels'
+        ? accountLabels.value
+        : { isFetching: false }
+    ),
 }));
 // One route object whose query reads the current value, as vue-router's own reactive route does: the page captures
 // it once in setup and reads `route.query` again on every activation.
@@ -87,6 +93,10 @@ describe('WhatsAppCampaignsPage', () => {
       { id: 7, name: 'VIP buyers', shared: true },
       { id: 8, name: 'Mine', shared: false },
     ];
+    accountLabels.value = [
+      { id: 4, title: 'vip' },
+      { id: 9, title: 'wholesale' },
+    ];
   });
 
   it('opens nothing, and fetches nothing, when the route names no audience', async () => {
@@ -145,5 +155,37 @@ describe('WhatsAppCampaignsPage', () => {
     await nextTick();
 
     expect(page(wrapper).initialSharedAudienceIds).toEqual([9]);
+  });
+
+  it('opens the dialog on the label the route names', async () => {
+    query.value = { label: '9' };
+    const wrapper = await mountPage();
+
+    expect(page(wrapper).initialLabelIds).toEqual([9]);
+    expect(page(wrapper).initialSharedAudienceIds).toEqual([]);
+    // A label is already in the store, so nothing has to be fetched for it.
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("prefills nothing for a label id that is not this account's", async () => {
+    query.value = { label: '11' };
+    const wrapper = await mountPage();
+
+    expect(page(wrapper).initialLabelIds).toEqual([]);
+  });
+
+  it('ignores a label query value that is not a single positive integer', async () => {
+    query.value = { label: 'vip' };
+    const wrapper = await mountPage();
+
+    expect(page(wrapper).initialLabelIds).toEqual([]);
+  });
+
+  it('clears the label prefill when the dialog closes', async () => {
+    query.value = { label: '9' };
+    const wrapper = await mountPage();
+    page(wrapper).closeDialog();
+
+    expect(page(wrapper).initialLabelIds).toEqual([]);
   });
 });

@@ -20,6 +20,8 @@ defineProps({
   canManageSegment: { type: Boolean, default: true },
   // The audience being viewed, passed through to the overflow menu where its actions live.
   activeSegment: { type: Object, default: null },
+  // The label the list is filtered by, passed through for the same reason.
+  activeLabel: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -135,6 +137,7 @@ const emit = defineEmits([
             />
             <ContactMoreActions
               :segment="activeSegment"
+              :active-label="activeLabel"
               @add="emit('add')"
               @import="emit('import')"
               @export="emit('export')"

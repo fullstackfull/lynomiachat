@@ -9,7 +9,9 @@ import {
 } from 'dashboard/composables/store';
 import {
   audienceIdFromQuery,
+  findAccountLabel,
   findSharedAudience,
+  labelIdFromQuery,
 } from 'dashboard/helper/audienceHelper';
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
@@ -34,6 +36,8 @@ const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
 
 const confirmDeleteCampaignDialogRef = ref(null);
 const initialSharedAudienceIds = ref([]);
+const initialLabelIds = ref([]);
+const accountLabels = useMapGetter('labels/getLabels');
 
 const WhatsAppCampaigns = computed(
   () => getters['campaigns/getWhatsAppCampaigns'].value
@@ -55,14 +59,22 @@ const handleDelete = campaign => {
 // empty dialog, and the server would refuse it anyway.
 onActivated(async () => {
   const audienceId = audienceIdFromQuery(route.query);
-  if (!audienceId) return;
+  const labelId = labelIdFromQuery(route.query);
+  if (!audienceId && !labelId) return;
 
-  await store.dispatch('customViews/get', 'contact');
-  const audience = findSharedAudience(
-    getters['customViews/getContactCustomViews'].value,
-    audienceId
-  );
-  initialSharedAudienceIds.value = audience ? [audience.id] : [];
+  if (audienceId) {
+    await store.dispatch('customViews/get', 'contact');
+    const audience = findSharedAudience(
+      getters['customViews/getContactCustomViews'].value,
+      audienceId
+    );
+    initialSharedAudienceIds.value = audience ? [audience.id] : [];
+  }
+  if (labelId) {
+    // A label the account does not have opens the ordinary empty dialog, and the server would refuse it anyway.
+    const label = findAccountLabel(accountLabels.value, labelId);
+    initialLabelIds.value = label ? [label.id] : [];
+  }
   toggleWhatsAppCampaignDialog(true);
 });
 
@@ -70,6 +82,7 @@ onActivated(async () => {
 const closeDialog = () => {
   toggleWhatsAppCampaignDialog(false);
   initialSharedAudienceIds.value = [];
+  initialLabelIds.value = [];
 };
 
 const handleAnalytics = campaign => {
@@ -91,6 +104,7 @@ const handleAnalytics = campaign => {
       <WhatsAppCampaignDialog
         v-if="showWhatsAppCampaignDialog"
         :initial-shared-audience-ids="initialSharedAudienceIds"
+        :initial-label-ids="initialLabelIds"
         @close="closeDialog"
       />
     </template>

@@ -16,8 +16,8 @@ class AddUniquePhoneNumberIndexToContacts < ActiveRecord::Migration[7.1]
   def up
     unlimit_statement_timeout
     drop_invalid_unique_index
-    normalize_blank_phone_numbers
     refuse_on_duplicates
+    normalize_blank_phone_numbers
 
     add_index :contacts, [:phone_number, :account_id], unique: true, name: UNIQUE_INDEX, algorithm: :concurrently
     # Exactly the same columns in exactly the same order, so the unique one subsumes it.
@@ -74,12 +74,17 @@ class AddUniquePhoneNumberIndexToContacts < ActiveRecord::Migration[7.1]
   end
 
   # Refused before the build, not during it: a failed `CREATE UNIQUE INDEX CONCURRENTLY` leaves an INVALID index
-  # behind, so finding out from the build is the expensive way to find out.
+  # behind, so finding out from the build is the expensive way to find out. And refused before the
+  # normalization, so an aborted run leaves the table as it found it.
+  #
+  # Blank strings are excluded because the next step turns them into NULLs, which do not collide. Counting them
+  # as conflicts would refuse the migration over the very thing it is about to fix — and would disagree with
+  # `contacts:phone_uniqueness:dry_run`, which has always excluded them.
   def refuse_on_duplicates
     duplicates = select_all(<<~SQL.squish).to_a
       SELECT account_id, phone_number, COUNT(*) AS rows
       FROM contacts
-      WHERE phone_number IS NOT NULL
+      WHERE phone_number IS NOT NULL AND phone_number <> ''
       GROUP BY account_id, phone_number
       HAVING COUNT(*) > 1
       ORDER BY COUNT(*) DESC

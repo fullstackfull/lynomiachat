@@ -11,7 +11,7 @@ RSpec.describe Contact, type: :model do
     let(:number) { '+966551119500' }
 
     after do
-      account.contacts.delete_all
+      described_class.where(account_id: account.id).delete_all
       account.destroy!
     end
 

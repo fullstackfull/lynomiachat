@@ -342,6 +342,24 @@ RSpec.describe 'Contacts API', type: :request do
     end
   end
 
+  # E (docs/contacts/11-phone-uniqueness.md §E5). Both requests pass their own uniqueness validation, because
+  # neither row exists when either looks; the database refuses the loser.
+  describe 'the loser of a simultaneous create' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    it 'is answered with the 422 it would have got a moment later, not a 500' do
+      create(:contact, account: account, phone_number: '+966551110001')
+      allow_any_instance_of(Contact).to receive(:save!).and_raise(ActiveRecord::RecordNotUnique) # rubocop:disable RSpec/AnyInstance
+
+      post "/api/v1/accounts/#{account.id}/contacts",
+           headers: admin.create_new_auth_token,
+           params: { name: 'Race', phone_number: '+966551110001' }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['phone_number']).to eq(['taken'])
+    end
+  end
+
   # D3 (docs/contacts/10-phase-d.md). The dialog's own flow sends the same file more than twice; it should cross
   # the wire once.
   describe 'a contact import that reuses the file its preview stored' do

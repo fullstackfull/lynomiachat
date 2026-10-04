@@ -13,6 +13,13 @@ module Custom::AutomationRule
     base.validate :commerce_trigger
   end
 
+  # The seven provider-neutral order events. Listed here whether or not the account is entitled to them: the name
+  # is a real trigger either way, and entitlement is already reported separately by `commerce_trigger_rules`, which
+  # gives the accurate reason rather than "not a supported trigger".
+  def event_names
+    super + Automation::CommerceEvents::EVENTS
+  end
+
   def conditions_attributes
     super + lynomia_conditions_list.pluck('attribute_key')
   end

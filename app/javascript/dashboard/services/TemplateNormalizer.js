@@ -66,20 +66,28 @@ export class TemplateNormalizer {
 
     components.forEach(component => {
       if (component.text) {
+        // Meta keys a component's examples by the component, and shapes them differently per component:
+        // BODY carries `body_text_named_params` / nested `body_text: [[...]]`, while a TEXT HEADER carries
+        // `header_text_named_params` / flat `header_text: [...]`. Reading the body keys for every component
+        // meant a TEXT header's variable examples were always missed
+        // (docs/product-enablement/12-proposed-phases.md D5).
+        const isHeader = component.type === WA_COMPONENT_TYPES.HEADER;
         const matches = component.text.match(/\{\{([^}]+)\}\}/g) || [];
         matches.forEach(match => {
           const variable = match.replace(/[{}]/g, '');
 
           if (template.parameter_format === WA_PARAM_FORMATS.NAMED) {
-            const example =
-              component.example?.body_text_named_params?.find(
-                p => p.param_name === variable
-              )?.example || '';
-            variables[variable] = example;
+            const namedParams = isHeader
+              ? component.example?.header_text_named_params
+              : component.example?.body_text_named_params;
+            variables[variable] =
+              namedParams?.find(p => p.param_name === variable)?.example || '';
           } else {
             const position = parseInt(variable, 10) - 1;
-            const example = component.example?.body_text?.[0]?.[position] || '';
-            variables[variable] = example;
+            const example = isHeader
+              ? component.example?.header_text?.[position]
+              : component.example?.body_text?.[0]?.[position];
+            variables[variable] = example || '';
           }
         });
       }

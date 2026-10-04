@@ -7,6 +7,46 @@ from an earlier phase.
 
 ---
 
+## Full backend suite, against the pre-phase base
+
+Both runs alone on the machine, nothing else competing.
+
+```
+base  92b11a20   10495 examples, 6 failures, 67 pending
+head  a86346a2   10542 examples, 6 failures, 67 pending
+```
+
+The failing-example lists **diff to nothing**. The same six, all pre-existing:
+
+| | |
+|---|---|
+| `spec/controllers/slack_uploads_controller_spec.rb` ×4 | `UnsafeRedirectError`. `SlackUploadsController#avatar_url` interpolates `ENV.fetch('FRONTEND_URL', nil)` into an absolute URL and `load_defaults 7.0` enables `raise_on_open_redirects`, so any host other than the controller spec's `test.host` raises. Proved in phase B: unset the variable and all five pass. `.env.example:17` ships `http://0.0.0.0:3000`, which fails the same way. |
+| `spec/enterprise/services/voice/call_transcription_service_spec.rb` | pre-existing; fails identically at the base |
+| `spec/builders/agent_builder_spec.rb` | pre-existing; fails identically at the base |
+
+`10542 − 10495 = 47`, which is exactly the number of examples this phase's specs add.
+
+### The concurrency artefact, finally explained
+
+An earlier run of the same suite reported **92 failures and 517 fewer examples**, 63 of them in the Commerce
+providers. That run was concurrent with two vite builds, a second `rspec` process and Chromium. This time the
+error text was captured:
+
+```
+NameError: uninitialized constant Commerce::Providers::Woocommerce::Normalizer
+```
+
+That is a Zeitwerk autoload failure, not a logic failure, and two `rspec` processes share
+`tmp/cache/bootsnap`. Clearing the compile cache and running alone gives the six failures above and no Commerce
+failures at all; the same files pass 508/508 on their own.
+
+This also accounts for the 44-failure Commerce cluster phase B recorded as *unreproduced*
+([03](03-phase-b.md)) — same files, same conditions, and that run was likewise concurrent with a capture build
+and the frontend suite. **Do not run two backend suites at once on this machine**, and clear
+`tmp/cache/bootsnap` if one has been.
+
+---
+
 ## Per-module backend gates
 
 All on the final tree, `a86346a2`, each group run on its own against a freshly loaded schema.
@@ -38,6 +78,7 @@ normalizers this phase deliberately did not touch.
 | Full Vitest (`pnpm test`) | **480 files, 4982 tests, 0 failures** | 478 files, 4942 tests |
 | ESLint, repo gate (`pnpm eslint`) | **0 errors**, 487 warnings | 0 errors, 483 warnings |
 | RuboCop, all 23 changed Ruby files | **no offenses** | — |
+| Production build (`npx vite build`) | **exit 0, built in 1m 23s** | — |
 
 The four extra ESLint warnings are all `@intlify/vue-i18n/no-dynamic-keys` in the rewritten import dialog, which
 builds its tile, source, reason and policy labels from a key suffix. It is the repo's existing pattern — all 487

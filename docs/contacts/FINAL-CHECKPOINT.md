@@ -103,3 +103,32 @@ Neither was in the brief; both were real.
    `Contacts::SyncAttributes` never ran — and in an account with `crm_v2` enabled, `resolved_contacts` is
    `where(contact_type: 'lead')`, so contacts somebody had just imported were **absent from the contacts list
    entirely**.
+
+---
+
+## Gates
+
+Full detail, and the per-module breakdown, in [09](09-regression-results.md).
+
+| Gate | Result |
+|---|---|
+| Full backend suite, head against base | **10542 examples, 6 failures** against **10495, 6** — failing sets diff to nothing, and +47 is exactly what this phase's specs add |
+| Ten per-module backend groups | all green: contacts 249, labels 70, import 262, bulk 25, audience 61, automation 181, campaigns 45, flows 61, Commerce 508, WhatsApp 535 |
+| Full Vitest | **480 files, 4982 tests, 0 failures** (base 478 / 4942) |
+| ESLint, repo gate | **0 errors**, 487 warnings (base 483; the four new are `no-dynamic-keys`, the rule all 487 are) |
+| RuboCop, 23 changed Ruby files | **no offenses** |
+| Production build | **exit 0, 1m 23s** |
+| Feature parity | **0 lost, 0 moved, 0 added, 0 newly-named, 0 regressions** over 544 shared captures; one new Contacts surface, +80 controls, 0 unnamed / 0 overflow / 0 wrong-direction |
+| Browser journeys | **48 runs, 312 checks, 0 failed** (base 44 / 264) |
+
+The six backend failures are the base's own six: four are this container's `FRONTEND_URL`, proved in phase B,
+and two predate the phase. Nothing this phase touched is among them.
+
+## Environment limitations
+
+| | |
+|---|---|
+| The WhatsApp **staging runtime harness** is not runnable here | It needs real Meta credentials and a staging number. The 535 runnable WhatsApp specs are reported instead. |
+| `FRONTEND_URL` makes four `slack_uploads` specs fail | A property of this container, not the tree — see [09](09-regression-results.md). |
+| Two backend suites must not run at once | They share `tmp/cache/bootsnap`, and the result is Zeitwerk `NameError`s that look like Commerce regressions. This explains phase B's unreproduced cluster too. |
+| `rails runner` against a test database leaves rows behind | It cost 12 false WhatsApp failures here before the database was reloaded: `Contact.all.first` is not account-scoped. Probes now wrap themselves in a transaction and report `contacts left behind: 0`. |

@@ -14,6 +14,8 @@ module ContactLabelParams
   # @param contact [Contact] the record the rejection is reported on.
   # @return [Array<String>] the titles to assign, empty when the request asked for none.
   def requested_label_titles(contact)
+    return [] if params[:labels].blank?
+
     titles = Array(params[:labels]).map { |title| title.to_s.strip.downcase }.compact_blank.uniq
     unknown = titles - Current.account.labels.where(title: titles).pluck(:title)
     return titles if unknown.empty?

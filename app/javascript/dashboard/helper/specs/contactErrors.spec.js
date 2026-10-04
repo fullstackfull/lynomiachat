@@ -105,7 +105,8 @@ describe('contactErrors', () => {
 
     it("shows the server's summary when several fields were rejected", () => {
       const error = validationError({
-        message: 'Email has already been taken, Phone number has already been taken',
+        message:
+          'Email has already been taken, Phone number has already been taken',
         errors: {
           email: ['Email has already been taken'],
           phone_number: ['Phone number has already been taken'],
@@ -126,10 +127,12 @@ describe('contactErrors', () => {
 
     // No branch may be silent, which is what four of the five call sites used to be.
     it('is never empty', () => {
-      expect(contactErrorMessage(new Error('AxiosError: Network Error'), t)).toBe(
+      expect(
+        contactErrorMessage(new Error('AxiosError: Network Error'), t)
+      ).toBe('t:CONTACT_ERRORS.GENERIC');
+      expect(contactErrorMessage(undefined, t)).toBe(
         't:CONTACT_ERRORS.GENERIC'
       );
-      expect(contactErrorMessage(undefined, t)).toBe('t:CONTACT_ERRORS.GENERIC');
       expect(
         contactErrorMessage(new DuplicateContactException(['email']), t)
       ).toBe('t:CONTACT_ERRORS.GENERIC');

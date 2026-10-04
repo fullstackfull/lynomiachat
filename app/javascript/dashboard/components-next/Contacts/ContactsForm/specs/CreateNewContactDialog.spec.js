@@ -27,7 +27,9 @@ vi.mock('vue-router', () => ({
   useRoute: () => route.value,
   useRouter: () => ({ push }),
 }));
-vi.mock('dashboard/api/contacts', () => ({ default: { filter: (...a) => filter(...a) } }));
+vi.mock('dashboard/api/contacts', () => ({
+  default: { filter: (...a) => filter(...a) },
+}));
 vi.mock('dashboard/api/bulkActions', () => ({
   default: { create: (...a) => bulkCreate(...a) },
 }));
@@ -36,6 +38,7 @@ const close = vi.fn();
 const resetForm = vi.fn();
 
 const DialogStub = {
+  emits: ['confirm', 'close'],
   setup(_, { expose }) {
     expose({ open: vi.fn(), close });
   },
@@ -124,7 +127,10 @@ describe('CreateNewContactDialog', () => {
     expect(dispatch).toHaveBeenCalledWith('contacts/create', FORM_CONTACT);
     expect(close).toHaveBeenCalled();
     expect(resetForm).toHaveBeenCalled();
-    expect(wrapper.emitted('created')[0][0]).toEqual({ id: 7, ...FORM_CONTACT });
+    expect(wrapper.emitted('created')[0][0]).toEqual({
+      id: 7,
+      ...FORM_CONTACT,
+    });
   });
 
   // The workflow this phase exists for.
@@ -162,12 +168,12 @@ describe('CreateNewContactDialog', () => {
 
     await submit(wrapper);
 
-    expect(wrapper.findComponent(ContactsFormStub).props('serverErrors')).toEqual(
-      {
-        phone_number:
-          'This phone number already belongs to another contact in this account.',
-      }
-    );
+    expect(
+      wrapper.findComponent(ContactsFormStub).props('serverErrors')
+    ).toEqual({
+      phone_number:
+        'This phone number already belongs to another contact in this account.',
+    });
   });
 
   it('shows the e164 message for a format rejection, not the duplicate one', async () => {
@@ -184,7 +190,9 @@ describe('CreateNewContactDialog', () => {
 
     expect(
       wrapper.findComponent(ContactsFormStub).props('serverErrors').phone_number
-    ).toBe('Enter the number in international format, for example +96522201234.');
+    ).toBe(
+      'Enter the number in international format, for example +96522201234.'
+    );
     // A malformed number belongs to nobody, so nothing is looked up.
     expect(filter).not.toHaveBeenCalled();
   });
@@ -198,6 +206,24 @@ describe('CreateNewContactDialog', () => {
     expect(
       wrapper.findComponent(ContactsFormStub).props('serverErrors').phone_number
     ).toBe('رقم الهاتف هذا يعود إلى جهة اتصال أخرى في هذا الحساب.');
+  });
+
+  // The form unmounts while the dialog is shut but the errors live outside it, so without this a reopened
+  // dialog would mark an empty field red.
+  it('clears the field errors when the dialog is closed', async () => {
+    dispatch.mockRejectedValue(validationError(TAKEN_PHONE));
+    const wrapper = buildWrapper();
+    await submit(wrapper);
+    expect(
+      wrapper.findComponent(ContactsFormStub).props('serverErrors')
+    ).not.toEqual({});
+
+    await wrapper.findComponent(DialogStub).vm.$emit('close');
+    await flushPromises();
+
+    expect(
+      wrapper.findComponent(ContactsFormStub).props('serverErrors')
+    ).toEqual({});
   });
 
   it('clears the field errors once the form is edited again', async () => {
@@ -243,7 +269,9 @@ describe('CreateNewContactDialog', () => {
           },
         ],
       });
-      expect(wrapper.text()).toContain('A contact with these details already exists');
+      expect(wrapper.text()).toContain(
+        'A contact with these details already exists'
+      );
     });
 
     it('opens the existing contact in the list context it came from', async () => {
@@ -286,7 +314,8 @@ describe('CreateNewContactDialog', () => {
     it('offers nothing when two identity keys collided, because either could be meant', async () => {
       dispatch.mockRejectedValue(
         validationError({
-          message: 'Email has already been taken, Phone number has already been taken',
+          message:
+            'Email has already been taken, Phone number has already been taken',
           errors: {
             email: ['Email has already been taken'],
             phone_number: ['Phone number has already been taken'],

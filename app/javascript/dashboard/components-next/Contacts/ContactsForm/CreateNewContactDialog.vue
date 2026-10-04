@@ -151,7 +151,6 @@ const addLabelToExistingContact = async () => {
 };
 
 const closeDialog = () => {
-  clearErrors();
   dialogRef.value.close();
 };
 
@@ -164,6 +163,7 @@ defineExpose({ dialogRef, contactsFormRef });
     width="3xl"
     overflow-y-auto
     @confirm="handleDialogConfirm"
+    @close="clearErrors"
   >
     <ContactsForm
       ref="contactsFormRef"

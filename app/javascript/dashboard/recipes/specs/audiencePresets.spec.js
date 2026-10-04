@@ -152,11 +152,7 @@ describe('AUDIENCE_PRESETS', () => {
   });
 
   it('asks about conversation history on the conversation model, over every status', () => {
-    const byId = Object.fromEntries(
-      AUDIENCE_PRESETS.map(preset => [preset.id, preset.build({}).payload])
-    );
-
-    expect(byId.contacted_us).toEqual([
+    expect(build('contacted_us')).toEqual([
       {
         attribute_key: 'conversation_status',
         filter_operator: 'equal_to',
@@ -166,7 +162,7 @@ describe('AUDIENCE_PRESETS', () => {
       },
     ]);
     // The mirror image, so "never" really is every status rather than one of them.
-    expect(byId.never_contacted_us[0]).toMatchObject({
+    expect(build('never_contacted_us')[0]).toMatchObject({
       filter_operator: 'not_equal_to',
       values: ['open', 'pending', 'resolved', 'snoozed'],
     });

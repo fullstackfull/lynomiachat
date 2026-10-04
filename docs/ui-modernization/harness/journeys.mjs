@@ -374,6 +374,67 @@ const JOURNEYS = [
     },
   },
   {
+    id: 'J12',
+    title: 'Walk the contact import dialog to its preview',
+    surface: 'contacts-header',
+    run: async ({ page }, ctx, id) => {
+      // Same as J11: this surface renders with the header's more-actions menu already open, so the menu item is
+      // clicked directly and clicking the trigger would close it.
+      const importItem = page.getByText(/import contacts|استيراد جهات/i).first();
+      const hasImport = await importItem.count();
+      check(`${id}: the header menu offers importing`, hasImport > 0, `${hasImport}`);
+      if (!hasImport) return 0;
+
+      await importItem.click();
+      await page.waitForTimeout(400);
+
+      const pasteTab = page.getByText(/paste numbers|لصق أرقام/i).first();
+      const hasPaste = await pasteTab.count();
+      check(`${id}: the dialog offers both sources`, hasPaste > 0, `${hasPaste}`);
+      if (!hasPaste) return 0;
+
+      await pasteTab.click();
+      await page.waitForTimeout(200);
+      const textarea = page.locator('textarea:visible').first();
+      const hasTextarea = await textarea.count();
+      check(`${id}: choosing paste reveals the number field`, hasTextarea > 0, `${hasTextarea}`);
+      if (!hasTextarea) return 0;
+
+      await textarea.fill('+966551112233\n0551112299');
+      const continueButton = page.getByRole('button', { name: /continue|متابعة/i }).first();
+      const hasContinue = await continueButton.count();
+      check(`${id}: the dialog offers to check the list first`, hasContinue > 0, `${hasContinue}`);
+      if (!hasContinue) return 0;
+
+      await continueButton.click();
+      await page.waitForTimeout(500);
+
+      // The second step's own content, from the fixture preview: every count tile, and only the rows that need a
+      // decision. A dialog that threw on the way would render neither.
+      const tiles = await page.locator('dd:visible').count();
+      check(`${id}: the preview shows every count, zeros included`, tiles === 6, `${tiles} tiles`);
+
+      const rows = await page.locator('tbody tr:visible').count();
+      check(`${id}: the preview explains only the rows needing a decision`, rows === 3, `${rows} rows`);
+
+      const text = await page.locator('body').innerText();
+      check(
+        `${id}: the preview states the country local numbers will be read as`,
+        /\bSA\b/.test(text),
+        text.replace(/\s+/g, ' ').slice(0, 170)
+      );
+      check(
+        `${id}: the preview offers the import itself`,
+        (await page.getByRole('button', { name: /^(import|استيراد)$/i }).count()) > 0,
+        ''
+      );
+
+      const all = await names(page);
+      check(`${id}: every dialog control announces a name`, all.every(Boolean), '');
+      return tiles;
+    },
+  },
+  {
     id: 'J6',
     title: 'Start a WhatsApp campaign',
     surface: 'campaigns-whatsapp',

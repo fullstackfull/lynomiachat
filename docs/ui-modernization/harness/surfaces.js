@@ -81,6 +81,19 @@ export const SURFACES = {
     },
     interactions: ['[data-test-id="contact-more-actions"]'],
   },
+  // The same header on a label page rather than on an audience. A label is a campaign recipient source in its own
+  // right, so this surface is what makes that action visible to a capture (docs/contacts/06-campaign-bridge.md).
+  'contacts-header-label': {
+    title: 'Contacts · header on a label page',
+    load: () => import('dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue'),
+    route: 'contacts_dashboard_labels_index',
+    params: { label: 'vip' },
+    frame: 'plain',
+    props: {
+      headerTitle: 'vip',
+    },
+    interactions: ['[data-test-id="contact-more-actions"]'],
+  },
   'canned-list': {
     title: 'Settings · Canned responses',
     load: () => import('dashboard/routes/dashboard/settings/canned/Index.vue'),

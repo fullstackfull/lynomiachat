@@ -21,6 +21,7 @@ import {
   FLOW_GRAPH,
   FLOW_NODE_TYPES,
   CANNED_RESPONSES,
+  CONTACT_IMPORT_PREVIEW,
   CONTACT_NOTES,
   CONVERSATION,
   CONTACTS,
@@ -43,42 +44,93 @@ const list = rows => (STATE === 'empty' || STATE === 'loading' ? [] : rows);
 
 // Longest match wins, so a specific path beats its prefix.
 const ROUTES = [
-  [/\/flows\/\d+$/, () => ({
-    ...FLOWS[0],
-    graph: FLOW_GRAPH,
-    errors: [],
-    capabilities: { whatsapp: { buttons: true, list: true, template: true } },
-    node_types: FLOW_NODE_TYPES,
-    variables: [],
-  })],
+  [
+    /\/flows\/\d+$/,
+    () => ({
+      ...FLOWS[0],
+      graph: FLOW_GRAPH,
+      errors: [],
+      capabilities: { whatsapp: { buttons: true, list: true, template: true } },
+      node_types: FLOW_NODE_TYPES,
+      variables: [],
+    }),
+  ],
   [/\/flows$/, () => ({ payload: list(FLOWS) })],
   [/\/automation_rules$/, () => ({ payload: list(AUTOMATIONS) })],
+  // The contact import preview (docs/contacts/04-bulk-import.md). Deterministic, and shaped exactly as the
+  // endpoint answers, so a journey can walk the import dialog to its second step and read the counts.
+  [/\/contacts\/import_preview$/, () => CONTACT_IMPORT_PREVIEW],
   [/\/commerce\/audience_fields$/, () => AUDIENCE_FIELDS],
   // The conversation Commerce panel: both stores linked, so Customer 360 and the store view both render.
-  [/\/conversations\/\d+\/commerce\/stores\/\d+\/customers$/, () => ({ candidates: [] })],
+  [
+    /\/conversations\/\d+\/commerce\/stores\/\d+\/customers$/,
+    () => ({ candidates: [] }),
+  ],
   [/\/conversations\/\d+\/commerce\/stores\/\d+$/, () => COMMERCE_PANEL],
-  [/\/conversations\/\d+\/commerce\/stores$/, () => ({ payload: list(COMMERCE_CONVERSATION_STORES) })],
+  [
+    /\/conversations\/\d+\/commerce\/stores$/,
+    () => ({ payload: list(COMMERCE_CONVERSATION_STORES) }),
+  ],
   [/\/conversations\/\d+\/commerce\/overview$/, () => COMMERCE_OVERVIEW],
-  [/\/conversations\/\d+\/commerce\/orders$/, () => ({ orders: [], stores: [] })],
-  [/\/conversations\/\d+\/commerce\/carts$/, () => ({ stores: list(COMMERCE_CARTS) })],
-  [/\/conversations\/\d+\/messages/, () => ({ payload: list(CONVERSATION.messages), meta: {} })],
+  [
+    /\/conversations\/\d+\/commerce\/orders$/,
+    () => ({ orders: [], stores: [] }),
+  ],
+  [
+    /\/conversations\/\d+\/commerce\/carts$/,
+    () => ({ stores: list(COMMERCE_CARTS) }),
+  ],
+  [
+    /\/conversations\/\d+\/messages/,
+    () => ({ payload: list(CONVERSATION.messages), meta: {} }),
+  ],
   [/\/conversations\/\d+$/, () => CONVERSATION],
-  [/\/conversations\/filter|\/conversations$/, () => ({ data: { payload: list([CONVERSATION]), meta: {} } })],
+  [
+    /\/conversations\/filter|\/conversations$/,
+    () => ({ data: { payload: list([CONVERSATION]), meta: {} } }),
+  ],
   [/\/notes$/, () => list(CONTACT_NOTES)],
   [/\/commerce\/stores$/, () => ({ payload: list(COMMERCE_STORES) })],
   [/\/commerce\/carts$/, () => ({ payload: [] })],
   [/\/custom_filters/, () => list(CONTACT_VIEWS)],
-  [/\/campaigns\/\d+\/analytics\/metrics$/, () => (STATE === 'empty' ? { audience: 0, sent: 0, delivered: 0, read: 0, failed: 0, skipped: 0, status_counts: {} } : CAMPAIGN_METRICS)],
-  [/\/campaigns\/\d+\/analytics\/contacts/, () => ({
-    payload: list(CAMPAIGN_DELIVERIES),
-    meta: { current_page: 1, total_pages: 1, total_count: list(CAMPAIGN_DELIVERIES).length },
-  })],
+  [
+    /\/campaigns\/\d+\/analytics\/metrics$/,
+    () =>
+      STATE === 'empty'
+        ? {
+            audience: 0,
+            sent: 0,
+            delivered: 0,
+            read: 0,
+            failed: 0,
+            skipped: 0,
+            status_counts: {},
+          }
+        : CAMPAIGN_METRICS,
+  ],
+  [
+    /\/campaigns\/\d+\/analytics\/contacts/,
+    () => ({
+      payload: list(CAMPAIGN_DELIVERIES),
+      meta: {
+        current_page: 1,
+        total_pages: 1,
+        total_count: list(CAMPAIGN_DELIVERIES).length,
+      },
+    }),
+  ],
   [/\/campaigns$/, () => list(CAMPAIGNS)],
   [/\/labels$/, () => ({ payload: list(LABELS) })],
   [/\/inboxes$/, () => ({ payload: list(INBOXES) })],
   [/\/teams$/, () => list(TEAMS)],
   [/\/agents$/, () => list(AGENTS)],
-  [/\/contacts/, () => ({ payload: list(CONTACTS), meta: { count: list(CONTACTS).length, current_page: 1 } })],
+  [
+    /\/contacts/,
+    () => ({
+      payload: list(CONTACTS),
+      meta: { count: list(CONTACTS).length, current_page: 1 },
+    }),
+  ],
   [/\/canned_responses$/, () => list(CANNED_RESPONSES)],
   [/\/macros$/, () => ({ payload: list(MACROS) })],
   [/\/custom_attribute_definitions/, () => list(CUSTOM_ATTRIBUTES)],
@@ -90,7 +142,14 @@ const ROUTES = [
   [/\/saml_settings$/, () => (STATE === 'empty' ? {} : SAML_SETTINGS)],
   [/\/webhooks$/, () => ({ payload: { webhooks: list(WEBHOOKS) } })],
   [/\/dashboard_apps$/, () => list(DASHBOARD_APPS)],
-  [/\/audit_logs/, () => ({ audit_logs: list(AUDIT_LOGS), current_page: 1, total_entries: list(AUDIT_LOGS).length })],
+  [
+    /\/audit_logs/,
+    () => ({
+      audit_logs: list(AUDIT_LOGS),
+      current_page: 1,
+      total_entries: list(AUDIT_LOGS).length,
+    }),
+  ],
   [/\/integrations\/apps$/, () => ({ payload: list(INTEGRATION_APPS) })],
 ];
 

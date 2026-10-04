@@ -6,15 +6,48 @@ import { FLOW_TEMPLATES } from 'dashboard/recipes/flowTemplates';
 export const ACCOUNT_ID = 1;
 
 export const TEAMS = [
-  { id: 1, name: 'Customer Care', description: 'First line support', allow_auto_assign: true },
-  { id: 2, name: 'Orders', description: 'Order and delivery questions', allow_auto_assign: true },
-  { id: 3, name: 'Products', description: 'Product specialists', allow_auto_assign: false },
+  {
+    id: 1,
+    name: 'Customer Care',
+    description: 'First line support',
+    allow_auto_assign: true,
+  },
+  {
+    id: 2,
+    name: 'Orders',
+    description: 'Order and delivery questions',
+    allow_auto_assign: true,
+  },
+  {
+    id: 3,
+    name: 'Products',
+    description: 'Product specialists',
+    allow_auto_assign: false,
+  },
 ];
 
 export const LABELS = [
-  { id: 1, title: 'vip', description: 'High value customer', color: '#1f93ff', show_on_sidebar: true },
-  { id: 2, title: 'refund', description: 'Refund requested', color: '#d32f2f', show_on_sidebar: true },
-  { id: 3, title: 'shipped', description: 'Order on the way', color: '#43a047', show_on_sidebar: false },
+  {
+    id: 1,
+    title: 'vip',
+    description: 'High value customer',
+    color: '#1f93ff',
+    show_on_sidebar: true,
+  },
+  {
+    id: 2,
+    title: 'refund',
+    description: 'Refund requested',
+    color: '#d32f2f',
+    show_on_sidebar: true,
+  },
+  {
+    id: 3,
+    title: 'shipped',
+    description: 'Order on the way',
+    color: '#43a047',
+    show_on_sidebar: false,
+  },
 ];
 
 export const INBOXES = [
@@ -29,9 +62,30 @@ export const INBOXES = [
 ];
 
 export const AGENTS = [
-  { id: 11, name: 'Lina Haddad', email: 'lina@example.com', role: 'administrator', availability_status: 'online', confirmed: true },
-  { id: 12, name: 'Omar Nasser', email: 'omar@example.com', role: 'agent', availability_status: 'busy', confirmed: true },
-  { id: 13, name: 'Sara Khoury', email: 'sara@example.com', role: 'agent', availability_status: 'offline', confirmed: false },
+  {
+    id: 11,
+    name: 'Lina Haddad',
+    email: 'lina@example.com',
+    role: 'administrator',
+    availability_status: 'online',
+    confirmed: true,
+  },
+  {
+    id: 12,
+    name: 'Omar Nasser',
+    email: 'omar@example.com',
+    role: 'agent',
+    availability_status: 'busy',
+    confirmed: true,
+  },
+  {
+    id: 13,
+    name: 'Sara Khoury',
+    email: 'sara@example.com',
+    role: 'agent',
+    availability_status: 'offline',
+    confirmed: false,
+  },
 ];
 
 export const CONTACT_VIEWS = [
@@ -55,12 +109,34 @@ export const CONTACT_VIEWS = [
     active_automation_rules_count: 2,
     campaigns_count: 1,
   },
-  { id: 8, name: 'My drafts', filter_type: 'contact', shared: false, query: { payload: [] } },
+  {
+    id: 8,
+    name: 'My drafts',
+    filter_type: 'contact',
+    shared: false,
+    query: { payload: [] },
+  },
 ];
 
 export const COMMERCE_STORES = [
-  { id: 4, name: 'Syria Cosmetics', provider: 'woocommerce', status: 'active', base_url: 'https://shop.example.com', actions: true, carts: true },
-  { id: 9, name: 'Damascus Outlet', provider: 'woocommerce', status: 'needs_reauth', base_url: 'https://outlet.example.com', actions: false, carts: false },
+  {
+    id: 4,
+    name: 'Syria Cosmetics',
+    provider: 'woocommerce',
+    status: 'active',
+    base_url: 'https://shop.example.com',
+    actions: true,
+    carts: true,
+  },
+  {
+    id: 9,
+    name: 'Damascus Outlet',
+    provider: 'woocommerce',
+    status: 'needs_reauth',
+    base_url: 'https://outlet.example.com',
+    actions: false,
+    carts: false,
+  },
 ];
 
 export const FLOWS = [
@@ -102,7 +178,14 @@ export const AUTOMATIONS = [
     active: false,
     execution_delay: null,
     created_on: '2026-09-02T09:00:00.000Z',
-    conditions: [{ attribute_key: 'contact_audience', filter_operator: 'equal_to', values: [7], query_operator: null }],
+    conditions: [
+      {
+        attribute_key: 'contact_audience',
+        filter_operator: 'equal_to',
+        values: [7],
+        query_operator: null,
+      },
+    ],
     actions: [{ action_name: 'change_priority', action_params: ['high'] }],
   },
   {
@@ -113,7 +196,14 @@ export const AUTOMATIONS = [
     active: true,
     execution_delay: null,
     created_on: '2026-08-21T09:00:00.000Z',
-    conditions: [{ attribute_key: 'commerce_event_store', filter_operator: 'equal_to', values: [4], query_operator: null }],
+    conditions: [
+      {
+        attribute_key: 'commerce_event_store',
+        filter_operator: 'equal_to',
+        values: [4],
+        query_operator: null,
+      },
+    ],
     actions: [{ action_name: 'assign_team', action_params: [1] }],
   },
   {
@@ -124,7 +214,14 @@ export const AUTOMATIONS = [
     active: true,
     execution_delay: 60,
     created_on: '2026-07-11T09:00:00.000Z',
-    conditions: [{ attribute_key: 'status', filter_operator: 'equal_to', values: ['open'], query_operator: null }],
+    conditions: [
+      {
+        attribute_key: 'status',
+        filter_operator: 'equal_to',
+        values: ['open'],
+        query_operator: null,
+      },
+    ],
     actions: [{ action_name: 'add_label', action_params: ['vip'] }],
   },
 ];
@@ -139,7 +236,12 @@ export const CONTACTS = [
     availability_status: 'offline',
     last_activity_at: 1759400000,
     created_at: 1757000000,
-    additional_attributes: { city: 'Riyadh', country: 'Saudi Arabia', country_code: 'SA', company_name: 'Mansour Trading' },
+    additional_attributes: {
+      city: 'Riyadh',
+      country: 'Saudi Arabia',
+      country_code: 'SA',
+      company_name: 'Mansour Trading',
+    },
     custom_attributes: {},
     labels: ['vip'],
   },
@@ -152,7 +254,11 @@ export const CONTACTS = [
     availability_status: 'online',
     last_activity_at: 1759300000,
     created_at: 1757100000,
-    additional_attributes: { city: 'Jeddah', country: 'Saudi Arabia', country_code: 'SA' },
+    additional_attributes: {
+      city: 'Jeddah',
+      country: 'Saudi Arabia',
+      country_code: 'SA',
+    },
     custom_attributes: {},
     labels: [],
   },
@@ -199,15 +305,29 @@ export const CAMPAIGNS = [
 export const CURRENCIES = ['SAR', 'AED'];
 
 export const AUDIENCE_FIELDS = {
-  stores: COMMERCE_STORES.filter(store => store.status === 'active').map(({ id, name, provider }) => ({ id, name, provider })),
+  stores: COMMERCE_STORES.filter(store => store.status === 'active').map(
+    ({ id, name, provider }) => ({ id, name, provider })
+  ),
   currencies: CURRENCIES,
   unread_contacts: 14,
 };
 
 export const CANNED_RESPONSES = [
-  { id: 301, short_code: 'hours', content: 'We are open 9am to 6pm, Sunday to Thursday.' },
-  { id: 302, short_code: 'refund', content: 'Refunds reach your card within 5 to 7 working days.' },
-  { id: 303, short_code: 'tracking', content: 'Here is your tracking link: {{order.tracking_url}}' },
+  {
+    id: 301,
+    short_code: 'hours',
+    content: 'We are open 9am to 6pm, Sunday to Thursday.',
+  },
+  {
+    id: 302,
+    short_code: 'refund',
+    content: 'Refunds reach your card within 5 to 7 working days.',
+  },
+  {
+    id: 303,
+    short_code: 'tracking',
+    content: 'Here is your tracking link: {{order.tracking_url}}',
+  },
 ];
 
 export const MACROS = [
@@ -271,8 +391,18 @@ export const SLA_POLICIES = [
 ];
 
 export const CUSTOM_ROLES = [
-  { id: 701, name: 'Order desk', description: 'Reads conversations, manages orders', permissions: ['conversation_manage'] },
-  { id: 702, name: 'Reporting only', description: 'Reports and nothing else', permissions: ['report_manage'] },
+  {
+    id: 701,
+    name: 'Order desk',
+    description: 'Reads conversations, manages orders',
+    permissions: ['conversation_manage'],
+  },
+  {
+    id: 702,
+    name: 'Reporting only',
+    description: 'Reports and nothing else',
+    permissions: ['report_manage'],
+  },
 ];
 
 // Three statuses on purpose: approved shows no chip, pending and rejected are the two tones the
@@ -305,8 +435,20 @@ export const WHATSAPP_TEMPLATES = [
 ];
 
 export const INTEGRATION_APPS = [
-  { id: 'slack', name: 'Slack', description: 'Send conversations to a Slack channel', enabled: false, hooks: [] },
-  { id: 'webhook', name: 'Webhooks', description: 'Post events to your own endpoint', enabled: true, hooks: [] },
+  {
+    id: 'slack',
+    name: 'Slack',
+    description: 'Send conversations to a Slack channel',
+    enabled: false,
+    hooks: [],
+  },
+  {
+    id: 'webhook',
+    name: 'Webhooks',
+    description: 'Post events to your own endpoint',
+    enabled: true,
+    hooks: [],
+  },
   // Shaped on `_app.json.jbuilder` + `_hook.json.jbuilder`: the app carries its own `visible_properties` and a
   // hook exposes only the settings named there. Dialogflow is the one `hook_type: inbox` app that also allows
   // multiple hooks, so it is the app whose hooks table exercises both the property columns and the inbox column.
@@ -325,7 +467,11 @@ export const INTEGRATION_APPS = [
         status: true,
         hook_type: 'inbox',
         inbox: { id: 5, name: 'WhatsApp Main' },
-        settings: { project_id: 'lynomia-prod-01', region: 'europe-west1', language_code: 'ar' },
+        settings: {
+          project_id: 'lynomia-prod-01',
+          region: 'europe-west1',
+          language_code: 'ar',
+        },
       },
       {
         id: 942,
@@ -333,7 +479,11 @@ export const INTEGRATION_APPS = [
         status: true,
         hook_type: 'inbox',
         inbox: { id: 2, name: 'Website' },
-        settings: { project_id: 'lynomia-prod-02', region: 'us-central1', language_code: 'en' },
+        settings: {
+          project_id: 'lynomia-prod-02',
+          region: 'us-central1',
+          language_code: 'en',
+        },
       },
     ],
   },
@@ -358,7 +508,11 @@ export const CONVERSATION = {
   waiting_since: 1759399000,
   first_reply_created_at: 1759350000,
   timestamp: 1759400000,
-  applied_sla: { id: 601, name: 'VIP first reply', first_response_time_threshold: 900 },
+  applied_sla: {
+    id: 601,
+    name: 'VIP first reply',
+    first_response_time_threshold: 900,
+  },
   sla_events: [],
   custom_attributes: { order_number: '1234' },
   additional_attributes: { browser: { browser_name: 'Chrome' } },
@@ -404,7 +558,12 @@ export const CONTACT_NOTES = [
     id: 1001,
     content: 'Prefers Arabic. Calls before 11am.',
     created_at: 1759200000,
-    user: { id: 11, name: 'Lina Haddad', available_name: 'Lina', thumbnail: '' },
+    user: {
+      id: 11,
+      name: 'Lina Haddad',
+      available_name: 'Lina',
+      thumbnail: '',
+    },
   },
 ];
 
@@ -431,20 +590,42 @@ const COMMERCE_ORDER = (number, attributes = {}) => ({
   ...attributes,
 });
 
-const COMMERCE_STORE_REF = { id: 4, name: 'Syria Cosmetics', provider: 'woocommerce' };
+const COMMERCE_STORE_REF = {
+  id: 4,
+  name: 'Syria Cosmetics',
+  provider: 'woocommerce',
+};
 
 // Both stores linked, so the panel opens on Customer 360 and the store view is one click away: every control of
 // both views lands in the inventory.
 export const COMMERCE_CONVERSATION_STORES = [
   { ...COMMERCE_STORE_REF, linked: true, actions: true, carts: true },
-  { id: 9, name: 'Damascus Outlet', provider: 'woocommerce', linked: true, actions: false, carts: false },
+  {
+    id: 9,
+    name: 'Damascus Outlet',
+    provider: 'woocommerce',
+    linked: true,
+    actions: false,
+    carts: false,
+  },
 ];
 
 export const COMMERCE_PANEL = {
   store: COMMERCE_STORE_REF,
   state: 'linked',
-  link: { match_source: 'verified_phone', customer_type: 'registered', linked_at: '2026-09-20T08:00:00.000Z', confirmed_by: null },
-  orders: [COMMERCE_ORDER('1234'), COMMERCE_ORDER('1198', { status: 'completed', shipment_status: 'delivered' })],
+  link: {
+    match_source: 'verified_phone',
+    customer_type: 'registered',
+    linked_at: '2026-09-20T08:00:00.000Z',
+    confirmed_by: null,
+  },
+  orders: [
+    COMMERCE_ORDER('1234'),
+    COMMERCE_ORDER('1198', {
+      status: 'completed',
+      shipment_status: 'delivered',
+    }),
+  ],
   candidates: [],
   fetched_at: '2026-09-29T08:30:00.000Z',
   stale: false,
@@ -466,7 +647,14 @@ export const COMMERCE_OVERVIEW = {
   shipped_orders_count: 1,
   latest_orders: [
     { ...COMMERCE_ORDER('1234'), store: COMMERCE_STORE_REF },
-    { ...COMMERCE_ORDER('8891', { currency: 'AED', total: '95.00', status: 'shipped' }), store: COMMERCE_CONVERSATION_STORES[1] },
+    {
+      ...COMMERCE_ORDER('8891', {
+        currency: 'AED',
+        total: '95.00',
+        status: 'shipped',
+      }),
+      store: COMMERCE_CONVERSATION_STORES[1],
+    },
   ],
   stores: [
     {
@@ -519,9 +707,27 @@ export const AUDIENCE_SEGMENT = {
   ...CONTACT_VIEWS[0],
   query: {
     payload: [
-      { attribute_key: 'name', filter_operator: 'equal_to', attribute_model: 'standard', values: ['Rania'], query_operator: 'and' },
-      { attribute_key: 'conversation_status', filter_operator: 'equal_to', attribute_model: 'conversation', values: ['open'], query_operator: 'and' },
-      { attribute_key: 'commerce_spend_sar', filter_operator: 'is_greater_than', attribute_model: 'commerce', values: ['1000'], query_operator: null },
+      {
+        attribute_key: 'name',
+        filter_operator: 'equal_to',
+        attribute_model: 'standard',
+        values: ['Rania'],
+        query_operator: 'and',
+      },
+      {
+        attribute_key: 'conversation_status',
+        filter_operator: 'equal_to',
+        attribute_model: 'conversation',
+        values: ['open'],
+        query_operator: 'and',
+      },
+      {
+        attribute_key: 'commerce_spend_sar',
+        filter_operator: 'is_greater_than',
+        attribute_model: 'commerce',
+        values: ['1000'],
+        query_operator: null,
+      },
     ],
   },
 };
@@ -548,7 +754,10 @@ export const APPLIED_CONTACT_FILTERS = [
 // The flow builder's canvas, from a real template rather than a hand-drawn graph: `FLOW_TEMPLATES[0].build`
 // produces the twelve nodes and nineteen edges its own spec asserts against the backend's graph contract, so
 // the capture renders a flow the server would accept.
-export const FLOW_GRAPH = FLOW_TEMPLATES[0].build({ team: 1, language: 'both' });
+export const FLOW_GRAPH = FLOW_TEMPLATES[0].build({
+  team: 1,
+  language: 'both',
+});
 
 // `Flows::NodeTypes::TYPES`, as the flows API serves it. Transcribed from the backend the same way
 // `recipes/specs/flowTemplates.spec.js` transcribes it, and for the same reason: the node's output handles
@@ -556,12 +765,24 @@ export const FLOW_GRAPH = FLOW_TEMPLATES[0].build({ team: 1, language: 'both' })
 export const FLOW_NODE_TYPES = {
   start: { outputs: ['next'], data: ['keywords', 'conditions'] },
   send_message: { outputs: ['next'], data: ['text'] },
-  send_template: { outputs: ['next', 'failed'], optional: ['failed'], data: ['name', 'language', 'params'] },
+  send_template: {
+    outputs: ['next', 'failed'],
+    optional: ['failed'],
+    data: ['name', 'language', 'params'],
+  },
   question: {
     outputs: ['reply', 'invalid', 'timeout'],
     optional: ['invalid', 'timeout'],
     wait: true,
-    data: ['text', 'reply_type', 'keywords', 'store_as', 'max_attempts', 'retry_text', 'timeout_minutes'],
+    data: [
+      'text',
+      'reply_type',
+      'keywords',
+      'store_as',
+      'max_attempts',
+      'retry_text',
+      'timeout_minutes',
+    ],
   },
   buttons: {
     outputs: 'options',
@@ -584,8 +805,16 @@ export const FLOW_NODE_TYPES = {
   set_conversation_attribute: { outputs: ['next'], data: ['key', 'value'] },
   add_label: { outputs: ['next'], data: ['labels'] },
   remove_label: { outputs: ['next'], data: ['labels'] },
-  assign_agent: { outputs: ['next', 'failed'], optional: ['failed'], data: ['agent_id'] },
-  assign_team: { outputs: ['next', 'failed'], optional: ['failed'], data: ['team_id'] },
+  assign_agent: {
+    outputs: ['next', 'failed'],
+    optional: ['failed'],
+    data: ['agent_id'],
+  },
+  assign_team: {
+    outputs: ['next', 'failed'],
+    optional: ['failed'],
+    data: ['team_id'],
+  },
   commerce_lookup: {
     outputs: ['found', 'not_found', 'unavailable'],
     optional: ['not_found', 'unavailable'],
@@ -593,7 +822,10 @@ export const FLOW_NODE_TYPES = {
   },
   webhook: { outputs: ['next'], data: ['url'] },
   delay: { outputs: ['next'], wait: true, data: ['seconds'] },
-  handoff: { outputs: [], data: ['team_id', 'agent_id', 'priority', 'labels', 'reason'] },
+  handoff: {
+    outputs: [],
+    data: ['team_id', 'agent_id', 'priority', 'labels', 'reason'],
+  },
   goto: { outputs: [], data: ['target'] },
   end: { outputs: [], data: ['resolve'] },
 };
@@ -650,18 +882,48 @@ export const CAMPAIGN_DELIVERIES = [
 
 // The five settings pages that were modernised in earlier batches and had no capture to prove it.
 export const WEBHOOKS = [
-  { id: 901, url: 'https://hooks.example.com/lynomia', subscriptions: ['conversation_created', 'message_created'] },
-  { id: 902, url: 'https://ops.example.com/orders', subscriptions: ['conversation_status_changed'] },
+  {
+    id: 901,
+    url: 'https://hooks.example.com/lynomia',
+    subscriptions: ['conversation_created', 'message_created'],
+  },
+  {
+    id: 902,
+    url: 'https://ops.example.com/orders',
+    subscriptions: ['conversation_status_changed'],
+  },
 ];
 
 export const DASHBOARD_APPS = [
-  { id: 911, title: 'Order lookup', content: [{ url: 'https://apps.example.com/orders' }] },
-  { id: 912, title: 'Returns desk', content: [{ url: 'https://apps.example.com/returns' }] },
+  {
+    id: 911,
+    title: 'Order lookup',
+    content: [{ url: 'https://apps.example.com/orders' }],
+  },
+  {
+    id: 912,
+    title: 'Returns desk',
+    content: [{ url: 'https://apps.example.com/returns' }],
+  },
 ];
 
 export const AGENT_BOTS = [
-  { id: 921, name: 'Order tracking bot', description: 'Answers where-is-my-order', bot_type: 'webhook', outgoing_url: 'https://bots.example.com/track', access_token: 'tok_1' },
-  { id: 922, name: 'Triage bot', description: '', bot_type: 'csml', outgoing_url: '', access_token: 'tok_2' },
+  {
+    id: 921,
+    name: 'Order tracking bot',
+    description: 'Answers where-is-my-order',
+    bot_type: 'webhook',
+    outgoing_url: 'https://bots.example.com/track',
+    access_token: 'tok_1',
+  },
+  {
+    id: 922,
+    name: 'Triage bot',
+    description: '',
+    bot_type: 'csml',
+    outgoing_url: '',
+    access_token: 'tok_2',
+  },
 ];
 
 // Shaped on `enterprise/.../audit_logs/show.json.jbuilder`: `created_at` is unix seconds, and the row renders
@@ -797,11 +1059,70 @@ export const SAML_SETTINGS = {
   id: 7,
   account_id: ACCOUNT_ID,
   sso_url: 'https://sso.lynomia.test/saml/sso',
-  certificate: '-----BEGIN CERTIFICATE-----\nMIICljCCAX4CCQD…\n-----END CERTIFICATE-----',
+  certificate:
+    '-----BEGIN CERTIFICATE-----\nMIICljCCAX4CCQD…\n-----END CERTIFICATE-----',
   fingerprint: 'AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01',
   idp_entity_id: 'https://sso.lynomia.test/saml',
   sp_entity_id: 'https://app.lynomia.test/sp',
   role_mappings: {},
   created_at: '2026-09-01T09:00:00.000Z',
   updated_at: '2026-09-20T11:30:00.000Z',
+};
+
+// What `POST /contacts/import_preview` answers: one of each classification, so the import dialog's second step
+// renders every count tile and the rows that need a decision (docs/contacts/04-bulk-import.md).
+export const CONTACT_IMPORT_PREVIEW = {
+  total_rows: 6,
+  previewed_rows: 6,
+  row_limit: 500,
+  duplicate_policy: 'update',
+  default_country: 'SA',
+  labels: ['vip'],
+  counts: {
+    new_contact: 2,
+    update_existing: 1,
+    skip_existing: 0,
+    duplicate_in_file: 1,
+    no_identity: 1,
+    invalid: 1,
+  },
+  rows: [
+    {
+      number: 1,
+      classification: 'new_contact',
+      phone_number: '+966551112233',
+      normalized_phone_number: '+966551112233',
+    },
+    {
+      number: 2,
+      classification: 'update_existing',
+      email: 'existing@example.com',
+      reason: 'existing_contact',
+    },
+    {
+      number: 3,
+      classification: 'duplicate_in_file',
+      phone_number: '+966551112233',
+      reason: 'duplicate_in_file',
+      detail: '1',
+    },
+    {
+      number: 4,
+      classification: 'no_identity',
+      name: 'Nameless',
+      reason: 'missing_identity',
+    },
+    {
+      number: 5,
+      classification: 'invalid',
+      phone_number: '0551112299',
+      reason: 'phone_country_required',
+    },
+    {
+      number: 6,
+      classification: 'new_contact',
+      phone_number: '+971501234567',
+      normalized_phone_number: '+971501234567',
+    },
+  ],
 };

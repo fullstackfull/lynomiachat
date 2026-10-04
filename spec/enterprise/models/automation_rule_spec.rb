@@ -27,9 +27,17 @@ RSpec.describe AutomationRule do
     end
 
     context 'when automation rule is in enterprise namespace' do
-      it 'has associated sla methods available' do
-        expect(automation_rule.conditions_attributes).to include('sla_policy_id')
+      it 'adds the add_sla action' do
         expect(automation_rule.actions_attributes).to include('add_sla')
+      end
+
+      # P0/D7. `sla_policy_id` used to be offered as a condition key and could never match: no
+      # `lib/filters/filter_keys.yml` entry, so the validation service fell through to `custom_attribute_present?`
+      # and returned false, and the rule was auto-disabled after two evaluations. It was removed rather than
+      # implemented — implementing it needs a condition-level feature gate that does not exist in the OSS
+      # constants, and this phase is not an SLA expansion. The action is the supported capability.
+      it 'does not offer sla_policy_id as a condition, so a rule cannot be saved that never matches' do
+        expect(automation_rule.conditions_attributes).not_to include('sla_policy_id')
       end
     end
   end

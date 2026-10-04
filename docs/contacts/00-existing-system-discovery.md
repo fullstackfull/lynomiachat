@@ -371,13 +371,38 @@ the account's label titles (`:39-41`), exactly as the importer validates against
 So **export → edit the `labels` cell → import** is already a complete, supported bulk-labelling workflow. It is simply
 not described anywhere in the product.
 
+### 3.3c The structured error machinery already exists — and the CSV path does not use it
+
+`DataImportError` (`app/models/data_import_error.rb:22-33`) is entirely generic: `belongs_to :data_import`, optional
+`data_import_item`, `error_code` required, a `details` jsonb with a `kind` key, and the three scopes
+`skip_logs` / `failed` / `non_skip_logs`. Around it:
+
+| | |
+|---|---|
+| Finder | `DataImportErrorFinder` (`app/finders/data_import_error_finder.rb`), `DataImportSkipLogFinder` |
+| Rendered | `data_imports/show.json.jbuilder:3-26` emits `import_errors` and `skip_logs` arrays; `_data_import.json.jbuilder:19-25` emits `import_errors_count` / `skip_logs_count` |
+| Downloadable | `GET /data_imports/:id/error_logs` and `/skip_logs` (`routes.rb:256-257`, `data_imports_controller.rb:81-95,174-198`) |
+| Written by | **only** `DataImports::Importer:1136` — the Intercom / Freshdesk pipeline |
+
+The legacy CSV importer writes **no** `DataImportError` rows and no `DataImportItem` rows; its per-row reasons go only
+into the `failed_records` attachment. So the storage, the finder, the serializer and two CSV download endpoints for
+per-row import errors all exist and are already wired — the CSV path simply does not populate them.
+
 ### 3.4 Where the CSV importer is weak
 
 | | |
 |---|---|
 | Feedback | The dashboard alert fires on `head :ok` (`ContactListHeaderWrapper.vue:124-139`), i.e. on upload, not on completion. Rejected rows reach the user **only** by email: `failed_records` is read solely by `account_notification_mailer.rb:29-30` and is exposed by no API, jbuilder or page (`grep -rn failed_records` → 6 hits, all backend) |
 | Phone normalization | `ContactManager#format_phone_number` (`:47-49`) is `phone_number.start_with?('+') ? phone_number : "+#{phone_number}"` — a bare `+` prefix. `"96512345678"` → `"+96512345678"` works; `"012345678"` → `"+012345678"` fails the model's `[1-9]` rule and the row is rejected |
-| Duplicate policy | `find_existing_contact` (`:20-27`) looks up identifier → email → phone and, when found and valid, **updates** it (`update_contact_with_merged_attributes`, `:51-57`). So the CSV path upserts while the API path 422s |
+| Duplicate policy | two different mechanisms. For an **existing** contact, `find_existing_contact` (`:20-27`) looks up identifier → email → phone and `update_contact_with_merged_attributes` (`:51-57`) writes and `save`s it **row by row during the parse phase** — scalars only when `.present?`, so blank cells never clear a value. For **new** contacts the bulk call is `on_duplicate_key_ignore: true` (`data_import_job.rb:77`), i.e. `ON CONFLICT DO NOTHING` — an insert-with-ignore, never an upsert. Net effect: the CSV path updates-or-ignores while the API path 422s. Note `contact.save` at `contact_manager.rb:56` is not `save!`, so a failed update of a matched contact is swallowed |
+| Within-file duplicates | `on_duplicate_key_ignore` relies on the unique indexes, which exist for email and identifier but **not for phone** (`db/schema.rb:946-948`). A file listing the same phone number twice therefore inserts **two** contacts; the same email twice inserts one |
+| Callbacks | `Contact.import` (`:77`) validates but does not run callbacks, so a newly imported contact gets no `Contacts::SyncAttributes` (city/country sync, `visitor` → `lead`) and no `CONTACT_CREATED` dispatch. A *matched* contact, updated through `contact.save`, does get them — the two halves of one import behave differently |
+| Column whitelist | none. `ContactManager` names six columns — `identifier`, `email`, `phone_number`, `name`, `company_name`, `city` (`:14`, `:52-54`, `:62-65`) — and sweeps **every other header** into `custom_attributes` (`:66`). The documented column set exists only in the sample CSV |
+| Dry run / preview / column mapping | none (`grep -i "dry_run\|preview"` over the importer, the service and the controller) |
+| Upload validation | only `params[:import_file].blank?` (`contacts_controller.rb:35`) — no content type, no byte size, no header assertion |
+| Feature gating | none. `ContactsController#import` has only `check_authorization`; the `data_import` feature flag guards `DataImportsController` alone (`:6`, `:99-101`) |
+| Memory | the whole file is read into one String (`:199-207`) and rows accumulate in two unbounded arrays (`:34-45`). The only batch size in the system is `1000`, on both `Contact.import` (`:77`) and `ActsAsTaggableOn::Tagging.import` (`:86`) |
+| Timestamps | `started_at` / `completed_at` / `abandoned_at` are written only by the integration pipeline (`data_imports/importer.rb:56,65-68,81`); a CSV import leaves them null |
 | Per-row errors | Written but not surfaced (above) |
 | Progress | `processed_records` / `total_records` set once at the end (`:153-155`) |
 
@@ -445,7 +470,26 @@ Bar: `ContactsBulkActionBar.vue` — two `BulkLabelActions` instances (`type="co
 **Conclusion: a server batch path for bulk contact labels exists and is already wired to the UI — one request for N
 contacts. Nothing here needs to be built.**
 
-Note the asymmetry worth knowing before touching it: label *assignment* goes contact-by-contact inside the job
+### 4.4 What the Contact bulk path does not have
+
+Measured against the Conversation side of the same endpoint.
+
+| | |
+|---|---|
+| **"All contacts matching this filter / segment / search"** | **absent.** Permitted params are `ids: []` only (`bulk_actions_controller.rb:65`); nothing in the controller, the services, the job or the UI accepts a filter. Selection does survive pagination so it can accumulate, but with a page size of 15 (`contacts_controller.rb:12`), labelling a large audience means paging through it by hand. Contrast `#export`, which **is** filter-based: `{ payload:, label: }` → `Account::ContactsExportJob` (`:45-50`) |
+| Maximum selection size / payload cap / batching | absent in the controller, the three services, the job and the frontend |
+| Per-record permission filtering | absent. The conversation job runs `Conversations::PermissionFilterService` (`app/jobs/bulk_actions_job.rb:66`); there is no Contacts equivalent |
+| Acting user | plumbed and then dropped. `BulkActionService` assigns `@user` (`:3-6`) and never reads it; the conversation job sets `Current.user` (`bulk_actions_job.rb:12`), the contact job does not. So nothing records who relabelled or deleted |
+| Transaction / atomicity | absent. All three services iterate with `find_each` and no `ActiveRecord::Base.transaction` |
+| Partial-failure reporting | impossible by construction. The controller answers `head :ok` before the job runs (`:7-10`), and the job discards the services' `{ success:, updated_contact_ids: }` return value |
+| `add` + `remove` in one payload | absent — the service early-returns (`bulk_action_service.rb:9-11`). The conversation job *does* support both: `bulk_update` removes then adds (`bulk_actions_job.rb:20-23`) |
+| Online-presence guard on delete | absent. Single delete refuses while the contact is online (`contacts_controller.rb:101-105`); `BulkDeleteService:10` is a bare `find_each(&:destroy!)` |
+| Authorization on label add / remove | absent — only `delete` is checked (`bulk_actions_controller.rb:38-44`) |
+| Extension point | **absent.** No `prepend_mod_with` or `include_mod_with` on the controller, either job, or any of the four services |
+| Other operations conversations have | assign agent, assign team, change status, snooze, applied-label narrowing on Remove, the "only this page is selected" banner, a Vuex `uiFlag` path (`store/modules/bulkActions.js:5` holds `selectedConversationIds` only) |
+| Bulk "add to an audience / campaign / segment" | absent |
+
+One performance asymmetry worth knowing before touching it: label *assignment* goes contact-by-contact inside the job
 (`BulkAssignLabelsService:13-15` calls `add_labels` → `update!` per contact), whereas the CSV importer bulk-inserts
 taggings in batches of 1000 (`data_import_job.rb:85-86`). For large selections the importer's shape is the faster one.
 
@@ -680,6 +724,9 @@ Ordered by how little has to change.
 12. **A unique index on `(phone_number, account_id)`** — the only one of the three identity keys without one. Noted,
     **not** proposed: adding it is a migration, and existing data may already contain duplicates, so it is out of
     scope for a zero-migration phase and is recorded here as a known limitation instead.
+13. **Bulk action over "every contact matching this filter".** The bulk endpoint takes an explicit id list and the
+    list page shows 15 at a time, while `#export` already accepts a filter. This is the one gap that actually limits
+    the brief's bulk workflows at scale, and the shape to copy already exists on the export path.
 
 Nothing above requires a new engine, a new table, a second importer, a second bulk framework, a new audience system or
 a new phone-validation framework.
@@ -694,6 +741,13 @@ a new phone-validation framework.
 | `CONTACT_CREATION.ERROR_MESSAGE` is untranslated in `locale/ar/contact.json:316` | i18n |
 | Neither `Contact` nor `Label` is audited | observability |
 | `BulkAssignLabelsService` updates one contact at a time while the importer batch-inserts taggings | performance |
+| No per-record permission filtering on contact bulk actions, where conversations have `Conversations::PermissionFilterService` | authorization |
+| The acting user is plumbed into `Contacts::BulkActionService` and never read; `Current.user` is not set as it is for conversations | observability |
+| `BulkDeleteService` skips the online-presence guard that single delete enforces | consistency |
+| No transaction, no payload cap and no partial-failure reporting on contact bulk actions | robustness |
+| No extension point (`prepend_mod_with` / `include_mod_with`) anywhere on the bulk-action path | extensibility |
+| CSV import is not feature-gated while the integration import is; upload validation is blankness only | robustness |
+| `contact.save` (not `save!`) in `ContactManager#update_contact_with_merged_attributes:56` swallows a failed update of a matched row | correctness |
 | `Contacts::BulkActionService:9-11` applies only `add` when a payload carries both `add` and `remove`, and the caller cannot detect it | correctness |
 | Bulk label add / remove are not policy-checked; only bulk delete is (`bulk_actions_controller.rb:38-44`) | authorization |
 | The per-contact label endpoint has no `authorize` call at all | authorization |

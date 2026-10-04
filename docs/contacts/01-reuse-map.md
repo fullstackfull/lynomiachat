@@ -46,6 +46,8 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | `app/jobs/data_import_job.rb` | the CSV importer — **already imports a `labels` column**: `:8-10`, `:47-67`, `:81-116`, `:138-151` |
 | `app/services/data_import/contact_manager.rb` | per-row find-or-upsert; `format_phone_number` `:47-49` |
 | `app/jobs/account/contacts_export_job.rb` | CSV export — **already emits a virtual `labels` column** (`:4`, `:21`, `:34`, `:43-57`), filtered to the account catalogue |
+| `app/models/data_import_error.rb`, `app/models/data_import_item.rb`, `app/finders/data_import_error_finder.rb`, `app/finders/data_import_skip_log_finder.rb` | generic per-row import error storage, finders — **written only by the integration pipeline today** |
+| `app/views/api/v1/accounts/data_imports/{show,index,_data_import}.json.jbuilder` | already serialize `import_errors`, `skip_logs` and their counts |
 | `app/services/data_imports/importer.rb` | the Intercom / Freshdesk importer; `Contact.insert_all!` `:286`, `E164_REGEX` `:17`, `normalized_phone` `:850-854` — the one path with no validations or callbacks |
 | `app/builders/contact_inbox_with_contact_builder.rb`, `app/builders/contact_inbox_builder.rb` | the inbound-channel create path, every channel |
 
@@ -169,6 +171,14 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | Find-or-upsert per row | yes | `contact_manager.rb:20-27,51-57` | **REUSE** |
 | Country-aware phone normalization in import | no | `contact_manager.rb:47-49` prefixes `+` only | **PATCH** |
 | Rejected rows visible in the product | no | `failed_records` read only by `account_notification_mailer.rb:29-30` | **NOT PRESENT** |
+| **Per-row error storage + finder + serializer + CSV download** | **yes** | `DataImportError`, `DataImportErrorFinder`, `show.json.jbuilder:3-26`, `GET /data_imports/:id/{error_logs,skip_logs}` | **REUSE** — generic, but written only by `DataImports::Importer:1136`; the CSV path has only to populate it |
+| Within-file duplicate phone detection | no | `on_duplicate_key_ignore` needs a unique index; phone has none | **NOT PRESENT** — a file with the same phone twice inserts two contacts |
+| Callbacks on bulk-imported contacts | no | `Contact.import` validates but skips callbacks (`:77`) | **NOT PRESENT** — matched contacts (`contact.save`) do run them; the halves differ |
+| Column whitelist | no | `ContactManager:14,52-54,62-66` names six, sweeps the rest into `custom_attributes` | **NOT PRESENT** |
+| Dry run / preview / column mapping | no | — | **NOT PRESENT** |
+| Upload content-type / size / header validation | no | `contacts_controller.rb:35` checks blankness only | **NOT PRESENT** |
+| Feature gating on CSV import | no | the `data_import` flag guards `DataImportsController` only | **NOT PRESENT** |
+| Streaming / chunked parsing | no | whole file in memory (`:199-207`, `:34-45`) | **NOT PRESENT** |
 | Completion feedback in the UI | no | alert fires on upload (`ContactListHeaderWrapper.vue:124-139`) | **NOT PRESENT** |
 | **`labels` column on CSV export** | **yes** | `account/contacts_export_job.rb:4,21,34,43-57` | **REUSE** — export → edit → import already round-trips labels |
 | A second CSV import engine | — | — | **DO NOT CREATE** |
@@ -184,7 +194,14 @@ HEAD and is read in [00](00-existing-system-discovery.md).
 | Bulk bar UI, one request for N contacts | yes | `ContactsBulkActionBar.vue:105-117`, `ContactsIndex.vue:333-375` | **REUSE** |
 | Success / failure alerts on bulk actions | yes | `ContactsIndex.vue:345,349,367,371,389,394` | **REUSE** |
 | Batched tagging writes in the bulk job | no | `BulkAssignLabelsService:13-15` is per contact | **NOT PRESENT** (performance finding) |
-| `add` and `remove` in one payload | no | `bulk_action_service.rb:9-11` early-returns on `add` | **NOT PRESENT** — send one key per request |
+| `add` and `remove` in one payload | no | `bulk_action_service.rb:9-11` early-returns on `add`; the conversation job does support both (`bulk_actions_job.rb:20-23`) | **NOT PRESENT** — send one key per request |
+| **Bulk action over "all contacts matching this filter"** | no | `bulk_actions_controller.rb:65` permits `ids: []` only; `#export` **is** filter-based (`contacts_controller.rb:45-50`) | **NOT PRESENT** — the one gap that limits bulk workflows at scale; copy the export path's shape |
+| Per-record permission filtering | no | conversations have `Conversations::PermissionFilterService` (`bulk_actions_job.rb:66`) | **NOT PRESENT** (authorization finding) |
+| Acting user recorded | no | `BulkActionService:3-6` assigns `@user` and never reads it; `Current.user` unset | **NOT PRESENT** (observability finding) |
+| Transaction / payload cap / partial-failure reporting | no | none in the controller, services or job; `head :ok` precedes the work | **NOT PRESENT** (robustness finding) |
+| Online-presence guard on bulk delete | no | single delete has one (`contacts_controller.rb:101-105`); `BulkDeleteService:10` does not | **NOT PRESENT** (consistency finding) |
+| Extension point on the bulk path | no | no `prepend_mod_with` / `include_mod_with` on the controller, jobs or four services | **NOT PRESENT** — adding one is itself the cheapest change if the path must be extended |
+| Bulk "add to audience / campaign / segment" | no | — | **NOT PRESENT** — C3's target |
 | Policy check on bulk label add / remove | no | only `delete` is checked (`bulk_actions_controller.rb:38-44`) | **PATCH** (authorization finding) |
 | A second bulk-action framework | — | — | **DO NOT CREATE** |
 
@@ -311,14 +328,20 @@ Sequenced so each step is independently shippable and verifiable. **Not started 
 
 ### Phase C — the actual gaps
 
-1. **C1 — bulk add / import.** Extend `DataImportJob`, which already imports labels; surface `failed_records` and the
-   per-row reasons in the product instead of only by email. No new importer.
-2. **C2 — bulk labels.** Already complete end to end (`bulk_actions_controller.rb:65` → `BulkAssignLabelsService`,
-   driven by `ContactsBulkActionBar.vue`), and one request covers N contacts, so the brief's "do not send one HTTP
-   request per Contact" is already satisfied. Nothing to build. If volume demands it, align
-   `BulkAssignLabelsService:13-15` with the importer's batched tagging insert
-   (`data_import_job.rb:85-86`). If a contact list should *show* labels, preload taggings for the page the way
-   `contacts_export_job.rb:43-53` does rather than adding a column or a request per row.
+1. **C1 — bulk add / import.** Extend `DataImportJob`, which already imports labels. To surface per-row reasons in
+   the product, have it write `DataImportError` rows — the model, both finders, the `show` serializer
+   (`show.json.jbuilder:3-26`), the index counts and the two CSV download endpoints are all generic and already
+   wired, and only `DataImports::Importer:1136` populates them today. No new importer, no new table, no new
+   endpoint.
+2. **C2 — bulk labels.** The batch path and its UI are already complete end to end
+   (`bulk_actions_controller.rb:65` → `BulkAssignLabelsService`, driven by `ContactsBulkActionBar.vue`), and one
+   request covers N contacts, so the brief's "do not send one HTTP request per Contact" is already satisfied.
+   The **one** thing worth adding is selection by filter: the bulk endpoint takes `ids: []` only, while `#export`
+   already accepts `{ payload:, label: }` (`contacts_controller.rb:45-50`), so the shape, the validation and the
+   error vocabulary all exist on a sibling action. With that, `BulkAssignLabelsService:13-15` should move to the
+   importer's batched tagging insert (`data_import_job.rb:85-86`) and the service should gain a payload cap, since a
+   filter can select far more than 15 rows. If a contact list should *show* labels, preload taggings for the page the
+   way `contacts_export_job.rb:43-53` does rather than adding a column or a request per row.
 3. **C3 — Contact / Label → Campaign.** The smallest cross-module action on top of
    `Campaign#audience_contacts` and the `audienceHelper.js` prefill pattern.
 4. **C4 — automatic classification.** A **contact** label action for Automation and the Flow Builder, added through

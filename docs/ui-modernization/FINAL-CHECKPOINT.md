@@ -81,10 +81,15 @@ file was touched** — verified by a path filter over the whole diff.
 
 ## 4. Files created
 
-Four, all shared design-system primitives — no new module, no new sidebar item, no new route:
+Four, all shared design-system primitives — no new module, no new route, no new navigable destination:
 
 - `components-next/skeleton/Skeleton.vue` + `index.js`
 - `components-next/empty-state/EmptyState.vue` + `index.js`
+
+One qualification, because "no new sidebar item" would be loose: the settings regrouping (§25) added **six
+non-navigable section headings** — Account, People, Channels, Automation, Conversation data, Records — with
+six new i18n keys. They label the existing twenty Settings entries; they are not destinations, and the set
+of navigable targets is identical before and after.
 
 ## 5. Files deleted
 
@@ -298,7 +303,9 @@ previously sat only in the header above an empty page.
   (An earlier draft said 129: the glob `**/*.routes.js` silently missed four files named plain
   `routes.js` — calls, companies, contacts and inbox — carrying 12 further named routes. `**/*routes.js`
   matches all 37 route files.)
-- **50 sidebar destinations before and after.**
+- **The sidebar's navigable destinations are an identical set before and after** — 50
+  `accountScopedRoute(...)` call sites, 43 unique targets. The six new entries are section headings, not
+  destinations.
 - The only route-file changes are removals of `headerTitle` / `icon` / `showNewButton` props that
   `SettingsWrapper` never declared and nothing consumed.
 - **No route removed. No module hidden. No deep link broken.**
@@ -458,7 +465,7 @@ removed.
 - 8 controls moved, each declared in `parity-exceptions.json` with where it went and why.
 - 0 marked REMOVED.
 - 141 route names, identical sets before and after.
-- 50 sidebar destinations, before and after.
+- The sidebar's navigable destinations, an identical set before and after.
 - Discoverability improved rather than traded away: 1,578 controls that announced nothing now announce a
   name; six that no keyboard could reach are reachable; four capabilities that only a mouse could get to —
   the row priority/label/agent/team menus, SLA breach history in the header, selecting a conversation for a

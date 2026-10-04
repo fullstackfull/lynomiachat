@@ -23,8 +23,7 @@ class DataImport::ContactManager
   # The row as a new, unsaved contact.
   def build_new(params, region: nil)
     contact = @account.contacts.new(identity_attributes(params, region))
-    apply_attributes(contact, params)
-    contact
+    apply_attributes(contact, params, region)
   end
 
   # The row written onto a contact the account already has, in memory. A column the row leaves blank never clears
@@ -32,8 +31,7 @@ class DataImport::ContactManager
   # the preview ask whether the update *would* be valid.
   def assign_existing(contact, params, region: nil)
     contact.assign_attributes(identity_attributes(params, region).compact_blank)
-    apply_attributes(contact, params)
-    contact
+    apply_attributes(contact, params, region)
   end
 
   # The same, saved.
@@ -49,8 +47,7 @@ class DataImport::ContactManager
 
     # A contact that is already invalid for some other reason is left alone rather than saved into a worse state;
     # the row's attributes are still applied in memory so the caller sees what it asked for.
-    apply_attributes(existing, params)
-    existing
+    apply_attributes(existing, params, region)
   end
 
   # E.164 for what a row carries, using the row's own country when it names one.
@@ -102,14 +99,26 @@ class DataImport::ContactManager
     @account.contacts.find_by(phone_number: number)
   end
 
-  # String keys, because `Contacts::SyncAttributes` reads `additional_attributes['city']` and
-  # `additional_attributes['country']` to fill the `location` and `country_code` columns; symbol keys left both
-  # unset on every imported contact.
-  def apply_attributes(contact, params)
+  # String keys, because `Contacts::SyncAttributes` reads `additional_attributes['city']` to fill the `location`
+  # column; symbol keys left it unset on every imported contact.
+  def apply_attributes(contact, params, region)
     contact.name = params[:name] if params[:name].present?
     contact.additional_attributes ||= {}
     contact.additional_attributes['company_name'] = params[:company_name] if params[:company_name].present?
     contact.additional_attributes['city'] = params[:city] if params[:city].present?
+    # The country this row's number was read with, under the key the contact form reads as its region, so editing
+    # the contact later starts from the same country the import used (docs/contacts/03-phase-b.md §B4).
+    contact.additional_attributes['country_code'] = region if region.present?
     contact.assign_attributes(custom_attributes: contact.custom_attributes.merge(params.except(:identifier, :email, :name, :phone_number)))
+    sync_attributes(contact)
+  end
+
+  # `Contact.import` runs validation callbacks but not `before_save`, so the sync every ordinary write performs has
+  # to be performed here too. Without it a bulk-inserted contact keeps the `visitor` contact_type it was created
+  # with, and an account with `crm_v2` enabled resolves its contacts list to leads only — so the contacts somebody
+  # just imported would not be in it.
+  def sync_attributes(contact)
+    Contacts::SyncAttributes.new(contact).perform
+    contact
   end
 end

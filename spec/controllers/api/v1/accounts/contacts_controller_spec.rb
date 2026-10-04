@@ -216,6 +216,132 @@ RSpec.describe 'Contacts API', type: :request do
     end
   end
 
+  describe 'POST /api/v1/accounts/{account.id}/contacts/import, with the batch\'s own choices' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    def import(params)
+      post "/api/v1/accounts/#{account.id}/contacts/import", headers: admin.create_new_auth_token, params: params
+    end
+
+    it 'turns pasted numbers into the file the importer already reads' do
+      import({ phone_numbers: "+966551112233\n00966551112234, +966551112235" })
+
+      expect(response).to have_http_status(:success)
+      data_import = account.data_imports.last
+      expect(data_import.import_file).to be_attached
+      expect(data_import.import_file.download).to eq("phone_number\n+966551112233\n00966551112234\n+966551112235\n")
+    end
+
+    it 'keeps the batch\'s choices on the import itself, so the job reads them back' do
+      create(:label, account: account, title: 'vip')
+      import({ phone_numbers: '+966551112233', labels: ['VIP'], default_country: 'sa', duplicate_policy: 'keep' })
+
+      expect(response).to have_http_status(:success)
+      expect(account.data_imports.last.source_metadata).to eq(
+        'labels' => ['vip'], 'default_country' => 'SA', 'duplicate_policy' => 'keep'
+      )
+    end
+
+    it 'defaults to the policy this importer has always applied' do
+      import({ phone_numbers: '+966551112233' })
+
+      expect(account.data_imports.last.source_metadata['duplicate_policy']).to eq('update')
+    end
+
+    it 'refuses a label the account does not have, creating nothing' do
+      import({ phone_numbers: '+966551112233', labels: ['ghost'] })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['labels']).to eq(['not_in_account'])
+      expect(account.data_imports.count).to eq(0)
+    end
+
+    it 'refuses a country that is not one' do
+      import({ phone_numbers: '+966551112233', default_country: 'ZZ' })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_a_country'])
+      expect(account.data_imports.count).to eq(0)
+    end
+
+    it 'refuses a duplicate policy that is not one of the two' do
+      import({ phone_numbers: '+966551112233', duplicate_policy: 'merge' })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_a_duplicate_policy'])
+    end
+
+    it 'refuses a file that is not a CSV' do
+      import({ import_file: fixture_file_upload(Rails.root.join('spec/assets/avatar.png'), 'image/png') })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_a_csv'])
+    end
+  end
+
+  describe 'POST /api/v1/accounts/{account.id}/contacts/import_preview' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    def preview(params)
+      post "/api/v1/accounts/#{account.id}/contacts/import_preview", headers: admin.create_new_auth_token, params: params
+      response.parsed_body
+    end
+
+    it 'returns unauthorized for an agent' do
+      agent = create(:user, account: account, role: :agent)
+      post "/api/v1/accounts/#{account.id}/contacts/import_preview",
+           headers: agent.create_new_auth_token, params: { phone_numbers: '+966551112233' }, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'classifies every row and creates nothing at all' do
+      create(:contact, account: account, phone_number: '+966551112233')
+      body = preview({ phone_numbers: "+966551112233\n+966551112234\n+966551112234\n0551112299" })
+
+      expect(response).to have_http_status(:success)
+      expect(body['total_rows']).to eq(4)
+      expect(body['previewed_rows']).to eq(4)
+      expect(body['counts']).to eq(
+        'new_contact' => 1, 'update_existing' => 1, 'skip_existing' => 0,
+        'duplicate_in_file' => 1, 'no_identity' => 0, 'invalid' => 1
+      )
+      expect(body['rows'].last).to include('classification' => 'invalid', 'reason' => 'phone_country_required')
+      expect(account.data_imports.count).to eq(0)
+      expect(account.contacts.count).to eq(1)
+    end
+
+    it 'shows what the batch\'s country would do to a local number, before it is applied' do
+      body = preview({ phone_numbers: '0551112233', default_country: 'SA' })
+
+      expect(body['default_country']).to eq('SA')
+      expect(body['rows'].first).to include('classification' => 'new_contact', 'phone_number' => '0551112233',
+                                            'normalized_phone_number' => '+966551112233')
+    end
+
+    it 'reports a contact in another account as new, never as existing' do
+      create(:contact, account: create(:account), phone_number: '+966551112233')
+      body = preview({ phone_numbers: '+966551112233' })
+
+      expect(body['counts']).to include('new_contact' => 1, 'update_existing' => 0)
+    end
+
+    it 'counts the whole file even when it examines only the first rows' do
+      stub_const('DataImport::ContactPreview::ROW_LIMIT', 2)
+      body = preview({ phone_numbers: "+966551112233\n+966551112234\n+966551112235" })
+
+      expect(body['total_rows']).to eq(3)
+      expect(body['previewed_rows']).to eq(2)
+      expect(body['row_limit']).to eq(2)
+    end
+
+    it 'reports a blank payload rather than an empty preview' do
+      preview({})
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/contacts/export' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do

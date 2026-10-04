@@ -107,6 +107,11 @@ ar:
       import:
         failed: الملف فارغ
         phone_country_required: 'رقم الهاتف المحلي يحتاج إلى بلد. أضف عمود country_code أو اختر بلداً لهذا الاستيراد.'
+        not_a_csv: يجب أن يكون ملف CSV
+        too_large: 'يجب أن يكون أصغر من %{size} ميجابايت للمعاينة'
+        too_many_numbers: 'يحتوي على أكثر من %{count} رقم. قسّم القائمة أو حمّلها كملف CSV.'
+        not_a_country: '%{country} ليس رمز بلد'
+        not_a_duplicate_policy: 'يجب أن يكون أحد التالي: %{policies}'
       export:
         success: سنقوم بإعلامك بمجرد أن يكون ملف تصدير جهات الاتصال جاهزاً للعرض.
       email:

@@ -123,6 +123,11 @@ en:
       import:
         failed: File is blank
         phone_country_required: A local phone number needs a country. Add a country_code column or choose one for this import.
+        not_a_csv: must be a CSV file
+        too_large: must be smaller than %{size} MB to preview
+        too_many_numbers: holds more than %{count} numbers. Split the list, or upload it as a CSV file.
+        not_a_country: '%{country} is not a country code'
+        not_a_duplicate_policy: 'must be one of: %{policies}'
       export:
         success: We will notify you once contacts export file is ready to view.
       email:

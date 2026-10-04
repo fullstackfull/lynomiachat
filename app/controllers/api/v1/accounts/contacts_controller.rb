@@ -1,5 +1,6 @@
 class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   include Sift
+  include ContactImportParams
   include ContactLabelParams
   sort_on :email, type: :string
   sort_on :name, internal_name: :order_on_name, type: :scope, scope_params: [:direction]
@@ -33,14 +34,19 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   def import
-    render json: { error: I18n.t('errors.contacts.import.failed') }, status: :unprocessable_entity and return if params[:import_file].blank?
+    attachment = import_attachment
+    return render_import_blank if attachment.blank?
 
-    ActiveRecord::Base.transaction do
-      import = Current.account.data_imports.create!(data_type: 'contacts')
-      import.import_file.attach(params[:import_file])
-    end
-
+    create_contact_import(attachment)
     head :ok
+  end
+
+  # What `import` would do with the same payload, without doing any of it.
+  def import_preview
+    content = import_csv_content
+    return render_import_blank if content.blank?
+
+    render json: contact_import_preview(content)
   end
 
   def export

@@ -283,5 +283,114 @@ RSpec.describe DataImportJob do
         expect(unknown_label_import.failed_records.download).to include('Unknown labels: unknown_label')
       end
     end
+
+    context 'when the batch made its own choices' do
+      let(:account) { create(:account) }
+
+      before { create(:label, account: account, title: 'vip') }
+
+      def import_with(metadata, data)
+        create(:data_import, account: account, source_metadata: metadata, import_file: generate_csv_file(data))
+      end
+
+      it 'applies the batch\'s labels to every row, and additively to a contact it already had' do
+        existing = create(:contact, account: account, email: 'existing@example.com')
+        existing.add_labels('customer')
+        data_import = import_with({ 'labels' => ['vip'] }, [
+                                    %w[name email],
+                                    ['New One', 'new@example.com'],
+                                    ['Existing One', 'existing@example.com']
+                                  ])
+
+        described_class.perform_now(data_import)
+
+        expect(account.contacts.from_email('new@example.com').label_list).to contain_exactly('vip')
+        expect(existing.reload.label_list).to contain_exactly('customer', 'vip')
+      end
+
+      it 'uses the batch\'s country for the rows that name none' do
+        data_import = import_with({ 'default_country' => 'SA' }, [
+                                    %w[name phone_number country_code],
+                                    ['Local', '0551112233', ''],
+                                    ['Turkish', '05551234567', 'TR']
+                                  ])
+
+        described_class.perform_now(data_import)
+
+        expect(account.contacts.pluck(:phone_number)).to contain_exactly('+966551112233', '+905551234567')
+      end
+
+      it 'leaves an existing contact\'s details alone under the keep policy, but still labels it' do
+        existing = create(:contact, account: account, email: 'existing@example.com', name: 'Old Name')
+        data_import = import_with({ 'duplicate_policy' => 'keep', 'labels' => ['vip'] }, [
+                                    %w[name email],
+                                    ['Rewritten Name', 'existing@example.com']
+                                  ])
+
+        described_class.perform_now(data_import)
+
+        expect(existing.reload.name).to eq('Old Name')
+        expect(existing.label_list).to contain_exactly('vip')
+      end
+
+      it 'refuses the whole import\'s unknown label before touching anything' do
+        data_import = import_with({ 'labels' => ['ghost'] }, [%w[name email], ['New One', 'new@example.com']])
+
+        described_class.perform_now(data_import)
+
+        expect(account.contacts.count).to eq(0)
+        expect(data_import.reload.failed_records.download).to include('Unknown labels: ghost')
+      end
+    end
+
+    context 'when two rows name the same contact by phone number alone' do
+      let(:account) { create(:account) }
+
+      it 'creates one contact, and still counts both rows' do
+        data_import = create(:data_import, account: account, import_file: generate_csv_file([
+                                                                                              %w[name email phone_number],
+                                                                                              ['First', 'first@example.com', '+966551112233'],
+                                                                                              ['Second', 'second@example.com', '+966551112233']
+                                                                                            ]))
+
+        described_class.perform_now(data_import)
+
+        expect(account.contacts.where(phone_number: '+966551112233').count).to eq(1)
+        expect(data_import.reload.processed_records).to eq(2)
+        expect(data_import.total_records).to eq(2)
+        expect(data_import.stats['contacts']).to include('duplicate_in_file' => 1, 'imported' => 1)
+      end
+    end
+
+    context 'when the import finishes' do
+      let(:account) { create(:account) }
+
+      it 'records what happened to every row' do
+        data_import = create(:data_import, account: account, import_file: generate_csv_file([
+                                                                                              %w[name email phone_number],
+                                                                                              ['Reachable', 'reachable@example.com', '+966551112233'],
+                                                                                              ['Nameless only', '', ''],
+                                                                                              ['Bad local', 'bad@example.com', '0551112233']
+                                                                                            ]))
+
+        described_class.perform_now(data_import)
+
+        expect(data_import.reload.stats['contacts']).to include(
+          'total' => 3, 'imported' => 1, 'without_identity' => 1, 'skipped' => 1
+        )
+        expect(data_import.failed_records.download).to include('A local phone number needs a country')
+      end
+
+      it 'promotes an imported contact to a lead, so the contacts list can return it' do
+        data_import = create(:data_import, account: account, import_file: generate_csv_file([
+                                                                                              %w[name phone_number],
+                                                                                              ['Reachable', '+966551112233']
+                                                                                            ]))
+
+        described_class.perform_now(data_import)
+
+        expect(account.contacts.find_by(phone_number: '+966551112233')).to be_lead
+      end
+    end
   end
 end

@@ -216,10 +216,10 @@ Regression cover: `mutations.spec.js` asserts `SET_CONTACT_RECORD` leaves `sortO
 
 | Gate | Result |
 |---|---|
-| Backend, contacts + labels + model | **105 examples, 0 failures** |
-| Frontend, full suite | **478 files, 4941 tests, 0 failures** |
-| ESLint, changed files | 0 errors, 4 warnings (`no-dynamic-keys`, the repo's existing pattern) |
-| RuboCop, changed files | 0 offenses |
+| Backend, contacts + labels + model | **117 examples, 0 failures** — `contacts_controller_spec.rb` (74), `contacts/labels_controller_spec.rb` (4), `labels_controller_spec.rb` (10), `contact_spec.rb` (29); the new "when the request carries labels" context is 10 of them |
+| Frontend, full suite | **478 files, 4942 tests, 0 failures** |
+| ESLint, repo gate (`pnpm eslint`) | **0 errors**, 483 warnings — against 0 errors, 488 warnings at `968aef48`, so five fewer |
+| RuboCop, changed files | **4 files inspected, no offenses** |
 | Production build | **built in 1m30s, exit 0** |
 | Feature parity, 544 captures before and after | **5678 controls both sides; 0 lost, 0 moved, 0 added, 0 newly unnamed, 0 regressions** ([parity/](parity/)) |
 | Browser journeys | **44 runs, 264 checks, 0 failed**, including the new Contacts one ([journeys/](journeys/)) |
@@ -230,6 +230,14 @@ phase's diff alone rather than the UI/UX phase's. Details in [parity/](parity/).
 The Rails environment was built for this phase — Ruby 3.4.4, 356 gems, Postgres 16 with `pgvector`, Redis — so
 the backend numbers are real integration runs, not fixtures.
 
+One artefact of that environment, worth knowing before reading a full-suite run here:
+`spec/controllers/slack_uploads_controller_spec.rb` fails four examples whenever `FRONTEND_URL` names a host
+other than the controller spec's `test.host`. `SlackUploadsController#avatar_url` interpolates
+`ENV.fetch('FRONTEND_URL', nil)` into an absolute URL, and `config.load_defaults 7.0` enables
+`raise_on_open_redirects`, so the redirect raises `UnsafeRedirectError`. With the variable unset the URL is
+relative and all five pass. It is the environment, not the tree — `.env.example:17` ships
+`http://0.0.0.0:3000`, which fails the same way.
+
 New backend coverage, in `spec/controllers/api/v1/accounts/contacts_controller_spec.rb`: label persisted and
 findable by `tagged_with`; a `Contact` tagging in the `labels` context, not a `Conversation` one; the catalogue
 label accepted in any case, reusing the one tag; an unknown label rejected with `error_types: ['not_in_account']`
@@ -239,7 +247,7 @@ duplicate-phone contract with its `taken` type; the existing contact not named i
 same-number contact in another account created successfully.
 
 New frontend coverage: `shared/helpers/specs/phoneNumber.spec.js` (17), `helper/specs/contactErrors.spec.js`
-(15), `Contacts/ContactsForm/specs/CreateNewContactDialog.spec.js` (14, including the Arabic message, the
+(15), `Contacts/ContactsForm/specs/CreateNewContactDialog.spec.js` (15, including the Arabic message, the
 dialog staying open, both recovery actions, and all three cases where recovery is withheld), plus the two
 store specs.
 

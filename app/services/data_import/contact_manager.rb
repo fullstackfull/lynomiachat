@@ -9,12 +9,28 @@ class DataImport::ContactManager
     @account = account
   end
 
+  # Every contact the account already has that any of these identities could name, loaded in three queries rather
+  # than three per row. A caller that classifies a whole batch at once — the preview — looks first; the import's
+  # own pass over a file it is streaming does not, and keeps the row-by-row lookup below.
+  #
+  # @param identities [Array<Array>] `[:identifier | :email | :phone_number, value]` pairs.
+  def preload(identities)
+    grouped = identities.compact.group_by(&:first).transform_values { |pairs| pairs.map(&:last).uniq }
+    @known = {
+      identifier: index_by(:identifier, grouped[:identifier]),
+      email: index_by(:email, grouped[:email]),
+      phone_number: index_by(:phone_number, grouped[:phone_number])
+    }
+  end
+
   # The contact this row names, when the account already has one. Read-only.
   #
   # @param params [Hash] the row.
   # @param region [String, nil] the explicit country for this row, for matching a local phone number.
   # @return [Contact, nil]
   def find_existing(params, region: nil)
+    return from_preloaded(params, region) if @known
+
     find_contact_by_identifier(params) ||
       find_contact_by_email(params) ||
       find_contact_by_phone_number(params, region)
@@ -71,6 +87,19 @@ class DataImport::ContactManager
   private_class_method :prefixed
 
   private
+
+  def index_by(column, values)
+    return {} if values.blank?
+
+    @account.contacts.where(column => values).index_by { |contact| contact.public_send(column) }
+  end
+
+  # Identity order is the same as the query path's: identifier, then email, then phone number.
+  def from_preloaded(params, region)
+    @known[:identifier][params[:identifier].presence] ||
+      @known[:email][params[:email].presence&.downcase] ||
+      @known[:phone_number][self.class.phone_number(params[:phone_number], region)]
+  end
 
   def identity_attributes(params, region)
     {

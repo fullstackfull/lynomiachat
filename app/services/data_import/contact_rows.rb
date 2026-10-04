@@ -37,6 +37,14 @@ class DataImport::ContactRows
 
   attr_reader :duplicate_policy
 
+  # Look up every row's identities at once, for a caller that holds the whole batch. Without it a 500-row preview
+  # costs three queries a row; with it, three in total.
+  #
+  # @param rows [Array] the rows about to be classified.
+  def preload(rows)
+    @manager.preload(rows.flat_map { |row| identity_keys_for(row.to_h.with_indifferent_access) })
+  end
+
   # @param row [CSV::Row, Hash] one row.
   # @param number [Integer] its position in the file, 1-based, the header not counted.
   # @return [Result]
@@ -117,6 +125,10 @@ class DataImport::ContactRows
 
   def normalized_phone(attributes, region)
     DataImport::ContactManager.phone_number(attributes[:phone_number], region)
+  end
+
+  def identity_keys_for(attributes)
+    identity_keys(attributes, region_for(attributes))
   end
 
   # Every identity a row carries, because two rows can collide on any one of them.

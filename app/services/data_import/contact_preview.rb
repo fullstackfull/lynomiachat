@@ -35,16 +35,19 @@ class DataImport::ContactPreview
 
   private
 
+  # Two passes: read the file, keeping the rows that will be examined, then classify them. The first pass is what
+  # lets the whole batch's existing contacts be looked up in three queries instead of three per row, and it also
+  # counts the rest of the file, which is how `total_rows` can be exact while `previewed_rows` is bounded.
   def classify
-    results = []
+    examined = []
     total = 0
     DataImport::ContactCsv.parse(@raw_csv).each do |row|
       total += 1
-      next if results.size >= ROW_LIMIT
-
-      results << @rows.classify(row, number: total)
+      examined << row if examined.size < ROW_LIMIT
     end
-    [results, total]
+
+    @rows.preload(examined)
+    [examined.each_with_index.map { |row, index| @rows.classify(row, number: index + 1) }, total]
   end
 
   # Every classification is reported, including the ones that are zero, so a caller never has to guess whether a

@@ -30,3 +30,26 @@ by the gate today.
 
 **Lands in:** the accessibility sweep, together with the surfaces needed to prove it — which is the point
 worth keeping: every one of these was invisible until a capture existed for the surface it lives on.
+
+---
+
+## Re-scanned at the close of the phase
+
+Four of the ten are now named, each by the batch that reached its surface: the order-number copy button
+(`CommerceOrderItem.vue`), the alert-tone preview (`AudioAlertTone.vue`), the attachment control in
+`ReplyBottomPanel.vue`, and the previous-conversation link (`ContactConversationLink.vue`).
+
+**Six remain**, all on surfaces the capture set still does not reach:
+
+| File | Line | Control |
+|---|---|---|
+| `components/widgets/conversation/conversation/LabelSuggestion.vue` | 169 | accept a suggested label |
+| `components-next/emoji-icon-picker/EmojiIconPicker.vue` | 152, 204 | the two picker mode triggers |
+| `components-next/emoji-icon-picker/ColorPalette.vue` | 11 | a colour swatch |
+| `components-next/message/CaptainGenerationDetails.vue` | 229 | open the generation detail |
+| `components-next/message/chips/File.vue` | 70 | download an attachment |
+
+The 68 captured surfaces report **0 unnamed controls** in 544 captures. These six are outside that set,
+so naming them is a change the gate cannot yet check — which is the reason they are still listed rather
+than quietly fixed.
+

@@ -106,6 +106,7 @@ ar:
     contacts:
       import:
         failed: الملف فارغ
+        phone_country_required: 'رقم الهاتف المحلي يحتاج إلى بلد. أضف عمود country_code أو اختر بلداً لهذا الاستيراد.'
       export:
         success: سنقوم بإعلامك بمجرد أن يكون ملف تصدير جهات الاتصال جاهزاً للعرض.
       email:

@@ -2,13 +2,9 @@
 module Commerce::Phone
   # E.164 for a stored store phone, or nil. International numbers ("+..." or "00...") parse on their own; a local
   # number ("055...") only with the order's billing country. No country and no "+" means no match, never a guess.
-  def self.e164(raw, country = nil)
-    number = raw.to_s.strip.sub(/\A00/, '+')
-    return if number.blank?
-
-    parsed = number.start_with?('+') ? TelephoneNumber.parse(number) : country.presence && TelephoneNumber.parse(number, country.to_s.downcase.to_sym)
-    parsed.e164_number if parsed&.valid?
-  end
+  # The rule itself lives in `Contacts::Phone`, which the contact form and the CSV importer apply too, so a number
+  # a store reports and the same number typed into a contact normalize identically.
+  def self.e164(raw, country = nil) = Contacts::Phone.e164(raw, country)
 
   # The national significant number ("551112233" for +966551112233): a substring of the formats stores keep
   # ("+966551112233", "0551112233", "00966551112233"), used only to discover candidates.

@@ -1,16 +1,18 @@
 # TODO: logic is written tailored to contact import since its the only import available
 # let's break this logic and clean this up in future
+#
+# What each row means is decided by `DataImport::ContactRows`, which the preview endpoint runs too, so the counts
+# a user approves before an import are produced by the same code that then performs it
+# (docs/contacts/04-bulk-import.md). The batch's own choices — labels for every row, a country for the rows that
+# name none, what to do about a contact the account already has — travel on the import's `source_metadata`.
 
 class DataImportJob < ApplicationJob
   queue_as :low
   retry_on ActiveStorage::FileNotFoundError, wait: 1.minute, attempts: 3
 
-  LABELS_DELIMITER = ','.freeze
-  LABELS_CONTEXT = 'labels'.freeze
-  CONTACT_TAGGABLE_TYPE = 'Contact'.freeze
-
   def perform(data_import)
     @data_import = data_import
+    @rows = DataImport::ContactRows.new(@data_import.account, options: batch_options)
     @contact_manager = DataImport::ContactManager.new(@data_import.account)
     begin
       process_import_file
@@ -22,136 +24,93 @@ class DataImportJob < ApplicationJob
 
   private
 
+  def batch_options
+    metadata = @data_import.source_metadata.to_h
+    {
+      labels: Array(metadata['labels']),
+      default_country: metadata['default_country'],
+      duplicate_policy: metadata['duplicate_policy']
+    }
+  end
+
   def process_import_file
     @data_import.update!(status: :processing)
-    contacts, rejected_contacts = parse_csv_and_build_contacts
+    results = classify_rows
+    accepted = results.reject(&:invalid?)
 
-    import_contacts(contacts)
-    update_data_import_status(contacts.length, rejected_contacts.length)
-    save_failed_records_csv(rejected_contacts)
+    import_contacts(accepted)
+    update_data_import_status(results)
+    save_failed_records_csv(results.select(&:invalid?).map { |result| rejected_row(result) })
   end
 
-  def parse_csv_and_build_contacts
-    contacts = []
-    rejected_contacts = []
-
+  def classify_rows
+    results = []
     with_import_file do |file|
-      csv_reader(file).each do |row|
-        build_contact_from_row(row, contacts, rejected_contacts)
+      csv_reader(file).each_with_index do |row, index|
+        results << @rows.classify(row, number: index + 1)
       end
     end
-
-    [contacts, rejected_contacts]
+    results
   end
 
-  def build_contact_from_row(row, contacts, rejected_contacts)
-    row_hash = row.to_h.with_indifferent_access
-    labels = extract_labels(row_hash)
-    invalid_labels = labels.map(&:downcase) - approved_labels
+  def rejected_row(result)
+    row = result.row
+    row['errors'] = error_message(result)
+    row
+  end
 
-    if invalid_labels.present?
-      append_label_error(row, invalid_labels, rejected_contacts)
-      return
-    end
-
-    current_contact = @contact_manager.build_contact(row_hash.except(:labels))
-    if current_contact.valid?
-      contacts << { contact: current_contact, labels: labels }
-    else
-      append_rejected_contact(row, current_contact, rejected_contacts)
+  def error_message(result)
+    case result.reason
+    when 'unknown_labels' then "Unknown labels: #{result.detail}"
+    when 'phone_country_required' then I18n.t('errors.contacts.import.phone_country_required')
+    when 'phone_invalid' then I18n.t('errors.contacts.phone_number.invalid')
+    else result.detail.to_s
     end
   end
 
-  def extract_labels(row_hash)
-    row_hash[:labels].to_s.split(LABELS_DELIMITER).map(&:strip).reject(&:blank?)
-  end
-
-  def append_rejected_contact(row, contact, rejected_contacts)
-    row['errors'] = contact.errors.full_messages.join(', ')
-    rejected_contacts << row
-  end
-
-  def import_contacts(contacts_with_labels)
-    contacts = contacts_with_labels.pluck(:contact)
+  def import_contacts(results)
+    # Before the insert, not after: `synchronize:` re-reads every already-persisted instance from the database, so
+    # an update that was still only in memory at that point would be thrown away.
+    save_updated_contacts(results)
+    # One object per contact, so two rows naming the same person insert once and contribute both their labels.
+    contacts = results.filter_map(&:contact).uniq
     # <struct ActiveRecord::Import::Result failed_instances=[], num_inserts=1, ids=[444, 445], results=[]>
     Contact.import(contacts, synchronize: contacts, on_duplicate_key_ignore: true, track_validation_failures: true, validate: true, batch_size: 1000)
-    apply_labels_to_contacts(contacts_with_labels)
+    DataImport::ContactLabels.new(@data_import.account)
+                             .apply(results.map { |result| { contact: result.contact, labels: result.labels } })
   end
 
-  def apply_labels_to_contacts(contacts_with_labels)
-    taggings = taggings_for_contacts(contacts_with_labels)
-    return if taggings.blank?
-
-    ActsAsTaggableOn::Tagging.import(%i[tag_id taggable_type taggable_id context created_at],
-                                     taggings, on_duplicate_key_ignore: true, validate: false, batch_size: 1000)
+  # A contact the account already had is written once the whole file has been read, rather than row by row during
+  # the pass, so a file that fails half way through has not already changed half the account.
+  def save_updated_contacts(results)
+    results.select { |result| result.classification == :update_existing }
+           .map(&:contact).uniq
+           .each(&:save)
   end
 
-  def taggings_for_contacts(contacts_with_labels)
-    tag_lookup = tags_by_label_name(contacts_with_labels)
-    taggings = contacts_with_labels.flat_map do |item|
-      contact = contact_for_label_import(item[:contact])
-      labels = item[:labels].map(&:downcase).uniq
-      next [] if contact&.id.blank?
-
-      labels.map do |label|
-        [tag_lookup[label].id, CONTACT_TAGGABLE_TYPE, contact.id, LABELS_CONTEXT]
-      end
-    end.uniq
-
-    reject_existing_taggings(taggings).map { |tagging| tagging + [Time.zone.now] }
+  # `processed_records` has always counted the rows this importer accepted rather than the rows it inserted — a
+  # row naming a contact the account already has is accepted and then not inserted. `stats` carries the breakdown
+  # the old counters could not express, and the import's own detail page already renders it.
+  def update_data_import_status(results)
+    counts = results.group_by(&:classification).transform_values(&:size)
+    @data_import.update!(
+      status: :completed,
+      processed_records: results.count { |result| !result.invalid? },
+      total_records: results.size,
+      stats: @data_import.stats.to_h.merge('contacts' => contact_stats(counts))
+    )
   end
 
-  def reject_existing_taggings(taggings)
-    tag_ids = taggings.map { |tag_id, _taggable_type, _taggable_id, _context| tag_id }
-    taggable_ids = taggings.map { |_tag_id, _taggable_type, taggable_id, _context| taggable_id }
-    existing_taggings = ActsAsTaggableOn::Tagging
-                        .where(context: LABELS_CONTEXT, taggable_type: CONTACT_TAGGABLE_TYPE,
-                               taggable_id: taggable_ids, tag_id: tag_ids)
-                        .pluck(:tag_id, :taggable_id)
-                        .index_with(true)
-
-    taggings.reject do |tag_id, _taggable_type, taggable_id, _context|
-      existing_taggings[[tag_id, taggable_id]]
-    end
-  end
-
-  def contact_for_label_import(contact)
-    return contact if contact.id.present?
-
-    key = contact_identity_key(contact)
-    return if key.blank?
-
-    imported_contact(contact)
-  end
-
-  def contact_identity_key(contact)
-    contact.identifier.presence || contact.email.presence || contact.phone_number.presence
-  end
-
-  def imported_contact(contact)
-    return @data_import.account.contacts.find_by(identifier: contact.identifier) if contact.identifier.present?
-    return @data_import.account.contacts.from_email(contact.email) if contact.email.present?
-
-    @data_import.account.contacts.find_by(phone_number: contact.phone_number) if contact.phone_number.present?
-  end
-
-  def tags_by_label_name(contacts_with_labels)
-    labels = contacts_with_labels.flat_map { |item| item[:labels] }.map(&:downcase).uniq
-
-    ActsAsTaggableOn::Tag.find_or_create_all_with_like_by_name(labels).index_by { |tag| tag.name.downcase }
-  end
-
-  def approved_labels
-    @approved_labels ||= @data_import.account.labels.pluck(:title)
-  end
-
-  def append_label_error(row, labels, rejected_contacts)
-    row['errors'] = "Unknown labels: #{labels.join(', ')}"
-    rejected_contacts << row
-  end
-
-  def update_data_import_status(processed_records, rejected_records)
-    @data_import.update!(status: :completed, processed_records: processed_records, total_records: processed_records + rejected_records)
+  def contact_stats(counts)
+    {
+      'total' => counts.values.sum,
+      'imported' => counts.fetch(:new_contact, 0),
+      'updated' => counts.fetch(:update_existing, 0),
+      'kept' => counts.fetch(:skip_existing, 0),
+      'duplicate_in_file' => counts.fetch(:duplicate_in_file, 0),
+      'without_identity' => counts.fetch(:no_identity, 0),
+      'skipped' => counts.fetch(:invalid, 0)
+    }
   end
 
   def save_failed_records_csv(rejected_contacts)

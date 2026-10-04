@@ -122,6 +122,7 @@ en:
     contacts:
       import:
         failed: File is blank
+        phone_country_required: A local phone number needs a country. Add a country_code column or choose one for this import.
       export:
         success: We will notify you once contacts export file is ready to view.
       email:

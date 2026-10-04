@@ -1,4 +1,6 @@
 class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseController
+  include ContactLabelParams
+
   def create
     case normalized_type
     when 'Conversation'
@@ -40,7 +42,19 @@ class Api::V1::Accounts::BulkActionsController < Api::V1::Accounts::BaseControll
   end
 
   def check_authorization_for_contact_action
-    authorize(Contact, :destroy?) if delete_contact_action?
+    return authorize(Contact, :destroy?) if delete_contact_action?
+
+    # Every other contact write is authorized; this endpoint only checked deletion, so a label write bypassed the
+    # policy entirely — including the overlay `ContactPolicy.prepend_mod_with` installs.
+    authorize(Contact, :update?)
+    validate_bulk_labels
+  end
+
+  # Checked here rather than in the job, for the same reason the create and import paths check here: the account's
+  # catalogue is what the sidebar, the CSV export and campaign audiences read, so a tag outside it looks applied
+  # and does nothing. `add_labels` would create one for any string.
+  def validate_bulk_labels
+    validated_label_titles(params.dig(:labels, :add), Current.account.contacts.new)
   end
 
   def conversation_params

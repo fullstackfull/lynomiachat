@@ -241,6 +241,7 @@ RSpec.describe 'Api::V1::Accounts::BulkActionsController', type: :request do
       it 'enqueues Contacts::BulkActionJob with permitted params' do
         contact_one = create(:contact, account: account)
         contact_two = create(:contact, account: account)
+        %w[vip support].each { |title| create(:label, account: account, title: title) }
 
         expect do
           post "/api/v1/accounts/#{account.id}/bulk_actions",
@@ -261,6 +262,73 @@ RSpec.describe 'Api::V1::Accounts::BulkActionsController', type: :request do
         )
 
         expect(response).to have_http_status(:success)
+      end
+
+      it 'applies an addition and a removal from one payload' do
+        contact = create(:contact, account: account)
+        create(:label, account: account, title: 'vip')
+        contact.add_labels('prospect')
+
+        perform_enqueued_jobs do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Contact', ids: [contact.id], labels: { add: ['vip'], remove: ['prospect'] } }
+        end
+
+        expect(response).to have_http_status(:success)
+        expect(contact.reload.label_list).to contain_exactly('vip')
+      end
+
+      it 'refuses a label the account does not have, enqueueing nothing' do
+        contact = create(:contact, account: account)
+
+        expect do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Contact', ids: [contact.id], labels: { add: ['ghost'] } }
+        end.not_to have_enqueued_job(Contacts::BulkActionJob)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error_types']['labels']).to eq(['not_in_account'])
+      end
+
+      it 'refuses another account\'s label' do
+        contact = create(:contact, account: account)
+        create(:label, account: create(:account), title: 'elsewhere')
+
+        post "/api/v1/accounts/#{account.id}/bulk_actions",
+             headers: agent.create_new_auth_token,
+             params: { type: 'Contact', ids: [contact.id], labels: { add: ['elsewhere'] } }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'still removes a label the catalogue no longer holds, so an old tag can be cleaned up' do
+        contact = create(:contact, account: account)
+        contact.add_labels('off-catalogue')
+
+        perform_enqueued_jobs do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Contact', ids: [contact.id], labels: { remove: ['off-catalogue'] } }
+        end
+
+        expect(response).to have_http_status(:success)
+        expect(contact.reload.label_list).to be_empty
+      end
+
+      it 'never reaches another account\'s contact' do
+        other_contact = create(:contact, account: create(:account))
+        create(:label, account: account, title: 'vip')
+
+        perform_enqueued_jobs do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Contact', ids: [other_contact.id], labels: { add: ['vip'] } }
+        end
+
+        expect(response).to have_http_status(:success)
+        expect(other_contact.reload.label_list).to be_empty
       end
 
       it 'permits contact label removal params' do

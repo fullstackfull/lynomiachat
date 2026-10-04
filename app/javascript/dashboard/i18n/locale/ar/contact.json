@@ -321,7 +321,7 @@
         "UNBLOCK_ERROR_MESSAGE": "Unable to unblock contact. Please try again later.",
         "IMPORT_CONTACT": {
           "TITLE": "Import contacts",
-          "DESCRIPTION": "استيراد جهات الاتصال من خلال ملف CSV.",
+          "DESCRIPTION": "استورد جهات الاتصال من ملف CSV، أو الصق قائمة أرقام هواتف.",
           "DOWNLOAD_LABEL": "تحميل عينة csv.",
           "LABEL": "ملف CSV:",
           "CHOOSE_FILE": "Choose file",
@@ -329,7 +329,57 @@
           "CANCEL": "إلغاء",
           "IMPORT": "استيراد",
           "SUCCESS_MESSAGE": "سيتم إعلامك عبر البريد الإلكتروني عند استكمال الاستيراد.",
-          "ERROR_MESSAGE": "حدث خطأ، الرجاء المحاولة مرة أخرى"
+          "ERROR_MESSAGE": "حدث خطأ، الرجاء المحاولة مرة أخرى",
+          "SOURCES": {
+            "FILE": "ملف CSV",
+            "PASTE": "لصق أرقام"
+          },
+          "PASTE_LABEL": "أرقام الهواتف",
+          "PASTE_PLACEHOLDER": "+96551112233\n00966551112233\n+971501234567",
+          "PASTE_HINT": "رقم في كل سطر، أو مفصولة بفواصل. المسافات داخل الرقم مقبولة.",
+          "LABELS_LABEL": "تصنيفات لكل جهة اتصال في هذا الاستيراد",
+          "LABELS_PLACEHOLDER": "اختر التصنيفات",
+          "NO_LABELS": "لا توجد تصنيفات في هذا الحساب بعد",
+          "COUNTRY_LABEL": "بلد الأرقام المحلية",
+          "COUNTRY_HINT": "يُستخدم فقط للصفوف التي لا تذكر بلدها، وفقط للأرقام المكتوبة بدون رمز بلد.",
+          "COUNTRY_PLACEHOLDER": "لم يتم اختيار بلد",
+          "DUPLICATES_LABEL": "جهات الاتصال الموجودة في هذا الحساب",
+          "DUPLICATES_HINT": "تُضاف التصنيفات في الحالتين، ولا تستبدل أبداً تصنيفات جهة الاتصال الحالية.",
+          "DUPLICATES": {
+            "UPDATE": "تحديث بياناتها",
+            "KEEP": "الإبقاء على بياناتها"
+          },
+          "CONTINUE": "متابعة",
+          "BACK": "رجوع",
+          "COUNTS": {
+            "NEW_CONTACT": "جهات اتصال جديدة",
+            "UPDATE_EXISTING": "ستُحدَّث",
+            "SKIP_EXISTING": "ستبقى كما هي",
+            "DUPLICATE_IN_FILE": "صفوف مكررة",
+            "NO_IDENTITY": "لا سبيل للوصول إليها",
+            "INVALID": "ستُتجاهل"
+          },
+          "FULL_PREVIEW": "تم فحص كل الصفوف ({total}).",
+          "PARTIAL_PREVIEW": "تم فحص أول {previewed} من {total} صف. وستُستورد البقية بالطريقة نفسها.",
+          "CHOICES": "ستُقرأ الأرقام المحلية على أنها {country}. التصنيفات: {labels}.",
+          "NO_COUNTRY": "بدون بلد",
+          "NO_LABELS_CHOSEN": "لا شيء",
+          "ROW": "الصف",
+          "ROW_CONTACT": "جهة الاتصال",
+          "ROW_REASON": "ما سيحدث",
+          "REASONS": {
+            "UNKNOWN_LABELS": "تم تجاهله: تصنيفات غير موجودة في هذا الحساب ({detail})",
+            "PHONE_COUNTRY_REQUIRED": "تم تجاهله: الرقم المحلي يحتاج إلى بلد",
+            "PHONE_INVALID": "تم تجاهله: ليس رقم هاتف يمكن تخزينه",
+            "MISSING_IDENTITY": "سيتم إنشاؤها، لكن بدون إيميل أو هاتف أو معرّف لن تظهر في قائمة جهات الاتصال",
+            "DUPLICATE_IN_FILE": "نفس جهة الاتصال في الصف {detail}؛ وتُضاف تصنيفاته إليها",
+            "EXISTING_CONTACT": "موجودة في هذا الحساب",
+            "INVALID_RECORD": "تم تجاهله: {detail}"
+          },
+          "ERRORS": {
+            "NOT_A_CSV": "اختر ملف .csv.",
+            "PREVIEW_FAILED": "لم نتمكن من فحص الملف. يرجى المحاولة مرة أخرى."
+          }
         },
         "EXPORT_CONTACT": {
           "TITLE": "Export contacts",

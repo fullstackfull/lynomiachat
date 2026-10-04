@@ -32,10 +32,12 @@ const DialogStub = {
     '<div><slot name="description" /><slot /><slot name="footer" /></div>',
 };
 
+// No `@click="$emit('click')"`: the stub declares no `emits`, so Vue passes the parent's own click listener
+// through to this root element. Re-emitting it as well ran every handler twice, which made the order of the
+// calls a test makes impossible to read.
 const ButtonStub = {
   props: ['label', 'isLoading', 'disabled', 'variant', 'color'],
-  template:
-    '<button :data-label="label" :disabled="disabled" @click="$emit(\'click\')" />',
+  template: '<button :data-label="label" :disabled="disabled" />',
 };
 
 const ComboBoxStub = {
@@ -107,6 +109,15 @@ const clickLabel = async (wrapper, label) => {
   await flushPromises();
 };
 
+const chooseFile = async (wrapper, name = 'contacts.csv') => {
+  const input = wrapper.find('input[type="file"]');
+  Object.defineProperty(input.element, 'files', {
+    value: [new File(['phone_number'], name, { type: 'text/csv' })],
+    configurable: true,
+  });
+  await input.trigger('change');
+};
+
 const paste = async (wrapper, text, messages = contact) => {
   await clickLabel(
     wrapper,
@@ -145,6 +156,7 @@ describe('ContactImportDialog', () => {
 
     expect(previewImport).toHaveBeenCalledWith({
       file: null,
+      importFileBlobId: '',
       phoneNumbers: '+966551112233\n0551112299',
       labels: [],
       defaultCountry: '',
@@ -221,6 +233,104 @@ describe('ContactImportDialog', () => {
     expect(wrapper.emitted('import')[0][0]).toMatchObject({
       phoneNumbers: '+966551112233',
       duplicatePolicy: 'update',
+    });
+  });
+
+  // D3 (docs/contacts/10-phase-d.md). The file is uploaded by the preview; everything after it sends the id of
+  // the copy the server already has.
+  describe('the file the preview stored', () => {
+    beforeEach(() => {
+      previewImport.mockResolvedValue({
+        data: { ...PREVIEW, import_file_blob_id: 'signed-id' },
+      });
+    });
+
+    it('is what the import is asked for, rather than the file again', async () => {
+      const wrapper = mountDialog();
+      await chooseFile(wrapper);
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.IMPORT
+      );
+
+      expect(wrapper.emitted('import')[0][0]).toMatchObject({
+        importFileBlobId: 'signed-id',
+      });
+    });
+
+    it('is what a second look at the same file asks about', async () => {
+      const wrapper = mountDialog();
+      await chooseFile(wrapper);
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.BACK
+      );
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+
+      expect(previewImport.mock.calls[0][0].importFileBlobId).toBe('');
+      expect(previewImport.mock.calls[1][0].importFileBlobId).toBe('signed-id');
+    });
+
+    it('is forgotten when a different file is chosen', async () => {
+      const wrapper = mountDialog();
+      await chooseFile(wrapper);
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.BACK
+      );
+      await chooseFile(wrapper, 'others.csv');
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+
+      expect(previewImport.mock.calls[1][0].importFileBlobId).toBe('');
+    });
+
+    // The server rejects an id it no longer recognises. Holding on to it would leave the dialog unable to do
+    // anything until it was closed and reopened.
+    it('is forgotten when the server refuses the preview', async () => {
+      const wrapper = mountDialog();
+      await chooseFile(wrapper);
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.BACK
+      );
+      previewImport.mockRejectedValue({
+        response: { data: { message: 'is no longer available' } },
+      });
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+      expect(previewImport.mock.calls[1][0].importFileBlobId).toBe('signed-id');
+
+      previewImport.mockResolvedValue({ data: PREVIEW });
+      await clickLabel(
+        wrapper,
+        contact.CONTACTS_LAYOUT.HEADER.ACTIONS.IMPORT_CONTACT.CONTINUE
+      );
+
+      expect(previewImport.mock.calls[2][0].importFileBlobId).toBe('');
     });
   });
 

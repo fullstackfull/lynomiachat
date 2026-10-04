@@ -4,18 +4,26 @@ import ApiClient from './ApiClient';
 /**
  * The body of an import or of its preview. The two take exactly the same payload, so whatever the preview
  * classified is what the import then performs (docs/contacts/04-bulk-import.md).
- * @param {Object} payload - `{ file, phoneNumbers, labels, defaultCountry, duplicatePolicy }`.
- * @returns {FormData} The multipart body. A file and pasted numbers are alternatives; the file wins.
+ *
+ * `importFileBlobId` is what the preview answered with after storing the file: send it instead of the file and
+ * the server reads the copy it already has, so a 10MB CSV crosses the wire once however many times the options
+ * are changed and previewed again (docs/contacts/10-phase-d.md).
+ * @param {Object} payload - `{ file, importFileBlobId, phoneNumbers, labels, defaultCountry, duplicatePolicy }`.
+ * @returns {FormData} The multipart body. The stored file, an upload and pasted numbers are alternatives, in
+ * that order of preference.
  */
 export const buildImportFormData = ({
   file,
+  importFileBlobId = '',
   phoneNumbers = '',
   labels = [],
   defaultCountry = '',
   duplicatePolicy = '',
 } = {}) => {
   const formData = new FormData();
-  if (file) {
+  if (importFileBlobId) {
+    formData.append('import_file_blob_id', importFileBlobId);
+  } else if (file) {
     formData.append('import_file', file);
   } else if (phoneNumbers) {
     formData.append('phone_numbers', phoneNumbers);

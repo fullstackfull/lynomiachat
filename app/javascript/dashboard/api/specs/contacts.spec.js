@@ -220,6 +220,24 @@ describe('#buildContactParams', () => {
       expect(keys).toEqual(['import_file']);
     });
 
+    // The point of the id: the preview already stored those bytes, so sending the file again is the whole
+    // transfer repeated for nothing (docs/contacts/10-phase-d.md).
+    it('sends the stored file in place of the file itself', () => {
+      const file = new File(['a,b'], 'contacts.csv', { type: 'text/csv' });
+
+      expect(
+        entries(buildImportFormData({ file, importFileBlobId: 'signed-id' }))
+      ).toEqual([['import_file_blob_id', 'signed-id']]);
+    });
+
+    it('sends the file again once the stored copy is gone', () => {
+      const file = new File(['a,b'], 'contacts.csv', { type: 'text/csv' });
+
+      expect(
+        entries(buildImportFormData({ file, importFileBlobId: '' }))
+      ).toEqual([['import_file', file]]);
+    });
+
     it('sends each label separately, so Rails reads an array', () => {
       expect(
         entries(

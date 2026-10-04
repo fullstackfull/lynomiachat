@@ -141,9 +141,11 @@ On this machine, half the batch naming contacts that already exist:
 250 is where a synchronous click still feels like an answer. It covers a pasted list exactly, and for a file of
 thousands both 250 and 500 are a sample, so the extra latency bought very little.
 
-The file is uploaded twice for a CSV — once to preview, once to import. That is the cost of a preview that
-persists nothing; the alternative is creating the import first and starting it later, which would mean
-suppressing `DataImport`'s own `after_create_commit`.
+The file was uploaded twice for a CSV — once to preview, once to import — and more than twice if the options
+were changed and previewed again. **Phase D fixed that**: the preview stores the file once and answers with the
+id of what it stored, and everything after it sends that id instead of the bytes. The import attaches the blob
+the preview read, so there is no second copy of the file at all
+([docs/contacts/10-phase-d.md](10-phase-d.md) §D3).
 
 ---
 
@@ -242,7 +244,7 @@ reported with their reasons, the queued path unchanged, and the pre-existing imp
 |---|---|
 | Two concurrent imports can still create two contacts sharing a phone number | In-file deduplication closes the single-file case, which is the reported one. The remaining race needs a **unique index on `(phone_number, account_id)`** — a migration, which the brief says to stop before writing. Reported in [§A migration this would need](#a-migration-this-would-need) rather than written. |
 | A row with only a name is still created, and still does not appear in the contacts list | Unchanged behaviour, now *stated*: the preview classifies it `no_identity` and says it will be created but will not be listed. Changing it would change what the importer imports. |
-| The CSV is uploaded twice when a preview is used | The cost of a preview that persists nothing. See [§Preview](#preview). |
+| ~~The CSV is uploaded twice when a preview is used~~ | Fixed in phase D: the preview stores it once and the import attaches that blob ([10-phase-d.md](10-phase-d.md) §D3). |
 | The preview examines at most 250 rows | Bounded by measurement (see [§Preview](#preview)). Lifting it further means not running the model's validations on every row, which would make the preview less truthful, or running the preview in a job, which would make it not a preview. |
 | `POST /contacts/import` is not in the OpenAPI definitions | It never was — only `create` is, which is why phase B updated swagger and this phase does not. The whole import family is undocumented there. |
 | No link from the dialog to the import's status page | The import returns `head :ok` with no id. The existing Settings → Data page does list and detail legacy CSV imports, so the page is there; only the link is missing. |

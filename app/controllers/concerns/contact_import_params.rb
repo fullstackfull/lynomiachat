@@ -12,40 +12,16 @@
 module ContactImportParams
   extend ActiveSupport::Concern
   include ContactLabelParams
-
-  PASTED_FILENAME = 'pasted-numbers.csv'.freeze
-  # A .csv leaves the spreadsheet with whichever of these the operating system feels like; the extension is the
-  # reliable signal and the content type is the fallback.
-  CSV_CONTENT_TYPES = ['text/csv', 'application/csv', 'text/plain', 'application/vnd.ms-excel'].freeze
-  MAX_PASTED_NUMBERS = 10_000
-  MAX_PREVIEW_BYTES = 10.megabytes
+  include ContactImportFile
 
   private
-
-  # What to attach to the import: the uploaded file as it came, or the pasted numbers as the CSV they become.
-  def import_attachment
-    return uploaded_csv if uploaded_csv.present?
-    return if pasted_csv.blank?
-
-    { io: StringIO.new(pasted_csv), filename: PASTED_FILENAME, content_type: 'text/csv' }
-  end
-
-  # The same bytes, for the preview, which reads them and creates nothing.
-  def import_csv_content
-    return pasted_csv if uploaded_csv.blank?
-
-    if uploaded_csv.size > MAX_PREVIEW_BYTES
-      invalid_import!(:too_large, I18n.t('errors.contacts.import.too_large', size: MAX_PREVIEW_BYTES / 1.megabyte))
-    end
-
-    uploaded_csv.read
-  end
 
   # The file and the batch's choices are written together, so a job can never pick the import up with one and not
   # the other.
   def create_contact_import(attachment)
     ActiveRecord::Base.transaction do
-      import = Current.account.data_imports.create!(data_type: 'contacts', source_metadata: import_metadata)
+      import = Current.account.data_imports.create!(data_type: 'contacts', initiated_by: Current.user,
+                                                    source_metadata: import_metadata)
       import.import_file.attach(attachment)
     end
   end
@@ -54,8 +30,14 @@ module ContactImportParams
     render json: { error: I18n.t('errors.contacts.import.failed') }, status: :unprocessable_entity
   end
 
+  # The preview's own answer, plus the id of the stored file, which is how the import that follows avoids sending
+  # it again. The paste path has nothing to store: a pasted list is a few kilobytes of text.
   def contact_import_preview(content)
-    DataImport::ContactPreview.new(Current.account, raw_csv: content, options: import_metadata.symbolize_keys).perform
+    preview = DataImport::ContactPreview.new(Current.account, raw_csv: content, options: import_metadata.symbolize_keys).perform
+    signed_id = import_blob_signed_id
+    return preview if signed_id.blank?
+
+    preview.merge(import_file_blob_id: signed_id)
   end
 
   # @return [Hash] the batch's choices, as the job will read them back.
@@ -65,38 +47,6 @@ module ContactImportParams
       'default_country' => requested_default_country,
       'duplicate_policy' => requested_duplicate_policy
     }
-  end
-
-  def uploaded_csv
-    return @uploaded_csv if defined?(@uploaded_csv)
-
-    @uploaded_csv = params[:import_file].presence
-    validate_csv_upload(@uploaded_csv) if @uploaded_csv
-    @uploaded_csv
-  end
-
-  def validate_csv_upload(upload)
-    return unless upload.respond_to?(:original_filename)
-    return if File.extname(upload.original_filename).downcase == '.csv'
-    return if CSV_CONTENT_TYPES.include?(upload.content_type)
-
-    invalid_import!(:not_a_csv, I18n.t('errors.contacts.import.not_a_csv'))
-  end
-
-  def pasted_csv
-    return @pasted_csv if defined?(@pasted_csv)
-
-    text = params[:phone_numbers]
-    @pasted_csv = text.blank? ? nil : DataImport::PastedNumbers.csv(text)
-    validate_pasted_count(@pasted_csv) if @pasted_csv
-    @pasted_csv
-  end
-
-  def validate_pasted_count(csv)
-    # The header is one of the lines.
-    return if csv.count("\n") <= MAX_PASTED_NUMBERS + 1
-
-    invalid_import!(:too_many_numbers, I18n.t('errors.contacts.import.too_many_numbers', count: MAX_PASTED_NUMBERS))
   end
 
   # An explicit country, or nil. Never inferred from the account's locale, its timezone, an inbox or a business

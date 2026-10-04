@@ -215,14 +215,22 @@ class Contact < ApplicationRecord
     self.email = email_was unless email.match(Devise.email_regexp)
   end
 
+  # Blank becomes NULL for every column that is unique per account, and email is lowercased because its index
+  # is on the raw column while its validation is not case-sensitive.
+  #
+  # `(email, account_id)`, `(identifier, account_id)` and now `(phone_number, account_id)` are all UNIQUE, and
+  # PostgreSQL treats NULLs as distinct from one another — so any number of contacts may have no number, while
+  # `''` is a value and the second one collides. Only email was ever normalized ("So that the db unique
+  # constraint won't throw error when email is ''"), which is why `PATCH /contacts/:id` with `identifier: ""`
+  # could answer 500 on the second contact in an account (docs/contacts/11-phone-uniqueness.md).
+  #
+  # Before validation rather than before save: `Contact.import` runs each record's validation callbacks and
+  # skips its save callbacks, so the CSV importer only sees what happens here.
   def prepare_contact_attributes
-    prepare_email_attribute
-    prepare_jsonb_attributes
-  end
-
-  def prepare_email_attribute
-    # So that the db unique constraint won't throw error when email is ''
     self.email = email.present? ? email.downcase : nil
+    self.phone_number = nil if phone_number.blank?
+    self.identifier = nil if identifier.blank?
+    prepare_jsonb_attributes
   end
 
   def prepare_jsonb_attributes

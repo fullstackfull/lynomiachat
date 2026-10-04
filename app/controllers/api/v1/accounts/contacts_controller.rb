@@ -97,12 +97,16 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
       @contact_inbox = build_contact_inbox
       process_avatar_from_url
     end
+  rescue ActiveRecord::RecordNotUnique => e
+    reject_duplicate_contact(e)
   end
 
   def update
     @contact.assign_attributes(contact_update_params)
     @contact.save!
     process_avatar_from_url
+  rescue ActiveRecord::RecordNotUnique => e
+    reject_duplicate_contact(e)
   end
 
   def destroy
@@ -123,6 +127,21 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   end
 
   private
+
+  # Two requests writing the same contact at once both pass the `uniqueness` validations — a validation runs a
+  # SELECT, and the other row does not exist yet — and the database then refuses the loser. That has always been
+  # so for `(email, account_id)` and `(identifier, account_id)`, which have been UNIQUE since Chatwoot's first
+  # schema, and is now so for `(phone_number, account_id)` (docs/contacts/11-phone-uniqueness.md).
+  #
+  # Revalidating answers with the same 422 the loser would have got a moment later, because the winning row is
+  # visible now. If it does not, the refusal is not the one described here, and saying so is better than
+  # inventing a message for it.
+  def reject_duplicate_contact(error)
+    @contact.validate
+    raise error if @contact.errors.empty?
+
+    raise ActiveRecord::RecordInvalid, @contact
+  end
 
   # TODO: Move this to a finder class
   # The view this request describes. A bulk action over every result in a view, and the CSV export, ask

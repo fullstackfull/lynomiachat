@@ -1074,7 +1074,7 @@ export const SAML_SETTINGS = {
 export const CONTACT_IMPORT_PREVIEW = {
   total_rows: 6,
   previewed_rows: 6,
-  row_limit: 500,
+  row_limit: 250,
   duplicate_policy: 'update',
   default_country: 'SA',
   labels: ['vip'],

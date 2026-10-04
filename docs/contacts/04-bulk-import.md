@@ -123,10 +123,23 @@ It returns every classification including the zeros, so a caller never has to gu
 none or means not looked at, and it reports each row as written beside the number it would be stored as, so a
 batch country's effect is visible before it is applied.
 
-Classifying a row against the account costs a query, so the examined rows are bounded at
-`DataImport::ContactPreview::ROW_LIMIT` (500) and the response says what it did: `total_rows` is the whole file,
-`previewed_rows` is what was examined, and the dialog says "checked the first 500 of 900 rows" rather than
-reporting the rest as nothing. Row-level reasons are capped at 100.
+The examined rows are bounded at `DataImport::ContactPreview::ROW_LIMIT` (250) and the response says what it
+did: `total_rows` is the whole file, `previewed_rows` is what was examined, and the dialog says "checked the
+first 250 of 900 rows" rather than reporting the rest as nothing. Row-level reasons are capped at 100.
+
+The bound is a measurement rather than a guess. The batch's existing contacts are looked up in three queries
+(`ContactManager#preload`) rather than three per row, but the remaining cost is the model's own uniqueness
+validations, which the preview runs on purpose so that whatever `Contact` would refuse is reported as refused.
+On this machine, half the batch naming contacts that already exist:
+
+| rows | elapsed | queries |
+|---|---|---|
+| 100 | 0.62s | 217 |
+| 250 | 1.43s | 502 |
+| 500 | 2.89s | 752 |
+
+250 is where a synchronous click still feels like an answer. It covers a pasted list exactly, and for a file of
+thousands both 250 and 500 are a sample, so the extra latency bought very little.
 
 The file is uploaded twice for a CSV — once to preview, once to import. That is the cost of a preview that
 persists nothing; the alternative is creating the import first and starting it later, which would mean
@@ -230,7 +243,7 @@ reported with their reasons, the queued path unchanged, and the pre-existing imp
 | Two concurrent imports can still create two contacts sharing a phone number | In-file deduplication closes the single-file case, which is the reported one. The remaining race needs a **unique index on `(phone_number, account_id)`** — a migration, which the brief says to stop before writing. Reported in [§A migration this would need](#a-migration-this-would-need) rather than written. |
 | A row with only a name is still created, and still does not appear in the contacts list | Unchanged behaviour, now *stated*: the preview classifies it `no_identity` and says it will be created but will not be listed. Changing it would change what the importer imports. |
 | The CSV is uploaded twice when a preview is used | The cost of a preview that persists nothing. See [§Preview](#preview). |
-| The preview examines at most 500 rows | Bounded because each row costs a query. The response says what it examined; a bulk-prefetched existence index would lift it, at the cost of a second code path. |
+| The preview examines at most 250 rows | Bounded by measurement (see [§Preview](#preview)). Lifting it further means not running the model's validations on every row, which would make the preview less truthful, or running the preview in a job, which would make it not a preview. |
 | `POST /contacts/import` is not in the OpenAPI definitions | It never was — only `create` is, which is why phase B updated swagger and this phase does not. The whole import family is undocumented there. |
 | No link from the dialog to the import's status page | The import returns `head :ok` with no id. The existing Settings → Data page does list and detail legacy CSV imports, so the page is there; only the link is missing. |
 | Arabic strings were added here, not left to Crowdin | CLAUDE.md leaves non-English to Crowdin. Phase B set the precedent for Contacts because the brief requires the flow to work in Arabic, and an RTL capture of untranslated copy proves nothing. |

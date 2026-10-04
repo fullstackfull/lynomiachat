@@ -283,3 +283,68 @@ argument should be.
 | `spec/controllers/api/v1/accounts/bulk_actions_controller_spec.rb` | a label view, a search view and a filter view each resolve to the right contacts; another account is never reached; an empty description is the unfiltered list; **a missing description reaches nothing**; over the bound it refuses and enqueues nothing; and an unknown label and a non-admin delete are still refused |
 | `spec/jobs/account/contacts_export_job_spec.rb` | a search exports what it matched, and the online list exports who is online — neither exports the account |
 | `ContactsBulkActionBar.spec.js` | offered only when the page is exhausted and the view has more; not offered when the page *is* the view; emits the request; and counts the view rather than the ids once taken |
+
+---
+
+## Phase D — regression results
+
+Backend compared against the phase C head, `a86346a2`, whose own full run is recorded in
+[09-regression-results.md](09-regression-results.md).
+
+```
+phase C head   10542 examples,  6 failures, 67 pending
+phase D + E    10582 examples,  2 failures, 67 pending   (37m43s, alone on the machine)
+```
+
+**`10582 − 10542 = 40`**, which is exactly the number of examples the two phases add: 32 in phase D
+(9 bulk-action, 10 contacts-import, 8 view-scope, 2 export, 3 bulk-action-job) and 8 in phase E.
+
+The two remaining failures are both on phase C's pre-existing list and neither touches contacts:
+
+| | |
+|---|---|
+| `spec/builders/agent_builder_spec.rb:47` | `have_enqueued_mail(Devise::Mailer, :confirmation_instructions)` → *"Wrong number of arguments. Expected 2 to 3, got 0"*. Fails identically at the base. |
+| `spec/enterprise/services/voice/call_transcription_service_spec.rb:77` | `Message does not implement: reindex` — Searchkick is not configured in this environment. Fails identically at the base. |
+
+Phase C's other four were `spec/controllers/slack_uploads_controller_spec.rb`, and they pass here. They were
+never a tree problem: `SlackUploadsController#avatar_url` interpolates `ENV.fetch('FRONTEND_URL', nil)` into an
+absolute URL and `raise_on_open_redirects` rejects any host but the controller spec's `test.host`. Phase C
+proved that by setting and unsetting the variable; it was set in that shell and is not in this one.
+
+Frontend, on the phase D head (phase E changed no JavaScript):
+
+```
+481 test files, 5008 tests, 0 failures   (239.60s)
+```
+
+ESLint over `app/javascript` reports 11 errors and 52 warnings. **None are in the 35 files these phases
+touched.** Every error is in a Crowdin-managed non-English locale file — irregular whitespace in `fr` (×4),
+`lt`, `lv`, `pt_BR`, `th` (×2), and one Prettier wrap in `zh` — which CLAUDE.md puts out of bounds. The
+warnings are the repo's existing `@intlify/vue-i18n/no-dynamic-keys` pattern.
+
+### The run that was discarded, and why
+
+An earlier full run of this same tree reported **83 failures**, spread across Captain, billing, voice, flows,
+commerce and Cloudflare — nothing near contacts. It was invalid, and the cause was mine: I edited
+`app/models/contact.rb`, `app/services/contacts/sync_attributes.rb` and the contacts controller *while the suite
+was running*. `config/environments/test.rb:11` sets `cache_classes = false`, so the test environment reloads;
+the edits tripped a Zeitwerk reload that replaced every autoloaded `Class` object part-way through.
+
+The signature is unmistakable once seen — a matcher failing on two objects it prints identically:
+
+```
+expected Captain::Copilot::ReplySuggestionService::GenerationError with "Temporary model failure.",
+     got #<Captain::Copilot::ReplySuggestionService::GenerationError: Temporary model failure.>
+```
+
+Same class name, same message, no match: two different `Class` objects. Stubs, captured exception classes and
+mailer registrations all still pointed at the pre-reload ones. This is the same hazard CLAUDE.md's own note
+addresses — *"in parallel/reloading environments, prefer comparing `error.class.name` over constant class
+equality"*.
+
+Two rules for this repository, then, both learned the same way:
+
+1. Never run two `rspec` processes at once — they share `tmp/cache/bootsnap` and corrupt each other's Zeitwerk
+   loads (phase C, [09-regression-results.md](09-regression-results.md)).
+2. Never edit application code while a suite is running — the test environment reloads, and the reload
+   invalidates every constant already loaded.

@@ -218,3 +218,30 @@ produced the committed file: it writes `ActiveRecord::Schema[7.2]` where the fil
 lists differently, and adds a layer of parentheses to two partial-index predicates. None of that is this
 change's to make, so the commit carries only the two lines the migration actually changed — the version, and
 the contacts index.
+
+---
+
+## E7 — final regression
+
+One clean run, alone on the machine, with the migration applied and no file touched while it ran:
+
+```
+10582 examples, 2 failures, 67 pending   (37m43s)
+```
+
+Both failures are pre-existing and unrelated to contacts — `Devise::Mailer` argument arity in
+`agent_builder_spec`, and `Message does not implement: reindex` (Searchkick is not configured here) in
+`call_transcription_service_spec`. Both fail identically at the phase C base. The full comparison, including the
+earlier run that had to be discarded, is in [10-phase-d.md](10-phase-d.md#phase-d--regression-results).
+
+The contacts set specifically, run against the live unique index:
+
+```
+spec/models/contact_phone_uniqueness_spec.rb, contact_phone_race_spec.rb, contact_spec.rb,
+spec/controllers/api/v1/accounts/contacts_controller_spec.rb, spec/jobs/data_import_job_spec.rb,
+spec/services/data_import, spec/services/contacts
+→ 251 examples, 0 failures
+```
+
+That matters more than the total: the CSV importer, the contacts controller and the bulk-action paths all write
+phone numbers, and all of them now do so through a constraint rather than only past a validation.

@@ -1,6 +1,7 @@
 # Contacts Reliability & Bulk Workflows
 
-Phase A was discovery. Phase B fixed the proven defect. Phase C made contacts work at scale.
+Phase A was discovery. Phase B fixed the proven defect. Phase C made contacts work at scale. Phase D hardened
+what C shipped, and Phase E put a database constraint under the one identity column that never had one.
 
 ## Read this first
 
@@ -14,6 +15,8 @@ Phase A was discovery. Phase B fixed the proven defect. Phase C made contacts wo
 | [`07-label-vs-audience.md`](07-label-vs-audience.md) | **C4**: the product rule, and the part of the brief it contradicts |
 | [`08-recipes-and-presets.md`](08-recipes-and-presets.md) | **C5**: two presets added, five candidates rejected with the reason |
 | [`09-regression-results.md`](09-regression-results.md) | every gate, measured, with the backend failure set compared against the pre-phase base |
+| [`10-phase-d.md`](10-phase-d.md) | **D**: the Arabic gallery, the bulk-job refetch race, uploading an import's CSV once instead of once per look, acting on a whole view — and the whole-account export bug that last one exposed |
+| [`11-phone-uniqueness.md`](11-phone-uniqueness.md) | **E**: the uniqueness semantics read off the model and the schema, the audit, the concurrent migration and its INVALID-index recovery, and the race proved with two connections |
 | [`02-discovery-checkpoint.md`](02-discovery-checkpoint.md) | the twelve answers Phase A had to produce |
 
 ## The trace
@@ -59,7 +62,7 @@ counts above are measured from the matrix, not asserted. Nothing here rests on a
 
 ## Status
 
-Phases A, B and C are done. Nothing of CRM, SLA or AI was started.
+Phases A through E are done. Nothing of CRM, SLA or AI was started.
 
 Each phase had to correct the account the previous one gave, and each correction is proved by a test rather than
 argued:
@@ -74,3 +77,15 @@ argued:
   instead ([07](07-label-vs-audience.md)).
 - **Phase C also confirmed Phase A was right** about `Commerce::Phone.e164` being the country-aware normalizer
   that refuses to guess. C1 made it the server's single rule rather than one of several.
+- **Phase D corrected Phase C's own record.** C documented "all of the current filter's results" as too large to
+  do and listed three open questions; D answered all three and shipped it ([10](10-phase-d.md) §D4). C also
+  called the double upload "the cost of a preview that persists nothing", which it was not — the preview can
+  store the file once and hand back its id (§D3).
+- **Phase E corrected Phase C's migration design.** C wrote up a *partial* unique index for approval. A partial
+  index is unusable under a generic plan, so the right move was to make the data fit a plain one: blank becomes
+  NULL, as email always has ([11](11-phone-uniqueness.md) §E2).
+
+Two defects found in passing, neither in scope and both live on `main`: exporting contacts from a search or the
+online list emailed **every contact in the account** ([10](10-phase-d.md) §D4), and the second contact in an
+account given `identifier: ""` was refused by the database while the model skipped the validation that would
+have made it a 422 ([11](11-phone-uniqueness.md) §E1).

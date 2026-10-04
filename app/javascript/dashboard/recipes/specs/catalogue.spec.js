@@ -1,8 +1,12 @@
-// Every catalogue, against the English strings the gallery and the wizard render. A recipe whose name, description,
-// input label or requirement reason is missing would show a raw key, so it is a failure here rather than in the UI.
+// Every catalogue, against the strings the gallery and the wizard render — in **both** locales the gallery ships.
+// A recipe whose name, description, input label or requirement reason is missing would show a raw key, so it is a
+// failure here rather than in the UI, and a new entry cannot be added in English only.
 import recipes from 'dashboard/i18n/locale/en/recipes.json';
 import automation from 'dashboard/i18n/locale/en/automation.json';
 import conversation from 'dashboard/i18n/locale/en/conversation.json';
+import recipesAr from 'dashboard/i18n/locale/ar/recipes.json';
+import automationAr from 'dashboard/i18n/locale/ar/automation.json';
+import conversationAr from 'dashboard/i18n/locale/ar/conversation.json';
 import { AUDIENCE_PRESETS } from '../audiencePresets';
 import { AUTOMATION_RECIPES } from '../automationRecipes';
 import { FLOW_TEMPLATES } from '../flowTemplates';
@@ -16,38 +20,85 @@ const CATALOGUES = {
 };
 const ALL = Object.values(CATALOGUES).flat();
 
-const lookup = key =>
+const MESSAGES = {
+  en: { ...recipes, ...automation, ...conversation },
+  ar: { ...recipesAr, ...automationAr, ...conversationAr },
+};
+const LOCALES = Object.keys(MESSAGES);
+
+const lookupIn = (locale, key) =>
   key
     .split('.')
-    .reduce((node, part) => (node === undefined ? undefined : node[part]), {
-      ...recipes,
-      ...automation,
-      ...conversation,
-    });
+    .reduce(
+      (node, part) => (node === undefined ? undefined : node[part]),
+      MESSAGES[locale]
+    );
+const lookup = key => lookupIn('en', key);
 
 describe('recipe catalogues', () => {
-  it('has a name and a description string for every recipe', () => {
-    ALL.forEach(recipe => {
-      expect(lookup(recipe.name), recipe.name).toBeTruthy();
-      expect(lookup(recipe.description), recipe.description).toBeTruthy();
-    });
+  it.each(LOCALES)(
+    'has a name and a description string for every recipe (%s)',
+    locale => {
+      ALL.forEach(recipe => {
+        expect(lookupIn(locale, recipe.name), recipe.name).toBeTruthy();
+        expect(
+          lookupIn(locale, recipe.description),
+          recipe.description
+        ).toBeTruthy();
+      });
+    }
+  );
+
+  it.each(LOCALES)(
+    'has a label string for every input every recipe asks for (%s)',
+    locale => {
+      ALL.forEach(recipe =>
+        recipe.inputs.forEach(input => {
+          const key = `RECIPES.INPUTS.${input.key.toUpperCase()}`;
+          expect(lookupIn(locale, key), `${recipe.id}: ${key}`).toBeTruthy();
+        })
+      );
+    }
+  );
+
+  it.each(LOCALES)(
+    'has a reason string for every requirement any recipe declares (%s)',
+    locale => {
+      const used = new Set(ALL.flatMap(recipe => recipe.requires));
+      used.forEach(requirement => {
+        const key = `RECIPES.REQUIREMENTS.${requirement.toUpperCase()}`;
+        expect(lookupIn(locale, key), `${locale}: ${key}`).toBeTruthy();
+      });
+    }
+  );
+
+  it('keeps the two recipe locales structurally identical', () => {
+    const leaves = node =>
+      Object.entries(node)
+        .flatMap(([key, value]) =>
+          value && typeof value === 'object'
+            ? leaves(value).map(child => `${key}.${child}`)
+            : [key]
+        )
+        .sort();
+
+    expect(leaves(recipesAr)).toEqual(leaves(recipes));
   });
 
-  it('has a label string for every input every recipe asks for', () => {
-    ALL.forEach(recipe =>
-      recipe.inputs.forEach(input => {
-        const key = `RECIPES.INPUTS.${input.key.toUpperCase()}`;
-        expect(lookup(key), `${recipe.id}: ${key}`).toBeTruthy();
-      })
-    );
-  });
+  it('keeps every interpolation placeholder in the Arabic strings', () => {
+    const placeholders = text =>
+      typeof text === 'string' ? (text.match(/\{\w+\}/g) ?? []).sort() : [];
+    const walk = (english, arabic, path = '') => {
+      if (english && typeof english === 'object') {
+        Object.keys(english).forEach(key =>
+          walk(english[key], arabic?.[key], path ? `${path}.${key}` : key)
+        );
+        return;
+      }
+      expect(placeholders(arabic), path).toEqual(placeholders(english));
+    };
 
-  it('has a reason string for every requirement any recipe declares', () => {
-    const used = new Set(ALL.flatMap(recipe => recipe.requires));
-    used.forEach(requirement => {
-      const key = `RECIPES.REQUIREMENTS.${requirement.toUpperCase()}`;
-      expect(lookup(key), key).toBeTruthy();
-    });
+    walk(recipes, recipesAr);
   });
 
   it('has a label for every option the wizard can offer', () => {

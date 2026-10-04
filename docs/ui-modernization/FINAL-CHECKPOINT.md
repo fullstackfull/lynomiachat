@@ -15,7 +15,8 @@ with a measurement or a file reference, not a claim.
 |---|---|
 | Repository | `fullstackfull/lynomiachat` |
 | Branch | `claude/practical-thompson-9xfqed` |
-| HEAD | `433108e3` |
+| HEAD at the final measurement run | `433108e3` — every number below was measured against this tree |
+| Branch tip | three commits later: this document, the after-capture evidence, and the HEAD stamp. None of them touches `app/` |
 | Pre-phase base | `ad3eecff` — every "before" number in this document is measured at that commit |
 | Pushed | yes, `origin/claude/practical-thompson-9xfqed` |
 
@@ -293,7 +294,10 @@ previously sat only in the header above an empty page.
 ## 25. Navigation / IA result
 
 - The twenty settings entries are grouped into six labelled sections.
-- **129 unique route names before and after — identical sets**, verified by diffing the two.
+- **141 unique route names before and after — identical sets**, verified by diffing the two.
+  (An earlier draft said 129: the glob `**/*.routes.js` silently missed four files named plain
+  `routes.js` — calls, companies, contacts and inbox — carrying 12 further named routes. `**/*routes.js`
+  matches all 37 route files.)
 - **50 sidebar destinations before and after.**
 - The only route-file changes are removals of `headerTitle` / `icon` / `showNewButton` props that
   `SettingsWrapper` never declared and nothing consumed.
@@ -453,7 +457,7 @@ removed.
 - 0 controls lost by the gate's four-pass matcher.
 - 8 controls moved, each declared in `parity-exceptions.json` with where it went and why.
 - 0 marked REMOVED.
-- 129 route names, identical sets before and after.
+- 141 route names, identical sets before and after.
 - 50 sidebar destinations, before and after.
 - Discoverability improved rather than traded away: 1,578 controls that announced nothing now announce a
   name; six that no keyboard could reach are reachable; four capabilities that only a mouse could get to —

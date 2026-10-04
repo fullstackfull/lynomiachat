@@ -23,8 +23,9 @@ class CsatTemplateManagementService
   def create_template(template_params)
     validate_template_params!(template_params)
 
-    delete_existing_template_if_needed
-
+    # The existing template is deliberately left in place. Both providers mint a fresh versioned name
+    # (CsatTemplateNameService.generate_next_template_name), so the old one is never in the way -- deleting it
+    # only took CSAT offline for the days Meta takes to approve the replacement.
     result = create_template_via_provider(template_params)
     update_inbox_csat_config(result) if result[:success]
 
@@ -145,54 +146,6 @@ class CsatTemplateManagementService
         template_exists: false,
         error: 'Template not found'
       }
-    end
-  end
-
-  def delete_existing_template_if_needed
-    template = @inbox.csat_config&.dig('template')
-    return true if template.blank?
-
-    if @inbox.twilio_whatsapp?
-      delete_existing_twilio_template(template)
-    else
-      delete_existing_whatsapp_template(template)
-    end
-  rescue StandardError => e
-    Rails.logger.error "Error during template deletion for inbox #{@inbox.id}: #{e.message}"
-    false
-  end
-
-  def delete_existing_twilio_template(template)
-    content_sid = template['content_sid']
-    return true if content_sid.blank?
-
-    template_service = Twilio::CsatTemplateService.new(@inbox.channel)
-    deletion_result = template_service.delete_template(nil, content_sid)
-
-    if deletion_result[:success]
-      Rails.logger.info "Deleted existing Twilio CSAT template '#{content_sid}' for inbox #{@inbox.id}"
-      true
-    else
-      Rails.logger.warn "Failed to delete existing Twilio CSAT template '#{content_sid}' for inbox #{@inbox.id}: #{deletion_result[:response_body]}"
-      false
-    end
-  end
-
-  def delete_existing_whatsapp_template(template)
-    template_name = template['name']
-    return true if template_name.blank?
-
-    csat_template_service = Whatsapp::CsatTemplateService.new(@inbox.channel)
-    template_status = csat_template_service.get_template_status(template_name)
-    return true unless template_status[:success]
-
-    deletion_result = csat_template_service.delete_template(template_name)
-    if deletion_result[:success]
-      Rails.logger.info "Deleted existing CSAT template '#{template_name}' for inbox #{@inbox.id}"
-      true
-    else
-      Rails.logger.warn "Failed to delete existing CSAT template '#{template_name}' for inbox #{@inbox.id}: #{deletion_result[:response_body]}"
-      false
     end
   end
 end

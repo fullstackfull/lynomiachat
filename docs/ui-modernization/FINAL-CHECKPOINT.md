@@ -149,10 +149,12 @@ baseline, which also measured 0 — so nothing regressed and the responsive work
 ## 13. RTL result
 
 - **0 captures render in the wrong direction**, in either locale, at any width.
-- 224 class tokens named a physical side with no `ltr:`/`rtl:` variant. **148 were rewritten** to logical
-  utilities and 2 simplified; **64 were kept with a stated reason** (40 symmetric pairs, 6 centring, 4 CSS
-  triangles, and 12 where the physical side is the point — four-edge overlays, JS pixel positioning, a
-  physical reset).
+- 210 class tokens named a physical side with no `ltr:`/`rtl:` variant. **148 were rewritten** to logical
+  utilities; **62 were left physical with a stated reason** — 50 the scan itself proves direction-agnostic
+  (40 symmetric pairs, 6 centring, 4 CSS triangles) and 12 on an explicit keep list (JS pixel positioning,
+  full-viewport overlays anchored at the physical origin, a physical reset). 148 + 50 + 12 = 210. A further
+  17 hand-written `ltr:`/`rtl:` overrides were removed where a rewritten utility made them redundant; those
+  are overrides, not tokens, and are counted separately.
 - Logical direction utilities in dashboard templates: **237 → 417**.
 - Two were real Arabic defects rather than drift: the setup wizard drew its step connector on **both sides
   at once** in Arabic, and the overview metric card **removed** the gap beside its status dot in Arabic
@@ -165,9 +167,12 @@ baseline, which also measured 0 — so nothing regressed and the responsive work
 - **0 unnamed controls in all 544 captures**, against **1,578** in the pre-phase baseline. Per width:
   390px 387→0, 768px 397→0, 1024px 397→0, 1280px 397→0. Per locale: en 791→0, ar 787→0.
 - `aria-label` occurrences in dashboard templates: **70 → 215**. `focus-ring` uses: **0 → 23**.
-- **Six controls no keyboard could reach** were fixed: the Inbox view's conversation card and notification
-  card, the Captain response's conversation link, the inbox sort options, the inbox option-menu rows, and
-  the sidebar group header.
+- **Six controls no keyboard could reach** were fixed, in three shapes: three `div`s gained `tabindex="0"`
+  with Enter and Space handlers (the Inbox view's conversation card and notification card, the Captain
+  response's conversation link); two became real `<button>` elements (the inbox sort options, the inbox
+  option-menu rows); and the sidebar group header relies on native semantics instead — a real `<button>`
+  when it has no route, a native `<a href>` when it does. That last one was only half-fixed by the sweep
+  commit and completed in the follow-up, which is recorded in `parity/sweeps.md`.
 - Two shared primitives stopped announcing a constant: every `Switch` in the product said "Toggle switch",
   and every notification `CheckBox` said its storage key (`email_conversation_creation`). Both now take a
   `label`, and `SettingsToggleSection` passes its own heading down.
@@ -376,7 +381,7 @@ both lead to billing, one of which leaves the product.
 
 ## 33. Remaining deferred visual findings
 
-`findings/deferred.md`, 18 entries (one of them, the `_woot.scss` second design system, is marked
+`findings/deferred.md`, 19 entries (one of them, the `_woot.scss` second design system, is marked
 RESOLVED). The open ones:
 
 | Finding | Why it is still open |
@@ -389,9 +394,27 @@ RESOLVED). The open ones:
 | 227 hand-written `ltr:`/`rtl:` pairs | already correct; collapsing them would make 148 correctness fixes unreviewable |
 | 29 chevron triggers with no `aria-expanded` | mostly Help Center, Captain and search — no surface captures them |
 | 6 controls named only by a tooltip | same reason; listed by file and line |
+| 2 Captain illustration toggles announced as pressable that ignore Enter and Space | found by the adversarial re-check of this document, not by the sweep that should have caught them; same reason — no capture reaches them |
 | copy casing inconsistent product-wide | a copy decision for the whole product, and it retranslates at Crowdin |
 | FormKit styling in the new-hook modal | contained to that modal; the real fix is FormKit's `classes` config |
 | settings empty states on SLA, templates, integration hooks | the `emptyState` slot exists and four pages use it; these three were not reached |
+
+## 33a. How this document was checked
+
+Every load-bearing claim in it was handed to an independent agent whose instruction was to **falsify** it,
+with the commands to run. Eight claim groups; **four came back CONFIRMED and four IMPRECISE**, and all four
+corrections are applied above rather than argued with:
+
+| Claim | What was wrong |
+|---|---|
+| route names | 129 was a glob artefact — `**/*.routes.js` misses four files named plain `routes.js` (calls, companies, contacts, inbox) carrying 12 further routes. The real figure is **141**, and the sets are identical. The checker also verified the **137 route *paths*** are an identical set, which proves deep links intact more strongly than names alone |
+| files created | "no new sidebar item" was loose: the settings regrouping added **six non-navigable section headings** |
+| RTL counts | 224 was wrong arithmetic. 210 tokens found; 148 rewritten, 62 left physical. The Spinner's fourth token was double-counted across two groups, and the overlay reason was reworded |
+| keyboard fixes | the six are three shapes, not two; and `SidebarGroupHeader` was only half-fixed by the sweep commit, completed in the follow-up |
+
+The same pass found an accessibility defect this phase's own sweep had flagged and not recorded — two
+Captain illustration toggles that announce themselves as pressable and ignore Enter and Space. It is now
+in `findings/deferred.md` with the reason it is deferred rather than fixed.
 
 ## 34. Known limitations
 
@@ -411,7 +434,11 @@ RESOLVED). The open ones:
 6. **Screenshots are captured at two widths** (390, 1280) while the inventory covers four. A purely visual
    regression at 768 or 1024 would be caught by the inventory's overflow and direction checks but not by a
    picture.
-7. **ESLint reports 488 warnings** application-wide. They are pre-existing in kind and the repo's own gate
+7. **The route-name figure in an earlier draft of this document was wrong**, and was caught by an
+   adversarial re-check rather than by the phase's own tooling. Any future parity work that reuses the
+   glob `app/javascript/dashboard/**/*.routes.js` will silently miss Contacts, Companies, Calls and the
+   Inbox view — use `**/*routes.js`.
+8. **ESLint reports 488 warnings** application-wide. They are pre-existing in kind and the repo's own gate
    (exit code) is clean, but they are not zero.
 
 ## 35. Performance

@@ -53,28 +53,31 @@ Tokens were read out of `class` / `:class` attributes and `@apply` rules only, s
 
 ### What it found
 
-**224 unprefixed physical utilities.** 64 were kept after inspection, in three groups the scan can prove
-are direction-agnostic:
+**210 physical direction tokens** across `dashboard/` and `shared/` templates. 148 were rewritten, 62 were
+left physical.
+
+**148 were rewritten to the logical equivalent** — `ms`, `me`, `ps`, `pe`, `start`, `end`, `text-start`,
+`text-end`, `border-s/e`, `rounded-s/e`, `rounded-ss/se/es/ee`, `float-start/end`.
+
+**50 the scan itself proves direction-agnostic**, in three groups:
 
 | Group | Count | Why it reads the same in either direction |
 |---|---|---|
 | symmetric pair | 40 | `left-0 right-0`, `ml-0 mr-0`, `border-l-0 border-r-0` — both edges at once |
-| centering | 6 | an edge at 50% pulled back by half the element's own width |
+| centring | 6 | an edge at 50% pulled back by half the element's own width |
 | CSS triangle | 4 | `border-l-transparent` **and** `border-r-transparent` draw one arrow |
-| overlay, JS position, physical reset | 12 | see below |
 
-**148 were rewritten to the logical equivalent** — `ms`, `me`, `ps`, `pe`, `start`, `end`, `text-start`,
-`text-end`, `border-s/e`, `rounded-s/e`, `rounded-ss/se/es/ee`, `float-start/end` — and 2 were simplified.
-
-**12 were deliberately left physical**, because the left edge of the screen is the left edge of the screen
-whatever the language:
+**12 more were deliberately left physical** on an explicit keep list, because the left edge of the screen
+is the left edge of the screen whatever the language:
 
 | File | Why |
 |---|---|
 | `DraggableReorderList.vue` ×3 | the dragged element's position is written by JS in pixels from the viewport origin; a logical inset would move that origin in Arabic and break the arithmetic |
-| `IframeLoader.vue` ×3, `SearchPopover.vue`, `Modal.vue` | an overlay pinned to all four edges |
-| `Spinner.vue` ×3 | centred by half its own width |
+| `IframeLoader.vue` ×3, `SearchPopover.vue`, `Modal.vue` | a full-viewport overlay anchored at the physical origin — `top-0 left-0` plus `w-full h-full` or `w-screen h-screen` |
+| `Spinner.vue` ×3 | centred by half its own width. (Its fourth physical token, `-ml-2.5`, is counted under *centring* above. `shared/components/Spinner.vue` was not modified by this phase at all — its physical CSS is pre-existing and was read, judged agnostic, and left.) |
 | `ReplyBox.vue` | `left-[unset]` resets a physical property something else sets physically |
+
+148 + 50 + 12 = 210.
 
 ### Two real defects, not just drift
 
@@ -89,7 +92,8 @@ whatever the language:
 
 Rewriting a physical utility next to a hand-written `ltr:`/`rtl:` pair leaves the same property declared
 twice. Sixteen were redundant and the override was removed; one — `ArticleEditor.vue:215` — genuinely used
-different values per direction (`pl-4` / `pr-3`) and is now `ps-4 rtl:ps-3`.
+different values per direction (`pl-4` / `pr-3`) and is now `ps-4 rtl:ps-3`. These 17 are separate from the
+210 above: they are overrides removed, not tokens rewritten.
 
 ---
 
@@ -119,7 +123,7 @@ announced as a button and cannot be focused or activated:
 | `ResponseCard.vue:294` — the link from a Captain response to its conversation | same |
 | `InboxDisplayMenu.vue:145` — the sort options | now real `<button role="menuitemradio" :aria-checked>` elements |
 | `MenuItem.vue:12` — the inbox option menu's rows, which the parent binds `@click` to | now a real `<button>`, so the listener keeps working and Enter and Space come with it |
-| `SidebarGroupHeader.vue:42` — renders `<a href>` or `<div>` by prop | `role="button"` removed: it overrode the link's own role in one branch and described an unfocusable element in the other |
+| `SidebarGroupHeader.vue:42` — renders `<a href>` or a `<div>` by prop | a third shape: it relies on native semantics rather than `tabindex` + a key handler. `role="button"` overrode the link's own role in the `to` branch and described an unfocusable element in the other. **The sweep's removal only half-fixed it** — the no-`to` branch was left a bare `div` with a click handler. It became a real `<button>` in the follow-up commit, below |
 
 **Six disclosures that did not announce their state.** The two filter bars (audit logs, WhatsApp
 templates), the SAML attribute map, `SelectMenu`, and the inbox display and sort menus now carry

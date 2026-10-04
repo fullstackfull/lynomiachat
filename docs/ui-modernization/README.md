@@ -45,7 +45,7 @@ and nine system files. A redesign is checked against these.
 
 | | |
 |---|---|
-| [`findings/deferred.md`](findings/deferred.md) | 18 entries: visual work left, capability gaps found but not implemented, and five correctness defects found while reading |
+| [`findings/deferred.md`](findings/deferred.md) | 19 entries: visual work left, capability gaps found but not implemented, and five correctness defects found while reading |
 | [`findings/unnamed-controls-remaining.md`](findings/unnamed-controls-remaining.md) | the controls still named only by a tooltip, and why naming them has to wait for a capture |
 | [`findings/command-failures.md`](findings/command-failures.md) | every command in the session that did not exit 0, classified |
 

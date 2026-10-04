@@ -285,3 +285,19 @@ rest — a chevron button that opens something without announcing whether it is 
 
 Most are in Help Center, Captain and the search module, which no surface captures. Adding the attribute
 without a capture to check it against is how a wrong `aria-expanded` ships — it needs those surfaces first.
+
+## Two Captain illustration toggles are announced as pressable and do nothing on a key
+
+`components-next/captain/AnimatingImg/Guardrails.vue:12` and
+`components-next/captain/AnimatingImg/ResponseGuidelines.vue:12` are each a
+`<div role="button" tabindex="0" :aria-pressed @click>` with **no keydown handler**. A keyboard can focus
+them and a screen reader announces a pressable button, but Enter and Space do nothing — which is worse
+than an unfocusable div, because the control advertises an action it will not perform.
+
+The accessibility sweep's scan flagged them and the sweep did not fix them: they are illustration toggles
+in Captain, on a surface no capture reaches, so adding `@keydown.enter`/`@keydown.space` is a change the
+gate cannot check. They are the same class of thing as the 29 missing `aria-expanded` and the six
+tooltip-only names — fixable in one line each, waiting on the surfaces that would prove it.
+
+Found by an adversarial re-check of the final checkpoint's own claims, not by the sweep that should have
+caught them.

@@ -365,7 +365,23 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response).to have_http_status(:unauthorized)
       end
 
-      it 'allows access when agent is assigned to inbox' do
+      # P0. Creating replaces the inbox's live template AT META, deleting the approved one first, so it is inbox
+      # administration — gated like `InboxPolicy#update?` and `#sync_templates?`, and like the dashboard page
+      # that offers it. Inbox membership alone is no longer enough; `show` is still open to members.
+      it 'refuses an assigned agent, because creating replaces the live template at Meta' do
+        allow(mock_service).to receive(:get_template_status).and_return({ success: false })
+        allow(mock_service).to receive(:create_template)
+
+        post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
+             headers: agent.create_new_auth_token,
+             params: valid_template_params,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(mock_service).not_to have_received(:create_template)
+      end
+
+      it 'allows an administrator' do
         allow(mock_service).to receive(:get_template_status).and_return({ success: false })
         allow(mock_service).to receive(:create_template).and_return({
                                                                       success: true,
@@ -374,7 +390,7 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
                                                                     })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
-             headers: agent.create_new_auth_token,
+             headers: admin.create_new_auth_token,
              params: valid_template_params,
              as: :json
 
@@ -456,14 +472,27 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response).to have_http_status(:unauthorized)
       end
 
-      it 'allows access when agent is assigned to inbox' do
+      # P0. `analyze` spends account LLM budget, so it is gated with `create`.
+      it 'refuses an assigned agent, because analysis spends account LLM budget' do
+        allow(analysis_service).to receive(:perform)
+
+        post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template/analyze",
+             headers: agent.create_new_auth_token,
+             params: valid_template_params,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(analysis_service).not_to have_received(:perform)
+      end
+
+      it 'allows an administrator' do
         allow(analysis_service).to receive(:perform).and_return({
                                                                   classification: 'LIKELY_UTILITY',
                                                                   optimized_message: 'Your support request has been closed.'
                                                                 })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template/analyze",
-             headers: agent.create_new_auth_token,
+             headers: admin.create_new_auth_token,
              params: valid_template_params,
              as: :json
 

@@ -1,4 +1,15 @@
 class Api::V1::Accounts::InboxCsatTemplatesController < Api::V1::Accounts::BaseController
+  # `create` and `analyze` are inbox administration and are gated like the rest of it. `fetch_inbox` establishes
+  # inbox MEMBERSHIP only (`authorize @inbox, :show?`), so without this any agent on a WhatsApp inbox could
+  # replace that inbox's live CSAT template at Meta — `CsatTemplateManagementService#create_template` deletes the
+  # approved one first, taking surveys offline until Meta re-approves — and could spend account LLM budget
+  # through `#analyze`. Every sibling action on an inbox's configuration already requires an administrator
+  # (`InboxPolicy#update?`, `#sync_templates?`, `#whatsapp_business_management_token?`), and the dashboard only
+  # ever offers this page to one (`inbox.routes.js` meta.permissions: ['administrator']).
+  #
+  # `show` is left to inbox members: it only reads the template's status, and that is what upstream's specs
+  # assert. Before `fetch_inbox`, so a non-admin gets 401 rather than learning from a 404 whether an inbox exists.
+  before_action :check_admin_authorization?, only: [:create, :analyze]
   before_action :fetch_inbox
   before_action :validate_whatsapp_channel
   before_action :validate_captain_enabled, only: [:analyze]

@@ -72,4 +72,32 @@ PLAYWRIGHT_MODULE=/opt/node-tools/node_modules/playwright \
   node docs/ui-modernization/harness/journeys.mjs /tmp/journeys-b
 ```
 
-`before-capture.log` and `after-capture.log` here are the two runs' own output.
+The two runs' own output is quoted above rather than kept as files: `*.log` is gitignored
+(`.gitignore:24`), so a committed copy was never actually there. Phase C's numbers are in
+[`../09-regression-results.md`](../09-regression-results.md) the same way.
+
+---
+
+## Phase C
+
+Base `92b11a20`, head `a86346a2`. Full numbers and the reading of them in
+[`../09-regression-results.md`](../09-regression-results.md).
+
+```
+base   surfaces: 68  captures: 544  controls: 5678
+head   surfaces: 69  captures: 552  controls: 5758
+       both sides: unnamed 0  horizontal overflow 0  wrong direction 0  page errors 0
+
+parity compared 544 captures
+       lost 0   moved-with-reason 0   added 0   newly-named 0   regressions 0
+       8 notes, all `contacts-header-label|{en,ar}|{390,768,1024,1280}`: new capture, no baseline
+```
+
+The 80 extra controls are one new surface — the contacts header on a **label** page rather than on an audience —
+added so the campaign action a label page offers is visible to a capture. Every one of the 544 shared captures is
+identical.
+
+```
+journeys: 48  checks: 312  failed: 0
+J12 · 48 checks, all passing, in all four contexts — the import dialog walked to its preview step
+```

@@ -169,6 +169,34 @@
       "outcome": 15
     },
     {
+      "id": "J12",
+      "title": "Walk the contact import dialog to its preview",
+      "context": "en-desktop",
+      "surface": "contacts-header",
+      "outcome": 6
+    },
+    {
+      "id": "J12",
+      "title": "Walk the contact import dialog to its preview",
+      "context": "ar-desktop",
+      "surface": "contacts-header",
+      "outcome": 6
+    },
+    {
+      "id": "J12",
+      "title": "Walk the contact import dialog to its preview",
+      "context": "en-390px",
+      "surface": "contacts-header",
+      "outcome": 6
+    },
+    {
+      "id": "J12",
+      "title": "Walk the contact import dialog to its preview",
+      "context": "ar-390px",
+      "surface": "contacts-header",
+      "outcome": 6
+    },
+    {
       "id": "J6",
       "title": "Start a WhatsApp campaign",
       "context": "en-desktop",
@@ -1199,6 +1227,294 @@
       "detail": "0px"
     },
     {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the header menu offers importing",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the dialog offers both sources",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: choosing paste reveals the number field",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the dialog offers to check the list first",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the preview shows every count, zeros included",
+      "pass": true,
+      "detail": "6 tiles"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the preview explains only the rows needing a decision",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the preview states the country local numbers will be read as",
+      "pass": true,
+      "detail": "VIP buyers Message Import contacts Import contacts from a CSV file, or paste a list of phone numbers. Download a sample csv. New contacts 2 To update 1 Left as they are 0"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: the preview offers the import itself",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: every dialog control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J12 (en-desktop)",
+      "name": "J12: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the header menu offers importing",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the dialog offers both sources",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: choosing paste reveals the number field",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the dialog offers to check the list first",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the preview shows every count, zeros included",
+      "pass": true,
+      "detail": "6 tiles"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the preview explains only the rows needing a decision",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the preview states the country local numbers will be read as",
+      "pass": true,
+      "detail": "VIP buyers رسالة Import contacts استورد جهات الاتصال من ملف CSV، أو الصق قائمة أرقام هواتف. تحميل عينة csv. جهات اتصال جديدة 2 ستُحدَّث 1 ستبقى كما هي 0 صفوف مكررة 1 لا س"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: the preview offers the import itself",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: every dialog control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J12 (ar-desktop)",
+      "name": "J12: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the header menu offers importing",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the dialog offers both sources",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: choosing paste reveals the number field",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the dialog offers to check the list first",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the preview shows every count, zeros included",
+      "pass": true,
+      "detail": "6 tiles"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the preview explains only the rows needing a decision",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the preview states the country local numbers will be read as",
+      "pass": true,
+      "detail": "VIP buyers Message Import contacts Import contacts from a CSV file, or paste a list of phone numbers. Download a sample csv. New contacts 2 To update 1 Left as they are 0"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: the preview offers the import itself",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: every dialog control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: direction is ltr",
+      "pass": true,
+      "detail": "ltr"
+    },
+    {
+      "run": "J12 (en-390px)",
+      "name": "J12: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the header menu offers importing",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the dialog offers both sources",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: choosing paste reveals the number field",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the dialog offers to check the list first",
+      "pass": true,
+      "detail": "1"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the preview shows every count, zeros included",
+      "pass": true,
+      "detail": "6 tiles"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the preview explains only the rows needing a decision",
+      "pass": true,
+      "detail": "3 rows"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the preview states the country local numbers will be read as",
+      "pass": true,
+      "detail": "VIP buyers رسالة Import contacts استورد جهات الاتصال من ملف CSV، أو الصق قائمة أرقام هواتف. تحميل عينة csv. جهات اتصال جديدة 2 ستُحدَّث 1 ستبقى كما هي 0 صفوف مكررة 1 لا س"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: the preview offers the import itself",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: every dialog control announces a name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: no page error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: direction is rtl",
+      "pass": true,
+      "detail": "rtl"
+    },
+    {
+      "run": "J12 (ar-390px)",
+      "name": "J12: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
       "run": "J6 (en-desktop)",
       "name": "J6: the page offers its primary action",
       "pass": true,
@@ -1908,6 +2224,8 @@
     "J5-ar-desktop.png",
     "J11-en-desktop.png",
     "J11-ar-desktop.png",
+    "J12-en-desktop.png",
+    "J12-ar-desktop.png",
     "J6-en-desktop.png",
     "J6-ar-desktop.png",
     "J7-en-desktop.png",

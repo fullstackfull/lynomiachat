@@ -15,7 +15,7 @@
 # write, so ConfigLoader stays the single authoritative writer. Premium FEATURE gating
 # (reconcile_premium_features / premium_features.yml) is untouched.
 - name: INSTALLATION_NAME
-  value: 'Lynomia chat'
+  value: 'Lynomia Chat'
 - name: LOGO_THUMBNAIL
   value: '/brand-assets/logo_thumbnail.svg'
 - name: LOGO
@@ -27,7 +27,7 @@
 - name: WIDGET_BRAND_URL
   value: 'https://www.chat.lynomia.com'
 - name: BRAND_NAME
-  value: 'Lynomia chat'
+  value: 'Lynomia Chat'
 - name: TERMS_URL
   value: 'https://chat.lynomia.com/#terms'
 - name: PRIVACY_URL

@@ -294,11 +294,14 @@ retained, so such a test would be false by construction.
 
 ## 9. Unresolved — for the brand owner, not code
 
-1. **Casing.** `INSTALLATION_NAME` is `'Lynomia chat'` (lower-case c). The page title and PWA name previously
-   said `'Lynomia Chat'`. Now that both read configuration, the rendered name follows the config value, so the
-   title bar changes from "Lynomia Chat" to "Lynomia chat". If title case is wanted, set `INSTALLATION_NAME`
-   to `'Lynomia Chat'` — one row, one place, which is the point of §2. The configured value was not changed
-   here because choosing the brand's capitalization is not an engineering decision.
+1. ~~**Casing.**~~ **Resolved in P2.** `INSTALLATION_NAME` and `BRAND_NAME` are now `'Lynomia Chat'` in
+   `config/installation_config.yml`, mirrored in the enterprise overlay so the plan reconcile stays a
+   non-writer. Note the reach of that change, verified by running `ConfigLoader` both ways: a **fresh**
+   installation seeds `"Lynomia Chat"`, but an **existing** installation whose row already holds
+   `"Lynomia chat"` keeps it, because `ConfigLoader` defaults to `reconcile_only_new: true` and both callers
+   pass no arguments. On a running installation the row is the source of truth and an operator updates it in
+   Super Admin → Installation Configs. No data migration was written for this: a second writer of branding is
+   exactly what §1 removed.
 2. **`MAILER_SENDER_EMAIL`** defaults to `Chatwoot <accounts@chatwoot.com>` in five places. In production the
    operator sets this ENV variable; if it is unset, outbound mail carries the upstream brand in the `From:`
    header. This is already configuration, so it is an operator action, not a code change.

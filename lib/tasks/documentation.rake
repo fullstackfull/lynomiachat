@@ -7,6 +7,12 @@ namespace :documentation do
     end
   end
 
+  desc 'Seed the Lynomia changelog from custom/db/changelog'
+  task changelog: :environment do
+    result = Documentation::ContentSeeder.changelog.perform!
+    puts "releases: #{result.created} created, #{result.updated} updated, #{result.unchanged} unchanged"
+  end
+
   desc 'Seed the Lynomia documentation corpus from custom/db/documentation'
   task content: :environment do
     result = Documentation::ContentSeeder.new.perform!

@@ -7,15 +7,21 @@
 # An operator's own edits in Super Admin are not protected from a re-run: the files are the source, and a change that
 # should survive belongs in a file. The seeder says what it changed so that is visible rather than silent.
 class Documentation::ContentSeeder
-  ROOT = Rails.root.join('custom/db/documentation')
+  DOCS_ROOT = Rails.root.join('custom/db/documentation')
+  CHANGELOG_ROOT = Rails.root.join('custom/db/changelog')
   FRONT_MATTER = /\A---\s*\n(.*?)\n---\s*\n/m
 
   Result = Struct.new(:created, :updated, :unchanged, :locales, keyword_init: true)
 
-  def initialize(portal: nil, author: nil, publish: true)
+  def self.changelog
+    new(portal: Documentation::Library.changelog_portal!, root: CHANGELOG_ROOT)
+  end
+
+  def initialize(portal: nil, author: nil, publish: true, root: DOCS_ROOT)
     @portal = portal || Documentation::Library.docs_portal!
     @author = author || SuperAdmin.first || raise(ArgumentError, 'A super admin is required to author documentation')
     @publish = publish
+    @root = root
     @result = Result.new(created: 0, updated: 0, unchanged: 0, locales: [])
   end
 
@@ -26,10 +32,10 @@ class Documentation::ContentSeeder
 
   private
 
-  attr_reader :portal, :author
+  attr_reader :portal, :author, :root
 
   def manifest
-    @manifest ||= YAML.load_file(ROOT.join('manifest.yml'))
+    @manifest ||= YAML.load_file(root.join('manifest.yml'))
   end
 
   # The default locale is seeded first, because every other locale links its translation to that article.
@@ -43,7 +49,7 @@ class Documentation::ContentSeeder
       next unless section[locale]
 
       category = upsert_category(section, locale)
-      Dir.glob(ROOT.join(locale, section['slug'], '*.md')).each do |path|
+      Dir.glob(root.join(locale, section['slug'], '*.md')).each do |path|
         upsert_article(path, category, locale)
       end
     end
@@ -101,7 +107,9 @@ class Documentation::ContentSeeder
     { 'doc_key' => key,
       'title' => front_matter['seo_title'].presence || front_matter.fetch('title'),
       'description' => front_matter['seo_description'].presence || front_matter['description'],
-      'tags' => Array(front_matter['tags']) }.compact
+      'tags' => Array(front_matter['tags']),
+      'version' => front_matter['version'].presence,
+      'release_date' => front_matter['release_date'].presence&.to_s }.compact
   end
 
   def count(was_new, changed)

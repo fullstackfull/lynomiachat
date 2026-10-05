@@ -136,7 +136,27 @@ answering with output rather than with trust.
 
 ---
 
-## 5. What was not run, and why
+## 5. SEO, as the page actually renders it
+
+Checked by reading the rendered article rather than the partial:
+
+| | |
+|---|---|
+| `<title>` | `WhatsApp templates \| Lynomia Chat Documentation` |
+| `<link rel="canonical">` | `…/hc/lynomia-docs/articles/whatsapp-templates`, and `…-ar` on the Arabic article |
+| `<meta name="title">`, `og:title` | the article's `meta['title']` |
+| `<meta name="description">`, `og:description` | the article's `meta['description']`, HTML-escaped |
+| `<meta name="tags">` | the article's `meta['tags']`, comma-joined |
+| `sitemap.xml` | 86 `<url>` entries, each with `lastmod` |
+| `/robots.txt` | `Disallow: /widget` only — the documentation is indexable |
+
+The canonical link was **absent** before this phase and is the one thing added here. Everything else is the existing
+portal SEO partial, fed from the article's `meta`. `og:image` is set by the controller and renders nothing because no
+image service is configured, which is upstream behaviour and was left alone.
+
+---
+
+## 6. What was not run, and why
 
 - **Real-provider verification of anything.** This phase adds no provider integration.
 - **A load test on documentation search.** Public search is portal-scoped and uses the existing pg_search index; the

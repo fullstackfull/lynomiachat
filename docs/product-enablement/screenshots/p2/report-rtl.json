@@ -33,6 +33,26 @@
     "detail": "no horizontal scroll"
   },
   {
+    "name": "the audiences page fits 1024px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the audiences page fits 1280px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the card menu has an Arabic accessible name",
+    "ok": true,
+    "detail": "إجراءات أخرى لـ Customers in Kuwait"
+  },
+  {
+    "name": "the card menu items are Arabic, not an English fallback",
+    "ok": true,
+    "detail": "campaign item translated"
+  },
+  {
     "name": "the starter gallery reads in Arabic",
     "ok": true
   },

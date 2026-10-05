@@ -36,7 +36,58 @@ class Whatsapp::Diagnosis::MetaChecks
     token_state(client, token)
     permissions(client)
     phone_number(client, config[:phone_number_id])
+    callback_configuration(channel, client, config[:phone_number_id])
     waba(client, config[:business_account_id])
+  end
+
+  # P5 Part D, and the suspect a dashboard check cannot see.
+  #
+  # Whatsapp::WebhookSetupService sets a PHONE-LEVEL callback override (FacebookApiClient
+  # #override_phone_number_callback), and Meta gives that override precedence over the app's own webhook
+  # configuration. So a number can be overridden to a URL that is stale — an old domain, a dev tunnel, a
+  # FRONTEND_URL that was wrong when the inbox was created — while the Meta App dashboard still shows a correct
+  # callback and looks fine. The override is only visible by reading it back.
+  #
+  # Whatsapp::ManualWebhookStatusService already performs exactly this comparison, so it is reused for the verdict;
+  # what it does not do is say what Meta actually holds when the answer is no, which is the part an operator needs.
+  def callback_configuration(channel, client, phone_number_id)
+    status = report.read('callback configuration (Whatsapp::ManualWebhookStatusService)') do
+      Whatsapp::ManualWebhookStatusService.new(channel).perform
+    end
+    return if status.nil?
+
+    report.say "  expected callback_url: #{status[:callback_url]}"
+    report.check('the callback Meta holds for this number matches this installation', status[:callback_configured],
+                 status[:callback_configured].inspect,
+                 note: 'Meta is delivering to a different URL than this installation serves. A phone-level override ' \
+                       'takes precedence over the app-level webhook configuration, so the Meta App dashboard can ' \
+                       'look correct while the number is overridden elsewhere.')
+    report.check('the WABA reports at least one subscribed app', status[:subscription_verified],
+                 status[:subscription_verified].inspect, note: NO_SUBSCRIPTION_NOTE)
+    report_override(client, phone_number_id) unless status[:callback_configured]
+  end
+
+  # Only on a mismatch, and only the host: the full override URI can carry a token in its query string.
+  def report_override(client, phone_number_id)
+    data = report.read("what Meta actually holds (/#{phone_number_id}?fields=webhook_configuration)") do
+      client.fetch_phone_number(phone_number_id, fields: 'webhook_configuration')
+    end
+    return if data.nil?
+
+    configuration = data.fetch('webhook_configuration', {})
+    %w[override_callback_uri phone_number whatsapp_business_account application].each do |key|
+      next if configuration[key].blank?
+
+      report.say "    #{key}: #{host_of(configuration[key])}"
+    end
+    report.say '    (hosts only — an override URI can carry a verify token in its query string)'
+  end
+
+  def host_of(value)
+    uri = URI.parse(value.to_s)
+    [uri.scheme, uri.host, uri.port, uri.path].compact.join(' ')
+  rescue URI::InvalidURIError
+    '<unparseable>'
   end
 
   private

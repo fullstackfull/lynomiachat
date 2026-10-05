@@ -6,20 +6,28 @@ import { vOnClickOutside } from '@vueuse/components';
 
 import { useAlert } from 'dashboard/composables';
 import { useMapGetter, useStore } from 'dashboard/composables/store';
-import { useAbortableRequest } from 'dashboard/composables/useAbortableRequest';
+import {
+  isAbortError,
+  useAbortableRequest,
+} from 'dashboard/composables/useAbortableRequest';
 import { INBOX_TYPES, TWILIO_CHANNEL_MEDIUM } from 'dashboard/helper/inbox';
 import InboxesAPI from 'dashboard/api/inboxes';
+import WhatsAppTemplatesAPI from 'dashboard/api/whatsappTemplates';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SettingsLayout from '../SettingsLayout.vue';
+import TemplateBuilderDialog from './TemplateBuilderDialog.vue';
 import TemplateCard from './TemplateCard.vue';
 import TemplatePreviewDrawer from './TemplatePreviewDrawer.vue';
 import {
   formatTemplateDate,
   formatTemplateLanguage,
   groupTemplates,
+  templateRowFromRecord,
+  templateStatusLabelKey,
   templateTypeKey,
 } from './templateUtils';
 
@@ -36,17 +44,34 @@ const store = useStore();
 const { t } = useI18n();
 
 const inboxes = useMapGetter('inboxes/getInboxes');
-const templates = ref([]);
+// Managed templates come from the one shared query, with their state and what may be done to them. Twilio's content
+// templates keep their own per-inbox path, unchanged: the manager is WhatsApp's, and dropping Twilio from this page
+// would be a regression.
+const managedTemplates = ref([]);
+const twilioTemplates = ref([]);
+const wabaContexts = ref([]);
 const searchQuery = ref('');
 const selectedInboxId = ref('all');
 const selectedLanguage = ref('all');
 const selectedType = ref('all');
+const selectedStatus = ref('all');
 const selectedTemplate = ref(null);
+const editingTemplate = ref(null);
+const pendingAction = ref(null);
 const openFilterMenu = ref(null);
 const previewPanelRef = ref(null);
+const builderRef = ref(null);
+const confirmRef = ref(null);
 const templateRecordsByInboxId = new Map();
 const lastSyncAttemptsByInboxId = ref({});
 const isSyncing = ref(false);
+const isActing = ref(false);
+
+const templates = computed(() =>
+  [...managedTemplates.value, ...twilioTemplates.value].sort((first, second) =>
+    String(first.name).localeCompare(String(second.name))
+  )
+);
 const {
   run: runTemplateRequest,
   abort: abortTemplateRequest,
@@ -56,10 +81,12 @@ const {
 const hasTemplates = computed(() => templates.value.length > 0);
 
 const lastSyncAttemptAt = computed(() => {
-  const timestamps = Object.values(lastSyncAttemptsByInboxId.value)
-    .filter(Boolean)
-    .map(value => new Date(value).getTime())
-    .filter(Number.isFinite);
+  const timestamps = [
+    ...Object.values(lastSyncAttemptsByInboxId.value).map(value =>
+      new Date(value).getTime()
+    ),
+    ...wabaContexts.value.map(waba => (waba.last_synced_at || 0) * 1000),
+  ].filter(value => Number.isFinite(value) && value > 0);
 
   return timestamps.length ? new Date(Math.max(...timestamps)) : null;
 });
@@ -83,6 +110,27 @@ const whatsappInboxes = computed(() =>
       (inbox.channel_type === INBOX_TYPES.TWILIO &&
         inbox.medium === TWILIO_CHANNEL_MEDIUM.WHATSAPP)
   )
+);
+
+const twilioWhatsappInboxes = computed(() =>
+  whatsappInboxes.value.filter(
+    inbox => inbox.channel_type === INBOX_TYPES.TWILIO
+  )
+);
+
+// A template is created in a WhatsApp Business Account, which is a property of a WhatsApp Cloud inbox.
+const builderInboxOptions = computed(() =>
+  inboxes.value
+    .filter(
+      inbox =>
+        inbox.channel_type === INBOX_TYPES.WHATSAPP &&
+        inbox.provider_config?.business_account_id
+    )
+    .map(inbox => ({ value: inbox.id, label: inbox.name }))
+);
+
+const inboxesById = computed(() =>
+  Object.fromEntries(inboxes.value.map(inbox => [inbox.id, inbox]))
 );
 
 const inboxOptions = computed(() => [
@@ -123,8 +171,30 @@ const typeOptions = computed(() => [
     .sort((first, second) => first.label.localeCompare(second.label)),
 ]);
 
+const statusOptions = computed(() => [
+  {
+    value: 'all',
+    label: t('WHATSAPP_TEMPLATE_MGMT.FILTERS.ALL_STATUSES'),
+  },
+  ...[...new Set(templates.value.map(template => template.status))]
+    .filter(Boolean)
+    .map(status => ({
+      value: status,
+      label: templateStatusLabelKey(status)
+        ? t(templateStatusLabelKey(status))
+        : status,
+    }))
+    .sort((first, second) => first.label.localeCompare(second.label)),
+]);
+
 const filterMenus = computed(() =>
   [
+    {
+      key: 'status',
+      icon: 'i-lucide-circle-dot',
+      options: statusOptions.value,
+      active: selectedStatus.value,
+    },
     {
       key: 'inbox',
       icon: 'i-lucide-inbox',
@@ -175,6 +245,7 @@ const handleFilterAction = ({ action, value }) => {
   closeFilterMenu();
   if (action === 'inbox') selectedInboxId.value = value;
   else if (action === 'language') selectedLanguage.value = value;
+  else if (action === 'status') selectedStatus.value = value;
   else selectedType.value = value;
 };
 
@@ -196,6 +267,12 @@ const filteredTemplates = computed(() => {
   if (selectedType.value !== 'all') {
     records = records.filter(
       template => templateTypeKey(template) === selectedType.value
+    );
+  }
+
+  if (selectedStatus.value !== 'all') {
+    records = records.filter(
+      template => template.status === selectedStatus.value
     );
   }
 
@@ -224,7 +301,13 @@ const fetchTemplates = async () => {
       if (!didFetchInboxes) throw new Error();
       if (signal.aborted) return;
 
-      const inboxesToFetch = [...whatsappInboxes.value];
+      const inboxesToFetch = [...twilioWhatsappInboxes.value];
+      // Started alongside the Twilio fetches and awaited below. The catch is what keeps an aborted request from
+      // becoming an unhandled rejection when this runner returns early.
+      const managed = WhatsAppTemplatesAPI.get({ signal }).catch(error => {
+        if (isAbortError(error)) return { data: {} };
+        throw error;
+      });
       const responses = await Promise.allSettled(
         inboxesToFetch.map(async inbox => {
           const { data } = await InboxesAPI.getMessageTemplates(
@@ -270,9 +353,16 @@ const fetchTemplates = async () => {
         nextLastSyncAttempts[value.inboxId] = value.lastSyncAttemptAt;
       });
       lastSyncAttemptsByInboxId.value = nextLastSyncAttempts;
-      templates.value = groupTemplates(
+      twilioTemplates.value = groupTemplates(
         [...templateRecordsByInboxId.values()].flat()
       );
+
+      const { data } = await managed;
+      if (signal.aborted || !data.payload) return;
+      managedTemplates.value = data.payload.map(record =>
+        templateRowFromRecord(record, inboxesById.value)
+      );
+      wabaContexts.value = data.meta?.whatsapp_business_accounts || [];
 
       if (
         !inboxOptions.value.some(({ value }) => value === selectedInboxId.value)
@@ -286,6 +376,10 @@ const fetchTemplates = async () => {
         selectedLanguage.value = 'all';
       if (!typeOptions.value.some(({ value }) => value === selectedType.value))
         selectedType.value = 'all';
+      if (
+        !statusOptions.value.some(({ value }) => value === selectedStatus.value)
+      )
+        selectedStatus.value = 'all';
 
       if (responses.some(response => response.status === 'rejected')) {
         const errorMessage = successfulResponses.length
@@ -297,6 +391,104 @@ const fetchTemplates = async () => {
   } catch {
     useAlert(t('WHATSAPP_TEMPLATE_MGMT.FETCH_ERROR'));
   }
+};
+
+const CONFIRMATIONS = {
+  submit: {
+    title: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.SUBMIT.TITLE',
+    description: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.SUBMIT.DESCRIPTION',
+    confirm: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.SUBMIT.CONFIRM',
+  },
+  delete: {
+    title: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.DELETE.TITLE',
+    description: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.DELETE.DESCRIPTION_REMOTE',
+    descriptionDraft: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.DELETE.DESCRIPTION_DRAFT',
+    confirm: 'WHATSAPP_TEMPLATE_MGMT.CONFIRM.DELETE.CONFIRM',
+  },
+};
+
+const confirmation = computed(() => {
+  const action = pendingAction.value;
+  if (!action) return null;
+
+  const copy = CONFIRMATIONS[action.name];
+  const isDraft = action.template.state === 'draft';
+
+  return {
+    title: t(copy.title, { name: action.template.name }),
+    description: t(
+      isDraft && copy.descriptionDraft
+        ? copy.descriptionDraft
+        : copy.description
+    ),
+    confirmLabel: t(copy.confirm),
+  };
+});
+
+const alertError = error => {
+  const code = error?.response?.data?.error?.code;
+  useAlert(
+    code
+      ? t(`WHATSAPP_TEMPLATE_MGMT.ERRORS.${code}`)
+      : t('WHATSAPP_TEMPLATE_MGMT.ERRORS.GENERIC')
+  );
+};
+
+const openBuilder = template => {
+  editingTemplate.value = template || null;
+  builderRef.value?.open();
+};
+
+const duplicateTemplate = async template => {
+  try {
+    const { data } = await WhatsAppTemplatesAPI.duplicate(template.id);
+    useAlert(t('WHATSAPP_TEMPLATE_MGMT.DUPLICATED', { name: template.name }));
+    await fetchTemplates();
+    openBuilder(
+      managedTemplates.value.find(record => record.id === data.id) || null
+    );
+  } catch (error) {
+    alertError(error);
+  }
+};
+
+const runPendingAction = async () => {
+  const action = pendingAction.value;
+  if (!action || isActing.value) return;
+
+  isActing.value = true;
+  try {
+    if (action.name === 'submit') {
+      await WhatsAppTemplatesAPI.submit(action.template.id);
+      useAlert(t('WHATSAPP_TEMPLATE_MGMT.SUBMITTED'));
+    } else {
+      await WhatsAppTemplatesAPI.delete(action.template.id);
+      useAlert(t('WHATSAPP_TEMPLATE_MGMT.DELETED'));
+      previewPanelRef.value?.close();
+    }
+    await fetchTemplates();
+  } catch (error) {
+    alertError(error);
+  } finally {
+    isActing.value = false;
+    pendingAction.value = null;
+  }
+};
+
+const handleTemplateAction = (action, template) => {
+  if (action === 'edit') return openBuilder(template);
+  if (action === 'duplicate') return duplicateTemplate(template);
+
+  pendingAction.value = { name: action, template };
+  return confirmRef.value?.open();
+};
+
+const handleBuilderSaved = async () => {
+  await fetchTemplates();
+  const refreshed = managedTemplates.value.find(
+    record => record.id === selectedTemplate.value?.id
+  );
+  if (refreshed) selectedTemplate.value = refreshed;
 };
 
 const syncTemplates = async () => {
@@ -393,17 +585,49 @@ onDeactivated(abortTemplateRequest);
           </span>
         </template>
         <template #actions>
-          <Button
-            :label="$t('WHATSAPP_TEMPLATE_MGMT.SYNC_TEMPLATES')"
-            icon="i-lucide-refresh-cw"
-            color="slate"
-            size="sm"
-            :is-loading="isSyncing"
-            :disabled="!whatsappInboxes.length || isSyncing"
-            @click="syncTemplates"
-          />
+          <div class="flex items-center gap-2">
+            <Button
+              :label="$t('WHATSAPP_TEMPLATE_MGMT.SYNC_TEMPLATES')"
+              icon="i-lucide-refresh-cw"
+              color="slate"
+              size="sm"
+              :is-loading="isSyncing"
+              :disabled="!whatsappInboxes.length || isSyncing"
+              @click="syncTemplates"
+            />
+            <Button
+              :label="$t('WHATSAPP_TEMPLATE_MGMT.CREATE')"
+              icon="i-lucide-plus"
+              size="sm"
+              data-test-id="create-template"
+              :disabled="!builderInboxOptions.length"
+              @click="openBuilder(null)"
+            />
+          </div>
         </template>
       </BaseSettingsHeader>
+    </template>
+
+    <template #emptyState>
+      <div class="flex flex-col items-center gap-3 p-10 text-center">
+        <span class="text-heading-3 text-n-slate-12">
+          {{
+            builderInboxOptions.length
+              ? $t('WHATSAPP_TEMPLATE_MGMT.EMPTY')
+              : $t('WHATSAPP_TEMPLATE_MGMT.EMPTY_NO_INBOX')
+          }}
+        </span>
+        <span class="max-w-md text-body-main text-n-slate-11">
+          {{ $t('WHATSAPP_TEMPLATE_MGMT.EMPTY_DESCRIPTION') }}
+        </span>
+        <Button
+          v-if="builderInboxOptions.length"
+          :label="$t('WHATSAPP_TEMPLATE_MGMT.CREATE')"
+          icon="i-lucide-plus"
+          data-test-id="create-template-empty"
+          @click="openBuilder(null)"
+        />
+      </div>
     </template>
 
     <template #body>
@@ -422,10 +646,33 @@ onDeactivated(abortTemplateRequest);
           :key="template.key"
           :template="template"
           @preview="openPreview(template)"
+          @action="handleTemplateAction($event, template)"
         />
       </div>
     </template>
 
-    <TemplatePreviewDrawer ref="previewPanelRef" :template="selectedTemplate" />
+    <TemplatePreviewDrawer
+      ref="previewPanelRef"
+      :template="selectedTemplate"
+      @action="handleTemplateAction($event, selectedTemplate)"
+    />
+
+    <TemplateBuilderDialog
+      ref="builderRef"
+      :template="editingTemplate"
+      :inbox-options="builderInboxOptions"
+      @saved="handleBuilderSaved"
+    />
+
+    <Dialog
+      ref="confirmRef"
+      type="alert"
+      :title="confirmation?.title"
+      :description="confirmation?.description"
+      :confirm-button-label="confirmation?.confirmLabel"
+      :is-loading="isActing"
+      @confirm="runPendingAction"
+      @close="pendingAction = null"
+    />
   </SettingsLayout>
 </template>

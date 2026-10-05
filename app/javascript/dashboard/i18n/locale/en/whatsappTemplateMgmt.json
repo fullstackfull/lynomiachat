@@ -1,7 +1,7 @@
 {
   "WHATSAPP_TEMPLATE_MGMT": {
     "TITLE": "Templates",
-    "DESCRIPTION": "View the message templates synced from your WhatsApp inboxes. To create or edit a template, manage it with your provider.",
+    "DESCRIPTION": "Create, change and submit the WhatsApp message templates your inboxes use. WhatsApp reviews every template before it can be sent.",
     "COUNT": "{n} template | {n} templates",
     "LEARN_MORE": "Learn more about WhatsApp templates",
     "SYNC_TEMPLATES": "Sync templates",
@@ -19,12 +19,26 @@
     "LAST_SYNC_ATTEMPT": "Last sync attempt on {date}",
     "MORE_INBOXES": "+{n}",
     "STATUSES": {
-      "UNSUBMITTED": "Not submitted for WhatsApp approval"
+      "UNSUBMITTED": "Not submitted for WhatsApp approval",
+      "SUBMITTING": "Submitting to WhatsApp",
+      "SUBMISSION_FAILED": "WhatsApp did not accept the submission",
+      "MISSING": "No longer at WhatsApp",
+      "APPROVED": "Approved",
+      "PENDING": "In review at WhatsApp",
+      "REJECTED": "Rejected by WhatsApp",
+      "PAUSED": "Paused by WhatsApp",
+      "DISABLED": "Disabled by WhatsApp",
+      "IN_APPEAL": "Under appeal",
+      "PENDING_DELETION": "Being deleted",
+      "DELETED": "Deleted",
+      "ARCHIVED": "Archived by WhatsApp",
+      "LIMIT_EXCEEDED": "Template limit reached"
     },
     "FILTERS": {
       "ALL_INBOXES": "All inboxes",
       "ALL_LANGUAGES": "All languages",
-      "ALL_TYPES": "All types"
+      "ALL_TYPES": "All types",
+      "ALL_STATUSES": "All states"
     },
     "TYPES": {
       "TEXT": "Text",
@@ -48,6 +62,180 @@
       "CATEGORY": "Category",
       "LANGUAGE": "Language",
       "INBOXES": "Inboxes"
-    }
+    },
+    "CREATE": "New template",
+    "EMPTY_NO_INBOX": "Connect a WhatsApp inbox to manage templates.",
+    "EMPTY_DESCRIPTION": "Templates are the messages WhatsApp lets you start a conversation with. Create one here and submit it for review.",
+    "ACTIONS": {
+      "SUBMIT": "Submit for review",
+      "EDIT": "Edit",
+      "DELETE": "Delete",
+      "DUPLICATE": "Duplicate",
+      "MORE": "More actions for {name}"
+    },
+    "CONFIRM": {
+      "SUBMIT": {
+        "TITLE": "Submit this template to WhatsApp?",
+        "DESCRIPTION": "WhatsApp reviews it before it can be sent, which usually takes minutes but can take longer. Its name and language cannot be changed afterwards.",
+        "CONFIRM": "Submit for review"
+      },
+      "EDIT_APPROVED": {
+        "TITLE": "This template goes back into review",
+        "DESCRIPTION": "Saving a change sends the template to WhatsApp for review again, so it may be unavailable for a while. WhatsApp allows one change every 24 hours and ten every 30 days for an approved template.",
+        "CONFIRM": "Save and send for review"
+      },
+      "DELETE": {
+        "TITLE": "Delete {name}?",
+        "DESCRIPTION_DRAFT": "This draft has never been sent to WhatsApp, so it is only deleted here.",
+        "DESCRIPTION_REMOTE": "The template is deleted at WhatsApp as well, campaigns and flows using it stop working, and WhatsApp blocks the name for 30 days.",
+        "CONFIRM": "Delete"
+      }
+    },
+    "DETAIL": {
+      "REJECTION": "Why WhatsApp rejected it",
+      "SUBMISSION_ERROR": "Why the submission did not go through",
+      "MISSING_NOTICE": "This template is no longer in your WhatsApp account. It was last seen on {date}. Duplicate it to start a new draft.",
+      "QUALITY": "Quality rating",
+      "LAST_SEEN": "Last read from WhatsApp",
+      "SUBMITTED_AT": "Submitted",
+      "DRAFT_NOTICE": "WhatsApp has never seen this template. Submit it for review when it is ready.",
+      "CSAT_NOTICE": "This is the survey template for an inbox. Manage it in that inbox’s CSAT settings."
+    },
+    "BUILDER": {
+      "TITLE_NEW": "New template",
+      "TITLE_EDIT": "Edit template",
+      "SAVE_DRAFT": "Save draft",
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "CONTENT": "Content",
+      "PREVIEW": "Preview",
+      "NAME": {
+        "LABEL": "Name",
+        "PLACEHOLDER": "order_shipped",
+        "HELP": "Lowercase letters, numbers and underscores. WhatsApp does not allow the name to change later."
+      },
+      "LANGUAGE": {
+        "LABEL": "Language",
+        "PLACEHOLDER": "en_US",
+        "HELP": "The language of this template’s text, not of the dashboard. It cannot change later."
+      },
+      "INBOX": {
+        "LABEL": "WhatsApp inbox",
+        "HELP": "The template is created in this inbox’s WhatsApp account, and every inbox sharing that account can send it."
+      },
+      "CATEGORY": {
+        "LABEL": "Category",
+        "UTILITY": "Utility",
+        "MARKETING": "Marketing",
+        "HELP": "WhatsApp decides the final category and may change it."
+      },
+      "PARAMETER_FORMAT": {
+        "LABEL": "Variables",
+        "POSITIONAL": "Numbered ({'{{'}1{'}}'})",
+        "NAMED": "Named ({'{{'}order_number{'}}'})"
+      },
+      "HEADER": {
+        "LABEL": "Header",
+        "NONE": "None",
+        "TEXT": "Text",
+        "IMAGE": "Image",
+        "VIDEO": "Video",
+        "DOCUMENT": "Document",
+        "TEXT_PLACEHOLDER": "Your order is on its way",
+        "HANDLE_LABEL": "Sample media handle",
+        "HANDLE_HELP": "WhatsApp needs a sample for review. Upload the file in WhatsApp Manager once and paste the handle it gives you."
+      },
+      "BODY": {
+        "LABEL": "Message",
+        "PLACEHOLDER": "Hi {'{{'}1{'}}'}, your order {'{{'}2{'}}'} has shipped.",
+        "HELP": "Up to 1024 characters. A variable cannot start or end the message, and two cannot sit together."
+      },
+      "FOOTER": {
+        "LABEL": "Footer",
+        "PLACEHOLDER": "Reply STOP to unsubscribe",
+        "HELP": "Up to 60 characters, and no variables."
+      },
+      "BUTTONS": {
+        "LABEL": "Buttons",
+        "ADD": "Add button",
+        "REMOVE": "Remove button {index}",
+        "TYPE": "Type",
+        "QUICK_REPLY": "Quick reply",
+        "URL": "Website",
+        "PHONE_NUMBER": "Call",
+        "COPY_CODE": "Copy code",
+        "TEXT": "Label",
+        "URL_VALUE": "Website address",
+        "PHONE_VALUE": "Phone number",
+        "EXAMPLE": "Sample value",
+        "HELP": "Up to ten buttons. Keep quick replies together: WhatsApp refuses them mixed in among the others."
+      },
+      "EXAMPLES": {
+        "TITLE": "Sample values",
+        "HELP": "WhatsApp reviews the template with these, and they are never sent to a customer.",
+        "PLACEHOLDER": "Sample for {name}"
+      },
+      "PROBLEMS": {
+        "TITLE": "Fix these before submitting",
+        "NO_GUARANTEE": "These are the rules WhatsApp publishes. Passing them does not mean WhatsApp will approve the template."
+      }
+    },
+    "PROBLEM": {
+      "name_format": "The name may only use lowercase letters, numbers and underscores.",
+      "language_blank": "Choose a language.",
+      "category_unsupported": "Choose a category.",
+      "parameter_format_unsupported": "Choose how variables are written.",
+      "component_unsupported": "This template has a part Lynomia Chat cannot edit. Manage it in WhatsApp Manager.",
+      "component_duplicated": "There is more than one of this part.",
+      "body_missing": "Add the message text.",
+      "body_blank": "Add the message text.",
+      "body_too_long": "The message is longer than {limit} characters.",
+      "header_too_long": "The header is longer than {limit} characters.",
+      "header_too_many_variables": "A header may hold one variable.",
+      "header_format_unsupported": "This header type cannot be edited here.",
+      "header_example_missing": "Add a sample media handle for the header.",
+      "footer_too_long": "The footer is longer than {limit} characters.",
+      "footer_has_variables": "A footer cannot contain variables.",
+      "buttons_too_many": "There can be at most {limit} buttons.",
+      "button_type_unsupported": "This button type cannot be edited here.",
+      "button_type_too_many": "There can be at most {limit} of this button type.",
+      "buttons_quick_reply_not_grouped": "Keep the quick replies next to each other.",
+      "button_text_too_long": "The label is longer than {limit} characters.",
+      "button_url_blank": "Add the website address.",
+      "button_url_too_long": "The address is longer than {limit} characters.",
+      "button_url_too_many_variables": "A website button may hold one variable.",
+      "button_url_variable_not_at_end": "The variable has to come at the end of the address.",
+      "button_phone_too_long": "The phone number is longer than {limit} characters.",
+      "button_copy_code_too_long": "The sample code is longer than {limit} characters.",
+      "button_example_missing": "Add a sample value for this button.",
+      "variable_at_edge": "A variable cannot be the first or last thing in the text.",
+      "variables_adjacent": "Put some text between two variables.",
+      "variables_not_sequential": "Number the variables 1, 2, 3 in the order they appear.",
+      "variable_name_invalid": "A variable name may only use lowercase letters, numbers and underscores.",
+      "variable_duplicated": "Each variable name can be used once.",
+      "variable_example_missing": "Add a sample value for every variable."
+    },
+    "ERRORS": {
+      "ALREADY_AT_META": "WhatsApp already has this template.",
+      "SUBMIT_IN_FLIGHT": "This template is already being submitted.",
+      "NOT_SUBMITTABLE": "This template cannot be submitted.",
+      "NOT_EDITABLE": "WhatsApp only allows a template to change while it is approved, rejected or paused.",
+      "CATEGORY_NOT_EDITABLE": "WhatsApp does not allow the category of an approved template to change.",
+      "NOT_DELETABLE": "WhatsApp does not allow a disabled template to be deleted.",
+      "CSAT_MANAGED_ELSEWHERE": "This survey template is managed in the inbox’s CSAT settings.",
+      "NO_WHATSAPP_INBOX": "The WhatsApp inbox this template belongs to is no longer connected.",
+      "INVALID_TEMPLATE": "Fix the highlighted problems and try again.",
+      "NAME_TAKEN": "This account already has a template with that name in that language.",
+      "AUTH_INVALID": "WhatsApp refused the credentials for this inbox. Reconnect it and try again.",
+      "RATE_LIMITED": "WhatsApp is rate limiting this account. Try again shortly.",
+      "META_UNAVAILABLE": "WhatsApp could not be reached. Try again shortly.",
+      "META_REJECTED_REQUEST": "WhatsApp refused the request.",
+      "GENERIC": "Something went wrong. Please try again."
+    },
+    "CREATED": "Draft created.",
+    "SAVED": "Template saved.",
+    "SUBMITTED": "Submitted to WhatsApp for review.",
+    "DELETED": "Template deleted.",
+    "DUPLICATED": "Draft created from {name}."
   }
 }

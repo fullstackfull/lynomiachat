@@ -10,7 +10,7 @@ RSpec.describe 'WhatsApp message templates API', type: :request do
       'components' => [{ 'type' => 'BODY', 'text' => 'Shipped in {{1}} days' }], 'rejected_reason' => 'NONE' }
   end
   # The channel factory fixes the WABA itself: its before(:create) hook merges business_account_id over whatever a
-  # test passes (spec/factories/channel/channel_whatsapp.rb:98-109).
+  # test passes (spec/factories/channel/channel_whatsapp.rb:98-109), so a second WABA is set after the fact.
   let(:waba_id) { '123456789' }
   let(:channel) do
     create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false,
@@ -370,6 +370,44 @@ RSpec.describe 'WhatsApp message templates API', type: :request do
       post "#{templates_path}/#{template.id}/duplicate", headers: admin.create_new_auth_token, as: :json
 
       expect(response.parsed_body['name']).to eq('order_shipped_copy_2')
+    end
+  end
+
+  # One account, two WhatsApp Business Accounts: a template belongs to a WABA, and several inboxes can share one, so
+  # neither may be allowed to stand for the other (docs/whatsapp-template-manager/04-permissions-and-tenancy.md).
+  describe 'with more than one WhatsApp Business Account' do
+    let(:second_waba) { 'WABA_SECOND' }
+    let!(:second_channel) do
+      channel
+      other = create(:channel_whatsapp, account: account, sync_templates: false, validate_provider_config: false,
+                                        provider: 'whatsapp_cloud',
+                                        message_templates: [approved.merge('id' => '200')])
+      other.update!(provider_config: other.provider_config.merge('business_account_id' => second_waba))
+      other
+    end
+
+    it 'keeps the same template name on each account as its own template' do
+      get templates_path, headers: admin.create_new_auth_token, as: :json
+
+      shipped = response.parsed_body['payload'].select { |t| t['name'] == 'order_shipped' }
+      expect(shipped.map { |t| t['business_account_id'] }).to contain_exactly(waba_id, second_waba)
+      expect(shipped.map { |t| t['meta_template_id'] }).to contain_exactly('100', '200')
+    end
+
+    it 'tells each one which inboxes can send it' do
+      get templates_path, headers: admin.create_new_auth_token, as: :json
+
+      by_waba = response.parsed_body['payload'].index_by { |t| t['business_account_id'] }
+      expect(by_waba[waba_id]['inboxes'].pluck('id')).to eq([channel.inbox.id])
+      expect(by_waba[second_waba]['inboxes'].pluck('id')).to eq([second_channel.inbox.id])
+    end
+
+    it 'reports both business accounts, each with when it was last read' do
+      get templates_path, headers: admin.create_new_auth_token, as: :json
+
+      wabas = response.parsed_body['meta']['whatsapp_business_accounts']
+      expect(wabas.pluck('id')).to contain_exactly(waba_id, second_waba)
+      expect(wabas.map { |waba| waba['last_synced_at'] }).to all(be_present)
     end
   end
 

@@ -68,6 +68,7 @@ const handleAction = ({ action }) => {
     class="flex items-center justify-between gap-4 py-4 cursor-pointer group"
     role="button"
     tabindex="0"
+    data-test-id="template-row"
     @click="emit('preview')"
     @keydown.enter="emit('preview')"
     @keydown.space.prevent="emit('preview')"
@@ -124,6 +125,8 @@ const handleAction = ({ action }) => {
         v-if="menuItems.length"
         v-on-click-outside="() => (isMenuOpen = false)"
         class="relative"
+        data-test-id="template-actions"
+        @click.stop
       >
         <Button
           icon="i-lucide-ellipsis-vertical"

@@ -97,6 +97,13 @@ const inboxOptions = computed(() =>
   mapToOptions(formState.inboxes.value, 'id', 'name')
 );
 
+// Lynomia: keyed by name and language, which is how WhatsApp identifies a template and how every other consumer
+// matches one (Whatsapp::TemplateProcessorService, Flows::Template, the flow builder's own picker). Keying on
+// `template.id` made a synced template that arrived without a Meta id unselectable: its option value was undefined,
+// so picking it never resolved a template and the campaign could not be created.
+const templateOptionValue = template =>
+  `${template.name}|${template.language || 'en'}`;
+
 const templateOptions = computed(() => {
   if (!state.inboxId) return [];
   const templates = formState.getFilteredWhatsAppTemplates.value(state.inboxId);
@@ -107,7 +114,7 @@ const templateOptions = computed(() => {
       .replace(/\b\w/g, l => l.toUpperCase());
 
     return {
-      value: template.id,
+      value: templateOptionValue(template),
       label: `${friendlyName} (${template.language || 'en'})`,
       template: template,
     };

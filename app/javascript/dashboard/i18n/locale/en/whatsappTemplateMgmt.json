@@ -178,6 +178,10 @@
       "PROBLEMS": {
         "TITLE": "Fix these before submitting",
         "NO_GUARANTEE": "These are the rules WhatsApp publishes. Passing them does not mean WhatsApp will approve the template."
+      },
+      "STARTERS": {
+        "TITLE": "Start from a common one",
+        "HELP": "These fill the form with a draft to edit. They are not WhatsApp templates and nothing here is approved: WhatsApp reviews whatever you submit."
       }
     },
     "PROBLEM": {
@@ -236,6 +240,16 @@
     "SAVED": "Template saved.",
     "SUBMITTED": "Submitted to WhatsApp for review.",
     "DELETED": "Template deleted.",
-    "DUPLICATED": "Draft created from {name}."
+    "DUPLICATED": "Draft created from {name}.",
+    "STARTERS": {
+      "order_shipped": "Order shipped",
+      "order_delivered": "Order delivered",
+      "delivery_delayed": "Delivery delayed",
+      "appointment_reminder": "Appointment reminder",
+      "payment_due": "Payment due",
+      "back_in_stock": "Back in stock",
+      "support_follow_up": "Support follow-up",
+      "welcome_message": "Welcome message"
+    }
   }
 }

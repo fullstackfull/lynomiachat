@@ -11,6 +11,14 @@ class ContactDrop < BaseDrop
     @obj.try(:phone_number)
   end
 
+  # Lynomia: `{{contact.phone}}` is what the composer and canned-response pickers have always offered
+  # (shared/constants/messages.js, @chatwoot/utils getMessageVariables), and nothing resolved it. In the composer the
+  # editor substitutes it client-side so it looked fine; in a campaign it rendered empty, and a blank render skips the
+  # whole recipient (Whatsapp::LiquidTemplateProcessorService) -- so one offered variable silently dropped an audience.
+  def phone
+    phone_number
+  end
+
   def first_name
     @obj.try(:name).try(:split).try(:first).try(:capitalize)
   end

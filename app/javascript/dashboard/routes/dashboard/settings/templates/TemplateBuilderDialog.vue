@@ -11,6 +11,10 @@ import Select from 'dashboard/components-next/select/Select.vue';
 import TextArea from 'dashboard/components-next/textarea/TextArea.vue';
 import TemplatePreview from 'dashboard/components-next/template-preview/TemplatePreview.vue';
 import { PLATFORMS } from 'dashboard/services/TemplateConstants';
+import {
+  TEMPLATE_STARTERS,
+  starterContent,
+} from 'dashboard/recipes/templateStarters';
 import { TEMPLATE_LIMITS } from './templateUtils';
 
 const props = defineProps({
@@ -164,6 +168,36 @@ const allVariables = computed(() => [
   ...new Set([...headerVariables.value, ...bodyVariables.value]),
 ]);
 
+// A starter fills the form and nothing else: no record is created, nothing is sent, and WhatsApp reviews whatever is
+// submitted afterwards exactly as it would a template written from scratch.
+const applyStarter = starter => {
+  const content = starterContent(starter, form.value.language);
+  const examples = {};
+  (content.examples || []).forEach((value, index) => {
+    examples[String(index + 1)] = value;
+  });
+
+  form.value = {
+    ...form.value,
+    name: starter.name,
+    category: starter.category,
+    parameterFormat: starter.parameterFormat,
+    headerFormat: content.header?.format || 'NONE',
+    headerText: content.header?.text || '',
+    headerHandle: '',
+    body: content.body,
+    footer: content.footer || '',
+    buttons: (content.buttons || []).map(button => ({
+      type: button.type,
+      text: button.text || '',
+      url: button.url || '',
+      phoneNumber: button.phone_number || '',
+      example: button.example || '',
+    })),
+    examples,
+  };
+};
+
 const addButton = () => {
   form.value.buttons.push({
     type: 'QUICK_REPLY',
@@ -311,6 +345,31 @@ defineExpose({ open });
   >
     <div class="grid gap-6 md:grid-cols-5">
       <div class="flex flex-col gap-4 md:col-span-3">
+        <div v-if="!isEditing" class="flex flex-col gap-2">
+          <span class="text-heading-5 text-n-slate-12">
+            {{ $t('WHATSAPP_TEMPLATE_MGMT.BUILDER.STARTERS.TITLE') }}
+          </span>
+          <span class="text-body-main text-n-slate-11">
+            {{ $t('WHATSAPP_TEMPLATE_MGMT.BUILDER.STARTERS.HELP') }}
+          </span>
+          <div class="flex flex-wrap gap-2">
+            <!-- type="button": Dialog's content is a <form> whose submit confirms, and Button has no default type,
+                 so a chip without this would save the draft instead of filling it. -->
+            <Button
+              v-for="starter in TEMPLATE_STARTERS"
+              :key="starter.id"
+              type="button"
+              :label="$t(`WHATSAPP_TEMPLATE_MGMT.STARTERS.${starter.id}`)"
+              :icon="starter.icon"
+              color="slate"
+              variant="faded"
+              size="sm"
+              :data-test-id="`starter-${starter.id}`"
+              @click="applyStarter(starter)"
+            />
+          </div>
+        </div>
+
         <label
           v-if="!isEditing"
           class="flex flex-col gap-1 text-sm text-n-slate-12"
@@ -453,6 +512,7 @@ defineExpose({ open });
               {{ $t('WHATSAPP_TEMPLATE_MGMT.BUILDER.BUTTONS.LABEL') }}
             </span>
             <Button
+              type="button"
               :label="$t('WHATSAPP_TEMPLATE_MGMT.BUILDER.BUTTONS.ADD')"
               icon="i-lucide-plus"
               color="slate"
@@ -482,6 +542,7 @@ defineExpose({ open });
                 "
               />
               <Button
+                type="button"
                 icon="i-lucide-trash-2"
                 color="ruby"
                 size="sm"

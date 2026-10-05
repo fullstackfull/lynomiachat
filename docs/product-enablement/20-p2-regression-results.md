@@ -14,7 +14,7 @@ Branch `claude/practical-thompson-9xfqed`.
 | Vitest, full suite | `npx vitest run` | **492 files, 5160 tests, 0 failures** |
 | Vitest, P2 areas | recipes, recipe dialog, audience, contacts, macros, automation, campaigns | **28 files, 339 tests, 0 failures** |
 | RSpec, audience and branding | 11 files covering custom filters, shared filters, audiences, campaign audience, installation config, branding | **100 examples, 0 failures** |
-| RSpec, full suite | `bundle exec rspec` | in progress at the time of this commit, on a dropped and reloaded test database — see §1.1 for why the first run was discarded. The number lands in the next revision of this file |
+| RSpec, full suite | `bundle exec rspec`, on a dropped and reloaded test database | **10601 examples, 2 failures, 67 pending.** The two are `spec/builders/agent_builder_spec.rb:47` and `spec/enterprise/services/voice/call_transcription_service_spec.rb:77` — byte for byte the same two as the P0/P1 baseline run earlier in this session, in code this phase never touched. See §1.1 for the run that was discarded |
 | Production build | `bin/vite build` | exit 0; 5137 modules; the one notice is the pre-existing chunk-size advisory |
 | RuboCop | `bundle exec rubocop` | **3418 files inspected, no offenses**, exit 0 (zero `.rb` files changed in this phase) |
 | Browser journeys | four Playwright scripts against a production build | **52 checks, 0 failures** |
@@ -35,7 +35,9 @@ is configured only via ENV and config reconciliation left a blank row", "follows
 "when ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT is enabled", and so on.
 
 The suite was then re-run on a dropped and reloaded `chatwoot_test` with a flushed Redis and nothing else on the
-machine. That is the run reported above.
+machine: **2 failures**, and they are the *same two examples, at the same lines*, that the P0/P1 baseline run
+produced earlier in this session. That is what makes the 421 an artifact rather than a judgement call — a clean
+database reproduces the known baseline exactly, and this phase changed no Ruby for either failure to be about.
 
 **This is a pre-existing test-hygiene hazard worth fixing in its own right:** running any subset of the suite can
 leave `installation_configs` rows behind, and the next run — subset or full — then fails in places that have

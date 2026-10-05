@@ -99,8 +99,8 @@ Every item is a claim about what is in the branch. Where a claim is empirical th
 | # | Item | Verdict |
 |---|---|---|
 | 56 | P — docs 13 to 20 written, plus this checkpoint | and indexed from the directory README |
-| 57 | Q — every gate run, with numbers | ESLint, Vitest, RSpec, the production build, 52 browser journey checks and a 5-check accessibility pass; see `20-p2-regression-results.md` |
-| 58 | Q — findings reported honestly, including the ones against my own work | three defects this phase found and fixed in its own additions, and two pre-existing gaps counted and left with their reasons |
+| 57 | Q — every gate run, with numbers | ESLint 0 errors; Vitest 5160 tests green; RSpec 10601 examples with the 2 pre-existing baseline failures and nothing else; RuboCop no offenses; the production build clean; 52 browser journey checks and 5 accessibility checks green. See `20-p2-regression-results.md` |
+| 58 | Q — findings reported honestly, including the ones against my own work | four defects this phase found and fixed in its own additions; three pre-existing gaps counted and left with their reasons; one 421-failure test run diagnosed to a polluted database rather than called a flake, and proven so by a clean re-run matching the known baseline exactly |
 
 ---
 

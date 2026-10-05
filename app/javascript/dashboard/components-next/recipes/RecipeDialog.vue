@@ -127,8 +127,18 @@ defineExpose({ open, close });
           :data-test-id="`recipe-${recipe.id}`"
         >
           <span class="flex flex-col min-w-0 gap-1">
-            <span class="text-body-main text-n-slate-12">
-              {{ t(recipe.name) }}
+            <span class="flex flex-wrap items-center gap-2">
+              <span class="text-body-main text-n-slate-12">
+                {{ t(recipe.name) }}
+              </span>
+              <!-- Why this one is near the top: something the account actually has, said rather than implied. -->
+              <span
+                v-if="recipe.recommended"
+                class="rounded-md bg-n-teal-2 px-1.5 py-0.5 text-label-small text-n-teal-11 whitespace-nowrap"
+                :data-test-id="`recipe-${recipe.id}-recommended`"
+              >
+                {{ recipe.recommended }}
+              </span>
             </span>
             <span class="text-label-small text-n-slate-11" dir="auto">
               {{ t(recipe.description) }}

@@ -5,6 +5,10 @@
     "BACK": "Choose a different one",
     "FROM_SCRATCH": "Start from scratch instead",
     "REQUIRES": "Needs {what} first",
+    "RECOMMENDED": {
+      "STORE": "Fits your store",
+      "AUDIENCE": "Uses an audience you have"
+    },
     "NO_INPUTS": "Nothing to choose — this one is ready to create.",
     "CREATED": "Created. Review it before you turn it on.",
     "CREATE_ERROR": "Couldn’t create it. Check the values and try again.",
@@ -216,6 +220,21 @@
       "STORE_ISSUE_HANDOFF": {
         "NAME": "Send a store question to the right team",
         "DESCRIPTION": "Labels an order or store question, raises its priority and routes it to the team that can open the store. A macro cannot read or change an order itself."
+      }
+    },
+    "SETUP": {
+      "TITLE": "Set up more than one thing at once",
+      "PROVENANCE": "Created from the {name} setup recipe (version {version}).",
+      "PARTIAL": "Only part of this was created: {created}. Nothing else was changed — finish the rest yourself, or delete it and try again.",
+      "OBJECTS": {
+        "AUDIENCE": "the shared audience",
+        "RULE": "the automation rule"
+      },
+      "SPEND_AUDIENCE_ROUTING": {
+        "NAME": "Your best customers reach a dedicated team",
+        "DESCRIPTION": "Creates two things: a shared audience of the customers who have spent more than you say, and a rule that sends their conversations to a team at the priority you choose. Both stay yours to edit, and the rule arrives switched off.",
+        "AUDIENCE_NAME": "High-value customers",
+        "RULE_NAME": "High-value customers reach a dedicated team"
       }
     }
   }

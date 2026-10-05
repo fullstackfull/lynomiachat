@@ -22,6 +22,7 @@ import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
 import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
 import { audienceIdFromQuery } from 'dashboard/helper/audienceHelper';
 import { AUTOMATION_RECIPES } from 'dashboard/recipes/automationRecipes';
+import { SETUP_RECIPES } from 'dashboard/recipes/setupRecipes';
 import { DEFAULT_DELAY_MINUTES } from './constants';
 
 const getters = useStoreGetters();
@@ -191,11 +192,72 @@ const hideEditPopup = () => {
   editDialogRef.value?.close();
 };
 
+// One gallery. A setup recipe creates more than one object, but what the user is choosing is still the outcome.
+const GALLERY = [...AUTOMATION_RECIPES, ...SETUP_RECIPES];
+
 const openRecipes = () => recipeDialogRef.value?.open();
 
 const startFromScratch = () => {
   recipeDialogRef.value?.close();
   openAddPopup();
+};
+
+// A setup recipe's steps, in order, each through that object's own ordinary create call
+// (docs/product-enablement/18-setup-recipes.md). A later step reads what an earlier one produced, so the audience a
+// rule points at is the one just created rather than a guess. Nothing links the created objects afterwards: they are
+// an ordinary shared audience and an ordinary rule.
+const SETUP_CREATE = {
+  // `filter_type: 1` is `contact`, the same value the save-as-audience dialog sends.
+  audience: (payload, name) =>
+    store
+      .dispatch('customViews/create', { ...payload, name, filter_type: 1 })
+      .then(response => response?.data),
+  automation: (payload, name, provenance) =>
+    store.dispatch('automations/create', {
+      ...payload,
+      name,
+      description: provenance,
+    }),
+};
+
+// What exists already, named, so the user is not left guessing what half-happened.
+const setupFailure = created => {
+  const done = Object.keys(created).map(key =>
+    t(`RECIPES.SETUP.OBJECTS.${key.toUpperCase()}`)
+  );
+  const failure = new Error('setup step failed');
+  failure.partial = done.length
+    ? t('RECIPES.SETUP.PARTIAL', { created: done.join(', ') })
+    : t('RECIPES.CREATE_ERROR');
+  return failure;
+};
+
+// Chained rather than looped: each step is allowed to need the one before it, so they run one after another, and a
+// refused step stops the chain with nothing further created.
+const runSetupSteps = (recipe, values) => {
+  const provenance = t('RECIPES.SETUP.PROVENANCE', {
+    name: t(recipe.name),
+    version: recipe.version,
+  });
+  const created = {};
+
+  return recipe.steps.reduce(
+    (previous, step) =>
+      previous.then(async () => {
+        const made = await SETUP_CREATE[step.type](
+          step.build(values, created),
+          t(step.name),
+          provenance
+        ).catch(() => {
+          throw setupFailure(created);
+        });
+        if (!made?.id) throw setupFailure(created);
+
+        created[step.key] = made;
+        return made;
+      }),
+    Promise.resolve(null)
+  );
 };
 
 // A recipe creates a real rule through the ordinary call, so the ordinary validation runs — including the checks that
@@ -204,19 +266,21 @@ const startFromScratch = () => {
 const createFromRecipe = async (automationRecipe, values) => {
   isCreatingFromRecipe.value = true;
   try {
-    const created = await store.dispatch('automations/create', {
-      ...automationRecipe.build(values),
-      name: t(automationRecipe.name),
-      description: t('RECIPES.AUTOMATION.PROVENANCE', {
-        name: t(automationRecipe.name),
-        version: automationRecipe.version,
-      }),
-    });
+    const created = automationRecipe.steps
+      ? await runSetupSteps(automationRecipe, values)
+      : await store.dispatch('automations/create', {
+          ...automationRecipe.build(values),
+          name: t(automationRecipe.name),
+          description: t('RECIPES.AUTOMATION.PROVENANCE', {
+            name: t(automationRecipe.name),
+            version: automationRecipe.version,
+          }),
+        });
     recipeDialogRef.value?.close();
     useAlert(t('RECIPES.CREATED'));
     if (created) openEditPopup(created);
-  } catch {
-    useAlert(t('RECIPES.CREATE_ERROR'));
+  } catch (error) {
+    useAlert(error.partial || t('RECIPES.CREATE_ERROR'));
   } finally {
     isCreatingFromRecipe.value = false;
   }
@@ -467,7 +531,7 @@ const tableHeaders = computed(() => {
 
     <RecipeDialog
       ref="recipeDialogRef"
-      :recipes="AUTOMATION_RECIPES"
+      :recipes="GALLERY"
       :title="$t('RECIPES.AUTOMATION.TITLE')"
       :description="$t('RECIPES.AUTOMATION.DESCRIPTION')"
       :is-creating="isCreatingFromRecipe"

@@ -11,6 +11,7 @@ import { AUDIENCE_PRESETS } from '../audiencePresets';
 import { AUTOMATION_RECIPES } from '../automationRecipes';
 import { FLOW_TEMPLATES } from '../flowTemplates';
 import { MACRO_STARTERS } from '../macroStarters';
+import { SETUP_RECIPES } from '../setupRecipes';
 import { CATEGORIES, INPUT_TYPES, REQUIREMENTS } from '../index';
 import { LANGUAGES } from '../starterCopy';
 
@@ -19,6 +20,7 @@ const CATALOGUES = {
   automation: AUTOMATION_RECIPES,
   flow: FLOW_TEMPLATES,
   macro: MACRO_STARTERS,
+  setup: SETUP_RECIPES,
 };
 const ALL = Object.values(CATALOGUES).flat();
 
@@ -50,6 +52,33 @@ describe('recipe catalogues', () => {
       });
     }
   );
+
+  it.each(LOCALES)(
+    'has a name for every object a setup recipe creates (%s)',
+    locale => {
+      SETUP_RECIPES.forEach(recipe =>
+        recipe.steps.forEach(step => {
+          expect(lookupIn(locale, step.name), step.name).toBeTruthy();
+          expect(
+            lookupIn(locale, `RECIPES.SETUP.OBJECTS.${step.key.toUpperCase()}`),
+            step.key
+          ).toBeTruthy();
+        })
+      );
+    }
+  );
+
+  it('creates only object kinds a setup recipe can actually create', () => {
+    SETUP_RECIPES.forEach(recipe => {
+      expect(recipe.steps.length).toBeGreaterThan(1);
+      recipe.steps.forEach(step =>
+        expect(['audience', 'automation'], step.key).toContain(step.type)
+      );
+      // Unique keys, because a later step reads earlier ones by key.
+      const keys = recipe.steps.map(step => step.key);
+      expect(new Set(keys).size).toBe(keys.length);
+    });
+  });
 
   it.each(LOCALES)(
     'has the platform note it claims, in both languages (%s)',
@@ -202,6 +231,7 @@ describe('recipe catalogues', () => {
     expect(AUTOMATION_RECIPES).toHaveLength(11);
     expect(FLOW_TEMPLATES).toHaveLength(8);
     expect(MACRO_STARTERS).toHaveLength(6);
+    expect(SETUP_RECIPES).toHaveLength(1);
   });
 
   it('types every recipe as the catalogue it belongs to', () => {

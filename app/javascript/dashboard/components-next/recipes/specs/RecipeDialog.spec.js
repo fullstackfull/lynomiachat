@@ -96,6 +96,30 @@ describe('RecipeDialog', () => {
     ];
   });
 
+  it('says why a recipe is near the top, rather than leaving the order a mystery', async () => {
+    const commerce = recipe('commerce', { requires: [REQUIREMENTS.COMMERCE] });
+    const plain = recipe('plain');
+    const wrapper = await mountDialog([plain, commerce]);
+
+    const marker = wrapper.find('[data-test-id="recipe-commerce-recommended"]');
+    expect(marker.exists()).toBe(true);
+    expect(marker.text()).toBe('Fits your store');
+    expect(
+      wrapper.find('[data-test-id="recipe-plain-recommended"]').exists()
+    ).toBe(false);
+  });
+
+  it('recommends nothing on a store’s account that has no store connected', async () => {
+    stores.value = [];
+    const wrapper = await mountDialog([
+      recipe('commerce', { requires: [REQUIREMENTS.COMMERCE] }),
+    ]);
+
+    expect(
+      wrapper.find('[data-test-id="recipe-commerce-recommended"]').exists()
+    ).toBe(false);
+  });
+
   it('tells someone what their store platform cannot do, both in the list and after they pick it', async () => {
     const withNote = {
       ...recipe('tracking'),

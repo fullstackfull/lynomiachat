@@ -25,6 +25,23 @@ You choose which one an attribute is when you create it, and the choice cannot b
 A delivery zone is a property of the person. An order number is a property of this conversation. Getting it wrong
 is not fatal, but it is tedious to undo, because the type and the model are fixed once the attribute exists.
 
+## When to use one
+
+Use a custom attribute when the answer is a **value you will need to read back, filter on, or put in a message**,
+and no other field already holds it.
+
+- **The answer is not yes or no.** A delivery zone, a contract tier, a preferred branch, a reference number from
+  another system. A label can only say *this is true of them*; an attribute says *this is what it is*.
+- **You want to filter or segment on the value.** Attributes are available as conditions in a contact filter and
+  therefore in a [shared audience](shared-audiences), and as conditions in an [automation rule](automation-rules).
+- **You want it in a WhatsApp template.** A template's variables can be filled from a contact attribute, which is
+  how one approved template serves every customer without a separate draft each.
+- **Agents need it in front of them.** The value sits in the panel beside the conversation, so nobody has to open
+  another tool to find the customer's account number.
+
+If you cannot name the question the attribute answers, you do not need the attribute yet. An unused definition is
+one more empty field every agent sees on every contact.
+
 ## When not to use one
 
 - **When a [label](labels) would do.** A label is a yes/no decision you can filter and send campaigns to, and it

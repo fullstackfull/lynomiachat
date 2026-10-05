@@ -43,6 +43,27 @@ On a search, Lynomia Chat sometimes cannot say how many results there are withou
 case the button reads **Select all results in this view** with no number. It still acts on all of them. A
 missing number is honest, not a failure.
 
+## When to bulk-act, and when to do something else
+
+A bulk action is the right tool only when you want a **one-off, permanent change to the contacts themselves**.
+Three near neighbours do something different, and reaching for the wrong one is the usual mistake:
+
+| What you actually want | Use | Why not a bulk action |
+|---|---|---|
+| A group that keeps itself up to date | a [shared audience](shared-audiences) | a label applied today does not notice tomorrow's new customers |
+| To get contacts into the account in the first place | [import contacts](import-contacts) | bulk actions only change contacts that already exist |
+| To message this group | a [campaign](whatsapp-campaigns) | labelling people does not send anything |
+| To mark one conversation, not the person | a [conversation label](labels) | a contact label follows the customer across every conversation they ever have |
+
+**Do not use a bulk action when the set is a question, not a list.** "Customers who bought in the last 60 days"
+changes every day. Labelling them freezes an answer that was only true at the moment you pressed the button. Save
+it as a shared audience instead, and the answer stays current.
+
+**Do use one when the set really is a list.** "These 240 contacts came from the trade show" is a fact that does
+not change, and a label is exactly how you record it — including because a label is the only way to reach a
+hand-picked set from a campaign at all. A shared audience stores a query, not a set of people, so there is no way
+to express "these specific contacts" in one.
+
 ## What you can do
 
 | Action | Who | Notes |

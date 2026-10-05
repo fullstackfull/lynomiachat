@@ -84,6 +84,23 @@ RSpec.describe 'Global documentation ownership', type: :request do
       get "/docs/#{draft_article.slug}"
       expect(response).to have_http_status(:not_found)
     end
+
+    # The brief asks that a draft be previewable before it is published. The preview is the real public page, read
+    # with a super admin session, so the same URL that refuses an anonymous visitor above serves the draft here.
+    it 'serves a draft to a super admin, so it can be read before it is published' do
+      sign_in(super_admin, scope: :super_admin)
+      get_public "/hc/#{docs_portal.slug}/articles/#{draft_article.slug}"
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include(draft_article.title)
+    end
+
+    it 'points the super admin preview action at that page' do
+      sign_in(super_admin, scope: :super_admin)
+      get "/super_admin/articles/#{draft_article.id}/preview"
+      expect(response).to redirect_to(
+        "/hc/#{docs_portal.slug}/articles/#{draft_article.slug}?show_plain_layout=true"
+      )
+    end
   end
 
   describe 'managing, for nobody but a super admin' do

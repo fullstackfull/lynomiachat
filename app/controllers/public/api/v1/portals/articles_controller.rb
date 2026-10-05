@@ -69,9 +69,21 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
                 end
   end
 
+  # Only a published article is public. The lookup was unscoped, so the HTML page served an unpublished draft to
+  # anyone holding its URL -- the markdown endpoint already guarded against exactly that (`show_markdown`), and the
+  # tracking pixel guarded the view count, but the page itself did not.
+  #
+  # The one exception is a signed-in super admin previewing before publication, which is the whole point of a preview
+  # and is why the draft banner below it says what is being looked at.
   def set_article
-    @article = @portal.articles.find_by(slug: permitted_params[:article_slug])
+    scope = previewing_as_super_admin? ? @portal.articles : @portal.articles.published
+    @article = scope.find_by!(slug: permitted_params[:article_slug])
   end
+
+  def previewing_as_super_admin?
+    respond_to?(:current_super_admin) && current_super_admin.present?
+  end
+  helper_method :previewing_as_super_admin?
 
   def set_category
     return if permitted_params[:category_slug].blank?

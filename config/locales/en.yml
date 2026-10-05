@@ -73,6 +73,11 @@ en:
     sessions:
       cannot_revoke_current: You cannot revoke the current session.
 
+  documentation:
+    not_set_up: Lynomia Chat documentation is not set up on this installation yet.
+    super_admin:
+      published: Article published. It is now public.
+      unpublished: Article unpublished. It is no longer public.
   errors:
     account:
       not_authorized: You are not authorized to access this account
@@ -514,6 +519,7 @@ en:
       slug_generation_failed: 'Unable to generate unique slug after 5 attempts'
       limit_exceeded: 'You can create a maximum of %{limit} custom tools per account'
   public_portal:
+    draft_preview: This article is a draft. Only you can see it, and it is not published.
     search:
       search_placeholder: Search for article by title or body...
       empty_placeholder: No results found.

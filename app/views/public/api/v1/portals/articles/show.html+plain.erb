@@ -3,6 +3,8 @@
              article: @article, portal: @portal, locale: @locale, og_image_url: @og_image_url %>
 <% end %>
 
+<%= render "public/api/v1/portals/articles/draft_banner", article: @article %>
+
 <div class="max-w-5xl mx-auto space-y-4 w-full px-4 md:px-8 py-4">
   <%= render "public/api/v1/portals/articles/article_header", article: @article, plain: true %>
 </div>

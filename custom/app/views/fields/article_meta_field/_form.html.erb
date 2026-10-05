@@ -1,0 +1,22 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'Metadata' %>
+</div>
+<div class="field-unit__field">
+  <% ArticleMetaField::STRING_KEYS.each do |key| %>
+    <div style="margin-bottom: 10px;">
+      <label for="article_meta_<%= key %>"><%= field.label(key) %></label>
+      <input type="<%= key == 'release_date' ? 'date' : 'text' %>"
+             id="article_meta_<%= key %>"
+             name="<%= f.object_name %>[<%= field.attribute %>][<%= key %>]"
+             value="<%= field.value_for(key) %>">
+      <p style="font-size: 12px; opacity: .7; margin: 2px 0 0;"><%= field.hint(key) %></p>
+    </div>
+  <% end %>
+  <div style="margin-bottom: 10px;">
+    <label for="article_meta_tags"><%= field.label('tags') %></label>
+    <input type="text" id="article_meta_tags"
+           name="<%= f.object_name %>[<%= field.attribute %>][tags]"
+           value="<%= field.tags %>">
+    <p style="font-size: 12px; opacity: .7; margin: 2px 0 0;"><%= field.hint('tags') %></p>
+  </div>
+</div>

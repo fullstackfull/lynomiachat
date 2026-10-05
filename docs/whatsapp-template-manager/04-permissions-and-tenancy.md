@@ -209,10 +209,17 @@ flags, set account limits, set installation-wide WhatsApp credentials
 (`WHATSAPP_APP_ID`, `WHATSAPP_APP_SECRET`, `WHATSAPP_API_VERSION`, `INACTIVE_WHATSAPP_NUMBERS`), grant the
 administrator role, seed or delete an account, and watch `Channels::Whatsapp::TemplatesSyncJob` in Sidekiq Web.
 
-One of those is a genuine P3 prerequisite and belongs in the operator documentation: the **Meta App Dashboard's
-default callback URL** must point at `{FRONTEND_URL}/webhooks/whatsapp` for template status webhooks to arrive at all,
-because Meta never delivers them to a phone-level or WABA-level override (`01-meta-api-contract.md §8`). It is Meta-side
-configuration, not a setting in this product, and nothing breaks without it — status still moves on the existing sync
+One of those is a genuine P3 prerequisite and belongs in the operator documentation, and it is two values:
+
+1. **`WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN`**, set in Super Admin → Installation Configs, which is what Meta's
+   subscription handshake on the app-level callback is checked against. The same store already holds
+   `WHATSAPP_APP_ID`, `WHATSAPP_APP_SECRET` and `WHATSAPP_API_VERSION`, so this is one more key there, not a new
+   credential store.
+2. The **Meta App Dashboard's default callback URL**, which must point at `{FRONTEND_URL}/webhooks/whatsapp`, because
+   Meta never delivers a template webhook to a phone-level or WABA-level override
+   (`01-meta-api-contract.md §8`). That one is Meta-side configuration, not a setting in this product.
+
+Nothing breaks without either: status still moves on the existing sync and on the manual sync button
 (`03-sync-and-lifecycle.md §4.4`).
 
 ---

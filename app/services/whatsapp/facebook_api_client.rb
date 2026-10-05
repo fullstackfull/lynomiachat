@@ -6,7 +6,7 @@ class Whatsapp::FacebookApiClient
   # versions in play. Expires 2028-02-18 (docs/product-enablement/12-proposed-phases.md D3).
   DEFAULT_API_VERSION = 'v24.0'.freeze
   # Base webhook fields resent on every subscribe so Meta won't reset to defaults. `calls` is added by callers only when voice is enabled.
-  WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes].freeze
+  WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes message_template_status_update].freeze
 
   def initialize(access_token = nil)
     @access_token = access_token

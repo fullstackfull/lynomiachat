@@ -185,6 +185,11 @@ get  'webhooks/whatsapp', to: 'webhooks/whatsapp#verify'           # Meta's subs
   (`:34-39`) — which is precisely the right secret for an app-level callback, because the app that owns the
   subscription is what signs it. This path is **more** strictly verified than the per-phone one, which can fall back
   to a channel-level secret.
+- **The subscription handshake needs an installation-wide token.** Meta's `GET` handshake on the app's callback URL
+  carries `hub.verify_token`, and there is no channel to read one from, so `valid_token?` compares it against a new
+  `WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN` installation config — the **same** store that already holds
+  `WHATSAPP_APP_ID`, `WHATSAPP_APP_SECRET` and `WHATSAPP_API_VERSION`, not a new credential store. The comparison is
+  constant-time, and with no token configured the handshake is refused rather than open.
 - **Same job.** `Webhooks::WhatsappEventsJob` gains one branch, taken **before** `channel_is_inactive?`, because that
   guard treats "no channel" as "inactive" and returns (`whatsapp_events_job.rb:11-14`).
 - **Tenant resolution is by WABA, not by phone number.** For `object == 'whatsapp_business_account'`, `entry[].id` is
@@ -225,9 +230,13 @@ get  'webhooks/whatsapp', to: 'webhooks/whatsapp#verify'           # Meta's subs
 ### 4.4 The webhook is an accelerator, never the source of truth
 
 The Meta App Dashboard's default callback URL is **Meta-side configuration outside this repository.** If it is not
-pointed at `{FRONTEND_URL}/webhooks/whatsapp`, no template event arrives and nothing breaks: status still moves on the
-existing 3-hourly sync and on the manual sync button, exactly as today. The webhook turns "within three hours" into
-"within seconds"; it is never the only way a status changes, and no code path waits for it.
+pointed at `{FRONTEND_URL}/webhooks/whatsapp` with the matching `WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN`, no template event
+arrives and nothing breaks: status still moves on the existing 3-hourly sync and on the manual sync button, exactly as
+today. The webhook turns "within three hours" into "within seconds"; it is never the only way a status changes, and no
+code path waits for it.
+
+So the operator prerequisite is two values in one place they already visit — Super Admin → Installation Configs for
+the verify token, and the Meta App Dashboard for the URL — and the product is fully functional before either is set.
 
 This also answers PART 20: there is **no new polling job and no status-watching loop.** A submitted template's status
 arrives by webhook if the app callback is configured, and otherwise on the sync that already runs. Nothing retries in

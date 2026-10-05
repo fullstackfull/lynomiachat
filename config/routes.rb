@@ -677,6 +677,12 @@ Rails.application.routes.draw do
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
   get 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#verify'
   post 'webhooks/whatsapp/:phone_number', to: 'webhooks/whatsapp#process_payload'
+  # Lynomia: Meta never delivers a template webhook to a phone-level or WABA-level callback override -- the four
+  # template fields always go to the Meta app's default callback URL
+  # (docs/whatsapp-template-manager/01-meta-api-contract.md section 8). Same controller and same signature check as
+  # above; the tenant comes from the WABA id in the payload instead of a phone number in the path.
+  get 'webhooks/whatsapp', to: 'webhooks/whatsapp#verify'
+  post 'webhooks/whatsapp', to: 'webhooks/whatsapp#process_payload'
   get 'webhooks/instagram', to: 'webhooks/instagram#verify'
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'

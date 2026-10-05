@@ -26,9 +26,18 @@ class Webhooks::WhatsappController < ActionController::API
   end
 
   def valid_token?(token)
+    # Lynomia: the app-level callback has no phone number in its path, and it is the only URL Meta delivers template
+    # webhooks to, so its handshake is verified against an installation-wide token instead of a channel's.
+    return app_level_token?(token) if params[:phone_number].blank?
+
     channel = Channel::Whatsapp.find_by(phone_number: params[:phone_number])
     whatsapp_webhook_verify_token = channel.provider_config['webhook_verify_token'] if channel.present?
     token == whatsapp_webhook_verify_token if whatsapp_webhook_verify_token.present?
+  end
+
+  def app_level_token?(token)
+    configured = GlobalConfigService.load('WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN', nil)
+    configured.present? && token.present? && ActiveSupport::SecurityUtils.secure_compare(token.to_s, configured.to_s)
   end
 
   def meta_app_secrets

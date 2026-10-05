@@ -312,3 +312,59 @@ retained, so such a test would be false by construction.
    as a service endpoint and kept. If that host is ever meant to vary per installation, it needs a config key.
 6. **`chwt.app` shortlink liveness.** Whether the retained `chwt.app` and `www.chatwoot.com/hc/...` targets
    still resolve was not verified; no outbound requests were made.
+
+---
+
+## 10. Verification
+
+### Test and build gates
+
+| Gate | Result |
+|---|---|
+| Full RSpec | 10,601 examples, **2 failures**, 67 pending |
+| Full Vitest | 481 files, **5,024 tests, 0 failures** |
+| ESLint (41 changed JS/Vue) | **0 errors** (8 pre-existing `no-dynamic-keys` warnings) |
+| RuboCop (changed Ruby) | **0 offenses** |
+| Production build (`assets:precompile`) | **exit 0**, assets emitted in 1m24s |
+| Migrations added | **0** |
+
+Both RSpec failures were reproduced at the phase base `87ef8f76` and are not regressions:
+
+- `spec/builders/agent_builder_spec.rb:47` — reproduced at base by running `spec/actions spec/assets spec/builders` (300 examples, 1 failure, identical message). Cross-example ActiveJob queue pollution: a leftover `Devise::Mailer#confirmation_instructions` job with zero arguments. Passes in isolation at base and at HEAD.
+- `spec/enterprise/services/voice/call_transcription_service_spec.rb:77` — reproduced at base in isolation (19 examples, 1 failure, identical message). `Message` does not implement `reindex` for the verified double.
+
+Three failures in the first full run **were** this phase's and are fixed: `inboxes_whatsapp_credentials_spec.rb` pinned its WebMock stubs to `graph.facebook.com/v14.0`, the version removed by the Graph centralization, so the PATCH reached an unstubbed request and the controller answered 500. The file writes the host as an escaped regex, which the literal-string sweep over the other eleven spec files did not match.
+
+### End-to-end check on a running installation
+
+Booted in `RAILS_ENV=production` with precompiled assets against a database created and seeded from scratch, to verify a fresh install rather than a mutated one.
+
+Seeded configuration: `INSTALLATION_NAME` and `BRAND_NAME` = `Lynomia chat`; `DOCUMENTATION_URL`, `SUPPORT_URL`, `CHANGELOG_URL` = `""`.
+
+| Surface | Observed |
+|---|---|
+| `GET /manifest.json` | `{"name": "Lynomia chat", "short_name": "Lynomia", …}`, `content-type: application/manifest+json` |
+| `GET /app/login` `<title>` | `Lynomia chat` |
+| `window.globalConfig` | `INSTALLATION_NAME: "Lynomia chat"`, the three link keys present and empty |
+| Favicon / manifest links | `LOGO_THUMBNAIL`, `/manifest.json` — both intact |
+| Super Admin onboarding `<title>` | `SuperAdmin | Lynomia chat` (was the hard-coded `SuperAdmin | Chatwoot`) |
+
+### Browser check
+
+Chromium, four combinations (1440×900 and 390×844, each under `en-US` and `ar-SA`):
+
+| Check | Result |
+|---|---|
+| Page title | `Lynomia chat` in all four |
+| Horizontal overflow at 390px | none |
+| Controls present | email and password inputs, submit button, Privacy and Terms links |
+| User-visible "Chatwoot" in page text | **none** |
+| Page and console errors | **none** |
+
+The rendered copy reads "Login to Lynomia chat" / "Sign in to continue to Lynomia chat" — the `replaceInstallationName` path working end to end.
+
+**One honest limit on the RTL result.** `#app[dir]` stayed `ltr` in all four runs, including with `DEFAULT_LOCALE=ar`, because the dashboard derives direction from the signed-in account's locale, which does not exist on the unauthenticated login page. So that route cannot exercise RTL and the authenticated RTL surface was not re-driven in a browser this phase. What is established instead: the P1 diff changes **zero** `class` attributes, **zero** `ltr:`/`rtl:`/physical/logical direction utilities, **zero** responsive variants and **zero** `aria-*`, `role`, `tabindex` or `<label>` attributes, so there is no mechanism by which it could alter direction, breakpoint or accessible-name behaviour. The Arabic-locale pages rendered without error or overflow.
+
+### Controls
+
+No product control was removed. One link was: the Super Admin "Community Support" button, which pointed at upstream's Discord server. It renders again as soon as `SUPPORT_URL` is set, through the same suppression mechanism the codebase already applies to the forty upstream help links behind `CustomBrandPolicyWrapper`. The sidebar Docs and Changelog entries were already hidden on a branded installation and are now reachable once their keys are configured, so that surface gains a route rather than losing one.

@@ -4,8 +4,8 @@ The 82 items the brief asks for, answered in order.
 
 | # | Item | Result |
 |---|---|---|
-| 1 | Branch + HEAD | `claude/practical-thompson-9xfqed` at **`6da3a419`**, pushed. P3 closed at `53dd50b8` |
-| 2 | Commits | **21**, 194 files changed, +14,607 / −158 |
+| 1 | Branch + HEAD | `claude/practical-thompson-9xfqed`. P3 closed at `53dd50b8`. The last commit that changes code is **`6da3a419`**, which is the head every gate below was measured on; the commits after it are this document and the regression record |
+| 2 | Commits | **23**, 195 files changed, +14,561 / −145 |
 | 3 | Existing Help Center components reused | The whole engine. `Portal`, `Category`, `Article` (models, with `articles.meta` jsonb, the `draft/published/archived` enum and the `draft_title`/`draft_content` buffer); `Public::Api::V1::Portals::{ArticlesController, CategoriesController, SearchController}`; the `portal.html+documentation` layout and its partials; `ChatwootMarkdownRenderer`; pg_search's `text_search`; the sitemap and `robots.txt` builders; Administrate for the Super Admin CMS. **No new CMS, no new editor, no new search, no new renderer** |
 | 4 | Global ownership implementation | `portals.platform_owned` boolean. A platform portal has `account_id IS NULL`; `Portal` validates an account's **presence unless** platform-owned and its **absence if** platform-owned. `Category` and `Article` inherit it through `ensure_account_id`, which copies `portal&.account_id` — so the portal is the only ownership anchor and a null account propagates by itself. `Portal.platform` / `Portal.tenant` scopes read it. Reasoning in [01-global-ownership-design.md](01-global-ownership-design.md) |
 | 5 | Migration count | **One.** `custom/db/migrate/20261005110000_add_platform_ownership_to_help_center.rb` — adds `portals.platform_owned` with a partial index, and relaxes `account_id` to nullable on `portals`, `categories`, `articles`. Reversible; `down` restores the null constraints |

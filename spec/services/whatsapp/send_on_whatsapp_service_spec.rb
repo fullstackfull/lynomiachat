@@ -268,27 +268,74 @@ describe Whatsapp::SendOnWhatsappService do
         expect(message.reload.source_id).to eq('123456789')
       end
 
-      it 'handles edge case with missing template gracefully' do
-        # Test the service behavior when template is not found
-        missing_template_params = {
-          'name' => 'non_existent_template',
-          'namespace' => 'missing_namespace',
-          'language' => 'en_US',
-          'category' => 'UTILITY',
-          'processed_params' => { 'body' => { '1' => 'test' } }
-        }
+      # A template name the account does not have, has not had approved, or has in another language must not be sent.
+      # The three callers (this service and both oneoff campaign services) all refuse on a blank name, so the name has
+      # to come from the template that was found rather than from the request.
+      it 'resolves nothing for a template name the channel does not have' do
+        service = Whatsapp::TemplateProcessorService.new(
+          channel: whatsapp_channel,
+          template_params: {
+            'name' => 'non_existent_template',
+            'namespace' => 'missing_namespace',
+            'language' => 'en_US',
+            'category' => 'UTILITY',
+            'processed_params' => { 'body' => { '1' => 'test' } }
+          }
+        )
+
+        expect(service.call).to eq([nil, nil, nil, nil])
+      end
+
+      it 'resolves nothing for a template WhatsApp has not approved' do
+        whatsapp_channel.update_columns(
+          message_templates: [{ 'name' => 'order_shipped', 'status' => 'PENDING', 'category' => 'UTILITY',
+                                'language' => 'en_US',
+                                'components' => [{ 'type' => 'BODY', 'text' => 'Shipped in {{1}} days' }] }]
+        )
 
         service = Whatsapp::TemplateProcessorService.new(
           channel: whatsapp_channel,
-          template_params: missing_template_params
+          template_params: { 'name' => 'order_shipped', 'language' => 'en_US', 'category' => 'UTILITY',
+                             'processed_params' => { 'body' => { '1' => '3' } } }
         )
 
-        expect { service.call }.not_to raise_error
-        name, namespace, language, processed_params = service.call
-        expect(name).to eq('non_existent_template')
-        expect(namespace).to eq('missing_namespace')
+        expect(service.call).to eq([nil, nil, nil, nil])
+      end
+
+      it 'resolves nothing when the template exists in another language only' do
+        service = Whatsapp::TemplateProcessorService.new(
+          channel: whatsapp_channel,
+          template_params: { 'name' => 'customer_yes_no', 'language' => 'fr', 'category' => 'UTILITY' }
+        )
+
+        expect(service.call).to eq([nil, nil, nil, nil])
+      end
+
+      it 'takes the name and language from the approved template, not from the request' do
+        service = Whatsapp::TemplateProcessorService.new(
+          channel: whatsapp_channel,
+          template_params: { 'name' => 'sample_shipping_confirmation', 'language' => 'EN_us',
+                             'category' => 'UTILITY', 'processed_params' => { 'body' => { '1' => '3' } } }
+        )
+
+        name, _namespace, language, = service.call
+        expect(name).to eq('sample_shipping_confirmation')
         expect(language).to eq('en_US')
-        expect(processed_params).to be_nil
+      end
+
+      it 'never asks the provider to send a template WhatsApp has not approved' do
+        whatsapp_channel.update_columns(
+          message_templates: [{ 'name' => 'order_shipped', 'status' => 'REJECTED', 'category' => 'UTILITY',
+                                'language' => 'en_US', 'components' => [{ 'type' => 'BODY', 'text' => 'Shipped' }] }]
+        )
+        message = create_message_with_template('', { 'name' => 'order_shipped', 'language' => 'en_US',
+                                                     'category' => 'UTILITY' })
+
+        described_class.new(message: message).perform
+
+        expect(a_request(:post, 'https://waba.360dialog.io/v1/messages')).not_to have_been_made
+        expect(message.reload.status).to eq('failed')
+        expect(message.external_error).to eq('Template not found or invalid template name')
       end
 
       it 'handles template with blank parameter values correctly' do

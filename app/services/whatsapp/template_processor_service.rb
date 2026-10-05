@@ -9,27 +9,32 @@ class Whatsapp::TemplateProcessorService
 
   private
 
+  # Lynomia: the name and language are taken from the template that was FOUND, not from the request. Every caller
+  # guards on a blank name (send_on_whatsapp_service.rb, both oneoff_campaign_services), so returning the request's
+  # name for a template that is pending, rejected, paused, disabled, in another language or entirely unknown let that
+  # guard pass and handed the send to Meta with no parameters. The refusal is now structural: no approved template in
+  # this channel's synced list, no name, no send.
   def process_template_with_params
+    template = find_template
+    return [nil, nil, nil, nil] if template.blank?
+
     [
-      template_params['name'],
+      template['name'],
       template_params['namespace'],
-      template_params['language'],
-      processed_templates_params
+      template['language'],
+      processed_templates_params(template)
     ]
   end
 
   def find_template
-    channel.message_templates.find do |t|
+    Array(channel.message_templates).find do |t|
       t['name'] == template_params['name'] &&
         t['language']&.downcase == template_params['language']&.downcase &&
         t['status']&.downcase == 'approved'
     end
   end
 
-  def processed_templates_params
-    template = find_template
-    return if template.blank?
-
+  def processed_templates_params(template)
     # Convert legacy format to enhanced format before processing
     converter = Whatsapp::TemplateParameterConverterService.new(template_params, template)
     normalized_params = converter.normalize_to_enhanced
@@ -46,7 +51,7 @@ class Whatsapp::TemplateProcessorService
     components.concat(process_footer_components(processed_params))
     components.concat(process_button_components(processed_params))
 
-    @template_params = components
+    components
   end
 
   def process_header_components(processed_params, template)

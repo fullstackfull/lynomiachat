@@ -189,7 +189,7 @@
       "language_blank": "Choose a language.",
       "category_unsupported": "Choose a category.",
       "parameter_format_unsupported": "Choose how variables are written.",
-      "component_unsupported": "This template has a part Lynomia Chat cannot edit. Manage it in WhatsApp Manager.",
+      "component_unsupported": "This template has a part {installationName} cannot edit. Manage it in WhatsApp Manager.",
       "component_duplicated": "There is more than one of this part.",
       "body_missing": "Add the message text.",
       "body_blank": "Add the message text.",

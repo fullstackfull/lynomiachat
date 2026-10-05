@@ -182,7 +182,7 @@
       "language_blank": "اختر لغة.",
       "category_unsupported": "اختر فئة.",
       "parameter_format_unsupported": "اختر طريقة كتابة المتغيّرات.",
-      "component_unsupported": "في هذا القالب جزء لا يستطيع Lynomia Chat تعديله. أدِره في WhatsApp Manager.",
+      "component_unsupported": "في هذا القالب جزء لا يستطيع {installationName} تعديله. أدِره في WhatsApp Manager.",
       "component_duplicated": "هذا الجزء مكرّر.",
       "body_missing": "أضف نص الرسالة.",
       "body_blank": "أضف نص الرسالة.",

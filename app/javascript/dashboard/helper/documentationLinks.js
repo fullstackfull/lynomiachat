@@ -9,25 +9,41 @@
  * an empty string, and the caller renders no link at all — the behaviour every other product link already has.
  */
 export const DOC_ARTICLES = Object.freeze({
+  // getting started
   gettingStarted: 'welcome-to-lynomia-chat',
-  inboxes: 'set-up-an-inbox',
+  accountSetup: 'set-up-your-account',
+  inviteYourTeam: 'invite-your-team',
+  firstChannel: 'connect-your-first-channel',
+  firstConversation: 'your-first-conversation',
+  // conversations
   conversations: 'work-in-the-inbox',
-  contacts: 'contacts',
-  contactImport: 'import-contacts',
+  assignAndPrioritise: 'assign-and-prioritise',
   labels: 'labels',
+  cannedResponses: 'canned-responses',
+  macros: 'macros',
+  macrosOrAutomation: 'macros-or-automation',
+  // contacts
+  contacts: 'contacts',
+  customAttributes: 'custom-attributes',
+  contactImport: 'import-contacts',
+  bulkActions: 'bulk-actions',
+  // audiences and campaigns
   sharedAudiences: 'shared-audiences',
-  labelsVsAudiences: 'labels-or-shared-audiences',
+  labelsOrAudiences: 'labels-or-shared-audiences',
   campaigns: 'whatsapp-campaigns',
+  // whatsapp
   whatsapp: 'connect-whatsapp',
   whatsappCoexistence: 'whatsapp-business-coexistence',
+  whatsappWindow: 'the-whatsapp-24-hour-window',
   whatsappTemplates: 'whatsapp-templates',
   whatsappTemplateLifecycle: 'whatsapp-template-lifecycle',
-  whatsappWindow: 'the-whatsapp-24-hour-window',
+  whatsappTroubleshooting: 'whatsapp-troubleshooting',
+  // automation and bots
   automation: 'automation-rules',
   flows: 'flow-builder',
-  automationVsFlows: 'automation-or-flow-builder',
-  macros: 'macros',
+  automationOrFlows: 'automation-or-flow-builder',
   agentBots: 'agent-bots',
+  // commerce
   commerce: 'commerce-overview',
   commerceProviders: 'commerce-provider-support',
   commerceWoocommerce: 'connect-woocommerce',
@@ -35,9 +51,14 @@ export const DOC_ARTICLES = Object.freeze({
   commerceZid: 'connect-zid',
   commerceShopify: 'connect-shopify',
   customer360: 'customer-360',
+  // workspace and team
+  inboxes: 'set-up-an-inbox',
   teams: 'teams-and-agents',
-  integrations: 'integrations',
   permissions: 'roles-and-permissions',
+  ownHelpCentre: 'your-own-help-centre',
+  // platform
+  integrations: 'integrations',
+  webhooks: 'webhooks',
   auditLogs: 'audit-logs',
   troubleshooting: 'troubleshooting',
 });

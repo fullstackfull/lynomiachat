@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 
 import { useAlert } from 'dashboard/composables';
 import WhatsAppTemplatesAPI from 'dashboard/api/whatsappTemplates';
@@ -32,6 +33,7 @@ const BUTTON_TYPES = ['QUICK_REPLY', 'URL', 'PHONE_NUMBER', 'COPY_CODE'];
 const VARIABLE = /\{\{([^}]+)\}\}/g;
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const dialogRef = ref(null);
 const isSaving = ref(false);
 const problems = ref([]);
@@ -213,6 +215,7 @@ const removeButton = index => form.value.buttons.splice(index, 1);
 const problemMessage = problem =>
   t(`WHATSAPP_TEMPLATE_MGMT.PROBLEM.${problem.code}`, {
     limit: problem.limit ?? '',
+    installationName: installationName.value,
   });
 
 const load = template => {

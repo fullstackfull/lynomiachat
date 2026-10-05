@@ -51,17 +51,17 @@
   display_title: 'Privacy URL'
   description: 'The privacy policy URL displayed in the app'
 - name: DOCUMENTATION_URL
-  value: ''
+  value: '/docs'
   display_title: 'Documentation URL'
-  description: 'Your product documentation. Leave blank to hide every documentation link in the dashboard.'
+  description: 'Your product documentation. Defaults to this installation''s own documentation at /docs. Leave blank to hide every documentation link in the dashboard.'
 - name: SUPPORT_URL
   value: ''
   display_title: 'Support URL'
   description: 'Where users should go for help. Leave blank to hide every support link in the dashboard.'
 - name: CHANGELOG_URL
-  value: ''
+  value: '/changelog'
   display_title: 'Changelog URL'
-  description: 'Your product changelog. Leave blank to hide every changelog link in the dashboard.'
+  description: 'Your product changelog. Defaults to this installation''s own changelog at /changelog. Leave blank to hide every changelog link in the dashboard.'
 - name: DISPLAY_MANIFEST
   value: true
   display_title: 'Installation Metadata'

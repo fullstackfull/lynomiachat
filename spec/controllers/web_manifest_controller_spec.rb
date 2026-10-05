@@ -9,10 +9,12 @@ describe '/manifest.json', type: :request do
   # spec-correct application/manifest+json, so it comes back as a String.
   let(:manifest) { JSON.parse(response.body) } # rubocop:disable Rails/ResponseParsedBody
 
-  it 'names the web app after the installation rather than a hard-coded product name' do
+  before do
     InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
     GlobalConfig.clear_cache
+  end
 
+  it 'names the web app after the installation rather than a hard-coded product name' do
     get '/manifest.json'
 
     expect(response).to have_http_status(:success)

@@ -1,0 +1,121 @@
+[
+  {
+    "name": "the manager lists the account templates",
+    "ok": true,
+    "detail": "appointment_reminder, back_in_stock, eid_offer, order_shipped, weekly_digest"
+  },
+  {
+    "name": "a draft reads as not submitted, never as pending",
+    "ok": true,
+    "detail": "draft badge"
+  },
+  {
+    "name": "WhatsApp states are spelled out",
+    "ok": true,
+    "detail": "In review at WhatsApp | Rejected by WhatsApp | Paused by WhatsApp"
+  },
+  {
+    "name": "the list can be filtered by state as well as inbox, language and type",
+    "ok": true,
+    "detail": "All states | All inboxes | All languages | All types"
+  },
+  {
+    "name": "the detail panel says why WhatsApp rejected a template",
+    "ok": true,
+    "detail": "rejection shown"
+  },
+  {
+    "name": "the builder opens",
+    "ok": true
+  },
+  {
+    "name": "the builder offers starting points",
+    "ok": true,
+    "detail": "8 starters"
+  },
+  {
+    "name": "a starter fills the form with a draft to edit, and says WhatsApp still reviews it",
+    "ok": true,
+    "detail": "body filled, no approval claim"
+  },
+  {
+    "name": "and choosing one does not save anything by itself",
+    "ok": true,
+    "detail": "builder still open"
+  },
+  {
+    "name": "the preview redraws from what is being typed, with no provider call",
+    "ok": true,
+    "detail": "preview live"
+  },
+  {
+    "name": "every variable asks for the sample WhatsApp reviews it with",
+    "ok": true,
+    "detail": "3 sample fields"
+  },
+  {
+    "name": "the draft is saved and listed",
+    "ok": true,
+    "detail": "listed as shipping_delay_257148"
+  },
+  {
+    "name": "and the builder closes once there is nothing left to fix",
+    "ok": true,
+    "detail": "closed"
+  },
+  {
+    "name": "a draft can be submitted, edited, duplicated and deleted",
+    "ok": true,
+    "detail": "submit, edit, duplicate, delete"
+  },
+  {
+    "name": "an approved template is not offered a submit it cannot have",
+    "ok": true,
+    "detail": "edit, duplicate, delete"
+  },
+  {
+    "name": "submitting is confirmed, with what WhatsApp does next spelled out",
+    "ok": true,
+    "detail": "confirmation shown"
+  },
+  {
+    "name": "and nothing is submitted when the confirmation is dismissed",
+    "ok": true,
+    "detail": "dismissed"
+  },
+  {
+    "name": "choosing an action from the row menu does not also open the preview",
+    "ok": true,
+    "detail": "drawer closed"
+  },
+  {
+    "name": "deleting a draft says it never reached WhatsApp",
+    "ok": true,
+    "detail": "draft wording"
+  },
+  {
+    "name": "and the draft is gone",
+    "ok": true,
+    "detail": "removed"
+  },
+  {
+    "name": "the manager fits 390px with no sideways scroll",
+    "ok": true,
+    "detail": "overflow 0px"
+  },
+  {
+    "name": "the manager fits 768px with no sideways scroll",
+    "ok": true,
+    "detail": "overflow 0px"
+  },
+  {
+    "name": "the manager fits 1024px with no sideways scroll",
+    "ok": true,
+    "detail": "overflow 0px"
+  },
+  {
+    "name": "no request the manager makes fails",
+    "ok": true,
+    "detail": "none"
+  }
+]

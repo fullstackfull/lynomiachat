@@ -51,9 +51,9 @@ RSpec.describe 'WhatsApp inbox credentials', type: :request do
 
   describe 'PATCH /api/v1/accounts/:account_id/inboxes/:id' do
     before do
-      stub_request(:get, %r{graph\.facebook\.com/v14\.0/\d+/message_templates})
+      stub_request(:get, %r{graph\.facebook\.com/v\d+\.\d+/\d+/message_templates})
         .to_return(status: 200, body: { data: [] }.to_json, headers: { 'Content-Type' => 'application/json' })
-      stub_request(:get, %r{graph\.facebook\.com/v14\.0/\d+/phone_numbers})
+      stub_request(:get, %r{graph\.facebook\.com/v\d+\.\d+/\d+/phone_numbers})
         .to_return(status: 200, body: { data: [{ id: '123456789' }, { id: '555000111' }] }.to_json,
                    headers: { 'Content-Type' => 'application/json' })
     end

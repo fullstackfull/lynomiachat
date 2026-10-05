@@ -46,12 +46,34 @@ handled.
 
 ## 2. What can go wrong, and whether the code would notice
 
+> **Correction.** An earlier draft of this document said a `subscribe_app_to_waba` failure surfaces "loudly" and
+> that inbox creation fails rather than appearing to succeed. **That is wrong, and the truth is worse.** The
+> service does re-raise, but the model's callback swallows it. The corrected table is below, and the consequence is
+> the root cause in `08`.
+
 | Failure | Does the code notice? |
 |---|---|
-| `subscribe_app_to_waba` returns an error | **yes, loudly.** `setup_webhook` rescues, logs `[WHATSAPP] Webhook setup failed`, and re-raises as `"Webhook setup failed: …"`. Inbox creation fails rather than appearing to succeed |
+| `subscribe_app_to_waba` returns an error | **no.** `Whatsapp::WebhookSetupService#setup_webhook` re-raises as `"Webhook setup failed: …"`, but `Channel::Whatsapp#setup_webhooks` (`app/models/channel/whatsapp.rb:158-163`) is `rescue StandardError => e` → log → `prompt_reauthorization!`, with **no re-raise**. It is an `after_commit … on: :create`, so the inbox is already saved. The API answers success, and the channel is left **latched** — see below |
 | `register_phone_number` fails | **no, deliberately.** It rescues, stores `@registration_error`, logs a warning and continues — registration is not always needed (a Coexistence number is pre-registered) |
 | the subscription is later removed at Meta, outside this app | **never noticed.** Nothing re-reads `subscribed_apps` on a schedule |
 | the subscription is removed by this app | `Whatsapp::FacebookApiClient#unsubscribe_app_from_waba` exists and is called when the last inbox on a WABA is deleted |
+
+### What that rescue actually does
+
+```ruby
+# app/models/channel/whatsapp.rb:158-163
+def setup_webhooks(is_coexistence: nil)
+  perform_webhook_setup(is_coexistence: is_coexistence)
+rescue StandardError => e
+  Rails.logger.error "[WHATSAPP] Webhook setup failed: #{e.message}"
+  prompt_reauthorization!
+end
+```
+
+`prompt_reauthorization!` sets a Redis flag with **no expiry**. And
+`Webhooks::WhatsappEventsJob#channel_is_inactive?` drops every inbound webhook for an embedded-signup channel while
+that flag is set. So a webhook-setup failure at connect time does not merely fail to subscribe — it **permanently
+disables inbound for that channel** and reports success. That chain is `08`.
 
 **The gap that matters:** the code asserts the subscription **once, at setup**, and never again. There is no
 periodic reconciliation. So a WABA that was correctly subscribed in the past and is not subscribed now produces

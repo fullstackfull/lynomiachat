@@ -10,6 +10,27 @@ class Whatsapp::Diagnosis::LocalChecks
                            'This is the most commonly missed cause of "inbound never arrives", and it is silent ' \
                            'apart from a Rails.logger.warn.'
 
+  # The highest-value check in this whole report, and it needs no network call.
+  #
+  # Webhooks::WhatsappEventsJob#channel_is_inactive? (app/jobs/webhooks/whatsapp_events_job.rb:148-156) returns
+  # true when `reauthorization_required? && embedded_signup_channel?`, and #perform (:11-14) then returns after a
+  # single Rails.logger.warn -- no raise, no retry, no Sentry. Sidekiq records the job as a success and the
+  # controller has already answered Meta 200 OK, so Meta never retries. Every inbound webhook for the channel is
+  # discarded, while outbound keeps working because sending never consults this flag.
+  #
+  # The flag is a Redis key set with no expiry (Reauthorizable#prompt_reauthorization! ->
+  # Redis::Alfred.set(key, true), no `ex:`). Nothing clears it but #reauthorized!, which runs only when someone
+  # completes the reauthorization flow in the UI. Two ways in: AUTHORIZATION_ERROR_THRESHOLD = 2 authorization
+  # errors (a media-download 401 in incoming_message_whatsapp_cloud_service.rb:18 is one), or
+  # Channel::Whatsapp#setup_webhooks (app/models/channel/whatsapp.rb:158-163), which rescues StandardError and
+  # calls prompt_reauthorization! instead of re-raising -- so a webhook-setup failure at connect time latches the
+  # channel while the API still answers success.
+  REAUTH_NOTE = 'This single flag stops ALL inbound for this channel while outbound keeps working, which is ' \
+                'exactly the reported shape. It is a Redis key with no expiry, cleared only by completing the ' \
+                'reauthorization flow in the UI (Settings -> Inboxes -> this inbox). Clearing it is the fix ONLY ' \
+                'if the condition that set it is gone -- check the token and the media downloads first, or it ' \
+                'will latch again on the next two authorization errors.'
+
   def initialize(report)
     @report = report
   end
@@ -48,8 +69,28 @@ class Whatsapp::Diagnosis::LocalChecks
     report.heading("CHANNEL IDENTITY (P5 Part A) — inbox ##{channel.inbox&.id}")
     report.rows(identity_rows(channel, config))
     report.rows(credential_rows(config))
+    reauthorization_check(channel, config)
     signature_secret_check(channel, config)
     inactive_number_check(channel)
+  end
+
+  # P5 Part F: the JOB_FAILURE / INBOX_ROUTING class that looks exactly like META_SUBSCRIPTION from outside.
+  def reauthorization_check(channel, config)
+    latched = channel.reauthorization_required?
+    embedded = config[:source] == 'embedded_signup'
+    report.say "authorization_error_count: #{channel.authorization_error_count} " \
+               "(threshold #{channel.class::AUTHORIZATION_ERROR_THRESHOLD})"
+    report.say "reauthorization_required: #{latched}, source is embedded_signup: #{embedded}"
+    report.check(
+      "inbox ##{channel.inbox&.id}: the channel is NOT latched into reauthorization-required",
+      !(latched && embedded),
+      latched && embedded ? 'LATCHED — every inbound webhook is being dropped' : "latched=#{latched} embedded=#{embedded}",
+      note: REAUTH_NOTE
+    )
+    return unless latched && !embedded
+
+    report.say '  the flag is set but this is not an embedded-signup channel, so the job does not drop webhooks ' \
+               'for it (the guard is deliberately narrow). It still means an authorization error was recorded.'
   end
 
   private

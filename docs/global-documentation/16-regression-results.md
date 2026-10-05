@@ -11,7 +11,7 @@ WhatsApp Template Manager phase (P3) at `53dd50b8`, recorded in
 
 | Gate | P3 baseline | This phase | Reading |
 |---|---|---|---|
-| Full RSpec | 10,635 examples, **2 failures**, 67 pending | *see §2* | *see §2* |
+| Full RSpec | 10,635 examples, **2 failures**, 67 pending | **10,661 examples, 2 failures, 67 pending**, 40m07s | +26 examples, and **the same two failures** — zero regressions |
 | Full Vitest | 492 files, 5,170 tests, **0 failures** | **493 files, 5,177 tests, 0 failures** | +1 file, +7 tests — exactly this phase's `featureHelper.spec.js` |
 | ESLint | **0 errors**, 510 warnings | **0 errors, 510 warnings** | identical. No warning sits in any file this phase touched |
 | RuboCop | 3,442 files, **0 offences** | **3,458 files, 0 offences** | +16 files — this phase's own Ruby |
@@ -23,7 +23,62 @@ WhatsApp Template Manager phase (P3) at `53dd50b8`, recorded in
 
 ## 2. RSpec
 
-*(Filled in from the completed run; see the run log in the scratchpad as `p4-rspec-full.txt`.)*
+**10,661 examples, 2 failures, 67 pending**, in 40 minutes 7 seconds, on head `6da3a419` with nothing else running
+on the machine. Log: `p4-rspec-final.txt`.
+
+The two failures are **exactly** the P3 baseline pair, so this phase introduced none:
+
+- `spec/builders/agent_builder_spec.rb:47`
+- `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`
+
+The +26 examples over P3's 10,635 are accounted for exactly: **25** in the new
+`spec/requests/documentation/global_ownership_spec.rb`, and **1** added to
+`spec/controllers/public/api/v1/portals/articles_controller_spec.rb` (an article slug the portal does not have must
+return 404, which nothing asserted).
+
+### The first run reported 79 failures. Here is why, with evidence
+
+An earlier full run of the same code reported **79 failures**. That number is not a regression and it is not a
+flake — it has a mechanism, and the mechanism was mine as the operator.
+
+`config/environments/test.rb` sets `config.cache_classes = false` and `config.eager_load = false`, so the test
+process **reloads classes when files on disk change**. During that run I was editing the tree: `config/application.rb`,
+`app/helpers/portal_helper.rb`, `app/helpers/super_admin/branding_helper.rb`, a new
+`custom/app/helpers/documentation_helper.rb`, eighteen locale JSON files and a Vue component. Rails unloaded and
+re-autoloaded constants mid-suite, and the failures carry that signature unmistakably:
+
+| Symptom | What it proves |
+|---|---|
+| `NameError: uninitialized constant Commerce::Providers::Salla::Normalizer` at `salla.rb:138` | a nested constant could not be autoloaded after an unload |
+| `expected [… #<Commerce::RecoveryListener:0x…cefa00>] to include #<Commerce::RecoveryListener:0x…bb5bed8>` | **two distinct class objects of the same name** — the dispatcher held an instance of the pre-reload class while `described_class` pointed at the post-reload one |
+| shoulda `have_many … class_name => ::Channel::FacebookPage` failing | a matcher comparing class constants across the same boundary |
+
+All **135** commerce provider examples pass in isolation (`spec/services/commerce/providers/`, 0 failures), which is
+the control. This repository already knows about the condition: its own CLAUDE.md says *"Specs in
+parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting
+raised errors."*
+
+**Four of the 79 were real**, and they were a regression this phase introduced — see §2.1. They were fixed, and the
+run above is the measurement taken afterwards on a tree nobody was touching.
+
+### 2.1 The regression that run found
+
+`SuperAdmin::BrandingHelper#application_title` used `super` as its fallback. `super` there is
+`Administrate::ApplicationHelper#application_title`, which is only in the view's ancestor chain inside an
+Administrate controller. This phase's branding sweep had put the helper on two pages that are **not** Administrate
+controllers:
+
+- `app/views/installation/onboarding/index.html.erb` — the first screen of a fresh installation
+- `app/views/super_admin/devise/sessions/new.html.erb` — the Super Admin sign-in page
+
+Both raised `NoMethodError (super: no superclass method 'application_title')` and returned **500** whenever
+`INSTALLATION_NAME` was blank. That is not a corner: a fresh installation reads exactly those two pages *before*
+anything has seeded its name. It did not show up in manual checking because this machine's `INSTALLATION_NAME` is
+set, so `.presence ||` short-circuits and `super` is never reached.
+
+The fallback is now Administrate's own answer written out
+(`Rails.application.class.module_parent_name.titlecase`). Four examples went from 500 to green: the Super Admin
+sign-in page, the onboarding page, and the two `search_indexing_spec.rb` examples that read them.
 
 The P3 baseline's two failures are both pre-existing and were already pre-existing at P2:
 

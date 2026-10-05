@@ -7,7 +7,7 @@ RSpec.describe Category do
   end
 
   describe 'associations' do
-    it { is_expected.to belong_to(:account) }
+    it { is_expected.to belong_to(:account).optional }
     it { is_expected.to belong_to(:portal) }
     it { is_expected.to have_many(:articles) }
     it { is_expected.to have_many(:sub_categories) }

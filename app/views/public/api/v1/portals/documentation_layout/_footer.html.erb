@@ -15,7 +15,7 @@
     handle = socials[social[:key]].to_s.strip
     social.merge(url: "#{social[:base_url]}#{handle}") if handle.present?
   end
-  show_branding = !portal.account.feature_enabled?('disable_branding')
+  show_branding = !portal.feature_enabled?('disable_branding')
 %>
 
 <% if show_branding || active_socials.any? %>

@@ -26,7 +26,8 @@
 #
 class Category < ApplicationRecord
   paginates_per Limits::CATEGORIES_PER_PAGE
-  belongs_to :account
+  # See Article: a platform portal's categories have no account either.
+  belongs_to :account, optional: true
   belongs_to :portal
   has_many :folders, dependent: :destroy_async
   has_many :articles, dependent: :nullify
@@ -55,7 +56,7 @@ class Category < ApplicationRecord
              optional: true
 
   before_validation :ensure_account_id
-  validates :account_id, presence: true
+  validates :account_id, presence: true, unless: :platform_owned?
   validates :slug, presence: true
   validates :name, presence: true
   validate :allowed_locales
@@ -81,6 +82,10 @@ class Category < ApplicationRecord
         portal.categories.find(category_id).update!(position: new_position)
       end
     end
+  end
+
+  def platform_owned?
+    portal&.platform_owned? || false
   end
 
   private

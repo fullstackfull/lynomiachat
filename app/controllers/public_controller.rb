@@ -21,7 +21,7 @@ class PublicController < ActionController::Base
 
   def ensure_portal_feature_enabled
     return unless ChatwootApp.chatwoot_cloud?
-    return if @portal.account.feature_enabled?('help_center')
+    return if @portal.feature_enabled?('help_center')
 
     render 'public/api/v1/portals/not_active', status: :payment_required
   end

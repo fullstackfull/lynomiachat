@@ -8,7 +8,7 @@ RSpec.describe Portal do
   end
 
   describe 'associations' do
-    it { is_expected.to belong_to(:account) }
+    it { is_expected.to belong_to(:account).optional }
     it { is_expected.to have_many(:categories) }
     it { is_expected.to have_many(:folders) }
     it { is_expected.to have_many(:articles) }

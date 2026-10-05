@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_05_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_05_110000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -200,7 +200,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_100000) do
   end
 
   create_table "articles", force: :cascade do |t|
-    t.integer "account_id", null: false
+    t.integer "account_id"
     t.integer "portal_id", null: false
     t.integer "category_id"
     t.integer "folder_id"
@@ -606,7 +606,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_100000) do
   end
 
   create_table "categories", force: :cascade do |t|
-    t.integer "account_id", null: false
+    t.integer "account_id"
     t.integer "portal_id", null: false
     t.string "name"
     t.text "description"
@@ -1537,7 +1537,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_100000) do
   end
 
   create_table "portals", force: :cascade do |t|
-    t.integer "account_id", null: false
+    t.integer "account_id"
     t.string "name", null: false
     t.string "slug", null: false
     t.string "custom_domain"
@@ -1551,8 +1551,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_100000) do
     t.boolean "archived", default: false
     t.bigint "channel_web_widget_id"
     t.jsonb "ssl_settings", default: {}, null: false
+    t.boolean "platform_owned", default: false, null: false
     t.index ["channel_web_widget_id"], name: "index_portals_on_channel_web_widget_id"
     t.index ["custom_domain"], name: "index_portals_on_custom_domain", unique: true
+    t.index ["platform_owned"], name: "index_portals_on_platform_owned", where: "platform_owned"
     t.index ["slug"], name: "index_portals_on_slug", unique: true
   end
 

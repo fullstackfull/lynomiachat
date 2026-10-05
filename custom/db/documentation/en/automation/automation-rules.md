@@ -48,8 +48,8 @@ Shopify has no cancelled one. The recipe gallery says so next to each affected r
 Conditions cover the conversation (status, priority, inbox, assignee, team, labels), the message (its text, its
 type, whether it is a private note), the contact (email, phone, company, country, language), your custom
 attributes, whether the contact is in a **shared audience**, and what Commerce knows about them. On a Commerce
-trigger you can also test the order's store and store platform. Conditions join with **and** or **or**; a rule
-with none matches every time its event fires.
+trigger you can also test the order's store and store platform. Conditions join with **and** or **or**, and the
+form expects at least one.
 
 Actions cover ownership (assign or unassign an agent or team), classification (add or remove a label, change
 priority), status (resolve, reopen, mark pending, snooze, mute), messages (send a message, add a private note,
@@ -62,9 +62,10 @@ not a customer message, and the conversation may be outside
 ## Recipes
 
 A recipe fills in a working rule and asks only for what it cannot know — which team, label, store, audience or
-amount. The twelve cover order routing, refund escalation, paid-order priority, cancelled-order follow-up,
+amount. The eleven cover order routing, refund escalation, paid-order priority, cancelled-order follow-up,
 audience labelling and priority, spend-based routing, open-order routing, sending an order event to another
-system, and greeting every new conversation.
+system, and greeting every new conversation. The same gallery also offers a setup recipe that creates a shared
+audience and a rule that uses it, in one go.
 
 **A rule created from a recipe starts switched off.** You read it, edit the wording, and turn it on yourself. A
 rule you build by hand is live the moment you save it. Either way it is then an ordinary rule.

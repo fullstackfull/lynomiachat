@@ -7,7 +7,12 @@ namespace :api, defaults: { format: 'json' } do
     resources :accounts, only: [] do
       scope module: :accounts do
         namespace :whatsapp do
-          resources :message_templates, only: [:index, :show]
+          resources :message_templates, only: [:index, :show, :create, :update, :destroy] do
+            member do
+              post :submit
+              post :duplicate
+            end
+          end
         end
       end
     end

@@ -30,6 +30,9 @@ json.missing_at_meta template.missing_at_meta?(context[:mirrored_at])
 json.inboxes context[:inboxes] || []
 # Derived from Meta's current rules, server-side: the manager renders these and every lifecycle endpoint enforces them.
 json.allowed_actions Whatsapp::Templates::Actions.new(template).all
+# Meta's published rules, checked here so the builder can point at the input that is wrong before a submit costs a
+# review cycle. Empty does not mean Meta will approve it -- only that nothing publicly documented is wrong.
+json.validation_problems Whatsapp::Templates::Validator.new(template).problems
 
 json.created_at template.created_at.to_i
 json.updated_at template.updated_at.to_i

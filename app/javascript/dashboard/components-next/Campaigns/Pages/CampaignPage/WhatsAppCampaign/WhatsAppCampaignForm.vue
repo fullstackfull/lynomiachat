@@ -20,9 +20,13 @@ const props = defineProps({
   // Labels this campaign starts with ("Use in a new WhatsApp campaign", from a label page). The same picker, the
   // same server-side recipient count and the same server-side validation apply.
   initialLabelIds: { type: Array, default: () => [] },
+  // What the user had typed before stepping out to build a shared audience. Seeds the form so coming back
+  // resumes rather than restarts; the template's own parameters are not part of it, because the template picker
+  // rebuilds them from the chosen template.
+  initialDraft: { type: Object, default: null },
 });
 
-const emit = defineEmits(['submit', 'cancel']);
+const emit = defineEmits(['submit', 'cancel', 'createAudience']);
 
 const { t } = useI18n();
 
@@ -45,8 +49,20 @@ const initialState = {
 
 const state = reactive({
   ...initialState,
-  selectedAudience: [...props.initialLabelIds],
-  selectedSharedAudiences: [...props.initialSharedAudienceIds],
+  ...(props.initialDraft || {}),
+  // The ids the route carries win over the draft: they are the audience the user has just created, or the one
+  // they asked to campaign to, and that is the more recent intent.
+  selectedAudience: [
+    ...(props.initialLabelIds.length
+      ? props.initialLabelIds
+      : props.initialDraft?.selectedAudience || []),
+  ],
+  selectedSharedAudiences: [
+    ...new Set([
+      ...(props.initialDraft?.selectedSharedAudiences || []),
+      ...props.initialSharedAudienceIds,
+    ]),
+  ],
 });
 const templateParserRef = ref(null);
 
@@ -136,6 +152,18 @@ const resetState = () => {
 };
 
 const handleCancel = () => emit('cancel');
+
+// Leaving to build a shared audience. The page keeps these values and gives them back on return, so the trip
+// costs the user nothing.
+const handleCreateAudience = () =>
+  emit('createAudience', {
+    title: state.title,
+    inboxId: state.inboxId,
+    templateId: state.templateId,
+    scheduledAt: state.scheduledAt,
+    selectedAudience: [...state.selectedAudience],
+    selectedSharedAudiences: [...state.selectedSharedAudiences],
+  });
 
 const prepareCampaignDetails = () => {
   // Find the selected template to get its content
@@ -239,6 +267,7 @@ watch(
       v-model:label-ids="state.selectedAudience"
       v-model:audience-ids="state.selectedSharedAudiences"
       :message="formErrors.audience"
+      @create-audience="handleCreateAudience"
     />
 
     <Input

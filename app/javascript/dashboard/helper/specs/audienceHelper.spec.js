@@ -7,6 +7,9 @@ import {
   findSharedAudience,
   labelIdFromQuery,
   sharedAudiences,
+  audienceReturnRoute,
+  returnRouteFromQuery,
+  RETURN_TO_QUERY_PARAM,
 } from '../audienceHelper';
 
 const VIEWS = [
@@ -103,5 +106,40 @@ describe('audienceHelper', () => {
       expect(findAccountLabel(LABELS, 11)).toBeUndefined();
       expect(findAccountLabel(undefined, 4)).toBeUndefined();
     });
+  });
+});
+
+describe('audienceReturnRoute', () => {
+  it('sends the user to Contacts and remembers where to come back to', () => {
+    expect(audienceReturnRoute('campaigns_whatsapp_index')).toEqual({
+      name: 'contacts_dashboard_index',
+      query: { [RETURN_TO_QUERY_PARAM]: 'campaigns_whatsapp_index' },
+    });
+  });
+});
+
+describe('returnRouteFromQuery', () => {
+  it('reads back a route it knows', () => {
+    expect(returnRouteFromQuery({ returnTo: 'campaigns_whatsapp_index' })).toBe(
+      'campaigns_whatsapp_index'
+    );
+    expect(returnRouteFromQuery({ returnTo: 'campaigns_sms_index' })).toBe(
+      'campaigns_sms_index'
+    );
+  });
+
+  it('ignores a destination it does not know, so the parameter cannot aim someone elsewhere', () => {
+    expect(returnRouteFromQuery({ returnTo: 'super_admin' })).toBeNull();
+    expect(
+      returnRouteFromQuery({ returnTo: 'https://example.com' })
+    ).toBeNull();
+    expect(
+      returnRouteFromQuery({ returnTo: '/app/accounts/1/settings' })
+    ).toBeNull();
+  });
+
+  it('has no opinion when the query says nothing', () => {
+    expect(returnRouteFromQuery({})).toBeNull();
+    expect(returnRouteFromQuery(undefined)).toBeNull();
   });
 });

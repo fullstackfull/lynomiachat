@@ -10,6 +10,35 @@ export const AUDIENCE_QUERY_PARAM = 'audience';
 // its own permissions and validation. Nothing is created on the way.
 export const LABEL_QUERY_PARAM = 'label';
 
+// The other direction: a page that needs a shared audience sends the user to Contacts to build one, and names
+// itself so Contacts can send them back. Only a route NAME travels, never a path or a URL, so the parameter
+// cannot be used to point someone at somewhere else.
+export const RETURN_TO_QUERY_PARAM = 'returnTo';
+
+// The routes a Contacts return trip may land on. An unknown name is ignored and the user simply stays in
+// Contacts with the audience they built.
+const RETURN_ROUTES = ['campaigns_whatsapp_index', 'campaigns_sms_index'];
+
+/**
+ * The route that sends someone to Contacts to build an audience, remembering where they came from.
+ * @param {string} returnRouteName - The route to come back to.
+ * @returns {Object} A router location.
+ */
+export const audienceReturnRoute = returnRouteName => ({
+  name: 'contacts_dashboard_index',
+  query: { [RETURN_TO_QUERY_PARAM]: returnRouteName },
+});
+
+/**
+ * The route name a Contacts visit should return to, when it is one this helper knows.
+ * @param {Object} query - A route query object.
+ * @returns {string|null} The route name, or null.
+ */
+export const returnRouteFromQuery = query => {
+  const raw = query?.[RETURN_TO_QUERY_PARAM];
+  return RETURN_ROUTES.includes(raw) ? raw : null;
+};
+
 const idFromQuery = (query, key) => {
   const raw = query?.[key];
   // A repeated query parameter arrives as an array, and `Number(['3'])` is 3: only a single value counts.

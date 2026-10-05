@@ -12,7 +12,16 @@ import ComboBox from 'dashboard/components-next/combobox/ComboBox.vue';
 import CampaignRecipients from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignRecipients.vue';
 import { buildCampaignAudience } from 'shared/constants/campaign';
 
-const emit = defineEmits(['submit', 'cancel']);
+const props = defineProps({
+  // The same two prefills the WhatsApp form takes. The server accepts Audience entries on any one-off campaign
+  // (`Custom::CampaignAudience` checks only `one_off?`), so SMS was missing the bridge, not the capability.
+  initialSharedAudienceIds: { type: Array, default: () => [] },
+  initialLabelIds: { type: Array, default: () => [] },
+  // What the user had typed before stepping out to build a shared audience.
+  initialDraft: { type: Object, default: null },
+});
+
+const emit = defineEmits(['submit', 'cancel', 'createAudience']);
 
 const { t } = useI18n();
 
@@ -30,7 +39,32 @@ const initialState = {
   selectedSharedAudiences: [],
 };
 
-const state = reactive({ ...initialState });
+const state = reactive({
+  ...initialState,
+  ...(props.initialDraft || {}),
+  selectedAudience: [
+    ...(props.initialLabelIds.length
+      ? props.initialLabelIds
+      : props.initialDraft?.selectedAudience || []),
+  ],
+  selectedSharedAudiences: [
+    ...new Set([
+      ...(props.initialDraft?.selectedSharedAudiences || []),
+      ...props.initialSharedAudienceIds,
+    ]),
+  ],
+});
+
+// Leaving to build a shared audience. The page keeps these values and gives them back on return.
+const handleCreateAudience = () =>
+  emit('createAudience', {
+    title: state.title,
+    message: state.message,
+    inboxId: state.inboxId,
+    scheduledAt: state.scheduledAt,
+    selectedAudience: [...state.selectedAudience],
+    selectedSharedAudiences: [...state.selectedSharedAudiences],
+  });
 
 const rules = {
   title: { required, minLength: minLength(1) },
@@ -148,6 +182,7 @@ const handleSubmit = async () => {
       v-model:label-ids="state.selectedAudience"
       v-model:audience-ids="state.selectedSharedAudiences"
       :message="formErrors.audience"
+      @create-audience="handleCreateAudience"
     />
 
     <Input

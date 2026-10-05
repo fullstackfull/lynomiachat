@@ -1,8 +1,25 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onActivated, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToggle } from '@vueuse/core';
-import { useStoreGetters, useMapGetter } from 'dashboard/composables/store';
+import { useRoute, useRouter } from 'vue-router';
+import {
+  useStore,
+  useStoreGetters,
+  useMapGetter,
+} from 'dashboard/composables/store';
+import {
+  audienceIdFromQuery,
+  findAccountLabel,
+  findSharedAudience,
+  labelIdFromQuery,
+  audienceReturnRoute,
+} from 'dashboard/helper/audienceHelper';
+import {
+  saveCampaignDraft,
+  takeCampaignDraft,
+  clearCampaignDraft,
+} from 'dashboard/helper/campaignDraft';
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
@@ -13,9 +30,19 @@ import SMSCampaignEmptyState from 'dashboard/components-next/Campaigns/EmptyStat
 
 const { t } = useI18n();
 const getters = useStoreGetters();
+const store = useStore();
+const route = useRoute();
+const router = useRouter();
 
 const selectedCampaign = ref(null);
 const [showSMSCampaignDialog, toggleSMSCampaignDialog] = useToggle();
+
+const initialSharedAudienceIds = ref([]);
+const initialLabelIds = ref([]);
+const initialDraft = ref(null);
+const accountLabels = useMapGetter('labels/getLabels');
+
+const CAMPAIGN_TYPE = 'sms';
 
 const uiFlags = useMapGetter('campaigns/getUIFlags');
 const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
@@ -32,6 +59,42 @@ const handleDelete = campaign => {
   selectedCampaign.value = campaign;
   confirmDeleteCampaignDialogRef.value.dialogRef.open();
 };
+
+// The same bridge WhatsApp has: an audience or a label named in the route opens the dialog with it chosen, and a
+// draft left behind by a trip to Contacts is restored. Reading the draft also clears it.
+onActivated(async () => {
+  const audienceId = audienceIdFromQuery(route.query);
+  const labelId = labelIdFromQuery(route.query);
+  initialDraft.value = takeCampaignDraft(CAMPAIGN_TYPE, Date.now());
+  if (!audienceId && !labelId && !initialDraft.value) return;
+
+  if (audienceId) {
+    await store.dispatch('customViews/get', 'contact');
+    const audience = findSharedAudience(
+      getters['customViews/getContactCustomViews'].value,
+      audienceId
+    );
+    initialSharedAudienceIds.value = audience ? [audience.id] : [];
+  }
+  if (labelId) {
+    const label = findAccountLabel(accountLabels.value, labelId);
+    initialLabelIds.value = label ? [label.id] : [];
+  }
+  toggleSMSCampaignDialog(true);
+});
+
+const closeDialog = () => {
+  toggleSMSCampaignDialog(false);
+  initialSharedAudienceIds.value = [];
+  initialLabelIds.value = [];
+  initialDraft.value = null;
+  clearCampaignDraft(CAMPAIGN_TYPE);
+};
+
+const handleCreateAudience = draft => {
+  saveCampaignDraft(CAMPAIGN_TYPE, draft, Date.now());
+  router.push(audienceReturnRoute('campaigns_sms_index'));
+};
 </script>
 
 <template>
@@ -39,12 +102,16 @@ const handleDelete = campaign => {
     :header-title="t('CAMPAIGN.SMS.HEADER_TITLE')"
     :button-label="t('CAMPAIGN.SMS.NEW_CAMPAIGN')"
     @click="toggleSMSCampaignDialog()"
-    @close="toggleSMSCampaignDialog(false)"
+    @close="closeDialog"
   >
     <template #action>
       <SMSCampaignDialog
         v-if="showSMSCampaignDialog"
-        @close="toggleSMSCampaignDialog(false)"
+        :initial-shared-audience-ids="initialSharedAudienceIds"
+        :initial-label-ids="initialLabelIds"
+        :initial-draft="initialDraft"
+        @close="closeDialog"
+        @create-audience="handleCreateAudience"
       />
     </template>
     <div

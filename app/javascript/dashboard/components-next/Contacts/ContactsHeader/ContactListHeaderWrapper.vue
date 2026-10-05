@@ -31,6 +31,7 @@ import {
 import {
   AUDIENCE_QUERY_PARAM,
   LABEL_QUERY_PARAM,
+  returnRouteFromQuery,
 } from 'dashboard/helper/audienceHelper';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { frontendURL } from 'dashboard/helper/URLHelper';
@@ -156,6 +157,19 @@ const onCreateSegment = async payload => {
     );
     const segmentId = response?.data?.id;
     if (!segmentId) return;
+
+    // Somebody who came here from a campaign to build its audience wants the campaign back, not this audience's
+    // page. The route they came from is carried in the query and checked against a fixed list, so the trip can
+    // only end somewhere this helper knows.
+    const returnRoute = returnRouteFromQuery(route.query);
+    if (returnRoute) {
+      router.push({
+        name: returnRoute,
+        query: { [AUDIENCE_QUERY_PARAM]: segmentId },
+      });
+      return;
+    }
+
     // Navigate to the created segment
     router.push({
       name: 'contacts_dashboard_segments_index',

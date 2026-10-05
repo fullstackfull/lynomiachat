@@ -245,3 +245,33 @@ Graph API v24.0
 
 Nothing in that chain is new except the controller, the policy and the model. The credential selection, the account
 scoping, the audit sweeper, the 422 boundary and the Graph client are all existing machinery.
+
+---
+
+## 7. Coexistence
+
+A coexistence inbox (`provider_config['is_coexistence']`) is an ordinary `Channel::Whatsapp` with a WABA, so its
+templates are managed by the same manager, mirrored into the same table and offered by the same rule. One manager, one
+lifecycle; nothing in this phase branches on coexistence.
+
+The one coexistence-specific rule in the product is older than this phase and untouched:
+`Whatsapp::AuthenticationTemplateGuard` blocks an AUTHENTICATION-category template to a BSUID-only recipient. P3 does
+not author authentication templates at all (`01-meta-api-contract.md §5`), so it cannot create one for that guard to
+catch.
+
+## 8. Several WhatsApp Business Accounts
+
+Assumed throughout, never special-cased:
+
+- a template row is keyed on `(account, WABA, name, lower(language))`, so the same template name on two business
+  accounts is two independent rows and neither can overwrite the other;
+- the manager reports every business account the account has connected, each with the inboxes on it and when its
+  templates were last read, and a template says which inboxes can send it — because a template belongs to a business
+  account and several inboxes can share one;
+- a lifecycle call resolves a channel from the template's WABA
+  (`provider_config->>'business_account_id'`, the query the webhook setup already uses), so the credentials used are
+  always that business account's;
+- the status webhook is routed by the WABA id in the payload, which is the only tenant key a template event carries.
+
+Proven in the request specs: two business accounts under one account keep the same template name separate, each
+reports its own inboxes, and both are listed with their own last-read time.

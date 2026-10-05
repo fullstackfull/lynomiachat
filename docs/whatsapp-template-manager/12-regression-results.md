@@ -1,4 +1,4 @@
-# 07 — How this phase was verified
+# 12 — Regression results, and how this phase was verified
 
 Every claim in this document is a command that was run and an output that was read. Where something could not be
 verified, it says so and says why.
@@ -24,7 +24,7 @@ WABA-scoped payload carries no `value.metadata`, so the job resolved no channel 
 (`03-sync-and-lifecycle.md §4.2`).
 
 **`{{contact.phone}}` resolved nowhere** while being offered by the composer's own picker; in a campaign a blank
-render skips the recipient (`05-starters-and-variables.md §4`).
+render skips the recipient (`08-variables.md §2`).
 
 ---
 
@@ -113,7 +113,7 @@ an audit row with no entry in that map renders unlabelled.
   connected and no live credentials, so every Graph interaction in the specs is stubbed and the browser fixture uses
   a fake token. The contract those stubs encode is taken from Meta's current documentation, quoted and cited in
   `01-meta-api-contract.md`, not from a successful call. **Real Meta UAT is therefore not done**
-  (see `08-uat.md`).
+  (see `11-real-meta-uat.md`).
 - **The app-level webhook was not exercised end to end from Meta**, for the same reason: the Meta App Dashboard
   callback is configuration outside this repository. The route, the signature path, the branch, the WABA resolution
   and the row update are all verified locally against constructed payloads in Meta's documented shape.

@@ -287,7 +287,7 @@ describe Whatsapp::SendOnWhatsappService do
       end
 
       it 'resolves nothing for a template WhatsApp has not approved' do
-        whatsapp_channel.update_columns(
+        whatsapp_channel.update!(
           message_templates: [{ 'name' => 'order_shipped', 'status' => 'PENDING', 'category' => 'UTILITY',
                                 'language' => 'en_US',
                                 'components' => [{ 'type' => 'BODY', 'text' => 'Shipped in {{1}} days' }] }]
@@ -324,7 +324,7 @@ describe Whatsapp::SendOnWhatsappService do
       end
 
       it 'never asks the provider to send a template WhatsApp has not approved' do
-        whatsapp_channel.update_columns(
+        whatsapp_channel.update!(
           message_templates: [{ 'name' => 'order_shipped', 'status' => 'REJECTED', 'category' => 'UTILITY',
                                 'language' => 'en_US', 'components' => [{ 'type' => 'BODY', 'text' => 'Shipped' }] }]
         )

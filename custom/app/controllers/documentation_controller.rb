@@ -13,6 +13,18 @@ class DocumentationController < ApplicationController
     redirect_to_portal(Documentation::Library.changelog_portal)
   end
 
+  # A contextual help link from the product. A slug that is not a published article fails safely with a 404 rather
+  # than dropping the reader on a documentation home page that does not answer their question.
+  def article
+    portal = Documentation::Library.docs_portal
+    return render_not_set_up if portal.blank?
+
+    article = portal.articles.published.find_by(slug: params[:article_slug])
+    return head :not_found if article.blank?
+
+    redirect_to "/hc/#{portal.slug}/articles/#{article.slug}", allow_other_host: false
+  end
+
   private
 
   def redirect_to_portal(portal)

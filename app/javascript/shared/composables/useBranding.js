@@ -4,6 +4,7 @@
  */
 import { computed } from 'vue';
 import { useMapGetter } from 'dashboard/composables/store.js';
+import { documentationArticleUrl } from 'dashboard/helper/documentationLinks';
 
 // The InstallationConfig key behind each kind of product link, as globalConfig exposes it.
 const BRAND_LINK_CONFIG_KEYS = {
@@ -52,9 +53,21 @@ export function useBranding() {
     return globalConfig.value?.[BRAND_LINK_CONFIG_KEYS[kind]] || '';
   };
 
+  /**
+   * Resolves one documentation article from the registry against this installation's documentation URL.
+   * Keyed on the article's stable slug rather than on a database id, so a link survives the content being reseeded
+   * (dashboard/helper/documentationLinks.js). Returns '' when the installation has no documentation configured, and
+   * callers render no link in that case.
+   * @param {string} key - a key of DOC_ARTICLES
+   * @returns {string} - the article URL, or '' for no link
+   */
+  const docsLink = key =>
+    documentationArticleUrl(brandLink('documentation'), key);
+
   return {
     installationName,
     replaceInstallationName,
     brandLink,
+    docsLink,
   };
 }

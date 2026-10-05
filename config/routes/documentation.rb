@@ -20,4 +20,8 @@ end
 # The public entry points. Stable, brandable addresses that survive a slug or default-locale change, because they
 # resolve the platform portal rather than hard-coding its path.
 get 'docs', to: 'documentation#show', as: :lynomia_docs
+# One stable address per article, so a product link survives a portal slug change and never carries a database id.
+# The slug is the contract (docs/global-documentation/12-contextual-help.md).
+get 'docs/:article_slug', to: 'documentation#article', as: :lynomia_docs_article,
+                          constraints: { article_slug: /[a-z0-9][a-z0-9\-_]*/ }
 get 'changelog', to: 'documentation#changelog', as: :lynomia_changelog

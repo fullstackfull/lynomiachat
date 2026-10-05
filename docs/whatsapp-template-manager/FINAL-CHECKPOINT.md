@@ -7,8 +7,8 @@ The 77-item report, in the order asked for. Every claim is backed by a document 
 
 | # | Item | Result |
 |---|---|---|
-| 1 | Branch + HEAD | `claude/practical-thompson-9xfqed`, HEAD `a0aa7ece`. Base for this phase: `a970abb7` (P2 head) |
-| 2 | Commits | 11 commits: `a8d74615` preflight docs → `f7cf35aa` the record → `33d6b899` the sendability fix → `3e8082c6` the read abstraction → `90626614` the status webhook → `e5f96859` the read API + action authority → `862eba54` submit/edit/delete/duplicate → `f3093cca` the manager UI → `0ef78b16` audit labels → `f04c81a4` starters + the variable fix → `a0aa7ece` the preview header/footer fix. 77 files, +6286 / −139 |
+| 1 | Branch + HEAD | `claude/practical-thompson-9xfqed`, tip `05812c6b` plus this checkpoint's own commit. Base for this phase: `a970abb7` (P2 head) |
+| 2 | Commits | 14 commits: `a8d74615` preflight docs → `f7cf35aa` the record → `33d6b899` the sendability fix → `3e8082c6` the read abstraction → `90626614` the status webhook → `e5f96859` the read API + action authority → `862eba54` submit/edit/delete/duplicate → `f3093cca` the manager UI → `0ef78b16` audit labels → `f04c81a4` starters + the variable fix → `a0aa7ece` the preview header/footer fix → `044e7cd0` the document set and UAT runbook → `05812c6b` the campaign fixture, and this closeout. 84 files, +6768 / −141 through `05812c6b` |
 | 3 | Existing WhatsApp systems reused | `Channel::Whatsapp` and its `provider_config`; `Whatsapp::Providers::WhatsappCloudService#sync_templates` and the 3-hourly `Whatsapp::TemplatesSyncSchedulerJob`; `Whatsapp::FacebookApiClient` (Graph transport, `faraday`); `Whatsapp::SendOnWhatsappService` → `Whatsapp::TemplateProcessorService` → the provider's `send_template`; `Webhooks::WhatsappEventsJob` and `Webhooks::WhatsappController`; `Whatsapp::WebhookSetupService`; `Flows::Template.sendable?` and `@chatwoot/utils isSendableTemplate`; the `audited` gem → `Enterprise::AuditLog`; `Pundit` + `Api::V1::Accounts::BaseController`; `components-next/template-preview`. Inventory in `00-current-system.md` |
 | 4 | Official Meta API contract verified | Yes — `01-meta-api-contract.md` was **rewritten from Meta's own current documentation**, not from earlier notes, with every rule quoted and cited. It records five endpoints, the character limits verbatim, button type counts and quick-reply grouping, the edit statuses and quotas, the three delete shapes, the webhook delivery rule, and §10 "what an older implementation still gets wrong" |
 | 5 | Graph version used | **v24.0**, the version the repository's existing `Whatsapp::FacebookApiClient` already targets. No version was introduced or pinned separately |
@@ -62,20 +62,20 @@ The 77-item report, in the order asked for. Every claim is backed by a document 
 | 53 | Mobile result | 390 px with **0 px** horizontal overflow, asserted in the journey; 768 and 1024 likewise |
 | 54 | RTL result | The row's computed direction is `rtl` under an Arabic account, asserted in the journey. Layout uses logical utilities (`ms`, `me`, `start`, `end`) |
 | 55 | Accessibility result | Rows are `role="button"` with `tabindex`, Enter and Space; the menu trigger carries `aria-haspopup`, `aria-expanded` and an accessible name naming the template; the preview button has its own label. Dialogs and drawers are the product's existing components with their focus handling |
-| 56 | WhatsApp regressions | __WHATSAPP__ |
-| 57 | Coexistence regressions | __COEX__ |
-| 58 | Campaign regressions | __CAMPAIGN__ |
-| 59 | Flow regressions | __FLOW__ |
-| 60 | Automation regressions | __AUTOMATION__ |
-| 61 | Audience regressions | __AUDIENCE__ |
-| 62 | Contacts regressions | __CONTACTS__ |
-| 63 | Commerce regressions | __COMMERCE__ |
-| 64 | Full RSpec | __RSPEC__ |
+| 56 | WhatsApp regressions | **722 examples, 0 failures** — every `*whatsapp*` spec across `spec/`, `spec/enterprise/` and the new controller spec |
+| 57 | Coexistence regressions | **13 examples, 0 failures** — the coexistence specs. `Whatsapp::AuthenticationTemplateGuard` is untouched |
+| 58 | Campaign regressions | **125 examples, 0 failures.** One P2-era example had to change: it sent a template named `promo` that the channel's synced list has never held, which only passed because the send path echoed the requested name back — the defect this phase closed. The fixture now names a template the channel actually carries, and the example tests its real subject again |
+| 59 | Flow regressions | **69 examples, 0 failures** — flow builder, nodes, validator and executor |
+| 60 | Automation regressions | **276 examples, 0 failures** |
+| 61 | Audience regressions | **84 examples, 0 failures** — P2's audience work intact |
+| 62 | Contacts regressions | **517 examples, 0 failures** |
+| 63 | Commerce regressions | **706 examples, 0 failures** |
+| 64 | Full RSpec | **10635 examples, 2 failures, 67 pending**, 39m39s. The failure set is **identical to the P2 base** — `spec/builders/agent_builder_spec.rb:47` and `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`, both failing before this phase. P2 ran 10601 examples; the 34 new ones are this phase's. Two failures beyond that set appeared on the first run and **neither was called a flake**: both were reproduced in isolation and root-caused — see `12-regression-results.md §6` |
 | 65 | Full Vitest | **492 files, 5170 tests, 0 failures** (P2 base: 5160). `pnpm test`, exit 0 |
 | 66 | ESLint | **0 errors**, 510 warnings (P2 base: 495). The 15 new warnings are all `@intlify/vue-i18n/no-dynamic-keys` on keys built from the server's stable state and problem codes — the deliberate design, and the pattern already used across the codebase |
 | 67 | RuboCop | **3442 files, 0 offences**, exit 0. Two `Rails/SkipsModelValidations` offences in this phase's own spec were fixed by using `update!` rather than by disabling the cop |
 | 68 | Production build | `bin/vite build` clean, exit 0. Puma restarted on the built bundle and both journeys run against it |
-| 69 | Browser journeys | **English 24/24, Arabic 4/4** against the production bundle. 15 screenshots and both JSON reports in `screenshots/`. Two real defects were found here that no spec would have caught — see `12-regression-results.md §3` |
+| 69 | Browser journeys | **English 24/24, Arabic 4/4** against the production bundle. 15 screenshots and both JSON reports in `screenshots/`. Three real defects were found here that no spec would have caught — see `12-regression-results.md §3` |
 | 70 | Feature parity | No feature was removed. The per-inbox `GET .../inboxes/:id/message_templates` endpoint still serves the composer, the campaign form and the mobile app unchanged; the read-only template page became the manager without losing what it showed; the sync, the send path and the CSAT lifecycle are intact |
 | 71 | Real Meta UAT result | **SOFTWARE COMPLETE / REAL META UAT BLOCKED.** No template was created, edited or deleted at Meta. The blocker is credentials, not code or network: the only WhatsApp channel carries an 11-character fixture token and a fabricated WABA id, and no Meta environment variable is set, while an unauthenticated probe reaches Graph v24.0 and is refused for exactly that reason. A full operator runbook, with safety rules and a step-by-step script, is in `11-real-meta-uat.md`. **No GO is claimed** |
 | 72 | Known limitations | (a) Real Meta UAT not run (71). (b) The app-level webhook needs a Meta App Dashboard callback URL, which is configuration outside this repository. (c) The composer's variable picker still reads its client-side list — resolved in the browser, so not a send-context question, and rewiring it would touch canned responses and macros (`08-variables.md §2`). (d) `BUTTON_COPY_CODE_MAX` is held at 15, stricter than Meta's current 20, until the send path's constant is raised. (e) Media headers accept a Meta `header_handle`; no upload-and-resume helper was built |

@@ -72,18 +72,18 @@ afterwards.
 
 Driven with Playwright against the built production bundle, as a person would.
 
-**English — 23 checks.** The list and its states in words; the state filter beside inbox, language and type; the
+**English — 24 checks, all passing.** The list and its states in words; the state filter beside inbox, language and type; the
 detail panel explaining a rejection; the builder opening, offering eight starting points, filling from one without
 saving anything, redrawing its preview as the body is typed with no provider call, and asking for a sample value per
 variable; the draft saved and listed and the builder closing; a draft offering submit, edit, duplicate and delete
 while an approved template is not offered a submit it cannot have; the submit confirmation stating what WhatsApp does
 next and nothing being submitted when it is dismissed; choosing an action not also opening the preview; deleting a
-draft saying it never reached WhatsApp, and the draft being gone; and no sideways scroll at 390, 768 and 1024px.
+draft saying it never reached WhatsApp, and the draft being gone; no sideways scroll at 390, 768 and 1024px; and no request the manager makes failing.
 
-**Arabic — 4 checks.** The manager's title and states in Arabic, the new state filter translated, the layout
+**Arabic — 4 checks, all passing.** The manager's title and states in Arabic, the new state filter translated, the layout
 right-to-left, and the builder translated including its sample-value explanation.
 
-### Two defects the browser found that no spec would have
+### Three defects the browser found that no spec would have
 
 1. **Choosing an action from a row's menu also opened the preview**, because the menu's click bubbled to the card's
    own click handler. Fixed by stopping propagation at the menu.
@@ -92,6 +92,11 @@ right-to-left, and the builder translated including its sample-value explanation
    chip, "Add button" and the per-button remove each submitted the form. Fixed with an explicit `type="button"` on
    the three, with the reason in a comment so it is not re-introduced. The journey now asserts that choosing a
    starter leaves the builder open.
+3. **A template with buttons previewed neither its header nor its footer.** `TemplatePreview` computes `title` and
+   `footer` for every template type, but `CallToActionTemplate` — the leaf that draws a template with buttons —
+   rendered only the body, so a header typed in the builder vanished from the preview, and from every other surface
+   that renders such a template. Both are now drawn. It was visible in the builder screenshot and invisible to the
+   unit tests, because no test asserted on that component at all.
 
 ---
 
@@ -107,7 +112,84 @@ an audit row with no entry in that map renders unlabelled.
 
 ---
 
-## 5. What was not verified, and why
+## 5. Regression gates
+
+Run on the final tree, with nothing else writing to the repository.
+
+| Gate | Command | Result | P2 base |
+|---|---|---|---|
+| Full RSpec | `RAILS_ENV=test bundle exec rspec` | **10635 examples, 2 failures, 67 pending**, 39m39s | 10601 examples, the same 2 failures |
+| Full Vitest | `pnpm test` | **492 files, 5170 tests, 0 failures**, exit 0 | 5160 tests |
+| ESLint | `pnpm eslint` | **0 errors**, 510 warnings, exit 0 | 0 errors, 495 warnings |
+| RuboCop | `bundle exec rubocop` | **3442 files, 0 offences** | 0 offences |
+| Production build | `bin/vite build` | clean, exit 0 | — |
+| Browser journeys | Playwright against the built bundle | **EN 24/24, AR 4/4** | — |
+
+The two remaining RSpec failures are the P2 base pair and fail without this phase's changes:
+`spec/builders/agent_builder_spec.rb:47` and `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`.
+
+The 15 new ESLint warnings are all `@intlify/vue-i18n/no-dynamic-keys`, on keys built from the server's stable state
+and problem codes. That indirection is the design — the server returns a code and the UI owns the sentence — and it
+is the pattern already used across this codebase, which is why the rule is configured as a warning.
+
+Per subsystem, each run on its own:
+
+| Subsystem | Examples | Failures |
+|---|---|---|
+| WhatsApp (`*whatsapp*`, OSS + EE + new) | 722 | 0 |
+| Commerce | 706 | 0 |
+| Contacts | 517 | 0 |
+| Automation | 276 | 0 |
+| Campaigns | 125 | 0 |
+| Audience | 84 | 0 |
+| Flow builder | 69 | 0 |
+| Coexistence | 13 | 0 |
+
+---
+
+## 6. The failure set, compared with the P2 base
+
+The first full run finished **10635 examples, 4 failures** — two beyond the base. Neither was called a flake. Both
+were re-run in isolation, reproduced, and root-caused.
+
+### `spec/lib/config_loader_spec.rb:8` — not a code regression
+
+```
+expect(InstallationConfig.count).to eq(0)
+  expected: 0
+       got: 1
+```
+
+The test database held one row, `WHATSAPP_API_VERSION`, persisted in this container before the run; the example
+asserts an empty table before `ConfigLoader#process`. Nothing in this phase writes that row — every reader of it goes
+through `GlobalConfigService.load`, which does not create. Proven rather than assumed:
+
+- deleting the row makes the file pass, 5 examples, 0 failures;
+- running all 722 WhatsApp specs afterwards leaves `installation_configs` **empty**, so no spec recreates it.
+
+### `spec/models/campaign_audience_spec.rb:127` — this phase, behaving correctly
+
+```
+expect(channel).to have_received(:send_template).twice
+  expected: 2 times
+  received: 0 times
+```
+
+The example built a campaign whose `template_params` named `promo` — a template the channel's synced list has never
+held. Before this phase, `TemplateProcessorService` echoed the requested name back, so the campaign handed `promo` to
+Meta and the mock recorded two sends. That is precisely the defect §1 describes. Now the processor resolves the name
+from the template it finds, nothing is found, and the EE campaign service marks each recipient
+**skipped: "Template name could not be resolved"** instead of sending.
+
+So the old assertion was asserting the bug. The fixture now names a template the factory's channel actually carries
+and WhatsApp has approved, the example tests its real subject again — one send per contact across the campaign's
+labels and audiences — and a comment records why the name has to exist.
+
+The re-run after both findings: **10635 examples, 2 failures**, the base pair and nothing else.
+
+---
+
+## 7. What was not verified, and why
 
 - **Nothing was created, edited or deleted at Meta.** This installation has no real WhatsApp Business Account
   connected and no live credentials, so every Graph interaction in the specs is stubbed and the browser fixture uses

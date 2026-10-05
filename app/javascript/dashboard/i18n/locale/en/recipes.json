@@ -53,8 +53,7 @@
       "PRIORITY": "Priority",
       "LANGUAGE": "Language of the bot's messages",
       "EVENT": "Order event",
-      "URL": "Address to call",
-      "LABEL": "Label"
+      "URL": "Address to call"
     },
     "AUDIENCE": {
       "TITLE": "Start from an audience preset",
@@ -104,11 +103,13 @@
       "PROVENANCE": "Created from the {name} template (v{version}).",
       "COMMERCE_ORDER_TRACKING": {
         "NAME": "Order tracking bot",
-        "DESCRIPTION": "Offers to track an order, finds the customer's own latest order, asks for an order number when there is none, and hands anything else to your team."
+        "DESCRIPTION": "Offers to track an order, finds the customer's own latest order, asks for an order number when there is none, and hands anything else to your team.",
+        "PROVIDER_NOTE": "WooCommerce, Zid and Shopify can find an order by its number. Salla cannot, so on a Salla store the customer reaches your team instead. Delivery tracking detail also differs by platform."
       },
       "COMMERCE_AFTER_SALES": {
         "NAME": "Order issue intake",
-        "DESCRIPTION": "Asks for the order number, finds the order, asks what went wrong, and hands the conversation over with the answer already noted."
+        "DESCRIPTION": "Asks for the order number, finds the order, asks what went wrong, and hands the conversation over with the answer already noted.",
+        "PROVIDER_NOTE": "WooCommerce, Zid and Shopify can find an order by its number. Salla cannot, so on a Salla store the customer reaches your team instead."
       },
       "SUPPORT_DEPARTMENT_ROUTING": {
         "NAME": "Department routing bot",
@@ -125,6 +126,14 @@
       "WHATSAPP_WELCOME_MENU": {
         "NAME": "Welcome and collect the request",
         "DESCRIPTION": "Greets the customer, asks what they need, confirms it has been received, and hands the conversation to your team with the request in view."
+      },
+      "FAQ_MENU": {
+        "NAME": "The questions you answer every day",
+        "DESCRIPTION": "A menu of your most-asked questions with an answer for each, a way back to the menu, and the team one tap away. Every answer is yours to edit."
+      },
+      "COMPLAINT_INTAKE": {
+        "NAME": "A complaint arrives sorted",
+        "DESCRIPTION": "Takes the complaint in the customer’s own words, labels the conversation so you can count them later, asks what kind it is, and hands it to a team at the priority you choose."
       }
     },
     "AUTOMATION": {
@@ -138,7 +147,8 @@
       },
       "COMMERCE_ORDER_SHIPPED_LABEL": {
         "NAME": "Label a shipped order",
-        "DESCRIPTION": "When a store marks an order shipped, add a label to the customer's conversation so your team can see it at a glance."
+        "DESCRIPTION": "When a store marks an order shipped, add a label to the customer's conversation so your team can see it at a glance.",
+        "PROVIDER_NOTE": "Salla, Zid and Shopify report an order as shipped. WooCommerce has no shipped status, so this rule will not run for a WooCommerce store."
       },
       "COMMERCE_REFUND_ESCALATION": {
         "NAME": "Refund gets escalated",
@@ -159,6 +169,23 @@
       "ACTIVE_ORDER_ROUTING": {
         "NAME": "Customer with an open order",
         "DESCRIPTION": "When someone who has an order still in progress starts a conversation, send it to the team that can answer about it."
+      },
+      "COMMERCE_ORDER_PAID_PRIORITY": {
+        "NAME": "A paid order moves up the queue",
+        "DESCRIPTION": "When a customer's order is paid for, label the conversation and raise its priority so the order is handled before the questions."
+      },
+      "COMMERCE_ORDER_CANCELLED_FOLLOWUP": {
+        "NAME": "Someone follows up a cancelled order",
+        "DESCRIPTION": "When an order is cancelled, send the conversation to a team with a note asking them to find out why. The customer is never messaged automatically.",
+        "PROVIDER_NOTE": "WooCommerce, Salla and Zid report an order as cancelled. Shopify does not, so this rule will not run for a Shopify store."
+      },
+      "GREET_NEW_CONVERSATION": {
+        "NAME": "Every new conversation gets an answer",
+        "DESCRIPTION": "When someone starts a conversation, reply at once so they know they have been heard. Edit the wording before you turn it on."
+      },
+      "AUDIENCE_CONVERSATION_LABEL": {
+        "NAME": "An audience’s conversations are labelled",
+        "DESCRIPTION": "When someone in a shared audience starts a conversation, label it — so the group you described can be found in the inbox and in reports."
       }
     },
     "MACRO": {

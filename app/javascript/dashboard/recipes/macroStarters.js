@@ -49,9 +49,10 @@ const action = (name, params = []) => ({
   action_params: params,
 });
 
-const label = (key, required = true) => ({
+// `add_label` takes label titles, and always a list of them, which is the shape the wizard's label picker produces.
+const labels = (key, required = true) => ({
   key,
-  type: INPUT_TYPES.LABEL,
+  type: INPUT_TYPES.LABELS,
   required,
 });
 const team = (key, required = true) => ({
@@ -79,12 +80,12 @@ export const MACRO_STARTERS = [
     id: 'escalate_conversation',
     category: CATEGORIES.SUPPORT,
     requires: [REQUIREMENTS.TEAM, REQUIREMENTS.LABEL],
-    inputs: [team('team'), label('label')],
+    inputs: [team('team'), labels('labels')],
     build: values => ({
       actions: [
         action('change_priority', ['high']),
         action('assign_team', [values.team]),
-        action('add_label', [values.label]),
+        action('add_label', values.labels),
         action('add_private_note', [body('both', NOTES.ESCALATED)]),
       ],
     }),
@@ -112,10 +113,10 @@ export const MACRO_STARTERS = [
     id: 'resolve_with_reason',
     category: CATEGORIES.SUPPORT,
     requires: [REQUIREMENTS.LABEL],
-    inputs: [label('label')],
+    inputs: [labels('labels')],
     build: values => ({
       actions: [
-        action('add_label', [values.label]),
+        action('add_label', values.labels),
         action('resolve_conversation'),
       ],
     }),
@@ -141,10 +142,10 @@ export const MACRO_STARTERS = [
     id: 'waiting_on_customer',
     category: CATEGORIES.OPERATIONS,
     requires: [REQUIREMENTS.LABEL],
-    inputs: [label('label')],
+    inputs: [labels('labels')],
     build: values => ({
       actions: [
-        action('add_label', [values.label]),
+        action('add_label', values.labels),
         action('snooze_conversation'),
       ],
     }),
@@ -157,10 +158,10 @@ export const MACRO_STARTERS = [
     id: 'store_issue_handoff',
     category: CATEGORIES.ECOMMERCE,
     requires: [REQUIREMENTS.TEAM, REQUIREMENTS.LABEL],
-    inputs: [team('team'), label('label')],
+    inputs: [team('team'), labels('labels')],
     build: values => ({
       actions: [
-        action('add_label', [values.label]),
+        action('add_label', values.labels),
         action('change_priority', ['high']),
         action('assign_team', [values.team]),
         action('add_private_note', [body('both', NOTES.STORE_ISSUE)]),

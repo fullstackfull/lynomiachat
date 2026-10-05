@@ -140,6 +140,14 @@ defineExpose({ open, close });
             >
               {{ t('RECIPES.REQUIRES', { what: recipe.reasons.join(', ') }) }}
             </span>
+            <span
+              v-if="recipe.providerNote"
+              class="text-label-small text-n-slate-11"
+              :data-test-id="`recipe-${recipe.id}-provider-note`"
+              dir="auto"
+            >
+              {{ t(recipe.providerNote) }}
+            </span>
           </span>
           <Button
             v-if="recipe.status === RECIPE_STATUS.AVAILABLE"
@@ -174,6 +182,14 @@ defineExpose({ open, close });
       />
       <p v-else class="mb-0 text-sm text-n-slate-11">
         {{ t('RECIPES.NO_INPUTS') }}
+      </p>
+      <p
+        v-if="selected.providerNote"
+        class="mb-0 text-label-small text-n-slate-11"
+        data-test-id="recipe-selected-provider-note"
+        dir="auto"
+      >
+        {{ t(selected.providerNote) }}
       </p>
       <Button
         :label="t('RECIPES.BACK')"

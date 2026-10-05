@@ -24,10 +24,10 @@ const SERVER_ACTIONS = [
 
 const BUILDER_ACTIONS = MACRO_ACTION_TYPES.map(action => action.key);
 
-// Values a wizard would collect: a label input yields a title, a team input an id.
+// Values a wizard would collect: a label picker yields titles, a team input an id.
 const valuesFor = starter =>
   starter.inputs.reduce((values, input) => {
-    if (input.type === INPUT_TYPES.LABEL) values[input.key] = 'escalated';
+    if (input.type === INPUT_TYPES.LABELS) values[input.key] = ['escalated'];
     if (input.type === INPUT_TYPES.TEAM) values[input.key] = 12;
     return values;
   }, {});
@@ -96,7 +96,7 @@ describe('MACRO_STARTERS', () => {
         expect(starter.requires).toContain(REQUIREMENTS.TEAM);
       }
       if (requiresLabel) {
-        expect(declared).toContain('label');
+        expect(declared).toContain('labels');
         expect(starter.requires).toContain(REQUIREMENTS.LABEL);
       }
     }

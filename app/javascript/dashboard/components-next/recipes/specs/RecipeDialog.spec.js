@@ -96,6 +96,33 @@ describe('RecipeDialog', () => {
     ];
   });
 
+  it('tells someone what their store platform cannot do, both in the list and after they pick it', async () => {
+    const withNote = {
+      ...recipe('tracking'),
+      providerNote: 'RECIPES.FLOW.COMMERCE_ORDER_TRACKING.PROVIDER_NOTE',
+    };
+    const wrapper = await mountDialog([withNote]);
+
+    const inList = wrapper.find(
+      '[data-test-id="recipe-tracking-provider-note"]'
+    );
+    expect(inList.exists()).toBe(true);
+    expect(inList.text()).toContain('Salla cannot');
+
+    await wrapper.find('[data-test-id="recipe-tracking-use"]').trigger('click');
+    expect(
+      wrapper.find('[data-test-id="recipe-selected-provider-note"]').exists()
+    ).toBe(true);
+  });
+
+  it('says nothing about platforms for a starter that depends on none', async () => {
+    const wrapper = await mountDialog([recipe('ready')]);
+
+    expect(
+      wrapper.find('[data-test-id="recipe-ready-provider-note"]').exists()
+    ).toBe(false);
+  });
+
   it('offers a usable recipe with a Use button', async () => {
     const wrapper = await mountDialog([recipe('ready')]);
 

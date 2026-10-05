@@ -52,6 +52,30 @@ describe('recipe catalogues', () => {
   );
 
   it.each(LOCALES)(
+    'has the platform note it claims, in both languages (%s)',
+    locale => {
+      ALL.filter(recipe => recipe.providerNote).forEach(recipe => {
+        expect(
+          lookupIn(locale, recipe.providerNote),
+          recipe.providerNote
+        ).toBeTruthy();
+      });
+    }
+  );
+
+  it('says which platforms report a trigger only some of them report', () => {
+    // The four store platforms do not normalize the same order statuses: WooCommerce has no shipped status and
+    // Shopify no cancelled one, so a starter built on either must say so rather than read as ready everywhere.
+    [
+      'commerce_order_shipped_label',
+      'commerce_order_cancelled_followup',
+    ].forEach(id => {
+      const recipe = ALL.find(item => item.id === id);
+      expect(recipe.providerNote, id).toBeTruthy();
+    });
+  });
+
+  it.each(LOCALES)(
     'has a label string for every input every recipe asks for (%s)',
     locale => {
       ALL.forEach(recipe =>
@@ -172,10 +196,12 @@ describe('recipe catalogues', () => {
     });
   });
 
-  it('has the sizes the phase set out to deliver', () => {
+  // Not a target, a tripwire: a catalogue that changes size should change this line too, deliberately.
+  it('ships the catalogue sizes it says it does', () => {
     expect(AUDIENCE_PRESETS).toHaveLength(9);
-    expect(AUTOMATION_RECIPES).toHaveLength(7);
-    expect(FLOW_TEMPLATES).toHaveLength(6);
+    expect(AUTOMATION_RECIPES).toHaveLength(11);
+    expect(FLOW_TEMPLATES).toHaveLength(8);
+    expect(MACRO_STARTERS).toHaveLength(6);
   });
 
   it('types every recipe as the catalogue it belongs to', () => {

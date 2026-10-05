@@ -15,6 +15,11 @@
 //   description   i18n key for the one-line explanation
 //   category      one of CATEGORIES
 //   requires      REQUIREMENT keys the account must satisfy before the recipe can be used
+//   providerNote  optional i18n key, for a starter whose usefulness depends on what the store platform reports. The
+//                 four platforms do not report the same things — WooCommerce has no shipped or delivered order status
+//                 at all, Shopify has no cancelled one, Salla cannot look an order up by its number — so a starter
+//                 that depends on one says which platforms report it, where the choice is made. Shown, never enforced:
+//                 an account can connect a second platform tomorrow, and the created object keeps working.
 //   inputs        the account-specific values the wizard asks for, in order (see INPUT_TYPES)
 //   build         (values, context) -> the payload for that type's own create call. Pure: no requests, no ids but the
 //                 ones the user chose from their own account
@@ -47,7 +52,6 @@ export const REQUIREMENTS = {
 // The controls the wizard knows how to render. Every option list comes from the current account.
 export const INPUT_TYPES = {
   TEAM: 'team',
-  LABEL: 'label',
   LABELS: 'labels',
   AUDIENCE: 'audience',
   STORE: 'store',

@@ -85,6 +85,25 @@
         "READ_ONLY": "This is a shared audience. Only administrators can change it; you can still adjust the filters and apply them.",
         "EDIT": "Shared audience: everyone in the account can open it, and automation rules can use it.",
         "USED_BY": "This shared audience is used by {rules} active automation rules and {campaigns} campaigns not yet sent. Saving changes what they match at once."
+      },
+      "EXPLAINER": {
+        "TITLE": "What a shared audience is",
+        "BODY": "A live customer group. You save the rule once and the product works out who matches it every time the audience is used, so the group keeps up with your customers on its own.",
+        "EXAMPLES_TITLE": "For example",
+        "EXAMPLES": [
+          "Recent buyers",
+          "Customers with an active order",
+          "High-value customers",
+          "Customers of one store",
+          "Customers who have contacted us",
+          "Customers who never have"
+        ]
+      },
+      "VS_LABEL": {
+        "TITLE": "Label or shared audience?",
+        "LABEL": "A label is a sticker you put on the customers you choose. It stays until someone takes it off.",
+        "AUDIENCE": "A shared audience is a saved question about your customers, answered again every time it is used.",
+        "RULE": "If you can point at the customers, use a label. If you can describe them, use an audience."
       }
     }
   }

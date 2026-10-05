@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 describe SuperAdmin::BrandingHelper do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   let(:installation_name) { InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Chatwoot') }
   let(:support_url) { InstallationConfig.where(name: 'SUPPORT_URL').first_or_create(value: '') }
 

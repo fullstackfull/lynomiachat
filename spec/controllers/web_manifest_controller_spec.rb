@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 describe '/manifest.json', type: :request do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   # `response.parsed_body` only parses registered JSON media types, and the manifest is served as the
   # spec-correct application/manifest+json, so it comes back as a String.
   let(:manifest) { JSON.parse(response.body) } # rubocop:disable Rails/ResponseParsedBody

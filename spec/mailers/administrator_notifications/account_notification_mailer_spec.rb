@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe AdministratorNotifications::AccountNotificationMailer do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   let(:account) { create(:account, name: 'Test Account') }
   let(:mailer) { described_class.with(account: account) }
   let(:class_instance) { described_class.new }

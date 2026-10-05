@@ -15,8 +15,9 @@
 
 <p>To keep things secure and efficient, we regularly remove inactive accounts so our systems remain optimized for active teams.</p>
 
-{% if global_config["SUPPORT_URL"] %}
-<p>If you have any questions, you can <a href="{{ global_config['SUPPORT_URL'] }}">get in touch with us</a>.</p>
+{% assign support_url = global_config["SUPPORT_URL"] | strip %}
+{% if support_url != "" %}
+<p>If you have any questions, you can <a href="{{ support_url }}">get in touch with us</a>.</p>
 {% endif %}
 
 <p>— The {{ brand_name }} Team</p>

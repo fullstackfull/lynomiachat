@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 describe '/app/login', type: :request do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   context 'without DEFAULT_LOCALE' do
     it 'renders the dashboard' do
       get '/app/login'

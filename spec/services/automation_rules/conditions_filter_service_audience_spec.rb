@@ -3,6 +3,10 @@ require 'rails_helper'
 # The "Contact audience is in / is not in" condition in Chatwoot automation rules
 # (docs/automation/03-audience-and-commerce-conditions.md).
 RSpec.describe AutomationRules::ConditionsFilterService do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:inbox) { create(:inbox, account: account) }

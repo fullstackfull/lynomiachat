@@ -83,10 +83,10 @@ No column is here on the chance it is useful later. Each one is named with the t
 | `category` | `UTILITY` / `MARKETING` / `AUTHENTICATION`. Required by create and edit; the manager filters on it. |
 | `parameter_format` | `POSITIONAL` / `NAMED`. Required by create; `Whatsapp::TemplateProcessorService:83` reads it to decide parameter ordering, and the builder needs it to render placeholders. Not derivable without guessing. |
 | `components` | The Meta-shaped components payload, stored as Meta sends/accepts it (jsonb, per PART 1.2). The builder edits it, the preview renders it, the submit posts it. |
-| `meta_template_id` | Meta's template id. Null until Meta has it. Required for edit (`POST {template_id}`) and for delete-by-id. Its presence is what makes a record remote rather than a draft. |
-| `meta_status` | The remote status **verbatim** from Meta (`APPROVED`, `PENDING`, `REJECTED`, `PAUSED`, `DISABLED`, `IN_APPEAL`, `LIMIT_EXCEEDED`, `PENDING_DELETION`, `ARCHIVED`, `DELETED`). A string, not an enum, because Meta owns this vocabulary and adds to it. Null for a local draft — which is also why a draft is never shown as "Pending". |
+| `meta_template_id` | Meta's template id. Null until Meta has it. Required for edit (`POST {template_id}`) and for delete-by-id. |
+| `meta_status` | The remote status **verbatim** from Meta (`APPROVED`, `PENDING`, `REJECTED`, `PAUSED`, `DISABLED`, `IN_APPEAL`, `LIMIT_EXCEEDED`, `PENDING_DELETION`, `ARCHIVED`, `DELETED`). A string, not an enum, because Meta owns this vocabulary and adds to it. Null for a local draft — which is also why a draft is never shown as "Pending". **Its presence is what makes a row remote**, rather than the id: Meta always reports a status, while a synced template can arrive with no `id` at all (this repo's own factory has such entries, and `WhatsAppCampaignForm.vue:86` already breaks on them), and a row with an id but no status would read as a draft. |
 | `meta_payload` | The rest of the remote object as last seen: `rejected_reason`, `quality_score`, `previous_category`, `correct_category`, `sub_category`, `message_send_ttl_seconds`, `library_template_name`, `cta_url_link_tracking_opted_out`. jsonb, so Meta can add fields without a migration, and so the detail view can show what Meta actually said. **Never a column each.** |
-| `meta_synced_at` | When this row was last seen in a sync. Two honest uses: freshness in the UI, and absence detection — a row whose `meta_synced_at` predates the channel's `message_templates_last_updated` was **not in the last sync**, which is how remote deletion is modelled truthfully without inventing a status (PART 3). |
+| `meta_synced_at` | When this row was last seen in a sync. Two honest uses: freshness in the UI, and absence detection — a mirror pass stamps every template it saw with one timestamp, so a row older than the newest row of its own WABA is one that pass did not see. That is how remote deletion is modelled truthfully without inventing a status (PART 3). It is compared against the WABA's rows, **not** against the channel's `message_templates_last_updated`, because that column is advanced before the fetch (`whatsapp_cloud_service.rb:37`) and so moves even when a fetch comes back empty — comparing against it would report every template as gone after one failed fetch. |
 | `submitted_at` | Two honest uses: the "submitted on" fact the UI shows, and the **idempotency claim** for PART 7 — it is set under `with_lock` before the HTTP call, so a double-clicked Submit finds it present and refuses instead of creating a second Meta template. Cleared if the call fails, because the draft must survive (PART 7). |
 | `submission_error` | Why the last submit failed, truncated to 1000 chars. On the production path: Meta refuses a create, the user reloads, and a draft with `submitted_at` set and no explanation would be a broken state. Holds the safe structured message only (PART 19: never a credential, never a raw token). |
 | `created_at` / `updated_at` | Standard. "Drafted on" in the UI. |
@@ -171,7 +171,7 @@ Application code and schema roll back together, as usual — the new read paths 
 | Store | Writers | Readers | Status in P3 |
 |---|---|---|---|
 | `channel_whatsapp.message_templates` jsonb | **only** `WhatsappCloudService#sync_templates:43` and `Whatsapp360DialogService#sync_templates:31`, unchanged | every consumer listed in `00-current-system.md §5` — composer pickers, campaign form, flow editor, `TemplateProcessorService`, `AuthenticationTemplateGuard`, `ContactInfoRequestEligibilityService`, `Flows::Template`, the inbox jbuilder, the `message_templates` endpoint | **kept, unchanged, not deleted this phase.** It stays the snapshot of what Meta holds. |
-| `whatsapp_message_templates` rows | the mirror (one service, from the snapshot — no network) and the manager's own create/edit/submit/delete actions | the one shared query service, which the manager UI, the campaign selector and the flow selector read through | **new.** Authoritative for drafts and for lifecycle timestamps; a mirror, never an authority, for remote status. |
+| `whatsapp_message_templates` rows | `Whatsapp::Templates::Mirror` (from the snapshot — no network) and the manager's own create/edit/submit/delete actions | `Whatsapp::Templates::Query`, which the manager UI, the campaign selector and the flow selector read through | **new.** Authoritative for drafts and for lifecycle timestamps; a mirror, never an authority, for remote status. |
 
 The rule that keeps the two coherent:
 
@@ -182,33 +182,38 @@ The rule that keeps the two coherent:
 - **The mirror never touches a draft.** Its write set is `meta_template_id IS NOT NULL` plus the row whose
   `(waba, name, lower(language))` matches a template in the snapshot. A draft Meta has never seen is outside that set
   structurally, not by a conditional — which is PART 3's "a sync must never delete a local draft".
-- **One read abstraction.** Every new surface reads the query service; no new surface reads the jsonb directly, and no
-  old surface is switched to the table in the same step that introduces it.
+- **One read abstraction.** Every new surface reads `Whatsapp::Templates::Query`; no new surface reads the jsonb
+  directly, and no old surface is switched to the table in the same step that introduces it. The query reconciles from
+  the snapshots before every read, so no caller can see stale rows, and it answers "what can this inbox send" from the
+  snapshot under the existing product rule (`Flows::Template.sendable?` plus Meta's approved status, which is exactly
+  what `@chatwoot/utils` `isSendableTemplate` applies on the client) — a send must never depend on a projection having
+  run.
 
 ---
 
 ## 6. Derived state, in one place
 
 ```ruby
-# custom/app/models/whatsapp/message_template.rb (sketch, for review before PART 1 implements it)
+# custom/app/models/whatsapp/message_template.rb
 def local_state
-  return :remote      if meta_template_id.present?
+  return :remote      if meta_status.present?
   return :submitting  if submitted_at.present?
   :draft
 end
 
-def sendable?   # the authority stays Flows::Template; this is the record-level precondition
-  meta_template_id.present? && meta_status.to_s.casecmp?('APPROVED')
+def sendable?   # the live gate for an actual send stays the channel snapshot, read through Flows::Template
+  meta_status.to_s.casecmp?('APPROVED')
 end
 
-def missing_at_meta?
-  meta_template_id.present? && meta_synced_at.present? &&
-    channel_last_sync.present? && meta_synced_at < channel_last_sync
+# The caller passes the newest meta_synced_at among that WABA's rows.
+def missing_at_meta?(waba_mirrored_at)
+  remote? && meta_synced_at.present? && waba_mirrored_at.present? && meta_synced_at < waba_mirrored_at
 end
 ```
 
-A `draft`, `submitting` or `rejected` record can never be sendable, because `sendable?` requires an approved remote
-status and there is no column a UI or a caller could set to fake one. That is the structural half of PART 2.2; the
+A `draft`, `submitting` or `rejected` record can never be sendable, because `sendable?` requires Meta's own
+`APPROVED`, and `meta_status` is never a permitted parameter on any endpoint — it is written only by a sync or from
+Meta's own response, so no client can fake an approval. That is the structural half of PART 2.2; the
 other half is the `TemplateProcessorService` fix in `00-current-system.md §6.1`.
 
 **State vocabulary for the UI** (PART 5, and reusing the key that already exists with no producer,

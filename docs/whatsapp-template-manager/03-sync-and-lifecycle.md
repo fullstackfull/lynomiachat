@@ -100,15 +100,23 @@ deletes it. PART 3 forbids both wrong answers: silently deleting the local row, 
 **The observation is derived, not stored as a status we invented** (`02-local-record-design.md §6`):
 
 ```
-missing_at_meta? = meta_template_id.present?
-                && meta_synced_at < the channel's message_templates_last_updated
+missing_at_meta?(waba_mirrored_at) = remote? && meta_synced_at < waba_mirrored_at
 ```
 
-A row the last sync did not touch was not in the snapshot. The UI then says **"No longer at WhatsApp — last seen on
-<date>"**, the template is not sendable, and the row stays, with its content, so the user can duplicate it into a new
-draft and resubmit. Nothing is destroyed on the strength of one sync, and a failed or empty fetch cannot cause it:
-`sync_templates:38` returns before writing when the fetch is blank, so `message_templates_last_updated` moves only on
-a fetch that actually produced templates.
+where `waba_mirrored_at` is the newest `meta_synced_at` among that WABA's rows. A pass stamps every template it saw
+with one timestamp, so a row older than the newest is one the last pass did not see. The UI then says **"No longer at
+WhatsApp — last seen on <date>"**, the template is not sendable, and the row stays, with its content, so the user can
+duplicate it into a new draft and resubmit. Nothing is destroyed on the strength of one sync.
+
+**Why the comparison is against the WABA's rows and not the channel's timestamp.** `sync_templates:37` marks
+`message_templates_last_updated` **before** fetching, so that column advances even when the fetch comes back empty and
+the snapshot is left untouched (`:38` returns before writing). Comparing a row against it would therefore report
+**every** template as gone after a single failed fetch. Comparing rows against each other cannot do that: a failed
+fetch runs no pass, so no row moves.
+
+The one case this rule deliberately does not catch is a WABA whose catalogue becomes entirely empty — the mirror needs
+a non-blank snapshot to run, so nothing is flagged. That is indistinguishable from a failed fetch, and the safe answer
+to an ambiguous signal is to say nothing, which is the same conservatism `sync_templates:38` already applies.
 
 A template Meta reports as `PENDING_DELETION` or `DELETED` is simply mirrored with that status — Meta said it, so
 Lynomia repeats it.

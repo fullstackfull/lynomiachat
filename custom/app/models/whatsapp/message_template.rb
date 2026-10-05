@@ -54,35 +54,45 @@ class Whatsapp::MessageTemplate < ApplicationRecord
   validates :parameter_format, inclusion: { in: PARAMETER_FORMATS }, if: :local?
   validate :identity_is_unique, if: -> { name.present? && language.present? }
 
-  # A draft Meta has never seen, versus a row that mirrors one Meta holds.
-  scope :local, -> { where(meta_template_id: nil) }
-  scope :remote, -> { where.not(meta_template_id: nil) }
+  # A draft Meta has never seen, versus a row that mirrors one Meta holds. Remoteness is keyed on meta_status, not on
+  # meta_template_id: Meta always reports a status, while a synced template can arrive without an id (this repo's own
+  # factory has such entries), and a row with no status but an id would read as a draft.
+  scope :local, -> { where(meta_status: nil) }
+  scope :remote, -> { where.not(meta_status: nil) }
   scope :for_waba, ->(waba_id) { where(business_account_id: waba_id) }
 
   # Derived, so there is no column a caller could set to disagree with these two facts.
   def local?
-    meta_template_id.blank?
+    meta_status.blank?
   end
 
   def local_state
-    return :remote if meta_template_id.present?
+    return :remote if meta_status.present?
     return :submitting if submitted_at.present?
 
     :draft
   end
 
-  # The record-level precondition for sending. The live gate stays where it is today: the channel's synced snapshot,
-  # read through Flows::Template. Nothing here can fake an approval -- it takes a remote id and Meta's own word.
+  # The record-level precondition for sending: Meta's own word, and nothing else. The live gate for an actual send
+  # stays where it is today -- the channel's synced snapshot, read through Flows::Template and
+  # Whatsapp::TemplateProcessorService. meta_status is never a permitted parameter on any endpoint, so no client can
+  # write an approval; it is set from a sync or from Meta's own response.
   def sendable?
-    meta_template_id.present? && meta_status.to_s.casecmp?('APPROVED')
+    meta_status.to_s.casecmp?('APPROVED')
   end
 
-  # Modelled by observation rather than by a status we invented: a row the last sync did not touch was not in the
-  # snapshot Meta returned. The caller passes the WABA's last sync time, which it already has for the whole page, so
-  # rendering a list costs no extra query.
-  def missing_at_meta?(channel_synced_at)
-    meta_template_id.present? && meta_synced_at.present? &&
-      channel_synced_at.present? && meta_synced_at < channel_synced_at
+  # Modelled by observation rather than by a status we invented: a mirror pass stamps every template it saw with one
+  # timestamp, so a row older than the newest row of its WABA is one that pass did not see. Compared against the
+  # WABA's rows rather than the channel's message_templates_last_updated, because that column advances even when a
+  # fetch comes back empty (whatsapp_cloud_service.rb:37 marks it before fetching) -- which would report every
+  # template as gone after one failed fetch. The caller passes the WABA's newest value, which it has for the whole
+  # page in one query, so rendering a list costs nothing extra.
+  def missing_at_meta?(waba_mirrored_at)
+    remote? && meta_synced_at.present? && waba_mirrored_at.present? && meta_synced_at < waba_mirrored_at
+  end
+
+  def remote?
+    meta_status.present?
   end
 
   # The channels that can send this template: Meta scopes a template to the WABA, and several inboxes can share one.

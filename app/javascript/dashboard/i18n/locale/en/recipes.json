@@ -58,6 +58,7 @@
     },
     "AUDIENCE": {
       "TITLE": "Start from an audience preset",
+      "ACTION": "Start from a preset",
       "DESCRIPTION": "A preset saves a normal audience: its conditions stay editable and its members are worked out fresh every time it is opened.",
       "HIGH_VALUE_BUYERS": {
         "NAME": "High-value buyers",
@@ -98,6 +99,7 @@
     },
     "FLOW": {
       "TITLE": "Start from a flow template",
+      "ACTION": "Start from a template",
       "DESCRIPTION": "A template creates a normal flow draft: every node, message and branch is yours to edit, and nothing reaches a customer until you publish it.",
       "PROVENANCE": "Created from the {name} template (v{version}).",
       "COMMERCE_ORDER_TRACKING": {
@@ -127,6 +129,7 @@
     },
     "AUTOMATION": {
       "TITLE": "Start from an automation recipe",
+      "ACTION": "Start from a recipe",
       "DESCRIPTION": "A recipe creates a normal automation rule, switched off, for you to read and change before it runs.",
       "PROVENANCE": "Created from the {name} recipe (v{version}).",
       "COMMERCE_NEW_ORDER_ROUTING": {
@@ -160,6 +163,7 @@
     },
     "MACRO": {
       "TITLE": "Start from a macro starter",
+      "ACTION": "Start from a starter",
       "DESCRIPTION": "A starter saves a normal macro: an agent clicks it on a conversation and it runs the steps. Everything stays editable, and nothing runs on its own.",
       "PROVENANCE": "Created from the {name} starter (v{version}).",
       "ESCALATE_CONVERSATION": {

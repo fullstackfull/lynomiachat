@@ -19,6 +19,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import { BaseTable } from 'dashboard/components-next/table';
 import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
 import { audienceIdFromQuery } from 'dashboard/helper/audienceHelper';
 import { AUTOMATION_RECIPES } from 'dashboard/recipes/automationRecipes';
 import { DEFAULT_DELAY_MINUTES } from './constants';
@@ -380,7 +381,7 @@ const tableHeaders = computed(() => {
         <template #actions>
           <div class="flex items-center gap-2">
             <Button
-              :label="$t('AUTOMATION.LIST.RECIPES')"
+              :label="$t('RECIPES.AUTOMATION.ACTION')"
               size="sm"
               color="slate"
               variant="faded"
@@ -407,33 +408,32 @@ const tableHeaders = computed(() => {
       >
         {{ $t('AUTOMATION.LIST.DELAY_DISABLED_BANNER') }}
       </div>
-      <div
+      <EmptyState
         v-if="!records.length && !uiFlags.isFetching"
-        class="flex flex-col items-center gap-3 py-16 text-center"
+        icon="i-lucide-repeat"
+        :title="$t('AUTOMATION.LIST.404')"
+        :description="$t('AUTOMATION.LIST.EMPTY_HINT')"
         data-test-id="automation-empty-state"
       >
-        <p class="m-0 text-base text-n-slate-12">
-          {{ $t('AUTOMATION.LIST.404') }}
-        </p>
-        <p class="m-0 max-w-md text-sm text-n-slate-11">
-          {{ $t('AUTOMATION.LIST.EMPTY_HINT') }}
-        </p>
-        <div class="flex items-center gap-2">
-          <Button
-            :label="$t('AUTOMATION.LIST.RECIPES')"
-            size="sm"
-            data-test-id="automation-empty-recipes"
-            @click="openRecipes"
-          />
-          <Button
-            :label="$t('AUTOMATION.HEADER_BTN_TXT')"
-            size="sm"
-            color="slate"
-            variant="faded"
-            @click="openAddPopup"
-          />
-        </div>
-      </div>
+        <template #action>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              :label="$t('RECIPES.AUTOMATION.ACTION')"
+              size="sm"
+              icon="i-lucide-sparkles"
+              data-test-id="automation-empty-recipes"
+              @click="openRecipes"
+            />
+            <Button
+              :label="$t('AUTOMATION.HEADER_BTN_TXT')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              @click="openAddPopup"
+            />
+          </div>
+        </template>
+      </EmptyState>
       <BaseTable
         v-else
         sticky-header

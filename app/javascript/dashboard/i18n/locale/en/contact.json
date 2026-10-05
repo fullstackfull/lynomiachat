@@ -675,7 +675,6 @@
       "COUNT": "{count} contact | {count} contacts",
       "COUNT_ACTION": "Count contacts now",
       "COUNT_FAILED": "Couldn’t count this audience. Open it to see why.",
-      "FROM_PRESET": "Start from a preset",
       "FROM_FILTERS": "Build from filters",
       "ACTIONS": {
         "MORE": "More actions for {name}",

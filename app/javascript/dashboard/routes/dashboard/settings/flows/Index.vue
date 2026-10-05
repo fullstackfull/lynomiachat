@@ -16,6 +16,7 @@ import {
   BaseTableCell,
 } from 'dashboard/components-next/table';
 import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
 import { FLOW_TEMPLATES } from 'dashboard/recipes/flowTemplates';
 
 // The account's flows (Lynomia Flow Builder): each is a bot that answers its inboxes' conversations until it hands them
@@ -209,7 +210,7 @@ onMounted(load);
         <template #actions>
           <div class="flex items-center gap-2">
             <NextButton
-              :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
+              :label="t('RECIPES.FLOW.ACTION')"
               size="sm"
               color="slate"
               variant="faded"
@@ -231,33 +232,32 @@ onMounted(load);
       <span v-if="isLoading" role="status" class="sr-only">
         {{ t('FLOW_BUILDER.LIST.LOADING') }}
       </span>
-      <div
+      <EmptyState
         v-if="!flows.length && !isLoading"
-        class="flex flex-col items-center gap-3 py-16 text-center"
+        icon="i-lucide-workflow"
+        :title="t('FLOW_BUILDER.LIST.EMPTY')"
+        :description="t('FLOW_BUILDER.LIST.EMPTY_HINT')"
         data-test-id="flow-empty-state"
       >
-        <p class="m-0 text-base text-n-slate-12">
-          {{ t('FLOW_BUILDER.LIST.EMPTY') }}
-        </p>
-        <p class="m-0 max-w-md text-sm text-n-slate-11">
-          {{ t('FLOW_BUILDER.LIST.EMPTY_HINT') }}
-        </p>
-        <div class="flex items-center gap-2">
-          <NextButton
-            :label="t('FLOW_BUILDER.LIST.TEMPLATES')"
-            size="sm"
-            data-test-id="flow-empty-templates"
-            @click="openTemplates"
-          />
-          <NextButton
-            :label="t('FLOW_BUILDER.LIST.NEW')"
-            size="sm"
-            color="slate"
-            variant="faded"
-            @click="openCreate"
-          />
-        </div>
-      </div>
+        <template #action>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <NextButton
+              :label="t('RECIPES.FLOW.ACTION')"
+              size="sm"
+              icon="i-lucide-sparkles"
+              data-test-id="flow-empty-templates"
+              @click="openTemplates"
+            />
+            <NextButton
+              :label="t('FLOW_BUILDER.LIST.NEW')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              @click="openCreate"
+            />
+          </div>
+        </template>
+      </EmptyState>
       <BaseTable
         v-else
         :headers="headers"

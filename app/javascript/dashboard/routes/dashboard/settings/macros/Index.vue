@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import Button from 'dashboard/components-next/button/Button.vue';
 import { BaseTable } from 'dashboard/components-next/table';
+import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useRouter } from 'vue-router';
 import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
@@ -176,7 +177,7 @@ const tableHeaders = computed(() => {
         </template>
         <template #actions>
           <Button
-            :label="$t('RECIPES.MACRO.TITLE')"
+            :label="$t('RECIPES.MACRO.ACTION')"
             size="sm"
             faded
             slate
@@ -197,6 +198,34 @@ const tableHeaders = computed(() => {
           </router-link>
         </template>
       </BaseSettingsHeader>
+    </template>
+    <!-- An empty macro library answered with one sentence was the last starter catalogue nobody could find from
+    the page it belongs to. Same pair of offers as automation rules and flows. -->
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-toy-brick"
+        :title="$t('MACROS.LIST.404')"
+        :description="$t('MACROS.LIST.EMPTY_HINT')"
+      >
+        <template #action>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              :label="$t('RECIPES.MACRO.ACTION')"
+              size="sm"
+              icon="i-lucide-sparkles"
+              data-test-id="macro-empty-starters"
+              @click="openStarters"
+            />
+            <Button
+              :label="$t('MACROS.HEADER_BTN_TXT')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              @click="startFromScratch"
+            />
+          </div>
+        </template>
+      </EmptyState>
     </template>
     <template #body>
       <BaseTable

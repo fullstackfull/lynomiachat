@@ -212,7 +212,7 @@ const createAudience = async payload => {
             color="slate"
             variant="faded"
             size="sm"
-            :label="t('CONTACTS_LAYOUT.AUDIENCES.FROM_PRESET')"
+            :label="t('RECIPES.AUDIENCE.ACTION')"
             @click="openPresets"
           />
           <Button
@@ -252,7 +252,7 @@ const createAudience = async payload => {
               <Button
                 icon="i-lucide-sparkles"
                 size="sm"
-                :label="t('CONTACTS_LAYOUT.AUDIENCES.FROM_PRESET')"
+                :label="t('RECIPES.AUDIENCE.ACTION')"
                 @click="openPresets"
               />
               <Button

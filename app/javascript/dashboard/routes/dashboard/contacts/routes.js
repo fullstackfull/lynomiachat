@@ -1,5 +1,6 @@
 import { frontendURL } from '../../../helper/URLHelper';
 import ContactsIndex from './pages/ContactsIndex.vue';
+import AudiencesIndex from './pages/AudiencesIndex.vue';
 import ContactManageView from './pages/ContactManageView.vue';
 import { FEATURE_FLAGS } from '../../../featureFlags';
 
@@ -39,6 +40,15 @@ export const routes = [
         meta: commonMeta,
       },
     ],
+  },
+  // The audiences destination, a route of its own rather than a child of the list above: that parent renders
+  // ContactsIndex itself and has no `<router-view>`, so a child component would never be reached. Its static path
+  // also outranks `:contactId` below, so it can never be read as a contact id.
+  {
+    path: frontendURL('accounts/:accountId/contacts/audiences'),
+    name: 'contacts_dashboard_audiences_index',
+    component: AudiencesIndex,
+    meta: commonMeta,
   },
   {
     path: frontendURL('accounts/:accountId/contacts/:contactId'),

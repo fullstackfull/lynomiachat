@@ -39,6 +39,58 @@ export const returnRouteFromQuery = query => {
   return RETURN_ROUTES.includes(raw) ? raw : null;
 };
 
+// The two modules that take an audience as input. Named here rather than at each call site so the menu that asks
+// "can this user reach that page?" and the handler that pushes them there can never name different routes.
+export const AUDIENCE_CAMPAIGN_ROUTE = 'campaigns_whatsapp_index';
+export const AUDIENCE_AUTOMATION_ROUTE = 'automation_list';
+
+/**
+ * The route that starts a WhatsApp campaign to a shared audience.
+ * @param {Object} audience - A shared audience record.
+ * @returns {Object} A router location.
+ */
+export const audienceCampaignRoute = audience => ({
+  name: AUDIENCE_CAMPAIGN_ROUTE,
+  query: { [AUDIENCE_QUERY_PARAM]: audience.id },
+});
+
+/**
+ * The route that starts a WhatsApp campaign to a label, the other recipient source a campaign accepts.
+ * @param {Object} label - An account label record.
+ * @returns {Object} A router location.
+ */
+export const labelCampaignRoute = label => ({
+  name: AUDIENCE_CAMPAIGN_ROUTE,
+  query: { [LABEL_QUERY_PARAM]: label.id },
+});
+
+/**
+ * The route that starts an automation rule conditioned on a shared audience.
+ * @param {Object} audience - A shared audience record.
+ * @returns {Object} A router location.
+ */
+export const audienceAutomationRoute = audience => ({
+  name: AUDIENCE_AUTOMATION_ROUTE,
+  query: { [AUDIENCE_QUERY_PARAM]: audience.id },
+});
+
+// Editing an audience means editing its conditions, and that editor lives on the audience's own page: the filter
+// panel the Contacts header already owns. So "edit" is a destination, not a second editor.
+export const AUDIENCE_EDIT_QUERY_PARAM = 'edit';
+
+/**
+ * The route that opens one audience, optionally straight into its condition editor.
+ * @param {Object} audience - An audience record.
+ * @param {Object} [options] - Options.
+ * @param {boolean} [options.edit] - Open the condition editor on arrival.
+ * @returns {Object} A router location.
+ */
+export const audienceRoute = (audience, { edit = false } = {}) => ({
+  name: 'contacts_dashboard_segments_index',
+  params: { segmentId: audience.id },
+  query: { page: 1, ...(edit && { [AUDIENCE_EDIT_QUERY_PARAM]: '1' }) },
+});
+
 const idFromQuery = (query, key) => {
   const raw = query?.[key];
   // A repeated query parameter arrives as an array, and `Number(['3'])` is 3: only a single value counts.

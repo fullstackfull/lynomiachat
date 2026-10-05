@@ -30,7 +30,9 @@ import {
 } from 'dashboard/components-next/filter/audienceProvider.js';
 import {
   AUDIENCE_QUERY_PARAM,
-  LABEL_QUERY_PARAM,
+  audienceAutomationRoute,
+  audienceCampaignRoute,
+  labelCampaignRoute,
   returnRouteFromQuery,
 } from 'dashboard/helper/audienceHelper';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
@@ -252,20 +254,16 @@ const segmentUrl = () =>
   )}`;
 
 const useInAutomation = () =>
-  router.push({
-    name: 'automation_list',
-    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
-  });
+  router.push(audienceAutomationRoute(props.activeSegment));
 
 // Both recipient sources a campaign accepts, each carried the same way. A label page has no active segment and a
 // segment page has no label in its route, so exactly one of these applies.
 const useInCampaign = () =>
-  router.push({
-    name: 'campaigns_whatsapp_index',
-    query: activeLabel.value
-      ? { [LABEL_QUERY_PARAM]: activeLabel.value.id }
-      : { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
-  });
+  router.push(
+    activeLabel.value
+      ? labelCampaignRoute(activeLabel.value)
+      : audienceCampaignRoute(props.activeSegment)
+  );
 
 const copySegmentLink = async () => {
   try {

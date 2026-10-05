@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { AUDIENCE_EDIT_QUERY_PARAM } from 'dashboard/helper/audienceHelper';
 
 import ContactListHeaderWrapper from 'dashboard/components-next/Contacts/ContactsHeader/ContactListHeaderWrapper.vue';
 import ContactsActiveFiltersPreview from 'dashboard/components-next/Contacts/ContactsHeader/components/ContactsActiveFiltersPreview.vue';
@@ -67,6 +68,22 @@ const updateCurrentPage = page => {
 const openFilter = () => {
   contactListHeaderWrapper.value?.onToggleFilters();
 };
+
+// "Edit conditions", arriving from the Audiences page. The editor is the filter panel this header already owns, so
+// the link only has to open it — once the audience it is editing has loaded, because the panel builds its rows from
+// that record. Keyed by id rather than a flag: this component is reused between audiences, so a second visit must
+// open the panel again.
+const openedEditFor = ref(null);
+watch(
+  [() => route.query[AUDIENCE_EDIT_QUERY_PARAM], () => props.activeSegment],
+  ([shouldEdit, segment]) => {
+    if (!shouldEdit || !segment || openedEditFor.value === segment.id) return;
+
+    openedEditFor.value = segment.id;
+    openFilter();
+  },
+  { immediate: true }
+);
 
 const showLoadMore = computed(() => {
   return props.useInfiniteScroll && props.hasMore;

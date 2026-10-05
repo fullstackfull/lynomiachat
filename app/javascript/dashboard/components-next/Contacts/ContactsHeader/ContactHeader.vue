@@ -96,6 +96,9 @@ const emit = defineEmits([
               </Button>
               <slot name="filter" />
             </div>
+            <!-- Saving the current filter as an audience was a bare save icon whose only text was an aria-label,
+            so the one way to create an audience by hand was unreadable. It says what it does now, and the
+            visible text is its accessible name. -->
             <Button
               v-if="
                 hasActiveFilters &&
@@ -104,14 +107,15 @@ const emit = defineEmits([
                 !isActiveView
               "
               icon="i-lucide-save"
-              :aria-label="
+              :label="
                 $t(
-                  'CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.CONFIRM'
+                  'CONTACTS_LAYOUT.HEADER.ACTIONS.FILTERS.CREATE_SEGMENT.ACTION'
                 )
               "
               color="slate"
               size="sm"
-              variant="ghost"
+              variant="faded"
+              data-test-id="save-as-audience"
               @click="emit('createSegment')"
             />
             <Button

@@ -13,7 +13,6 @@ import { buildCampaignAudience } from 'shared/constants/campaign';
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import AudienceExplainer from 'dashboard/components-next/audience/AudienceExplainer.vue';
-import { useAudienceFilterTypes } from 'dashboard/components-next/filter/audienceProvider';
 import { useContactFilterContext } from 'dashboard/components-next/filter/contactProvider';
 import { summariseAudience } from 'dashboard/helper/audienceSummary';
 
@@ -40,13 +39,9 @@ const contactViews = useMapGetter('customViews/getContactCustomViews');
 const customViewUiFlags = useMapGetter('customViews/getUIFlags');
 const isLoadingAudiences = computed(() => customViewUiFlags.value?.isFetching);
 
+// One vocabulary names every attribute an audience can be built from: the contact provider already folds the
+// Commerce and Conversation conditions in.
 const { filterTypes } = useContactFilterContext();
-const { audienceFilterTypes } = useAudienceFilterTypes();
-// An audience's conditions can come from either vocabulary, so a summary needs both.
-const allFilterTypes = computed(() => [
-  ...(filterTypes.value || []),
-  ...(audienceFilterTypes.value || []),
-]);
 
 const labelOptions = computed(() =>
   labels.value.map(label => ({ value: label.id, label: label.title }))
@@ -61,7 +56,7 @@ const audienceOptions = computed(() =>
     value: view.id,
     label: view.name,
     description:
-      summariseAudience(view.query, allFilterTypes.value, {
+      summariseAudience(view.query, filterTypes.value, {
         limit: 2,
         andLabel: t('CONTACTS_FILTER.QUERY_DROPDOWN_LABELS.AND').toLowerCase(),
         moreLabel: count =>

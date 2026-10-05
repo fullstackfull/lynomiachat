@@ -1,8 +1,12 @@
 # Product Enablement & Self-Service Expansion — Discovery
 
-**Branch** `claude/practical-thompson-9xfqed` · **HEAD** `6c381e96` · **status: DISCOVERY COMPLETE, NOTHING IMPLEMENTED**
+**Branch** `claude/practical-thompson-9xfqed`
 
-No product code, config, spec or migration was changed. The only files added are the 14 in this directory.
+| | |
+|---|---|
+| Discovery (`00`–`12`) | complete at HEAD `6c381e96`; no product code was changed by it |
+| P0 defects, P1 branding | implemented |
+| P2 audience UX + starter library (`13`–`20`) | implemented, zero migrations |
 
 > The program brief cites `95d9994e` as the last known HEAD. That is stale: Contacts phases D and E landed
 > after it. Two consequences matter here — Part 5.6 ("all filtered results" bulk actions) is **already shipped**
@@ -26,6 +30,20 @@ No product code, config, spec or migration was changed. The only files added are
 | [`09-documentation-target-architecture.md`](09-documentation-target-architecture.md) | the Part 25 answer: yes with extension, no migration — and the slug risk it depends on |
 | [`10-changelog-architecture.md`](10-changelog-architecture.md) | reuse the documentation content model; the field-by-field mapping and its two mismatches |
 | [`11-permissions-and-tenant-map.md`](11-permissions-and-tenant-map.md) | the four gating layers, the authorization recipe per new surface, and the honest telemetry answer |
+
+## Phase P2, as implemented
+
+| | |
+|---|---|
+| [`13-audience-ux-implementation.md`](13-audience-ux-implementation.md) | the Audiences destination, the explainer, the campaign round trip, and the two things deliberately not built |
+| [`14-flow-template-additions.md`](14-flow-template-additions.md) | two templates, and the handoff priority the builder was dropping |
+| [`15-automation-recipe-additions.md`](15-automation-recipe-additions.md) | four recipes, including the first one a brand-new account can use |
+| [`16-commerce-aware-starters.md`](16-commerce-aware-starters.md) | what each store platform really reports, and abandoned cart recorded as COMING LATER |
+| [`17-macro-starters.md`](17-macro-starters.md) | six starters, the three server constraints, and the first gallery an agent can reach |
+| [`18-setup-recipes.md`](18-setup-recipes.md) | the multi-object extension to the recipe contract |
+| [`19-starter-experience-coherence.md`](19-starter-experience-coherence.md) | one way in to four catalogues; why relevance is stated; why there is no marketplace |
+| [`20-p2-regression-results.md`](20-p2-regression-results.md) | every gate run, with numbers, plus the findings P2 proved and left for a later phase |
+| [`P2-FINAL-CHECKPOINT.md`](P2-FINAL-CHECKPOINT.md) | the 58-item checkpoint |
 
 ## The eight findings that decide the program
 

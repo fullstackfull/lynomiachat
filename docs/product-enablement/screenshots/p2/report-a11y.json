@@ -1,0 +1,27 @@
+[
+  {
+    "name": "audiences page: every visible control has an accessible name",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "the audiences page has a heading that names it",
+    "ok": true,
+    "detail": "H1:Audiences | H3:Start from an audience preset | H3:Save these filters as an audience? | H3:Delete this audience? | H3:Resolve conversation"
+  },
+  {
+    "name": "its loading state is announced rather than silent",
+    "ok": true,
+    "detail": "1 live region(s)"
+  },
+  {
+    "name": "keyboard focus reaches the audience actions",
+    "ok": true,
+    "detail": "Start from a preset | Build from filters | More actions for Customers in Kuwait | Count contacts now | More actions for Everyone with an em | Count contacts now | More actions for My own shortlist | Count contacts now"
+  },
+  {
+    "name": "starter gallery: every visible control has an accessible name",
+    "ok": true,
+    "detail": ""
+  }
+]

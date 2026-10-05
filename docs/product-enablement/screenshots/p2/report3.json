@@ -1,0 +1,50 @@
+[
+  {
+    "name": "the campaigns page offers a new campaign",
+    "ok": true
+  },
+  {
+    "name": "a campaign with no audience to pick explains what one is, where the choice is made",
+    "ok": true,
+    "detail": "What a shared audience is"
+  },
+  {
+    "name": "the explainer offers to create the audience the campaign needs",
+    "ok": true,
+    "detail": "Create a shared audience"
+  },
+  {
+    "name": "the campaign sends the user to Contacts and says where to come back to",
+    "ok": true,
+    "detail": "http://127.0.0.1:3010/app/accounts/1/contacts?returnTo=campaigns_whatsapp_index&page=1"
+  },
+  {
+    "name": "the half-filled campaign is kept while the audience is built",
+    "ok": true,
+    "detail": "{\"savedAt\":1791173505632,\"state\":{\"title\":\"Eid offer\",\"inboxId\":null,\"templateId\":null,\"scheduledAt\":null,\"selectedAudience\":[],\"selectedSha"
+  },
+  {
+    "name": "the save control appears, labelled, once there is something to save",
+    "ok": true,
+    "detail": "Save as audience"
+  },
+  {
+    "name": "the save dialog asks for a name",
+    "ok": true
+  },
+  {
+    "name": "saving the audience lands back on the campaign, carrying it",
+    "ok": true,
+    "detail": "http://127.0.0.1:3010/app/accounts/1/campaigns/whatsapp?audience=5"
+  },
+  {
+    "name": "the campaign comes back with what was typed into it",
+    "ok": true,
+    "detail": "Eid offer"
+  },
+  {
+    "name": "and with the audience just built already chosen",
+    "ok": true,
+    "detail": "audience selected"
+  }
+]

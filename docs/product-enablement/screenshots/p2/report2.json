@@ -1,0 +1,22 @@
+[
+  {
+    "name": "the macro gallery offers all six starters",
+    "ok": true,
+    "detail": "recipe-escalate_conversation, recipe-take_conversation, recipe-resolve_with_reason, recipe-hand_to_team, recipe-waiting_on_customer, recipe-store_issue_handoff"
+  },
+  {
+    "name": "a starter an agent can use with nothing set up offers Create straight away",
+    "ok": true,
+    "detail": "6 usable"
+  },
+  {
+    "name": "an empty audiences page says what an audience is and offers both ways in",
+    "ok": true,
+    "detail": "empty state, preset, from filters"
+  },
+  {
+    "name": "the audience preset gallery opens from the empty state",
+    "ok": true,
+    "detail": "9 presets"
+  }
+]

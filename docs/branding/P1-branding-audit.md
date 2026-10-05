@@ -310,7 +310,20 @@ retained, so such a test would be false by construction.
 4. **Arabic locale drift.** 35 hand-edited Lynomia literals in `ar/*` bypass the branding mechanism, and
    `ar/conversation.json` `NATIVE_APP_ADVISORY` cannot track `INSTALLATION_NAME` at all because it already
    contains the brand name that `replaceInstallationName` is looking to replace. Owned by the translation
-   process, not by this phase. There is no locale-parity gate in the repo to catch a recurrence.
+   process, not by this phase.
+
+   **Narrowed in P2, with a count.** The damaging subset is the strings where the English **does** take
+   `{installationName}` and the Arabic hardcodes the brand instead, so the two languages disagree on a
+   white-labelled install. There are **28** of them: 26 in `ar/commerce.json`, one in `ar/automation.json`
+   (`AUTOMATION.LYNOMIA.COMMERCE_TRIGGER_NOTE`), and one in `ar/contactFilters.json`
+   (`CONTACTS_FILTER.AUDIENCE.COMMERCE_NOTE`). P2 fixed the last of these, because it sits on a surface P2 owns,
+   and left the other 27 for a branding phase rather than widening this one. The full list is reproducible by
+   comparing `{installationName}` between each `en/*.json` and its Arabic sibling.
+
+   A locale-parity gate now exists, scoped to the audience blocks
+   (`components-next/audience/specs/audienceCopy.spec.js`): same keys in both languages, same placeholder set per
+   string, and an Arabic plural the renderer can actually use. It is deliberately not repository-wide — a gate
+   that fails on 27 pre-existing strings gets switched off instead of fixed.
 5. **Billing portal host.** `settings/billing/Index.vue` redirects to `https://lynomia.com/admin/...`. Treated
    as a service endpoint and kept. If that host is ever meant to vary per installation, it needs a config key.
 6. **`chwt.app` shortlink liveness.** Whether the retained `chwt.app` and `www.chatwoot.com/hc/...` targets

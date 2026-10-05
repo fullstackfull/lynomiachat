@@ -3,10 +3,10 @@ title: Labels
 description: What a label is, how to keep a label set that stays useful, and the one case where a label is the wrong tool.
 position: 30
 tags: [conversations, contacts]
-seo_description: Labels in Lynomia Chat: tagging conversations and contacts, naming rules, and when to use a shared audience instead.
+seo_description: "Labels in Lynomia Chat: tagging conversations and contacts, naming rules, and when to use a shared audience instead."
 ---
-A label is a decision somebody made, written down. You put it on, and it stays there until somebody takes it
-off. Nothing in Lynomia Chat ever adds or removes one on its own.
+A label is a decision somebody made, written down. You put it on and it stays until somebody takes it off.
+Nothing in Lynomia Chat ever adds or removes one on its own.
 
 That single property — a label is **stored**, not calculated — decides everything else about when to use one.
 
@@ -19,12 +19,12 @@ This is the most common misunderstanding, and it costs real money when it goes w
 | **Conversation label** | this one exchange | the panel beside the conversation | the label views in the sidebar, conversation folders, reports |
 | **Contact label** | this person, across all their conversations | the panel on their contact record, or the contacts list in bulk | the contact's label page, campaign recipients |
 
-They draw from the same catalogue of labels, but they are stored separately. Tagging a conversation `vip` does
-**not** make that person a `vip` contact. If you build a campaign to the `vip` label and the tag only ever went
-on conversations, the campaign reaches nobody.
+They draw from the same catalogue but are stored separately. Tagging a conversation `vip` does **not** make that
+person a `vip` contact. Build a campaign to the `vip` label when the tag only ever went on conversations, and it
+reaches nobody.
 
 The same trap sits inside automation. An [automation rule's](automation-rules) "add label" action labels the
-**conversation**, always. There is no action anywhere in Lynomia Chat that labels a contact.
+**conversation**, always. No action anywhere in Lynomia Chat labels a contact.
 
 ## When to use one
 
@@ -33,18 +33,18 @@ Use a label when the answer is a judgement your team made and would otherwise be
 > `vip` · `wholesale` · `needs-follow-up` · `complaint-escalated` · `event-attendee` · `do-not-call`
 > · `refund-issued` · `arabic-speaker`
 
-A good test: could a new colleague work out this label from the data alone? If not, a label is exactly right,
-because nothing else in the product can record it.
+A good test: could a new colleague work this out from the data alone? If not, a label is exactly right, because
+nothing else in the product can record it.
 
 ## When not to use one
 
 **Do not use a label for anything that can change without anybody touching the contact.**
 
-"Recent buyers" as a label is correct on the day you apply it and wrong a month later. Nothing will warn you. The
-campaign you send to it goes to exactly the people who should no longer be in it.
+"Recent buyers" as a label is correct on the day you apply it and wrong a month later. Nothing warns you, and
+the campaign you send to it reaches exactly the people who should no longer be in it.
 
 Membership that works itself out belongs in a [shared audience](shared-audiences): a saved question about your
-contacts that is answered again every time it is opened, counted or sent to.
+contacts, answered again every time it is opened, counted or sent to.
 
 | The thing you want | Use |
 |---|---|
@@ -55,18 +55,16 @@ contacts that is answered again every time it is opened, counted or sent to.
 | customers we decided are VIP | a label |
 | customers who asked not to be contacted | a label |
 
-[Labels or shared audiences?](labels-or-shared-audiences) goes through the decision in more depth. Both are
-first-class recipient sources for a campaign, so choosing correctly costs you nothing at the point of sending.
+[Labels or shared audiences?](labels-or-shared-audiences) goes deeper. Both are first-class recipient sources
+for a campaign, so choosing correctly costs you nothing at the point of sending.
 
 ## Keeping a label set that stays useful
 
-- **Fewer, sharper labels.** A set of twelve that everyone uses beats a set of eighty where three people each
-  invented their own spelling.
-- **Write the description.** The description field exists so the next person applies it the way you meant.
-- **Only put the ones you navigate by on the sidebar.** Each sidebar label is a view with its own unread count;
-  twenty of them is not a sidebar.
-- **Rename rather than recreate.** Renaming a label updates every conversation and contact already carrying it.
-  Creating `vip-customer` beside `vip` splits your data in half, permanently.
+- **Fewer, sharper labels.** Twelve that everyone uses beats eighty where three people each invented a spelling.
+- **Write the description.** It exists so the next person applies the label the way you meant.
+- **Only put the ones you navigate by on the sidebar.** Each one is a view with its own unread count.
+- **Rename rather than recreate.** Renaming updates every conversation and contact already carrying it. Creating
+  `vip-customer` beside `vip` splits your data in half, permanently.
 
 ## Naming rules
 
@@ -97,15 +95,14 @@ Note step 2 put the label on the **contacts**, which is what the campaign reads.
 ## Who can do this
 
 Creating, renaming, recolouring and deleting labels is an **administrator** job. Any **agent** can apply and
-remove existing labels on conversations and contacts they can see. That split is deliberate: it keeps the
-catalogue coherent while letting the people doing the work use it.
+remove existing labels on conversations and contacts they can see. The split keeps the catalogue coherent while
+letting the people doing the work use it.
 
 ## Limits
 
-- Nothing maintains labels for you. There is no rule, job or schedule anywhere that adds or removes a contact
-  label.
-- There is no automation trigger for a contact being created or changed, and no automation condition on a contact
-  label.
+- Nothing maintains labels for you. No rule, job or schedule anywhere adds or removes a contact label.
+- There is no automation trigger for a contact being created or changed, and no automation condition on a
+  contact label.
 - **Labelling conversations in bulk covers only the page in front of you.** Labelling contacts in bulk can cover
   every contact matching the view you are looking at, up to 10,000 — above that Lynomia Chat refuses rather than
   silently doing part of the job.

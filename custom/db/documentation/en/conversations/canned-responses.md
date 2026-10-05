@@ -90,14 +90,13 @@ each inventing your own.
 
 ## Limits
 
-- **Canned responses are account-wide only.** There is no such thing as a private one for just you. (Macros do
+- **Canned responses are account-wide only.** There is no such thing as a private one for you alone. (Macros do
   have a private option — see [macros](macros).)
 - **They are switched off inside a private note**, along with variables. Both exist to compose a message to a
   customer.
 - A canned response is plain text and attachments are not part of it. A macro's "send attachment" action can
   send a file; a canned response cannot.
-- Nothing checks that your variables are spelled correctly. A typo in a variable name is simply rendered as
-  nothing.
+- Nothing checks that your variables are spelled correctly. A typo in a variable name is rendered as nothing.
 
 ## Related
 

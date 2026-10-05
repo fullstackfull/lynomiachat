@@ -5,9 +5,9 @@ position: 60
 tags: [conversations, automation]
 seo_description: When to use a macro and when to use an automation rule in Lynomia Chat, and what each one can do that the other cannot.
 ---
-Macros and automation rules do almost the same things to a conversation. They assign it, label it, change its
-status and priority, send a message, leave a note, call a webhook. If you read only the list of actions, you
-would not be able to tell them apart.
+Macros and automation rules do almost the same things to a conversation: assign it, label it, change its status
+and priority, send a message, leave a note, call a webhook. Read only the list of actions and you could not tell
+them apart.
 
 The difference is one thing, and it is the only thing that matters:
 
@@ -31,24 +31,23 @@ Everything else follows from that.
 ## Choose a macro when
 
 - **Somebody has to read the conversation first.** "Is this an escalation?" is not a question a condition can
-  answer. "Does this customer sound like they are about to leave?" even less so.
-- **You want the agent to stay in control.** They see the actions before pressing, and they can choose not to.
-- **An agent needs it and nobody will build it for them.** Any agent can create a private macro in two minutes.
-  An automation rule needs an administrator.
-- **You want it to assign to whoever is dealing with it.** A macro's "assign an agent" offers **Self**, meaning
-  the person pressing. Automation has no equivalent, because there is nobody pressing.
+  answer.
+- **You want the agent in control.** They see the actions before pressing, and can choose not to.
+- **An agent needs it and nobody will build it for them.** Any agent can create a private macro in two minutes;
+  an automation rule needs an administrator.
+- **It should assign to whoever is dealing with it.** A macro's "assign an agent" offers **Self**, meaning the
+  person pressing. Automation has no equivalent, because there is nobody pressing.
 
 ## Choose an automation rule when
 
-- **The trigger is a fact, not a judgement.** A conversation arriving on a channel. A message containing a word.
-  A conversation being resolved. An order being shipped.
-- **It must happen even at 3am.** Rules run whether or not anybody is logged in. Macros do not run themselves,
-  ever.
-- **It must happen every time without exception.** Relying on each agent remembering to press something is how
-  a process quietly stops being followed.
-- **It needs to look at things a macro cannot see.** A rule can condition on the message's text, the contact's
-  country, the language, the channel, a label, a custom attribute, a shared audience the contact is in, or what
-  your store knows about them. A macro has no conditions at all.
+- **The trigger is a fact, not a judgement.** A conversation arriving. A message containing a word. An order
+  being shipped.
+- **It must happen even at 3am.** Rules run whether or not anybody is logged in. Macros never run themselves.
+- **It must happen every time.** Relying on each agent remembering to press something is how a process quietly
+  stops being followed.
+- **It needs to see things a macro cannot.** A rule can condition on the message's text, the contact's country,
+  the language, the channel, a label, a custom attribute, a shared audience the contact is in, or what your store
+  knows about them. A macro has no conditions at all.
 
 ## What each one can trigger on
 
@@ -65,7 +64,7 @@ An automation rule picks exactly one event:
 | Message created | a message is added |
 | Commerce order created / updated / paid / shipped / delivered / cancelled / refunded | your connected store reports that change |
 
-The Commerce events need [Commerce](commerce-overview) connected, and they act on the contact's most recent
+The Commerce events need [Commerce](commerce-overview) connected and act on the contact's most recent
 conversation. They deliberately offer no customer-facing message action: a store event is not a customer message,
 and the conversation may be outside its 24-hour window.
 
@@ -85,18 +84,17 @@ Every WhatsApp conversation that mentions "refund" should be labelled and routed
 whether it becomes a formal complaint.
 
 1. **An automation rule**, on *message created*, condition *content contains "refund"*: add the label `refund`
-   and assign the **returns** team. This happens every time, including overnight.
-2. **A macro** called *Escalate to management*, which an agent presses only when the customer is genuinely
-   unhappy: priority high, assign management, label `complaint-escalated`, private note.
+   and assign the **returns** team. Every time, including overnight.
+2. **A macro** called *Escalate to management*, pressed only when the customer is genuinely unhappy: priority
+   high, assign management, label `complaint-escalated`, private note.
 
 The rule does the part with no judgement in it. The macro does the part that needs a person, and makes that
-person's decision fast and consistent.
+decision fast and consistent.
 
 ## Who can do this
 
-Creating and editing **automation rules** is **administrator**-only, with no exceptions. Creating a **private
-macro** is open to any **agent**; public macros are administrator-only. See
-[roles and permissions](roles-and-permissions).
+Creating and editing **automation rules** is **administrator**-only. Creating a **private macro** is open to any
+**agent**; public macros are administrator-only. See [roles and permissions](roles-and-permissions).
 
 ## Limits
 

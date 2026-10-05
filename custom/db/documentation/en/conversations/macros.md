@@ -3,7 +3,7 @@ title: Macros
 description: Turn the five things you always do to a conversation into one button an agent presses.
 position: 50
 tags: [conversations]
-seo_description: Macros in Lynomia Chat: a saved sequence of actions an agent runs on one conversation, and what they can and cannot do.
+seo_description: "Macros in Lynomia Chat: a saved sequence of actions an agent runs on one conversation, and what they can and cannot do."
 ---
 A macro is a named list of actions, run in order, on **one conversation**, because a person pressed it.
 
@@ -70,7 +70,7 @@ A customer's question needs the manager, and your team has been handling this in
 3. An agent reading a complaint presses it once. The conversation is now high priority, owned by management,
    findable later by its label, and carries a note saying what happened.
 
-The agent still decided this was an escalation. The macro just removed the four chances to forget a step.
+The agent still decided this was an escalation. The macro removed the four chances to forget a step.
 
 ## Who can do this
 
@@ -80,7 +80,7 @@ The agent still decided this was an escalation. The macro just removed the four 
 | **Administrator** | their own | create, edit, delete, run |
 
 An agent choosing "Public" when they create a macro gets a private one instead — this is enforced on the server,
-not just hidden in the interface. Public macros are an account-wide standard, so changing them is an
+not only hidden in the interface. Public macros are an account-wide standard, so changing them is an
 administrator's call.
 
 The order macros appear in beside a conversation is **yours**: drag them, and your own arrangement is

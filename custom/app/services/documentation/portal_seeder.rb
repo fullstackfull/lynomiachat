@@ -1,4 +1,5 @@
-# Lynomia global documentation: creates the two platform portals, idempotently.
+# Lynomia global documentation: creates the two platform portals, idempotently, and points the product's own
+# documentation and changelog links at them.
 #
 # Run from `rails documentation:setup`. Safe to re-run: it matches on slug and updates presentation, so an operator who
 # has renamed a portal in Super Admin does not lose that on the next deploy -- only the fields that define the portal's
@@ -20,11 +21,30 @@ class Documentation::PortalSeeder
     }
   ].freeze
 
+  # Where the dashboard's documentation and changelog links point once this installation serves them itself. The
+  # routes are in config/routes/documentation.rb.
+  LINKS = { 'DOCUMENTATION_URL' => '/docs', 'CHANGELOG_URL' => '/changelog' }.freeze
+
   def perform!
-    PORTALS.map { |attributes| create_or_update(attributes) }
+    PORTALS.map { |attributes| create_or_update(attributes) }.tap { point_product_links_here }
   end
 
   private
+
+  # ConfigLoader creates an installation config once and never overwrites it, so an installation that existed before
+  # these keys did keeps them blank -- and a blank DOCUMENTATION_URL hides every documentation link in the dashboard.
+  # Seeding the portals is the moment the installation starts serving its own documentation, so it is the moment the
+  # links should point at it. Only a blank value is filled: an operator who has pointed these at a documentation site
+  # of their own keeps that.
+  def point_product_links_here
+    LINKS.each do |name, path|
+      config = InstallationConfig.find_by(name: name)
+      next if config.nil? || config.value.present?
+
+      config.update!(value: path)
+    end
+    GlobalConfig.clear_cache
+  end
 
   def create_or_update(attributes)
     attributes = attributes.dup

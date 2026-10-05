@@ -124,14 +124,17 @@ RSpec.describe Campaign do
       expect(campaign.reload).to be_completed
     end
 
+    # The template name has to be one the channel's synced list actually holds and WhatsApp has approved: since the
+    # processor resolves the name from the template it finds, a campaign naming a template the inbox does not have
+    # now skips every recipient instead of handing the send to Meta (app/services/whatsapp/template_processor_service.rb).
     it 'records and sends a WhatsApp campaign once to each contact of its labels and audiences' do
       account.enable_features!(:whatsapp_campaign)
       tagged.update!(email: 'omar@vip.example')
       channel = create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', validate_provider_config: false, sync_templates: false)
       campaign = create(:campaign, account: account, inbox: channel.inbox,
                                    audience: [{ type: 'Label', id: label.id }, { type: 'Audience', id: vips.id }],
-                                   template_params: { 'name' => 'promo', 'namespace' => 'ns', 'category' => 'MARKETING', 'language' => 'en',
-                                                      'processed_params' => {} })
+                                   template_params: { 'name' => 'test_no_params_template', 'namespace' => 'ns', 'category' => 'UTILITY',
+                                                      'language' => 'en', 'processed_params' => {} })
       allow(channel).to receive(:send_template).and_return('wamid.1', 'wamid.2')
       allow_any_instance_of(Whatsapp::OneoffCampaignService).to receive(:channel).and_return(channel) # rubocop:disable RSpec/AnyInstance
 

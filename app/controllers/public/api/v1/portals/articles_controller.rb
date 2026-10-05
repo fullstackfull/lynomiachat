@@ -64,6 +64,8 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
   def order_by_sort_param
     @articles = if list_params[:sort].present? && list_params[:sort] == 'views'
                   @articles.order_by_views
+                elsif @portal.article_order == 'release_date'
+                  @articles.order_by_release_date
                 else
                   @articles.order_by_position
                 end

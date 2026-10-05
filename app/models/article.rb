@@ -81,6 +81,9 @@ class Article < ApplicationRecord
   scope :search_by_status, ->(status) { where(status: status) if status.present? }
   scope :order_by_updated_at, -> { reorder(updated_at: :desc) }
   scope :order_by_position, -> { reorder(position: :asc) }
+  # Newest release first. `meta['release_date']` is an author-entered ISO-8601 date, so it sorts lexically; entries
+  # without one fall to the end and keep their hand-set order among themselves.
+  scope :order_by_release_date, -> { reorder(Arel.sql("articles.meta->>'release_date' DESC NULLS LAST, articles.position ASC")) }
   scope :order_by_views, -> { reorder(views: :desc) }
 
   # TODO: if text search slows down https://www.postgresql.org/docs/current/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS

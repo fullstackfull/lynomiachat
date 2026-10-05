@@ -85,7 +85,7 @@ class Portal < ApplicationRecord
   }.freeze
 
   # TODO: 'website_token' is an unused reserved key; remove with a migration that scrubs it from existing portals' config
-  CONFIG_JSON_KEYS = %w[allowed_locales default_locale draft_locales website_token social_profiles layout
+  CONFIG_JSON_KEYS = %w[allowed_locales default_locale draft_locales website_token social_profiles layout article_order
                         locale_translations popular_content analytics].freeze
 
   def analytics
@@ -160,6 +160,10 @@ class Portal < ApplicationRecord
 
   def layout
     config_value('layout').presence || 'classic'
+  end
+
+  def article_order
+    config_value('article_order').presence || 'position'
   end
 
   def popular_category_ids(locale = default_locale)

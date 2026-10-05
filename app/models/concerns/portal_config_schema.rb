@@ -33,6 +33,10 @@ module PortalConfigSchema
       'default_locale' => { 'type' => %w[string null] },
       'draft_locales' => { 'type' => %w[array null], 'items' => { 'type' => 'string' } },
       'layout' => { 'type' => %w[string null], 'enum' => ['classic', 'documentation', nil] },
+      # How a category's articles are ordered on the public site. 'position' is the Help Center's own hand-ordered
+      # list; 'release_date' reads newest first from each article's meta, which is what a changelog needs and what a
+      # guide must never have (docs/global-documentation/08-changelog-design.md).
+      'article_order' => { 'type' => %w[string null], 'enum' => ['position', 'release_date', nil] },
       # TODO: unused reserved key; remove with a migration that scrubs it from existing portals' config
       'website_token' => { 'type' => %w[string null] },
       'social_profiles' => { 'type' => %w[object null] },

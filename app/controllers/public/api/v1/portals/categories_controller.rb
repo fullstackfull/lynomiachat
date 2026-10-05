@@ -29,7 +29,8 @@ class Public::Api::V1::Portals::CategoriesController < Public::Api::V1::Portals:
   end
 
   def load_category_articles
-    @articles = @category.articles.published.order(:position).includes(:author)
+    articles = @category.articles.published.includes(:author)
+    @articles = @portal.article_order == 'release_date' ? articles.order_by_release_date : articles.order(:position)
     @category_authors = @articles.filter_map(&:author).uniq
   end
 end

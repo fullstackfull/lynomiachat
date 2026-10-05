@@ -15,7 +15,8 @@ class Documentation::PortalSeeder
       slug: Documentation::Library::CHANGELOG_SLUG,
       name: 'Lynomia Chat Changelog',
       page_title: 'Lynomia Chat Changelog',
-      header_text: "What's new in Lynomia Chat."
+      header_text: "What's new in Lynomia Chat.",
+      article_order: 'release_date'
     }
   ].freeze
 
@@ -26,15 +27,14 @@ class Documentation::PortalSeeder
   private
 
   def create_or_update(attributes)
+    attributes = attributes.dup
+    portal_config = config.merge('article_order' => attributes.delete(:article_order) || 'position')
     portal = Portal.find_by(slug: attributes[:slug])
-    return create(attributes) if portal.nil?
+    return Portal.create!(attributes.merge(platform_owned: true, config: portal_config)) if portal.nil?
 
-    portal.update!(platform_owned: true, account: nil, config: config.merge(portal.config.to_h.slice('layout')))
+    portal.update!(platform_owned: true, account: nil,
+                   config: portal_config.merge(portal.config.to_h.slice('layout')))
     portal
-  end
-
-  def create(attributes)
-    Portal.create!(attributes.merge(platform_owned: true, config: config))
   end
 
   # Documentation reads better in the documentation layout than in the support-style classic one, and both languages

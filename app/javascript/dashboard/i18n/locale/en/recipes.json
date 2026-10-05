@@ -53,7 +53,8 @@
       "PRIORITY": "Priority",
       "LANGUAGE": "Language of the bot's messages",
       "EVENT": "Order event",
-      "URL": "Address to call"
+      "URL": "Address to call",
+      "LABEL": "Label"
     },
     "AUDIENCE": {
       "TITLE": "Start from an audience preset",
@@ -155,6 +156,35 @@
       "ACTIVE_ORDER_ROUTING": {
         "NAME": "Customer with an open order",
         "DESCRIPTION": "When someone who has an order still in progress starts a conversation, send it to the team that can answer about it."
+      }
+    },
+    "MACRO": {
+      "TITLE": "Start from a macro starter",
+      "DESCRIPTION": "A starter saves a normal macro: an agent clicks it on a conversation and it runs the steps. Everything stays editable, and nothing runs on its own.",
+      "PROVENANCE": "Created from the {name} starter (v{version}).",
+      "ESCALATE_CONVERSATION": {
+        "NAME": "Escalate this conversation",
+        "DESCRIPTION": "Raises the priority, hands it to a team, labels it, and leaves a note for whoever picks it up."
+      },
+      "TAKE_CONVERSATION": {
+        "NAME": "I'll take this one",
+        "DESCRIPTION": "Assigns the conversation to whoever clicks it and sets a normal priority. Needs nothing set up first."
+      },
+      "RESOLVE_WITH_REASON": {
+        "NAME": "Resolve with a reason",
+        "DESCRIPTION": "Labels the conversation with the reason it was closed, then resolves it, so the resolved queue can be read later."
+      },
+      "HAND_TO_TEAM": {
+        "NAME": "Hand to a team",
+        "DESCRIPTION": "Moves the conversation to a team, clears the current assignee, and leaves a note with the context."
+      },
+      "WAITING_ON_CUSTOMER": {
+        "NAME": "Waiting on the customer",
+        "DESCRIPTION": "Labels the conversation and snoozes it, so it comes back instead of sitting in the open queue."
+      },
+      "STORE_ISSUE_HANDOFF": {
+        "NAME": "Send a store question to the right team",
+        "DESCRIPTION": "Labels an order or store question, raises its priority and routes it to the team that can open the store. A macro cannot read or change an order itself."
       }
     }
   }

@@ -10,6 +10,7 @@ import conversationAr from 'dashboard/i18n/locale/ar/conversation.json';
 import { AUDIENCE_PRESETS } from '../audiencePresets';
 import { AUTOMATION_RECIPES } from '../automationRecipes';
 import { FLOW_TEMPLATES } from '../flowTemplates';
+import { MACRO_STARTERS } from '../macroStarters';
 import { CATEGORIES, INPUT_TYPES, REQUIREMENTS } from '../index';
 import { LANGUAGES } from '../starterCopy';
 
@@ -17,6 +18,7 @@ const CATALOGUES = {
   audience: AUDIENCE_PRESETS,
   automation: AUTOMATION_RECIPES,
   flow: FLOW_TEMPLATES,
+  macro: MACRO_STARTERS,
 };
 const ALL = Object.values(CATALOGUES).flat();
 

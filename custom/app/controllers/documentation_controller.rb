@@ -19,7 +19,7 @@ class DocumentationController < ApplicationController
     portal = Documentation::Library.docs_portal
     return render_not_set_up if portal.blank?
 
-    article = portal.articles.published.find_by(slug: params[:article_slug])
+    article = Documentation::Library.article_for(params[:article_slug], locale: params[:locale])
     return head :not_found if article.blank?
 
     redirect_to "/hc/#{portal.slug}/articles/#{article.slug}", allow_other_host: false

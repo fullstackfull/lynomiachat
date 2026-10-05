@@ -47,6 +47,15 @@ class Documentation::Library
       articles.find_by(slug: slug)
     end
 
+    # Resolves a contextual-help key to the article in the reader's language, falling back to the default locale when
+    # that language has no translation yet, and finally treating the key as a literal slug.
+    # `articles.slug` is globally unique, so one key cannot be the slug in more than one locale -- the key lives in
+    # `meta` instead (docs/global-documentation/12-contextual-help.md).
+    def article_for(key, locale: nil)
+      by_key = articles.where("articles.meta->>'doc_key' = ?", key)
+      by_key.find_by(locale: locale) || by_key.find_by(locale: DEFAULT_LOCALE) || by_key.first || article(key)
+    end
+
     private
 
     def platform_portal(slug)

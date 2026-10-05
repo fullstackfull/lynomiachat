@@ -181,7 +181,51 @@ the next writer trusts it.
 
 ---
 
-## 5. Arabic quality
+## 5. Arabic quality in the dashboard — the 78 strings P4 §16.3 asks for
+
+Separately from the documentation corpus, §16.3 asks that **user-facing strings this project shipped without an
+Arabic sibling** be fixed, and that the sweep not be expanded into translating every developer-only string. The line
+is therefore drawn at **authorship**: a missing Arabic key is this project's if the commit that introduced it in the
+English file is one of ours, and upstream's otherwise.
+
+| | Before | After |
+|---|---|---|
+| Missing Arabic siblings introduced by **this project** | 78 | **0** |
+| Missing Arabic siblings introduced **upstream** | 188 | 188, left to Crowdin |
+| Keys the method could not attribute | 0 | 0 |
+
+All 78 were written by hand, in the product's existing Arabic vocabulary rather than machine-translated, with every
+`{placeholder}` preserved and product names left in Latin script:
+
+| File | n | What the strings are |
+|---|---|---|
+| `flowBuilder.json` | 11 | the canvas chrome (back, zoom in, zoom out, fit to view), duplicate, the unpublished-changes badge, the save hint, the empty-state hint |
+| `contact.json` | 9 | the bulk-action bar — *select all N in this view*, *all results in this view selected*, the too-many-to-act-on warning — plus note delete and the copy/edit field labels |
+| `settings.json` | 15 | the settings sidebar's six group names, the access-token labels, the session device line, file import, the billing loading messages, the SAML copy button, *new conversation* |
+| `integrations.json` | 6 | the webhook and dashboard-app empty states, the Shopify store-URL validation message |
+| `components.json` | 5 | the pagination footer's four controls and the table's sort-by label |
+| `inboxMgmt.json` | 5 | the inbox list loading message, the Twilio number page, the rotate-secret confirmation, the access-request submit |
+| `campaign.json` | 4 | campaign card edit and delete, and the two loading messages |
+| `conversation.json` | 4 | copy conversation ID, the status menu's label, expand the editor, the typing indicator's alt text |
+| `commerce.json` | 3 | copy the order number, and its success and failure messages |
+| `mfa.json` | 3 | the QR code's alt text and the backup-code export heading and footer |
+| `sla.json` | 3 | the time units — minutes, hours, days |
+| `agentBots.json` | 2 | the empty state |
+| `datePicker.json` | 2 | show earlier / later dates |
+| `generalSettings.json` | 2 | the command bar's *go to Flow Builder* and *go to Commerce* |
+| `advancedFilters.json`, `automation.json`, `chatlist.json`, `contentTemplates.json` | 1 each | remove-condition, the automation empty-state hint, the conversation-row accessible name, the content-templates menu label |
+
+Terminology was taken from the existing Arabic rather than invented: **تدفق** for a flow and **منشئ التدفقات** for the
+Flow Builder, **المتجر** for Commerce, **وسم** for a label, **الفواتير** for billing, **الذهاب إلى …** for the command
+bar's navigation entries, and `Webhook` left in Latin script because the existing Arabic already does.
+
+Several of these were accessible names — the pagination controls, the canvas buttons, the typing indicator, the QR
+code — so until now an Arabic screen-reader user heard English for them. That is the part of this sweep that matters
+most, and it is why the keys were worth translating rather than only counting.
+
+---
+
+## 6. Arabic quality in the documentation corpus
 
 - **Nothing was machine-translated.** Each Arabic article was written against the same repository facts as its
   English counterpart, in the product's own Arabic vocabulary, and the two new decision sections in §2 were written
@@ -195,7 +239,7 @@ the next writer trusts it.
 
 ---
 
-## 6. What this audit does not cover
+## 7. What this audit does not cover
 
 - **Reading-level and tone consistency across 86 files** was reviewed by reading, not measured. There is no
   readability score in this record because one would be a number without a baseline.

@@ -48,7 +48,10 @@
         "NUMBER": "طلبك رقم #{orderNumber} في الطريق إليك. رقم التتبع: {number}."
       },
       "CANCEL": "إلغاء",
-      "ORDER_NUMBER": "#{number}"
+      "ORDER_NUMBER": "#{number}",
+      "COPY_NUMBER": "نسخ رقم الطلب",
+      "NUMBER_COPIED": "تم نسخ رقم الطلب",
+      "NUMBER_COPY_FAILED": "لم نتمكن من نسخ رقم الطلب."
     },
     "OVERVIEW": {
       "TAB": "نظرة عامة",

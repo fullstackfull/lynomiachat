@@ -39,7 +39,9 @@
         "DETAILS": "Bot Details",
         "URL": "رابط Webhook",
         "ACTIONS": "الإجراءات"
-      }
+      },
+      "EMPTY_TITLE": "لا روبوتات بعد",
+      "EMPTY_DESCRIPTION": "أضف روبوتاً يجيب أولاً ويحوّل المحادثة إلى وكيل عندما لا يستطيع."
     },
     "DELETE": {
       "BUTTON_TEXT": "حذف",

@@ -56,14 +56,27 @@ When a real Lynomia support destination exists, setting that one config key turn
 
 ## 5. Arabic coverage — P4 §16.3
 
+An earlier pass in this phase counted these by **namespace** — a whole locale file was "ours" or "upstream's" — and
+reported 62 ours and 204 upstream's. That rule is wrong, because this project added keys *into* upstream namespaces
+(pagination controls in `components.json`, bulk-action copy in `contact.json`, sidebar groups in `settings.json`) and
+those keys are ours wherever they sit. The figures below replace it, attributed per key by **the commit that
+introduced that key** in the English file — this project's commits versus inherited ones:
+
 | | Count | Whose |
 |---|---|---|
-| English keys with no Arabic sibling in **upstream** namespaces | 204 | Crowdin and the community, per this repository's own translation rule |
-| English keys with no Arabic sibling in **Lynomia-authored** namespaces | 62 | ours — written by phases C, P2 and P3, which Crowdin has never seen |
+| English keys with no Arabic sibling, introduced by **this project** | **78 → 0** | ours. All 78 are now translated |
+| English keys with no Arabic sibling, introduced **upstream** | **188** | Crowdin and the community, per this repository's own translation rule |
+| Keys the method could not attribute | **0** | — |
 
-The 62 are the ones a Lynomia Arabic user actually meets, and they are listed in `15-content-quality-audit.md` with
-the surfaces they belong to. The 204 are deliberately left to Crowdin: translating upstream strings by hand would
-collide with the next sync and is explicitly not this phase's job.
+The 78 were every user-facing string this project had shipped English-only: the flow-builder canvas chrome, the
+pagination footer, the contacts bulk-action bar, the settings sidebar's group names, the agent-bot and webhook empty
+states, the SLA time units, the access-token and two-factor labels, the commerce order-number copy, and the
+loading messages across campaigns, inboxes and billing. They are listed by file in
+[15-content-quality-audit.md](15-content-quality-audit.md) §5.
+
+The 188 are deliberately left to Crowdin: translating upstream strings by hand would collide with the next sync and
+is explicitly not this phase's job. P4 §16.3's own instruction — "do not expand this into translation of every
+developer-only string" — is why the line is drawn at authorship rather than at count.
 
 ## 6. What a verification pass should check
 

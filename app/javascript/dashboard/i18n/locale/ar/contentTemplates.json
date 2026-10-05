@@ -47,6 +47,7 @@
     "FORM": {
       "BACK_BUTTON": "العودة",
       "SEND_MESSAGE_BUTTON": "إرسال الرسالة"
-    }
+    },
+    "TRIGGER_LABEL": "قوالب المحتوى"
   }
 }

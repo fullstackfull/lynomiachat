@@ -60,7 +60,9 @@
       "CONTACT_LABELS": "تصنفيات جهات الاتصال",
       "PREVIOUS_CONVERSATIONS": "المحادثات السابقة",
       "NO_RECORDS_FOUND": "لم يتم العثور على سمات"
-    }
+    },
+    "COPY_FIELD": "نسخ {field}",
+    "EDIT_FIELD": "تعديل {field}"
   },
   "EDIT_CONTACT": {
     "BUTTON_LABEL": "تعديل جهة الاتصال",
@@ -649,7 +651,9 @@
         "COLLAPSE": "Collapse",
         "NO_NOTES": "No notes, you can add notes from the contact details page.",
         "EMPTY_STATE": "There are no notes associated to this contact. You can add a note by typing in the box above.",
-        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one."
+        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
+        "DELETE": "حذف الملاحظة",
+        "LOADING": "جارٍ تحميل الملاحظات"
       }
     },
     "EMPTY_STATE": {
@@ -705,7 +709,12 @@
       "SINGULAR_DESCRIPTION": "This will permanently delete the selected contact. This action cannot be undone.",
       "CONFIRM_MULTIPLE": "Delete contacts",
       "CONFIRM_SINGLE": "حذف جهة الاتصال"
-    }
+    },
+    "SELECT_ALL_MATCHING": "تحديد الكل ({count}) في هذا العرض",
+    "SELECT_ALL_MATCHING_UNCOUNTED": "تحديد كل النتائج في هذا العرض",
+    "SELECTED_ALL_MATCHING_COUNT": "تم تحديد الكل ({count})",
+    "SELECTED_ALL_MATCHING": "تم تحديد كل النتائج في هذا العرض",
+    "TOO_MANY_MATCHING": "في هذا العرض جهات اتصال أكثر من أن يُعمل عليها مرة واحدة. ضيّقه أولاً."
   },
   "COMPOSE_NEW_CONVERSATION": {
     "CONTACT_SEARCH": {

@@ -28,7 +28,8 @@
       "ERROR_STARTING": "MFA not enabled. Please contact administrator.",
       "INVALID_CODE": "Invalid verification code",
       "SECRET_COPIED": "Secret key copied to clipboard",
-      "SUCCESS": "Two-factor authentication has been enabled successfully"
+      "SUCCESS": "Two-factor authentication has been enabled successfully",
+      "QR_ALT": "رمز QR لإقران تطبيق المصادقة"
     },
     "BACKUP": {
       "TITLE": "Save Your Backup Codes",
@@ -39,7 +40,9 @@
       "COPY_ALL": "Copy All",
       "CONFIRM": "I have saved my backup codes in a secure location and understand that I won't be able to see them again",
       "COMPLETE_SETUP": "Complete Setup",
-      "CODES_COPIED": "Backup codes copied to clipboard"
+      "CODES_COPIED": "Backup codes copied to clipboard",
+      "EXPORT_HEADING": "رموز النسخ الاحتياطي للتحقق بخطوتين في {installationName}",
+      "EXPORT_FOOTER": "احفظ هذه الرموز في مكان آمن."
     },
     "MANAGEMENT": {
       "BACKUP_CODES": "Backup Codes",

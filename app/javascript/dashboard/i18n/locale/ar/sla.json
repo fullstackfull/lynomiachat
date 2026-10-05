@@ -82,7 +82,12 @@
       "EDIT": "تعديل",
       "CREATE": "إنشاء",
       "DELETE": "حذف",
-      "CANCEL": "إلغاء"
+      "CANCEL": "إلغاء",
+      "UNITS": {
+        "MINUTES": "دقائق",
+        "HOURS": "ساعات",
+        "DAYS": "أيام"
+      }
     },
     "ADD": {
       "TITLE": "Add SLA",

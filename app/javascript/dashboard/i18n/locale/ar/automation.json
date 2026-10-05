@@ -93,7 +93,8 @@
         "DELAYED": "Runs after a wait"
       },
       "DELAY_BADGE": "Runs after {delay}",
-      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on."
+      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on.",
+      "EMPTY_HINT": "ابدأ من وصفة جاهزة، أو ابنِ قاعدة شرطاً شرطاً. والوصفة تأتي مُطفأة لتقرأها قبل أن تعمل."
     },
     "DELETE": {
       "TITLE": "حذف قاعدة الأتمتة",

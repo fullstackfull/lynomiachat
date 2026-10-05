@@ -284,7 +284,8 @@
           "MESSAGE": "رسالة",
           "MESSAGE_NOT_GENERATED": "Not generated",
           "REASON": "Reason",
-          "ERROR_CODE": "Code {code}"
+          "ERROR_CODE": "Code {code}",
+          "LOADING": "جارٍ تحميل عمليات التسليم"
         }
       }
     },
@@ -320,6 +321,11 @@
         "NOTE": "تستلم كل جهة اتصال الحملة مرة واحدة، ويُعاد تحديد المستلمين عند إرسالها.",
         "FAILED": "تعذّر تحميل عدد جهات الاتصال المطابقة."
       }
+    },
+    "LOADING": "جارٍ تحميل الحملات",
+    "CARD": {
+      "EDIT": "تعديل الحملة",
+      "DELETE": "حذف الحملة"
     }
   }
 }

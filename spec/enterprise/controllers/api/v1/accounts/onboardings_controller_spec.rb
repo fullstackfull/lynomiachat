@@ -12,19 +12,34 @@ RSpec.describe 'Enterprise Onboarding API', type: :request do
         allow(ChatwootApp).to receive(:chatwoot_cloud?).and_return(true)
       end
 
-      it 'invokes HelpCenterCreationService when website is present' do
-        service = instance_double(Onboarding::HelpCenterCreationService, perform: nil)
-        allow(Onboarding::HelpCenterCreationService).to receive(:new).and_return(service)
+      # Lynomia owns the documentation, so onboarding does not stand up a Help Center for the tenant
+      # (custom/app/controllers/custom/api/v1/accounts/onboardings_controller.rb). This is the one tenant-authoring
+      # path no policy could reach: HelpCenterCreationService is called internally during inbox setup, not through a
+      # request anybody authorizes.
+      it 'does not invoke HelpCenterCreationService, even when a website is present' do
+        allow(Onboarding::HelpCenterCreationService).to receive(:new)
 
         patch "/api/v1/accounts/#{account.id}/onboarding",
               params: { website: 'acme.com', onboarding_step: 'account_details' },
               headers: admin.create_new_auth_token, as: :json
 
-        expect(Onboarding::HelpCenterCreationService).to have_received(:new) do |arg_account, arg_user|
-          expect(arg_account.id).to eq(account.id)
-          expect(arg_user.id).to eq(admin.id)
-        end
-        expect(service).to have_received(:perform)
+        expect(Onboarding::HelpCenterCreationService).not_to have_received(:new)
+      end
+
+      it 'creates no portal for the tenant' do
+        expect do
+          patch "/api/v1/accounts/#{account.id}/onboarding",
+                params: { website: 'acme.com', onboarding_step: 'account_details' },
+                headers: admin.create_new_auth_token, as: :json
+        end.not_to(change { account.portals.count })
+      end
+
+      it 'still completes the onboarding step' do
+        patch "/api/v1/accounts/#{account.id}/onboarding",
+              params: { website: 'acme.com', onboarding_step: 'account_details' },
+              headers: admin.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
       end
     end
   end

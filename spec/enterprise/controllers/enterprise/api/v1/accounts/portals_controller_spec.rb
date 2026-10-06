@@ -22,32 +22,6 @@ RSpec.describe 'Enterprise Portal API', type: :request do
     agent_with_role_account_user
   end
 
-  describe 'GET /api/v1/accounts/:account_id/portals' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        get "/api/v1/accounts/#{account.id}/portals",
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-      end
-    end
-  end
-
-  describe 'GET /api/v1/accounts/:account_id/portals/:portal_slug' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        get "/api/v1/accounts/#{account.id}/portals/#{portal.slug}",
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['name']).to eq('test_portal')
-      end
-    end
-  end
-
   describe 'POST /api/v1/accounts/:account_id/portals' do
     let(:portal_params) do
       {  portal: {
@@ -69,36 +43,6 @@ RSpec.describe 'Enterprise Portal API', type: :request do
     end
   end
 
-  describe 'PUT /api/v1/accounts/:account_id/portals/:portal_slug' do
-    let(:portal_params) do
-      { portal: { name: 'updated_portal' } }
-    end
-
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        put "/api/v1/accounts/#{account.id}/portals/#{portal.slug}",
-            params: portal_params,
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['name']).to eq('updated_portal')
-      end
-
-      it 'ignores analytics config for knowledge_base_manage users' do
-        put "/api/v1/accounts/#{account.id}/portals/#{portal.slug}",
-            params: { portal: { name: 'updated_portal', config: { analytics: { ga4_measurement_id: 'G-KBMANAGER1' } } } },
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(portal.reload.name).to eq('updated_portal')
-        expect(portal.config['analytics']).to be_blank
-      end
-    end
-  end
-
   describe 'GET /api/v1/accounts/{account.id}/portals/{portal.slug}/ssl_status' do
     let(:portal_with_domain) { create(:portal, slug: 'portal-with-domain', account_id: account.id, custom_domain: 'docs.example.com') }
 
@@ -109,61 +53,24 @@ RSpec.describe 'Enterprise Portal API', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+  end
 
-    context 'when it is an authenticated user' do
-      it 'returns error when custom domain is not configured' do
-        get "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/ssl_status",
-            headers: agent.create_new_auth_token,
-            as: :json
+  # Enterprise::PortalPolicy grants update, edit and logo to a custom role holding knowledge_base_manage, and
+  # ssl_status to any member. Custom::PortalPolicy refuses all of it.
+  describe 'a custom role holding knowledge_base_manage' do
+    let(:base) { "/api/v1/accounts/#{account.id}/portals" }
+    let(:headers) { agent_with_role.create_new_auth_token }
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.parsed_body['error']).to eq('Custom domain is not configured')
-      end
-
-      it 'returns SSL status when portal has ssl_settings' do
-        portal_with_domain.update(ssl_settings: {
-                                    'cf_status' => 'active',
-                                    'cf_verification_errors' => nil
-                                  })
-
-        mock_service = instance_double(Cloudflare::CheckCustomHostnameService)
-        allow(Cloudflare::CheckCustomHostnameService).to receive(:new).and_return(mock_service)
-        allow(mock_service).to receive(:perform).and_return({ data: [] })
-
-        get "/api/v1/accounts/#{account.id}/portals/#{portal_with_domain.slug}/ssl_status",
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(response.parsed_body['status']).to eq('active')
-        expect(response.parsed_body['verification_errors']).to be_nil
-      end
-
-      it 'returns null values when portal has no ssl_settings' do
-        mock_service = instance_double(Cloudflare::CheckCustomHostnameService)
-        allow(Cloudflare::CheckCustomHostnameService).to receive(:new).and_return(mock_service)
-        allow(mock_service).to receive(:perform).and_return({ data: [] })
-
-        get "/api/v1/accounts/#{account.id}/portals/#{portal_with_domain.slug}/ssl_status",
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(response.parsed_body['status']).to be_nil
-        expect(response.parsed_body['verification_errors']).to be_nil
-      end
-
-      it 'returns error when Cloudflare service returns errors' do
-        mock_service = instance_double(Cloudflare::CheckCustomHostnameService)
-        allow(Cloudflare::CheckCustomHostnameService).to receive(:new).and_return(mock_service)
-        allow(mock_service).to receive(:perform).and_return({ errors: ['API token not found'] })
-
-        get "/api/v1/accounts/#{account.id}/portals/#{portal_with_domain.slug}/ssl_status",
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-        expect(response.parsed_body['error']).to eq(['API token not found'])
+    it 'still cannot read, update, configure or inspect a portal' do
+      [
+        -> { get base, headers: headers, as: :json },
+        -> { get "#{base}/#{portal.slug}", headers: headers, as: :json },
+        -> { put "#{base}/#{portal.slug}", params: { name: 'renamed' }, headers: headers, as: :json },
+        -> { delete "#{base}/#{portal.slug}/logo", headers: headers, as: :json },
+        -> { get "#{base}/#{portal.slug}/ssl_status", headers: headers, as: :json }
+      ].each do |request|
+        request.call
+        expect(response).to have_http_status(:unauthorized)
       end
     end
   end

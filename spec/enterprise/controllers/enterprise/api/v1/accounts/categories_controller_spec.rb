@@ -21,106 +21,8 @@ RSpec.describe 'Enterprise Categories API', type: :request do
     agent_with_role_account_user
   end
 
-  describe 'GET /api/v1/accounts/:account_id/portals/:portal_slug/categories' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        get "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories",
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-      end
-    end
-  end
-
-  describe 'GET /api/v1/accounts/:account_id/portals/:portal_slug/categories/:id' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        get "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories/#{category.id}",
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['payload']['name']).to eq('category')
-      end
-    end
-  end
-
-  describe 'POST /api/v1/accounts/:account_id/portals/:portal_slug/categories' do
-    let(:category_params) do
-      {
-        category: {
-          name: 'New Category',
-          slug: 'new-category',
-          locale: 'en',
-          description: 'This is a new category'
-        }
-      }
-    end
-
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        post "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories",
-             params: category_params,
-             headers: agent_with_role.create_new_auth_token,
-             as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['payload']['name']).to eq('New Category')
-      end
-    end
-  end
-
-  describe 'PUT /api/v1/accounts/:account_id/portals/:portal_slug/categories/:id' do
-    let(:category_params) do
-      {
-        category: {
-          name: 'Updated Category',
-          description: 'This is an updated category'
-        }
-      }
-    end
-
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        put "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories/#{category.id}",
-            params: category_params,
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['payload']['name']).to eq('Updated Category')
-      end
-    end
-  end
-
-  describe 'DELETE /api/v1/accounts/:account_id/portals/:portal_slug/categories/:id' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        delete "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories/#{category.id}",
-               headers: agent_with_role.create_new_auth_token,
-               as: :json
-
-        expect(response).to have_http_status(:success)
-      end
-    end
-  end
-
   describe 'POST /api/v1/accounts/:account_id/portals/:portal_slug/categories/reorder' do
     context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        post "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories/reorder",
-             params: { positions_hash: { category.id => 20 } },
-             headers: agent_with_role.create_new_auth_token,
-             as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(category.reload.position).to eq(20)
-      end
-
       it 'returns not found for invalid portal slug' do
         post "/api/v1/accounts/#{account.id}/portals/invalid-portal-slug/categories/reorder",
              params: { positions_hash: { category.id => 20 } },
@@ -128,6 +30,25 @@ RSpec.describe 'Enterprise Categories API', type: :request do
              as: :json
 
         expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  # Enterprise grants these to a custom role holding knowledge_base_manage; Custom::CategoryPolicy refuses them.
+  describe 'a custom role holding knowledge_base_manage' do
+    let(:base) { "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/categories" }
+    let(:headers) { agent_with_role.create_new_auth_token }
+
+    it 'still cannot read or manage categories, which is where locales are managed' do
+      [
+        -> { get base, headers: headers, as: :json },
+        -> { post base, params: { category: { name: 'n', slug: 's', locale: 'en' } }, headers: headers, as: :json },
+        -> { put "#{base}/#{category.slug}", params: { category: { name: 'renamed' } }, headers: headers, as: :json },
+        -> { delete "#{base}/#{category.slug}", headers: headers, as: :json },
+        -> { post "#{base}/reorder", params: { positions: { category.id => 1 } }, headers: headers, as: :json }
+      ].each do |request|
+        request.call
+        expect(response).to have_http_status(:unauthorized)
       end
     end
   end

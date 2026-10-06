@@ -24,94 +24,31 @@ RSpec.describe 'Enterprise Articles API', type: :request do
     agent_with_role_account_user
   end
 
-  describe 'GET /api/v1/accounts/:account_id/portals/:portal_slug/articles/:id' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        get "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/#{article.id}",
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
+  # Enterprise::ArticlePolicy grants every article action to a custom role holding knowledge_base_manage.
+  # Custom::ArticlePolicy prepends ahead of it and refuses, because Lynomia owns the documentation and no tenant role
+  # authors it. These cases exist to pin that the grant is genuinely overridden at each endpoint.
+  describe 'a custom role holding knowledge_base_manage' do
+    let(:base) { "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles" }
+    let(:headers) { agent_with_role.create_new_auth_token }
 
-        expect(response).to have_http_status(:success)
+    it 'still cannot read, create, update, delete or reorder articles' do
+      [
+        -> { get base, headers: headers, as: :json },
+        -> { get "#{base}/#{article.id}", headers: headers, as: :json },
+        -> { post base, params: { article: { title: 't', content: 'c', author_id: admin.id } }, headers: headers, as: :json },
+        -> { put "#{base}/#{article.id}", params: { article: { title: 'renamed' } }, headers: headers, as: :json },
+        -> { delete "#{base}/#{article.id}", headers: headers, as: :json },
+        -> { post "#{base}/reorder", params: { positions: { article.id => 1 } }, headers: headers, as: :json }
+      ].each do |request|
+        request.call
+        expect(response).to have_http_status(:unauthorized)
       end
     end
-  end
 
-  describe 'POST /api/v1/accounts/:account_id/portals/:portal_slug/articles' do
-    let(:article_params) do
-      {
-        article: {
-          category_id: category.id,
-          title: 'New Article',
-          slug: 'new-article',
-          content: 'This is a new article',
-          author_id: agent_with_role.id,
-          status: 'draft'
-        }
-      }
-    end
-
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        post "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles",
-             params: article_params,
-             headers: agent_with_role.create_new_auth_token,
-             as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['payload']['title']).to eq('New Article')
-      end
-    end
-  end
-
-  describe 'PUT /api/v1/accounts/:account_id/portals/:portal_slug/articles/:id' do
-    let(:article_params) do
-      {
-        article: {
-          title: 'Updated Article',
-          content: 'This is an updated article'
-        }
-      }
-    end
-
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        put "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/#{article.id}",
-            params: article_params,
-            headers: agent_with_role.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-        json_response = response.parsed_body
-        expect(json_response['payload']['title']).to eq('Updated Article')
-      end
-    end
-  end
-
-  describe 'DELETE /api/v1/accounts/:account_id/portals/:portal_slug/articles/:id' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        delete "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/#{article.id}",
-               headers: agent_with_role.create_new_auth_token,
-               as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(Article.find_by(id: article.id)).to be_nil
-      end
-    end
-  end
-
-  describe 'POST /api/v1/accounts/:account_id/portals/:portal_slug/articles/reorder' do
-    context 'when it is an authenticated user' do
-      it 'returns success for agents with knowledge_base_manage permission' do
-        post "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/reorder",
-             params: { positions_hash: { article.id => 20 } },
-             headers: agent_with_role.create_new_auth_token,
-             as: :json
-
-        expect(response).to have_http_status(:success)
-        expect(article.reload.position).to eq(20)
-      end
+    it 'leaves the article untouched' do
+      expect do
+        delete "#{base}/#{article.id}", headers: headers, as: :json
+      end.not_to(change { Article.exists?(article.id) })
     end
   end
 end

@@ -33,147 +33,21 @@ RSpec.describe 'Article Bulk Actions API', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+  end
 
-    context 'when captain is not enabled' do
-      it 'returns unprocessable entity' do
-        post translate_url,
-             headers: admin.create_new_auth_token,
-             params: { ids: [article_one.id], locale: 'es', category_id: category_es.id },
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
+  # Bulk translation is authoring: it writes new articles in another locale. BulkActionsController authorizes through
+  # authorize(Article, :create?), which Custom::ArticlePolicy refuses, so no tenant role reaches the Captain
+  # translation jobs at all.
+  describe 'tenant bulk translation' do
+    let(:headers) { admin.create_new_auth_token }
+    let(:perform_request) do
+      post translate_url, params: { ids: [article_one.id, article_two.id], locale: 'es' }, headers: headers, as: :json
     end
 
-    context 'when authenticated as admin' do
-      before do
-        account.enable_features!('captain_tasks')
-      end
+    it_behaves_like 'a refused tenant Help Center request'
 
-      it 'enqueues translation jobs for each article' do
-        expect do
-          post translate_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id, article_two.id], locale: 'es', category_id: category_es.id },
-               as: :json
-        end.to have_enqueued_job(Captain::Articles::TranslateJob).exactly(2).times
-
-        expect(response).to have_http_status(:ok)
-      end
-
-      it 'enqueues job with correct arguments' do
-        expect do
-          post translate_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id], locale: 'es', category_id: category_es.id },
-               as: :json
-        end.to have_enqueued_job(Captain::Articles::TranslateJob).with(
-          account, article_one.id, 'es', category_es.id, admin
-        )
-
-        expect(response).to have_http_status(:ok)
-      end
-
-      it 'returns unprocessable entity for invalid locale' do
-        post translate_url,
-             headers: admin.create_new_auth_token,
-             params: { ids: [article_one.id], locale: 'zh', category_id: category_es.id },
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-
-      it 'returns unprocessable entity for invalid category' do
-        post translate_url,
-             headers: admin.create_new_auth_token,
-             params: { ids: [article_one.id], locale: 'es', category_id: 0 },
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-
-      it 'returns unprocessable entity when category locale does not match requested locale' do
-        post translate_url,
-             headers: admin.create_new_auth_token,
-             params: { ids: [article_one.id], locale: 'es', category_id: category_en.id },
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-
-      it 'enqueues job with nil category when category_id is omitted' do
-        expect do
-          post translate_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id], locale: 'es' },
-               as: :json
-        end.to have_enqueued_job(Captain::Articles::TranslateJob).with(
-          account, article_one.id, 'es', nil, admin
-        )
-
-        expect(response).to have_http_status(:ok)
-      end
-
-      it 'enqueues job with nil category when category_id is blank' do
-        expect do
-          post translate_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id], locale: 'es', category_id: '' },
-               as: :json
-        end.to have_enqueued_job(Captain::Articles::TranslateJob).with(
-          account, article_one.id, 'es', nil, admin
-        )
-
-        expect(response).to have_http_status(:ok)
-      end
-
-      it 'returns unprocessable entity when no articles found' do
-        post translate_url,
-             headers: admin.create_new_auth_token,
-             params: { ids: [0], locale: 'es', category_id: category_es.id },
-             as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-
-      context 'when translations already exist' do
-        let!(:existing_translation) do
-          create(:article, portal: portal, category: category_es, account: account, author_id: admin.id,
-                           locale: 'es', associated_article_id: article_one.id)
-        end
-
-        it 'returns conflict with duplicate articles' do
-          post translate_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id], locale: 'es', category_id: category_es.id },
-               as: :json
-
-          expect(response).to have_http_status(:conflict)
-          body = response.parsed_body
-          expect(body['duplicate_articles'].length).to eq(1)
-          expect(body['duplicate_articles'].first['id']).to eq(existing_translation.id)
-        end
-
-        it 'does not enqueue jobs when duplicates found without force' do
-          expect do
-            post translate_url,
-                 headers: admin.create_new_auth_token,
-                 params: { ids: [article_one.id], locale: 'es', category_id: category_es.id },
-                 as: :json
-          end.not_to have_enqueued_job(Captain::Articles::TranslateJob)
-        end
-
-        it 'enqueues jobs when force is true' do
-          expect do
-            post translate_url,
-                 headers: admin.create_new_auth_token,
-                 params: { ids: [article_one.id], locale: 'es', category_id: category_es.id, force: true },
-                 as: :json
-          end.to have_enqueued_job(Captain::Articles::TranslateJob).exactly(1).times
-
-          expect(response).to have_http_status(:ok)
-        end
-      end
+    it 'enqueues no translation job' do
+      expect { perform_request }.not_to have_enqueued_job(Captain::Articles::TranslateJob)
     end
   end
 end

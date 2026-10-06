@@ -2,6 +2,8 @@
 
 require 'rails_helper'
 
+# Custom:: prepends after Enterprise::, so Custom::CategoryPolicy wins: a custom role holding every permission
+# still cannot author documentation.
 RSpec.describe 'Enterprise::CategoryPolicy', type: :policy do
   subject(:category_policy) { CategoryPolicy }
 
@@ -21,7 +23,7 @@ RSpec.describe 'Enterprise::CategoryPolicy', type: :policy do
 
   permissions :index?, :update?, :show?, :edit?, :create?, :destroy? do
     context 'when agent with knowledge_base_manage permission' do
-      it { expect(category_policy).to permit(agent_with_role_context, category) }
+      it { expect(category_policy).not_to permit(agent_with_role_context, category) }
     end
   end
 end

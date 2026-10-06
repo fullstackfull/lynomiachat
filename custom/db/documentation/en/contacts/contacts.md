@@ -81,7 +81,7 @@ inbound WhatsApp messages from that person are dropped rather than queued, any c
 resolved and muted, and no notifications are raised.
 
 Blocking governs what comes in. It does not govern what goes out. Nothing filters blocked contacts out of a
-campaign, so a blocked person still receives a campaign whose label they carry. Keep them out of the labels you
+[campaign](whatsapp-campaigns), so a blocked person still receives a campaign whose label they carry. Keep them out of the labels you
 send to — or build the audience you send to with **blocked is false** as one of its conditions, which is a
 filter you can add.
 

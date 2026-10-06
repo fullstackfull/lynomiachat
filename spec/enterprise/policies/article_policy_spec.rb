@@ -2,6 +2,8 @@
 
 require 'rails_helper'
 
+# Custom:: prepends after Enterprise::, so Custom::ArticlePolicy overrides the `knowledge_base_manage` grant this
+# module adds: a custom role holding that permission still cannot author documentation.
 RSpec.describe 'Enterprise::ArticlePolicy', type: :policy do
   subject(:article_policy) { ArticlePolicy }
 
@@ -22,7 +24,7 @@ RSpec.describe 'Enterprise::ArticlePolicy', type: :policy do
 
   permissions :index?, :update?, :show?, :edit?, :create?, :destroy?, :reorder? do
     context 'when agent with knowledge_base_manage permission' do
-      it { expect(article_policy).to permit(agent_with_role_context, article) }
+      it { expect(article_policy).not_to permit(agent_with_role_context, article) }
     end
   end
 end

@@ -12,13 +12,19 @@ const messageContext = {
 };
 
 let documentationUrl;
+let docsLinkKey;
 
 vi.mock('../provider.js', () => ({
   useMessageContext: () => messageContext,
 }));
 
 vi.mock('shared/composables/useBranding', () => ({
-  useBranding: () => ({ docsLink: () => documentationUrl }),
+  useBranding: () => ({
+    docsLink: key => {
+      docsLinkKey = key;
+      return documentationUrl;
+    },
+  }),
 }));
 
 vi.mock('vue-i18n', () => ({
@@ -53,6 +59,7 @@ const retryButton = wrapper =>
 
 beforeEach(() => {
   documentationUrl = 'https://docs.example.com/whatsapp-troubleshooting';
+  docsLinkKey = undefined;
   messageContext.createdAt = computed(() => Math.floor(Date.now() / 1000));
   messageContext.status = computed(() => MESSAGE_STATUS.FAILED);
   messageContext.content = computed(() => 'hello');
@@ -167,6 +174,34 @@ describe('MessageError', () => {
     expect(retryButton(mountError({ deliveryFailure: BILLING })).exists()).toBe(
       false
     );
+  });
+
+  // An agent reading "131049" wants the page about 131049. Each classified code has its own article, and a code
+  // with no article falls back to the general one rather than linking somewhere that does not answer the question.
+  describe('the Learn more destination', () => {
+    it('asks for the article about this code', () => {
+      mountError({ deliveryFailure: RECIPIENT_RESTRICTED });
+      expect(docsLinkKey).toBe('whatsappError131049');
+
+      mountError({ deliveryFailure: BILLING });
+      expect(docsLinkKey).toBe('whatsappError131042');
+    });
+
+    it('falls back to the general article for a code with no page of its own', () => {
+      mountError({
+        deliveryFailure: { code: 133010, classification: 'UNCLASSIFIED' },
+      });
+
+      expect(docsLinkKey).toBe('whatsappTroubleshooting');
+    });
+
+    it('renders no link at all when the installation has no documentation', () => {
+      documentationUrl = '';
+
+      expect(
+        mountError({ deliveryFailure: RECIPIENT_RESTRICTED }).find('a').exists()
+      ).toBe(false);
+    });
   });
 
   // The parent places this block against its bubble with a `justify-*` class on the row, so the column inside has

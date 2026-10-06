@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import Icon from 'next/icon/Icon.vue';
 import { useI18n } from 'vue-i18n';
 import { useBranding } from 'shared/composables/useBranding';
+import { whatsappErrorArticle } from 'dashboard/helper/documentationLinks';
 import { useMessageContext } from './provider.js';
 import { hasOneDayPassed } from 'shared/helpers/timeHelper';
 import { ORIENTATION, MESSAGE_STATUS } from './constants';
@@ -64,9 +65,16 @@ const canRetry = computed(() => {
   return !hasOneDayPassed(createdAt.value) && (hasContent || hasAttachments);
 });
 
-const learnMoreUrl = computed(() =>
-  props.deliveryFailure ? docsLink('whatsappTroubleshooting') : ''
-);
+// The article about this code where one exists, and the general troubleshooting article otherwise. An agent
+// reading "131049" wants the page that explains 131049, not the page that explains WhatsApp.
+const learnMoreUrl = computed(() => {
+  if (!props.deliveryFailure) return '';
+
+  return docsLink(
+    whatsappErrorArticle(props.deliveryFailure.code) ??
+      'whatsappTroubleshooting'
+  );
+});
 
 // The block sits against its bubble, but its sentences stay start-aligned. Ragged-left body copy beside an
 // outgoing bubble is markedly harder to read than the same three lines set normally, and the explanation is the

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Lynomia Chat",
-    "description": "This is the API documentation for the Lynomia Chat server.\n\nLynomia Chat publishes the product documentation itself, so a workspace has no knowledge base of\nits own and this API has no Help Center endpoints. The inherited\n`/api/v1/accounts/{account_id}/portals` routes and their category and article routes still exist,\nbut they are refused for every caller and are not part of this contract.\n",
+    "description": "This is the API documentation for the Lynomia Chat server.\n\nLynomia Chat publishes the product documentation itself, so a workspace has no knowledge base of\nits own and this API has no Help Center endpoints. The inherited\n`/api/v1/accounts/{account_id}/portals` routes and their category and article routes still exist,\nbut they are refused for every caller and are not part of this contract. For the same reason an\ninbox has no portal to attach: sending `portal_id` to the inbox endpoints is refused with `422`.\n",
     "version": "1.1.0",
     "license": {
       "name": "MIT License",
@@ -4083,11 +4083,6 @@
             "description": "Lock contact messages to a single active conversation.\n\nAvailable for: `API` `LINE` `Telegram` `WhatsApp` `SMS`\n",
             "example": true
           },
-          "portal_id": {
-            "type": "integer",
-            "description": "Id of the help center portal to attach to the inbox.",
-            "example": 1
-          },
           "sender_name_type": {
             "type": "string",
             "description": "Sender name type for outbound email replies.\n\nAvailable for: `Website` `Email`\n",
@@ -4252,11 +4247,6 @@
             "type": "boolean",
             "description": "Lock contact messages to a single active conversation.\n\nAvailable for: `API` `LINE` `Telegram` `WhatsApp` `SMS`\n",
             "example": true
-          },
-          "portal_id": {
-            "type": "integer",
-            "description": "Id of the help center portal to attach to the inbox.",
-            "example": 1
           },
           "sender_name_type": {
             "type": "string",

@@ -61,4 +61,25 @@ RSpec.describe Documentation::ContentSeeder do
       end
     end
   end
+
+  # The dashboard's contextual-help registry is the other half of this contract: a key there names a slug here,
+  # and a slug that stops existing turns a product link into a 404 that nothing else would catch. The registry is
+  # JavaScript, so it is read as text rather than evaluated.
+  describe 'the dashboard link registry' do
+    registry = Rails.root.join('app/javascript/dashboard/helper/documentationLinks.js').read
+    slugs = registry[/DOC_ARTICLES = Object\.freeze\(\{(.*?)\n\}\)/m, 1]
+            .to_s.scan(/^\s*\w+:\s*'([a-z0-9-]+)',/).flatten
+
+    it 'is not empty, so a parsing change cannot make this vacuous' do
+      expect(slugs.size).to be > 40
+    end
+
+    it 'points every key at an article the corpus carries' do
+      expect(slugs - keys_by_locale[Documentation::Library::DEFAULT_LOCALE]).to be_empty
+    end
+
+    it 'has an article for every WhatsApp error code the server classifies' do
+      expect(slugs).to include(*Whatsapp::DeliveryFailure::CODES.keys.map { |code| "whatsapp-error-#{code}" })
+    end
+  end
 end

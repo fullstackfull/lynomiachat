@@ -8,7 +8,8 @@ describe Whatsapp::FacebookApiClient do
   let(:app_secret) { 'test_app_secret' }
 
   before do
-    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', 'v22.0').and_return(api_version)
+    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION',
+                                                      Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).and_return(api_version)
     allow(GlobalConfigService).to receive(:load).with('WHATSAPP_APP_ID', '').and_return(app_id)
     allow(GlobalConfigService).to receive(:load).with('WHATSAPP_APP_SECRET', '').and_return(app_secret)
   end
@@ -52,7 +53,7 @@ describe Whatsapp::FacebookApiClient do
     context 'when successful' do
       before do
         stub_request(:get, "https://graph.facebook.com/#{api_version}/#{waba_id}/phone_numbers")
-          .with(query: { access_token: access_token })
+          .with(headers: { 'Authorization' => "Bearer #{access_token}" })
           .to_return(
             status: 200,
             body: { data: [{ id: '123', display_phone_number: '1234567890' }] }.to_json,
@@ -70,7 +71,7 @@ describe Whatsapp::FacebookApiClient do
     context 'when failed' do
       before do
         stub_request(:get, "https://graph.facebook.com/#{api_version}/#{waba_id}/phone_numbers")
-          .with(query: { access_token: access_token })
+          .with(headers: { 'Authorization' => "Bearer #{access_token}" })
           .to_return(status: 403, body: { error: 'Access denied' }.to_json)
       end
 
@@ -195,7 +196,7 @@ describe Whatsapp::FacebookApiClient do
         stub_request(:post, "https://graph.facebook.com/#{api_version}/#{waba_id}/subscribed_apps")
           .with(
             headers: { 'Authorization' => "Bearer #{access_token}", 'Content-Type' => 'application/json' },
-            body: { subscribed_fields: %w[messages smb_message_echoes] }.to_json
+            body: { subscribed_fields: %w[messages smb_message_echoes message_template_status_update] }.to_json
           )
           .to_return(
             status: 200,

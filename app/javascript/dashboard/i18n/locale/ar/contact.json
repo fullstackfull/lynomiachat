@@ -60,7 +60,9 @@
       "CONTACT_LABELS": "تصنفيات جهات الاتصال",
       "PREVIOUS_CONVERSATIONS": "المحادثات السابقة",
       "NO_RECORDS_FOUND": "لم يتم العثور على سمات"
-    }
+    },
+    "COPY_FIELD": "نسخ {field}",
+    "EDIT_FIELD": "تعديل {field}"
   },
   "EDIT_CONTACT": {
     "BUTTON_LABEL": "تعديل جهة الاتصال",
@@ -419,7 +421,8 @@
             "SUCCESS_MESSAGE": "تم حفظ الجمهور",
             "ERROR_MESSAGE": "تعذر حفظ الجمهور. حاول مرة أخرى.",
             "SHARE": "مشاركة مع كل الحساب",
-            "SHARE_HINT": "يمكن لكل أعضاء الحساب فتح الجمهور المشترك، ويمكن لقواعد الأتمتة استخدامه. يعدّله المسؤولون فقط."
+            "SHARE_HINT": "يمكن لكل أعضاء الحساب فتح الجمهور المشترك، ويمكن لقواعد الأتمتة استخدامه. يعدّله المسؤولون فقط.",
+            "ACTION": "حفظ كجمهور"
           },
           "DELETE_SEGMENT": {
             "TITLE": "هل تريد حذف هذا الجمهور؟",
@@ -429,6 +432,26 @@
             "SUCCESS_MESSAGE": "تم حذف الجمهور",
             "ERROR_MESSAGE": "تعذر حذف الجمهور. حاول مرة أخرى."
           }
+        },
+        "AUDIENCE": {
+          "SECTION": "الجمهور",
+          "USED_BY": "مستخدم في {usage}",
+          "USED_BY_RULES": "{n} قاعدة أتمتة | {n} قواعد أتمتة",
+          "USED_BY_CAMPAIGNS": "{n} حملة | {n} حملات",
+          "USE_IN_AUTOMATION": "استخدمه في قاعدة أتمتة جديدة",
+          "USE_IN_CAMPAIGN": "استخدمه في حملة واتساب جديدة",
+          "DUPLICATE": "أنشئ نسخة من هذا الجمهور",
+          "DUPLICATE_TITLE": "إنشاء نسخة من هذا الجمهور؟",
+          "DUPLICATE_NAME": "نسخة من {name}",
+          "COPY_LINK": "انسخ رابط هذا الجمهور",
+          "LINK_COPIED": "تم نسخ الرابط",
+          "LINK_COPY_FAILED": "تعذّر نسخ الرابط. انسخه من شريط العنوان بدلًا من ذلك.",
+          "FROM_PRESET": "جمهور جديد من قالب جاهز"
+        },
+        "MORE": "إجراءات أخرى",
+        "BUTTONS": {
+          "DELETE_SEGMENT": "حذف الجمهور",
+          "FILTER": "تصفية جهات الاتصال"
         }
       }
     },
@@ -628,7 +651,9 @@
         "COLLAPSE": "Collapse",
         "NO_NOTES": "No notes, you can add notes from the contact details page.",
         "EMPTY_STATE": "There are no notes associated to this contact. You can add a note by typing in the box above.",
-        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one."
+        "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
+        "DELETE": "حذف الملاحظة",
+        "LOADING": "جارٍ تحميل الملاحظات"
       }
     },
     "EMPTY_STATE": {
@@ -639,7 +664,28 @@
       "LIST_EMPTY_STATE_TITLE": "No contacts available in this view 📋",
       "ACTIVE_EMPTY_STATE_TITLE": "No contacts are active at the moment 🌙"
     },
-    "LOAD_MORE": "تحميل المزيد"
+    "LOAD_MORE": "تحميل المزيد",
+    "AUDIENCES": {
+      "TITLE": "الجماهير",
+      "LOADING": "جارٍ تحميل الجماهير",
+      "SHARED": "مشترك",
+      "PERSONAL": "خاص بك",
+      "NO_CONDITIONS": "لا توجد شروط محفوظة، لذلك يطابق هذا الجمهور كل جهات الاتصال.",
+      "COUNT": "لا توجد جهات اتصال | جهة اتصال واحدة | {count} جهة اتصال",
+      "COUNT_ACTION": "احسب جهات الاتصال الآن",
+      "COUNT_FAILED": "تعذّر حساب هذا الجمهور. افتحه لمعرفة السبب.",
+      "FROM_FILTERS": "ابنِ من الفلاتر",
+      "ACTIONS": {
+        "MORE": "إجراءات أخرى لـ {name}",
+        "OPEN": "افتح هذا الجمهور",
+        "EDIT": "تعديل شروطه",
+        "DELETE": "حذف هذا الجمهور"
+      },
+      "EMPTY_STATE": {
+        "TITLE": "لا توجد جماهير بعد",
+        "DESCRIPTION": "الجمهور قاعدة محفوظة عن عملائك، تُطبَّق من جديد في كل مرة يُستخدم فيها. ابدأ من قالب جاهز، أو اختر الشروط بنفسك من قائمة جهات الاتصال."
+      }
+    }
   },
   "CONTACTS_BULK_ACTIONS": {
     "ASSIGN_LABELS": "تعيين التسميات",
@@ -663,7 +709,12 @@
       "SINGULAR_DESCRIPTION": "This will permanently delete the selected contact. This action cannot be undone.",
       "CONFIRM_MULTIPLE": "Delete contacts",
       "CONFIRM_SINGLE": "حذف جهة الاتصال"
-    }
+    },
+    "SELECT_ALL_MATCHING": "تحديد الكل ({count}) في هذا العرض",
+    "SELECT_ALL_MATCHING_UNCOUNTED": "تحديد كل النتائج في هذا العرض",
+    "SELECTED_ALL_MATCHING_COUNT": "تم تحديد الكل ({count})",
+    "SELECTED_ALL_MATCHING": "تم تحديد كل النتائج في هذا العرض",
+    "TOO_MANY_MATCHING": "في هذا العرض جهات اتصال أكثر من أن يُعمل عليها مرة واحدة. ضيّقه أولاً."
   },
   "COMPOSE_NEW_CONVERSATION": {
     "CONTACT_SEARCH": {

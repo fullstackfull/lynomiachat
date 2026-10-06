@@ -104,13 +104,22 @@ defineExpose({
         :aria-selected="isSelected(option)"
         @click.stop="emit('select', option)"
       >
-        <span
-          :class="{
-            'font-medium': isSelected(option),
-          }"
-          class="text-n-slate-12"
-        >
-          {{ option.label }}
+        <span class="flex min-w-0 flex-col gap-0.5">
+          <span
+            :class="{
+              'font-medium': isSelected(option),
+            }"
+            class="text-n-slate-12"
+          >
+            {{ option.label }}
+          </span>
+          <!-- An option that can say more about itself does; one that cannot is unchanged. -->
+          <span
+            v-if="option.description"
+            class="truncate text-label-small text-n-slate-11"
+          >
+            {{ option.description }}
+          </span>
         </span>
         <span
           v-if="isSelected(option)"

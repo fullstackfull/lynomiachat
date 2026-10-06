@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
@@ -51,6 +52,7 @@ const STEPS = {
 };
 
 const { t, locale } = useI18n();
+const { installationName } = useBranding();
 const { apiErrorMessage, errorMessage, orderStatus, providerName } =
   useCommerceLabels();
 const { actionLabel, unavailableReason, refundReasons, cancelReasons } =
@@ -145,8 +147,12 @@ const resultMessage = computed(() => {
   if (status === 'failed') return errorMessage(run.value.error_code);
   if (status === 'unknown') {
     return run.value.reconcile === 'exhausted'
-      ? t('COMMERCE.ACTIONS.RESULT.UNRESOLVED')
-      : t('COMMERCE.ACTIONS.RESULT.UNKNOWN');
+      ? t('COMMERCE.ACTIONS.RESULT.UNRESOLVED', {
+          installationName: installationName.value,
+        })
+      : t('COMMERCE.ACTIONS.RESULT.UNKNOWN', {
+          installationName: installationName.value,
+        });
   }
   return pollsLeft.value > 0
     ? t('COMMERCE.ACTIONS.RESULT.PROCESSING')

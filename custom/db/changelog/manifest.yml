@@ -1,0 +1,12 @@
+# Lynomia Chat changelog. Release notes are Articles in the changelog portal, ordered newest first by their
+# release_date (docs/global-documentation/08-changelog-design.md).
+sections:
+  - slug: releases
+    position: 10
+    icon: sparkles
+    en:
+      name: Releases
+      description: What changed in Lynomia Chat, newest first.
+    ar:
+      name: الإصدارات
+      description: ما الذي تغيّر في لينوميا تشات، الأحدث أولاً.

@@ -127,8 +127,18 @@ defineExpose({ open, close });
           :data-test-id="`recipe-${recipe.id}`"
         >
           <span class="flex flex-col min-w-0 gap-1">
-            <span class="text-body-main text-n-slate-12">
-              {{ t(recipe.name) }}
+            <span class="flex flex-wrap items-center gap-2">
+              <span class="text-body-main text-n-slate-12">
+                {{ t(recipe.name) }}
+              </span>
+              <!-- Why this one is near the top: something the account actually has, said rather than implied. -->
+              <span
+                v-if="recipe.recommended"
+                class="rounded-md bg-n-teal-2 px-1.5 py-0.5 text-label-small text-n-teal-11 whitespace-nowrap"
+                :data-test-id="`recipe-${recipe.id}-recommended`"
+              >
+                {{ recipe.recommended }}
+              </span>
             </span>
             <span class="text-label-small text-n-slate-11" dir="auto">
               {{ t(recipe.description) }}
@@ -139,6 +149,14 @@ defineExpose({ open, close });
               :data-test-id="`recipe-${recipe.id}-requirements`"
             >
               {{ t('RECIPES.REQUIRES', { what: recipe.reasons.join(', ') }) }}
+            </span>
+            <span
+              v-if="recipe.providerNote"
+              class="text-label-small text-n-slate-11"
+              :data-test-id="`recipe-${recipe.id}-provider-note`"
+              dir="auto"
+            >
+              {{ t(recipe.providerNote) }}
             </span>
           </span>
           <Button
@@ -174,6 +192,14 @@ defineExpose({ open, close });
       />
       <p v-else class="mb-0 text-sm text-n-slate-11">
         {{ t('RECIPES.NO_INPUTS') }}
+      </p>
+      <p
+        v-if="selected.providerNote"
+        class="mb-0 text-label-small text-n-slate-11"
+        data-test-id="recipe-selected-provider-note"
+        dir="auto"
+      >
+        {{ t(selected.providerNote) }}
       </p>
       <Button
         :label="t('RECIPES.BACK')"

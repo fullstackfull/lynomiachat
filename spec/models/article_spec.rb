@@ -32,7 +32,7 @@ RSpec.describe Article do
   end
 
   describe 'associations' do
-    it { is_expected.to belong_to(:account) }
+    it { is_expected.to belong_to(:account).optional }
     it { is_expected.to belong_to(:author) }
   end
 

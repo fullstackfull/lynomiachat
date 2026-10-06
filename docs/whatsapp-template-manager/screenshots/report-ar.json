@@ -1,0 +1,22 @@
+[
+  {
+    "name": "the manager reads in Arabic",
+    "ok": true,
+    "detail": "title, draft state, in review, rejected"
+  },
+  {
+    "name": "the new state filter is translated too",
+    "ok": true,
+    "detail": "all states"
+  },
+  {
+    "name": "and lays out right to left",
+    "ok": true,
+    "detail": "rtl"
+  },
+  {
+    "name": "the builder is translated, including the sample-value explanation",
+    "ok": true,
+    "detail": "title, preview"
+  }
+]

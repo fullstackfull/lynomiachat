@@ -50,6 +50,9 @@ const selectedLabels = ref([]);
 const defaultCountry = ref('');
 const duplicatePolicy = ref(DUPLICATE_POLICIES[0]);
 const preview = ref(null);
+// Answered by the preview once it has stored the file. Sent in place of the file from then on, so the bytes
+// cross the wire once no matter how many times the options change (docs/contacts/10-phase-d.md).
+const importFileBlobId = ref('');
 const isPreviewing = ref(false);
 const errorMessage = ref('');
 
@@ -93,6 +96,7 @@ const hasSource = computed(() =>
 
 const payload = computed(() => ({
   file: source.value === SOURCES.FILE ? selectedFile.value : null,
+  importFileBlobId: source.value === SOURCES.FILE ? importFileBlobId.value : '',
   phoneNumbers: source.value === SOURCES.PASTE ? pastedNumbers.value : '',
   labels: selectedLabels.value,
   defaultCountry: defaultCountry.value,
@@ -127,6 +131,7 @@ const resetState = () => {
   defaultCountry.value = '';
   duplicatePolicy.value = DUPLICATE_POLICIES[0];
   preview.value = null;
+  importFileBlobId.value = '';
   errorMessage.value = '';
   if (fileInput.value) fileInput.value.value = null;
 };
@@ -141,6 +146,8 @@ const handleFileClick = () => fileInput.value?.click();
 const handleFileChange = () => {
   const file = fileInput.value?.files?.[0] ?? null;
   errorMessage.value = '';
+  // A different file is a different import: the stored copy of the last one is no longer what to send.
+  importFileBlobId.value = '';
   // Checked here as well as on the server: the file picker's `accept` is a suggestion the browser lets through.
   if (file && !file.name.toLowerCase().endsWith('.csv')) {
     selectedFile.value = null;
@@ -154,6 +161,7 @@ const handleFileChange = () => {
 
 const handleRemoveFile = () => {
   selectedFile.value = null;
+  importFileBlobId.value = '';
   if (fileInput.value) fileInput.value.value = null;
 };
 
@@ -165,8 +173,12 @@ const loadPreview = async () => {
   try {
     const { data } = await ContactAPI.previewImport(payload.value);
     preview.value = data;
+    importFileBlobId.value = data.import_file_blob_id ?? '';
     step.value = STEPS.PREVIEW;
   } catch (error) {
+    // A rejected stored copy is the one error worth recovering from here rather than reporting: ask for the
+    // file itself next time.
+    importFileBlobId.value = '';
     errorMessage.value =
       error.response?.data?.message ??
       error.response?.data?.error ??

@@ -68,9 +68,14 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     message.with_lock do
       next false unless message.failed?
 
+      # Capture the provider's reason BEFORE anything clears it. Moving to 'sent' nils external_error (a non-failed
+      # status resolves to no error), and the content_attributes rewrite below drops whatever was there, so a
+      # retry used to destroy the only record of why Meta refused the message. Somebody troubleshooting a failed
+      # WhatsApp send must not lose the reason because they pressed Retry.
+      failure_history = previous_failure_attributes
       Messages::StatusUpdateService.new(message, 'sent').perform
       previous_source_id = message.source_id
-      retry_attributes = { content_attributes: retry_content_attributes }
+      retry_attributes = { content_attributes: retry_content_attributes.merge(failure_history) }
       retry_attributes[:source_id] = nil unless @conversation.inbox.api? || @conversation.inbox.web_widget?
       message.update!(retry_attributes)
       if retry_attributes.key?(:source_id) && previous_source_id.present?
@@ -84,6 +89,17 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     return message.content_attributes if message.content_attributes.dig('whatsapp_contact_info', 'type') == 'request'
 
     {}
+  end
+
+  # The last provider failure, kept on the message so the next attempt does not erase the previous reason. One
+  # slot, not a history: the useful thing is the most recent real refusal, and the brief for this work asks for
+  # the existing fields rather than an event store. `retried_at` says the reason is from a previous attempt, so a
+  # reader cannot mistake it for the current state.
+  def previous_failure_attributes
+    reason = message.external_error.presence || message.content_attributes['previous_external_error']
+    return {} if reason.blank?
+
+    { 'previous_external_error' => reason, 'retried_at' => Time.current.iso8601 }
   end
 
   def permitted_params

@@ -10,9 +10,10 @@ import WhatsAppCampaignForm from 'dashboard/components-next/Campaigns/Pages/Camp
 defineProps({
   initialSharedAudienceIds: { type: Array, default: () => [] },
   initialLabelIds: { type: Array, default: () => [] },
+  initialDraft: { type: Object, default: null },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'createAudience']);
 
 const store = useStore();
 const { t } = useI18n();
@@ -52,8 +53,10 @@ const handleClose = () => emit('close');
       <WhatsAppCampaignForm
         :initial-shared-audience-ids="initialSharedAudienceIds"
         :initial-label-ids="initialLabelIds"
+        :initial-draft="initialDraft"
         @submit="handleSubmit"
         @cancel="handleClose"
+        @create-audience="draft => emit('createAudience', draft)"
       />
     </div>
   </div>

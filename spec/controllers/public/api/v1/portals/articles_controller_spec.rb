@@ -128,11 +128,18 @@ RSpec.describe 'Public Articles API', type: :request do
       expect(article.reload.views).to eq 0 # View count should not increment on show
     end
 
-    it 'does not increment the view count if the article is not published' do
+    # The page used to serve an unpublished draft to anyone holding its URL, and this example asserted that -- it
+    # only checked that the view count stayed at zero. A draft is not public, so it is not served at all.
+    it 'does not serve an article that is not published, or count a view of it' do
       draft_article = create(:article, category: category, status: :draft, portal: portal, account_id: account.id, author_id: agent.id, views: 0)
       get "/hc/#{portal.slug}/articles/#{draft_article.slug}"
-      expect(response).to have_http_status(:success)
+      expect(response).to have_http_status(:not_found)
       expect(draft_article.reload.views).to eq 0
+    end
+
+    it 'returns not found for an article slug the portal does not have' do
+      get "/hc/#{portal.slug}/articles/no-such-article"
+      expect(response).to have_http_status(:not_found)
     end
 
     it 'returns the article with the id with a different locale' do

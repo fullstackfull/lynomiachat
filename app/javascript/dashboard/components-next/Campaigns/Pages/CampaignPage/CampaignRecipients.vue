@@ -11,10 +11,17 @@ import CampaignsAPI from 'dashboard/api/campaigns';
 import { buildCampaignAudience } from 'shared/constants/campaign';
 
 import TagMultiSelectComboBox from 'dashboard/components-next/combobox/TagMultiSelectComboBox.vue';
+import Button from 'dashboard/components-next/button/Button.vue';
+import AudienceExplainer from 'dashboard/components-next/audience/AudienceExplainer.vue';
+import { useContactFilterContext } from 'dashboard/components-next/filter/contactProvider';
+import { summariseAudience } from 'dashboard/helper/audienceSummary';
 
 defineProps({
   message: { type: String, default: '' },
 });
+
+// The page owns the trip to Contacts and back, because it is the page that has a draft to keep.
+const emit = defineEmits(['createAudience']);
 
 const labelIds = defineModel('labelIds', { type: Array, default: () => [] });
 const audienceIds = defineModel('audienceIds', {
@@ -27,14 +34,38 @@ const { t } = useI18n();
 const labels = useMapGetter('labels/getLabels');
 // The Sidebar loads the contact filters; campaigns may use only the shared ones.
 const contactViews = useMapGetter('customViews/getContactCustomViews');
+// Those filters arrive asynchronously. Without this the section said "no shared audiences yet" to an account
+// that has several, simply because the dialog opened before the fetch returned.
+const customViewUiFlags = useMapGetter('customViews/getUIFlags');
+const isLoadingAudiences = computed(() => customViewUiFlags.value?.isFetching);
+
+// One vocabulary names every attribute an audience can be built from: the contact provider already folds the
+// Commerce and Conversation conditions in.
+const { filterTypes } = useContactFilterContext();
 
 const labelOptions = computed(() =>
   labels.value.map(label => ({ value: label.id, label: label.title }))
 );
+const sharedAudiences = computed(() =>
+  contactViews.value.filter(view => view.shared)
+);
+// Each option says what its audience actually asks for. The summary is read from the stored query, so the list
+// costs no request and asks no provider anything.
 const audienceOptions = computed(() =>
-  contactViews.value
-    .filter(view => view.shared)
-    .map(view => ({ value: view.id, label: view.name }))
+  sharedAudiences.value.map(view => ({
+    value: view.id,
+    label: view.name,
+    description:
+      summariseAudience(view.query, filterTypes.value, {
+        limit: 2,
+        andLabel: t('CONTACTS_FILTER.QUERY_DROPDOWN_LABELS.AND').toLowerCase(),
+        moreLabel: count =>
+          t('CAMPAIGN.RECIPIENTS.AUDIENCES.CONDITIONS', { count }, count),
+      }) || undefined,
+  }))
+);
+const hasNoAudiences = computed(
+  () => !isLoadingAudiences.value && sharedAudiences.value.length === 0
 );
 
 const PREVIEW_DELAY_MS = 300;
@@ -106,12 +137,34 @@ const countNote = computed(() => {
         v-model="audienceIds"
         :options="audienceOptions"
         :placeholder="t('CAMPAIGN.RECIPIENTS.AUDIENCES.PLACEHOLDER')"
-        :empty-state="t('CAMPAIGN.RECIPIENTS.AUDIENCES.EMPTY')"
+        :empty-state="
+          isLoadingAudiences
+            ? t('CAMPAIGN.RECIPIENTS.AUDIENCES.LOADING')
+            : t('CAMPAIGN.RECIPIENTS.AUDIENCES.EMPTY')
+        "
         :has-error="!!message"
         class="[&>div>button]:bg-n-alpha-black2"
         data-test-id="campaign-recipient-audiences"
       />
     </div>
+    <!-- An account with none needs to know what one is and be able to make one, here, without losing this
+         campaign. Saying "no shared audiences yet" inside a dropdown nobody opens did neither. -->
+    <AudienceExplainer v-if="hasNoAudiences" compact>
+      <template #action>
+        <Button
+          sm
+          faded
+          slate
+          icon="i-lucide-plus"
+          :label="t('CAMPAIGN.RECIPIENTS.AUDIENCES.CREATE')"
+          data-test-id="campaign-create-audience"
+          @click="emit('createAudience')"
+        />
+        <span class="text-label-small text-n-slate-11">
+          {{ t('CAMPAIGN.RECIPIENTS.AUDIENCES.CREATE_HINT') }}
+        </span>
+      </template>
+    </AudienceExplainer>
     <p v-if="message" class="mb-0 text-label-small text-n-ruby-11">
       {{ message }}
     </p>

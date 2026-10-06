@@ -56,15 +56,11 @@ class Account::ContactsExportJob < ApplicationJob
     @contact_labels_by_id ||= Hash.new { |hash, contact_id| hash[contact_id] = [] }
   end
 
+  # The view the export was asked for, resolved the same way a bulk action over a whole view resolves it. This
+  # used to be answered here, with a payload-else-label-else-everything fall-through, so exporting from a search
+  # or from the online list quietly exported the whole account (docs/contacts/10-phase-d.md §D4).
   def contacts
-    if @params.present? && @params[:payload].present? && @params[:payload].any?
-      result = ::Contacts::FilterService.new(@account, @account_user, @params).perform
-      result[:contacts]
-    elsif @params[:label].present?
-      @account.contacts.resolved_contacts(use_crm_v2: @account.feature_enabled?('crm_v2')).tagged_with(@params[:label], any: true)
-    else
-      @account.contacts.resolved_contacts(use_crm_v2: @account.feature_enabled?('crm_v2'))
-    end
+    ::Contacts::ViewScope.new(account: @account, user: @account_user, params: @params).perform
   end
 
   def valid_headers(column_names)

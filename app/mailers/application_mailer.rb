@@ -1,7 +1,12 @@
 class ApplicationMailer < ActionMailer::Base
   include ActionView::Helpers::SanitizeHelper
 
-  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Chatwoot <accounts@chatwoot.com>')
+  # MAILER_SENDER_EMAIL is a deployment setting and a branded install must set it. When it is not set the address
+  # still falls back, because an unset sender would stop mail entirely -- but the display name a customer reads in
+  # their mail client is the installation's own, not the upstream project's. Evaluated per message rather than at
+  # class load, so it does not read config during boot.
+  # A proc rather than a lambda: ActionMailer calls a default value with the mailer, and a lambda would refuse it.
+  default from: proc { ENV.fetch('MAILER_SENDER_EMAIL') { "#{GlobalConfig.get_value('INSTALLATION_NAME')} <accounts@chatwoot.com>" } }
   before_action { ensure_current_account(params.try(:[], :account)) }
   around_action :switch_locale
   layout 'mailer/base'
@@ -54,7 +59,7 @@ class ApplicationMailer < ActionMailer::Base
   def liquid_locals
     # expose variables you want to be exposed in liquid
     locals = {
-      global_config: GlobalConfig.get('BRAND_NAME', 'BRAND_URL'),
+      global_config: GlobalConfig.get('BRAND_NAME', 'BRAND_URL', 'SUPPORT_URL'),
       action_url: @action_url
     }
 

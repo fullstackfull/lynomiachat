@@ -41,9 +41,22 @@ const ButtonStub = {
   template: '<button :data-label="label" @click="$emit(\'click\')" />',
 };
 
-const mountBar = ({ visible = [1, 2, 3], selected = [], policy = true } = {}) =>
+const mountBar = ({
+  visible = [1, 2, 3],
+  selected = [],
+  policy = true,
+  totalCount = 0,
+  isWholeViewSelected = false,
+  hasMore = false,
+} = {}) =>
   mount(ContactsBulkActionBar, {
-    props: { visibleContactIds: visible, selectedContactIds: selected },
+    props: {
+      visibleContactIds: visible,
+      selectedContactIds: selected,
+      totalCount,
+      isWholeViewSelected,
+      hasMore,
+    },
     global: {
       plugins: [
         createI18n({ legacy: false, locale: 'en', messages: { en: contact } }),
@@ -119,6 +132,137 @@ describe('ContactsBulkActionBar', () => {
     await clear.trigger('click');
 
     expect(wrapper.emitted('clearSelection')).toHaveLength(1);
+  });
+
+  // D4 (docs/contacts/10-phase-d.md). Only the server can enumerate a view, so the page has to ask for it by
+  // name rather than by id.
+  describe('acting on a whole view', () => {
+    const selectAllMatching = wrapper =>
+      wrapper
+        .findAll('button')
+        .find(button =>
+          button.attributes('data-label')?.startsWith('Select all 42')
+        );
+
+    it('offers the whole view once the page itself is exhausted', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 42,
+      });
+
+      expect(selectAllMatching(wrapper).attributes('data-label')).toBe(
+        'Select all 42 in this view'
+      );
+    });
+
+    it('does not offer it while part of the page is still unselected', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1],
+        totalCount: 42,
+      });
+
+      expect(selectAllMatching(wrapper)).toBeUndefined();
+    });
+
+    it('does not offer it when the page is the whole view', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+      });
+
+      expect(selectAllMatching(wrapper)).toBeUndefined();
+    });
+
+    // P0/D6. On a search view the server reports the page size as its count, by design, so gating purely on the
+    // total meant this whole feature was silently unreachable there.
+    it('is offered on a search view, where the total IS the page size', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+      });
+      const button = wrapper
+        .findAll('button')
+        .find(
+          b => b.attributes('data-label') === 'Select all results in this view'
+        );
+
+      expect(button).toBeDefined();
+    });
+
+    it('shows no number when the server did not give a usable one', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+      });
+      const labels = wrapper
+        .findAll('button')
+        .map(b => b.attributes('data-label'));
+
+      expect(labels).toContain('Select all results in this view');
+      expect(labels.some(l => l?.includes('Select all 3'))).toBe(false);
+    });
+
+    it('counts without a number once an uncounted view is selected', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: true,
+        isWholeViewSelected: true,
+      });
+
+      expect(wrapper.find('[data-test-id="count"]').text()).toBe(
+        'All results in this view selected'
+      );
+    });
+
+    it('is still not offered when the page is the whole view and there is no more', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 3,
+        hasMore: false,
+      });
+      const labels = wrapper
+        .findAll('button')
+        .map(b => b.attributes('data-label'));
+
+      expect(labels).not.toContain('Select all results in this view');
+      expect(selectAllMatching(wrapper)).toBeUndefined();
+    });
+
+    it('asks for the whole view when offered and taken', async () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 42,
+      });
+      await selectAllMatching(wrapper).trigger('click');
+
+      expect(wrapper.emitted('selectAllMatching')).toHaveLength(1);
+    });
+
+    // The count of ids the browser holds would read as three of forty-two, which is not what is about to happen.
+    it('counts the whole view once the whole view is what is selected', () => {
+      const wrapper = mountBar({
+        visible: [1, 2, 3],
+        selected: [1, 2, 3],
+        totalCount: 42,
+        isWholeViewSelected: true,
+      });
+
+      expect(wrapper.find('[data-test-id="count"]').text()).toBe(
+        'All 42 selected'
+      );
+      expect(selectAllMatching(wrapper)).toBeUndefined();
+    });
   });
 
   it('offers delete only to a user the policy admits', () => {

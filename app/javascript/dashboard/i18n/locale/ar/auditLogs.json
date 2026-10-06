@@ -32,7 +32,8 @@
         "MACROS": "ماكروس",
         "AUDIENCES": "الجماهير",
         "CONVERSATION_DELETIONS": "Conversation deletions",
-        "MESSAGE_DELETIONS": "Message deletions"
+        "MESSAGE_DELETIONS": "Message deletions",
+        "WHATSAPP_TEMPLATES": "قوالب واتساب"
       },
       "SORT": {
         "NEWEST": "Newest first",
@@ -95,6 +96,11 @@
       "ADD": "{agentName} أنشأ جمهورًا جديدًا (#{id})",
       "EDIT": "{agentName} قام بتحديث جمهور (#{id})",
       "DELETE": "{agentName} حذف جمهورًا (#{id})"
+    },
+    "WHATSAPP_TEMPLATE": {
+      "ADD": "{agentName} أنشأ قالب واتساب (#{id})",
+      "EDIT": "{agentName} حدّث قالب واتساب (#{id})",
+      "DELETE": "{agentName} حذف قالب واتساب (#{id})"
     },
     "INBOX_MEMBER": {
       "ADD": "{agentName} أضاف {user} إلى صندوق الوارد (#{inbox_id})",

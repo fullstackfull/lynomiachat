@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import { useAlert } from 'dashboard/composables';
 import InboxesAPI from 'dashboard/api/inboxes';
 import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
@@ -14,7 +15,14 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
-const WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_GUIDE_URL = 'https://chwt.app/zM7G2yU';
+const { brandLink } = useBranding();
+// These point at upstream Chatwoot's own documentation, which is the right destination only on an upstream
+// installation. A branded one gets its configured DOCUMENTATION_URL, and no link at all when it has none.
+const UPSTREAM_BUSINESS_MANAGEMENT_TOKEN_GUIDE_URL = 'https://chwt.app/zM7G2yU';
+
+const guideUrl = computed(() =>
+  brandLink('documentation', UPSTREAM_BUSINESS_MANAGEMENT_TOKEN_GUIDE_URL)
+);
 const businessManagementToken = ref('');
 const isUpdating = ref(false);
 const tokenUpdated = ref(false);
@@ -131,7 +139,8 @@ const updateToken = async () => {
         </NextButton>
       </div>
       <a
-        :href="WHATSAPP_BUSINESS_MANAGEMENT_TOKEN_GUIDE_URL"
+        v-if="guideUrl"
+        :href="guideUrl"
         target="_blank"
         rel="noopener noreferrer"
         class="text-label-small text-n-blue-11 hover:underline"

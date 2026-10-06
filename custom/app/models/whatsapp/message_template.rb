@@ -1,0 +1,114 @@
+# == Schema Information
+#
+# Table name: whatsapp_message_templates
+#
+#  id                  :bigint           not null, primary key
+#  business_account_id :string           not null
+#  category            :string           not null
+#  components          :jsonb            not null
+#  language            :string           not null
+#  meta_payload        :jsonb            not null
+#  meta_status         :string
+#  meta_synced_at      :datetime
+#  name                :string           not null
+#  parameter_format    :string           default("POSITIONAL"), not null
+#  submission_error    :string(1000)
+#  submitted_at        :datetime
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  account_id          :bigint           not null
+#  meta_template_id    :string
+#
+# Indexes
+#
+#  index_whatsapp_message_templates_on_identity  (account_id, business_account_id, name, lower(language)) UNIQUE
+#  index_whatsapp_message_templates_on_meta_id   (account_id, meta_template_id) UNIQUE WHERE meta_template_id IS NOT NULL
+#
+# Lynomia WhatsApp Template Manager (docs/whatsapp-template-manager/02-local-record-design.md): one template an
+# account manages. A row with no meta_template_id is a local draft Meta has never seen; a row with one mirrors a
+# template Meta holds, and Meta stays authoritative for its status. Identity is Meta's own -- (WABA, name, language)
+# -- scoped to the account, so one WABA never overwrites another's same-named template.
+class Whatsapp::MessageTemplate < ApplicationRecord
+  self.table_name = 'whatsapp_message_templates'
+
+  # The categories a user may author. Reads can carry Meta's pre-2022 values (SHIPPING_UPDATE and friends, still in
+  # this repo's own factories), so the inclusion rule applies to drafts only: parse what Meta sends, offer only these.
+  CATEGORIES = %w[UTILITY MARKETING AUTHENTICATION].freeze
+  PARAMETER_FORMATS = %w[POSITIONAL NAMED].freeze
+  # Meta: lowercase letters, digits and underscores, up to 512 characters.
+  NAME_FORMAT = /\A[a-z0-9_]{1,512}\z/
+
+  belongs_to :account
+
+  # The gem resolves its audit class lazily from the string in config/initializers/audited.rb, so no EE constant is
+  # needed at load time -- the same unguarded declaration as enterprise/app/models/enterprise/audit/macro.rb. This is
+  # the whole audit story for a template: create, update and destroy, with the acting user from the sweeper.
+  audited associated_with: :account
+
+  normalizes :language, with: ->(value) { value.to_s.strip }
+  normalizes :name, with: ->(value) { value.to_s.strip }
+
+  validates :business_account_id, :name, :language, :category, presence: true
+  validates :name, format: { with: NAME_FORMAT }, if: :local?
+  validates :category, inclusion: { in: CATEGORIES }, if: :local?
+  validates :parameter_format, inclusion: { in: PARAMETER_FORMATS }, if: :local?
+  validate :identity_is_unique, if: -> { name.present? && language.present? }
+
+  # A draft Meta has never seen, versus a row that mirrors one Meta holds. Remoteness is keyed on meta_status, not on
+  # meta_template_id: Meta always reports a status, while a synced template can arrive without an id (this repo's own
+  # factory has such entries), and a row with no status but an id would read as a draft.
+  scope :local, -> { where(meta_status: nil) }
+  scope :remote, -> { where.not(meta_status: nil) }
+  scope :for_waba, ->(waba_id) { where(business_account_id: waba_id) }
+
+  # Derived, so there is no column a caller could set to disagree with these two facts.
+  def local?
+    meta_status.blank?
+  end
+
+  def local_state
+    return :remote if meta_status.present?
+    return :submitting if submitted_at.present?
+
+    :draft
+  end
+
+  # The record-level precondition for sending: Meta's own word, and nothing else. The live gate for an actual send
+  # stays where it is today -- the channel's synced snapshot, read through Flows::Template and
+  # Whatsapp::TemplateProcessorService. meta_status is never a permitted parameter on any endpoint, so no client can
+  # write an approval; it is set from a sync or from Meta's own response.
+  def sendable?
+    meta_status.to_s.casecmp?('APPROVED')
+  end
+
+  # Modelled by observation rather than by a status we invented: a mirror pass stamps every template it saw with one
+  # timestamp, so a row older than the newest row of its WABA is one that pass did not see. Compared against the
+  # WABA's rows rather than the channel's message_templates_last_updated, because that column advances even when a
+  # fetch comes back empty (whatsapp_cloud_service.rb:37 marks it before fetching) -- which would report every
+  # template as gone after one failed fetch. The caller passes the WABA's newest value, which it has for the whole
+  # page in one query, so rendering a list costs nothing extra.
+  def missing_at_meta?(waba_mirrored_at)
+    remote? && meta_synced_at.present? && waba_mirrored_at.present? && meta_synced_at < waba_mirrored_at
+  end
+
+  def remote?
+    meta_status.present?
+  end
+
+  # The channels that can send this template: Meta scopes a template to the WABA, and several inboxes can share one.
+  # Same query the webhook setup already uses (app/services/whatsapp/webhook_setup_service.rb).
+  def channels
+    account.whatsapp_channels.where("provider_config->>'business_account_id' = ?", business_account_id)
+  end
+
+  private
+
+  # Mirrors index_whatsapp_message_templates_on_identity, which folds the language case because every language
+  # comparison in this codebase is case-insensitive while the stored value stays as Meta gives it (en_US).
+  def identity_is_unique
+    scope = self.class.where(account_id: account_id, business_account_id: business_account_id, name: name)
+                .where('lower(language) = ?', language.to_s.downcase)
+    scope = scope.where.not(id: id) if persisted?
+    errors.add(:name, :taken) if scope.exists?
+  end
+end

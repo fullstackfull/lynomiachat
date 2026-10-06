@@ -1,8 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Whatsapp::BusinessManagementTokenValidationService do
-  let(:permissions_url) { 'https://graph.facebook.com/v22.0/me/permissions' }
-  let(:templates_url) { 'https://graph.facebook.com/v22.0/waba-id/message_templates?limit=1' }
+  let(:permissions_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/me/permissions" }
+  let(:templates_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/waba-id/message_templates?limit=1" }
   let(:service) { described_class.new('business-token', 'waba-id') }
 
   around do |example|
@@ -12,7 +12,8 @@ RSpec.describe Whatsapp::BusinessManagementTokenValidationService do
   end
 
   before do
-    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', 'v22.0').and_return('v22.0')
+    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
+                                                .and_return(Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
   end
 
   it 'accepts a token with the WhatsApp business management permission' do

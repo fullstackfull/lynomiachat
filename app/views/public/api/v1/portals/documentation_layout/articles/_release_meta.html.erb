@@ -1,0 +1,28 @@
+<%# locals: (article:)
+    Lynomia changelog: the version, release date and module tags an article carries in its `meta`. Shown only when it
+    has them, so a documentation guide renders exactly as before. %>
+<%
+  version = article.meta['version'].presence
+  release_date = article.meta['release_date'].presence
+  tags = Array(article.meta['tags']).compact_blank
+%>
+<% if version || release_date || tags.any? %>
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <% if version %>
+      <span class="inline-flex items-center rounded-md bg-n-alpha-2 px-2 py-0.5 text-xs font-medium text-n-slate-12">
+        <%= version %>
+      </span>
+    <% end %>
+    <% if release_date %>
+      <span class="inline-flex items-center gap-1.5 text-xs text-n-slate-11">
+        <span class="i-lucide-calendar size-3.5" aria-hidden="true"></span>
+        <%= I18n.t('public_portal.common.released_on', released_on: release_date) %>
+      </span>
+    <% end %>
+    <% tags.each do |tag| %>
+      <span class="inline-flex items-center rounded-md border border-solid border-n-weak px-2 py-0.5 text-xs text-n-slate-11">
+        <%= tag %>
+      </span>
+    <% end %>
+  </div>
+<% end %>

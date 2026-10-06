@@ -1,0 +1,24 @@
+# bundle exec rspec, on a dropped and reloaded chatwoot_test with a flushed Redis.
+# Phase P2 closeout. The two failures are the P0/P1 baseline failures, in code P2 never touched.
+
+Failures:
+
+  1) AgentBuilder#perform when user does not exist reserves email capacity and enqueues the invitation
+     Failure/Error: expect { agent_builder.perform }.to have_enqueued_mail(Devise::Mailer, :confirmation_instructions)
+       Incorrect arguments passed to Devise::Mailer: Wrong number of arguments. Expected 2 to 3, got 0.
+     # ./spec/builders/agent_builder_spec.rb:50:in 'block (4 levels) in <main>'
+
+  2) Voice::CallTranscriptionService#perform reindexes before broadcasting so a retry after a reindex failure does not resend the update event
+     Failure/Error: allow(message).to receive(:reindex).and_raise(StandardError, 'reindex boom')
+       #<Message id: 1314, content: "Incoming Message", account_id: 5595, inbox_id: 4040, conversation_id: 2859, message_type: "incoming", created_at: "2026-10-05 05:29:35.206903673 +0000", updated_at: "2026-10-05 05:29:35.206903673 +0000", private: false, status: "sent", source_id: nil, content_type: "voice_call", content_attributes: {}, sender_type: "Contact", sender_id: 5888, external_source_ids: {}, additional_attributes: {}, processed_message_content: "Incoming Message", sentiment: {}> does not implement: reindex
+     # ./spec/enterprise/services/voice/call_transcription_service_spec.rb:80:in 'block (3 levels) in <main>'
+
+Finished in 34 minutes 9 seconds (files took 13.19 seconds to load)
+10601 examples, 2 failures, 67 pending
+
+Failed examples:
+
+rspec ./spec/builders/agent_builder_spec.rb:47 # AgentBuilder#perform when user does not exist reserves email capacity and enqueues the invitation
+rspec ./spec/enterprise/services/voice/call_transcription_service_spec.rb:77 # Voice::CallTranscriptionService#perform reindexes before broadcasting so a retry after a reindex failure does not resend the update event
+
+exit=1

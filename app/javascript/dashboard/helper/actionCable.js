@@ -60,6 +60,7 @@ class ActionCableConnector extends BaseActionCableConnector {
         this.onConversationUnreadCountChanged,
       'account.cache_invalidated': this.onCacheInvalidate,
       'commerce.customer.updated': this.onCommerceCustomerUpdated,
+      'contact.bulk_action_completed': this.onContactBulkActionCompleted,
       'account.enrichment_completed': this.onEnrichmentCompleted,
       'copilot.message.created': this.onCopilotMessageCreated,
       'voice_call.incoming': this.onVoiceCallIncoming,
@@ -341,6 +342,14 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onEnrichmentCompleted = () => {
     this.app.$store.dispatch('accounts/get', { silent: true });
+  };
+
+  // A contact bulk action has finished on the server. Sent only to the agent who asked for it
+  // (Contacts::BulkActionJob broadcasts to their own pubsub_token), so the page that is waiting refetches and
+  // nobody else's tabs do anything.
+  // eslint-disable-next-line class-methods-use-this
+  onContactBulkActionCompleted = data => {
+    emitter.emit(BUS_EVENTS.CONTACT_BULK_ACTION_COMPLETED, data);
   };
 
   // Lynomia Commerce: a contact's store data changed. The payload only has ids; an open Commerce section refetches.

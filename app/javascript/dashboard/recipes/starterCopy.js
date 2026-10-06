@@ -114,6 +114,82 @@ export const COPY = {
     NOTE_OTHER: 'Routing flow: the customer chose Something else.',
   },
 
+  // The questions a store is asked before anyone needs to answer them. A list rather than buttons: WhatsApp allows
+  // three buttons and ten list rows, and an FAQ menu that cannot grow past three is not an FAQ menu.
+  FAQ: {
+    MENU: {
+      ar: 'مرحبًا! 👋 اختر سؤالك، أو اطلب التحدث مع الفريق.',
+      en: 'Hello! 👋 Pick your question, or ask to talk to the team.',
+    },
+    BUTTON: { ar: 'الأسئلة', en: 'Questions', both: 'الأسئلة / FAQ' },
+    DELIVERY: {
+      ar: 'مدة التوصيل',
+      en: 'Delivery times',
+      both: 'التوصيل / Delivery',
+    },
+    DELIVERY_ANSWER: {
+      ar: 'التوصيل داخل المدينة من يوم إلى ثلاثة أيام عمل، وخارجها من ثلاثة إلى خمسة أيام. عدّل هذا النص بما يناسب متجرك.',
+      en: 'Delivery takes one to three working days inside the city and three to five outside it. Edit this text to match your store.',
+    },
+    RETURNS: {
+      ar: 'الإرجاع والاستبدال',
+      en: 'Returns',
+      both: 'الإرجاع / Returns',
+    },
+    RETURNS_ANSWER: {
+      ar: 'يمكنك الإرجاع أو الاستبدال خلال أربعة عشر يومًا من الاستلام، بشرط أن يكون المنتج بحالته الأصلية. عدّل هذا النص بما يناسب متجرك.',
+      en: 'You can return or exchange within fourteen days of delivery, as long as the item is in its original condition. Edit this text to match your store.',
+    },
+    PAYMENT: {
+      ar: 'طرق الدفع',
+      en: 'Payment methods',
+      both: 'الدفع / Payment',
+    },
+    PAYMENT_ANSWER: {
+      ar: 'نقبل البطاقات والدفع عند الاستلام والمحافظ الإلكترونية. عدّل هذا النص بما يناسب متجرك.',
+      en: 'We accept cards, cash on delivery and digital wallets. Edit this text to match your store.',
+    },
+    TEAM: {
+      ar: 'التحدث مع الفريق',
+      en: 'Talk to the team',
+      both: 'الفريق / Team',
+    },
+    ANYTHING_ELSE: {
+      ar: 'هل تحتاج شيئًا آخر؟',
+      en: 'Anything else we can help with?',
+    },
+    AGAIN: { ar: 'سؤال آخر', en: 'Another question', both: 'آخر / Another' },
+    DONE: { ar: 'لا، شكرًا', en: 'No, thanks', both: 'شكرًا / Thanks' },
+    BYE: {
+      ar: 'شكرًا لتواصلك معنا! 🌟',
+      en: 'Thanks for getting in touch! 🌟',
+    },
+    NOTE: 'FAQ flow: the customer asked to talk to the team.',
+  },
+
+  // A complaint captured in the customer's own words, labelled so the same complaint can be counted next month, and
+  // sorted on the way to the team. Details first, then the category: people describe before they classify.
+  COMPLAINT: {
+    OPEN: {
+      ar: 'نأسف لذلك. اكتب لنا ما حدث بالتفصيل، وسيتابعها الفريق من هنا.',
+      en: 'We are sorry about that. Tell us what happened, and the team will take it from here.',
+    },
+    KIND: {
+      ar: 'شكرًا لك. ما أقرب وصف للمشكلة؟',
+      en: 'Thank you. Which of these describes it best?',
+    },
+    ORDER: { ar: 'طلب أو توصيل', en: 'Order or delivery', both: 'طلب / Order' },
+    PRODUCT: {
+      ar: 'المنتج نفسه',
+      en: 'The product itself',
+      both: 'منتج / Product',
+    },
+    OTHER: { ar: 'شيء آخر', en: 'Something else', both: 'آخر / Other' },
+    NOTE_ORDER: 'Complaint flow: an order or delivery problem.',
+    NOTE_PRODUCT: 'Complaint flow: a problem with the product.',
+    NOTE_OTHER: 'Complaint flow: something else, or the customer did not say.',
+  },
+
   VIP: {
     ACK: {
       ar: 'أهلًا بك 🌟 سنوصلك بفريقنا المخصص على الفور.',

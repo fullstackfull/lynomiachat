@@ -150,7 +150,7 @@ const route = useRoute();
 const inboxGetter = useMapGetter('inboxes/getInbox');
 const inbox = computed(() => inboxGetter.value(props.inboxId) || {});
 const isOnChatwootCloud = useMapGetter('globalConfig/isOnChatwootCloud');
-const { replaceInstallationName } = useBranding();
+const { installationName } = useBranding();
 
 const isCaptainMessage = computed(() => {
   const senderType = props.sender?.type ?? props.senderType;
@@ -514,7 +514,9 @@ const avatarInfo = computed(() => {
 
 const avatarTooltip = computed(() => {
   if (props.contentAttributes?.externalEcho) {
-    return replaceInstallationName(t('CONVERSATION.NATIVE_APP_ADVISORY'));
+    return t('CONVERSATION.NATIVE_APP_ADVISORY', {
+      installationName: installationName.value,
+    });
   }
   if (avatarInfo.value.name === '') return '';
   return `${t('CONVERSATION.SENT_BY')} ${avatarInfo.value.name}`;

@@ -32,7 +32,8 @@
         "MACROS": "Macros",
         "AUDIENCES": "Audiences",
         "CONVERSATION_DELETIONS": "Conversation deletions",
-        "MESSAGE_DELETIONS": "Message deletions"
+        "MESSAGE_DELETIONS": "Message deletions",
+        "WHATSAPP_TEMPLATES": "WhatsApp templates"
       },
       "SORT": {
         "NEWEST": "Newest first",
@@ -96,6 +97,11 @@
       "ADD": "{agentName} created a new audience (#{id})",
       "EDIT": "{agentName} updated an audience (#{id})",
       "DELETE": "{agentName} deleted an audience (#{id})"
+    },
+    "WHATSAPP_TEMPLATE": {
+      "ADD": "{agentName} created a WhatsApp template (#{id})",
+      "EDIT": "{agentName} updated a WhatsApp template (#{id})",
+      "DELETE": "{agentName} deleted a WhatsApp template (#{id})"
     },
     "INBOX_MEMBER": {
       "ADD": "{agentName} added {user} to the inbox(#{inbox_id})",

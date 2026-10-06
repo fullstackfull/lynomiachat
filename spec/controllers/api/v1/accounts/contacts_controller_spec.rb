@@ -342,6 +342,126 @@ RSpec.describe 'Contacts API', type: :request do
     end
   end
 
+  # E (docs/contacts/11-phone-uniqueness.md §E5). Both requests pass their own uniqueness validation, because
+  # neither row exists when either looks; the database refuses the loser.
+  describe 'the loser of a simultaneous create' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+
+    it 'is answered with the 422 it would have got a moment later, not a 500' do
+      create(:contact, account: account, phone_number: '+966551110001')
+      allow_any_instance_of(Contact).to receive(:save!).and_raise(ActiveRecord::RecordNotUnique) # rubocop:disable RSpec/AnyInstance
+
+      post "/api/v1/accounts/#{account.id}/contacts",
+           headers: admin.create_new_auth_token,
+           params: { name: 'Race', phone_number: '+966551110001' }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['phone_number']).to eq(['taken'])
+    end
+  end
+
+  # D3 (docs/contacts/10-phase-d.md). The dialog's own flow sends the same file more than twice; it should cross
+  # the wire once.
+  describe 'a contact import that reuses the file its preview stored' do
+    let(:admin) { create(:user, account: account, role: :administrator) }
+    let(:csv) { fixture_file_upload(Rails.root.join('spec/assets/contacts.csv'), 'text/csv') }
+
+    def preview(params)
+      post "/api/v1/accounts/#{account.id}/contacts/import_preview", headers: admin.create_new_auth_token, params: params
+      response.parsed_body
+    end
+
+    def import(params)
+      post "/api/v1/accounts/#{account.id}/contacts/import", headers: admin.create_new_auth_token, params: params
+    end
+
+    it 'answers a preview of an uploaded file with the id of the copy it stored' do
+      body = preview({ import_file: csv })
+
+      expect(response).to have_http_status(:success)
+      expect(body['import_file_blob_id']).to be_present
+      expect(ActiveStorage::Blob.find_signed(body['import_file_blob_id']).download).to eq(csv.tap(&:rewind).read)
+    end
+
+    it 'previews again from the stored copy, without a second upload and without storing a second one' do
+      first = preview({ import_file: csv })
+
+      expect { preview({ import_file_blob_id: first['import_file_blob_id'], default_country: 'SA' }) }
+        .not_to change(ActiveStorage::Blob, :count)
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['total_rows']).to eq(first['total_rows'])
+    end
+
+    it 'imports the very blob the preview described, rather than a second copy of it' do
+      blob_id = preview({ import_file: csv })['import_file_blob_id']
+      blob = ActiveStorage::Blob.find_signed(blob_id)
+
+      expect { import({ import_file_blob_id: blob_id }) }.not_to change(ActiveStorage::Blob, :count)
+      expect(response).to have_http_status(:success)
+      expect(account.data_imports.last.import_file.blob).to eq(blob)
+    end
+
+    it 'records who asked for the import, which the imports list renders' do
+      import({ import_file: csv })
+
+      expect(account.data_imports.last.initiated_by).to eq(admin)
+    end
+
+    it 'refuses a blob this account never stored for an import' do
+      other = ActiveStorage::Blob.create_and_upload!(io: StringIO.new('phone_number'), filename: 'x.csv', content_type: 'text/csv')
+
+      import({ import_file_blob_id: other.signed_id })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_an_import_file'])
+      expect(account.data_imports.count).to eq(0)
+    end
+
+    it 'refuses the stored file of another account' do
+      stored = preview({ import_file: csv })['import_file_blob_id']
+      intruder = create(:user, account: create(:account), role: :administrator)
+
+      post "/api/v1/accounts/#{intruder.accounts.first.id}/contacts/import",
+           headers: intruder.create_new_auth_token, params: { import_file_blob_id: stored }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_an_import_file'])
+    end
+
+    it 'refuses an id that is not a signed blob id at all' do
+      import({ import_file_blob_id: 'not-a-signed-id' })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_an_import_file'])
+    end
+
+    it 'refuses a stored id once it has expired' do
+      blob_id = preview({ import_file: csv })['import_file_blob_id']
+
+      travel_to(ContactImportFile::BLOB_TTL.from_now + 1.minute) do
+        import({ import_file_blob_id: blob_id })
+      end
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_an_import_file'])
+    end
+
+    it 'refuses a file too large to read, storing nothing' do
+      stub_const('ContactImportFile::MAX_IMPORT_BYTES', 8)
+
+      expect { import({ import_file: csv }) }.not_to change(ActiveStorage::Blob, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['too_large'])
+    end
+
+    it 'refuses an import_file sent as text rather than as a file' do
+      import({ import_file: 'phone_number\n+966551112233' })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['not_a_csv'])
+    end
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/contacts/export' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -367,7 +487,7 @@ RSpec.describe 'Contacts API', type: :request do
       let(:admin) { create(:user, account: account, role: :administrator) }
 
       it 'enqueues a contact export job' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, nil, { :payload => nil, :label => nil }).once
+        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, nil, {}).once
 
         post "/api/v1/accounts/#{account.id}/contacts/export",
              headers: admin.create_new_auth_token
@@ -376,8 +496,7 @@ RSpec.describe 'Contacts API', type: :request do
       end
 
       it 'enqueues a contact export job with sent_columns' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, %w[phone_number email],
-                                                                           { :payload => nil, :label => nil }).once
+        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, %w[phone_number email], {}).once
 
         post "/api/v1/accounts/#{account.id}/contacts/export",
              headers: admin.create_new_auth_token,
@@ -387,11 +506,9 @@ RSpec.describe 'Contacts API', type: :request do
       end
 
       it 'enqueues a contact export job with payload' do
-        expect(Account::ContactsExportJob).to receive(:perform_later).with(account.id, admin.id, nil,
-                                                                           {
-                                                                             :payload => [ActionController::Parameters.new(email_filter).permit!],
-                                                                             :label => nil
-                                                                           }).once
+        expect(Account::ContactsExportJob).to receive(:perform_later).with(
+          account.id, admin.id, nil, { payload: [email_filter.stringify_keys] }
+        ).once
 
         post "/api/v1/accounts/#{account.id}/contacts/export",
              headers: admin.create_new_auth_token,

@@ -1,9 +1,20 @@
 import { useI18n } from 'vue-i18n';
+import { useMapGetter } from 'dashboard/composables/store';
 
 // Maps the backend's Commerce codes (order/payment/shipment/store status, error codes, URL reasons, panel states) to their
 // strings. Every key is written out so the i18n linter can check it; unknown codes fall back to a generic label.
 export function useCommerceLabels() {
-  const { t } = useI18n();
+  const { t: translate } = useI18n();
+  const globalConfig = useMapGetter('globalConfig/get');
+
+  // Several of these strings name the product ("{installationName} is checking the order with the store"). vue-i18n
+  // drops a named placeholder nobody supplies, so the param is supplied once here rather than at each of the keys
+  // below -- a branded string added to any of these maps later is then covered without a second edit.
+  const t = (key, params) =>
+    translate(key, {
+      installationName: globalConfig.value?.installationName,
+      ...params,
+    });
 
   const orderStatus = status =>
     ({

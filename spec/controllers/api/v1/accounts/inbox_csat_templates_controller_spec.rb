@@ -303,7 +303,10 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response.parsed_body['error']).to eq('Template creation failed')
       end
 
-      it 'deletes existing template before creating new one' do
+      # P0/D4. Creating a replacement used to DELETE the live template at Meta first. Both providers mint a
+      # fresh versioned name, so the delete freed nothing -- it just took CSAT offline for the days Meta
+      # takes to approve the new template, on an inbox that had a working survey a moment earlier.
+      it 'leaves the existing approved template in place while the replacement awaits approval' do
         whatsapp_inbox.update!(csat_config: {
                                  'template' => {
                                    'name' => 'existing_template',
@@ -311,16 +314,11 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
                                  }
                                })
 
-        allow(mock_service).to receive(:get_template_status)
-          .with('existing_template')
-          .and_return({ success: true, template: { id: '111111111' } })
-        expect(mock_service).to receive(:delete_template)
-          .with('existing_template')
-          .and_return({ success: true })
+        expect(mock_service).not_to receive(:delete_template)
         expect(mock_service).to receive(:create_template)
           .and_return({
                         success: true,
-                        template_name: "customer_satisfaction_survey_#{whatsapp_inbox.id}",
+                        template_name: "customer_satisfaction_survey_#{whatsapp_inbox.id}_1",
                         template_id: '222222222'
                       })
 
@@ -330,28 +328,7 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
              as: :json
 
         expect(response).to have_http_status(:created)
-      end
-
-      it 'continues with creation even if deletion fails' do
-        whatsapp_inbox.update!(csat_config: {
-                                 'template' => { 'name' => 'existing_template' }
-                               })
-
-        allow(mock_service).to receive(:get_template_status).and_return({ success: true })
-        allow(mock_service).to receive(:delete_template)
-          .and_return({ success: false, response_body: 'Delete failed' })
-        allow(mock_service).to receive(:create_template).and_return({
-                                                                      success: true,
-                                                                      template_name: "customer_satisfaction_survey_#{whatsapp_inbox.id}",
-                                                                      template_id: '333333333'
-                                                                    })
-
-        post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
-             headers: admin.create_new_auth_token,
-             params: valid_template_params,
-             as: :json
-
-        expect(response).to have_http_status(:created)
+        expect(whatsapp_inbox.reload.csat_config['template']['name']).to eq("customer_satisfaction_survey_#{whatsapp_inbox.id}_1")
       end
 
       it 'returns unauthorized when agent is not assigned to inbox' do
@@ -365,7 +342,23 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response).to have_http_status(:unauthorized)
       end
 
-      it 'allows access when agent is assigned to inbox' do
+      # P0. Creating replaces the inbox's live template AT META, deleting the approved one first, so it is inbox
+      # administration — gated like `InboxPolicy#update?` and `#sync_templates?`, and like the dashboard page
+      # that offers it. Inbox membership alone is no longer enough; `show` is still open to members.
+      it 'refuses an assigned agent, because creating replaces the live template at Meta' do
+        allow(mock_service).to receive(:get_template_status).and_return({ success: false })
+        allow(mock_service).to receive(:create_template)
+
+        post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
+             headers: agent.create_new_auth_token,
+             params: valid_template_params,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(mock_service).not_to have_received(:create_template)
+      end
+
+      it 'allows an administrator' do
         allow(mock_service).to receive(:get_template_status).and_return({ success: false })
         allow(mock_service).to receive(:create_template).and_return({
                                                                       success: true,
@@ -374,7 +367,7 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
                                                                     })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
-             headers: agent.create_new_auth_token,
+             headers: admin.create_new_auth_token,
              params: valid_template_params,
              as: :json
 
@@ -456,14 +449,27 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response).to have_http_status(:unauthorized)
       end
 
-      it 'allows access when agent is assigned to inbox' do
+      # P0. `analyze` spends account LLM budget, so it is gated with `create`.
+      it 'refuses an assigned agent, because analysis spends account LLM budget' do
+        allow(analysis_service).to receive(:perform)
+
+        post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template/analyze",
+             headers: agent.create_new_auth_token,
+             params: valid_template_params,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(analysis_service).not_to have_received(:perform)
+      end
+
+      it 'allows an administrator' do
         allow(analysis_service).to receive(:perform).and_return({
                                                                   classification: 'LIKELY_UTILITY',
                                                                   optimized_message: 'Your support request has been closed.'
                                                                 })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template/analyze",
-             headers: agent.create_new_auth_token,
+             headers: admin.create_new_auth_token,
              params: valid_template_params,
              as: :json
 

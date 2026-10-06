@@ -28,7 +28,7 @@ export default {
     Icon,
   },
   setup() {
-    const { replaceInstallationName } = useBranding();
+    const { replaceInstallationName, brandLink } = useBranding();
     const { isMetaInboxCreationDisabled } = useAccount();
     const { preloadSdk, loginAndFetchPages } = useFacebookPageConnect();
     return {
@@ -36,7 +36,7 @@ export default {
       isMetaInboxCreationDisabled,
       preloadSdk,
       loginAndFetchPages,
-      META_RESTRICTION_STATUS_URL,
+      brandLink,
       v$: useVuelidate(),
     };
   },
@@ -68,6 +68,11 @@ export default {
   },
 
   computed: {
+    // Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded
+    // one gets its configured SUPPORT_URL, and no link at all when it has none.
+    metaRestrictionStatusUrl() {
+      return this.brandLink('support', META_RESTRICTION_STATUS_URL);
+    },
     showLoader() {
       return !this.user_access_token || this.isCreating;
     },
@@ -205,7 +210,8 @@ export default {
             <span>
               {{ $t('INBOX_MGMT.ADD.FB.RESTRICTED_WARNING') }}
               <a
-                :href="META_RESTRICTION_STATUS_URL"
+                v-if="metaRestrictionStatusUrl"
+                :href="metaRestrictionStatusUrl"
                 class="link underline"
                 rel="noopener noreferrer nofollow"
                 target="_blank"

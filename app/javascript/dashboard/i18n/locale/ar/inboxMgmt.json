@@ -11,7 +11,8 @@
     "WHATSAPP_REGISTRATION_INCOMPLETE": "Your WhatsApp Business registration isn’t complete. Please check your display name status in Meta Business Manager before reconnecting.",
     "COMPLETE_REGISTRATION": "Complete Registration",
     "LIST": {
-      "404": "لا توجد صناديق وارد لقنوات تواصل مرتبطة بهذا الحساب."
+      "404": "لا توجد صناديق وارد لقنوات تواصل مرتبطة بهذا الحساب.",
+      "LOADING_MESSAGE": "جارٍ إحضار صناديق الوارد"
     },
     "CREATE_FLOW": {
       "CHANNEL": {
@@ -430,7 +431,8 @@
             "TITLE": "Quick setup with Meta",
             "DESCRIPTION": "Connect a new number or an existing number from the WhatsApp Business app without manual configuration. To request this option, tell our team what your business does, how you’ll use WhatsApp, and which Chatwoot account needs access.",
             "FOOTNOTE": "We’ll review your request and let you know if this option can be enabled. You can also continue with manual setup below.",
-            "BUTTON": "Request access"
+            "BUTTON": "Request access",
+            "SUBMIT": "إرسال"
           },
           "RESTRICTED_WARNING": "WhatsApp Embedded Signup is temporarily unavailable due to an API-level issue on Meta’s side, not a problem with Chatwoot. You can use manual setup for eligible Cloud API numbers. We’re working closely with Meta to resolve it as quickly as possible.",
           "STATUS_LINK": "View status updates",
@@ -1012,7 +1014,10 @@
         "SECRET_KEY": "Secret Key",
         "VIEW_DOCS": "View documentation",
         "REQUIRE_LABEL": "Require identity validation for all conversations",
-        "REQUIRE_DESCRIPTION": "When enabled, users must provide a valid identity token to start conversations. Requests without valid tokens will be rejected."
+        "REQUIRE_DESCRIPTION": "When enabled, users must provide a valid identity token to start conversations. Requests without valid tokens will be rejected.",
+        "ROTATE": {
+          "TITLE": "تدوير المفتاح السري؟"
+        }
       },
       "INBOX_AGENTS": "وكيل الدعم",
       "INBOX_AGENTS_SUB_TEXT": "إضافة أو إزالة وكلاء من صندوق الوارد هذا",
@@ -1524,6 +1529,12 @@
       "INSTAGRAM": "Instagram",
       "TIKTOK": "TikTok",
       "VOICE": "Voice"
+    },
+    "TWILIO_HEALTH": {
+      "TITLE": "إدارة رقم Twilio الخاص بك",
+      "WEBHOOKS": {
+        "TITLE": "الـ Webhooks"
+      }
     }
   }
 }

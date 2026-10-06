@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import Avatar from 'next/avatar/Avatar.vue';
 import SidebarProfileMenuStatus from './SidebarProfileMenuStatus.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { useBranding } from 'shared/composables/useBranding';
 
 import {
   DropdownContainer,
@@ -31,6 +32,7 @@ const currentUser = useMapGetter('getCurrentUser');
 const currentUserAvailability = useMapGetter('getCurrentUserAvailability');
 const accountId = useMapGetter('getCurrentAccountId');
 const globalConfig = useMapGetter('globalConfig/get');
+const { brandLink } = useBranding();
 const isFeatureEnabledonAccount = useMapGetter(
   'accounts/isFeatureEnabledonAccount'
 );
@@ -49,6 +51,16 @@ const toggleChatSupport = () => {
     window.$chatwoot.toggle();
   }
 };
+
+// The upstream docs and changelog links used to be hidden outright on a branded installation, leaving the
+// menu with no route to either. They now follow this installation's configured links and stay hidden only
+// while those are unset.
+const docsLink = computed(() =>
+  brandLink('documentation', 'https://www.chatwoot.com/hc/user-guide/en')
+);
+const changelogLink = computed(() =>
+  brandLink('changelog', 'https://www.chatwoot.com/changelog/')
+);
 
 const menuItems = computed(() => {
   return [
@@ -86,20 +98,20 @@ const menuItems = computed(() => {
       },
     },
     {
-      show: true,
-      showOnCustomBrandedInstance: false,
+      show: Boolean(docsLink.value),
+      showOnCustomBrandedInstance: true,
       label: t('SIDEBAR_ITEMS.DOCS'),
       icon: 'i-lucide-book',
-      link: 'https://www.chatwoot.com/hc/user-guide/en',
+      link: docsLink.value,
       nativeLink: true,
       target: '_blank',
     },
     {
-      show: true,
-      showOnCustomBrandedInstance: false,
+      show: Boolean(changelogLink.value),
+      showOnCustomBrandedInstance: true,
       label: t('SIDEBAR_ITEMS.CHANGELOG'),
       icon: 'i-lucide-scroll-text',
-      link: 'https://www.chatwoot.com/changelog/',
+      link: changelogLink.value,
       nativeLink: true,
       target: '_blank',
     },

@@ -30,7 +30,10 @@ import {
 } from 'dashboard/components-next/filter/audienceProvider.js';
 import {
   AUDIENCE_QUERY_PARAM,
-  LABEL_QUERY_PARAM,
+  audienceAutomationRoute,
+  audienceCampaignRoute,
+  labelCampaignRoute,
+  returnRouteFromQuery,
 } from 'dashboard/helper/audienceHelper';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { frontendURL } from 'dashboard/helper/URLHelper';
@@ -156,6 +159,19 @@ const onCreateSegment = async payload => {
     );
     const segmentId = response?.data?.id;
     if (!segmentId) return;
+
+    // Somebody who came here from a campaign to build its audience wants the campaign back, not this audience's
+    // page. The route they came from is carried in the query and checked against a fixed list, so the trip can
+    // only end somewhere this helper knows.
+    const returnRoute = returnRouteFromQuery(route.query);
+    if (returnRoute) {
+      router.push({
+        name: returnRoute,
+        query: { [AUDIENCE_QUERY_PARAM]: segmentId },
+      });
+      return;
+    }
+
     // Navigate to the created segment
     router.push({
       name: 'contacts_dashboard_segments_index',
@@ -238,20 +254,16 @@ const segmentUrl = () =>
   )}`;
 
 const useInAutomation = () =>
-  router.push({
-    name: 'automation_list',
-    query: { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
-  });
+  router.push(audienceAutomationRoute(props.activeSegment));
 
 // Both recipient sources a campaign accepts, each carried the same way. A label page has no active segment and a
 // segment page has no label in its route, so exactly one of these applies.
 const useInCampaign = () =>
-  router.push({
-    name: 'campaigns_whatsapp_index',
-    query: activeLabel.value
-      ? { [LABEL_QUERY_PARAM]: activeLabel.value.id }
-      : { [AUDIENCE_QUERY_PARAM]: props.activeSegment.id },
-  });
+  router.push(
+    activeLabel.value
+      ? labelCampaignRoute(activeLabel.value)
+      : audienceCampaignRoute(props.activeSegment)
+  );
 
 const copySegmentLink = async () => {
   try {

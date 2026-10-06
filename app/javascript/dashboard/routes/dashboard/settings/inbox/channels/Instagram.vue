@@ -7,8 +7,16 @@ import Banner from 'dashboard/components-next/banner/Banner.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { META_RESTRICTION_STATUS_URL } from 'dashboard/constants/globals';
+import { useBranding } from 'shared/composables/useBranding';
 
 const { t } = useI18n();
+const { brandLink } = useBranding();
+
+// Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded one
+// gets its configured SUPPORT_URL, and no link at all when it has none.
+const metaRestrictionStatusUrl = computed(() =>
+  brandLink('support', META_RESTRICTION_STATUS_URL)
+);
 const { isMetaInboxCreationDisabled } = useAccount();
 
 const hasError = ref(false);
@@ -99,7 +107,8 @@ const requestAuthorization = async () => {
               <span>
                 {{ $t('INBOX_MGMT.ADD.INSTAGRAM.RESTRICTED_WARNING') }}
                 <a
-                  :href="META_RESTRICTION_STATUS_URL"
+                  v-if="metaRestrictionStatusUrl"
+                  :href="metaRestrictionStatusUrl"
                   class="link underline"
                   rel="noopener noreferrer nofollow"
                   target="_blank"

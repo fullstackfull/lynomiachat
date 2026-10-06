@@ -116,6 +116,61 @@ describe('#mutations', () => {
         attachments,
       });
     });
+
+    // `contact.updated` arrives as Contact#push_event_data, which carries no labels, no last_activity_at,
+    // no availability_status and no created_at. Replacing the record wholesale dropped all four from a row
+    // the list had already loaded and sorted on.
+    it('keeps fields the websocket payload does not carry', () => {
+      const state = {
+        records: {
+          1: {
+            id: 1,
+            name: 'contact1',
+            labels: ['vip'],
+            last_activity_at: 1700000000,
+            availability_status: 'online',
+          },
+        },
+      };
+      mutations[types.EDIT_CONTACT](state, { id: 1, name: 'contact2' });
+      expect(state.records[1]).toEqual({
+        id: 1,
+        name: 'contact2',
+        labels: ['vip'],
+        last_activity_at: 1700000000,
+        availability_status: 'online',
+      });
+    });
+
+    it('stores a contact the list has not loaded yet', () => {
+      const state = { records: {} };
+      mutations[types.EDIT_CONTACT](state, { id: 9, name: 'contact9' });
+      expect(state.records[9]).toEqual({ id: 9, name: 'contact9' });
+    });
+  });
+
+  describe('#DELETE_CONTACT', () => {
+    it('removes the contact from the records and the order', () => {
+      const state = {
+        records: { 1: { id: 1 }, 2: { id: 2 } },
+        sortOrder: [1, 2],
+      };
+      mutations[types.DELETE_CONTACT](state, 1);
+      expect(state.records).toEqual({ 2: { id: 2 } });
+      expect(state.sortOrder).toEqual([2]);
+    });
+
+    // A `contact.deleted` push for any contact in the account reaches this, including one the current page
+    // never rendered. `findIndex` answered -1 for those, and `splice(-1, 1)` then dropped the last row shown.
+    it('leaves the order alone for a contact the page never showed', () => {
+      const state = {
+        records: { 1: { id: 1 }, 2: { id: 2 } },
+        sortOrder: [1, 2],
+      };
+      mutations[types.DELETE_CONTACT](state, 99);
+      expect(state.sortOrder).toEqual([1, 2]);
+      expect(state.records).toEqual({ 1: { id: 1 }, 2: { id: 2 } });
+    });
   });
 
   describe('#SET_CONTACT_FILTERS', () => {

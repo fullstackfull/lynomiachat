@@ -95,7 +95,8 @@
         "REVOKE_ERROR": "Unable to revoke session. Please try again.",
         "FETCH_ERROR": "Unable to fetch sessions. Please try again.",
         "LAST_ACTIVE": "Last active",
-        "UNKNOWN_DEVICE": "Unknown device"
+        "UNKNOWN_DEVICE": "Unknown device",
+        "DEVICE": "{browser} على {platform}"
       },
       "ACCESS_TOKEN": {
         "TITLE": "رمز المصادقة",
@@ -106,7 +107,10 @@
         "CONFIRM_RESET": "Are you sure?",
         "CONFIRM_HINT": "Click again to confirm",
         "RESET_SUCCESS": "Access token regenerated successfully",
-        "RESET_ERROR": "Unable to regenerate access token. Please try again"
+        "RESET_ERROR": "Unable to regenerate access token. Please try again",
+        "LABEL": "رمز الوصول",
+        "SHOW": "إظهار رمز الوصول",
+        "HIDE": "إخفاء رمز الوصول"
       },
       "AUDIO_NOTIFICATIONS_SECTION": {
         "TITLE": "Audio Alerts",
@@ -362,6 +366,7 @@
     "RESIZE_SIDEBAR": "اسحب لتغيير العرض، وانقر مرتين للطي أو التوسيع",
     "CUSTOM_VIEWS_FOLDER": "المجلدات",
     "CUSTOM_VIEWS_SEGMENTS": "الجماهير",
+    "ALL_AUDIENCES": "الجماهير",
     "ALL_CONTACTS": "جميع جهات الاتصال",
     "TAGGED_WITH": "مشار إليه بواسطة",
     "NEW_LABEL": "علامة جديدة",
@@ -421,7 +426,16 @@
     "SECURITY": "Security",
     "CAPTAIN_AI": "قائد",
     "CONVERSATION_WORKFLOW": "Conversation Workflow",
-    "SHARED_AUDIENCE": "{name} · مشترك"
+    "SHARED_AUDIENCE": "{name} · مشترك",
+    "COMPOSE_CONVERSATION": "محادثة جديدة",
+    "SETTINGS_GROUPS": {
+      "ACCOUNT": "الحساب",
+      "PEOPLE": "الأشخاص",
+      "CHANNELS": "القنوات",
+      "AUTOMATION": "الأتمتة",
+      "CONVERSATION_DATA": "بيانات المحادثات",
+      "RECORDS": "السجلات"
+    }
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",
@@ -532,6 +546,9 @@
       "IMPORT_RETRY_FAILED": "Could not retry the import.",
       "IMPORT_ABANDONED": "Import has been abandoned.",
       "IMPORT_FAILED": "Could not start the import."
+    },
+    "SOURCE": {
+      "FILE": "استيراد من ملف"
     }
   },
   "CAPTAIN_SETTINGS": {
@@ -648,6 +665,10 @@
         "GO_BACK": "العودة للخلف",
         "CONFIRM_PURCHASE": "Confirm Purchase"
       }
+    },
+    "LOADING": "جارٍ فتح الفواتير",
+    "SHOPIFY": {
+      "LOADING": "جارٍ التحقق من اشتراك Shopify..."
     }
   },
   "SECURITY_SETTINGS": {
@@ -719,7 +740,8 @@
       "INFO_SECTION": {
         "TITLE": "Service Provider Information",
         "TOOLTIP": "Copy these values and configure them in your Identity Provider to establish the SAML connection"
-      }
+      },
+      "COPY": "نسخ {field}"
     }
   },
   "CONVERSATION_WORKFLOW": {

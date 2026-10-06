@@ -55,7 +55,7 @@ RSpec.describe Flows::Nodes::SendTemplate do
 
   before do
     AgentBotInbox.create!(inbox: inbox, agent_bot: bot)
-    stub_request(:post, %r{\Ahttps://graph.facebook.com/v13.0/\w+/messages\z}).to_return do |request|
+    stub_request(:post, %r{\Ahttps://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/\w+/messages\z}o).to_return do |request|
       graph_calls << JSON.parse(request.body)
       { status: 200, body: { messages: [{ id: "wamid.#{graph_calls.size}" }] }.to_json, headers: { 'Content-Type' => 'application/json' } }
     end

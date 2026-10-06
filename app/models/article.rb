@@ -48,7 +48,9 @@ class Article < ApplicationRecord
              foreign_key: :associated_article_id,
              inverse_of: :associated_articles,
              optional: true
-  belongs_to :account
+  # A platform portal has no account, so neither do its articles; `ensure_account_id` already copies
+  # `portal&.account_id`, which is nil there (docs/global-documentation/01-global-ownership-design.md).
+  belongs_to :account, optional: true
   belongs_to :category, optional: true
   belongs_to :portal
   belongs_to :author, class_name: 'User', inverse_of: :articles
@@ -60,7 +62,7 @@ class Article < ApplicationRecord
   # Slugs that collide with help center routes (e.g. /hc/:slug/:locale/search)
   RESERVED_SLUGS = %w[search articles categories].freeze
 
-  validates :account_id, presence: true
+  validates :account_id, presence: true, unless: :platform_owned?
   validates :author_id, presence: true
   validates :title, presence: true
   validates :content, presence: true, if: :published?
@@ -79,6 +81,9 @@ class Article < ApplicationRecord
   scope :search_by_status, ->(status) { where(status: status) if status.present? }
   scope :order_by_updated_at, -> { reorder(updated_at: :desc) }
   scope :order_by_position, -> { reorder(position: :asc) }
+  # Newest release first. `meta['release_date']` is an author-entered ISO-8601 date, so it sorts lexically; entries
+  # without one fall to the end and keep their hand-set order among themselves.
+  scope :order_by_release_date, -> { reorder(Arel.sql("articles.meta->>'release_date' DESC NULLS LAST, articles.position ASC")) }
   scope :order_by_views, -> { reorder(views: :desc) }
 
   # TODO: if text search slows down https://www.postgresql.org/docs/current/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS
@@ -101,6 +106,10 @@ class Article < ApplicationRecord
     },
     ranked_by: ':tsearch'
   )
+
+  def platform_owned?
+    portal&.platform_owned? || false
+  end
 
   def self.search(params)
     records = left_outer_joins(

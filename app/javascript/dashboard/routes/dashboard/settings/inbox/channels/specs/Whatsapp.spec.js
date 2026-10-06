@@ -56,6 +56,8 @@ vi.mock('dashboard/composables/useAccount', () => ({
 vi.mock('shared/composables/useBranding', () => ({
   useBranding: () => ({
     replaceInstallationName: text => `${text}|branded`,
+    // A branded installation with no SUPPORT_URL configured, so the upstream status link is not rendered.
+    brandLink: () => '',
   }),
 }));
 

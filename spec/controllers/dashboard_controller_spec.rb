@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 describe '/app/login', type: :request do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   context 'without DEFAULT_LOCALE' do
     it 'renders the dashboard' do
       get '/app/login'
@@ -15,6 +19,25 @@ describe '/app/login', type: :request do
         expect(response).to have_http_status(:success)
         expect(response.body).to include "selectedLocale: 'pt_BR'"
       end
+    end
+  end
+
+  context 'with branding' do
+    it 'titles the page with the installation name rather than a hard-coded product name' do
+      InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
+      GlobalConfig.clear_cache
+
+      get '/app/login'
+
+      expect(response.body).to include '<title>Acme Desk</title>'
+    end
+
+    it 'ships the configurable product links to the dashboard' do
+      get '/app/login'
+
+      expect(response.body).to include 'DOCUMENTATION_URL'
+      expect(response.body).to include 'SUPPORT_URL'
+      expect(response.body).to include 'CHANGELOG_URL'
     end
   end
 

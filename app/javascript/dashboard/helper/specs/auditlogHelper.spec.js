@@ -186,6 +186,21 @@ describe('Helper functions', () => {
       expect(logActionKey).toEqual('AUDIT_LOGS.ACCOUNT_USER.EDIT.SELF');
     });
 
+    // A namespaced model keeps its `whatsapp::` prefix in the key, and a row with no entry renders unlabelled, so
+    // these three have to exist for the template manager's audit rows to read as anything.
+    it('names what a person did to a WhatsApp template', () => {
+      ['create', 'update', 'destroy'].forEach(action => {
+        expect(
+          generateLogActionKey({
+            auditable_type: 'Whatsapp::MessageTemplate',
+            action,
+          })
+        ).toEqual(
+          `AUDIT_LOGS.WHATSAPP_TEMPLATE.${{ create: 'ADD', update: 'EDIT', destroy: 'DELETE' }[action]}`
+        );
+      });
+    });
+
     it('should generate correct action key when user updates other agent', () => {
       const auditLogItem = {
         auditable_type: 'AccountUser',

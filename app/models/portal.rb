@@ -30,7 +30,20 @@ class Portal < ApplicationRecord
 
   DEFAULT_COLOR = '#1f93ff'.freeze
 
-  belongs_to :account
+  # Portal slugs are a first-come-first-served global namespace (`slug` is UNIQUE and there is no reservation list
+  # upstream), and tenant onboarding reaches for exactly these names on its own:
+  # `[base, first_token, "#{first_token}-docs", "#{first_token}-help"]`
+  # (enterprise/app/services/onboarding/help_center_creation_service.rb). An account called "Docs" would otherwise
+  # squat the name Lynomia's own documentation needs, with no human in the loop. Platform portals are exempt, since
+  # these names are reserved FOR them.
+  RESERVED_SLUGS = %w[docs documentation help helpcenter changelog releases release-notes support status api lynomia
+                      lynomia-docs lynomia-changelog].freeze
+
+  # Lynomia's own product documentation belongs to the platform, not to a customer, so a platform portal has no
+  # account at all (docs/global-documentation/01-global-ownership-design.md). That is what keeps it out of every
+  # tenant surface: each one reads through `Current.account.portals`, which compiles to `WHERE account_id = $1` and
+  # can never match a NULL.
+  belongs_to :account, optional: true
   has_many :categories, dependent: :destroy_async
   has_many :folders,  through: :categories
   has_many :articles, dependent: :destroy_async
@@ -39,9 +52,13 @@ class Portal < ApplicationRecord
   belongs_to :channel_web_widget, class_name: 'Channel::WebWidget', optional: true
 
   before_validation -> { normalize_empty_string_to_nil(%i[custom_domain homepage_link]) }
-  validates :account_id, presence: true
+  # Both halves are validated so neither state is reachable by accident: a tenant portal still fails loudly without an
+  # account, and a platform portal cannot quietly acquire one.
+  validates :account_id, presence: true, unless: :platform_owned?
+  validates :account_id, absence: true, if: :platform_owned?
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
+  validate :slug_not_reserved
   validates :custom_domain, uniqueness: true, allow_nil: true
   validates :color, format: { with: /\A#(?:\h{3}|\h{6})\z/ }, allow_blank: true
   before_validation :normalize_config
@@ -52,6 +69,8 @@ class Portal < ApplicationRecord
                  attribute_resolver: ->(record) { record.config }
 
   scope :active, -> { where(archived: false) }
+  scope :platform, -> { where(platform_owned: true) }
+  scope :tenant, -> { where(platform_owned: false) }
 
   # Analytics id fields and the format each must match. Formats keep values safe to
   # interpolate into markup. Add a provider here and its snippet in _portal_analytics.html.erb.
@@ -66,7 +85,7 @@ class Portal < ApplicationRecord
   }.freeze
 
   # TODO: 'website_token' is an unused reserved key; remove with a migration that scrubs it from existing portals' config
-  CONFIG_JSON_KEYS = %w[allowed_locales default_locale draft_locales website_token social_profiles layout
+  CONFIG_JSON_KEYS = %w[allowed_locales default_locale draft_locales website_token social_profiles layout article_order
                         locale_translations popular_content analytics].freeze
 
   def analytics
@@ -143,6 +162,10 @@ class Portal < ApplicationRecord
     config_value('layout').presence || 'classic'
   end
 
+  def article_order
+    config_value('article_order').presence || 'position'
+  end
+
   def popular_category_ids(locale = default_locale)
     Array(config.dig('popular_content', locale.to_s, 'category_ids')).first(POPULAR_CATEGORY_LIMIT)
   end
@@ -151,11 +174,29 @@ class Portal < ApplicationRecord
     Array(config.dig('popular_content', locale.to_s, 'article_ids')).first(POPULAR_ARTICLE_LIMIT)
   end
 
+  # A platform portal has no account to ask about a feature flag, and every caller that asks is on the public read
+  # path (docs/global-documentation/01-global-ownership-design.md section 5). The answers are stated once, here,
+  # rather than at each call site, so a sixth caller inherits them instead of raising on nil.
+  PLATFORM_FEATURES = { 'help_center' => true }.freeze
+
+  def feature_enabled?(feature)
+    return account.feature_enabled?(feature) if account.present?
+
+    PLATFORM_FEATURES.fetch(feature, false)
+  end
+
   def social_profiles
     config_value('social_profiles') || {}
   end
 
   private
+
+  def slug_not_reserved
+    return if platform_owned?
+    return if slug.blank? || RESERVED_SLUGS.exclude?(slug.downcase)
+
+    errors.add(:slug, I18n.t('errors.portals.slug.reserved'))
+  end
 
   def normalize_config
     self.config = persisted_config.merge((config || {}).deep_stringify_keys)

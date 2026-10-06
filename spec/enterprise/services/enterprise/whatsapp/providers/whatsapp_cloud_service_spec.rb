@@ -4,10 +4,10 @@ describe Whatsapp::Providers::WhatsappCloudService do
   subject(:service) { described_class.new(whatsapp_channel: whatsapp_channel) }
 
   let(:whatsapp_channel) { create(:channel_whatsapp, provider: 'whatsapp_cloud', validate_provider_config: false, sync_templates: false) }
-  # Call-flow endpoints use the configured WHATSAPP_API_VERSION (fallback v22.0),
+  # Call-flow endpoints use the configured WHATSAPP_API_VERSION (fallback Whatsapp::FacebookApiClient::DEFAULT_API_VERSION),
   # not the OSS v13.0 path locked for legacy /messages compatibility.
-  let(:calls_url) { 'https://graph.facebook.com/v22.0/123456789/calls' }
-  let(:messages_url) { 'https://graph.facebook.com/v22.0/123456789/messages' }
+  let(:calls_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/calls" }
+  let(:messages_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/messages" }
   let(:headers) { { 'Content-Type' => 'application/json' } }
 
   before { stub_request(:get, /message_templates/) }

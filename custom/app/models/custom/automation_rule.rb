@@ -13,6 +13,13 @@ module Custom::AutomationRule
     base.validate :commerce_trigger
   end
 
+  # The seven provider-neutral order events. Listed here whether or not the account is entitled to them: the name
+  # is a real trigger either way, and entitlement is already reported separately by `commerce_trigger_rules`, which
+  # gives the accurate reason rather than "not a supported trigger".
+  def event_names
+    super + Automation::CommerceEvents::EVENTS
+  end
+
   def conditions_attributes
     super + lynomia_conditions_list.pluck('attribute_key')
   end
@@ -31,12 +38,18 @@ module Custom::AutomationRule
   end
 
   def commerce_trigger_rules
-    return errors.add(:event_name, I18n.t('automation.lynomia.extensions_disabled')) unless Automation::Extensions.enabled?
+    return errors.add(:event_name, extensions_disabled_error) unless Automation::Extensions.enabled?
     return errors.add(:event_name, I18n.t('automation.lynomia.commerce_disabled')) unless account&.feature_enabled?('lynomia_commerce')
 
     errors.add(:execution_delay, I18n.t('automation.lynomia.no_delay')) if execution_delay.present?
     messages = Array(actions).pluck('action_name') & CUSTOMER_MESSAGE_ACTIONS
     errors.add(:actions, I18n.t('automation.lynomia.no_customer_message', actions: messages.join(', '))) if messages.any?
+  end
+
+  # The message names the product, so it reads the installation's own name rather than carrying a brand literal.
+  def extensions_disabled_error
+    I18n.t('automation.lynomia.extensions_disabled',
+           installation_name: GlobalConfigService.load('INSTALLATION_NAME', 'Chatwoot'))
   end
 
   def lynomia_conditions_list
@@ -46,7 +59,7 @@ module Custom::AutomationRule
   def lynomia_conditions
     list = lynomia_conditions_list
     return if list.empty?
-    return errors.add(:conditions, I18n.t('automation.lynomia.extensions_disabled')) unless Automation::Extensions.enabled?
+    return errors.add(:conditions, extensions_disabled_error) unless Automation::Extensions.enabled?
 
     limit = Custom::Contacts::FilterService::MAX_CONDITIONS
     return errors.add(:conditions, I18n.t('automation.lynomia.too_many_conditions', count: limit)) if list.size > limit

@@ -1,9 +1,20 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import CommerceAPI from 'dashboard/api/commerce';
 import { useAlert } from 'dashboard/composables';
 import CommerceOrderActions from '../CommerceOrderActions.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 vi.mock('dashboard/api/commerce', () => ({
   default: {
@@ -59,7 +70,10 @@ const mountActions = async () => {
       order: { external_order_id: '15', order_number: '15' },
     },
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'en', messages: { en } })],
+      plugins: [
+        createI18n({ legacy: false, locale: 'en', messages: { en } }),
+        brandingStore,
+      ],
       stubs: { Dialog: DialogStub },
     },
   });
@@ -187,7 +201,7 @@ describe('CommerceOrderActions', () => {
     );
   });
 
-  it("tells Lynomia's own request limit apart from the store's", async () => {
+  it("tells the product's own request limit apart from the store's", async () => {
     CommerceAPI.requestOrderAction.mockRejectedValueOnce({
       response: {
         status: 429,
@@ -218,7 +232,7 @@ describe('CommerceOrderActions', () => {
 
     expect(
       wrapper.find('[data-test-id="commerce-action-result"]').text()
-    ).toContain('Lynomia is checking the order with the store');
+    ).toContain('Acme Desk is checking the order with the store');
     expect(
       wrapper.find('[data-test-id="commerce-action-confirm"]').exists()
     ).toBe(false);

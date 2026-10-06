@@ -550,21 +550,32 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'),
           collapsible: true,
           showTreeLine: true,
-          children: contactCustomViews.value.map(view => ({
-            name: `${view.name}-${view.id}`,
-            label: view.shared
-              ? t('SIDEBAR.SHARED_AUDIENCE', { name: view.name })
-              : view.name,
-            to: accountScopedRoute(
-              'contacts_dashboard_segments_index',
-              { segmentId: view.id },
-              { page: 1 }
-            ),
-            activeOn: [
-              'contacts_dashboard_segments_index',
-              'contacts_edit_segment',
-            ],
-          })),
+          children: [
+            // First, and always present. Without it this section disappeared entirely for an account with no
+            // audiences, so the word never appeared in the sidebar until somebody had already made one — and
+            // there was nowhere to make one from.
+            {
+              name: 'All Audiences',
+              label: t('SIDEBAR.ALL_AUDIENCES'),
+              to: accountScopedRoute('contacts_dashboard_audiences_index'),
+              activeOn: ['contacts_dashboard_audiences_index'],
+            },
+            ...contactCustomViews.value.map(view => ({
+              name: `${view.name}-${view.id}`,
+              label: view.shared
+                ? t('SIDEBAR.SHARED_AUDIENCE', { name: view.name })
+                : view.name,
+              to: accountScopedRoute(
+                'contacts_dashboard_segments_index',
+                { segmentId: view.id },
+                { page: 1 }
+              ),
+              activeOn: [
+                'contacts_dashboard_segments_index',
+                'contacts_edit_segment',
+              ],
+            })),
+          ],
         },
         {
           name: 'Tagged With',

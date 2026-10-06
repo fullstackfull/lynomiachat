@@ -7,6 +7,13 @@ import {
   findSharedAudience,
   labelIdFromQuery,
   sharedAudiences,
+  audienceReturnRoute,
+  returnRouteFromQuery,
+  RETURN_TO_QUERY_PARAM,
+  audienceAutomationRoute,
+  audienceCampaignRoute,
+  audienceRoute,
+  labelCampaignRoute,
 } from '../audienceHelper';
 
 const VIEWS = [
@@ -102,6 +109,82 @@ describe('audienceHelper', () => {
     it('finds nothing for an id the account does not have', () => {
       expect(findAccountLabel(LABELS, 11)).toBeUndefined();
       expect(findAccountLabel(undefined, 4)).toBeUndefined();
+    });
+  });
+});
+
+describe('audienceReturnRoute', () => {
+  it('sends the user to Contacts and remembers where to come back to', () => {
+    expect(audienceReturnRoute('campaigns_whatsapp_index')).toEqual({
+      name: 'contacts_dashboard_index',
+      query: { [RETURN_TO_QUERY_PARAM]: 'campaigns_whatsapp_index' },
+    });
+  });
+});
+
+describe('returnRouteFromQuery', () => {
+  it('reads back a route it knows', () => {
+    expect(returnRouteFromQuery({ returnTo: 'campaigns_whatsapp_index' })).toBe(
+      'campaigns_whatsapp_index'
+    );
+    expect(returnRouteFromQuery({ returnTo: 'campaigns_sms_index' })).toBe(
+      'campaigns_sms_index'
+    );
+  });
+
+  it('ignores a destination it does not know, so the parameter cannot aim someone elsewhere', () => {
+    expect(returnRouteFromQuery({ returnTo: 'super_admin' })).toBeNull();
+    expect(
+      returnRouteFromQuery({ returnTo: 'https://example.com' })
+    ).toBeNull();
+    expect(
+      returnRouteFromQuery({ returnTo: '/app/accounts/1/settings' })
+    ).toBeNull();
+  });
+
+  it('has no opinion when the query says nothing', () => {
+    expect(returnRouteFromQuery({})).toBeNull();
+    expect(returnRouteFromQuery(undefined)).toBeNull();
+  });
+});
+
+describe('cross-module routes', () => {
+  const audience = { id: 7, name: 'Recent buyers', shared: true };
+
+  it('starts a WhatsApp campaign to an audience', () => {
+    expect(audienceCampaignRoute(audience)).toEqual({
+      name: 'campaigns_whatsapp_index',
+      query: { [AUDIENCE_QUERY_PARAM]: 7 },
+    });
+  });
+
+  it('starts a WhatsApp campaign to a label, the other recipient source', () => {
+    expect(labelCampaignRoute({ id: 3, title: 'vip' })).toEqual({
+      name: 'campaigns_whatsapp_index',
+      query: { [LABEL_QUERY_PARAM]: 3 },
+    });
+  });
+
+  it('starts an automation rule conditioned on an audience', () => {
+    expect(audienceAutomationRoute(audience)).toEqual({
+      name: 'automation_list',
+      query: { [AUDIENCE_QUERY_PARAM]: 7 },
+    });
+  });
+
+  it('opens an audience on its own page', () => {
+    expect(audienceRoute(audience)).toEqual({
+      name: 'contacts_dashboard_segments_index',
+      params: { segmentId: 7 },
+      query: { page: 1 },
+    });
+  });
+
+  it('opens an audience straight into its condition editor when asked', () => {
+    expect(audienceRoute(audience, { edit: true })).toEqual({
+      name: 'contacts_dashboard_segments_index',
+      params: { segmentId: 7 },
+      query: { page: 1, edit: '1' },
     });
   });
 });

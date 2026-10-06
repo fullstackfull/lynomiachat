@@ -38,6 +38,17 @@ class Whatsapp::IncomingMessageBaseService
     return if find_message_by_source_id(messages_data.first[:id])
     return unless lock_message_source_id!
 
+    begin
+      ingest_messages
+    ensure
+      # The persisted Message is the durable dedup from here on, so the lock has done its job either way. Releasing
+      # it in an ensure is what lets Meta's redelivery succeed after a failed attempt instead of being swallowed
+      # for the rest of the lock's TTL.
+      release_message_source_id!
+    end
+  end
+
+  def ingest_messages
     set_contact
     return unless @contact
     return if @contact.blocked? && !outgoing_echo

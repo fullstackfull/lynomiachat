@@ -150,7 +150,8 @@
         "RT": "RT {status}",
         "MISSED": "مفقود",
         "DUE": "مستحق"
-      }
+      },
+      "COPY_ID": "نسخ معرّف المحادثة"
     },
     "RESOLVE_DROPDOWN": {
       "MARK_PENDING": "تحديد كمعلق",
@@ -160,7 +161,8 @@
         "NEXT_REPLY": "الرد القادم",
         "TOMORROW": "غداً",
         "NEXT_WEEK": "الأسبوع القادم"
-      }
+      },
+      "TRIGGER_LABEL": "إجراءات حالة أخرى"
     },
     "MENTION": {
       "AGENTS": "الوكلاء",
@@ -323,7 +325,8 @@
         "REMOVE_PREVIEW": "Remove quoted email thread",
         "COLLAPSE": "Collapse preview",
         "EXPAND": "Expand preview"
-      }
+      },
+      "TIP_EXPAND_EDITOR": "توسيع المحرّر"
     },
     "VISIBLE_TO_AGENTS": "ملاحظة خاصة: مرئية فقط لك ولأعضاء فريقك",
     "CHANGE_STATUS": "تم تغيير حالة المحادثة",
@@ -341,7 +344,7 @@
     "SENT_BY": "أرسلت بواسطة:",
     "BOT": "رد آلي",
     "NATIVE_APP": "تطبيق الجوال",
-    "NATIVE_APP_ADVISORY": "تم إرسال هذه الرسالة من تطبيق الجوال. رد من Lynomia Chat للحفاظ على نافذة الرسالة.",
+    "NATIVE_APP_ADVISORY": "تم إرسال هذه الرسالة من تطبيق الجوال. رد من {installationName} للحفاظ على نافذة الرسالة.",
     "SEND_FAILED": "تعذر إرسال الرسالة! حاول مرة أخرى",
     "TRY_AGAIN": "إعادة المحاولة",
     "ASSIGNMENT": {
@@ -401,7 +404,8 @@
       "UNMUTE": "Unmute mic",
       "VIEW_CHAT_HISTORY": "View chat history",
       "GO_TO_CONVERSATION": "Go to conversation thread"
-    }
+    },
+    "TYPING_INDICATOR_ALT": "أحدهم يكتب الآن"
   },
   "EMAIL_TRANSCRIPT": {
     "TITLE": "إرسال نص المحادثة",

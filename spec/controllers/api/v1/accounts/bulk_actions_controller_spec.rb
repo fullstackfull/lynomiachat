@@ -371,4 +371,121 @@ RSpec.describe 'Api::V1::Accounts::BulkActionsController', type: :request do
       end
     end
   end
+
+  # D4 (docs/contacts/10-phase-d.md). A bulk action over every contact a view matches, not only the page the
+  # browser is holding.
+  describe 'POST /api/v1/accounts/{account.id}/bulk_actions over a whole view' do
+    let(:account) { create(:account) }
+    let(:agent) { create(:user, account: account, role: :agent) }
+    let!(:vip) { create(:label, account: account, title: 'vip') }
+
+    # As JSON, like the dashboard: a form-encoded body cannot carry an empty `all_matching`, and the whole point
+    # of this contract is that an empty description is a description.
+    def bulk(params)
+      post "/api/v1/accounts/#{account.id}/bulk_actions", headers: agent.create_new_auth_token, params: params, as: :json
+    end
+
+    def contact_jobs
+      enqueued_jobs.select { |job| job[:job] == Contacts::BulkActionJob }
+    end
+
+    def enqueued_ids
+      contact_jobs.flat_map { |job| Array(job[:args].last['ids']) }
+    end
+
+    before { vip }
+
+    it 'resolves a label view to every contact carrying that label' do
+      tagged = [create(:contact, account: account, phone_number: '+966551110001'),
+                create(:contact, account: account, phone_number: '+966551110002')]
+      tagged.each { |contact| contact.add_labels(['vip']) }
+      create(:contact, account: account, phone_number: '+966551119999')
+
+      bulk({ type: 'Contact', all_matching: { label: 'vip' }, labels: { add: ['vip'] } })
+
+      expect(response).to have_http_status(:success)
+      expect(enqueued_ids).to match_array(tagged.map(&:id))
+    end
+
+    it 'resolves a search view with the search endpoint\'s own predicate' do
+      match = create(:contact, account: account, name: 'Ahmed Zaki')
+      create(:contact, account: account, name: 'Someone Else')
+
+      bulk({ type: 'Contact', all_matching: { q: 'zaki' }, labels: { add: ['vip'] } })
+
+      expect(enqueued_ids).to eq([match.id])
+    end
+
+    it 'resolves a filter view through Contacts::FilterService' do
+      match = create(:contact, account: account, email: 'wholesale@example.com')
+      create(:contact, account: account, email: 'retail@example.com')
+
+      bulk({ type: 'Contact',
+             all_matching: { payload: [{ attribute_key: 'email', filter_operator: 'contains', values: 'wholesale',
+                                         query_operator: nil, attribute_model: 'standard', custom_attribute_type: '' }] },
+             labels: { add: ['vip'] } })
+
+      expect(response).to have_http_status(:success)
+      expect(enqueued_ids).to eq([match.id])
+    end
+
+    it 'never reaches another account, whatever the view says' do
+      mine = create(:contact, account: account, name: 'Ahmed Zaki')
+      create(:contact, account: create(:account), name: 'Ahmed Zaki')
+
+      bulk({ type: 'Contact', all_matching: { q: 'zaki' }, labels: { add: ['vip'] } })
+
+      expect(enqueued_ids).to eq([mine.id])
+    end
+
+    it 'takes an empty description as the unfiltered list, because somebody asked for it in so many words' do
+      listed = create(:contact, account: account, phone_number: '+966551110001')
+      # The unfiltered list is `resolved_contacts`, exactly as `/contacts` is, so a row with no identity is no
+      # more reachable here than it is on the page.
+      unlisted = create(:contact, account: account)
+
+      bulk({ type: 'Contact', all_matching: {}, labels: { add: ['vip'] } })
+
+      expect(response).to have_http_status(:success)
+      expect(enqueued_ids).to include(listed.id)
+      expect(enqueued_ids).not_to include(unlisted.id)
+    end
+
+    it 'never reads a missing description as every contact in the account' do
+      create(:contact, account: account)
+
+      bulk({ type: 'Contact', labels: { add: ['vip'] } })
+
+      expect(response).to have_http_status(:success)
+      expect(enqueued_ids).to be_empty
+    end
+
+    it 'refuses a view with more contacts than one action may touch, rather than doing some of them' do
+      create_list(:contact, 3, account: account)
+      stub_const('Api::V1::Accounts::BulkActionsController::CONTACT_VIEW_LIMIT', 2)
+
+      bulk({ type: 'Contact', all_matching: {}, labels: { add: ['vip'] } })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['base']).to eq(['too_many_contacts'])
+      expect(contact_jobs).to be_empty
+    end
+
+    it 'still refuses a label the account does not have' do
+      create(:contact, account: account)
+
+      bulk({ type: 'Contact', all_matching: {}, labels: { add: ['ghost'] } })
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error_types']['labels']).to eq(['not_in_account'])
+    end
+
+    it 'still refuses a delete from a user who may not delete' do
+      create(:contact, account: account)
+
+      bulk({ type: 'Contact', all_matching: {}, action_name: 'delete' })
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

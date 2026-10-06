@@ -2,7 +2,7 @@ module Enterprise::Public::Api::V1::Portals::ArticlesController
   private
 
   def search_articles
-    if @portal.account.feature_enabled?('help_center_embedding_search')
+    if @portal.feature_enabled?('help_center_embedding_search')
       @articles = @articles.vector_search(list_params.merge(account_id: @portal.account_id)) if list_params[:query].present?
     else
       super

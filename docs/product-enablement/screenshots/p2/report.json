@@ -1,0 +1,122 @@
+[
+  {
+    "name": "sign in",
+    "ok": true,
+    "detail": "http://127.0.0.1:3010/app/accounts/1/dashboard"
+  },
+  {
+    "name": "sidebar has an Audiences destination",
+    "ok": true,
+    "detail": "1 link(s)"
+  },
+  {
+    "name": "save-as-audience is a labelled control",
+    "ok": true,
+    "detail": "\"Save as audience\""
+  },
+  {
+    "name": "audiences page lists the account’s audiences",
+    "ok": true,
+    "detail": "3 cards"
+  },
+  {
+    "name": "audiences page explains what an audience is",
+    "ok": true
+  },
+  {
+    "name": "first card is a shared audience with its conditions",
+    "ok": true,
+    "detail": "Customers in Kuwait | Shared | Country name Equal to Kuwait | Count contacts now"
+  },
+  {
+    "name": "nothing is counted before anybody asks",
+    "ok": true
+  },
+  {
+    "name": "counting one audience counts only that one",
+    "ok": true,
+    "detail": "0 contacts"
+  },
+  {
+    "name": "each card’s menu has an accessible name that names its audience",
+    "ok": true,
+    "detail": "More actions for Customers in Kuwait"
+  },
+  {
+    "name": "the card menu is reachable by keyboard",
+    "ok": true,
+    "detail": "More actions for Customers in Kuwait"
+  },
+  {
+    "name": "the menu offers open, edit, use and delete",
+    "ok": true,
+    "detail": "open, edit, campaign, delete"
+  },
+  {
+    "name": "audiences page fits 390px",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "audiences page fits 768px",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "audiences page fits 1024px",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "audiences page fits 1280px",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "macros offers its starter gallery from the header",
+    "ok": true,
+    "detail": "Start from a starter"
+  },
+  {
+    "name": "an empty macro library offers the gallery and a blank macro",
+    "ok": true
+  },
+  {
+    "name": "the macro gallery offers the starters",
+    "ok": true,
+    "detail": "Lynomia Demo | Search... | CTRL K | My Inbox | Conversations | Contacts | Reports | Campaigns | Help Center | Settings | Account | Account Set"
+  },
+  {
+    "name": "the macro gallery still offers starting from nothing",
+    "ok": true
+  },
+  {
+    "name": "an empty rule list offers the gallery",
+    "ok": true,
+    "detail": "Start from a recipe"
+  },
+  {
+    "name": "the setup recipe is offered in the same gallery",
+    "ok": true
+  },
+  {
+    "name": "a commerce recipe says what is missing instead of offering Create",
+    "ok": true,
+    "detail": "Needs Commerce, a connected store first"
+  },
+  {
+    "name": "a starter that depends on the store platform says which platforms report it",
+    "ok": true,
+    "detail": "Salla, Zid and Shopify report an order as shipped. WooCommerce has no shipped status, so this rule will not run for a Wo"
+  },
+  {
+    "name": "the audience-based recipe is marked as fitting this account",
+    "ok": true,
+    "detail": "Uses an audience you have"
+  },
+  {
+    "name": "an empty flow list offers the gallery, named the same way",
+    "ok": true,
+    "detail": "Start from a template"
+  }
+]

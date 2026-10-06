@@ -438,7 +438,8 @@
             "SUCCESS_MESSAGE": "Audience saved",
             "ERROR_MESSAGE": "Couldn’t save the audience. Please try again.",
             "SHARE": "Share with the whole account",
-            "SHARE_HINT": "Everyone in the account can open a shared audience, and automation rules can use it. Only administrators can change it."
+            "SHARE_HINT": "Everyone in the account can open a shared audience, and automation rules can use it. Only administrators can change it.",
+            "ACTION": "Save as audience"
           },
           "DELETE_SEGMENT": {
             "TITLE": "Delete this audience?",
@@ -664,7 +665,28 @@
       "LIST_EMPTY_STATE_TITLE": "No contacts available in this view 📋",
       "ACTIVE_EMPTY_STATE_TITLE": "No contacts are active at the moment 🌙"
     },
-    "LOAD_MORE": "Load more"
+    "LOAD_MORE": "Load more",
+    "AUDIENCES": {
+      "TITLE": "Audiences",
+      "LOADING": "Loading audiences",
+      "SHARED": "Shared",
+      "PERSONAL": "Only you",
+      "NO_CONDITIONS": "No conditions saved, so this matches every contact.",
+      "COUNT": "{count} contact | {count} contacts",
+      "COUNT_ACTION": "Count contacts now",
+      "COUNT_FAILED": "Couldn’t count this audience. Open it to see why.",
+      "FROM_FILTERS": "Build from filters",
+      "ACTIONS": {
+        "MORE": "More actions for {name}",
+        "OPEN": "Open this audience",
+        "EDIT": "Edit its conditions",
+        "DELETE": "Delete this audience"
+      },
+      "EMPTY_STATE": {
+        "TITLE": "No audiences yet",
+        "DESCRIPTION": "An audience is a saved rule about your customers, answered again every time it is used. Start from a preset, or pick the conditions yourself on the contacts list."
+      }
+    }
   },
   "CONTACTS_BULK_ACTIONS": {
     "ASSIGN_LABELS": "Assign Labels",
@@ -676,8 +698,13 @@
     "DESCRIPTION": "Select the labels you want to add to the selected contacts.",
     "NO_LABELS_FOUND": "No labels available yet.",
     "SELECTED_COUNT": "{count} selected",
+    "SELECTED_ALL_MATCHING_COUNT": "All {count} selected",
     "CLEAR_SELECTION": "Clear selection",
     "SELECT_ALL": "Select all ({count})",
+    "SELECT_ALL_MATCHING": "Select all {count} in this view",
+    "SELECT_ALL_MATCHING_UNCOUNTED": "Select all results in this view",
+    "SELECTED_ALL_MATCHING": "All results in this view selected",
+    "TOO_MANY_MATCHING": "This view has too many contacts to act on at once. Narrow it first.",
     "DELETE_CONTACTS": "Delete",
     "DELETE_SUCCESS": "Contacts deleted successfully.",
     "DELETE_FAILED": "Failed to delete contacts.",

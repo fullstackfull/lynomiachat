@@ -125,9 +125,95 @@ export const templateStatusTone = status => {
     rejected: { tone: 'danger', variant: 'solid' },
     paused: { tone: 'warning', variant: 'solid' },
     disabled: { tone: 'neutral', variant: 'subtle' },
+    // Lynomia Template Manager states. A draft and a submission that failed are ours; the rest are WhatsApp's.
+    unsubmitted: { tone: 'neutral', variant: 'subtle' },
+    submitting: { tone: 'info', variant: 'subtle' },
+    submission_failed: { tone: 'danger', variant: 'subtle' },
+    missing: { tone: 'danger', variant: 'subtle' },
+    in_appeal: { tone: 'warning', variant: 'subtle' },
+    pending_deletion: { tone: 'warning', variant: 'subtle' },
+    deleted: { tone: 'neutral', variant: 'subtle' },
+    archived: { tone: 'neutral', variant: 'subtle' },
+    limit_exceeded: { tone: 'danger', variant: 'subtle' },
   };
 
   return tones[status?.toLowerCase()] || { tone: 'neutral', variant: 'subtle' };
+};
+
+// What WhatsApp publishes, mirrored here only so an input can stop typing at the limit instead of letting a review
+// cycle find it. The authority is the server (custom/app/services/whatsapp/templates/validator.rb), which is what a
+// submit is refused on; these are the same numbers, named once on the client.
+export const TEMPLATE_LIMITS = {
+  name: 512,
+  headerText: 60,
+  body: 1024,
+  footer: 60,
+  buttonText: 25,
+  buttonUrl: 2000,
+  buttonPhone: 20,
+  buttonCopyCode: 15,
+  buttons: 10,
+};
+
+// The one place a record becomes a word. A draft is never called "pending": WhatsApp has not seen it, so it has no
+// status of WhatsApp's at all. A submission WhatsApp refused at the API is not "rejected" either -- it never reached
+// review. Everything else is WhatsApp's own status, lowercased, so a value it adds later still renders.
+export const templateState = record => {
+  if (record.state === 'draft') return 'unsubmitted';
+  if (record.state === 'submitting') {
+    return record.submission_error ? 'submission_failed' : 'submitting';
+  }
+  if (record.missing_at_meta) return 'missing';
+
+  return (record.meta_status || 'unsubmitted').toLowerCase();
+};
+
+// Every state the manager can show, so an unknown one from WhatsApp falls back to its own formatted name instead of
+// rendering a translation key.
+const STATUS_KEYS = [
+  'UNSUBMITTED',
+  'SUBMITTING',
+  'SUBMISSION_FAILED',
+  'MISSING',
+  'APPROVED',
+  'PENDING',
+  'REJECTED',
+  'PAUSED',
+  'DISABLED',
+  'IN_APPEAL',
+  'PENDING_DELETION',
+  'DELETED',
+  'ARCHIVED',
+  'LIMIT_EXCEEDED',
+];
+
+export const templateStatusLabelKey = status => {
+  const key = (status || 'unsubmitted').toUpperCase();
+
+  return STATUS_KEYS.includes(key)
+    ? `WHATSAPP_TEMPLATE_MGMT.STATUSES.${key}`
+    : null;
+};
+
+// The manager's API shape, rendered by the same card and preview the synced list already uses. `inboxes` has to be
+// whole inbox records, because that is what ChannelIcon reads; the API sends ids and names, so the caller resolves
+// them against the inboxes it already has in the store.
+export const templateRowFromRecord = (record, inboxesById) => {
+  const inboxes = (record.inboxes || [])
+    .map(inbox => inboxesById[inbox.id] || { id: inbox.id, name: inbox.name })
+    .filter(Boolean);
+
+  return {
+    ...record,
+    platform: PLATFORMS.WHATSAPP,
+    key: `whatsapp-${record.id}`,
+    status: templateState(record),
+    inboxes,
+    inboxNames: (record.inboxes || []).map(inbox => inbox.name).join(', '),
+    lastUpdatedAt: record.last_seen_at ? record.last_seen_at * 1000 : null,
+    searchableContent: JSON.stringify(record.components || []),
+    isManaged: true,
+  };
 };
 
 export const templateTypeKey = template => {

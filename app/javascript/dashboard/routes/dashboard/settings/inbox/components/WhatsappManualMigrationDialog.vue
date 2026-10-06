@@ -21,9 +21,11 @@ const props = defineProps({
 
 const emit = defineEmits(['reconnect']);
 const { t } = useI18n();
-const { replaceInstallationName } = useBranding();
+const { replaceInstallationName, brandLink } = useBranding();
 
-const WHATSAPP_MANUAL_MIGRATION_GUIDE_URL = 'https://chwt.app/migrate-whatsapp';
+// These point at upstream Chatwoot's own documentation, which is the right destination only on an upstream
+// installation. A branded one gets its configured DOCUMENTATION_URL, and no link at all when it has none.
+const UPSTREAM_MANUAL_MIGRATION_GUIDE_URL = 'https://chwt.app/migrate-whatsapp';
 
 const dialogRef = ref(null);
 const currentStep = ref(0);
@@ -178,7 +180,9 @@ const steps = computed(() => [
 const currentStepDetails = computed(() => steps.value[currentStep.value]);
 const isFirstStep = computed(() => currentStep.value === 0);
 const isLastStep = computed(() => currentStep.value === steps.value.length - 1);
-const guideUrl = WHATSAPP_MANUAL_MIGRATION_GUIDE_URL;
+const guideUrl = computed(() =>
+  brandLink('documentation', UPSTREAM_MANUAL_MIGRATION_GUIDE_URL)
+);
 const hasBusinessDetails = computed(
   () => form.value.wabaId.trim() && form.value.phoneNumberId.trim()
 );

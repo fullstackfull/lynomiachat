@@ -1,8 +1,19 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import CommerceAPI from 'dashboard/api/commerce';
 import SallaConnectDialog from '../SallaConnectDialog.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 vi.mock('dashboard/composables', () => ({ useAlert: vi.fn() }));
 vi.mock('shared/helpers/clipboard', () => ({ copyTextToClipboard: vi.fn() }));
@@ -28,7 +39,10 @@ const mountDialog = () =>
   mount(SallaConnectDialog, {
     props: { show: true },
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'en', messages: { en } })],
+      plugins: [
+        createI18n({ legacy: false, locale: 'en', messages: { en } }),
+        brandingStore,
+      ],
       stubs: { Dialog: DialogStub },
     },
   });
@@ -56,7 +70,7 @@ describe('SallaConnectDialog', () => {
     const wrapper = mountDialog();
 
     expect(wrapper.text()).toContain('Create a one-time connection code.');
-    expect(wrapper.text()).toContain('Install the Lynomia app in Salla.');
+    expect(wrapper.text()).toContain('Install the Acme Desk app in Salla.');
     expect(wrapper.find('input').exists()).toBe(false);
   });
 
@@ -103,7 +117,7 @@ describe('SallaConnectDialog', () => {
     await vi.advanceTimersByTimeAsync(10000);
 
     expect(statusText(wrapper)).toContain(
-      'connected to another Lynomia account'
+      'connected to another Acme Desk account'
     );
     expect(CommerceAPI.getSallaConnection).toHaveBeenCalledTimes(1);
     expect(wrapper.emitted('connected')).toBeUndefined();

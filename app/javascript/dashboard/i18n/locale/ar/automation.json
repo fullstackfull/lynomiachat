@@ -93,7 +93,8 @@
         "DELAYED": "Runs after a wait"
       },
       "DELAY_BADGE": "Runs after {delay}",
-      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on."
+      "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on.",
+      "EMPTY_HINT": "ابدأ من وصفة جاهزة، أو ابنِ قاعدة شرطاً شرطاً. والوصفة تأتي مُطفأة لتقرأها قبل أن تعمل."
     },
     "DELETE": {
       "TITLE": "حذف قاعدة الأتمتة",
@@ -253,7 +254,7 @@
       "IS_NOT_IN": "ليس ضمن",
       "EVENT_STORE": "متجر الطلب",
       "EVENT_PROVIDER": "منصة متجر الطلب",
-      "COMMERCE_TRIGGER_NOTE": "تعمل عندما تقرأ Lynomia تغييرًا في طلبات عميل مرتبط (تحديث من المتجر، أو فتح وكيل للمحادثة)، على آخر محادثة لجهة الاتصال. إرسال الرسائل إلى العميل غير متاح لمشغّلات Commerce."
+      "COMMERCE_TRIGGER_NOTE": "تعمل عندما تقرأ {installationName} تغييرًا في طلبات عميل مرتبط (تحديث من المتجر، أو فتح وكيل للمحادثة)، على آخر محادثة لجهة الاتصال. إرسال الرسائل إلى العميل غير متاح لمشغّلات Commerce."
     }
   }
 }

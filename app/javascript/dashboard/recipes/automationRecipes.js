@@ -10,6 +10,7 @@
 // conversation may be outside WhatsApp's 24-hour window.
 
 import { CATEGORIES, INPUT_TYPES, REQUIREMENTS, joinConditions } from './index';
+import { body } from './starterCopy';
 
 const PREFIX = 'RECIPES.AUTOMATION';
 
@@ -37,6 +38,7 @@ const recipe = ({
   event,
   conditions,
   actions,
+  providerNote = false,
 }) => ({
   id,
   type: 'automation',
@@ -45,6 +47,10 @@ const recipe = ({
   description: `${PREFIX}.${id.toUpperCase()}.DESCRIPTION`,
   category,
   requires: [REQUIREMENTS.AUTOMATIONS, ...requires],
+  // A trigger the account's own store platform may never report. Said here, where the rule is chosen.
+  ...(providerNote
+    ? { providerNote: `${PREFIX}.${id.toUpperCase()}.PROVIDER_NOTE` }
+    : {}),
   inputs,
   // The mechanical parts of the rule. The page that creates it adds the name and the description, as the flow list
   // does for a template.
@@ -69,6 +75,26 @@ const eventStore = ({ store }) => [
   condition('commerce_event_store', 'equal_to', [store]),
 ];
 
+// A note a rule writes is text, not a key it looks up: `build` is pure and has no translator, so the wording lives
+// here in both languages, as the flow templates' copy does, and the rule's author edits it like any other field.
+const NOTES = {
+  CANCELLED: {
+    ar: 'أُلغي طلب هذا العميل. يرجى التواصل معه ومعرفة السبب.',
+    en: 'This customer’s order was cancelled. Please reach out and find out why.',
+  },
+};
+
+const GREETING = {
+  ar: 'مرحبًا! 👋 شكرًا لتواصلك معنا. سيرد عليك أحد أفراد الفريق هنا قريبًا.',
+  en: 'Hello! 👋 Thanks for getting in touch. Someone from the team will reply here shortly.',
+};
+
+// Every status a conversation can start in: 'open' normally, 'pending' on an inbox a bot answers first. Saying both
+// is what makes a "when a conversation starts" rule behave the same on every inbox.
+const NEW_CONVERSATION = () => [
+  condition('status', 'equal_to', ['open', 'pending']),
+];
+
 export const AUTOMATION_RECIPES = [
   recipe({
     id: 'commerce_new_order_routing',
@@ -89,6 +115,7 @@ export const AUTOMATION_RECIPES = [
   recipe({
     id: 'commerce_order_shipped_label',
     category: CATEGORIES.OPERATIONS,
+    providerNote: true,
     requires: [
       REQUIREMENTS.COMMERCE,
       REQUIREMENTS.COMMERCE_STORE,
@@ -135,6 +162,84 @@ export const AUTOMATION_RECIPES = [
     event: ({ event }) => event,
     conditions: eventStore,
     actions: ({ url }) => [action('send_webhook_event', [url])],
+  }),
+  recipe({
+    id: 'commerce_order_paid_priority',
+    category: CATEGORIES.ECOMMERCE,
+    requires: [
+      REQUIREMENTS.COMMERCE,
+      REQUIREMENTS.COMMERCE_STORE,
+      REQUIREMENTS.LABEL,
+    ],
+    inputs: [
+      STORE_INPUT,
+      { key: 'labels', type: INPUT_TYPES.LABELS, required: true },
+      {
+        key: 'priority',
+        type: INPUT_TYPES.PRIORITY,
+        required: true,
+        default: 'high',
+      },
+    ],
+    event: () => 'commerce_order_paid',
+    conditions: eventStore,
+    actions: ({ labels, priority }) => [
+      action('add_label', labels),
+      action('change_priority', [priority]),
+    ],
+  }),
+  recipe({
+    id: 'commerce_order_cancelled_followup',
+    category: CATEGORIES.RETENTION,
+    providerNote: true,
+    requires: [
+      REQUIREMENTS.COMMERCE,
+      REQUIREMENTS.COMMERCE_STORE,
+      REQUIREMENTS.TEAM,
+    ],
+    inputs: [STORE_INPUT, TEAM_INPUT, LABELS_INPUT],
+    event: () => 'commerce_order_cancelled',
+    conditions: eventStore,
+    // A private note, never a message to the customer: a store event is not a customer message, and a Commerce
+    // trigger may not send one (`Custom::AutomationRule::CUSTOMER_MESSAGE_ACTIONS`).
+    actions: ({ team, labels }) => [
+      ...labelAction(labels),
+      action('assign_team', [team]),
+      action('add_private_note', [body('both', NOTES.CANCELLED)]),
+    ],
+  }),
+  recipe({
+    id: 'greet_new_conversation',
+    category: CATEGORIES.SUPPORT,
+    // The one recipe every account can use on its first day: no store, no team, no audience, no label.
+    requires: [],
+    inputs: [
+      {
+        key: 'language',
+        type: INPUT_TYPES.LANGUAGE,
+        required: true,
+        default: 'both',
+      },
+    ],
+    event: () => 'conversation_created',
+    conditions: NEW_CONVERSATION,
+    actions: ({ language }) => [
+      action('send_message', [body(language, GREETING)]),
+    ],
+  }),
+  recipe({
+    id: 'audience_conversation_label',
+    category: CATEGORIES.RETENTION,
+    requires: [REQUIREMENTS.SHARED_AUDIENCE, REQUIREMENTS.LABEL],
+    inputs: [
+      { key: 'audience', type: INPUT_TYPES.AUDIENCE, required: true },
+      { key: 'labels', type: INPUT_TYPES.LABELS, required: true },
+    ],
+    event: () => 'conversation_created',
+    conditions: ({ audience }) => [
+      condition('contact_audience', 'equal_to', [audience]),
+    ],
+    actions: ({ labels }) => [action('add_label', labels)],
   }),
   recipe({
     id: 'vip_audience_priority',

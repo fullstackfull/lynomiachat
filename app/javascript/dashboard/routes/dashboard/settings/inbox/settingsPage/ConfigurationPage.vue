@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { useWhatsappEmbeddedSignup } from 'dashboard/composables/useWhatsappEmbeddedSignup';
+import { useBranding } from 'shared/composables/useBranding';
 import whatsappChannel from 'dashboard/api/channel/whatsappChannel';
 import inboxMixin from 'shared/mixins/inboxMixin';
 import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
@@ -38,7 +39,8 @@ export default {
   },
   setup() {
     const { runEmbeddedSignup } = useWhatsappEmbeddedSignup();
-    return { v$: useVuelidate(), runEmbeddedSignup };
+    const { brandLink } = useBranding();
+    return { v$: useVuelidate(), runEmbeddedSignup, brandLink };
   },
   data() {
     return {
@@ -59,6 +61,14 @@ export default {
     ...mapGetters({
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
     }),
+    // Upstream Chatwoot's SDK documentation is the right destination only on an upstream installation; a
+    // branded one gets its configured DOCUMENTATION_URL, and no link at all when it has none.
+    identityValidationDocsUrl() {
+      return this.brandLink(
+        'documentation',
+        'https://www.chatwoot.com/docs/product/channels/live-chat/sdk/identity-validation/'
+      );
+    },
     isEmbeddedSignupWhatsApp() {
       return this.inbox.provider_config?.source === 'embedded_signup';
     },
@@ -299,9 +309,10 @@ export default {
           <p class="mt-1.5 text-label-small text-n-slate-11">
             {{ $t('INBOX_MGMT.SETTINGS_POPUP.HMAC_DESCRIPTION') }}
             <a
+              v-if="identityValidationDocsUrl"
               target="_blank"
               rel="noopener noreferrer"
-              href="https://www.chatwoot.com/docs/product/channels/live-chat/sdk/identity-validation/"
+              :href="identityValidationDocsUrl"
               class="text-n-blue-11 hover:underline text-label-small"
             >
               {{

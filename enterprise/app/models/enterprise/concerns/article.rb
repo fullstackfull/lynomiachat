@@ -39,7 +39,9 @@ module Enterprise::Concerns::Article
   end
 
   def add_article_embedding
-    return unless account.feature_enabled?('help_center_embedding_search')
+    # Asked of the portal rather than the account, because a platform documentation portal has no account
+    # (docs/global-documentation/01-global-ownership-design.md section 5).
+    return unless portal.feature_enabled?('help_center_embedding_search')
 
     Portal::ArticleIndexingJob.perform_later(self)
   end

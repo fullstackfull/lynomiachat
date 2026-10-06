@@ -56,13 +56,40 @@ export function useRecipeContext() {
     ),
   }));
 
+  // Why a recipe is offered first: something this account actually has. Ordered, most specific first; the rank is
+  // what `describeAll` sorts by and the reason is what the gallery says out loud, so the order is never a mystery.
+  // Deterministic and stated: no model, no score, nothing sent anywhere.
+  const RECOMMENDATIONS = [
+    {
+      rank: 0,
+      requirement: REQUIREMENTS.COMMERCE,
+      evidence: REQUIREMENTS.COMMERCE_STORE,
+      reason: 'STORE',
+    },
+    {
+      rank: 1,
+      requirement: REQUIREMENTS.SHARED_AUDIENCE,
+      evidence: REQUIREMENTS.SHARED_AUDIENCE,
+      reason: 'AUDIENCE',
+    },
+  ];
+
+  const recommendationFor = recipe =>
+    RECOMMENDATIONS.find(
+      entry =>
+        recipe.requires.includes(entry.requirement) &&
+        satisfied.value[entry.evidence]
+    );
+
   /**
    * A recipe with what this account makes of it.
    * @param {Object} recipe - A recipe from one of the catalogues.
-   * @returns {Object} The recipe, plus its `status`, the `missing` requirement keys and their readable `reasons`.
+   * @returns {Object} The recipe, plus its `status`, the `missing` requirement keys, their readable `reasons`, and
+   *   `recommended`: why this account's own setup puts it first, or an empty string.
    */
   const describe = recipe => {
     const missing = recipe.requires.filter(key => !satisfied.value[key]);
+    const fit = missing.length ? undefined : recommendationFor(recipe);
     return {
       ...recipe,
       status: missing.length
@@ -72,6 +99,7 @@ export function useRecipeContext() {
       reasons: missing.map(key =>
         t(`RECIPES.REQUIREMENTS.${key.toUpperCase()}`)
       ),
+      recommended: fit ? t(`RECIPES.RECOMMENDED.${fit.reason}`) : '',
     };
   };
 
@@ -83,16 +111,7 @@ export function useRecipeContext() {
    * @returns {Array} The described recipes, in the order to show them.
    */
   const describeAll = recipes => {
-    const relevance = recipe => {
-      if (
-        recipe.requires.includes(REQUIREMENTS.COMMERCE) &&
-        satisfied.value[REQUIREMENTS.COMMERCE_STORE]
-      ) {
-        return 0;
-      }
-      if (recipe.requires.includes(REQUIREMENTS.SHARED_AUDIENCE)) return 1;
-      return 2;
-    };
+    const relevance = recipe => recommendationFor(recipe)?.rank ?? 2;
 
     return recipes
       .map(describe)

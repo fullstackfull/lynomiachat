@@ -117,6 +117,70 @@ describe('TemplateNormalizer', () => {
     });
   });
 
+  // P0/D5. Meta shapes a TEXT header's examples under its own keys, and flat rather than nested. Reading the
+  // body keys for every component silently lost every header variable's example.
+  it('extracts a TEXT header positional variable from header_text', () => {
+    const template = {
+      parameter_format: 'POSITIONAL',
+      components: [
+        {
+          type: 'HEADER',
+          format: 'TEXT',
+          text: 'Order {{1}}',
+          example: { header_text: ['A-1001'] },
+        },
+        {
+          type: 'BODY',
+          text: 'Hi {{1}}',
+          example: { body_text: [['Zuhayr']] },
+        },
+      ],
+    };
+
+    const variables = TemplateNormalizer.extractWhatsAppVariables(template);
+
+    // The body is read last and both use position 1, so the body example wins the key — the point here is that
+    // the header lookup resolves at all rather than yielding ''.
+    expect(variables[1]).toBe('Zuhayr');
+
+    const headerOnly = TemplateNormalizer.extractWhatsAppVariables({
+      parameter_format: 'POSITIONAL',
+      components: [template.components[0]],
+    });
+    expect(headerOnly).toMatchObject({ 1: 'A-1001' });
+  });
+
+  it('extracts a TEXT header named variable from header_text_named_params', () => {
+    const variables = TemplateNormalizer.extractWhatsAppVariables({
+      parameter_format: 'NAMED',
+      components: [
+        {
+          type: 'HEADER',
+          format: 'TEXT',
+          text: 'Order {{order_id}}',
+          example: {
+            header_text_named_params: [
+              { param_name: 'order_id', example: 'A-1001' },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(variables).toMatchObject({ order_id: 'A-1001' });
+  });
+
+  it('still reads the body example from the nested body_text shape', () => {
+    const variables = TemplateNormalizer.extractWhatsAppVariables({
+      parameter_format: 'POSITIONAL',
+      components: [
+        { type: 'BODY', text: 'Hi {{1}}', example: { body_text: [['John']] } },
+      ],
+    });
+
+    expect(variables).toMatchObject({ 1: 'John' });
+  });
+
   it('normalizes WhatsApp media image templates', () => {
     const template = {
       id: '1',

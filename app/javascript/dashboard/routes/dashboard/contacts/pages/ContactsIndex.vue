@@ -15,6 +15,7 @@ import ContactsList from 'dashboard/components-next/Contacts/Pages/ContactsList.
 import ContactsBulkActionBar from '../components/ContactsBulkActionBar.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import BulkActionsAPI from 'dashboard/api/bulkActions';
+import { waitForBulkActionCompletion } from 'dashboard/helper/bulkActionCompletion';
 
 // Only order backed by index_contacts_on_account_id_and_last_activity_at
 const DEFAULT_SORT = '-last_activity_at';
@@ -70,9 +71,25 @@ const hasMore = computed(() => meta.value?.hasMore ?? false);
 const isSearchView = computed(() => !!searchQuery.value);
 
 const selectedContactIds = ref([]);
+// Set only by the bar's "select all N in this view". The ids then stop being the target: the server resolves
+// the view itself, because the browser is holding one page of it (docs/contacts/10-phase-d.md §D4).
+const isWholeViewSelected = ref(false);
 const isBulkActionLoading = ref(false);
 const bulkDeleteDialogRef = ref(null);
-const selectedCount = computed(() => selectedContactIds.value.length);
+const visibleContactIds = computed(() =>
+  contacts.value.map(contact => contact.id)
+);
+
+// On a search view the server's count IS the page size (D6), so a whole-view selection there has no honest
+// number to show. Fall back to the ids actually held rather than reporting the page size as a total.
+const hasUsableTotal = computed(
+  () => (totalItems.value ?? 0) > visibleContactIds.value.length
+);
+const selectedCount = computed(() =>
+  isWholeViewSelected.value && hasUsableTotal.value
+    ? totalItems.value
+    : selectedContactIds.value.length
+);
 const bulkDeleteDialogTitle = computed(() =>
   selectedCount.value > 1
     ? t('CONTACTS_BULK_ACTIONS.DELETE_DIALOG.TITLE')
@@ -138,12 +155,13 @@ const emptyStateMessage = computed(() => {
   return t('CONTACTS_LAYOUT.EMPTY_STATE.SEARCH_EMPTY_STATE_TITLE');
 });
 
-const visibleContactIds = computed(() =>
-  contacts.value.map(contact => contact.id)
-);
-
 const clearSelection = () => {
   selectedContactIds.value = [];
+  isWholeViewSelected.value = false;
+};
+
+const selectAllMatching = () => {
+  isWholeViewSelected.value = true;
 };
 
 const openBulkDeleteDialog = () => {
@@ -152,6 +170,8 @@ const openBulkDeleteDialog = () => {
 };
 
 const toggleSelectAll = shouldSelect => {
+  // Any hand-made change to the selection means it is no longer "everything this view matches".
+  isWholeViewSelected.value = false;
   const currentSelection = new Set(selectedContactIds.value);
   if (shouldSelect) {
     visibleContactIds.value.forEach(id => currentSelection.add(id));
@@ -162,6 +182,7 @@ const toggleSelectAll = shouldSelect => {
 };
 
 const toggleContactSelection = ({ id, value }) => {
+  isWholeViewSelected.value = false;
   const isAlreadySelected = selectedContactIds.value.includes(id);
   const shouldSelect = value ?? !isAlreadySelected;
 
@@ -330,72 +351,88 @@ const fetchContactsBasedOnContext = async (page, options = {}) => {
 const onPageChange = page =>
   fetchContactsBasedOnContext(page, { clearSelection: false });
 
-const assignLabels = async labels => {
-  if (!labels.length || !selectedContactIds.value.length) {
-    return;
+// What the server needs to resolve this view for itself, branch for branch the same way
+// `fetchContactsBasedOnContext` above decides which list to fetch — so the rows a bulk action reaches are the
+// rows the list is showing, and not a second opinion about them (docs/contacts/10-phase-d.md §D4).
+const viewDescription = computed(() => {
+  if (searchQuery.value) return { q: searchQuery.value };
+  if (isActiveView.value) return { active: true };
+  if (
+    (hasAppliedFilters.value || activeSegment.value?.query) &&
+    !activeLabel.value
+  ) {
+    const query =
+      activeSegment.value?.query || filterQueryGenerator(appliedFilters.value);
+    return { payload: query.payload ?? [] };
   }
+  return { label: activeLabel.value || '' };
+});
 
-  isBulkActionLoading.value = true;
-  try {
-    await BulkActionsAPI.create({
-      type: 'Contact',
-      ids: selectedContactIds.value,
-      labels: { add: labels },
-    });
-    useAlert(t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_SUCCESS'));
-    clearSelection();
-    await fetchContactsBasedOnContext(pageNumber.value);
-  } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_FAILED'));
-  } finally {
-    isBulkActionLoading.value = false;
-  }
-};
+const bulkTarget = computed(() =>
+  isWholeViewSelected.value
+    ? { all_matching: viewDescription.value }
+    : { ids: selectedContactIds.value }
+);
 
-const removeLabels = async labels => {
-  if (!labels.length || !selectedContactIds.value.length) {
-    return;
-  }
-
-  isBulkActionLoading.value = true;
-  try {
-    await BulkActionsAPI.create({
-      type: 'Contact',
-      ids: selectedContactIds.value,
-      labels: { remove: labels },
-    });
-    useAlert(t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_SUCCESS'));
-    clearSelection();
-    await fetchContactsBasedOnContext(pageNumber.value);
-  } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_FAILED'));
-  } finally {
-    isBulkActionLoading.value = false;
-  }
-};
-
-const deleteContacts = async () => {
+const runBulkAction = async ({ payload, success, failure, onDone }) => {
   if (!selectedContactIds.value.length) {
     return;
   }
 
   isBulkActionLoading.value = true;
+  // Listening before the request is sent: a small selection can finish before the response lands.
+  const completed = waitForBulkActionCompletion();
   try {
     await BulkActionsAPI.create({
       type: 'Contact',
-      ids: selectedContactIds.value,
-      action_name: 'delete',
+      ...bulkTarget.value,
+      ...payload,
     });
-    useAlert(t('CONTACTS_BULK_ACTIONS.DELETE_SUCCESS'));
+    await completed;
+    useAlert(success);
+    // Cleared only now — until the server has acted, the selection is what the user can retry with.
     clearSelection();
     await fetchContactsBasedOnContext(pageNumber.value);
-    bulkDeleteDialogRef.value?.close?.();
+    onDone?.();
   } catch (error) {
-    useAlert(t('CONTACTS_BULK_ACTIONS.DELETE_FAILED'));
+    // The one refusal worth quoting: a view with more contacts than one action may touch.
+    useAlert(error.response?.data?.message ?? failure);
   } finally {
     isBulkActionLoading.value = false;
   }
 };
+
+const assignLabels = async labels => {
+  if (!labels.length) {
+    return;
+  }
+
+  await runBulkAction({
+    payload: { labels: { add: labels } },
+    success: t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.ASSIGN_LABELS_FAILED'),
+  });
+};
+
+const removeLabels = async labels => {
+  if (!labels.length) {
+    return;
+  }
+
+  await runBulkAction({
+    payload: { labels: { remove: labels } },
+    success: t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.REMOVE_LABELS_FAILED'),
+  });
+};
+
+const deleteContacts = () =>
+  runBulkAction({
+    payload: { action_name: 'delete' },
+    success: t('CONTACTS_BULK_ACTIONS.DELETE_SUCCESS'),
+    failure: t('CONTACTS_BULK_ACTIONS.DELETE_FAILED'),
+    onDone: () => bulkDeleteDialogRef.value?.close?.(),
+  });
 
 const handleSort = async ({ sort, order }) => {
   Object.assign(sortState, { activeSort: sort, activeOrdering: order });
@@ -546,7 +583,11 @@ onMounted(async () => {
           :visible-contact-ids="visibleContactIds"
           :selected-contact-ids="selectedContactIds"
           :is-loading="isBulkActionLoading"
+          :total-count="totalItems ?? 0"
+          :has-more="hasMore"
+          :is-whole-view-selected="isWholeViewSelected"
           @toggle-all="toggleSelectAll"
+          @select-all-matching="selectAllMatching"
           @clear-selection="clearSelection"
           @assign-labels="assignLabels"
           @remove-labels="removeLabels"

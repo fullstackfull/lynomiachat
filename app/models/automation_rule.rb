@@ -36,6 +36,8 @@ class AutomationRule < ApplicationRecord
   validate :query_operator_presence
   validate :query_operator_value
   validates :account_id, presence: true
+  validates :event_name, inclusion: { in: ->(rule) { rule.event_names },
+                                      message: I18n.t('errors.automation_rule.event_name.unsupported') }
   validates :execution_delay, numericality: { only_integer: true, in: EXECUTION_DELAY_RANGE }, allow_nil: true
   validate :execution_delay_supported_conditions
   validate :execution_delay_supported_event
@@ -45,6 +47,14 @@ class AutomationRule < ApplicationRecord
   after_update :discard_stale_pending_executions, if: :execution_config_changed?
 
   scope :active, -> { where(active: true) }
+
+  # The triggers this installation can actually run, beside the condition and action vocabularies and extended the
+  # same way: `AutomationRuleListener` defines one handler per name here, so a name absent from this list is a name
+  # nothing dispatches to. Without the inclusion validation below, such a rule saved successfully and was an
+  # invisible no-op (docs/product-enablement/12-proposed-phases.md D8).
+  def event_names
+    %w[conversation_created conversation_updated conversation_opened conversation_resolved message_created]
+  end
 
   def conditions_attributes
     %w[content email country_code status message_type browser_language assignee_id team_id referer city company_name inbox_id

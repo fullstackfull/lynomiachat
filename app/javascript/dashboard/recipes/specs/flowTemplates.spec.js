@@ -577,6 +577,39 @@ describe('FLOW_TEMPLATES', () => {
       .forEach(node => expect(node.data.labels).toBeUndefined());
   });
 
+  it('puts the chosen priority on every complaint handoff, so the choice is not collected and dropped', () => {
+    const complaint = FLOW_TEMPLATES.find(
+      item => item.id === 'complaint_intake'
+    );
+    const handoffs = complaint
+      .build({
+        team: 3,
+        labels: ['complaint'],
+        priority: 'urgent',
+        language: 'en',
+      })
+      .nodes.filter(node => node.type === 'handoff');
+
+    expect(handoffs).toHaveLength(3);
+    handoffs.forEach(node => expect(node.data.priority).toBe('urgent'));
+  });
+
+  it('sends a second FAQ question back to the same menu instead of a second copy of it', () => {
+    const faq = FLOW_TEMPLATES.find(item => item.id === 'faq_menu');
+    const graph = faq.build({ team: 3, language: 'en' });
+    const again = graph.edges.find(
+      edge => edge.source === 'ask_more' && edge.sourceHandle === 'again'
+    );
+
+    expect(again.target).toBe('menu');
+    // And the loop is only safe because both ends wait for the customer.
+    ['menu', 'ask_more'].forEach(id =>
+      expect(['list', 'buttons', 'question', 'delay'], id).toContain(
+        graph.nodes.find(node => node.id === id).type
+      )
+    );
+  });
+
   it('sends Arabic only, English only, or both, as chosen', () => {
     const routing = FLOW_TEMPLATES.find(
       item => item.id === 'support_department_routing'

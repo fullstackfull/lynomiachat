@@ -284,4 +284,54 @@ RSpec.describe AutomationRule do
       expect(rule.pending_executions.pending.count).to eq(1)
     end
   end
+
+  # P0/D8. `event_name` was a free string with only a NOT NULL behind it, so a rule naming a trigger nothing
+  # dispatches to saved successfully and was an invisible no-op — the most dangerous failure mode for a starter
+  # catalogue, because the rule looks created.
+  describe 'event_name' do
+    let(:account) { create(:account) }
+
+    def rule(event_name)
+      account.automation_rules.new(
+        name: 'Rule', event_name: event_name,
+        conditions: [{ attribute_key: 'status', filter_operator: 'equal_to', values: ['open'], query_operator: nil }],
+        actions: [{ action_name: 'add_label', action_params: ['x'] }]
+      )
+    end
+
+    it 'accepts every conversation trigger the listener handles' do
+      %w[conversation_created conversation_updated conversation_opened conversation_resolved
+         message_created].each do |event|
+        expect(rule(event)).to be_valid, "expected #{event} to be a valid trigger"
+      end
+    end
+
+    it 'refuses a trigger nothing dispatches to' do
+      invalid = rule('commerce_cart_abandoned')
+
+      expect(invalid).not_to be_valid
+      expect(invalid.errors[:event_name]).to include('is not a trigger this installation can run')
+    end
+
+    it 'refuses an empty trigger' do
+      expect(rule('')).not_to be_valid
+    end
+
+    it 'lists exactly the triggers the listener defines a handler for' do
+      handlers = AutomationRuleListener.instance_methods(false).map(&:to_s) & rule('conversation_created').event_names
+
+      expect(handlers).to match_array(%w[conversation_created conversation_updated conversation_opened
+                                         conversation_resolved message_created])
+    end
+
+    # The commerce names are real triggers whether or not the account is entitled to them, so the inclusion check
+    # must not be the thing that rejects them — `commerce_trigger_rules` already gives the accurate reason.
+    it 'treats a commerce trigger as a known name and lets entitlement report itself' do
+      commerce = rule('commerce_order_paid')
+      commerce.valid?
+
+      expect(commerce.errors[:event_name]).not_to include('is not a trigger this installation can run')
+      expect(commerce.errors[:event_name]).to be_present
+    end
+  end
 end

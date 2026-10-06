@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
@@ -22,6 +23,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const { t } = useI18n();
+const { installationName } = useBranding();
 const { apiErrorMessage } = useCommerceLabels();
 const dialogRef = ref(null);
 const shopDomain = ref('');
@@ -69,8 +71,10 @@ watch(
     "
     :description="
       orderActions
-        ? t('COMMERCE.SETTINGS.SHOPIFY.ACTIONS_DESCRIPTION')
-        : t('COMMERCE.SETTINGS.SHOPIFY.DESCRIPTION')
+        ? t('COMMERCE.SETTINGS.SHOPIFY.ACTIONS_DESCRIPTION', {
+            installationName,
+          })
+        : t('COMMERCE.SETTINGS.SHOPIFY.DESCRIPTION', { installationName })
     "
     :show-confirm-button="false"
     :cancel-button-label="t('COMMERCE.SETTINGS.FORM.CANCEL')"
@@ -87,7 +91,7 @@ watch(
         :message="t('COMMERCE.SETTINGS.SHOPIFY.SHOP_HINT')"
       />
       <p class="text-body-main text-n-slate-12">
-        {{ t('COMMERCE.SETTINGS.SHOPIFY.STEPS') }}
+        {{ t('COMMERCE.SETTINGS.SHOPIFY.STEPS', { installationName }) }}
       </p>
       <p
         v-if="errorMessage"

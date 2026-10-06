@@ -51,6 +51,7 @@ import Widget from 'dashboard/modules/widget-preview/components/Widget.vue';
 import AccessToken from 'dashboard/routes/dashboard/settings/profile/AccessToken.vue';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import { META_RESTRICTION_STATUS_URL } from 'dashboard/constants/globals';
+import { useBranding } from 'shared/composables/useBranding';
 
 export default {
   components: {
@@ -93,7 +94,8 @@ export default {
   },
   mixins: [inboxMixin],
   setup() {
-    return { v$: useVuelidate() };
+    const { brandLink } = useBranding();
+    return { v$: useVuelidate(), brandLink };
   },
   data() {
     return {
@@ -370,8 +372,10 @@ export default {
     showInstagramRestrictionSettingsBanner() {
       return this.isMetaMessageSendingDisabled && this.isAnInstagramChannel;
     },
+    // Upstream Chatwoot's status page is the right destination only on an upstream installation; a branded
+    // one gets its configured SUPPORT_URL, and no link at all when it has none.
     metaRestrictionStatusUrl() {
-      return META_RESTRICTION_STATUS_URL;
+      return this.brandLink('support', META_RESTRICTION_STATUS_URL);
     },
     tiktokUnauthorized() {
       return this.isATiktokChannel && this.inbox.reauthorization_required;

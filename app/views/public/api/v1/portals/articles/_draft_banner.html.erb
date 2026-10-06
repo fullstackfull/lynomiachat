@@ -1,0 +1,7 @@
+<%# Shown only to a signed-in super admin previewing an unpublished article, so a preview can never be mistaken for
+    the live page. A visitor never reaches this: an unpublished article is not resolved for them at all. %>
+<% if article.present? && !article.published? %>
+  <div class="bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 px-4 py-3 text-sm text-center">
+    <%= t('public_portal.draft_preview') %>
+  </div>
+<% end %>

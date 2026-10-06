@@ -53,6 +53,9 @@ module Chatwoot
     config.eager_load_paths += Dir["#{Rails.root}/custom/app/**"]
     # rubocop:enable Rails/FilePath
     config.paths['app/views'].unshift('custom/app/views')
+    # Eager loading resolves the constant; this is what makes a custom helper module reach the views, the way a
+    # helper in app/helpers does. Without it `helper :all` only sees app/helpers.
+    config.paths['app/helpers'] << 'custom/app/helpers'
     config.paths['db/migrate'] << 'custom/db/migrate'
     # --- end Lynomia customization ---
 

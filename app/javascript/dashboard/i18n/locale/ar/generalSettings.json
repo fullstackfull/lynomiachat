@@ -225,7 +225,9 @@
       "LIGHT_MODE": "فاتح",
       "DARK_MODE": "مظلم",
       "SYSTEM_MODE": "النظام",
-      "SNOOZE_NOTIFICATION": "تأجيل الإشعارات"
+      "SNOOZE_NOTIFICATION": "تأجيل الإشعارات",
+      "GO_TO_SETTINGS_FLOW_BUILDER": "الذهاب إلى منشئ التدفقات",
+      "GO_TO_SETTINGS_COMMERCE": "الذهاب إلى المتجر"
     }
   },
   "DASHBOARD_APPS": {

@@ -12,7 +12,13 @@ import {
   findAccountLabel,
   findSharedAudience,
   labelIdFromQuery,
+  audienceReturnRoute,
 } from 'dashboard/helper/audienceHelper';
+import {
+  saveCampaignDraft,
+  takeCampaignDraft,
+  clearCampaignDraft,
+} from 'dashboard/helper/campaignDraft';
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
@@ -37,6 +43,9 @@ const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
 const confirmDeleteCampaignDialogRef = ref(null);
 const initialSharedAudienceIds = ref([]);
 const initialLabelIds = ref([]);
+const initialDraft = ref(null);
+
+const CAMPAIGN_TYPE = 'whatsapp';
 const accountLabels = useMapGetter('labels/getLabels');
 
 const WhatsAppCampaigns = computed(
@@ -60,7 +69,10 @@ const handleDelete = campaign => {
 onActivated(async () => {
   const audienceId = audienceIdFromQuery(route.query);
   const labelId = labelIdFromQuery(route.query);
-  if (!audienceId && !labelId) return;
+  // A draft is here only when this page sent the user to Contacts to build an audience. Taking it also clears
+  // it, so a later visit starts on an empty form.
+  initialDraft.value = takeCampaignDraft(CAMPAIGN_TYPE, Date.now());
+  if (!audienceId && !labelId && !initialDraft.value) return;
 
   if (audienceId) {
     await store.dispatch('customViews/get', 'contact');
@@ -78,11 +90,21 @@ onActivated(async () => {
   toggleWhatsAppCampaignDialog(true);
 });
 
-// Closing clears the prefill, so the next "New campaign" starts empty.
+// Closing clears the prefill, so the next "New campaign" starts empty. Closing is also the user saying they are
+// finished with this campaign, so the draft goes with it.
 const closeDialog = () => {
   toggleWhatsAppCampaignDialog(false);
   initialSharedAudienceIds.value = [];
   initialLabelIds.value = [];
+  initialDraft.value = null;
+  clearCampaignDraft(CAMPAIGN_TYPE);
+};
+
+// "Create a shared audience", from the recipients section. The campaign is kept here and Contacts is told where
+// to come back to, so the user does not have to rebuild it.
+const handleCreateAudience = draft => {
+  saveCampaignDraft(CAMPAIGN_TYPE, draft, Date.now());
+  router.push(audienceReturnRoute('campaigns_whatsapp_index'));
 };
 
 const handleAnalytics = campaign => {
@@ -105,7 +127,9 @@ const handleAnalytics = campaign => {
         v-if="showWhatsAppCampaignDialog"
         :initial-shared-audience-ids="initialSharedAudienceIds"
         :initial-label-ids="initialLabelIds"
+        :initial-draft="initialDraft"
         @close="closeDialog"
+        @create-audience="handleCreateAudience"
       />
     </template>
     <div

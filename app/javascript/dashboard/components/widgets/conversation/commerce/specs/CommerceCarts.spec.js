@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import CommerceAPI from 'dashboard/api/commerce';
 import { useAlert } from 'dashboard/composables';
@@ -7,6 +8,16 @@ import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { mockIsAdmin } from 'dashboard/composables/useAdmin';
 import CommerceCarts from '../CommerceCarts.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 vi.mock('dashboard/api/commerce', () => ({
   default: { getCarts: vi.fn(), prepareRecovery: vi.fn() },
@@ -37,7 +48,10 @@ const mountCarts = async (stores, props = {}) => {
   const wrapper = mount(CommerceCarts, {
     props: { conversationId: 3, ...props },
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'en', messages: { en } })],
+      plugins: [
+        createI18n({ legacy: false, locale: 'en', messages: { en } }),
+        brandingStore,
+      ],
     },
   });
   await flushPromises();

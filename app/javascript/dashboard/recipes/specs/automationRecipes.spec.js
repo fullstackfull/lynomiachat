@@ -309,7 +309,12 @@ describe('AUTOMATION_RECIPES', () => {
 
   it('adds no label action when the user chose no label', () => {
     built({ ...VALUES, labels: [] }).forEach(([item, rule]) => {
-      if (item.id === 'commerce_order_shipped_label') return;
+      // A recipe whose whole point is the label asks for one, and the wizard will not let it through empty.
+      const labelsRequired = item.inputs.some(
+        input => input.key === 'labels' && input.required
+      );
+      if (labelsRequired) return;
+
       expect(
         rule.actions.map(action => action.action_name),
         item.id

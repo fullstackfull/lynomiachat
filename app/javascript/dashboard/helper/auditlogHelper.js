@@ -30,6 +30,11 @@ const translationKeys = {
   'customfilter:create': `AUDIT_LOGS.AUDIENCE.ADD`,
   'customfilter:update': `AUDIT_LOGS.AUDIENCE.EDIT`,
   'customfilter:destroy': `AUDIT_LOGS.AUDIENCE.DELETE`,
+  // Lynomia WhatsApp Template Manager. The key is the auditable type downcased, so a namespaced model keeps its
+  // `whatsapp::` prefix; without these three the rows render unlabelled.
+  'whatsapp::messagetemplate:create': `AUDIT_LOGS.WHATSAPP_TEMPLATE.ADD`,
+  'whatsapp::messagetemplate:update': `AUDIT_LOGS.WHATSAPP_TEMPLATE.EDIT`,
+  'whatsapp::messagetemplate:destroy': `AUDIT_LOGS.WHATSAPP_TEMPLATE.DELETE`,
   'accountuser:create': `AUDIT_LOGS.ACCOUNT_USER.ADD`,
   'accountuser:update:self': `AUDIT_LOGS.ACCOUNT_USER.EDIT.SELF`,
   'accountuser:update:other': `AUDIT_LOGS.ACCOUNT_USER.EDIT.OTHER`,
@@ -247,6 +252,7 @@ export const EVENT_TYPE_GROUPS = [
       { value: 'AutomationRule', key: 'AUTOMATION_RULES' },
       { value: 'Macro', key: 'MACROS' },
       { value: 'CustomFilter', key: 'AUDIENCES' },
+      { value: 'Whatsapp::MessageTemplate', key: 'WHATSAPP_TEMPLATES' },
     ],
   },
   {

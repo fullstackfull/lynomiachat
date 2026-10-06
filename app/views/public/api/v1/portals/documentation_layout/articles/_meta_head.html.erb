@@ -1,4 +1,5 @@
 <title><%= article.title %> | <%= portal.display_title(article.locale) %></title>
+<link rel="canonical" href="<%= portal_canonical_url(portal, article) %>">
 <% if article.meta["title"].present? %>
   <meta name="title" content="<%= article.meta["title"] %>">
   <meta property="og:title" content="<%= article.meta["title"] %>">

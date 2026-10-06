@@ -307,7 +307,12 @@
       "AUDIENCES": {
         "LABEL": "Shared audiences",
         "PLACEHOLDER": "Select shared audiences",
-        "EMPTY": "No shared audiences yet. Save a contact filter as a shared audience in Contacts."
+        "EMPTY": "No shared audiences yet. Save a contact filter as a shared audience in Contacts.",
+        "LOADING": "Loading your shared audiences…",
+        "NONE_TITLE": "No shared audiences yet",
+        "CREATE": "Create a shared audience",
+        "CREATE_HINT": "We will keep this campaign while you build one.",
+        "CONDITIONS": "No conditions | 1 condition | {count} conditions"
       },
       "ERROR": "Select at least one label or shared audience",
       "COUNT": {

@@ -9,12 +9,51 @@ import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import Button from 'dashboard/components-next/button/Button.vue';
 import { BaseTable } from 'dashboard/components-next/table';
+import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
 import { useAdmin } from 'dashboard/composables/useAdmin';
+import { useRouter } from 'vue-router';
+import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
+import { MACRO_STARTERS } from 'dashboard/recipes/macroStarters';
 
 const getters = useStoreGetters();
 const store = useStore();
 const { t } = useI18n();
 const { isAdmin } = useAdmin();
+const router = useRouter();
+
+const starterDialogRef = ref(null);
+const isCreatingFromStarter = ref(false);
+
+const openStarters = () => starterDialogRef.value?.open();
+
+// A starter produces an ordinary macro through the ordinary endpoint, so the policy, the validation and the
+// visibility rule are the usual ones - including that an agent's macro is forced to personal whatever is asked
+// for (`Macro#set_visibility`). The editor opens on the result, because a starter is a starting point.
+const createFromStarter = async (starter, values) => {
+  isCreatingFromStarter.value = true;
+  try {
+    const created = await store.dispatch('macros/create', {
+      ...starter.build(values),
+      name: t(starter.name),
+      visibility: isAdmin.value ? 'global' : 'personal',
+    });
+    starterDialogRef.value?.close();
+    useAlert(t('RECIPES.CREATED'));
+    if (created?.id) {
+      router.push({ name: 'macros_edit', params: { macroId: created.id } });
+    }
+  } catch {
+    useAlert(t('RECIPES.CREATE_ERROR'));
+  } finally {
+    isCreatingFromStarter.value = false;
+  }
+};
+
+// Starting from nothing stays exactly where it was, and goes to the same full-page editor.
+const startFromScratch = () => {
+  starterDialogRef.value?.close();
+  router.push({ name: 'macros_new' });
+};
 
 const showDeleteConfirmationPopup = ref(false);
 const selectedMacro = ref({});
@@ -137,6 +176,15 @@ const tableHeaders = computed(() => {
           </span>
         </template>
         <template #actions>
+          <Button
+            :label="$t('RECIPES.MACRO.ACTION')"
+            size="sm"
+            faded
+            slate
+            icon="i-lucide-sparkles"
+            data-test-id="macro-starters"
+            @click="openStarters"
+          />
           <router-link
             :to="{ name: 'macros_new' }"
             :aria-label="$t('MACROS.HEADER_BTN_TXT')"
@@ -150,6 +198,34 @@ const tableHeaders = computed(() => {
           </router-link>
         </template>
       </BaseSettingsHeader>
+    </template>
+    <!-- An empty macro library answered with one sentence was the last starter catalogue nobody could find from
+    the page it belongs to. Same pair of offers as automation rules and flows. -->
+    <template #emptyState>
+      <EmptyState
+        icon="i-lucide-toy-brick"
+        :title="$t('MACROS.LIST.404')"
+        :description="$t('MACROS.LIST.EMPTY_HINT')"
+      >
+        <template #action>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              :label="$t('RECIPES.MACRO.ACTION')"
+              size="sm"
+              icon="i-lucide-sparkles"
+              data-test-id="macro-empty-starters"
+              @click="openStarters"
+            />
+            <Button
+              :label="$t('MACROS.HEADER_BTN_TXT')"
+              size="sm"
+              color="slate"
+              variant="faded"
+              @click="startFromScratch"
+            />
+          </div>
+        </template>
+      </EmptyState>
     </template>
     <template #body>
       <BaseTable
@@ -190,4 +266,13 @@ const tableHeaders = computed(() => {
       />
     </template>
   </SettingsLayout>
+  <RecipeDialog
+    ref="starterDialogRef"
+    :recipes="MACRO_STARTERS"
+    :title="$t('RECIPES.MACRO.TITLE')"
+    :description="$t('RECIPES.MACRO.DESCRIPTION')"
+    :is-creating="isCreatingFromStarter"
+    @create="createFromStarter"
+    @scratch="startFromScratch"
+  />
 </template>

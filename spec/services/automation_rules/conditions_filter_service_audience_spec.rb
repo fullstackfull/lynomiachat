@@ -3,6 +3,10 @@ require 'rails_helper'
 # The "Contact audience is in / is not in" condition in Chatwoot automation rules
 # (docs/automation/03-audience-and-commerce-conditions.md).
 RSpec.describe AutomationRules::ConditionsFilterService do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:inbox) { create(:inbox, account: account) }
@@ -127,5 +131,18 @@ RSpec.describe AutomationRules::ConditionsFilterService do
       expect(account.automation_rules.new(name: 'x', event_name: 'conversation_created', conditions: [condition('equal_to', [shared.id])],
                                           actions: [])).not_to be_valid
     end
+  end
+
+  it 'names the installation, not a hard-coded product, when it refuses a rule because the extensions are off' do
+    InstallationConfig.where(name: 'INSTALLATION_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
+    GlobalConfig.clear_cache
+    invalid_rule = account.automation_rules.new(name: 'x', event_name: 'conversation_created', actions: [],
+                                                conditions: [condition('equal_to', [shared.id])])
+
+    with_modified_env LYNOMIA_AUTOMATION_EXTENSIONS_ENABLED: 'false' do
+      invalid_rule.valid?
+    end
+
+    expect(invalid_rule.errors[:conditions].join).to include('Acme Desk')
   end
 end

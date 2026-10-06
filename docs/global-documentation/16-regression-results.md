@@ -1,0 +1,221 @@
+# 16 — Regression results
+
+Every gate in this document was run against the phase's own head, on the same machine and the same database as the
+phase before it, so the numbers are comparable rather than merely green. The baseline throughout is the
+WhatsApp Template Manager phase (P3) at `53dd50b8`, recorded in
+`docs/whatsapp-template-manager/FINAL-CHECKPOINT.md` items 64–67.
+
+---
+
+## 1. The gates, against the P3 baseline
+
+| Gate | P3 baseline | This phase | Reading |
+|---|---|---|---|
+| Full RSpec | 10,635 examples, **2 failures**, 67 pending | **10,661 examples, 2 failures, 67 pending**, 40m07s | +26 examples, and **the same two failures** — zero regressions |
+| Full Vitest | 492 files, 5,170 tests, **0 failures** | **493 files, 5,177 tests, 0 failures** | +1 file, +7 tests — exactly this phase's `featureHelper.spec.js` |
+| ESLint | **0 errors**, 510 warnings | **0 errors, 510 warnings** | identical. No warning sits in any file this phase touched |
+| RuboCop | 3,442 files, **0 offences** | **3,458 files, 0 offences** | +16 files — this phase's own Ruby |
+| Production asset build | clean | *see §4* | |
+| Documentation browser journey | — | **22 / 22** | new to this phase |
+| Ownership and tenancy request spec | — | **25 examples, 0 failures** | new to this phase |
+
+---
+
+## 2. RSpec
+
+**10,661 examples, 2 failures, 67 pending**, in 40 minutes 7 seconds, on head `6da3a419` with nothing else running
+on the machine. Log: `p4-rspec-final.txt`.
+
+The two failures are **exactly** the P3 baseline pair, so this phase introduced none:
+
+- `spec/builders/agent_builder_spec.rb:47`
+- `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`
+
+The +26 examples over P3's 10,635 are accounted for exactly: **25** in the new
+`spec/requests/documentation/global_ownership_spec.rb`, and **1** added to
+`spec/controllers/public/api/v1/portals/articles_controller_spec.rb` (an article slug the portal does not have must
+return 404, which nothing asserted).
+
+### The first run reported 79 failures. Here is why, with evidence
+
+An earlier full run of the same code reported **79 failures**. That number is not a regression and it is not a
+flake — it has a mechanism, and the mechanism was mine as the operator.
+
+`config/environments/test.rb` sets `config.cache_classes = false` and `config.eager_load = false`, so the test
+process **reloads classes when files on disk change**. During that run I was editing the tree: `config/application.rb`,
+`app/helpers/portal_helper.rb`, `app/helpers/super_admin/branding_helper.rb`, a new
+`custom/app/helpers/documentation_helper.rb`, eighteen locale JSON files and a Vue component. Rails unloaded and
+re-autoloaded constants mid-suite, and the failures carry that signature unmistakably:
+
+| Symptom | What it proves |
+|---|---|
+| `NameError: uninitialized constant Commerce::Providers::Salla::Normalizer` at `salla.rb:138` | a nested constant could not be autoloaded after an unload |
+| `expected [… #<Commerce::RecoveryListener:0x…cefa00>] to include #<Commerce::RecoveryListener:0x…bb5bed8>` | **two distinct class objects of the same name** — the dispatcher held an instance of the pre-reload class while `described_class` pointed at the post-reload one |
+| shoulda `have_many … class_name => ::Channel::FacebookPage` failing | a matcher comparing class constants across the same boundary |
+
+All **135** commerce provider examples pass in isolation (`spec/services/commerce/providers/`, 0 failures), which is
+the control. This repository already knows about the condition: its own CLAUDE.md says *"Specs in
+parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting
+raised errors."*
+
+**Four of the 79 were real**, and they were a regression this phase introduced — see §2.1. They were fixed, and the
+run above is the measurement taken afterwards on a tree nobody was touching.
+
+### 2.1 The regression that run found
+
+`SuperAdmin::BrandingHelper#application_title` used `super` as its fallback. `super` there is
+`Administrate::ApplicationHelper#application_title`, which is only in the view's ancestor chain inside an
+Administrate controller. This phase's branding sweep had put the helper on two pages that are **not** Administrate
+controllers:
+
+- `app/views/installation/onboarding/index.html.erb` — the first screen of a fresh installation
+- `app/views/super_admin/devise/sessions/new.html.erb` — the Super Admin sign-in page
+
+Both raised `NoMethodError (super: no superclass method 'application_title')` and returned **500** whenever
+`INSTALLATION_NAME` was blank. That is not a corner: a fresh installation reads exactly those two pages *before*
+anything has seeded its name. It did not show up in manual checking because this machine's `INSTALLATION_NAME` is
+set, so `.presence ||` short-circuits and `super` is never reached.
+
+The fallback is now Administrate's own answer written out
+(`Rails.application.class.module_parent_name.titlecase`). Four examples went from 500 to green: the Super Admin
+sign-in page, the onboarding page, and the two `search_indexing_spec.rb` examples that read them.
+
+The P3 baseline's two failures are both pre-existing and were already pre-existing at P2:
+
+- `spec/builders/agent_builder_spec.rb:47`
+- `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`
+
+Neither is in a file or a subsystem this phase touches. **A failure beyond that pair is a regression**, and is treated
+as one rather than as a flake — the rule this project has used since P2 is that a failure is reproduced in isolation
+and root-caused before it is characterised at all.
+
+### Specs this phase changed, and why
+
+Three model specs were edited, and in each case the edit records a genuine change to the association contract rather
+than accommodating a broken test:
+
+| Spec | Change | Why |
+|---|---|---|
+| `spec/models/portal_spec.rb` | `belong_to(:account)` → `.optional` | a platform portal belongs to no account; the association genuinely became optional |
+| `spec/models/category_spec.rb` | same | a platform category inherits that |
+| `spec/models/article_spec.rb` | same | a platform article inherits that |
+
+One upstream spec was rewritten because it asserted a defect:
+
+| Spec | Was | Now |
+|---|---|---|
+| `spec/controllers/public/api/v1/portals/articles_controller_spec.rb` — *does not increment the view count if the article is not published* | expected a **2xx** for an unpublished article, and only asserted the view count had not moved | expects **404** |
+
+That spec was the reason the defect survived: a draft article was publicly readable, with its full content, because
+`set_article` resolved against `@portal.articles` rather than `@portal.articles.published`. The spec's own name said
+the article was not published; its expectation said the response was a success. Fixing the controller made the old
+expectation fail, which is how the defect surfaced. Both are in §3 of
+[14-security-and-tenancy.md](14-security-and-tenancy.md).
+
+---
+
+## 3. What was proven in a browser, not asserted
+
+### The documentation journey — 22 / 22
+
+`/opt/node-tools/p4-docs.mjs`, Chromium, against the production-mode server on this machine.
+
+| | Check |
+|---|---|
+| 1 | the `/docs` address lands on the documentation |
+| 2 | the eleven sections are all there |
+| 3 | it is branded as Lynomia Chat, with no upstream brand in the chrome |
+| 4 | a contextual help key opens its article |
+| 5 | the article explains the rule, not the buttons (5,409 characters of body) |
+| 6 | no upstream brand in the content |
+| 7 | the provider matrix states what each platform cannot do |
+| 8 | search finds the audience articles |
+| 9 | the Arabic documentation is in Arabic (`lang=ar`) |
+| 10 | and lays out right to left (`dir=rtl`) |
+| 11 | it uses the product's own Arabic words |
+| 12 | Arabic search finds an Arabic article |
+| 13 | the `/changelog` address lands on the changelog |
+| 14 | with a release note that says where the history starts |
+| 15 | an article that does not exist fails safely (404, not 500) |
+| 16–19 | the documentation fits 390 / 768 / 1024 / 1280 px with no sideways scroll |
+| 20 | the first tab stop is reachable and named |
+| 21 | every link and button has an accessible name (0 unnamed) |
+| 22 | no request the documentation makes fails |
+
+### Draft visibility — 9 / 9
+
+Part 10 asks that a draft never appear publicly and that a Super Admin be able to preview one before publishing.
+That was proven against the running installation with a real draft article, rather than only in a request spec:
+
+| | Check | Result |
+|---|---|---|
+| 1 | anonymous read of the draft | **404** |
+| 2 | anonymous read through the `/docs/:slug` help link | **404** |
+| 3 | the draft is absent from public search | **absent** |
+| 4 | the draft is absent from the public index | **absent** |
+| 5 | a Super Admin reaches the article list | **200** |
+| 6 | a Super Admin previews the unpublished draft | **200, and the draft body is rendered** |
+| 7 | the same URL stays refused for an anonymous visitor | **404** |
+| 8 | after publish, anonymous read succeeds | **200** |
+| 9 | after unpublish, anonymous read is refused again | **404** |
+
+The draft was deleted afterwards. The script is in the scratchpad as `p4-draft-proof.sh`.
+
+### Contextual help resolution — 43 / 43
+
+Every key in `documentationLinks.js` was resolved against the running installation. All 43 redirect (302) to a
+published article; none 404s. A dead help link is the failure mode a registry is supposed to prevent, so it is
+checked mechanically rather than by reading the file.
+
+---
+
+## 4. Sanitization
+
+The documentation renders Markdown through the same `ChatwootMarkdownRenderer` the tenant Help Center uses. Five
+payloads were rendered and the output inspected:
+
+| Payload | Result |
+|---|---|
+| `<script>alert(1)</script>` | neutralised |
+| `<img src=x onerror="alert(1)">` | neutralised |
+| `[click](javascript:alert(1))` | neutralised |
+| `<a href="#" onclick="alert(1)">x</a>` | neutralised |
+| `<iframe src="…"></iframe>` | neutralised |
+
+Two reflected paths were checked live: the public search parameter is HTML-escaped in the page, and an article's
+`meta.description` is escaped in the `<meta>` tag (an apostrophe arrives as `&#39;`).
+
+This is the renderer's existing behaviour, not something this phase added. It is recorded because the documentation
+portal is the first portal whose content is authored by the platform and read by everyone, so the question is worth
+answering with output rather than with trust.
+
+---
+
+## 5. SEO, as the page actually renders it
+
+Checked by reading the rendered article rather than the partial:
+
+| | |
+|---|---|
+| `<title>` | `WhatsApp templates \| Lynomia Chat Documentation` |
+| `<link rel="canonical">` | `…/hc/lynomia-docs/articles/whatsapp-templates`, and `…-ar` on the Arabic article |
+| `<meta name="title">`, `og:title` | the article's `meta['title']` |
+| `<meta name="description">`, `og:description` | the article's `meta['description']`, HTML-escaped |
+| `<meta name="tags">` | the article's `meta['tags']`, comma-joined |
+| `sitemap.xml` | 86 `<url>` entries, each with `lastmod` |
+| `/robots.txt` | `Disallow: /widget` only — the documentation is indexable |
+
+The canonical link was **absent** before this phase and is the one thing added here. Everything else is the existing
+portal SEO partial, fed from the article's `meta`. `og:image` is set by the controller and renders nothing because no
+image service is configured, which is upstream behaviour and was left alone.
+
+---
+
+## 6. What was not run, and why
+
+- **Real-provider verification of anything.** This phase adds no provider integration.
+- **A load test on documentation search.** Public search is portal-scoped and uses the existing pg_search index; the
+  corpus is 86 articles. There is nothing here that the tenant Help Center does not already do at larger scale.
+- **Accessibility audit beyond the journey's two checks.** The journey asserts a reachable, named first tab stop and
+  zero unnamed links and buttons across the documentation pages. A full audit of the Help Center layout is upstream
+  surface that this phase did not change.

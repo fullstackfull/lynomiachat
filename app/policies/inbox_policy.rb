@@ -34,6 +34,12 @@ class InboxPolicy < ApplicationPolicy
     true
   end
 
+  # Deliberately open at the CLASS level. `check_authorization` authorizes the Inbox *class*
+  # (`app/controllers/api/base_controller.rb:14-18`), so `record` here is `Inbox`, not an inbox — a membership
+  # test would evaluate `assigned_inboxes.include?(Inbox)`, which is always false, and would lock out
+  # administrators too. The record-level gate runs one callback earlier: `fetch_inbox` loads from
+  # `Current.account.inboxes` and then `authorize @inbox, :show?`, so a foreign-account id 404s and a non-member
+  # 401s before this is consulted.
   def message_templates?
     true
   end

@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe AdministratorNotifications::AccountNotificationMailer do
+  # InstallationConfig rows roll back with the transaction, but GlobalConfig caches them in Redis, which does
+  # not. Clearing it here keeps a value set for one example out of the next one.
+  after { GlobalConfig.clear_cache }
+
   let(:account) { create(:account, name: 'Test Account') }
   let(:mailer) { described_class.with(account: account) }
   let(:class_instance) { described_class.new }
@@ -17,12 +21,34 @@ RSpec.describe AdministratorNotifications::AccountNotificationMailer do
       mail = mailer.account_deletion_user_initiated(account, 'manual_deletion')
       expect(mail.subject).to eq('Your Chatwoot account deletion has been scheduled')
     end
+
+    it 'names the installation rather than a hard-coded product in the subject and the body' do
+      InstallationConfig.where(name: 'BRAND_NAME').first_or_create(value: 'Acme Desk').update!(value: 'Acme Desk')
+      GlobalConfig.clear_cache
+
+      mail = mailer.account_deletion_user_initiated(account, 'manual_deletion')
+
+      expect(mail.subject).to eq('Your Acme Desk account deletion has been scheduled')
+      expect(mail.body.encoded).to include('The Acme Desk Team')
+      expect(mail.body.encoded).not_to include('Chatwoot Team')
+    end
   end
 
   describe '#account_deletion_for_inactivity' do
     it 'sets the correct subject for system-initiated deletion' do
       mail = mailer.account_deletion_for_inactivity(account, 'Account Inactive')
       expect(mail.subject).to eq('Your Chatwoot account is scheduled for deletion due to inactivity')
+    end
+
+    it 'links to the configured support destination, and omits the line when none is configured' do
+      InstallationConfig.where(name: 'SUPPORT_URL').first_or_create(value: '').update!(value: '')
+      GlobalConfig.clear_cache
+      expect(mailer.account_deletion_for_inactivity(account, 'Account Inactive').body.encoded).not_to include('get in touch')
+
+      InstallationConfig.find_by(name: 'SUPPORT_URL').update!(value: 'https://help.acme.example')
+      GlobalConfig.clear_cache
+
+      expect(mailer.account_deletion_for_inactivity(account, 'Account Inactive').body.encoded).to include('https://help.acme.example')
     end
   end
 

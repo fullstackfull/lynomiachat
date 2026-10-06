@@ -1,9 +1,20 @@
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
+import { createStore } from 'vuex';
 import en from 'dashboard/i18n/locale/en/commerce.json';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import CommerceOrderItem from '../CommerceOrderItem.vue';
+
+// Commerce copy names the product through an `{installationName}` placeholder, which the components read from
+// globalConfig. A deliberately unbranded name here proves the substitution happens rather than restating
+// whatever this installation is currently called.
+const brandingStore = createStore({
+  getters: {
+    'globalConfig/get': () => ({ installationName: 'Acme Desk' }),
+    'globalConfig/isACustomBrandedInstance': () => true,
+  },
+});
 
 vi.mock('dashboard/composables', () => ({ useAlert: vi.fn() }));
 
@@ -32,7 +43,10 @@ const mountOrder = order =>
   mount(CommerceOrderItem, {
     props: { order: { ...baseOrder, ...order } },
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'en', messages: { en } })],
+      plugins: [
+        createI18n({ legacy: false, locale: 'en', messages: { en } }),
+        brandingStore,
+      ],
     },
   });
 

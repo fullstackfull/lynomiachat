@@ -94,7 +94,6 @@
       },
       "DELAY_BADGE": "Runs after {delay}",
       "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on.",
-      "RECIPES": "Recipes",
       "EMPTY_HINT": "Start from a ready-made recipe, or build a rule condition by condition. A recipe arrives switched off, for you to read before it runs."
     },
     "DELETE": {
@@ -255,7 +254,7 @@
       "IS_NOT_IN": "Is not in",
       "EVENT_STORE": "Order store",
       "EVENT_PROVIDER": "Order store platform",
-      "COMMERCE_TRIGGER_NOTE": "Runs when Lynomia reads a change in a linked customer's orders (a store update, or an agent opening the conversation), on the contact's latest conversation. Messages to the customer aren't available on Commerce triggers."
+      "COMMERCE_TRIGGER_NOTE": "Runs when {installationName} reads a change in a linked customer's orders (a store update, or an agent opening the conversation), on the contact's latest conversation. Messages to the customer aren't available on Commerce triggers."
     }
   }
 }

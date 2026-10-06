@@ -1,6 +1,5 @@
 <script setup>
 import { computed, useSlots } from 'vue';
-import CustomBrandPolicyWrapper from 'dashboard/components/CustomBrandPolicyWrapper.vue';
 import { getHelpUrlForFeature } from '../../../../helper/featureHelper';
 import BackButton from '../../../../components/widgets/BackButton.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
@@ -39,6 +38,11 @@ const searchQuery = defineModel('searchQuery', { type: String, default: '' });
 
 // Reactive: several pages bind `featureName` to data that arrives after setup, and a one-shot read
 // left those pages permanently without their help link.
+//
+// The link used to sit inside CustomBrandPolicyWrapper, which hid it on every branded installation -- correct when
+// the only destination was upstream's help centre. `getHelpUrlForFeature` now decides per feature: a branded
+// installation gets its own documentation article, or nothing where it has no article, and never an upstream URL
+// (docs/global-documentation/12-contextual-help.md). The wrapper would only hide a link that is ours.
 const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
 </script>
 
@@ -75,21 +79,19 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
       >
         <slot name="description">{{ description }}</slot>
       </p>
-      <CustomBrandPolicyWrapper :show-on-custom-branded-instance="false">
-        <a
-          v-if="helpURL && linkText"
-          :href="helpURL"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-blue-11 hover:underline mb-2"
-        >
-          {{ linkText }}
-          <Icon
-            icon="i-lucide-chevron-right"
-            class="flex-shrink-0 text-n-blue-11 size-4"
-          />
-        </a>
-      </CustomBrandPolicyWrapper>
+      <a
+        v-if="helpURL && linkText"
+        :href="helpURL"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-blue-11 hover:underline mb-2"
+      >
+        {{ linkText }}
+        <Icon
+          icon="i-lucide-chevron-right"
+          class="flex-shrink-0 text-n-blue-11 size-4"
+        />
+      </a>
       <slot name="meta" />
     </div>
   </div>

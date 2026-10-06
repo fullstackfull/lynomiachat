@@ -8,10 +8,7 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
   def perform(params = {})
     channel = find_channel_from_whatsapp_business_payload(params)
 
-    if channel_is_inactive?(channel)
-      Rails.logger.warn("Inactive WhatsApp channel: #{channel&.phone_number || "unknown - #{params[:phone_number]}"}")
-      return
-    end
+    return unless ingestible?(channel, params)
 
     sender_id = contact_sender_id(params)
     return process_events(channel, params) if sender_id.blank?
@@ -145,17 +142,62 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
     [system[:parent_user_id], system[:user_id], system[:wa_id], message[:from]].compact_blank.first
   end
 
-  def channel_is_inactive?(channel)
-    return true if channel.blank?
-    # Only skip for embedded signup when reauth is required; manual flow uses API keys and should still receive webhooks
-    return true if channel.reauthorization_required? && embedded_signup_channel?(channel)
-    return true unless channel.account.active?
+  # Whether this payload can be ingested at all, and a truthful operational record when it cannot.
+  #
+  # This used to also refuse a channel whose `reauthorization_required?` flag was set, for an embedded-signup
+  # source. That dropped every inbound customer message for the channel — permanently, since the flag has no
+  # expiry — while outbound kept working, and it did so after the controller had already answered Meta 200 OK, so
+  # Meta never retried and Sidekiq recorded a success.
+  #
+  # It protected nothing. Meta delivers these payloads to us: resolving a Contact, a Conversation and a Message is
+  # entirely local and needs no Meta credential. The only inbound step that does is the media download, and
+  # `Whatsapp::IncomingMessageBaseService#attach_files` already returns early when the download fails and still
+  # saves the message — an attachment-less message is a supported state, not a broken one. So a channel awaiting
+  # reauthorization now ingests, and loses at most its attachments.
+  #
+  # The two refusals that remain are the ones where there is genuinely nothing to write to. Neither is retryable:
+  # a payload naming a phone_number_id this installation does not own will never become ingestible, and retrying
+  # would only repeat the drop. Both are therefore reported rather than retried.
+  def ingestible?(channel, params)
+    return report_unroutable(params) if channel.blank?
+    return report_inactive_account(channel) unless channel.account.active?
 
+    true
+  end
+
+  # No channel matches the payload's phone_number_id. Resolution depends entirely on a strict match against
+  # `provider_config['phone_number_id']`, so this is usually a stale or mistyped id on the channel, or a number
+  # that belongs to another installation sharing the Meta app.
+  def report_unroutable(params)
+    metadata = whatsapp_business_metadata(params)
+    log_ingest_failure(
+      'unroutable_payload',
+      phone_number_id: metadata[:phone_number_id],
+      url_phone_number: params[:phone_number],
+      detail: 'no Channel::Whatsapp has this phone_number_id in provider_config'
+    )
     false
   end
 
-  def embedded_signup_channel?(channel)
-    (channel.provider_config || {}).to_h['source'] == 'embedded_signup'
+  def report_inactive_account(channel)
+    log_ingest_failure(
+      'inactive_account',
+      channel_id: channel.id,
+      inbox_id: channel.inbox&.id,
+      account_id: channel.account_id,
+      phone_number_id: channel.provider_config['phone_number_id'],
+      detail: 'the account is not active, so inbound is not ingested'
+    )
+    false
+  end
+
+  # One structured line per dropped inbound payload, because a permanently discarded customer message must not be
+  # visible only as a bare warning. No token, no secret, no message body — the fields are what an operator needs
+  # to find the channel and the Meta-side record.
+  def log_ingest_failure(event, **fields)
+    Rails.logger.error(
+      "[WHATSAPP INGEST] event=#{event} #{fields.compact.map { |key, value| "#{key}=#{value}" }.join(' ')}"
+    )
   end
 
   def find_channel_by_url_param(params)
@@ -164,17 +206,32 @@ class Webhooks::WhatsappEventsJob < MutexApplicationJob
     Channel::Whatsapp.find_by(phone_number: params[:phone_number])
   end
 
+  # For a Cloud API delivery the payload's own metadata is the ONLY acceptable source, and the URL segment is
+  # deliberately not consulted — not even as a fallback.
+  #
+  # An audit flagged `find_channel_by_url_param` as unreachable here and suggested reviving it. That is wrong, and
+  # `spec/jobs/webhooks/whatsapp_events_job_spec.rb:44` already pins why: one Meta app serves many numbers
+  # (chatwoot/chatwoot#4712), and the URL is whatever the phone-level callback override was registered with. If the
+  # metadata names a number this installation does not own, falling back to the URL would file that customer's
+  # message under a DIFFERENT channel's inbox — a cross-number misattribution. Refusing the payload and saying so
+  # loudly is the correct behaviour; `report_unroutable` is what makes it visible.
+  #
+  # The URL lookup stays reachable for providers that post a different payload shape to the per-number route
+  # (360dialog, `provider == 'default'`), which is the branch below.
   def find_channel_from_whatsapp_business_payload(params)
-    # for the case where facebook cloud api support multiple numbers for a single app
-    # https://github.com/chatwoot/chatwoot/issues/4712#issuecomment-1173838350
-    # we will give priority to the phone_number in the payload
     return get_channel_from_wb_payload(params) if params[:object] == 'whatsapp_business_account'
 
     find_channel_by_url_param(params)
   end
 
+  def whatsapp_business_metadata(params)
+    return {} unless params[:object] == 'whatsapp_business_account'
+
+    params[:entry]&.first&.dig(:changes)&.first&.dig(:value, :metadata) || {}
+  end
+
   def get_channel_from_wb_payload(wb_params)
-    metadata = wb_params[:entry].first[:changes].first.dig(:value, :metadata) || {}
+    metadata = whatsapp_business_metadata(wb_params)
     Whatsapp::WebhookChannelFinderService.new(
       display_phone_number: metadata[:display_phone_number],
       phone_number_id: metadata[:phone_number_id]

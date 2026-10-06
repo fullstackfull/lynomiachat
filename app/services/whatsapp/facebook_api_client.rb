@@ -1,13 +1,21 @@
 class Whatsapp::FacebookApiClient
   BASE_URI = 'https://graph.facebook.com'.freeze
+  # The one Graph version this installation talks, overridable per installation via the WHATSAPP_API_VERSION
+  # config. v24.0 and not lower because `Whatsapp::HealthService` requires at least 24.0 for
+  # `whatsapp_business_manager_messaging_limit` and clamps to it anyway — a lower default would leave two
+  # versions in play. Expires 2028-02-18 (docs/product-enablement/12-proposed-phases.md D3).
+  DEFAULT_API_VERSION = 'v24.0'.freeze
   # Base webhook fields resent on every subscribe so Meta won't reset to defaults. `calls` is added by callers only when voice is enabled.
-  WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes].freeze
+  WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes message_template_status_update].freeze
 
   def initialize(access_token = nil)
     @access_token = access_token
-    @api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', 'v22.0')
+    @api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', DEFAULT_API_VERSION)
   end
 
+  # EXCEPTION, deliberate: this is the token exchange itself, so there is no bearer token to send yet. Meta's
+  # documented contract for /oauth/access_token takes client_id, client_secret and code as parameters. It cannot
+  # use header auth and is not changed.
   def exchange_code_for_token(code)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/oauth/access_token",
@@ -21,10 +29,12 @@ class Whatsapp::FacebookApiClient
     handle_response(response, 'Token exchange failed')
   end
 
+  # Header auth, matching `fetch_all_phone_numbers` below and every other read in this class; this one was the
+  # single holdout that still sent the token as a query parameter.
   def fetch_phone_numbers(waba_id)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{waba_id}/phone_numbers",
-      query: { access_token: @access_token }
+      headers: request_headers
     )
 
     handle_response(response, 'WABA phone numbers fetch failed')
@@ -97,6 +107,8 @@ class Whatsapp::FacebookApiClient
     handle_response(response, 'Phone number fetch failed')
   end
 
+  # EXCEPTION, deliberate: /debug_token's `input_token` is the subject being inspected rather than a credential,
+  # and Meta's contract passes the authorizing app token alongside it as `access_token`. Left as documented.
   def debug_token(input_token)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/debug_token",

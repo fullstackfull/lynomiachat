@@ -7,7 +7,13 @@ import { CAMPAIGNS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events.js';
 
 import SMSCampaignForm from 'dashboard/components-next/Campaigns/Pages/CampaignPage/SMSCampaign/SMSCampaignForm.vue';
 
-const emit = defineEmits(['close']);
+defineProps({
+  initialSharedAudienceIds: { type: Array, default: () => [] },
+  initialLabelIds: { type: Array, default: () => [] },
+  initialDraft: { type: Object, default: null },
+});
+
+const emit = defineEmits(['close', 'createAudience']);
 
 const store = useStore();
 const { t } = useI18n();
@@ -44,6 +50,13 @@ const handleClose = () => emit('close');
     <h3 class="text-base font-medium text-n-slate-12">
       {{ t(`CAMPAIGN.SMS.CREATE.TITLE`) }}
     </h3>
-    <SMSCampaignForm @submit="handleSubmit" @cancel="handleClose" />
+    <SMSCampaignForm
+      :initial-shared-audience-ids="initialSharedAudienceIds"
+      :initial-label-ids="initialLabelIds"
+      :initial-draft="initialDraft"
+      @submit="handleSubmit"
+      @cancel="handleClose"
+      @create-audience="draft => emit('createAudience', draft)"
+    />
   </div>
 </template>

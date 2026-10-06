@@ -19,6 +19,8 @@
       "THIS_WEEK": "This week",
       "MONTH_TO_DATE": "This month",
       "CUSTOM_RANGE": "تحديد نطاق التاريخ"
-    }
+    },
+    "SHOW_EARLIER_DATES": "عرض تواريخ أقدم",
+    "SHOW_LATER_DATES": "عرض تواريخ أحدث"
   }
 }

@@ -1,0 +1,115 @@
+# Lynomia Chat documentation: the sections, their order, and their names in each language.
+# The articles themselves are Markdown files under <locale>/<section>/<slug>.md with YAML front matter.
+# Seeded by `rails documentation:content` (custom/app/services/documentation/content_seeder.rb).
+#
+# The structure and the reasoning behind it are in docs/global-documentation/06-information-architecture.md.
+sections:
+  - slug: getting-started
+    position: 10
+    icon: rocket
+    en:
+      name: Getting started
+      description: Set up Lynomia Chat and handle your first conversation.
+    ar:
+      name: البداية
+      description: جهّز لينوميا تشات وتعامل مع أول محادثة لك.
+
+  - slug: conversations
+    position: 20
+    icon: messages-square
+    en:
+      name: Conversations
+      description: Working in the inbox day to day.
+    ar:
+      name: المحادثات
+      description: العمل في صندوق الوارد يوماً بيوم.
+
+  - slug: contacts
+    position: 30
+    icon: users
+    en:
+      name: Contacts
+      description: Who your customers are, and how to organise them.
+    ar:
+      name: جهات الاتصال
+      description: من هم عملاؤك، وكيف تنظّمهم.
+
+  - slug: audiences-and-campaigns
+    position: 40
+    icon: megaphone
+    en:
+      name: Audiences and campaigns
+      description: Reaching a group of customers on purpose.
+    ar:
+      name: الجماهير والحملات
+      description: الوصول إلى مجموعة من العملاء بشكل مقصود.
+
+  - slug: whatsapp
+    position: 50
+    icon: message-circle
+    en:
+      name: WhatsApp
+      description: Connecting WhatsApp, and the rules WhatsApp sets.
+    ar:
+      name: واتساب
+      description: ربط واتساب، والقواعد التي يفرضها واتساب.
+
+  - slug: automation
+    position: 60
+    icon: workflow
+    en:
+      name: Automation and bots
+      description: Letting Lynomia Chat do the repetitive work.
+    ar:
+      name: الأتمتة والروبوتات
+      description: اترك لينوميا تشات يقوم بالعمل المتكرر.
+
+  - slug: commerce
+    position: 70
+    icon: shopping-bag
+    en:
+      name: Commerce
+      description: Seeing what a customer bought, inside the conversation.
+    ar:
+      name: المتجر
+      description: اطّلع على مشتريات العميل من داخل المحادثة.
+
+  - slug: workspace
+    position: 80
+    icon: building
+    en:
+      name: Workspace and team
+      description: Inboxes, teams, and who can do what.
+    ar:
+      name: مساحة العمل والفريق
+      description: صناديق الوارد والفرق وصلاحيات كل شخص.
+
+  - slug: integrations
+    position: 90
+    icon: plug
+    en:
+      name: Integrations
+      description: Connecting Lynomia Chat to the rest of your tools.
+    ar:
+      name: التكاملات
+      description: ربط لينوميا تشات ببقية أدواتك.
+
+  - slug: administration
+    position: 100
+    icon: shield
+    en:
+      name: Administration
+      description: What happened in your account, and who did it.
+    ar:
+      name: الإدارة
+      description: ما الذي حدث في حسابك، ومن قام به.
+
+  - slug: troubleshooting
+    position: 110
+    icon: life-buoy
+    en:
+      name: Troubleshooting
+      description: When something is not working.
+    ar:
+      name: حل المشكلات
+      description: عندما لا يعمل شيء كما ينبغي.

@@ -6,6 +6,10 @@ import { useRouter } from 'vue-router';
 import Button from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
 import { usePolicy } from 'dashboard/composables/usePolicy';
+import {
+  AUDIENCE_AUTOMATION_ROUTE,
+  AUDIENCE_CAMPAIGN_ROUTE,
+} from 'dashboard/helper/audienceHelper';
 import { useMapGetter } from 'dashboard/composables/store';
 
 const props = defineProps({
@@ -97,7 +101,7 @@ const segmentActions = computed(() => {
           },
         ]
       : []),
-    ...(isShared.value && canReach('automation_list')
+    ...(isShared.value && canReach(AUDIENCE_AUTOMATION_ROUTE)
       ? [
           {
             label: t(
@@ -109,7 +113,7 @@ const segmentActions = computed(() => {
           },
         ]
       : []),
-    ...(isShared.value && canReach('campaigns_whatsapp_index')
+    ...(isShared.value && canReach(AUDIENCE_CAMPAIGN_ROUTE)
       ? [
           {
             label: t('CONTACTS_LAYOUT.HEADER.ACTIONS.AUDIENCE.USE_IN_CAMPAIGN'),
@@ -144,7 +148,7 @@ const segmentActions = computed(() => {
 // shared audience, and no condition means "the contact carries label X". Offering it for symmetry would open a
 // rule builder that cannot express what the menu implied.
 const labelActions = computed(() => {
-  if (!props.activeLabel || !canReach('campaigns_whatsapp_index')) return [];
+  if (!props.activeLabel || !canReach(AUDIENCE_CAMPAIGN_ROUTE)) return [];
 
   return [
     {

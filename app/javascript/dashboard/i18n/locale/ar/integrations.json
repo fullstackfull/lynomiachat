@@ -12,9 +12,11 @@
         "PLACEHOLDER": "your-store.myshopify.com",
         "HELP": "Enter your Shopify store's myshopify.com URL",
         "CANCEL": "إلغاء",
-        "SUBMIT": "Connect Store"
+        "SUBMIT": "Connect Store",
+        "INVALID_URL": "يُرجى إدخال رابط متجر Shopify صحيح (مثال: your-store.myshopify.com)"
       },
-      "ERROR": "There was an error connecting to Shopify. Please try again or contact support if the issue persists."
+      "ERROR": "There was an error connecting to Shopify. Please try again or contact support if the issue persists.",
+      "INVALID_URL": "يُرجى إدخال رابط متجر Shopify صحيح (مثال: your-store.myshopify.com)"
     },
     "HEADER": "خيارات الربط",
     "DESCRIPTION": "Chatwoot تتكامل مع أدوات وخدمات متعددة لتحسين كفاءة فريقك. استكشف القائمة أدناه لتكوين تطبيقاتك المفضلة.",
@@ -93,7 +95,9 @@
         "TABLE_HEADER": {
           "WEBHOOK_ENDPOINT": "Webhook endpoint",
           "ACTIONS": "الإجراءات"
-        }
+        },
+        "EMPTY_TITLE": "لا Webhooks بعد",
+        "EMPTY_DESCRIPTION": "أضف نقطة نهاية، وتُرسَل إليها الأحداث التي تشترك بها لحظة حدوثها."
       },
       "EDIT": {
         "BUTTON_TEXT": "تعديل",
@@ -274,7 +278,9 @@
           "ACTIONS": "الإجراءات"
         },
         "EDIT_TOOLTIP": "تعديل التطبيق",
-        "DELETE_TOOLTIP": "حذف التطبيق"
+        "DELETE_TOOLTIP": "حذف التطبيق",
+        "EMPTY_TITLE": "لا تطبيقات لوحة بعد",
+        "EMPTY_DESCRIPTION": "أضف تطبيقاً فيظهر بجانب كل محادثة، مع تمرير جهة الاتصال والمحادثة إليه."
       },
       "FORM": {
         "TITLE_LABEL": "الاسم",

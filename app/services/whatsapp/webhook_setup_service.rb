@@ -83,7 +83,11 @@ class Whatsapp::WebhookSetupService
 
   # Subscribe to `calls` only when voice calling is enabled on the inbox
   def subscribed_fields
-    fields = %w[messages smb_message_echoes]
+    # Lynomia: message_template_status_update is what makes a template's approval or rejection arrive in seconds
+    # instead of on the next three-hourly sync. It is a WABA-level field; Meta delivers it to the app's default
+    # callback URL, never to this channel's override (docs/whatsapp-template-manager/01-meta-api-contract.md
+    # section 8), so subscribing it here is only half of the arrangement.
+    fields = %w[messages smb_message_echoes message_template_status_update]
     fields << 'calls' if calls_enabled_on_waba?
     fields
   end

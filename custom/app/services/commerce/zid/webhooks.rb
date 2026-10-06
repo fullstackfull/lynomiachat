@@ -39,13 +39,21 @@ class Commerce::Zid::Webhooks
     raise unless e.code == 'NOT_FOUND'
   end
 
-  # VERIFY(zid-webhook-auth): Zid made Basic Authentication mandatory for webhooks on 2026-09-30 (Zid Partner changelog
-  # 57336, "Webhook Security Changes"), with the credentials set when the webhook is created. The request field that
-  # carries them could not be read from Zid's documentation from Lynomia's build environment, so it is set here only;
-  # a delivery without these credentials is refused whatever Zid did with them.
+  # Zid's documented create-webhook body takes `username` and `password` at the TOP LEVEL, alongside `event`,
+  # `target_url` and `original_id`: "If `username` and `password` are provided when creating a webhook, Zid will
+  # include a `Basic Authentication` header when sending webhook requests" (docs.zid.sa/create-a-webhook, read
+  # 2026-10-06). Basic Auth is the only mechanism Zid offers — there is no HMAC and no signing secret — and it
+  # became mandatory for every webhook on 2026-09-30 (Partner changelog 57336).
+  #
+  # This previously sent a nested `authentication: { type:, username:, password: }` object, which Zid does not
+  # define. The consequence was not a visible error: Zid would accept the subscription, ignore the unknown key and
+  # register the webhook with NO credentials, then deliver with no Authorization header — and
+  # Webhooks::ZidController refuses a credential-less delivery with 401. Every order event would have been lost
+  # silently, and Zid's circuit breaker treats non-2xx as failure: 30 in an hour marks the webhook BROKEN and it
+  # stops dispatching altogether (docs.zid.sa/webhook-health-tracking).
   def subscription(event, auth)
     { event: event, target_url: target_url, original_id: Commerce::Zid::Config.client_id,
-      authentication: { type: 'basic', username: auth['webhook_username'], password: auth['webhook_password'] } }
+      username: auth['webhook_username'], password: auth['webhook_password'] }
   end
 
   def target_url = "#{ENV.fetch('FRONTEND_URL')}/webhooks/zid/#{@store.external_store_id}"

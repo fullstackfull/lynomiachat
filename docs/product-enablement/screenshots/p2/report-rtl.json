@@ -1,0 +1,64 @@
+[
+  {
+    "name": "the audiences page renders right to left in Arabic",
+    "ok": true,
+    "detail": "rtl"
+  },
+  {
+    "name": "the card’s menu follows the reading direction rather than staying on the right",
+    "ok": true,
+    "detail": "menu at 57, card centre 480"
+  },
+  {
+    "name": "its copy is the Arabic copy, not a fallback to English",
+    "ok": true,
+    "detail": "المحادثات"
+  },
+  {
+    "name": "the explainer is there in Arabic too",
+    "ok": true
+  },
+  {
+    "name": "the count is still an action, not something already paid for",
+    "ok": true
+  },
+  {
+    "name": "the audiences page fits 390px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the audiences page fits 768px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the audiences page fits 1024px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the audiences page fits 1280px in Arabic",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "name": "the card menu has an Arabic accessible name",
+    "ok": true,
+    "detail": "إجراءات أخرى لـ Customers in Kuwait"
+  },
+  {
+    "name": "the card menu items are Arabic, not an English fallback",
+    "ok": true,
+    "detail": "campaign item translated"
+  },
+  {
+    "name": "the starter gallery reads in Arabic",
+    "ok": true
+  },
+  {
+    "name": "the platform note is translated, not left in English",
+    "ok": true,
+    "detail": "تُبلّغ سلة وزد وشوبيفاي عن شحن الطلب. ووكومرس لا تحتوي على حالة \"تم الشحن\"، لذلك"
+  }
+]

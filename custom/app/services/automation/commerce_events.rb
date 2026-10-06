@@ -8,7 +8,11 @@
 #   conversation    the rules act on the contact's latest conversation in the account; none, nothing runs
 #   once            one run per rule and event id (Redis, a week), so a retried job never repeats a rule
 module Automation::CommerceEvents
-  EVENTS = Commerce::OrderTransitions::EVENTS
+  # The one cart trigger. `commerce_cart_recovered` is deliberately absent: completion does not prove that Lynomia's
+  # outreach caused it, and Zid's own schema carries `reminders_count`, so the store may be reminding the shopper
+  # itself. A trigger named "recovered" would invite a rule that reports a recovery nobody can stand behind.
+  CART_EVENTS = %w[commerce_cart_abandoned].freeze
+  EVENTS = (Commerce::OrderTransitions::EVENTS + CART_EVENTS).freeze
   RUN_TTL = 7.days
 
   def self.event?(name) = EVENTS.include?(name.to_s)
@@ -27,6 +31,30 @@ module Automation::CommerceEvents
     store = link.store
     { event_name: transition.event, contact: link.contact, link_id: link.id, store_id: store.id, provider: store.provider,
       order: transition.order, event_id: "#{link.id}:#{transition.key}:#{transition.event}:#{fetched_at.to_i}" }
+  end
+
+  # One genuine transition into abandoned, dispatched through the same path an order event takes. Called only by
+  # Commerce::CartLifecycle, and only when the row actually changed state, so a duplicate or replayed provider
+  # delivery cannot re-fire it. A cart with no resolved contact has nobody to act on and dispatches nothing.
+  def self.dispatch_cart(cart)
+    account = cart.account
+    return if cart.contact_id.nil?
+    return unless Automation::Extensions.enabled? && account.feature_enabled?('lynomia_commerce')
+    return unless account.automation_rules.active.exists?(event_name: 'commerce_cart_abandoned')
+
+    Rails.configuration.dispatcher.dispatch('commerce.cart_abandoned', Time.zone.now, cart_data(cart))
+  end
+
+  def self.cart_data(cart)
+    { event_name: 'commerce_cart_abandoned', contact: cart.contact, store_id: cart.commerce_store_id,
+      provider: cart.provider, cart: cart_context(cart), event_id: "cart:#{cart.id}:abandoned:#{cart.last_provider_event_at.to_i}" }
+  end
+
+  # What a rule and an automation webhook may see about the cart. No checkout URL, no line items, no customer
+  # contact details: the conversation payload already carries the contact.
+  def self.cart_context(cart)
+    { id: cart.id, provider_cart_id: cart.provider_cart_id, phase: cart.provider_phase, currency: cart.currency,
+      total: cart.visible_total&.to_s, item_count: cart.item_count, abandoned_at: cart.abandoned_at }
   end
 
   # The conversation a Commerce rule acts on: the contact's latest in the account.
@@ -52,8 +80,9 @@ module Automation::CommerceEvents
 
   # What an automation webhook carries about the event (no contact data: the conversation payload already has it).
   def self.webhook_context(data)
-    { event: data[:event_name], store_id: data[:store_id], provider: data[:provider], order: data[:order] }
+    { event: data[:event_name], store_id: data[:store_id], provider: data[:provider],
+      order: data[:order], cart: data[:cart] }.compact
   end
 
-  private_class_method :data
+  private_class_method :data, :cart_data, :cart_context
 end

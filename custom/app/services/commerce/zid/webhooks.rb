@@ -6,7 +6,11 @@
 # every registration gets a new, random Basic Auth pair for Zid to send with each delivery. The pair is saved, encrypted
 # with the store's credentials, before Zid can use it; subscription ids are kept in the store's metadata.
 class Commerce::Zid::Webhooks
-  EVENTS = %w[order.create order.status.update order.payment_status.update].freeze
+  # Zid's officially documented events, and only those. The two abandoned-cart events give Lynomia a
+  # provider-authoritative cart lifecycle (docs/commerce-production/06-cart-transition-design.md); there is no
+  # cart.updated event, so a cart's changes between abandonment and completion are not observable by push.
+  EVENTS = (%w[order.create order.status.update order.payment_status.update] +
+            Commerce::Providers::Zid::CartEvents::EVENTS).freeze
   PATH = '/managers/webhooks'.freeze
 
   def initialize(store)

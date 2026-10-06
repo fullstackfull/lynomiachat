@@ -108,7 +108,9 @@ latch: persist what you have, degrade the part you cannot do.
 - it is a **pattern scan, not a fixed key read**, because the marker's exact spelling has varied across signup
   paths and a missing key would otherwise read as "not coexistence" — the more dangerous wrong answer;
 - it reports and stops. The diagnosis never calls `/register`, never writes `provider_config`, never touches the
-  subscription. P5's read-only rule is enforced by the service having no write path at all, not by a flag.
+  subscription. P5's read-only rule is enforced by the service having no write path to Meta or Redis at all,
+  not by a flag — and by reading configuration with a plain SELECT, since the ordinary accessor is create-on-read
+  (`10` §1).
 
 ## 7. What the live run adds
 

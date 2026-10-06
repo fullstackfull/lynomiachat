@@ -7,11 +7,11 @@ The sixty-item report the phase asks for. Where an item is a live result this en
 
 ### 1. Branch + HEAD
 
-`claude/practical-thompson-9xfqed` at `899a5546`. HEAD before the continuation was `cbd2a91d`.
+`claude/practical-thompson-9xfqed` at `46a73fdf`. HEAD before the continuation was `cbd2a91d`.
 
 ### 2. Commits
 
-Seven, each one change:
+Nine, each one change:
 
 | | |
 |---|---|
@@ -22,6 +22,8 @@ Seven, each one change:
 | `939cc2a9` | the regression matrix completed — and the fifth credential-bearing URL it found |
 | `18cc3bca` | docs 06, 07, 10, plus updates to 00, 01, 02, 03, 09 |
 | `899a5546` | one odd Meta response must not cost the whole diagnosis |
+| `b98794f5` | this checkpoint, and two corrections |
+| `46a73fdf` | the diagnosis was writing to the database, including a credential |
 
 ### 3. Repository defects proven
 
@@ -39,6 +41,11 @@ Six, each proven by reading the code and executing the failure — not inferred.
 
 The sentence this phase is entitled to write, and does: **a repository containing defects 1 and 2 is capable of
 producing exactly the four symptoms reported.** Not "production root cause confirmed" — that needs §51's command.
+
+A seventh defect belongs in the record but not in that table, because this phase **introduced** it rather than
+found it: the diagnosis task itself was writing to the database, and on a production server would have written the
+Meta app secret into `installation_configs`. It was caught by a stray row in the test database and is fixed — §27
+and §42 tell it in full.
 
 ### 4. Production facts still unproven
 
@@ -374,15 +381,44 @@ phone normalization) and the contacts controller.
 `BusinessProfileService`, `EmbeddedSignupService` and `HealthService`, plus the webhook controller and
 `WhatsappEventsJob` inside §35. The new work itself: `spec/requests/whatsapp/inbound_reliability_spec.rb` — **37
 examples**, covering all twenty required regressions (`09` §9 maps each one) — and
-`spec/services/whatsapp/diagnosis_spec.rb` — **9 examples**.
+`spec/services/whatsapp/diagnosis_spec.rb` — **13 examples**, including the four that pin what the diagnosis
+may and may not write (§27).
 
 ### 42. Full RSpec
 
-**PENDING at the time of this commit** — the full suite is running. Result recorded in the following commit.
+**10714 examples, 2 failures, 67 pending** — and the two failures are **exactly** the declared baseline:
+
+```
+rspec ./spec/builders/agent_builder_spec.rb:47
+rspec ./spec/enterprise/services/voice/call_transcription_service_spec.rb:77
+```
+
+Nothing else. This is the second run; the first returned 13 failures, and the extra 11 were investigated,
+reproduced and classified rather than dismissed — none was called a flake. All 11 were **pre-existing test
+database pollution** meeting globally unscoped assertions, from my own earlier `rails runner` debugging:
+
+| Failures | Assertion | Leftover |
+|---|---|---|
+| `spec/enterprise/models/inbox_spec.rb:162, :194, :238` | `Audited::Audit.where(auditable_type: 'Inbox', action: 'create').count == 1` → got 3 | 2 `audits` rows |
+| `spec/lib/config_loader_spec.rb:8` | `InstallationConfig.count == 0`, a precondition → got 1 | 1 `installation_configs` row |
+| `spec/models/working_hour_spec.rb:13, :25, :37, :49, :63, :71, :107` | `WorkingHour.today` resolves its timezone via `first.inbox`, an unscoped `ORDER BY id LIMIT 1` | 14 orphaned `working_hours` rows |
+
+Each was reproduced deliberately — insert the row, watch exactly those lines fail with exactly that message;
+remove it, watch the file pass — by three independent agents before being attributed. The orphaned working hours
+are structurally possible because `working_hours` has **no foreign key** to `inboxes` and `out_of_offisable.rb`
+associates them `dependent: :destroy_async`, so the job never runs under `Sidekiq::Testing`: even a correct
+`destroy` strands seven rows per inbox, permanently. The fix was `rails db:test:prepare`, which rebuilds the
+schema rather than guessing which tables to clean; this run started on a rebuilt database. `00` §5 records the
+hazard, which has now cost three rounds.
+
+**And the pollution produced the §27 finding.** The stray `installation_configs` row was named
+`WHATSAPP_API_VERSION`, timestamped to the minute the diagnosis task was first run by hand — which is how the
+diagnosis's own database write, and the app-secret write behind it, came to light.
 
 ### 43. Full Vitest
 
-**PENDING at the time of this commit** — queued behind the full RSpec run so neither is starved of CPU. No JavaScript or Vue file was changed in this phase.
+**493 test files, 5177 tests, all passed**, exit 0. No JavaScript or Vue file was changed in this phase, so this
+gate confirms the absence of collateral damage rather than new behaviour.
 
 ### 44. ESLint
 
@@ -397,7 +433,23 @@ single cop disabled: the ClassLength limit is what split the diagnosis into six 
 
 ### 46. Production build
 
-**PENDING at the time of this commit** — queued behind the full RSpec run. Result recorded in the following commit.
+**Succeeded: `✓ built in 1m 39s`, "Build with Vite complete"**, exit 0, with
+`SECRET_KEY_BASE=<throwaway> NODE_ENV=production RAILS_ENV=production bin/vite build --force`. The remaining
+warnings are the repository's pre-existing ones: chunks over 500 kB, and an outdated `caniuse-lite`.
+
+Worth recording how it was verified, because the first attempt was a false green of exactly the kind this phase
+is about. Run without a `SECRET_KEY_BASE`, `bin/vite build` printed
+
+```
+Unable to initialize Rails application before Vite build:
+  Missing `secret_key_base` for 'production' environment …
+Skipping vite build. Watched files have not changed since the last build at …
+```
+
+and **still exited 0**. A gate that reports success for a build it declined to run is worth no more than the
+`setup_webhooks` that reported success for a registration it had not performed. The result above is from a build
+that actually compiled, forced past the no-change check; its 530 MB of artefacts were then removed, since
+`public/vite*` is gitignored and the disk allowance is finite.
 
 ### 47. Migration count
 
@@ -439,7 +491,8 @@ bundle exec rails whatsapp:diagnose INBOX_ID=<id> CONTACT=+<old_test_number>
 ```
 
 Run on the server whose database owns the real WhatsApp inbox, as the application user, in the application
-directory. GET-only, writes nothing, every secret masked, safe to paste back. Use the **old** test contact: its
+directory. GET-only, changes nothing in Meta or Redis, no credential printed or written (§27), safe to paste
+back. Use the **old** test contact: its
 conversation has a persisted inbound message, so its window state is the control for the new contact's.
 
 ### 53. Exact output fields the operator must return

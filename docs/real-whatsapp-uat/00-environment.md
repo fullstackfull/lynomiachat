@@ -104,9 +104,10 @@ bundle exec rails whatsapp:diagnose
 bundle exec rails whatsapp:diagnose INBOX_ID=<id> CONTACT=+<number>
 ```
 
-It performs only GETs, through the installation's existing `Whatsapp::FacebookApiClient`; it writes nothing to Meta
-and nothing to the database; and it masks every token, secret and customer number, so its output is safe to paste
-into an issue. What it answers, and why each check is there, is in `02` and `03`.
+It performs only GETs, through the installation's existing `Whatsapp::FacebookApiClient`; it changes nothing in
+Meta and nothing in Redis; it reports credentials as present or absent rather than printing them, masked or
+otherwise; and it masks every customer number, so its output is safe to paste into an issue. The one database row
+a run can add, and why it is not the diagnosis's own doing, is in `10` §1. What it answers, and why each check is there, is in `02` and `03`.
 
 **Asking for the token instead would be the wrong trade.** A production WhatsApp token can send messages to real
 customers as the business; it does not belong in an ephemeral container, in a transcript, or in a repository. The

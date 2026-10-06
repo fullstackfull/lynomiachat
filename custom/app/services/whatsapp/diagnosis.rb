@@ -16,7 +16,10 @@
 #
 # Hard rules, enforced by construction:
 #   * every Meta call is a GET through the installation's existing Whatsapp::FacebookApiClient
-#   * nothing is written to Meta, to the database or to Redis — there is no write path in any collaborator
+#   * nothing is written to Meta and nothing to Redis — no collaborator has a write path to either
+#   * configuration is read with a plain SELECT through Whatsapp::Diagnosis::StoredConfig, never through
+#     GlobalConfigService.load, which is create-on-read; see that module for why this matters and what the one
+#     remaining row is
 #   * no credential value is printed, masked or otherwise; customer phone numbers are masked in one place
 #   * the service never writes to stdout; the caller is handed each line and decides what to do with it
 class Whatsapp::Diagnosis
@@ -49,7 +52,7 @@ class Whatsapp::Diagnosis
     @report.heading('LYNOMIA REAL WHATSAPP DIAGNOSIS — READ ONLY')
     @report.say "generated at #{Time.current.iso8601}"
     @report.say "installation #{stored_config('INSTALLATION_NAME').inspect}, Rails env #{Rails.env}"
-    @report.say 'This task performs GETs only. It writes nothing to Meta, the database or Redis.'
+    @report.say 'This task performs GETs only. It changes nothing in Meta, in Redis, or in your WhatsApp setup.'
   end
 
   def no_channel_report

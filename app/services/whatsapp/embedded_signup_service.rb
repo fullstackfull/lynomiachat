@@ -19,7 +19,11 @@ class Whatsapp::EmbeddedSignupService
     # 1. Reauthorization flow updates an existing channel (not a create), so after_commit on: :create won't trigger
     # 2. We need to run check_channel_health_and_prompt_reauth after webhook setup completes
     # 3. The channel is marked with source: 'embedded_signup' to skip the after_commit callback
-    channel.setup_webhooks(is_coexistence: @is_coexistence)
+    #
+    # The bang form is deliberate: a channel whose webhooks were not registered cannot receive anything, so
+    # reporting this signup as a success would hand the operator an inbox that silently never delivers. The channel
+    # is still created and latched, so retrying through the reauthorization flow is the recovery path.
+    channel.setup_webhooks!(is_coexistence: @is_coexistence)
     # Skip health check on reauth (avoids false disconnect emails) and on coexistence signups
     # (Meta's health data can lag several minutes behind a fresh FINISH event).
     check_channel_health_and_prompt_reauth(channel) if @inbox_id.blank? && !@is_coexistence

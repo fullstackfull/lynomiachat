@@ -155,11 +155,32 @@ class Channel::Whatsapp < ApplicationRecord
     Whatsapp::Providers::WhatsappCloudContactInfoRequestService.perform(self, identifier, message)
   end
 
-  def setup_webhooks(is_coexistence: nil)
+  # Webhook setup, for the two callers that need opposite things from a failure.
+  #
+  # `should_auto_setup_webhooks?` already states the intent: embedded signup and manual setup v2 run setup
+  # explicitly "so their API responses can reflect the real result instead of swallowing callback errors". That
+  # intent was defeated by this method rescuing the failure itself, so an explicit caller was told the setup had
+  # succeeded when it had not, and the inbox was left latched into reauthorization with nothing to say so. The
+  # bang version is the truthful one; the plain version exists only for the `after_commit` path, where raising
+  # would surface as a failed create for a record that is already committed.
+  #
+  # Both latch the channel before giving up, so its state keeps saying that reauthorization is required and
+  # recovery stays on the existing supported path.
+  def setup_webhooks!(is_coexistence: nil)
     perform_webhook_setup(is_coexistence: is_coexistence)
   rescue StandardError => e
     Rails.logger.error "[WHATSAPP] Webhook setup failed: #{e.message}"
+    report_webhook_setup_failure(e)
     prompt_reauthorization!
+    raise
+  end
+
+  # @return [Boolean] whether setup succeeded. Callers that can act on a failure should use `setup_webhooks!`.
+  def setup_webhooks(is_coexistence: nil)
+    setup_webhooks!(is_coexistence: is_coexistence)
+    true
+  rescue StandardError
+    false
   end
 
   private
@@ -180,6 +201,18 @@ class Channel::Whatsapp < ApplicationRecord
     return unless before&.dig('source') == 'embedded_signup' && after['source'] != 'embedded_signup'
 
     Rails.logger.info("[WHATSAPP_EMBEDDED_TO_MANUAL] success account_id=#{account_id} channel_id=#{id}")
+  end
+
+  # A webhook-setup failure disables inbound for this channel until somebody reauthorizes it, so it belongs in the
+  # installation's existing error reporting rather than in a log line alone. No token, no secret: the identifiers
+  # are the ones an operator needs to find the channel.
+  def report_webhook_setup_failure(error)
+    ChatwootExceptionTracker.new(error, account: account).capture_exception
+    Rails.logger.error(
+      "[WHATSAPP INGEST] event=webhook_setup_failed channel_id=#{id} inbox_id=#{inbox&.id} " \
+      "account_id=#{account_id} phone_number_id=#{provider_config['phone_number_id']} " \
+      "source=#{provider_config['source']} failure_class=#{error.class.name}"
+    )
   end
 
   def perform_webhook_setup(is_coexistence: nil)

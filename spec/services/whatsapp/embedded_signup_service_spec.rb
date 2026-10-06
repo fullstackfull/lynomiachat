@@ -42,7 +42,7 @@ describe Whatsapp::EmbeddedSignupService do
         .and_return(channel_creation)
       allow(channel_creation).to receive(:perform).and_return(channel)
 
-      allow(channel).to receive(:setup_webhooks)
+      allow(channel).to receive(:setup_webhooks!)
       allow(channel).to receive(:phone_number).and_return('+1234567890')
 
       health_service = instance_double(Whatsapp::HealthService)
@@ -55,7 +55,7 @@ describe Whatsapp::EmbeddedSignupService do
     end
 
     it 'creates channel and sets up webhooks' do
-      expect(channel).to receive(:setup_webhooks)
+      expect(channel).to receive(:setup_webhooks!)
 
       result = service.perform
       expect(result).to eq(channel)
@@ -126,28 +126,39 @@ describe Whatsapp::EmbeddedSignupService do
         expect { service.perform }.to raise_error('Token error')
       end
 
-      it 'prompts reauthorization when webhook setup fails' do
-        # Create a real channel to test the actual webhook failure behavior
+      # This used to assert that the signup "completes successfully even if webhook fails". It does not any more,
+      # and that was the defect: a channel whose webhooks were never registered cannot receive anything, so
+      # reporting success handed the operator an inbox that silently never delivered. The channel is still created
+      # and still latched, so retrying through the reauthorization flow remains the recovery path — but the caller
+      # is told the truth, which is what Channel::Whatsapp#should_auto_setup_webhooks? always intended.
+      it 'latches the channel and surfaces the failure when webhook setup fails' do
         real_channel = create(:channel_whatsapp, account: account, phone_number: '+1234567890',
                                                  validate_provider_config: false, sync_templates: false)
 
-        # Mock the channel creation to return our real channel
         channel_creation = instance_double(Whatsapp::ChannelCreationService)
         allow(Whatsapp::ChannelCreationService).to receive(:new).and_return(channel_creation)
         allow(channel_creation).to receive(:perform).and_return(real_channel)
 
-        # Mock webhook setup to fail
         allow(real_channel).to receive(:perform_webhook_setup).and_raise('Webhook setup error')
 
-        # Verify channel is not marked for reauthorization initially
         expect(real_channel.reauthorization_required?).to be false
-
-        # The service completes successfully even if webhook fails (webhook error is rescued in setup_webhooks)
-        result = service.perform
-        expect(result).to eq(real_channel)
-
-        # Verify the channel is now marked for reauthorization
+        expect { service.perform }.to raise_error('Webhook setup error')
         expect(real_channel.reauthorization_required?).to be true
+      end
+
+      it 'reports a webhook setup failure to the installation error tracker' do
+        real_channel = create(:channel_whatsapp, account: account, phone_number: '+1234567890',
+                                                 validate_provider_config: false, sync_templates: false)
+        channel_creation = instance_double(Whatsapp::ChannelCreationService)
+        allow(Whatsapp::ChannelCreationService).to receive(:new).and_return(channel_creation)
+        allow(channel_creation).to receive(:perform).and_return(real_channel)
+        allow(real_channel).to receive(:perform_webhook_setup).and_raise('Webhook setup error')
+
+        tracker = instance_double(ChatwootExceptionTracker, capture_exception: true)
+        allow(ChatwootExceptionTracker).to receive(:new).and_return(tracker)
+        expect(tracker).to receive(:capture_exception)
+
+        expect { service.perform }.to raise_error('Webhook setup error')
       end
     end
 
@@ -180,7 +191,7 @@ describe Whatsapp::EmbeddedSignupService do
 
       it 'uses ReauthorizationService and sets up webhooks' do
         expect(reauth_service).to receive(:perform)
-        expect(channel).to receive(:setup_webhooks)
+        expect(channel).to receive(:setup_webhooks!)
 
         result = service_with_inbox.perform
         expect(result).to eq(channel)
@@ -225,7 +236,7 @@ describe Whatsapp::EmbeddedSignupService do
             whatsapp_channel
           end
 
-          allow(whatsapp_channel).to receive(:setup_webhooks).and_return(true)
+          allow(whatsapp_channel).to receive(:setup_webhooks!).and_return(true)
         end
 
         def setup_health_service_mock

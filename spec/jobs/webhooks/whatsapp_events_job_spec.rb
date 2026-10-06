@@ -55,10 +55,15 @@ RSpec.describe Webhooks::WhatsappEventsJob do
       job.perform_now(params)
     end
 
-    it 'will not enqueue Whatsapp::IncomingMessageWhatsappCloudService if channel reauthorization required' do
+    # This used to assert the opposite: that a reauthorization-required embedded-signup channel had its inbound
+    # payload discarded. That dropped every customer message for the channel, permanently (the flag has no
+    # expiry) and silently (Meta had already been answered 200, Sidekiq recorded a success). It protected
+    # nothing: persisting a Contact, Conversation and Message needs no Meta credential, and the only step that
+    # does — the media download — already degrades to an attachment-less message.
+    it 'still ingests inbound messages when reauthorization is required on an embedded signup channel' do
       channel.prompt_reauthorization!
       allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
-      expect(Whatsapp::IncomingMessageWhatsappCloudService).not_to receive(:new)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new)
       job.perform_now(params)
     end
 
@@ -90,20 +95,50 @@ RSpec.describe Webhooks::WhatsappEventsJob do
       job.perform_now(params)
     end
 
-    it 'logs a warning when channel is inactive' do
-      channel.prompt_reauthorization!
-      allow(Rails.logger).to receive(:warn)
+    it 'records a suspended account as a structured ingest failure rather than a bare warning' do
+      channel.account.update!(status: :suspended)
+      allow(Rails.logger).to receive(:error)
 
-      expect(Rails.logger).to receive(:warn).with("Inactive WhatsApp channel: #{channel.phone_number}")
+      expect(Rails.logger).to receive(:error).with(
+        a_string_including('[WHATSAPP INGEST] event=inactive_account', "channel_id=#{channel.id}")
+      )
       job.perform_now(params)
     end
 
-    it 'logs a warning with unknown phone number when channel does not exist' do
+    it 'records an unroutable payload with the identifiers needed to find the channel' do
       unknown_phone = '+1234567890'
-      allow(Rails.logger).to receive(:warn)
+      allow(Rails.logger).to receive(:error)
 
-      expect(Rails.logger).to receive(:warn).with("Inactive WhatsApp channel: unknown - #{unknown_phone}")
+      expect(Rails.logger).to receive(:error).with(
+        a_string_including('[WHATSAPP INGEST] event=unroutable_payload', "url_phone_number=#{unknown_phone}")
+      )
       job.perform_now(phone_number: unknown_phone)
+    end
+
+    it 'reports the payload phone_number_id when the metadata names a number this installation does not own' do
+      allow(Rails.logger).to receive(:error)
+
+      expect(Rails.logger).to receive(:error).with(
+        a_string_including('event=unroutable_payload', 'phone_number_id=999999999999')
+      )
+      job.perform_now(
+        object: 'whatsapp_business_account',
+        entry: [{ changes: [{ value: { metadata: { phone_number_id: '999999999999' } } }] }]
+      )
+    end
+
+    # Finding #11, resolved the other way. An audit called the URL fallback dead code and suggested reviving it for
+    # Cloud deliveries; doing so files a message from a number this installation does not own under whichever
+    # channel the callback URL happens to name. The payload's metadata stays authoritative, and the refusal is
+    # reported instead of being silent.
+    it 'does not fall back to the URL phone number for a Cloud payload whose metadata names an unknown number' do
+      allow(Whatsapp::IncomingMessageWhatsappCloudService).to receive(:new).and_return(process_service)
+      expect(Whatsapp::IncomingMessageWhatsappCloudService).not_to receive(:new)
+      job.perform_now(
+        object: 'whatsapp_business_account',
+        phone_number: channel.phone_number,
+        entry: [{ changes: [{ value: { metadata: { phone_number_id: 'not-a-known-id' } } }] }]
+      )
     end
 
     it 'uses from_user_id as the mutex sender for BSUID-only inbound messages' do

@@ -111,3 +111,38 @@ into an issue. What it answers, and why each check is there, is in `02` and `03`
 **Asking for the token instead would be the wrong trade.** A production WhatsApp token can send messages to real
 customers as the business; it does not belong in an ephemeral container, in a transcript, or in a repository. The
 task exists so the credential never has to move.
+
+---
+
+## 5. The continuation: what changed about this environment, and what did not
+
+The continuation of this phase asked for inbound reliability hardening on top of the diagnosis. Two things are
+worth recording about the environment it ran in, because they bound what its claims mean.
+
+**What did not change.** Everything in §1 still holds. No real token appeared, no real number, no handset, and this
+container is still not Meta's callback destination. The continuation therefore produced **no** production finding,
+and deliberately does not contain the sentence "production root cause confirmed" anywhere. What it proved is
+narrower and stated in exactly those terms in `08`: *the repository contains defects capable of producing exactly
+the observed symptoms* — proven by reading the code and by tests that execute the failure.
+
+**What did change.** The local stack was brought up and used as evidence rather than as a formality:
+
+| | |
+|---|---|
+| Postgres | 16, `/tmp/pgdata`, started per session |
+| Redis | `redis-server --port 6379`, which is what makes the reauthorization latch and the dedup lock observable |
+| Ruby | via `rbenv`, `eval "$(rbenv init -)"` before every `bundle` command |
+| Test suite | the full RSpec suite plus a new request spec, `spec/requests/whatsapp/inbound_reliability_spec.rb` |
+
+That matters because the central defect is a Redis latch. With Redis running, the latched state can be created in a
+test, the inbound payload posted, and the drop observed — which is the difference between "this code looks wrong"
+and "this code does this". Each claim in `08` marked **PROVEN** is proven that way.
+
+**One environment hazard, recorded because it cost time twice.** Editing files under an autoload path while the
+full suite is running causes Rails to reload constants mid-run, and the result is a wave of failures that look real
+and are not — the previous phase lost an hour to 75 of them. Two consequences, both followed here: the suite's
+verdict is only taken from a run with no concurrent edits, and while a run is in flight only `docs/` is touched,
+since it is not an autoload path. Separately, `rails runner` writes land in the **test** database when `RAILS_ENV`
+says so and are not rolled back by spec transactions; seven spurious failures in
+`spec/services/whatsapp/incoming_message_service_spec.rb` came from exactly that, and the fix was to clean the rows
+rather than to believe them.

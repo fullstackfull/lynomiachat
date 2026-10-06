@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# The live half of a Lynomia WhatsApp diagnosis: P5 Parts B, C and D, read from Meta through the installation's
-# existing Whatsapp::FacebookApiClient.
+# The live half of a Lynomia WhatsApp diagnosis: what Meta says, read through the installation's existing
+# Whatsapp::FacebookApiClient. It fills the META IDENTITY, AUTH, WABA SUBSCRIPTION and WEBHOOK sections.
 #
 # Every call here is a GET. Nothing subscribes, registers, rotates or deletes — P5 Part T forbids it, and a
 # diagnosis that mutates the thing it is diagnosing is worthless anyway.
@@ -20,79 +20,67 @@ class Whatsapp::Diagnosis::MetaChecks
                          'Meta has nowhere to deliver and never calls the callback URL at all. The existing fix is ' \
                          'Whatsapp::FacebookApiClient#subscribe_app_to_waba — do not hand-roll a subscription.'
 
+  # The field list Meta reported for the subscribed app, handed to Whatsapp::Diagnosis::WebhookChecks so
+  # the WEBHOOK section can compare it without repeating the read.
+  attr_reader :subscribed_fields
+
   def initialize(report)
     @report = report
+    @subscribed_fields = nil
   end
 
-  def run(channel, config)
-    report.heading("META READS (P5 Parts B, C, D) — inbox ##{channel.inbox&.id}")
-    token = config[:api_key]
-    if token.blank?
-      report.blocked('every Meta read', 'provider_config has no api_key on this channel')
-      return
-    end
+  # ---- META IDENTITY -------------------------------------------------------------------------------------------
 
-    client = Whatsapp::FacebookApiClient.new(token)
-    token_state(client, token)
-    permissions(client)
+  def identity(channel, config)
+    report.heading("META IDENTITY — inbox ##{channel.inbox&.id}")
+    report.say "Graph API version in use: #{api_version} (default #{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION})"
+    report.rows(
+      [
+        ['WABA (business_account_id)', config[:business_account_id].presence || '<blank>'],
+        ['phone_number_id', config[:phone_number_id].presence || '<blank>']
+      ]
+    )
+    client = client_for(config, 'META IDENTITY reads') or return
     phone_number(client, config[:phone_number_id])
-    callback_configuration(channel, client, config[:phone_number_id])
-    waba(client, config[:business_account_id])
   end
 
-  # P5 Part D, and the suspect a dashboard check cannot see.
-  #
-  # Whatsapp::WebhookSetupService sets a PHONE-LEVEL callback override (FacebookApiClient
-  # #override_phone_number_callback), and Meta gives that override precedence over the app's own webhook
-  # configuration. So a number can be overridden to a URL that is stale — an old domain, a dev tunnel, a
-  # FRONTEND_URL that was wrong when the inbox was created — while the Meta App dashboard still shows a correct
-  # callback and looks fine. The override is only visible by reading it back.
-  #
-  # Whatsapp::ManualWebhookStatusService already performs exactly this comparison, so it is reused for the verdict;
-  # what it does not do is say what Meta actually holds when the answer is no, which is the part an operator needs.
-  def callback_configuration(channel, client, phone_number_id)
-    status = report.read('callback configuration (Whatsapp::ManualWebhookStatusService)') do
-      Whatsapp::ManualWebhookStatusService.new(channel).perform
-    end
-    return if status.nil?
+  # ---- AUTH (Meta's verdict on the credential; the local half is in LocalChecks#auth) --------------------------
 
-    report.say "  expected callback_url: #{status[:callback_url]}"
-    report.check('the callback Meta holds for this number matches this installation', status[:callback_configured],
-                 status[:callback_configured].inspect,
-                 note: 'Meta is delivering to a different URL than this installation serves. A phone-level override ' \
-                       'takes precedence over the app-level webhook configuration, so the Meta App dashboard can ' \
-                       'look correct while the number is overridden elsewhere.')
-    report.check('the WABA reports at least one subscribed app', status[:subscription_verified],
-                 status[:subscription_verified].inspect, note: NO_SUBSCRIPTION_NOTE)
-    report_override(client, phone_number_id) unless status[:callback_configured]
+  def auth(config)
+    client = client_for(config, 'token validity and scopes') or return
+
+    token_state(client, config[:api_key])
+    permissions(client)
   end
 
-  # Only on a mismatch, and only the host: the full override URI can carry a token in its query string.
-  def report_override(client, phone_number_id)
-    data = report.read("what Meta actually holds (/#{phone_number_id}?fields=webhook_configuration)") do
-      client.fetch_phone_number(phone_number_id, fields: 'webhook_configuration')
-    end
-    return if data.nil?
+  # ---- WABA SUBSCRIPTION ---------------------------------------------------------------------------------------
 
-    configuration = data.fetch('webhook_configuration', {})
-    %w[override_callback_uri phone_number whatsapp_business_account application].each do |key|
-      next if configuration[key].blank?
+  def waba_subscription(channel, config)
+    report.heading("WABA SUBSCRIPTION — inbox ##{channel.inbox&.id}")
+    waba_id = config[:business_account_id]
+    return report.blocked('WABA subscription reads', 'provider_config has no business_account_id') if waba_id.blank?
 
-      report.say "    #{key}: #{host_of(configuration[key])}"
-    end
-    report.say '    (hosts only — an override URI can carry a verify token in its query string)'
-  end
+    client = client_for(config, 'WABA subscription reads') or return
 
-  def host_of(value)
-    uri = URI.parse(value.to_s)
-    [uri.scheme, uri.host, uri.port, uri.path].compact.join(' ')
-  rescue URI::InvalidURIError
-    '<unparseable>'
+    subscribed_apps(client, waba_id)
+    templates(client, waba_id)
   end
 
   private
 
   attr_reader :report
+
+  def api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
+
+  # One client per token, so a channel's four sections share a single object. A blank token is reported once per
+  # section rather than raised, because the rest of the section may still have something to say.
+  def client_for(config, label)
+    token = config[:api_key]
+    return report.blocked(label, 'provider_config has no api_key on this channel') && nil if token.blank?
+
+    @client_cache ||= {}
+    @client_cache[token] ||= Whatsapp::FacebookApiClient.new(token)
+  end
 
   def token_state(client, token)
     data = report.read('token debug (validity, scopes, expiry)') { client.debug_token(token) }
@@ -162,16 +150,6 @@ class Whatsapp::Diagnosis::MetaChecks
     ]
   end
 
-  def waba(client, waba_id)
-    if waba_id.blank?
-      report.blocked('WABA subscription and template reads', 'provider_config has no business_account_id')
-      return
-    end
-
-    subscribed_apps(client, waba_id)
-    templates(client, waba_id)
-  end
-
   # P5 Part C. The primary suspect for "inbound never arrives".
   def subscribed_apps(client, waba_id)
     data = report.read("WABA app subscription (/#{waba_id}/subscribed_apps)") { client.fetch_subscribed_apps(waba_id) }
@@ -185,17 +163,14 @@ class Whatsapp::Diagnosis::MetaChecks
     configured_app_is_subscribed(apps)
   end
 
+  # The app id is printed in full on purpose: it is a public identifier, not a credential, and an operator cannot
+  # compare it against WHATSAPP_APP_ID masked. The app SECRET is never read here.
   def subscribed_app(entry)
     app = entry['whatsapp_business_api_data'] || {}
     report.say "    app_id=#{app['id']} name=#{app['name'].inspect}"
     fields = Array(entry['subscribed_fields'] || app['subscribed_fields'])
     report.say "    subscribed_fields: #{fields.presence&.join(', ') || '<not reported by this endpoint>'}"
-    return if fields.blank?
-
-    missing = REQUIRED_FIELDS - fields
-    report.check('the required webhook fields are subscribed', missing.empty?,
-                 missing.empty? ? "all of #{REQUIRED_FIELDS.join(', ')}" : "MISSING #{missing.join(', ')}",
-                 note: 'Without `messages` Meta never posts customer messages or delivery statuses.')
+    @subscribed_fields = fields if fields.present?
   end
 
   def configured_app_is_subscribed(apps)

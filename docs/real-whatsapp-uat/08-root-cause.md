@@ -1,10 +1,42 @@
 # 08 — Root cause (P5 Parts F, I)
 
-**One mechanism in this repository explains all four reported symptoms at once.** It was found by reading the code,
-proven by executing it, and it is checkable on the real server in one command with no call to Meta.
+Two different kinds of statement live in this document, and they are kept apart on purpose. Mixing them is how a
+repository finding gets reported as a production diagnosis.
 
-It is a **code defect**, not a Meta misconfiguration. That matters: the brief's instinct was to suspect Meta-side
-state, and the first pass of this phase suspected the same. The evidence points elsewhere.
+## PROVEN — repository defects
+
+Established by reading the code, by executing it, and by regression tests that now fail if it comes back. True of
+this repository regardless of what any particular installation is doing.
+
+| | Defect | Proof |
+|---|---|---|
+| 1 | `Webhooks::WhatsappEventsJob#channel_is_inactive?` discarded every inbound payload for an embedded-signup channel whose `reauthorization_required?` flag was set — permanently, silently, after Meta had been answered 200 OK | §1, §4; fixed; `spec/requests/whatsapp/inbound_reliability_spec.rb` |
+| 2 | `Channel::Whatsapp#setup_webhooks` rescued a real webhook-setup failure, latched the channel and reported success, so an inbox could be created that can never receive | §3(a); fixed; `spec/services/whatsapp/embedded_signup_service_spec.rb` |
+| 3 | `Whatsapp::MessageDedupLock` was a 24-hour tombstone with no release, so one failed attempt made a message id unprocessable for a day while Meta's redeliveries were swallowed | `09` §3; fixed |
+| 4 | A media-download 401 counted as an authorization error on HTTP status alone, so a per-resource failure could latch the channel | `09` §4; fixed |
+| 5 | Pressing Retry erased the provider's failure reason | `09` §5; fixed |
+| 6 | The access token travelled in the URL query string at four call sites | `09` §6; fixed |
+
+**A repository containing defect 1 and defect 2 is capable of producing exactly the four symptoms reported.** That
+is the strongest claim the evidence supports, and it is the claim this document makes.
+
+## NOT YET PROVEN — the state of the production channel
+
+None of the following is established. Each needs `bundle exec rails whatsapp:diagnose` on the server that owns the
+real WABA, and none of it can be read from here.
+
+- whether the real WhatsApp inbox currently has `reauthorization_required = true`
+- whether its webhook setup ever failed, and whether that is what latched it
+- whether the Meta app is subscribed to the WABA, and whether `messages` is among the subscribed fields
+- whether the callback Meta holds for the number is this installation's
+- whether `WHATSAPP_APP_SECRET` is configured
+- whether the number is on `INACTIVE_WHATSAPP_NUMBERS`
+- whether the stored `phone_number_id` matches Meta's
+- whether a Sidekiq process is consuming the `low` queue
+- whether the old contact's conversation has a persisted inbound message inside 24 hours
+
+Until that output exists, the honest statement is the one above: **the repository contained a defect capable of
+producing the observed symptoms**, not "the production root cause is confirmed".
 
 ---
 
@@ -185,18 +217,17 @@ subscription was never created. The order is:
 Step 3 is a UI action, not a code change, and it is the operator's to take. Nothing in this phase clears it for
 them: P5 Rule 1 requires the proof first, and the proof needs the real server.
 
-### The code changes this argues for, which are NOT applied in this phase
+### The code changes this argued for — now applied
 
-P5 Part G says implement the smallest fix only after the root cause is proven on the real system. The root cause is
-proven **in the code**; that it is the active cause on the production number is not yet proven, so nothing is
-changed. Recorded for the next phase, in priority order:
+The first three are implemented and tested; see `09`. The fourth is recorded as a deferred finding because it is a
+separate surface and nothing in the reported symptoms points at it.
 
-| # | Change | Why |
+| # | Change | Status |
 |---|---|---|
-| 1 | `channel_is_inactive?` must distinguish its three cases, and log which one, with the channel id and the payload's `phone_number_id` | today "channel not found", "latched" and "account inactive" are one indistinguishable warn line. This alone would have made the diagnosis immediate |
-| 2 | `Channel::Whatsapp#setup_webhooks` must not report success when setup failed | swallowing the raise creates a channel that can never receive. At minimum it should surface the failure to the connecting user |
-| 3 | The latch needs an escape — a TTL, or a re-check before dropping | an unbounded flag set by a transient 401 is a permanent outage |
-| 4 | `PATCH /inboxes/:id` can rewrite `business_account_id`, `phone_number_id` and `api_key` without re-registering the webhook (`after_commit … on: :create` only) | editing a channel silently breaks inbound the same way |
+| 1 | `channel_is_inactive?` must distinguish its cases and say which one, with the channel id and the payload's `phone_number_id` | **done** — replaced by `ingestible?`, which reports `unroutable_payload` and `inactive_account` as structured `[WHATSAPP INGEST]` lines, and no longer refuses a latched channel at all |
+| 2 | `Channel::Whatsapp#setup_webhooks` must not report success when setup failed | **done** — `setup_webhooks!` reports and raises; the non-raising form is kept only for the `after_commit` path |
+| 3 | The latch needs an escape | **done, differently and better** — rather than a TTL guess, the latch no longer gates inbound at all. Its lifecycle is unchanged and documented in `09` §2 |
+| 4 | `PATCH /inboxes/:id` can rewrite `business_account_id`, `phone_number_id` and `api_key` without re-registering the webhook (`after_commit … on: :create` only) | **deferred**, recorded in `09` §8 |
 
 ## 7. If the latch is NOT set — the ranked alternatives
 

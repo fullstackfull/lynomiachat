@@ -18,10 +18,16 @@ export const COMMERCE_EVENTS = [
   'commerce_order_delivered',
   'commerce_order_cancelled',
   'commerce_order_refunded',
+  'commerce_cart_abandoned',
 ];
 
-// A store event is not a customer message: these actions are not offered on Commerce triggers.
+// A store event is not a customer message, and a WhatsApp conversation may be outside its 24-hour window: these
+// FREE-FORM actions are not offered on Commerce triggers. `send_whatsapp_template` is deliberately absent from this
+// list — an approved template is the one thing WhatsApp permits outside that window, so it stays available.
+// (docs/pre-p7-closeout/03-template-automation-action.md)
 export const CUSTOMER_MESSAGE_ACTIONS = ['send_message', 'send_attachment'];
+
+export const TEMPLATE_ACTION = 'send_whatsapp_template';
 
 export const isCommerceEvent = event => COMMERCE_EVENTS.includes(event);
 
@@ -37,6 +43,7 @@ export function useLynomiaAutomation() {
   const store = useStore();
   const { isCloudFeatureEnabled } = useAccount();
   const contactViews = useMapGetter('customViews/getContactCustomViews');
+  const whatsappInboxes = useMapGetter('inboxes/getWhatsAppInboxes');
   const { audienceFilterTypes, loadAudienceFields } = useAudienceFilterTypes();
 
   const isCommerceEnabled = computed(() =>
@@ -170,8 +177,16 @@ export function useLynomiaAutomation() {
     return optionsOf(key);
   };
 
-  const actionAllowed = (event, actionKey) =>
-    !(isCommerceEvent(event) && CUSTOMER_MESSAGE_ACTIONS.includes(actionKey));
+  // Two refusals. A Commerce trigger never offers a free-form customer message, and the approved-template action
+  // is not offered at all when this account has no WhatsApp inbox to send from: the control would open onto an
+  // empty inbox list, and a rule that cannot be configured is the invisible no-op P0/D8 exists to prevent.
+  const actionAllowed = (event, actionKey) => {
+    if (isCommerceEvent(event) && CUSTOMER_MESSAGE_ACTIONS.includes(actionKey))
+      return false;
+    if (actionKey === TEMPLATE_ACTION) return whatsappInboxes.value.length > 0;
+
+    return true;
+  };
 
   return {
     load,

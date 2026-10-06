@@ -145,7 +145,18 @@
       "TEAM_DROPDOWN_PLACEHOLDER": "Select teams",
       "EMAIL_INPUT_PLACEHOLDER": "Enter email",
       "URL_INPUT_PLACEHOLDER": "Enter URL",
-      "INSERT_CONTACT_EMAIL": "Use contact's email"
+      "INSERT_CONTACT_EMAIL": "Use contact's email",
+      "WHATSAPP_TEMPLATE": {
+        "INBOX": "Choose a WhatsApp inbox",
+        "TEMPLATE": "Choose an approved template",
+        "NONE_APPROVED": "This inbox has no approved template that can be sent. Approve one in the Template Manager first.",
+        "HEADER_VARIABLE": "Header {{key}}",
+        "BODY_VARIABLE": "Body {{key}}",
+        "BUTTON_VARIABLE": "Button {{index}}",
+        "MEDIA_URL": "Header media URL",
+        "MEDIA_NAME": "Header document name",
+        "INCOMPLETE": "Fill every variable this template needs, or it cannot be sent."
+      }
     },
     "TOGGLE": {
       "ACTIVATION_TITLE": "Activate Automation Rule",
@@ -189,7 +200,8 @@
       "COMMERCE_ORDER_SHIPPED": "Commerce order shipped",
       "COMMERCE_ORDER_DELIVERED": "Commerce order delivered",
       "COMMERCE_ORDER_CANCELLED": "Commerce order cancelled",
-      "COMMERCE_ORDER_REFUNDED": "Commerce order refunded"
+      "COMMERCE_ORDER_REFUNDED": "Commerce order refunded",
+      "COMMERCE_CART_ABANDONED": "Commerce cart abandoned"
     },
     "ACTIONS": {
       "ASSIGN_AGENT": "Assign to Agent",
@@ -210,7 +222,8 @@
       "CHANGE_PRIORITY": "Change Priority",
       "ADD_SLA": "Add SLA",
       "OPEN_CONVERSATION": "Open conversation",
-      "PENDING_CONVERSATION": "Mark conversation as pending"
+      "PENDING_CONVERSATION": "Mark conversation as pending",
+      "SEND_WHATSAPP_TEMPLATE": "Send an approved WhatsApp template"
     },
     "MESSAGE_TYPES": {
       "INCOMING": "Incoming Message",

@@ -82,5 +82,27 @@ RSpec.describe AutomationRule do
       expect(rule('commerce_cart_abandoned',
                   [{ 'action_name' => 'send_whatsapp_template', 'action_params' => [] }])).not_to be_valid
     end
+
+    # A disabled rule is a draft. This is what lets the starter recipe create the trigger and the action and leave
+    # the inbox and template to be chosen in the rule editor, instead of a second template selector in the wizard.
+    it 'allows an incomplete draft while the rule is disabled' do
+      draft = rule('commerce_cart_abandoned',
+                   [{ 'action_name' => 'send_whatsapp_template', 'action_params' => [] }])
+      draft.active = false
+
+      expect(draft).to be_valid
+    end
+
+    it 'refuses to switch on an incomplete draft' do
+      draft = rule('commerce_cart_abandoned',
+                   [{ 'action_name' => 'send_whatsapp_template', 'action_params' => [] }])
+      draft.active = false
+      draft.save!
+
+      draft.active = true
+
+      expect(draft).not_to be_valid
+      expect(draft.errors[:actions].join).to include('inbox_id')
+    end
   end
 end

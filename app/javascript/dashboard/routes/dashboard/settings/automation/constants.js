@@ -786,6 +786,11 @@ export const AUTOMATION_ACTION_TYPES = [
     inputType: 'attachment',
   },
   {
+    key: 'send_whatsapp_template',
+    label: 'SEND_WHATSAPP_TEMPLATE',
+    inputType: 'whatsapp_template',
+  },
+  {
     key: 'send_message',
     label: 'SEND_MESSAGE',
     inputType: 'textarea',

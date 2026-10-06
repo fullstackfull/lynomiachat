@@ -44,7 +44,14 @@ module Custom::AutomationRule
   # A rule naming a template it cannot identify is an invisible no-op, which is the failure mode P0/D8 exists to
   # prevent: the rule saves, looks created, and sends nothing. The inbox, name and language are what the send-time
   # gate needs to find the template at all, so their absence is a configuration error, not a runtime surprise.
+  #
+  # Checked only while the rule is ACTIVE, because a disabled rule is a draft. That is what lets a starter recipe
+  # create the trigger and the action and leave the inbox and template for the person to choose in the rule editor,
+  # where the real control lives — rather than growing a second template selector in the recipe wizard. The rule
+  # then cannot be switched on until it is complete, so an incomplete draft can never run.
   def template_action_configured
+    return unless active?
+
     Array(actions).each do |action|
       next unless action['action_name'] == TEMPLATE_ACTION
 

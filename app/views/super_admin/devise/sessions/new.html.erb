@@ -38,6 +38,17 @@
                   <%= f.password_field :password, autocomplete: "current-password",  placeholder: "Password", class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
                 </div>
               </div>
+              <%# Always rendered: whether this account has two-factor authentication on is not something the sign-in
+                  page should reveal before it knows who is signing in. Ignored when the account has it off. %>
+              <div class="mb-5">
+                <label for="super_admin_otp_code" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                  Authentication code
+                  <span class="font-normal text-slate-500 dark:text-slate-400">if two-factor is enabled</span>
+                </label>
+                <div class="mt-1">
+                  <%= text_field_tag 'super_admin[otp_code]', nil, id: 'super_admin_otp_code', autocomplete: "one-time-code", inputmode: "numeric", placeholder: "Authenticator or backup code", class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                </div>
+              </div>
               <button type="submit" class="flex items-center w-full justify-center rounded-md bg-woot-500 py-3 px-3 text-base font-medium text-white shadow-sm hover:bg-woot-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-woot-500 cursor-pointer">
                 <span>Login</span>
               </button>

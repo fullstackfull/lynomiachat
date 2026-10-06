@@ -95,9 +95,12 @@ class Whatsapp::Diagnosis::InboundEvidence
     contact ? contact_windows(inbox, contact) : report.say('  no contact with that phone number in this account')
   end
 
+  # The operator's own CONTACT= value reaches this line, and a value that failed normalization is exactly the
+  # case where it is a bare local number — so it is masked like every other number in the report rather than
+  # echoed back into something that gets pasted into an issue.
   def unnormalizable_note
-    "contact lookup skipped: #{@contact_identifier.inspect} is not a number this installation can normalize " \
-      'without an explicit country (app/services/contacts/phone.rb). Give it in full international form.'
+    "contact lookup skipped: #{report.mask_phone(@contact_identifier)} is not a number this installation can " \
+      'normalize without an explicit country (app/services/contacts/phone.rb). Give it in full international form.'
   end
 
   def contact_windows(inbox, contact)

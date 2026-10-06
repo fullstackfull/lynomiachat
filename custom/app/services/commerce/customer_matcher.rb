@@ -25,9 +25,8 @@ class Commerce::CustomerMatcher
     discovery = Commerce::Cache.fetch(@store, :candidates, identity_key, force: @force) { discover }
     verified = discovery.value['verified'].map { |attrs| customer(attrs) }
     suggested = discovery.value['suggested'].map { |attrs| customer(attrs) }
-    link = auto_link(verified.first) if verified.one?
-    Result.new(link: link, verified: verified, suggested: suggested, fetched_at: discovery.fetched_at, stale: discovery.stale,
-               error: discovery.error)
+    Result.new(link: resolve_link(verified, discovery), verified: verified, suggested: suggested,
+               fetched_at: discovery.fetched_at, stale: discovery.stale, error: discovery.error)
   end
 
   # E.164 phone of the channel identity this conversation arrived on, or nil.
@@ -43,6 +42,15 @@ class Commerce::CustomerMatcher
 
   private
 
+  # One exact verified match links automatically — but only from a FRESH read. See #auto_link.
+  def resolve_link(verified, discovery)
+    return unless verified.one?
+    return auto_link(verified.first) unless discovery.stale
+
+    Commerce::Metrics.event('commerce.customer_link.stale_match_declined', store_id: @store.id, contact_id: @contact.id)
+    nil
+  end
+
   def discover
     verified = trusted_phone ? provider.find_customers(phone: trusted_phone) : []
     suggested = verified.empty? ? suggestions : []
@@ -57,6 +65,15 @@ class Commerce::CustomerMatcher
   end
 
   # Not after an agent removed the contact's link in this store (a suppressed link).
+  #
+  # Never called for a STALE discovery, and that guard is the point rather than caution. The comparison is exact — the
+  # store customer's phone equals the phone of the conversation's own channel identity — but the mapping from that
+  # phone to a customer is the store's to change. Inside the 24 h a stale entry can be served (an unavailable,
+  # timing-out or rate-limited store), the merchant may have edited that customer's phone, or deleted the customer and
+  # given the number to another: linking then binds the contact to an identity the store no longer has, and the link is
+  # durable, so Customer 360 and the order list would go on showing one person's orders in another person's
+  # conversation. A stale list is still returned for display and manual selection — `stale` is part of the Result and
+  # the UI says so — because showing a stale order list is a read, and creating a link is a write.
   def auto_link(customer)
     return if @store.customer_links.suppressed.exists?(contact: @contact)
 

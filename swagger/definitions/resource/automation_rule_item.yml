@@ -16,11 +16,21 @@ properties:
     example: Add label support and sales on message create event if incoming message content contains text help
   event_name:
     type: string
-    description: Automation Rule event, on which we call the actions(conversation_created, conversation_updated, message_created)
+    description: The trigger the rule runs on. The eight commerce events are real triggers whose availability depends on Commerce being enabled for the account; a rule naming one on an account without it is rejected with the reason.
     enum:
       - conversation_created
       - conversation_updated
+      - conversation_opened
+      - conversation_resolved
       - message_created
+      - commerce_order_created
+      - commerce_order_updated
+      - commerce_order_paid
+      - commerce_order_shipped
+      - commerce_order_delivered
+      - commerce_order_cancelled
+      - commerce_order_refunded
+      - commerce_cart_abandoned
     example: message_created
   conditions:
     type: array

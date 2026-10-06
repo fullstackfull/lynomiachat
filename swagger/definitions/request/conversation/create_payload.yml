@@ -4,7 +4,7 @@ required:
 properties:
   source_id:
     type: string
-    description: Conversation source id
+    description: Id of the contact's connection to the inbox. See the endpoint description for how it is formed per channel.
     example: '1234567890'
   inbox_id:
     type: integer
@@ -75,4 +75,4 @@ properties:
             type: object
             description: The processed param values for template variables in template
             example:
-              1: 'Chatwoot'
+              1: 'Lynomia'

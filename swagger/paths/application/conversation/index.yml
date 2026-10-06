@@ -69,7 +69,18 @@ post:
     - Conversations
   operationId: newConversation
   summary: Create New Conversation
-  description: "Creating a conversation in chatwoot requires a source id. \n\n Learn more about source_id: https://www.chatwoot.com/hc/user-guide/articles/1677839703-how-to-create-an-api-channel-inbox#send-messages-to-the-api-channel"
+  description: |
+    Creating a conversation requires a `source_id`, which identifies a contact's connection to one
+    inbox rather than the conversation itself.
+
+    Send `inbox_id` and `contact_id` together and the connection is created if it does not exist, so
+    `source_id` may be a value you choose — this is the usual path for an API channel inbox. Send
+    `source_id` on its own and it must match a connection that already exists, or the request returns
+    `404`.
+
+    How the value is formed depends on the channel: a website widget generates its own and reports it
+    on webhook events, Twilio phone channels use the phone number in E.164 format, email channels use
+    the contact's email address, and an API channel accepts any string you keep stable per contact.
   security:
     - userApiKey: []
     - agentBotApiKey: []
@@ -98,6 +109,12 @@ post:
                 description: ID of the inbox
     '403':
       description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/bad_request_error'
+    '404':
+      description: No contact inbox matches the source_id, and inbox_id and contact_id were not both supplied
       content:
         application/json:
           schema:

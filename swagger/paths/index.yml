@@ -63,6 +63,11 @@
     - $ref: '#/components/parameters/platform_user_id'
   get:
     $ref: './platform/users/login.yml'
+/platform/api/v1/users/{id}/token:
+  parameters:
+    - $ref: '#/components/parameters/platform_user_id'
+  post:
+    $ref: './platform/users/token.yml'
 
 # ---------------- end of platform path -----------#
 
@@ -306,37 +311,6 @@
   delete:
     $ref: ./application/automation_rule/delete.yml
 
-# Help Center
-/api/v1/accounts/{account_id}/portals:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-  post:
-    $ref: ./application/portal/create.yml
-  get:
-    $ref: ./application/portal/index.yml
-/api/v1/accounts/{account_id}/portals/{id}:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-    - $ref: '#/components/parameters/portal_id'
-  patch:
-    $ref: ./application/portal/update.yml
-
-# Help Center category
-/api/v1/accounts/{account_id}/portals/{id}/categories:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-    - $ref: '#/components/parameters/portal_id'
-  post:
-    $ref: ./application/category/create.yml
-
-# Help Center article
-/api/v1/accounts/{account_id}/portals/{id}/articles:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-    - $ref: '#/components/parameters/portal_id'
-  post:
-    $ref: ./application/article/create.yml
-
 # Conversations
 /api/v1/accounts/{account_id}/conversations/meta:
   $ref: ./application/conversation/meta.yml
@@ -380,6 +354,15 @@
     - $ref: '#/components/parameters/conversation_id'
   post:
     $ref: ./application/conversation/custom_attributes.yml
+
+# POST .../update_last_seen exists and had a written description that index.yml never referenced, so it
+# was absent from the published document.
+/api/v1/accounts/{account_id}/conversations/{conversation_id}/update_last_seen:
+  parameters:
+    - $ref: '#/components/parameters/account_id'
+    - $ref: '#/components/parameters/conversation_id'
+  post:
+    $ref: ./application/conversation/update_last_seen.yml
 
 /api/v1/accounts/{account_id}/conversations/{conversation_id}/destroy_custom_attributes:
   parameters:
@@ -643,7 +626,7 @@
   get:
     $ref: './application/reports/summary.yml'
 
-# Conversation metrics for account
+# Conversation metrics
 /api/v2/accounts/{account_id}/reports/conversations:
   parameters:
     - $ref: '#/components/parameters/account_id'
@@ -653,30 +636,16 @@
         type: string
         enum:
           - account
-      required: true
-      description: Type of report
-  get:
-    $ref: './application/reports/conversation/account.yml'
-
-# Conversation metrics for agent
-/api/v2/accounts/{account_id}/reports/conversations/:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-    - in: query
-      name: type
-      schema:
-        type: string
-        enum:
           - agent
       required: true
-      description: Type of report
+      description: Whether to report on the account as a whole or per agent
     - in: query
       name: user_id
       schema:
         type: string
-      description: The numeric ID of the user
+      description: With type=agent, narrows the report to one agent by numeric ID
   get:
-    $ref: './application/reports/conversation/agent.yml'
+    $ref: './application/reports/conversation/metrics.yml'
 
 # Channel summary report (Available in 4.10.0+)
 /api/v2/accounts/{account_id}/summary_reports/channel:
@@ -825,30 +794,6 @@
       description: The timestamp from where report should stop (Unix timestamp).
   get:
     $ref: './application/reports/outgoing_messages_count.yml'
-
-# Conversations Messages
-/accounts/{account_id}/conversations/{conversation_id}/messages:
-  parameters:
-    - $ref: '#/components/parameters/account_id'
-    - name: conversation_id
-      in: path
-      description: ID of the conversation
-      required: true
-      schema:
-        type: number
-  get:
-    tags:
-      - Conversation
-    summary: Get messages from a conversation
-    description: Returns all messages from a specific conversation
-    operationId: getConversationMessages
-    responses:
-      '200':
-        description: Success
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/conversation_messages'
 
 # Campaigns
 /api/v1/accounts/{account_id}/campaigns:

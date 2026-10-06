@@ -4,12 +4,17 @@ properties:
     type: string
     description: The name of the custom filter
     example: 'My Custom Filter'
-  type:
+  filter_type:
     type: string
     enum: ['conversation', 'contact', 'report']
-    description: The description about the custom filter
+    description: What the filter selects
     example: 'conversation'
   query:
     type: object
     description: A query that needs to be saved as a custom filter
     example: {}
+  shared:
+    type: boolean
+    description: >
+      Share the filter with the account as a shared audience. Administrators only. Unsharing one that automation
+      rules or campaigns still to send reference is refused with 422.

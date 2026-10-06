@@ -1,13 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Chatwoot",
-    "description": "This is the API documentation for Chatwoot server.",
+    "title": "Lynomia Chat",
+    "description": "This is the API documentation for the Lynomia Chat server.\n\nLynomia Chat publishes the product documentation itself, so a workspace has no knowledge base of\nits own and this API has no Help Center endpoints. The inherited\n`/api/v1/accounts/{account_id}/portals` routes and their category and article routes still exist,\nbut they are refused for every caller and are not part of this contract.\n",
     "version": "1.1.0",
-    "termsOfService": "https://www.chatwoot.com/terms-of-service/",
-    "contact": {
-      "email": "hello@chatwoot.com"
-    },
     "license": {
       "name": "MIT License",
       "url": "https://opensource.org/licenses/MIT"
@@ -15,10 +11,59 @@
   },
   "servers": [
     {
-      "url": "https://app.chatwoot.com/"
+      "url": "/",
+      "description": "This installation"
     }
   ],
   "paths": {
+    "/public/api/v1/inboxes/{inbox_identifier}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/public_inbox_identifier"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Inbox API"
+        ],
+        "operationId": "get-details-of-a-inbox",
+        "summary": "Inbox details",
+        "description": "Get the details of an inbox",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/public_inbox"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The given inbox does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/bad_request_error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/public/api/v1/inboxes/{inbox_identifier}/contacts": {
       "parameters": [
         {
@@ -629,31 +674,51 @@
   "components": {
     "schemas": {
       "bad_request_error": {
-        "title": "data",
+        "title": "error",
         "type": "object",
+        "description": "The error body this API returns. A write that fails validation returns `validation_error` instead.\n",
         "properties": {
-          "description": {
-            "type": "string"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/request_error"
-            }
+          "error": {
+            "type": "string",
+            "description": "What went wrong"
           }
         }
       },
-      "request_error": {
+      "validation_error": {
+        "title": "validation error",
         "type": "object",
+        "description": "Returned when a write is rejected by model validation. `message` is every error joined for display; `errors` and `error_types` are keyed by attribute so a form can put each message beside its own field and tell \"already taken\" from \"wrong format\".\n",
         "properties": {
-          "field": {
-            "type": "string"
-          },
           "message": {
-            "type": "string"
+            "type": "string",
+            "description": "Every validation error, joined"
           },
-          "code": {
-            "type": "string"
+          "attributes": {
+            "type": "array",
+            "description": "The attributes that were rejected",
+            "items": {
+              "type": "string"
+            }
+          },
+          "errors": {
+            "type": "object",
+            "description": "Messages, keyed by attribute",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "error_types": {
+            "type": "object",
+            "description": "The validator that rejected each attribute, keyed by attribute",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         }
       },
@@ -796,11 +861,21 @@
           },
           "event_name": {
             "type": "string",
-            "description": "Automation Rule event, on which we call the actions(conversation_created, conversation_updated, message_created)",
+            "description": "The trigger the rule runs on. The eight commerce events are real triggers whose availability depends on Commerce being enabled for the account; a rule naming one on an account without it is rejected with the reason.",
             "enum": [
               "conversation_created",
               "conversation_updated",
-              "message_created"
+              "conversation_opened",
+              "conversation_resolved",
+              "message_created",
+              "commerce_order_created",
+              "commerce_order_updated",
+              "commerce_order_paid",
+              "commerce_order_shipped",
+              "commerce_order_delivered",
+              "commerce_order_cancelled",
+              "commerce_order_refunded",
+              "commerce_cart_abandoned"
             ],
             "example": "message_created"
           },
@@ -868,272 +943,6 @@
           "active": {
             "type": "boolean",
             "description": "Enable/disable automation rule"
-          }
-        }
-      },
-      "portal": {
-        "type": "object",
-        "properties": {
-          "payload": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/portal_item"
-            }
-          }
-        }
-      },
-      "portal_single": {
-        "type": "object",
-        "properties": {
-          "payload": {
-            "$ref": "#/components/schemas/portal_item"
-          }
-        }
-      },
-      "portal_config": {
-        "type": "object",
-        "description": "Configuration settings for the portal",
-        "properties": {
-          "allowed_locales": {
-            "type": "array",
-            "description": "List of allowed locales for the portal",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string",
-                  "description": "The language code"
-                },
-                "articles_count": {
-                  "type": "integer",
-                  "description": "Number of articles in this locale"
-                },
-                "categories_count": {
-                  "type": "integer",
-                  "description": "Number of categories in this locale"
-                }
-              }
-            }
-          }
-        }
-      },
-      "portal_logo": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "ID of the logo file"
-          },
-          "portal_id": {
-            "type": "integer",
-            "description": "ID of the portal this logo belongs to"
-          },
-          "file_type": {
-            "type": "string",
-            "description": "MIME type of the file"
-          },
-          "account_id": {
-            "type": "integer",
-            "description": "ID of the account"
-          },
-          "file_url": {
-            "type": "string",
-            "description": "URL to access the logo file"
-          },
-          "blob_id": {
-            "type": "integer",
-            "description": "ID of the blob"
-          },
-          "filename": {
-            "type": "string",
-            "description": "Name of the file"
-          }
-        }
-      },
-      "portal_meta": {
-        "type": "object",
-        "properties": {
-          "all_articles_count": {
-            "type": "integer",
-            "description": "Total number of articles"
-          },
-          "archived_articles_count": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "Number of archived articles"
-          },
-          "published_count": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "Number of published articles"
-          },
-          "draft_articles_count": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "Number of draft articles"
-          },
-          "categories_count": {
-            "type": "integer",
-            "description": "Number of categories"
-          },
-          "default_locale": {
-            "type": "string",
-            "description": "Default locale for the portal"
-          }
-        }
-      },
-      "portal_item": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "The ID of the portal"
-          },
-          "archived": {
-            "type": "boolean",
-            "description": "Whether the portal is archived"
-          },
-          "color": {
-            "type": "string",
-            "description": "The color code for the portal"
-          },
-          "config": {
-            "$ref": "#/components/schemas/portal_config"
-          },
-          "custom_domain": {
-            "type": "string",
-            "description": "Custom domain for the portal"
-          },
-          "header_text": {
-            "type": "string",
-            "description": "The header text for the portal"
-          },
-          "homepage_link": {
-            "type": "string",
-            "description": "Homepage link for the portal"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the portal"
-          },
-          "slug": {
-            "type": "string",
-            "description": "URL slug for the portal"
-          },
-          "page_title": {
-            "type": "string",
-            "description": "Page title for the portal"
-          },
-          "account_id": {
-            "type": "integer",
-            "description": "ID of the account the portal belongs to"
-          },
-          "inbox": {
-            "$ref": "#/components/schemas/inbox"
-          },
-          "logo": {
-            "$ref": "#/components/schemas/portal_logo"
-          },
-          "meta": {
-            "$ref": "#/components/schemas/portal_meta"
-          }
-        }
-      },
-      "category": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "description": {
-            "type": "string",
-            "description": "The text content."
-          },
-          "locale": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "position": {
-            "type": "integer"
-          },
-          "portal_id": {
-            "type": "integer"
-          },
-          "account_id": {
-            "type": "integer"
-          },
-          "associated_category_id": {
-            "type": "integer",
-            "description": "To associate similar categories to each other, e.g same category of product documentation in different languages"
-          },
-          "parent_category_id": {
-            "type": "integer",
-            "description": "To define parent category, e.g product documentation has multiple level features in sales category or in engineering category."
-          }
-        }
-      },
-      "article": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "content": {
-            "type": "string",
-            "description": "The text content."
-          },
-          "meta": {
-            "type": "object"
-          },
-          "position": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "integer",
-            "enum": [
-              "draft",
-              "published",
-              "archived"
-            ]
-          },
-          "title": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "views": {
-            "type": "integer"
-          },
-          "portal_id": {
-            "type": "integer"
-          },
-          "account_id": {
-            "type": "integer"
-          },
-          "author_id": {
-            "type": "integer"
-          },
-          "category_id": {
-            "type": "integer"
-          },
-          "folder_id": {
-            "type": "integer"
-          },
-          "associated_article_id": {
-            "type": "integer",
-            "description": "To associate similar articles to each other, e.g to provide the link for the reference."
           }
         }
       },
@@ -2139,18 +1948,6 @@
           }
         }
       },
-      "contactable_inboxes": {
-        "type": "object",
-        "properties": {
-          "source_id": {
-            "type": "string",
-            "description": "Contact Inbox Source Id"
-          },
-          "inbox": {
-            "$ref": "#/components/schemas/inbox"
-          }
-        }
-      },
       "custom_filter": {
         "type": "object",
         "properties": {
@@ -2162,14 +1959,14 @@
             "type": "string",
             "description": "The name of the custom filter"
           },
-          "type": {
+          "filter_type": {
             "type": "string",
             "enum": [
               "conversation",
               "contact",
               "report"
             ],
-            "description": "The description about the custom filter"
+            "description": "What the filter selects"
           },
           "query": {
             "type": "object",
@@ -2184,6 +1981,22 @@
             "type": "string",
             "format": "date-time",
             "description": "The time at which the custom filter was updated"
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "Whether this is a shared audience, visible to everyone in the account and addressable by campaigns and automation rules. Only an administrator may share a filter, or change or delete a shared one.\n"
+          },
+          "automation_rules_count": {
+            "type": "number",
+            "description": "Present only on a shared filter. Automation rules that reference it."
+          },
+          "active_automation_rules_count": {
+            "type": "number",
+            "description": "Present only on a shared filter. How many of those rules are active."
+          },
+          "campaigns_count": {
+            "type": "number",
+            "description": "Present only on a shared filter. Campaigns still to send that reference it."
           }
         }
       },
@@ -2215,6 +2028,8 @@
                 "message_created",
                 "message_updated",
                 "webwidget_triggered",
+                "inbox_created",
+                "inbox_updated",
                 "conversation_typing_on",
                 "conversation_typing_off"
               ]
@@ -2229,27 +2044,6 @@
           "account_id": {
             "type": "number",
             "description": "The id of the account which the webhook object belongs to"
-          }
-        }
-      },
-      "account": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "Account ID"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name of the account"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "administrator",
-              "agent"
-            ],
-            "description": "The user role in the account"
           }
         }
       },
@@ -2688,7 +2482,7 @@
           },
           "pubsub_token": {
             "type": "string",
-            "description": "The token to be used to connect to chatwoot websocket"
+            "description": "The token to be used to connect to the websocket"
           }
         }
       },
@@ -3692,7 +3486,7 @@
         "properties": {
           "source_id": {
             "type": "string",
-            "description": "Conversation source id",
+            "description": "Id of the contact's connection to the inbox. See the endpoint description for how it is formed per channel.",
             "example": "1234567890"
           },
           "inbox_id": {
@@ -3784,7 +3578,7 @@
                     "type": "object",
                     "description": "The processed param values for template variables in template",
                     "example": {
-                      "1": "Chatwoot"
+                      "1": "Lynomia"
                     }
                   }
                 }
@@ -5136,20 +4930,24 @@
             "description": "The name of the custom filter",
             "example": "My Custom Filter"
           },
-          "type": {
+          "filter_type": {
             "type": "string",
             "enum": [
               "conversation",
               "contact",
               "report"
             ],
-            "description": "The description about the custom filter",
+            "description": "What the filter selects",
             "example": "conversation"
           },
           "query": {
             "type": "object",
             "description": "A query that needs to be saved as a custom filter",
             "example": {}
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "Share the filter with the account as a shared audience. Administrators only. Unsharing one that automation rules or campaigns still to send reference is refused with 422.\n"
           }
         }
       },
@@ -5178,6 +4976,8 @@
                 "contact_created",
                 "contact_updated",
                 "webwidget_triggered",
+                "inbox_created",
+                "inbox_updated",
                 "conversation_typing_on",
                 "conversation_typing_off"
               ]
@@ -5248,11 +5048,20 @@
             "enum": [
               "conversation_created",
               "conversation_updated",
+              "conversation_opened",
               "conversation_resolved",
-              "message_created"
+              "message_created",
+              "commerce_order_created",
+              "commerce_order_updated",
+              "commerce_order_paid",
+              "commerce_order_shipped",
+              "commerce_order_delivered",
+              "commerce_order_cancelled",
+              "commerce_order_refunded",
+              "commerce_cart_abandoned"
             ],
             "example": "message_created",
-            "description": "The event when you want to execute the automation actions"
+            "description": "The trigger the rule runs on. The eight commerce events are real triggers whose availability depends on Commerce being enabled for the account; a rule naming one on an account without it is rejected with the reason."
           },
           "active": {
             "type": "boolean",
@@ -5284,173 +5093,6 @@
                   "help"
                 ]
               }
-            }
-          }
-        }
-      },
-      "portal_create_update_payload": {
-        "type": "object",
-        "properties": {
-          "color": {
-            "type": "string",
-            "description": "Header color for help-center in hex format",
-            "example": "#FFFFFF"
-          },
-          "custom_domain": {
-            "type": "string",
-            "description": "Custom domain to display help center.",
-            "example": "chatwoot.help"
-          },
-          "header_text": {
-            "type": "string",
-            "description": "Help center header",
-            "example": "Handbook"
-          },
-          "homepage_link": {
-            "type": "string",
-            "description": "link to main dashboard",
-            "example": "https://www.chatwoot.com/"
-          },
-          "name": {
-            "type": "string",
-            "description": "Name for the portal",
-            "example": "Handbook"
-          },
-          "page_title": {
-            "type": "string",
-            "description": "Page title for the portal",
-            "example": "Handbook"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Slug for the portal to display in link",
-            "example": "handbook"
-          },
-          "archived": {
-            "type": "boolean",
-            "description": "Status to check if portal is live",
-            "example": false
-          },
-          "config": {
-            "type": "object",
-            "description": "Configuration about supporting locales",
-            "example": {
-              "allowed_locales": [
-                "en",
-                "es"
-              ],
-              "default_locale": "en"
-            }
-          }
-        }
-      },
-      "category_create_update_payload": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The name of the category",
-            "example": "Category Name"
-          },
-          "description": {
-            "type": "string",
-            "description": "A description for the category",
-            "example": "Category description"
-          },
-          "position": {
-            "type": "integer",
-            "description": "Category position in the portal list to sort",
-            "example": 1
-          },
-          "slug": {
-            "type": "string",
-            "description": "The category slug used in the URL",
-            "example": "category-name"
-          },
-          "locale": {
-            "type": "string",
-            "description": "The locale of the category",
-            "example": "en"
-          },
-          "icon": {
-            "type": "string",
-            "description": "The icon of the category as a string (emoji)",
-            "example": "📚"
-          },
-          "parent_category_id": {
-            "type": "integer",
-            "description": "To define parent category, e.g product documentation has multiple level features in sales category or in engineering category.",
-            "example": 1
-          },
-          "associated_category_id": {
-            "type": "integer",
-            "description": "To associate similar categories to each other, e.g same category of product documentation in different languages",
-            "example": 2
-          }
-        }
-      },
-      "article_create_update_payload": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "The title of the article",
-            "example": "Article Title"
-          },
-          "slug": {
-            "type": "string",
-            "description": "The slug of the article",
-            "example": "article-title"
-          },
-          "position": {
-            "type": "integer",
-            "description": "article position in category",
-            "example": 1
-          },
-          "content": {
-            "type": "string",
-            "description": "The text content.",
-            "example": "This is the content of the article"
-          },
-          "description": {
-            "type": "string",
-            "description": "The description of the article",
-            "example": "This is the description of the article"
-          },
-          "category_id": {
-            "type": "integer",
-            "description": "The category id of the article",
-            "example": 1
-          },
-          "author_id": {
-            "type": "integer",
-            "description": "The author agent id of the article",
-            "example": 1
-          },
-          "associated_article_id": {
-            "type": "integer",
-            "description": "To associate similar articles to each other, e.g to provide the link for the reference.",
-            "example": 2
-          },
-          "status": {
-            "type": "integer",
-            "description": "The status of the article. 0 for draft, 1 for published, 2 for archived",
-            "example": 1
-          },
-          "locale": {
-            "type": "string",
-            "description": "The locale of the article",
-            "example": "en"
-          },
-          "meta": {
-            "type": "object",
-            "description": "Use for search",
-            "example": {
-              "tags": [
-                "article_name"
-              ],
-              "title": "article title",
-              "description": "article description"
             }
           }
         }
@@ -5602,122 +5244,6 @@
             "$ref": "#/components/schemas/contact"
           }
         ]
-      },
-      "contact_list": {
-        "type": "array",
-        "description": "array of contacts",
-        "items": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/contact"
-            }
-          ]
-        }
-      },
-      "contact_conversations": {
-        "type": "array",
-        "description": "array of conversations",
-        "items": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/conversation"
-            },
-            {
-              "type": "object",
-              "properties": {
-                "meta": {
-                  "type": "object",
-                  "properties": {
-                    "sender": {
-                      "type": "object",
-                      "properties": {
-                        "additional_attributes": {
-                          "type": "object",
-                          "description": "The additional attributes of the sender"
-                        },
-                        "availability_status": {
-                          "type": "string",
-                          "description": "The availability status of the sender"
-                        },
-                        "email": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The email of the sender"
-                        },
-                        "id": {
-                          "type": "number",
-                          "description": "ID fo the sender"
-                        },
-                        "name": {
-                          "type": "string",
-                          "description": "The name of the sender"
-                        },
-                        "phone_number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The phone number of the sender"
-                        },
-                        "blocked": {
-                          "type": "boolean",
-                          "description": "Whether the sender is blocked"
-                        },
-                        "identifier": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "The identifier of the sender"
-                        },
-                        "thumbnail": {
-                          "type": [
-                            "string",
-                            "null"
-                          ],
-                          "description": "Avatar URL of the contact"
-                        },
-                        "custom_attributes": {
-                          "type": "object",
-                          "description": "The custom attributes of the sender"
-                        },
-                        "last_activity_at": {
-                          "type": "number",
-                          "description": "The last activity at of the sender"
-                        },
-                        "created_at": {
-                          "type": "number",
-                          "description": "The created at of the sender"
-                        }
-                      }
-                    },
-                    "channel": {
-                      "type": "string",
-                      "description": "Channel Type"
-                    },
-                    "assignee": {
-                      "$ref": "#/components/schemas/user"
-                    },
-                    "hmac_verified": {
-                      "type": "boolean",
-                      "description": "Whether the hmac is verified"
-                    }
-                  }
-                }
-              }
-            },
-            {
-              "type": "object",
-              "properties": {
-                "display_id": {
-                  "type": "number"
-                }
-              }
-            }
-          ]
-        }
       },
       "contact_labels": {
         "type": "object",
@@ -5951,32 +5477,6 @@
             }
           }
         ]
-      },
-      "conversation_status_toggle": {
-        "type": "object",
-        "properties": {
-          "meta": {
-            "type": "object"
-          },
-          "payload": {
-            "type": "object",
-            "properties": {
-              "success": {
-                "type": "boolean"
-              },
-              "current_status": {
-                "type": "string",
-                "enum": [
-                  "open",
-                  "resolved"
-                ]
-              },
-              "conversation_id": {
-                "type": "number"
-              }
-            }
-          }
-        }
       },
       "conversation_labels": {
         "type": "object",
@@ -6460,333 +5960,6 @@
           }
         ]
       },
-      "contact_detail": {
-        "type": "object",
-        "properties": {
-          "additional_attributes": {
-            "type": "object",
-            "description": "The object containing additional attributes related to the contact",
-            "properties": {
-              "city": {
-                "type": "string",
-                "description": "City of the contact"
-              },
-              "country": {
-                "type": "string",
-                "description": "Country of the contact"
-              },
-              "country_code": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "Country code of the contact"
-              },
-              "created_at_ip": {
-                "type": "string",
-                "description": "IP address when the contact was created"
-              }
-            }
-          },
-          "custom_attributes": {
-            "type": "object",
-            "description": "The custom attributes of the contact"
-          },
-          "email": {
-            "type": "string",
-            "description": "The email address of the contact"
-          },
-          "id": {
-            "type": "integer",
-            "description": "The ID of the contact"
-          },
-          "identifier": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The identifier of the contact"
-          },
-          "name": {
-            "type": "string",
-            "description": "The name of the contact"
-          },
-          "phone_number": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The phone number of the contact"
-          },
-          "thumbnail": {
-            "type": "string",
-            "description": "The thumbnail of the contact"
-          },
-          "blocked": {
-            "type": "boolean",
-            "description": "Whether the contact is blocked"
-          },
-          "type": {
-            "type": "string",
-            "description": "The type of entity",
-            "enum": [
-              "contact"
-            ]
-          }
-        }
-      },
-      "message_detailed": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "The ID of the message"
-          },
-          "content": {
-            "type": "string",
-            "description": "The text content of the message"
-          },
-          "inbox_id": {
-            "type": "number",
-            "description": "The ID of the inbox"
-          },
-          "conversation_id": {
-            "type": "number",
-            "description": "The ID of the conversation"
-          },
-          "message_type": {
-            "type": "integer",
-            "enum": [
-              0,
-              1,
-              2,
-              3
-            ],
-            "description": "The type of the message (0: incoming, 1: outgoing, 2: activity, 3: template)"
-          },
-          "content_type": {
-            "type": "string",
-            "enum": [
-              "text",
-              "input_text",
-              "input_textarea",
-              "input_email",
-              "input_select",
-              "cards",
-              "form",
-              "article",
-              "incoming_email",
-              "input_csat",
-              "integrations",
-              "sticker",
-              "voice_call"
-            ],
-            "description": "The type of the message content"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "sent",
-              "delivered",
-              "read",
-              "failed"
-            ],
-            "description": "The status of the message"
-          },
-          "content_attributes": {
-            "type": "object",
-            "description": "The content attributes for each content_type",
-            "properties": {
-              "in_reply_to": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "ID of the message this is replying to"
-              }
-            }
-          },
-          "echo_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The echo ID of the message, used for deduplication"
-          },
-          "created_at": {
-            "type": "integer",
-            "description": "The timestamp when message was created"
-          },
-          "private": {
-            "type": "boolean",
-            "description": "The flag which shows whether the message is private or not"
-          },
-          "source_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The source ID of the message"
-          },
-          "sender": {
-            "$ref": "#/components/schemas/contact_detail"
-          },
-          "attachments": {
-            "type": "array",
-            "description": "The list of attachments associated with the message",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "number",
-                  "description": "The ID of the attachment"
-                },
-                "message_id": {
-                  "type": "number",
-                  "description": "The ID of the message"
-                },
-                "file_type": {
-                  "type": "string",
-                  "enum": [
-                    "image",
-                    "video",
-                    "audio",
-                    "file",
-                    "location",
-                    "fallback",
-                    "share",
-                    "story_mention",
-                    "contact",
-                    "ig_reel"
-                  ],
-                  "description": "The type of the attached file"
-                },
-                "account_id": {
-                  "type": "number",
-                  "description": "The ID of the account"
-                },
-                "data_url": {
-                  "type": "string",
-                  "description": "The URL of the attached file"
-                },
-                "thumb_url": {
-                  "type": "string",
-                  "description": "The thumbnail URL of the attached file"
-                },
-                "file_size": {
-                  "type": "number",
-                  "description": "The size of the attached file in bytes"
-                }
-              }
-            }
-          }
-        }
-      },
-      "conversation_meta": {
-        "type": "object",
-        "properties": {
-          "labels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Labels associated with the conversation"
-          },
-          "additional_attributes": {
-            "type": "object",
-            "properties": {
-              "browser": {
-                "type": "object",
-                "properties": {
-                  "device_name": {
-                    "type": "string",
-                    "description": "Name of the device"
-                  },
-                  "browser_name": {
-                    "type": "string",
-                    "description": "Name of the browser"
-                  },
-                  "platform_name": {
-                    "type": "string",
-                    "description": "Name of the platform"
-                  },
-                  "browser_version": {
-                    "type": "string",
-                    "description": "Version of the browser"
-                  },
-                  "platform_version": {
-                    "type": "string",
-                    "description": "Version of the platform"
-                  }
-                }
-              },
-              "referer": {
-                "type": "string",
-                "description": "Referrer URL"
-              },
-              "initiated_at": {
-                "type": "object",
-                "properties": {
-                  "timestamp": {
-                    "type": "string",
-                    "description": "Timestamp when the conversation was initiated"
-                  }
-                }
-              },
-              "browser_language": {
-                "type": "string",
-                "description": "Browser language setting"
-              },
-              "conversation_language": {
-                "type": "string",
-                "description": "Conversation language"
-              }
-            },
-            "description": "Additional attributes of the conversation"
-          },
-          "contact": {
-            "$ref": "#/components/schemas/contact_detail"
-          },
-          "assignee": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/agent"
-              }
-            ],
-            "description": "The agent assigned to the conversation",
-            "nullable": true
-          },
-          "agent_last_seen_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Timestamp when the agent last saw the conversation"
-          },
-          "assignee_last_seen_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Timestamp when the assignee last saw the conversation"
-          }
-        }
-      },
-      "conversation_messages": {
-        "type": "object",
-        "properties": {
-          "meta": {
-            "$ref": "#/components/schemas/conversation_meta"
-          },
-          "payload": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/message_detailed"
-            },
-            "description": "List of messages in the conversation"
-          }
-        }
-      },
       "contact_meta": {
         "type": "object",
         "properties": {
@@ -6961,164 +6134,6 @@
         "properties": {
           "payload": {
             "$ref": "#/components/schemas/contact_list_item"
-          }
-        }
-      },
-      "contact_conversation_message": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "description": "ID of the message"
-          },
-          "content": {
-            "type": "string",
-            "description": "Content of the message"
-          },
-          "account_id": {
-            "type": "integer",
-            "description": "ID of the account"
-          },
-          "inbox_id": {
-            "type": "integer",
-            "description": "ID of the inbox"
-          },
-          "conversation_id": {
-            "type": "integer",
-            "description": "ID of the conversation"
-          },
-          "message_type": {
-            "type": "integer",
-            "description": "Type of the message"
-          },
-          "created_at": {
-            "type": "integer",
-            "description": "Timestamp when message was created"
-          },
-          "updated_at": {
-            "type": "string",
-            "description": "Formatted datetime when message was updated"
-          },
-          "private": {
-            "type": "boolean",
-            "description": "Whether the message is private"
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the message"
-          },
-          "source_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Source ID of the message"
-          },
-          "content_type": {
-            "type": "string",
-            "description": "Type of the content"
-          },
-          "content_attributes": {
-            "type": "object",
-            "description": "Attributes of the content"
-          },
-          "sender_type": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Type of the sender"
-          },
-          "sender_id": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "ID of the sender"
-          },
-          "external_source_ids": {
-            "type": "object",
-            "description": "External source IDs"
-          },
-          "additional_attributes": {
-            "type": "object",
-            "description": "Additional attributes of the message"
-          },
-          "processed_message_content": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Processed message content"
-          },
-          "sentiment": {
-            "type": "object",
-            "description": "Sentiment analysis of the message"
-          },
-          "conversation": {
-            "type": "object",
-            "description": "Conversation details",
-            "properties": {
-              "assignee_id": {
-                "type": [
-                  "integer",
-                  "null"
-                ],
-                "description": "ID of the assignee"
-              },
-              "unread_count": {
-                "type": "integer",
-                "description": "Count of unread messages"
-              },
-              "last_activity_at": {
-                "type": "integer",
-                "description": "Timestamp of last activity"
-              },
-              "contact_inbox": {
-                "type": "object",
-                "description": "Contact inbox details",
-                "properties": {
-                  "source_id": {
-                    "type": "string",
-                    "description": "Source ID of the contact inbox"
-                  }
-                }
-              }
-            }
-          },
-          "sender": {
-            "type": "object",
-            "description": "Details of the sender",
-            "properties": {
-              "id": {
-                "type": "integer",
-                "description": "ID of the sender"
-              },
-              "name": {
-                "type": "string",
-                "description": "Name of the sender"
-              },
-              "available_name": {
-                "type": "string",
-                "description": "Available name of the sender"
-              },
-              "avatar_url": {
-                "type": "string",
-                "description": "URL of the sender's avatar"
-              },
-              "type": {
-                "type": "string",
-                "description": "Type of the sender"
-              },
-              "availability_status": {
-                "type": "string",
-                "description": "Availability status of the sender"
-              },
-              "thumbnail": {
-                "type": "string",
-                "description": "Thumbnail URL of the sender"
-              }
-            }
           }
         }
       },
@@ -7487,7 +6502,7 @@
           "audience": {
             "type": "array",
             "minItems": 1,
-            "description": "Required when creating a one-off SMS or WhatsApp campaign. Provide at least one label from this account. Contacts matching any selected label are included. When updating, omit this field to retain the existing audience.",
+            "description": "Required when creating a one-off SMS or WhatsApp campaign. Each entry names either a label or a shared\ncontact audience of this account. The recipients are the contacts in any of the named labels or\naudiences, each once. An `Audience` entry is accepted on one-off campaigns only. When updating, omit this\nfield to retain the existing audience.\n",
             "items": {
               "type": "object",
               "required": [
@@ -7498,12 +6513,13 @@
                 "type": {
                   "type": "string",
                   "enum": [
-                    "Label"
+                    "Label",
+                    "Audience"
                   ]
                 },
                 "id": {
                   "type": "integer",
-                  "description": "ID of a label in this account."
+                  "description": "ID of a label in this account, or of one of its shared contact audiences."
                 }
               }
             }
@@ -7718,15 +6734,6 @@
         "required": true,
         "description": "The numeric ID of the integration hook"
       },
-      "source_id": {
-        "in": "path",
-        "name": "source_id",
-        "required": true,
-        "schema": {
-          "type": "string"
-        },
-        "description": "Id of the session for which the conversation is created.\n\n\n\n Source Ids can be obtained through contactable inboxes API or via generated.<br/><br/>Website: Chatwoot generated string which can be obtained from webhook events. <br/> Phone Channels(Twilio): Phone number in e164 format <br/> Email Channels: Contact Email address <br/> API Channel: Any Random String"
-      },
       "contact_sort_param": {
         "in": "query",
         "name": "sort",
@@ -7860,15 +6867,6 @@
         },
         "required": true,
         "description": "The source id of contact obtained on contact create"
-      },
-      "portal_id": {
-        "in": "path",
-        "name": "id",
-        "schema": {
-          "type": "string"
-        },
-        "required": true,
-        "description": "The slug identifier of the portal"
       }
     },
     "securitySchemes": {
@@ -7893,6 +6891,10 @@
     }
   },
   "tags": [
+    {
+      "name": "Inbox API",
+      "description": "Public inbox APIs"
+    },
     {
       "name": "Contacts API",
       "description": "Public contact APIs"
@@ -7940,13 +6942,13 @@
         "Reports",
         "Teams",
         "Webhooks",
-        "Automation Rule",
-        "Help Center"
+        "Automation Rule"
       ]
     },
     {
       "name": "Client",
       "tags": [
+        "Inbox API",
         "Contacts API",
         "Conversations API",
         "Messages API"

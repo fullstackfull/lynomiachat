@@ -13,10 +13,19 @@ properties:
     enum:
       - conversation_created
       - conversation_updated
+      - conversation_opened
       - conversation_resolved
       - message_created
+      - commerce_order_created
+      - commerce_order_updated
+      - commerce_order_paid
+      - commerce_order_shipped
+      - commerce_order_delivered
+      - commerce_order_cancelled
+      - commerce_order_refunded
+      - commerce_cart_abandoned
     example: message_created
-    description: The event when you want to execute the automation actions
+    description: The trigger the rule runs on. The eight commerce events are real triggers whose availability depends on Commerce being enabled for the account; a rule naming one on an account without it is rejected with the reason.
   active:
     type: boolean
     description: Enable/disable automation rule

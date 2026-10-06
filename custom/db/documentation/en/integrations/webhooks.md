@@ -80,9 +80,18 @@ the **raw** request body, keyed with the secret:
 sha256=HMAC_SHA256(secret, "<timestamp>.<raw body>")
 ```
 
-Compute it over the bytes you received, not over a re-serialised copy, and compare in constant time. The exact
-header names are in the API reference for the webhook resource. Reject anything that does not match, and treat
-the delivery id as the key for ignoring a repeat.
+Compute it over the bytes you received, not over a re-serialised copy, and compare in constant time. Reject
+anything that does not match, and treat the delivery id as the key for ignoring a repeat.
+
+The three headers are named exactly:
+
+| Header | Carries |
+|---|---|
+| `X-Chatwoot-Signature` | `sha256=` followed by the HMAC above |
+| `X-Chatwoot-Timestamp` | the timestamp the signature was computed over |
+| `X-Chatwoot-Delivery` | the delivery id, when one is available |
+
+Those names are part of the wire format and do not change with the installation's branding.
 
 ## When a delivery fails
 

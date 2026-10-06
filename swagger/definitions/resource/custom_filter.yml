@@ -6,10 +6,10 @@ properties:
   name:
     type: string
     description: The name of the custom filter
-  type:
+  filter_type:
     type: string
     enum: ["conversation", "contact", "report"]
-    description: The description about the custom filter
+    description: What the filter selects
   query:
     type: object
     description: A query that needs to be saved as a custom filter
@@ -21,3 +21,17 @@ properties:
     type: string
     format: date-time
     description: The time at which the custom filter was updated
+  shared:
+    type: boolean
+    description: >
+      Whether this is a shared audience, visible to everyone in the account and addressable by campaigns and
+      automation rules. Only an administrator may share a filter, or change or delete a shared one.
+  automation_rules_count:
+    type: number
+    description: Present only on a shared filter. Automation rules that reference it.
+  active_automation_rules_count:
+    type: number
+    description: Present only on a shared filter. How many of those rules are active.
+  campaigns_count:
+    type: number
+    description: Present only on a shared filter. Campaigns still to send that reference it.

@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { useBranding } from 'shared/composables/useBranding';
 import { useWindowSize, useEventListener } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
@@ -48,6 +49,12 @@ const store = useStore();
 
 const searchShortcut = useKbd([`$mod`, 'k']);
 const { t } = useI18n();
+// Lynomia owns the documentation, so the dashboard links out to it rather than letting a tenant author its own
+// (docs/global-documentation/12-contextual-help.md). brandLink returns '' when an installation has configured no
+// destination, and the Help & Support children filter those out rather than rendering a dead link.
+const { brandLink } = useBranding();
+const documentationUrl = computed(() => brandLink('documentation'));
+const supportUrl = computed(() => brandLink('support'));
 
 const isACustomBrandedInstance = useMapGetter(
   'globalConfig/isACustomBrandedInstance'
@@ -676,51 +683,21 @@ const menuItems = computed(() => {
       ],
     },
     {
-      name: 'Portals',
-      label: t('SIDEBAR.HELP_CENTER.TITLE'),
-      icon: 'i-lucide-library-big',
+      name: 'HelpAndSupport',
+      label: t('SIDEBAR.HELP_AND_SUPPORT.TITLE'),
+      icon: 'i-lucide-life-buoy',
       children: [
         {
-          name: 'Articles',
-          label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
-          activeOn: [
-            'portals_articles_index',
-            'portals_articles_new',
-            'portals_articles_edit',
-          ],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_articles_index',
-          }),
+          name: 'Documentation',
+          label: t('SIDEBAR.HELP_AND_SUPPORT.DOCUMENTATION'),
+          href: documentationUrl.value,
         },
         {
-          name: 'Categories',
-          label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
-          activeOn: [
-            'portals_categories_index',
-            'portals_categories_articles_index',
-            'portals_categories_articles_edit',
-          ],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_categories_index',
-          }),
+          name: 'ContactSupport',
+          label: t('SIDEBAR.HELP_AND_SUPPORT.CONTACT_SUPPORT'),
+          href: supportUrl.value,
         },
-        {
-          name: 'Locales',
-          label: t('SIDEBAR.HELP_CENTER.LOCALES'),
-          activeOn: ['portals_locales_index'],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_locales_index',
-          }),
-        },
-        {
-          name: 'Settings',
-          label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
-          activeOn: ['portals_settings_index'],
-          to: accountScopedRoute('portals_index', {
-            navigationPath: 'portals_settings_index',
-          }),
-        },
-      ],
+      ].filter(child => child.href),
     },
     {
       name: 'Settings',

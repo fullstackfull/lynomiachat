@@ -73,4 +73,31 @@ describe('SidebarGroupLeaf', () => {
 
     expect(wrapper.find('[data-test-id="custom-leaf-count"]').text()).toBe('4');
   });
+
+  // Documentation and support live outside the Vue router -- /docs is a server-rendered page, support may be another
+  // site entirely -- so a leaf has to be able to render a real anchor, not a router-link.
+  describe('an external destination', () => {
+    it('renders an anchor that opens in a new tab, safely', () => {
+      const wrapper = mountLeaf({ to: null, href: '/docs' });
+      const link = wrapper.find('a');
+
+      expect(link.attributes('href')).toBe('/docs');
+      expect(link.attributes('target')).toBe('_blank');
+      expect(link.attributes('rel')).toBe('noopener noreferrer');
+    });
+
+    it('keeps an in-app route a router-link, with no target or rel', () => {
+      const wrapper = mountLeaf({ to: '/support' });
+      const link = wrapper.find('a');
+
+      expect(link.attributes('href')).toBeUndefined();
+      expect(link.attributes('target')).toBeUndefined();
+    });
+
+    it('still renders the label', () => {
+      expect(
+        mountLeaf({ to: null, href: '/docs', label: 'Documentation' }).text()
+      ).toContain('Documentation');
+    });
+  });
 });

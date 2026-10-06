@@ -172,20 +172,18 @@ describe('useGoToCommandHotKeys', () => {
     ).toBeUndefined();
   });
 
-  it('should hide the help center from agents, who cannot open it', () => {
-    userPermissions = ['agent'];
+  // Lynomia owns the documentation, so there is no tenant Help Center to jump to any more -- not for an agent, not
+  // for an administrator, and not for a custom role holding knowledge_base_manage. Documentation and support are
+  // reached from the Help & Support group in the sidebar instead.
+  it.each([
+    ['agent', ['agent']],
+    ['administrator', ['administrator']],
+    ['knowledge base manager', ['custom_role', 'knowledge_base_manage']],
+  ])('offers no help center command to %s', (_role, permissions) => {
+    userPermissions = permissions;
     const { goToCommandHotKeys } = useGoToCommandHotKeys();
 
     expect(goToCommandHotKeys.value.map(cmd => cmd.id)).not.toContain(
-      'goto_help_center'
-    );
-  });
-
-  it('should offer the help center to a knowledge base manager', () => {
-    userPermissions = ['custom_role', 'knowledge_base_manage'];
-    const { goToCommandHotKeys } = useGoToCommandHotKeys();
-
-    expect(goToCommandHotKeys.value.map(cmd => cmd.id)).toContain(
       'goto_help_center'
     );
   });

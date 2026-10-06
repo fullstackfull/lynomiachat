@@ -14,7 +14,40 @@ class Commerce::RecoveryListener < BaseListener
     prepared(message).where(request_digest: digests).find_each { |run| sent!(run, message) }
   end
 
+  # A refused send must not permanently burn a cart's eligibility
+  # (docs/pre-p7-closeout/03-template-automation-action.md §targeted_at). `targeted_at` means a real outreach was
+  # ACCEPTED for sending; when the provider then refuses the very message that claimed it, the claim is released so a
+  # later outreach can be attempted, and the run stops counting towards the cooldown.
+  #
+  # Only the claimant may release its own claim: the guard compares the cart's `targeted_at` against this message's
+  # `created_at`, which is the exact value `claim_targeting` stored. A redelivered status for an older message
+  # therefore cannot clear a claim some later outreach made.
+  def message_updated(event)
+    message = extract_message_and_account(event)[0]
+    return unless message.failed? && message.outgoing? && !message.private?
+
+    refused(message).find_each { |run| refuse!(run, message) }
+  end
+
   private
+
+  # The run this message was sent for, found by the id the sender recorded on it.
+  def refused(message)
+    Commerce::ActionRun.where(action_type: Commerce::ActionRun::RECOVERY_MESSAGE, conversation_id: message.conversation_id)
+                       .where(created_at: SENT_WITHIN.ago..)
+                       .where("metadata->>'message_id' = ?", message.id.to_s)
+  end
+
+  def refuse!(run, message)
+    released = Commerce::Cart.where(commerce_store_id: run.commerce_store_id, provider_cart_id: run.external_resource_id,
+                                    targeted_at: message.created_at)
+                             .update_all(targeted_at: nil, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+    run.update!(status: :failed, error_code: message.external_error.to_s[0, 100].presence)
+    Commerce::Metrics.event('commerce.recovery.refused', provider: run.provider, store_id: run.commerce_store_id, run_id: run.id)
+    Commerce::AuditTrail.record('commerce.recovery.refused', auditable: run, user: nil,
+                                                             changes: { store_id: run.commerce_store_id, cart_id: run.external_resource_id,
+                                                                        message_id: message.id, targeting_released: released })
+  end
 
   def prepared(message)
     Commerce::ActionRun.pending.where(conversation_id: message.conversation_id, action_type: Commerce::ActionRun::RECOVERY_MESSAGE,

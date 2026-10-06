@@ -9,7 +9,7 @@ class FilterService
   ATTRIBUTE_TYPES = {
     date: 'date', text: 'text', number: 'numeric', link: 'text', list: 'text', checkbox: 'boolean'
   }.with_indifferent_access
-  STRING_VALUE_ATTRIBUTES = %w[status priority].freeze
+  STRING_VALUE_ATTRIBUTES = %w[status priority message_status].freeze
 
   def initialize(params, user)
     @params = params

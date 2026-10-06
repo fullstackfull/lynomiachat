@@ -2,6 +2,9 @@ import { ref } from 'vue';
 import ContactAPI from 'dashboard/api/contacts';
 import { useMapGetter } from 'dashboard/composables/store.js';
 import { useConversationFilterContext } from '../provider';
+import legacyFilterTypes, {
+  filterAttributeGroups as legacyFilterGroups,
+} from 'dashboard/components/widgets/conversation/advancedFilterItems/index';
 import {
   CONVERSATION_ATTRIBUTES,
   getCustomAttributeInputType,
@@ -224,5 +227,36 @@ describe('useConversationFilterContext', () => {
       { id: 2, name: 'alex@example.com' },
       { id: 3, name: 'Contact #3' },
     ]);
+  });
+});
+
+// Both filter surfaces and lib/filters/filter_keys.yml have to agree on an attribute key, because a key present
+// in one and missing from another is either a filter nobody can reach or a payload the server refuses.
+describe('message_status registration', () => {
+  it('is a conversation attribute in the next-generation surface', () => {
+    expect(CONVERSATION_ATTRIBUTES.MESSAGE_STATUS).toBe('message_status');
+  });
+
+  it('is offered by the legacy surface, with equality operators only', () => {
+    const filter = legacyFilterTypes.find(
+      item => item.attributeKey === 'message_status'
+    );
+
+    expect(filter.inputType).toBe('multi_select');
+    expect(filter.attributeModel).toBe('standard');
+    expect(filter.filterOperators.map(operator => operator.value)).toEqual([
+      'equal_to',
+      'not_equal_to',
+    ]);
+  });
+
+  it('is listed in the legacy standard filter group, so it can be picked', () => {
+    const standard = legacyFilterGroups.find(
+      group => group.i18nGroup === 'STANDARD_FILTERS'
+    );
+
+    expect(standard.attributes.map(attribute => attribute.key)).toContain(
+      'message_status'
+    );
   });
 });

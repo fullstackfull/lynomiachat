@@ -53,9 +53,9 @@ These carry no code; each is still anchored to something in the tree.
 | `whatsapp-business-scoped-contacts` | `Whatsapp::AuthenticationTemplateGuard` — both of its refusals |
 | `whatsapp-find-a-failed-message` | where a failure is shown, and the absence of a filter for one |
 
-That last one is deliberately a documentation answer to an **open product gap**: there is no "has a failed
-message" filter in the conversation list. The article says so, and says what to do instead, rather than
-describing a feature that does not exist. The gap itself is still open as a product item.
+That last one was written while the product still had no way to list such conversations, and said so rather than
+describing a feature that did not exist. The next item closed that gap, so the article now documents the
+`message_status` filter instead — see `docs/p7/10-failed-message-discoverability.md`.
 
 ## The resolver
 
@@ -101,5 +101,5 @@ site search.
 - **Template rejection reasons** stay in the existing `whatsapp-troubleshooting` and
   `whatsapp-template-lifecycle` articles. They are not error codes and splitting them out would duplicate the
   lifecycle article.
-- **Finding failed conversations in the list** is documented as the gap it is, not solved. That is a product
-  change, still open.
+- **Finding failed conversations in the list** was a gap when these articles were written, and is now closed by
+  the `message_status` filter; the article was rewritten to match. Nothing else here waits on a product change.

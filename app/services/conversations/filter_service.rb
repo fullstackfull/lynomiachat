@@ -57,7 +57,39 @@ class Conversations::FilterService < FilterService
     Conversations::SortService.apply(@conversations, @params[:sort_by]).page(current_page)
   end
 
+  # `message_status` is not a column on conversations: it asks whether the conversation CONTAINS a message with
+  # this status, which is the only way to find a conversation whose reply failed -- the failure is recorded on the
+  # message, and conversations carry nothing that reflects it. Everything else still goes through the shared
+  # column comparison.
+  def handle_standard_attributes(current_filter, query_hash, current_index, filter_operator_value)
+    return message_status_filter_query(query_hash, current_index) if message_status?(query_hash)
+
+    super
+  end
+
+  # An unknown name maps to nil, so `IN (NULL)` matches nothing: a filter naming a status this version does not
+  # have returns no conversations rather than every one of them.
+  def filter_values(query_hash)
+    return Array(query_hash['values']).map { |value| Message.statuses[value.to_s] } if message_status?(query_hash)
+
+    super
+  end
+
   private
+
+  def message_status?(query_hash) = query_hash[:attribute_key].to_s == 'message_status'
+
+  # Correlated rather than a join, so a conversation with several failed messages is returned once, and bounded by
+  # `conversations.id` -- the leading column of index_messages_on_conversation_account_type_created.
+  def message_status_filter_query(query_hash, current_index)
+    @filter_values["value_#{current_index}"] = filter_values(query_hash)
+    exists = "SELECT 1 FROM messages WHERE messages.conversation_id = #{filter_config[:table_name]}.id " \
+             "AND messages.status IN (:value_#{current_index})"
+
+    return "EXISTS (#{exists}) #{query_hash[:query_operator]}" if query_hash[:filter_operator] == 'equal_to'
+
+    "NOT EXISTS (#{exists}) #{query_hash[:query_operator]}"
+  end
 
   # The planner hint only pays off when the label condition positively narrows the
   # result set: `equal_to` joined by AND. Negative/presence operators or an OR in the

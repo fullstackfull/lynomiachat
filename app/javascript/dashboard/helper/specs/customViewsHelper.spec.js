@@ -134,6 +134,24 @@ describe('customViewsHelper', () => {
       ]);
     });
 
+    // message_status is a multi-select of plain values, like status, so a saved folder reopened for edit has to
+    // get back every value it stored rather than only the first one.
+    it('should return every value if attribute_key is message_status', () => {
+      const filter = { attribute_key: 'message_status', values: ['failed'] };
+      expect(getValuesForFilter(filter, {})).toEqual([
+        { id: 'failed', name: 'failed' },
+      ]);
+      expect(
+        getValuesForFilter(
+          { attribute_key: 'message_status', values: ['failed', 'sent'] },
+          {}
+        )
+      ).toEqual([
+        { id: 'failed', name: 'failed' },
+        { id: 'sent', name: 'sent' },
+      ]);
+    });
+
     it('should return id and name if attribute_key is assignee_id', () => {
       const filter = { attribute_key: 'assignee_id', values: [1] };
       const params = { agents: [{ id: 1, name: 'test' }] };

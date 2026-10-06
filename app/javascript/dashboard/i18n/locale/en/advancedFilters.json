@@ -67,7 +67,14 @@
       "CUSTOM_ATTRIBUTE_LINK": "Link",
       "CUSTOM_ATTRIBUTE_CHECKBOX": "Checkbox",
       "CREATED_AT": "Created at",
-      "LAST_ACTIVITY": "Last activity"
+      "LAST_ACTIVITY": "Last activity",
+      "MESSAGE_STATUS": "Message delivery"
+    },
+    "MESSAGE_STATUS_OPTIONS": {
+      "sent": "Sent",
+      "delivered": "Delivered",
+      "read": "Read",
+      "failed": "Failed to send"
     },
     "ERRORS": {
       "VALUE_REQUIRED": "Value is required",

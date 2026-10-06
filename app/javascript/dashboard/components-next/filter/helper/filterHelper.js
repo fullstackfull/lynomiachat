@@ -17,6 +17,7 @@ export const CONVERSATION_ATTRIBUTES = {
   DISPLAY_ID: 'display_id',
   CAMPAIGN_ID: 'campaign_id',
   LABELS: 'labels',
+  MESSAGE_STATUS: 'message_status',
   BROWSER_LANGUAGE: 'browser_language',
   REFERER: 'referer',
   CREATED_AT: 'created_at',

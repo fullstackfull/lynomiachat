@@ -95,6 +95,7 @@ export const getValuesForFilter = (filter, params) => {
   } = params;
   switch (attribute_key) {
     case 'status':
+    case 'message_status':
       return getValuesForStatus(values);
     case 'assignee_id':
       return getValuesName(values, agents, 'id', 'name');

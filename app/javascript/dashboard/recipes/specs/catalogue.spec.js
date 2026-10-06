@@ -228,7 +228,7 @@ describe('recipe catalogues', () => {
   // Not a target, a tripwire: a catalogue that changes size should change this line too, deliberately.
   it('ships the catalogue sizes it says it does', () => {
     expect(AUDIENCE_PRESETS).toHaveLength(9);
-    expect(AUTOMATION_RECIPES).toHaveLength(11);
+    expect(AUTOMATION_RECIPES).toHaveLength(12);
     expect(FLOW_TEMPLATES).toHaveLength(8);
     expect(MACRO_STARTERS).toHaveLength(6);
     expect(SETUP_RECIPES).toHaveLength(1);

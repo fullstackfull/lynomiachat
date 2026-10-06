@@ -154,6 +154,11 @@
   description: 'Configure this if you want to use a different Facebook API version. Make sure its prefixed with `v`'
   value: 'v18.0'
   locked: false
+- name: INSTAGRAM_MESSENGER_API_VERSION
+  display_title: 'Instagram-via-Messenger API Version'
+  description: 'The Graph version used to send Instagram DMs on a connected Facebook Page. Not the Instagram Login API, which uses INSTAGRAM_API_VERSION. Make sure its prefixed with `v`'
+  value: 'v11.0'
+  locked: false
 - name: ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT
   display_title: 'Enable human agent'
   value: false

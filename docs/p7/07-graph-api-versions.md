@@ -90,3 +90,76 @@ observable; Facebook's and the older Instagram's are old, partly uncontrollable,
 version this path has always sent on, the installation can move it without a deploy, and moving
 `INSTAGRAM_API_VERSION` does not move this one. The other 7 examples in that file still pass unchanged, which is
 the proof that the default preserves behaviour exactly.
+
+## A second pass, after a 64-agent audit of the same ground
+
+The audit re-read every Meta call site independently. It corroborated the inventory above and found two things
+this record had missed, both of which are now closed. It also made one claim this record rejects.
+
+### The version was being parsed as a Float
+
+`Whatsapp::HealthService` resolved its version with `.delete_prefix('v').to_f` and then
+`"v#{[version, 24.0].max}"`. A Float cannot hold a two-digit minor: a configured `v24.10` came back out as
+`v24.1`, which is a different version of the Graph API, and a bare `v26` became `v26.0`. `WHATSAPP_API_VERSION`
+is `locked: false`, so an operator can set either today.
+
+It now takes the newer of the configured version and the floor, compared part by part, and returns the configured
+string unchanged when it meets the floor. `MINIMUM_HEALTH_API_VERSION` is a version string rather than a Float,
+so there is no Float anywhere in the path. The floor itself is unchanged and still exists for the one reason it
+ever did: `whatsapp_business_manager_messaging_limit` needs v24.0.
+
+Four examples in `spec/services/whatsapp/health_service_spec.rb` pin the behaviour — `v24.0`, `v25.0`, `v24.10`
+and a below-floor `v23.0`. The `v24.10` one was run against the old Float code first and fails there, which is
+what makes it a regression test rather than a restatement.
+
+### Instagram's version was centralized in configuration only
+
+`INSTAGRAM_API_VERSION` existed, but `'v22.0'` was pasted as the fallback into five separate call sites —
+`Instagram::SendOnInstagramService`, `Instagram::UserDetailsService`, `Instagram::MessageText`,
+`Messages::Instagram::MessageBuilder` and `Channel::Instagram` itself. Five copies of a default can disagree with
+each other, which is the same defect class that this workstream's main finding was about.
+
+There is now one: `Channel::Instagram::DEFAULT_API_VERSION`, read by all five, mirroring
+`Whatsapp::FacebookApiClient::DEFAULT_API_VERSION`. The value is unchanged. One literal, five readers.
+
+### The override this workstream added had no way to be set
+
+`INSTAGRAM_MESSENGER_API_VERSION` was introduced earlier in this workstream so the hardcoded `v11.0` on the
+Instagram-via-Messenger send path could move without a deploy. It was never seeded into
+`config/installation_config.yml` and never added to the Super Admin allow-list, so in practice an operator could
+only set it by inserting an `InstallationConfig` row by hand — which makes the override half-built, and the whole
+point of it was that v11.0 is the oldest version in the tree and the likeliest to be retired next.
+
+It is now seeded at `v11.0`, `locked: false`, and listed under the Facebook group in Super Admin, where the Page
+credentials it belongs with already live. `ConfigLoader` runs with `reconcile_only_new: true`, so this is
+additive: existing installations gain the row at its default and nothing already configured is touched.
+
+### One drift gate, because the constant is only a fallback
+
+`GlobalConfigService.load(key, default)` reads the `InstallationConfig` row that `installation_config.yml` seeds.
+On a seeded install the YAML value wins and the code constant is never consulted — so if the two disagree, the
+constant is a lie about what the product talks, and the disagreement is invisible. `spec/lib/config_loader_spec.rb`
+now asserts, for each of the three Meta version keys, that the seeded value equals the code constant and is
+`v`-prefixed as its own description requires.
+
+### The claim this record rejects
+
+The audit flagged `docs/product-enablement/12-proposed-phases.md:64` as documentation drift, because its D3 row
+still describes `v13.0`/`v14.0` as a live defect and cites a line number that now reads `v24.0`.
+
+That is a misreading and nothing was changed. The document is a **dated proposal** — its own header pins it to
+HEAD `6c381e96` and titles it "Proposed implementation phases" — and D1–D8 were the defect list it proposed
+fixing, which a later phase did. Rewriting a dated record to match today's code would make the record false. The
+check the audit was reaching for is the one above: that no `v13.0` or `v14.0` survives in executable code, which
+is already asserted by the WhatsApp call sites all resolving through one constant.
+
+### Still not changed, and still for the same reason
+
+Nothing in this pass moves a version. Facebook Messenger's `v3.2` (inside `facebook-messenger` 2.0.1, with no
+`base_uri` override), Instagram-via-Messenger's `v11.0` default, the browser-only `FACEBOOK_API_VERSION` v18.0,
+and Koala's unversioned calls are all exactly as described above. The audit's own conclusion was the same: the
+only evidence pointing at `v3.2` and `v11.0` is that they predate two versions this repository records as
+expired, which is a reason to probe production, not a reason to edit.
+
+TikTok has the identical pasted-default problem — `'v1.3'` in `Tiktok::AuthClient` and `Tiktok::Client` — and is
+left alone because it is not a Meta Graph surface and so outside this workstream. Recorded so it is not lost.

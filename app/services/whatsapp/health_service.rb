@@ -15,7 +15,7 @@ class Whatsapp::HealthService
   end
 
   BASE_URI = 'https://graph.facebook.com'.freeze
-  MINIMUM_HEALTH_API_VERSION = 24.0
+  MINIMUM_HEALTH_API_VERSION = 'v24.0'.freeze
   BUSINESS_HEALTH_FIELDS = %i[business_account_id business_account_name business_portfolio_id business_portfolio_name].freeze
   PERSISTED_FIELDS = %i[
     id
@@ -42,8 +42,10 @@ class Whatsapp::HealthService
   def initialize(channel)
     @channel = channel
     @access_token = channel.provider_config['api_key']
-    version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).delete_prefix('v').to_f
-    @api_version = "v#{[version, MINIMUM_HEALTH_API_VERSION].max}"
+    # The newer of the configured version and the floor, compared part by part: as a Float a configured 'v24.10'
+    # became 'v24.1', which is a different version of the API.
+    configured = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
+    @api_version = [configured, MINIMUM_HEALTH_API_VERSION].max_by { |version| version.delete_prefix('v').split('.').map(&:to_i) }
   end
 
   def fetch_health_status(include_business_profile: false) = fetch_health_status_with_error(include_business_profile: include_business_profile).first

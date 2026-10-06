@@ -137,6 +137,22 @@ RSpec.describe Whatsapp::HealthService do
       ).not_to have_been_made
     end
 
+    # The version used to be parsed with to_f, which silently rewrote a two-digit minor: a configured 'v24.10'
+    # became 'v24.1'. WHATSAPP_API_VERSION is not locked, so an operator can set either.
+    [['v24.0', 'v24.0'], ['v25.0', 'v25.0'], ['v24.10', 'v24.10'], ['v23.0', 'v24.0']].each do |configured, expected|
+      it "calls #{expected} when the installation is configured for #{configured}" do
+        allow(GlobalConfigService).to receive(:load)
+          .with('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).and_return(configured)
+        stub_request(:get, %r{graph\.facebook\.com/#{Regexp.escape(expected)}/test_}).to_return(
+          status: 200, body: phone_health_response.to_json, headers: { 'Content-Type' => 'application/json' }
+        )
+
+        service.fetch_health_status
+
+        expect(a_request(:get, %r{graph\.facebook\.com/#{Regexp.escape(expected)}/test_phone_number_id})).to have_been_made.once
+      end
+    end
+
     it 'uses a newer configured API version' do
       allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION).and_return('v25.0')
       stub_request(:get, %r{graph\.facebook\.com/v25\.0/test_phone_number_id})

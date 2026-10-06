@@ -25,7 +25,7 @@
         }
       }
     },
-    "FAILED_TO_SEND": "Failed to send",
+    "FAILED_TO_SEND": "تعذّر الإرسال",
     "FETCH_ERROR": "Couldn't load conversations. Please try again.",
     "TAB_HEADING": "المحادثات",
     "MENTION_HEADING": "الإشارات",
@@ -170,7 +170,7 @@
       "ARIA_LABEL": "تصفية الحالة: {status}. اضغط للتغيير."
     },
     "DELIVERY_FAILURE": {
-      "PROVIDER_RESPONSE": "ردّ واتساب: {error}",
+      "PROVIDER_RESPONSE_LABEL": "ردّ واتساب:",
       "LEARN_MORE": "ما يمكن فعله حيال ذلك",
       "RETRY": "إرسال هذه الرسالة مرة أخرى",
       "NO_RETRY_REASON": "إرسالها مرة أخرى سيُرفض بالطريقة نفسها.",

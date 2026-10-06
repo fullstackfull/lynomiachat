@@ -170,7 +170,7 @@
       "ARIA_LABEL": "Status filter: {status}. Change it."
     },
     "DELIVERY_FAILURE": {
-      "PROVIDER_RESPONSE": "WhatsApp said: {error}",
+      "PROVIDER_RESPONSE_LABEL": "WhatsApp said:",
       "LEARN_MORE": "What to do about this",
       "RETRY": "Send this message again",
       "NO_RETRY_REASON": "Sending this again would be refused the same way.",

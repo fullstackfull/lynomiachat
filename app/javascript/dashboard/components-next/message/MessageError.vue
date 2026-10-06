@@ -38,11 +38,12 @@ const explanation = computed(() => {
 });
 
 // Meta's refusal is kept verbatim, whatever Lynomia makes of it: it is the thing an operator quotes to Meta, and
-// the thing a classification could be wrong about.
-const providerResponse = computed(() =>
+// the thing a classification could be wrong about. It is labelled only once it has been classified, because
+// then we know which provider said it.
+const providerLabel = computed(() =>
   props.deliveryFailure
-    ? t('CHAT_LIST.DELIVERY_FAILURE.PROVIDER_RESPONSE', { error: props.error })
-    : props.error
+    ? t('CHAT_LIST.DELIVERY_FAILURE.PROVIDER_RESPONSE_LABEL')
+    : ''
 );
 
 // A refusal that follows the recipient rather than the configuration will be given again for the same message to
@@ -67,17 +68,21 @@ const learnMoreUrl = computed(() =>
   props.deliveryFailure ? docsLink('whatsappTroubleshooting') : ''
 );
 
+// The block sits against its bubble, but its sentences stay start-aligned. Ragged-left body copy beside an
+// outgoing bubble is markedly harder to read than the same three lines set normally, and the explanation is the
+// part an agent has to actually read.
 const alignmentClass = computed(() =>
-  orientation.value === ORIENTATION.RIGHT
-    ? 'items-end text-end'
-    : 'items-start text-start'
+  orientation.value === ORIENTATION.RIGHT ? 'items-end' : 'items-start'
 );
 </script>
 
 <template>
   <!-- The row is kept so the parent's `justify-*` orientation class still places this block against its bubble. -->
   <div class="flex text-xs">
-    <div class="flex flex-col gap-1 max-w-xs" :class="alignmentClass">
+    <div
+      class="flex flex-col gap-1 max-w-xs text-start"
+      :class="alignmentClass"
+    >
       <div class="flex items-center gap-1.5 text-n-ruby-11">
         <Icon icon="i-lucide-alert-triangle" class="size-3.5 shrink-0" />
         <span>{{ t('CHAT_LIST.FAILED_TO_SEND') }}</span>
@@ -89,12 +94,12 @@ const alignmentClass = computed(() =>
       </template>
 
       <!-- Clamped rather than truncated: an SMTP rejection runs to paragraphs, and the whole of it stays
-           available through the title attribute and through the conversation's own API payload. -->
-      <p
-        class="text-n-slate-10 break-words line-clamp-3"
-        :title="providerResponse"
-      >
-        {{ providerResponse }}
+           available through the title attribute and through the conversation's own API payload. The refusal
+           itself is isolated: it is the provider's English, and in an Arabic paragraph its leading error code
+           was being reordered to the end of the line. -->
+      <p class="text-n-slate-10 break-words line-clamp-3" :title="error">
+        <span v-if="providerLabel">{{ providerLabel }}&nbsp;</span>
+        <bdi dir="auto">{{ error }}</bdi>
       </p>
 
       <div class="flex items-center gap-3">

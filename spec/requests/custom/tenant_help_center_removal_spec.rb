@@ -78,6 +78,52 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     end
   end
 
+  # An inbox could be pointed at a Help Center, and upstream never scoped that id to the account:
+  # `Inbox belongs_to :portal, optional: true` accepted any portal at all. Tenants have no portal to link now, so
+  # the parameter is refused at the boundary rather than silently dropped -- which closes the cross-account
+  # reference as well.
+  describe 'linking an inbox to a Help Center' do
+    let!(:inbox) { create(:inbox, account: account) }
+    let!(:other_account_portal) { create(:portal, account_id: create(:account).id, slug: 'someone-else') }
+
+    it 'is refused, with the reason' do
+      patch "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
+            params: { portal_id: portal.id }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to eq(I18n.t('errors.inboxes.help_center_not_available'))
+      expect(inbox.reload.portal_id).to be_nil
+    end
+
+    it 'is refused for a portal belonging to another account' do
+      patch "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
+            params: { portal_id: other_account_portal.id }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(inbox.reload.portal_id).to be_nil
+    end
+
+    it 'is refused for the platform documentation portal' do
+      docs = create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil)
+
+      patch "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
+            params: { portal_id: docs.id }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(inbox.reload.portal_id).to be_nil
+    end
+
+    # Refusing the parameter must not refuse the rest of the screen's saves.
+    it 'leaves every other inbox setting saveable' do
+      patch "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
+            params: { name: 'Renamed inbox', greeting_enabled: true },
+            headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(inbox.reload.name).to eq('Renamed inbox')
+    end
+  end
+
   it 'leaves the tenant content itself untouched: nothing here deletes a row' do
     expect { expect_refused(:delete, "/api/v1/accounts/#{account.id}/portals/#{portal.slug}", admin) }
       .not_to change(Portal, :count)

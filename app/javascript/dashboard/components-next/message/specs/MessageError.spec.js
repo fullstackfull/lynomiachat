@@ -77,6 +77,20 @@ describe('MessageError', () => {
     const wrapper = mountError({ deliveryFailure: RECIPIENT_RESTRICTED });
 
     expect(wrapper.text()).toContain('131049: Not delivered');
+    expect(wrapper.text()).toContain(
+      'CHAT_LIST.DELIVERY_FAILURE.PROVIDER_RESPONSE_LABEL'
+    );
+  });
+
+  // The refusal is the provider's English inside a paragraph that may be Arabic, where its leading error code
+  // was being reordered to the end of the line.
+  it('isolates the provider text from the direction of the sentence around it', () => {
+    const bdi = mountError({ deliveryFailure: RECIPIENT_RESTRICTED }).find(
+      'bdi'
+    );
+
+    expect(bdi.attributes('dir')).toBe('auto');
+    expect(bdi.text()).toBe('131049: Not delivered');
   });
 
   // Re-sending would be refused the same way and each attempt is another quality signal against the number, so
@@ -114,7 +128,10 @@ describe('MessageError', () => {
   it('shows the raw error and a retry when the refusal is not classified', () => {
     const wrapper = mountError({ deliveryFailure: null });
 
-    expect(wrapper.text()).toContain('131049: Not delivered');
+    expect(wrapper.find('bdi').text()).toBe('131049: Not delivered');
+    expect(wrapper.text()).not.toContain(
+      'CHAT_LIST.DELIVERY_FAILURE.PROVIDER_RESPONSE_LABEL'
+    );
     expect(wrapper.text()).not.toContain('META_RECIPIENT_DELIVERY_RESTRICTION');
     expect(retryButton(wrapper).exists()).toBe(true);
   });
@@ -153,11 +170,13 @@ describe('MessageError', () => {
   });
 
   // The parent places this block against its bubble with a `justify-*` class on the row, so the column inside has
-  // to carry the cross-axis alignment itself.
-  it('aligns with the bubble it belongs to', () => {
-    expect(
-      mountError({ deliveryFailure: null }).find('.flex-col').classes()
-    ).toContain('items-end');
+  // to carry the cross-axis alignment itself -- while its sentences stay start-aligned, because ragged-left body
+  // copy beside an outgoing bubble is markedly harder to read.
+  it('aligns with the bubble it belongs to, and keeps its sentences readable', () => {
+    const right = mountError({ deliveryFailure: null }).find('.flex-col');
+    expect(right.classes()).toContain('items-end');
+    expect(right.classes()).toContain('text-start');
+    expect(right.classes()).not.toContain('text-end');
 
     messageContext.orientation = computed(() => ORIENTATION.LEFT);
     expect(

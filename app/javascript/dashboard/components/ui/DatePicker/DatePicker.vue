@@ -33,6 +33,7 @@ import CalendarYear from './components/CalendarYear.vue';
 import CalendarMonth from './components/CalendarMonth.vue';
 import CalendarWeek from './components/CalendarWeek.vue';
 import CalendarFooter from './components/CalendarFooter.vue';
+import { toIntlLocale } from 'shared/helpers/localeHelper';
 
 const props = defineProps({
   hasAppliedRange: {
@@ -101,7 +102,7 @@ const canNavigateNext = computed(() => {
 const navigationLabel = computed(() => {
   const range = selectedRange.value;
   if (range === DATE_RANGE_TYPES.MONTH_TO_DATE) {
-    return new Intl.DateTimeFormat(navigator.language, {
+    return new Intl.DateTimeFormat(toIntlLocale(navigator.language), {
       month: 'long',
     }).format(selectedStartDate.value);
   }

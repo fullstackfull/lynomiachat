@@ -53,6 +53,47 @@ describe Instagram::Messenger::SendOnInstagramService do
     )
   end
 
+  # This send path is the Facebook-Page generation of Instagram, on graph.facebook.com, and the version it talks
+  # used to be written into the URL. Meta retiring it would have meant a code change and a deploy; it is now an
+  # environment change. The default is the version this path has always sent on, so nothing moves on its own.
+  describe 'the Graph version it talks' do
+    let(:message) do
+      create(:message, message_type: 'outgoing', inbox: instagram_messenger_inbox, account: account,
+                       conversation: conversation)
+    end
+
+    before do
+      allow(Facebook::Messenger::Configuration::AppSecretProofCalculator).to receive(:call).and_return('proof')
+      allow(HTTParty).to receive(:post).and_return(mock_response)
+    end
+
+    it 'sends on the version it has always sent on' do
+      expect(described_class::DEFAULT_API_VERSION).to eq('v11.0')
+
+      described_class.new(message: message).perform
+
+      expect(HTTParty).to have_received(:post).with('https://graph.facebook.com/v11.0/me/messages', any_args)
+    end
+
+    it 'lets the installation move it without a deploy' do
+      with_modified_env INSTAGRAM_MESSENGER_API_VERSION: 'v23.0' do
+        described_class.new(message: message).perform
+      end
+
+      expect(HTTParty).to have_received(:post).with('https://graph.facebook.com/v23.0/me/messages', any_args)
+    end
+
+    # The Instagram Login generation lives on graph.instagram.com and has its own key. Moving one must not move
+    # the other.
+    it 'does not read the key that governs the other generation' do
+      with_modified_env INSTAGRAM_API_VERSION: 'v23.0' do
+        described_class.new(message: message).perform
+      end
+
+      expect(HTTParty).to have_received(:post).with('https://graph.facebook.com/v11.0/me/messages', any_args)
+    end
+  end
+
   describe '#perform' do
     context 'with reply' do
       before do

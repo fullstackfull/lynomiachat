@@ -35,7 +35,6 @@ A custom role is built from a fixed list of permissions, so it is worth knowing 
 - manage conversations they are assigned to or participating in
 - manage contacts
 - manage reports
-- manage help centre portals
 - change store order statuses and resend store emails
 
 That last one is the Commerce permission, and it stops short: **refunds and cancellations stay with

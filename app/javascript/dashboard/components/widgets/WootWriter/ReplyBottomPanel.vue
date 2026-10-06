@@ -111,10 +111,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    portalSlug: {
-      type: String,
-      required: true,
-    },
     conversationType: {
       type: String,
       default: '',
@@ -133,7 +129,6 @@ export default {
     },
   },
   emits: [
-    'toggleInsertArticle',
     'selectWhatsappTemplate',
     'selectContentTemplate',
     'toggleQuotedReply',
@@ -251,9 +246,6 @@ export default {
         ? this.$t('CONVERSATION.FOOTER.DISABLE_SIGN_TOOLTIP')
         : this.$t('CONVERSATION.FOOTER.ENABLE_SIGN_TOOLTIP');
     },
-    enableInsertArticleInReply() {
-      return this.portalSlug;
-    },
     isFetchingAppIntegrations() {
       return this.uiFlags.isFetching;
     },
@@ -269,9 +261,6 @@ export default {
   methods: {
     toggleMessageSignature() {
       this.setSignatureFlagForInbox(this.channelType, !this.sendWithSignature);
-    },
-    toggleInsertArticle() {
-      this.$emit('toggleInsertArticle');
     },
   },
 };
@@ -399,16 +388,6 @@ export default {
           </h4>
         </div>
       </transition>
-      <NextButton
-        v-if="enableInsertArticleInReply"
-        v-tooltip.top-end="$t('HELP_CENTER.ARTICLE_SEARCH.OPEN_ARTICLE_SEARCH')"
-        :aria-label="$t('HELP_CENTER.ARTICLE_SEARCH.OPEN_ARTICLE_SEARCH')"
-        icon="i-ph-article-ny-times"
-        slate
-        faded
-        sm
-        @click="toggleInsertArticle"
-      />
     </div>
     <div class="flex ms-auto">
       <NextButton

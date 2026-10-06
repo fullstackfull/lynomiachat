@@ -55,7 +55,6 @@ export const DOC_ARTICLES = Object.freeze({
   inboxes: 'set-up-an-inbox',
   teams: 'teams-and-agents',
   permissions: 'roles-and-permissions',
-  ownHelpCentre: 'your-own-help-centre',
   // platform
   integrations: 'integrations',
   webhooks: 'webhooks',

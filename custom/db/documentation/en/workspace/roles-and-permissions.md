@@ -1,6 +1,6 @@
 ---
 title: Roles and permissions
-description: You will know what an administrator can do that an agent cannot, the exact seven permissions a custom role is built from, and what cannot be delegated at all.
+description: You will know what an administrator can do that an agent cannot, the exact six permissions a custom role is built from, and what cannot be delegated at all.
 position: 30
 tags: [workspace, roles]
 seo_description: Administrator versus agent in Lynomia Chat, the exact custom role permission list, and the settings that stay administrator-only.
@@ -17,7 +17,6 @@ do not stack.
 | Conversations | every conversation in every inbox, without being a collaborator | only inboxes they are a collaborator on |
 | Contacts, canned responses, macros | yes | yes |
 | Reports | yes | no |
-| Help centre articles | can write them | cannot write them, but can search them from the reply box |
 
 The important line is the second one. An administrator sees everything without being added anywhere. An agent sees
 only what inbox membership gives them, which is why [Set up an inbox](set-up-an-inbox) matters as much as the role
@@ -26,7 +25,7 @@ does.
 ## Custom roles
 
 A custom role is an **agent** with a chosen subset of permissions. The list is fixed — you pick from it, you cannot
-extend it. These are the seven options, named as the product names them:
+extend it. These are the six options, named as the product names them:
 
 | Permission | What it grants |
 |---|---|
@@ -35,19 +34,19 @@ extend it. These are the seven options, named as the product names them:
 | Manage participating conversations and those assigned to them | their own, plus ones they are a participant in |
 | Manage contacts | contacts |
 | Manage reports | reports, including satisfaction responses |
-| Manage knowledge base | help centre articles, categories and settings |
 | Manage store orders (status changes, resend store emails) | the order actions short of cancelling and refunding |
 
 The three conversation permissions are a **hierarchy, not a set**. The widest one you grant wins, so granting all
 three is the same as granting the first. A custom role with **no** conversation permission sees no conversations at
 all — a legitimate choice for a bookkeeper, but easy to do by accident.
 
-Two permissions stop short of where people expect:
+One permission stops short of where people expect. **Manage store orders** covers status changes and resending
+the store's own emails. **Cancelling and refunding are administrator-only and cannot be granted to any custom
+role.**
 
-- **Manage knowledge base** covers writing articles and changing a help centre's settings. It does not cover
-  **creating** a new help centre, **deleting** one, or setting its analytics ids. Those stay with administrators.
-- **Manage store orders** covers status changes and resending the store's own emails. **Cancelling and refunding are
-  administrator-only and cannot be granted to any custom role.**
+Lynomia Chat publishes the documentation itself, so there is no workspace knowledge base and no permission for one.
+A role created before that change keeps a **Manage knowledge base** entry on its record, where it now grants
+nothing. See [Documentation and support](your-own-help-centre).
 
 ## What is not on the list
 
@@ -90,7 +89,7 @@ Administrators. Creating custom roles, changing anyone's role and managing agent
 
 - **One role per person per account.** A custom role replaces the agent role; it is not added on top of
   administrator.
-- The permission list is fixed at the seven entries above and cannot be extended.
+- The permission list is fixed at the six entries above and cannot be extended.
 - **Refunds and cancellations are never delegable.**
 - Permissions are account-wide, not per inbox. You cannot grant "manage all conversations, but only in the Sales
   inbox" — restrict that with inbox membership instead.
@@ -101,7 +100,7 @@ Administrators. Creating custom roles, changing anyone's role and managing agent
 - [Invite your team](invite-your-team)
 - [Teams and agents](teams-and-agents)
 - [Set up an inbox](set-up-an-inbox)
-- [Your own help centre](your-own-help-centre)
+- [Documentation and support](your-own-help-centre)
 
 ## If it does not work
 
@@ -111,5 +110,5 @@ any inbox. Both are required.
 **The Custom Roles page is not in settings.** Custom roles are not included on your plan, or you are signed in as an
 agent.
 
-**Someone with Manage store orders cannot refund, and someone with Manage knowledge base cannot create a help
-centre.** Both are the rule, not a fault. Those actions need an administrator.
+**Someone with Manage store orders cannot refund.** That is the rule, not a fault. Refunds and cancellations need
+an administrator.

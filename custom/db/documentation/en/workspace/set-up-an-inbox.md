@@ -30,7 +30,7 @@ Open **Settings → Inboxes**, pick the inbox, and work through its tabs.
 
 | Tab | What it decides |
 |---|---|
-| **Settings** | name, logo, greeting message, attached help centre, and channel-specific options |
+| **Settings** | name, logo, greeting message, and channel-specific options |
 | **Collaborators** | which agents work here, and whether auto-assignment is on |
 | **Business Hours** | your timezone, your weekly schedule, and the reply sent when you are closed |
 | **CSAT** | whether a satisfaction survey is sent when a conversation is resolved |
@@ -38,10 +38,6 @@ Open **Settings → Inboxes**, pick the inbox, and work through its tabs.
 Other tabs appear only where they apply: **Pre Chat Form** for a website widget, **Configuration** for channels that
 hold credentials, **Bot Configuration** where agent bots are enabled, **Account Health** for WhatsApp and Twilio, and
 **Voice** or **Calls** where calling is switched on.
-
-Attaching a help centre on the Settings tab has a direct effect on daily work: agents can then search that help
-centre from the reply box and drop a link into an answer. Without an attached help centre, that search does not
-appear at all. See [Your own help centre](your-own-help-centre).
 
 ## Business hours
 
@@ -93,7 +89,7 @@ inboxes or channels, so this cannot be delegated — see [Roles and permissions]
 - [Connect WhatsApp](connect-whatsapp)
 - [Teams and agents](teams-and-agents)
 - [Assign and prioritise](assign-and-prioritise)
-- [Your own help centre](your-own-help-centre)
+- [Documentation and support](your-own-help-centre)
 
 ## If it does not work
 

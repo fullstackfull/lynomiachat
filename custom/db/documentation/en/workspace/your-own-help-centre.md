@@ -1,109 +1,66 @@
 ---
-title: Your own help centre
-description: You will understand how to publish a public help centre for your own customers, how it is structured, and what you cannot change about it.
+title: Documentation and support
+description: You will know where this documentation comes from, why your workspace does not publish a help centre of its own, and where to get help when you need it.
 position: 40
-tags: [workspace, help-centre]
-seo_description: Publish a public help centre for your customers from Lynomia Chat, in one or more languages, on your own domain.
+tags: [workspace, documentation, support]
+seo_description: Lynomia Chat publishes and maintains its own documentation and changelog. Workspaces do not author a help centre; here is where to find help instead.
 ---
-A **help centre** is a public website of articles that **you** write for **your** customers: your brand, your
-language, your address. It is not the documentation you are reading now — these pages are Lynomia Chat's own product
-documentation, they belong to the platform, and nothing in your account can edit them or pull them into your help
-centre. The two never mix.
+This documentation belongs to **Lynomia Chat**. The platform writes it, keeps it current and publishes it for every
+workspace at once, in English and Arabic. Your account reads it; it does not write it.
 
-Most businesses publish one for the same reason: the same six questions arrive on WhatsApp every week, and a page you
-can link to beats retyping the answer.
+That is deliberate. One documentation set means one answer to every question, the same answer for everyone, updated
+the day the product changes.
 
-## How it is structured
+## Your workspace does not publish a help centre
 
-Three levels, and the middle one has a rule worth knowing:
+Lynomia Chat does **not** give a workspace its own public help centre to author. There is no Help Center section in
+the sidebar, no portal to create, no categories or articles of your own, and no public site under your own domain.
+The same is true through the API: the portal, category and article endpoints refuse a workspace request.
 
-| | What it is |
+If your workspace published one before this change, nothing of yours was deleted and the pages your customers
+already have links to are still online. What you can no longer do is edit them, add to them or take them down from
+here. Ask whoever administers your installation if you need a page changed or removed.
+
+## What to do instead
+
+| You want to | Do this |
 |---|---|
-| **Help centre** | the site. Has a name, logo, brand colour and a public address |
-| **Category** | a section — Delivery, Returns, Payment. **A category belongs to one language** |
-| **Article** | the page itself, written in Markdown |
+| Answer the same question again and again | Write a [canned response](canned-responses) and insert it in one keystroke |
+| Hand a customer something to read | Link to a page on your own website, or paste the answer |
+| Tell your own team how you work | Use a [macro](macros) for the steps, and your own internal wiki for the prose |
+| Automate the answer entirely | Build an [automation rule](automation-rules) or a [flow](flow-builder) |
 
-An article takes the language of its category. To offer Returns in Arabic and English, create the category twice —
-once per language — and write an article in each.
+A canned response is the closest thing to a help centre article for day-to-day work: it is written once, searched
+from the reply box with `/`, and it carries variables so the customer's name and order number fill themselves in.
 
-## When not to use it
+## Where to find help
 
-A help centre is public. Anything meant for one customer belongs in a conversation, and anything your agents need
-but customers should not read belongs in [canned responses](canned-responses).
+| | Where |
+|---|---|
+| **Documentation** | the pages you are reading. **Help & Support → Documentation** in the sidebar, or `/docs` |
+| **Changelog** | what changed in each release, at `/changelog` |
+| **Support** | **Help & Support → Contact support** in the sidebar |
 
-## What you need first
+Both open in a new tab, and both are configured by whoever runs your installation, so a self-hosted install points
+at its own addresses.
 
-An administrator account, and the questions you actually get asked — taken from your conversation history, not an
-imagined list.
+## A note on roles
 
-## Steps
-
-1. Go to **Help Center** and create one. Give it a name and a **slug** — the word in its public address.
-2. On the **Locales** page, confirm the default language and add any others. A language is either **Draft**, meaning
-   not public yet, or **Published**.
-3. On the **Categories** page, create your sections for that language, then write articles. A new article starts as a
-   **draft**. Publish it when it is ready.
-4. In **Settings → Appearance**, choose a layout — **Classic** for a welcoming home page with search and featured
-   topics, **Documentation** for side-by-side navigation — and add your logo, brand colour and header text.
-5. In **Settings → Domain**, optionally add a custom domain such as `help.yourdomain.com` by pointing a CNAME record
-   at the address shown. It goes live once verified.
-6. Back in **Settings → Inboxes**, attach the help centre to an inbox. Agents can then search it from the reply box
-   and drop a link into an answer; without the attachment, the search does not appear.
-
-## Publishing and editing
-
-An article has three states: **draft**, **published** and **archived**. Editing one that is already published behaves
-differently: your changes are **staged**, the live page keeps the old text, and you can compare the two before
-publishing. That is one pending draft per article — useful for a careful correction, but **not** a revision history.
-Earlier versions are not kept and cannot be restored.
-
-You can also act on several articles at once: change status, move category, or delete.
-
-## A worked example
-
-A pharmacy chain in Doha publishes a help centre with Arabic as the default language and English added, creates two
-categories per language — Delivery and Prescriptions — and attaches it to its WhatsApp inbox. When a customer asks
-about delivery times, the agent searches "delivery" in the reply box, inserts the link, and answers in one message
-instead of five.
-
-English is left as **Draft** for two weeks while translations are checked, so visitors see only Arabic until then.
-
-## Who can do this
-
-Administrators, and an agent whose custom role grants **Manage knowledge base** — which covers writing articles and
-categories and changing the help centre's settings, but **not** creating one, deleting one, or setting analytics
-ids. See [Roles and permissions](roles-and-permissions).
-
-## Limits
-
-- **Slugs are unique across the whole installation**, not just your account, so a common word may be taken. These
-  are reserved and refused: `docs`, `documentation`, `help`, `helpcenter`, `support`, `status`, `api`, `changelog`,
-  `releases`, `release-notes`, and names beginning with `lynomia`. Article slugs are globally unique too.
-- **There is no revision history.** One pending draft per published article, and no way back to an earlier version.
-- The default language cannot be set to Draft.
-- The home page can feature at most **3 categories and 6 articles** per language.
-- Analytics ids — Google Tag Manager, GA4, Hotjar, Plausible, Amplitude, Clarity and the Meta pixel — are
-  **administrator-only**, because they inject tracking into every public page.
-- Folders appear in the underlying data but cannot be created or used. Categories are the only grouping.
-- Deleting a help centre is permanent and takes its articles with it.
-- Article bodies are Markdown. There is no visual page builder and no custom template.
+A custom role no longer offers a **Manage knowledge base** permission, because there is no workspace knowledge base
+to manage. A role created before this change keeps the permission on its record, where it now grants nothing — you
+can leave it or edit the role to drop it, and either way it changes nothing about what that person can do. See
+[Roles and permissions](roles-and-permissions).
 
 ## Related
 
-- [Set up an inbox](set-up-an-inbox)
-- [Roles and permissions](roles-and-permissions)
 - [Canned responses](canned-responses)
+- [Macros](macros)
+- [Roles and permissions](roles-and-permissions)
 
 ## If it does not work
 
-**The slug is refused.** It is reserved, or another account on the installation already has it. Add a word —
-`yourbrand-help` rather than `help`.
+**The Documentation or Contact support link is missing.** The installation has not configured an address for it.
+Ask whoever administers your installation.
 
-**An article is published but not on the public site.** Check its language. If that locale is still marked Draft,
-nothing in it is public.
-
-**My edit is not showing on the live page.** On a published article, edits are staged. Publish the pending draft.
-
-**The reply box has no article search.** The inbox has no help centre attached.
-
-**The custom domain is not working.** It stays pending until the CNAME record is verified.
+**I want to edit an article my workspace published before.** You cannot, from here. The page itself is still
+online for your customers, but editing, adding and removing are administrator work on the installation now.

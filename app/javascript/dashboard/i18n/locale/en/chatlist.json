@@ -168,6 +168,20 @@
     "STATUS_FILTER": {
       "TOOLTIP": "Change the status filter",
       "ARIA_LABEL": "Status filter: {status}. Change it."
+    },
+    "DELIVERY_FAILURE": {
+      "PROVIDER_RESPONSE": "WhatsApp said: {error}",
+      "LEARN_MORE": "What to do about this",
+      "RETRY": "Send this message again",
+      "NO_RETRY_REASON": "Sending this again would be refused the same way.",
+      "META_RECIPIENT_DELIVERY_RESTRICTION": {
+        "TITLE": "WhatsApp limited marketing messages to this person",
+        "BODY": "WhatsApp caps how many marketing messages one person receives, and it applies that cap per person rather than to your number. If the customer writes to you, you can reply freely for 24 hours; otherwise WhatsApp asks you to wait at least a day."
+      },
+      "META_BILLING_ELIGIBILITY": {
+        "TITLE": "WhatsApp could not bill this message",
+        "BODY": "The WhatsApp Business account's payment method or currency is not usable, so WhatsApp refused the message. An administrator fixes this in Meta's Business Manager, and the message can be sent again once it is corrected."
+      }
     }
   }
 }

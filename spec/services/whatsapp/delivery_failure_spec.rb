@@ -135,4 +135,49 @@ RSpec.describe Whatsapp::DeliveryFailure do
       expect(described_class.for(message.reload)).not_to be_recipient_scoped
     end
   end
+
+  # The dashboard showed "Failed to send" and Meta's raw string behind a hover, and nothing else: an agent reading
+  # "131049: ..." could not tell whether to try again. The meaning is decided here and carried to the client, so
+  # there is one copy of this policy rather than one on each side -- and because it is derived on read, the
+  # refusals already in the database explain themselves too.
+  describe 'what the dashboard receives' do
+    it 'reports the code, the classification and whether re-sending could possibly help' do
+      expect(described_class.new('131049: anything').push_event_data).to eq(
+        code: 131_049, classification: described_class::RECIPIENT_DELIVERY_RESTRICTION, recipient_scoped: true
+      )
+    end
+
+    it 'keeps 131042 retryable on the client, because fixing the billing makes the same message send' do
+      expect(described_class.new('131042: Business eligibility payment issue').push_event_data).to include(
+        classification: described_class::BILLING_ELIGIBILITY, recipient_scoped: false
+      )
+    end
+
+    # Reporting UNCLASSIFIED would put a Lynomia word on a refusal nobody here has explained. The client falls back
+    # to Meta's own text, which is what it has always shown.
+    it 'reports nothing for a code this installation has never classified' do
+      expect(described_class.new('190: Invalid OAuth access token').push_event_data).to be_nil
+      expect(described_class.new(nil).push_event_data).to be_nil
+    end
+
+    it 'derives it from the stored refusal, so a failure already on record carries it' do
+      message.update!(status: :failed, external_error: '131049: This message was not delivered')
+
+      expect(message.reload.delivery_failure_data).to include(recipient_scoped: true)
+      expect(message.push_event_data[:delivery_failure]).to include(code: 131_049)
+    end
+
+    it 'says nothing about a message that has not failed' do
+      expect(message.delivery_failure_data).to be_nil
+      expect(message.push_event_data).not_to have_key(:delivery_failure)
+    end
+
+    # A Twilio or SMTP rejection also lands in external_error. It must fall through untouched rather than be read
+    # against Meta's vocabulary.
+    it 'says nothing about a failure from another provider' do
+      message.update!(status: :failed, external_error: '30008: Unknown error')
+
+      expect(message.reload.delivery_failure_data).to be_nil
+    end
+  end
 end

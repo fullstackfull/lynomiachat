@@ -14,3 +14,8 @@ json.sender message.sender.push_event_data if message.sender
 json.attachments message.attachments.map(&:push_event_data) if message.attachments.present?
 
 json.set! :call, message.call.push_event_data if message.content_type == 'voice_call' && message.respond_to?(:call) && message.call.present?
+
+# What Meta's refusal means, when it is one Lynomia classifies (custom/app/models/custom/message.rb). Derived, never
+# stored, so the failures already on record carry it too; absent for everything else, which is most messages.
+delivery_failure = message.delivery_failure_data if message.respond_to?(:delivery_failure_data)
+json.set! :delivery_failure, delivery_failure if delivery_failure

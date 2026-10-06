@@ -1509,6 +1509,31 @@
             ],
             "description": "The file object attached to the image"
           },
+          "delivery_failure": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Present only on a failed message whose provider error code this installation classifies. Derived from the stored provider error rather than persisted, so it is also present on failures recorded before the classification existed. Absent on every other message.\n",
+            "properties": {
+              "code": {
+                "type": "integer",
+                "description": "The provider's own numeric error code"
+              },
+              "classification": {
+                "type": "string",
+                "enum": [
+                  "META_RECIPIENT_DELIVERY_RESTRICTION",
+                  "META_BILLING_ELIGIBILITY"
+                ],
+                "description": "What the refusal means"
+              },
+              "recipient_scoped": {
+                "type": "boolean",
+                "description": "True when the refusal follows the recipient rather than the configuration, so re-sending the same message to the same person would be refused again. The retry endpoint rejects such a message.\n"
+              }
+            }
+          },
           "sender": {
             "type": "object",
             "description": "User/Agent/AgentBot object"

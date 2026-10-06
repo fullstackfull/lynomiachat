@@ -209,6 +209,34 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(response).to conform_schema(200)
         expect(JSON.parse(response.body, symbolize_names: true)[:meta][:contact][:id]).to eq(conversation.contact_id)
       end
+
+      # The dashboard explains a refusal in the agent's own language and withdraws Retry where re-sending would be
+      # refused again, so what the server decided about Meta's code has to travel with the message
+      # (custom/app/models/custom/message.rb). Meta's own words stay beside it, untouched.
+      it 'carries what the provider refusal means, alongside the refusal itself' do
+        failed = create(:message, account: account, conversation: conversation, message_type: :outgoing,
+                                  status: :failed,
+                                  content_attributes: { external_error: '131049: Not delivered' })
+
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages",
+            headers: agent.create_new_auth_token, as: :json
+
+        payload = response.parsed_body['payload'].find { |row| row['id'] == failed.id }
+        expect(payload['delivery_failure']).to eq(
+          'code' => 131_049, 'classification' => 'META_RECIPIENT_DELIVERY_RESTRICTION', 'recipient_scoped' => true
+        )
+        expect(payload['content_attributes']['external_error']).to eq('131049: Not delivered')
+        expect(response).to conform_schema(200)
+      end
+
+      it 'says nothing about a message that did not fail' do
+        create(:message, account: account, conversation: conversation, message_type: :outgoing, status: :sent)
+
+        get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/messages",
+            headers: agent.create_new_auth_token, as: :json
+
+        expect(response.parsed_body['payload'].flat_map(&:keys)).not_to include('delivery_failure')
+      end
     end
   end
 

@@ -26,6 +26,7 @@ Metrics/MethodLength:
     - 'enterprise/lib/captain/agent.rb'
     - 'custom/db/migrate/20260926100100_create_billing_subscriptions.rb'
     - 'custom/db/migrate/20261001100000_create_commerce_action_runs.rb'
+    - 'custom/db/migrate/20261006100000_create_commerce_carts.rb'
     - 'app/controllers/super_admin/app_configs_controller.rb'
 
 RSpec/ExampleLength:

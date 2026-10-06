@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+#
+# Lynomia Chat production deploy.
+#
+# This replaces the unversioned /root/deploy-lynomia.sh. That script ran
+#   git pull --ff-only && bundle install && db:migrate && pnpm vite build && systemctl restart chatwoot.target
+# (docs/flow-builder/12-production-readiness.md:155) and was missing three steps, each of which has bitten or would
+# bite a release:
+#
+#   1. pnpm install --frozen-lockfile  -- without it, the Vite build runs against stale node_modules and fails on any
+#      release that adds a JavaScript dependency. Already recorded as a real failure in
+#      docs/flow-builder/uat/README.md:38.
+#   2. pnpm build:sdk  -- public/packs/js/sdk.js is the script customers embed on their own sites. It comes from its
+#      own Vite pipeline (vite.lib.config.ts, pnpm build:sdk), NOT from `pnpm vite build`, and it is gitignored. So a
+#      deploy that skips it leaves every customer site loading the previous widget indefinitely.
+#   3. POSTGRES_STATEMENT_TIMEOUT=0 for the migration -- production sets a statement timeout, and a migration that
+#      exceeds it is killed mid-flight. For CREATE INDEX CONCURRENTLY that leaves the index INVALID and the table
+#      silently unindexed.
+#
+# It also takes a backup before touching the database, records the outgoing revision so a rollback has something to
+# aim at, and verifies the services came back before reporting success.
+#
+# Run as root on the application server:   bash deployment/deploy.sh
+#
+# Behaviour on failure: stop immediately and do NOT restart. The previous version keeps serving. That is the one
+# good property of the old script and it is preserved deliberately -- a half-deployed restart is worse than a
+# postponed deploy.
+
+set -Eeuo pipefail
+
+APP_USER="${APP_USER:-chatwoot}"
+APP_DIR="${APP_DIR:-/home/chatwoot/chatwoot}"
+BACKUP_DIR="${BACKUP_DIR:-/var/backups/lynomia}"
+TARGET="${TARGET:-chatwoot.target}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/api}"
+KEEP_BACKUPS="${KEEP_BACKUPS:-14}"
+
+log()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
+fail() { printf '\n\033[1;31m!!! %s\033[0m\n' "$*" >&2; exit 1; }
+as_app() { sudo -u "$APP_USER" -H bash -lc "cd '$APP_DIR' && $1"; }
+
+trap 'fail "deploy aborted at line $LINENO. Nothing was restarted; the previous version is still serving."' ERR
+
+[[ $EUID -eq 0 ]] || fail "run as root: it restarts systemd units"
+[[ -d $APP_DIR ]] || fail "$APP_DIR does not exist"
+
+# ---------------------------------------------------------------------------
+log "0. Pre-deploy checks"
+
+if as_app 'git status --porcelain' | grep -q .; then
+  fail "working tree at $APP_DIR is dirty. Commit, stash or revert first."
+fi
+
+PREVIOUS_SHA="$(as_app 'git rev-parse HEAD')"
+PREVIOUS_BRANCH="$(as_app 'git rev-parse --abbrev-ref HEAD')"
+echo "currently serving: $PREVIOUS_SHA ($PREVIOUS_BRANCH)"
+
+systemctl is-active --quiet "$TARGET" || echo "note: $TARGET is not active before this deploy"
+
+df -Pk "$APP_DIR" | awk 'NR==2 && $4 < 2097152 { print "less than 2GB free on the app filesystem"; exit 1 }' \
+  || fail "not enough free disk for a build and a backup"
+
+# ---------------------------------------------------------------------------
+log "1. Database backup"
+
+install -d -m 750 -o "$APP_USER" -g "$APP_USER" "$BACKUP_DIR"
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+DUMP="$BACKUP_DIR/$STAMP-pre-deploy-$PREVIOUS_SHA.dump"
+
+as_app "set -a && . ./.env && set +a && PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_dump -Fc \
+  -h \"\${POSTGRES_HOST:-localhost}\" -p \"\${POSTGRES_PORT:-5432}\" -U \"\$POSTGRES_USERNAME\" \
+  \"\$POSTGRES_DATABASE\" -f '$DUMP'"
+
+[[ -s $DUMP ]] || fail "backup is empty: $DUMP"
+sha256sum "$DUMP" | tee "$DUMP.sha256"
+echo "backup: $DUMP ($(du -h "$DUMP" | cut -f1))"
+
+# ---------------------------------------------------------------------------
+log "2. Fetch the release"
+
+as_app 'git pull --ff-only'
+RELEASE_SHA="$(as_app 'git rev-parse HEAD')"
+
+if [[ $RELEASE_SHA == "$PREVIOUS_SHA" ]]; then
+  echo "already at $RELEASE_SHA; nothing to deploy"
+  exit 0
+fi
+as_app 'git log --oneline -1'
+
+# ---------------------------------------------------------------------------
+log "3. Dependencies"
+
+as_app 'bundle install --quiet'
+# Missing from the old script. Must run before any Vite build.
+as_app 'pnpm install --frozen-lockfile'
+
+# ---------------------------------------------------------------------------
+log "4. Migrations"
+
+# POSTGRES_STATEMENT_TIMEOUT=0 only for this step: production's timeout is there to protect request-path queries,
+# and a migration is not a request. Without this a long index build is killed partway.
+as_app 'RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 bundle exec rails db:migrate'
+# Two things the migration step can leave behind silently: a migration that did not run, and an index that a killed
+# CREATE INDEX CONCURRENTLY left INVALID. Postgres keeps serving queries against an invalid index's table by
+# sequential scan, so nothing fails -- it just gets slow, which is why this is checked rather than assumed.
+as_app 'RAILS_ENV=production bundle exec rails runner "
+  ActiveRecord::Migration.check_all_pending!
+  invalid = ActiveRecord::Base.connection.select_values(
+    %q(SELECT indexrelid::regclass::text FROM pg_index WHERE NOT indisvalid))
+  abort(%q(invalid indexes present: ) + invalid.join(%q(, ))) if invalid.any?
+  puts %q(schema ok)"'
+
+# ---------------------------------------------------------------------------
+log "5. Frontend build"
+
+as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm vite build'
+as_app 'test -s public/vite/.vite/manifest.json' || fail "vite build produced no manifest"
+
+# Missing from the old script: the embed script customers load from their own sites.
+as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm build:sdk'
+as_app 'test -s public/packs/js/sdk.js' || fail "sdk build produced no public/packs/js/sdk.js"
+
+# ---------------------------------------------------------------------------
+log "6. Restart"
+
+systemctl restart "$TARGET"
+
+# ---------------------------------------------------------------------------
+log "7. Verify"
+
+for attempt in $(seq 1 30); do
+  code="$(curl -fsS -o /tmp/deploy-readiness.json -w '%{http_code}' "$HEALTH_URL" || true)"
+  [[ $code == 200 ]] && break
+  [[ $attempt -eq 30 ]] && {
+    echo "last readiness response:"; cat /tmp/deploy-readiness.json 2>/dev/null || true
+    fail "readiness endpoint did not return 200 within 60s. ROLL BACK: see deployment/ROLLBACK.md, previous revision $PREVIOUS_SHA"
+  }
+  sleep 2
+done
+cat /tmp/deploy-readiness.json; echo
+
+systemctl is-active --quiet "$TARGET" \
+  || fail "$TARGET is not active after restart. ROLL BACK: previous revision $PREVIOUS_SHA"
+
+for unit in chatwoot-web.1.service chatwoot-worker.1.service; do
+  systemctl is-active --quiet "$unit" || fail "$unit is not active. ROLL BACK: previous revision $PREVIOUS_SHA"
+done
+
+as_app 'RAILS_ENV=production bundle exec rails runner "
+  require %q(sidekiq/api)
+  stats = Sidekiq::Stats.new
+  puts %(sidekiq: enqueued=#{stats.enqueued} retry=#{stats.retry_size} dead=#{stats.dead_size} processes=#{Sidekiq::ProcessSet.new.size})
+  abort(%q(no sidekiq process registered)) if Sidekiq::ProcessSet.new.size.zero?"'
+
+# ---------------------------------------------------------------------------
+log "8. Done"
+
+printf 'deployed  %s -> %s\nbackup    %s\nrollback  previous revision %s (deployment/ROLLBACK.md)\n' \
+  "$PREVIOUS_SHA" "$RELEASE_SHA" "$DUMP" "$PREVIOUS_SHA"
+
+# Keep the backup directory from filling the disk, oldest first.
+find "$BACKUP_DIR" -maxdepth 1 -name '*.dump' -printf '%T@ %p\n' | sort -rn | tail -n "+$((KEEP_BACKUPS + 1))" \
+  | cut -d' ' -f2- | while read -r old; do rm -f -- "$old" "$old.sha256"; done
+
+trap - ERR

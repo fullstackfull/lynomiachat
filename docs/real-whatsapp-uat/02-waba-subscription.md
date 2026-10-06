@@ -1,5 +1,10 @@
 # 02 — WABA app subscription (P5 Part C)
 
+> **Status, continuation.** This document is the P5 *diagnosis* of the WABA subscription path, describing the code
+> as it stood when the symptoms were reported. §2's swallowing `setup_webhooks` and the inbound drop it caused are
+> **fixed** — see `09` §1 and §2 — and `setup_webhooks!` now raises. Kept as written, because this is the evidence
+> the fix was built from, and the one correction already made in place shows how the conclusion was reached.
+
 P5 names this the primary suspect. This document says what the code does about subscription, what can therefore go
 wrong, and how the operator reads the real answer.
 

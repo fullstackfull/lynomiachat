@@ -60,16 +60,24 @@ bundle exec rails whatsapp:diagnose INBOX_ID=12 CONTACT=+9655XXXXXXX
 ## 3. The callback classification, and why it is the hard one
 
 A phone-level callback override takes **precedence over the Meta App's own webhook configuration**, and it is not
-visible in the Meta dashboard. So "the dashboard looks right" proves nothing. The `WEBHOOK` section therefore
-reports one of five verdicts rather than a boolean:
+visible in the Meta dashboard. So "the dashboard looks right" proves nothing, and a boolean answer would hide the
+part that matters. The `WEBHOOK` section therefore reports a **verdict** qualified by its **source**:
 
-| Verdict | Meaning | What to do |
+| Printed | Meaning | What to do |
 |---|---|---|
-| `MATCH` | Meta's effective callback is this installation's URL | nothing — move down the fix list |
-| `APP_LEVEL_CALLBACK` | no phone-level override; delivery follows the Meta App's configuration | confirm the app-level URL in the dashboard is this installation |
-| `PHONE_LEVEL_OVERRIDE` | an override exists and points at this installation | nothing, but note that the dashboard no longer governs this number |
-| `MISMATCH` | Meta's effective callback is **not** this installation | the top-priority finding. Re-register the callback through `Whatsapp::WebhookSetupService#register_callback` — do not hand-roll it |
-| `UNKNOWN` | Meta did not answer the read (permissions, or the field is unavailable) | treat as unproven, not as pass. The `BLOCKED` line names the Meta error |
+| `MATCH (APP_LEVEL_CALLBACK)` | no phone-level override; delivery follows the Meta App's configuration, and it is this installation | nothing — move down the fix list |
+| `MATCH (PHONE_LEVEL_OVERRIDE)` | an override exists and points at this installation | nothing, but note that the dashboard no longer governs this number |
+| `MISMATCH (PHONE_LEVEL_OVERRIDE)` | an override exists and points somewhere else — the dashboard can look perfect while this is true | the top-priority finding. Re-register via `Whatsapp::WebhookSetupService#register_callback` — do not edit the override by hand |
+| `MISMATCH (APP_LEVEL_CALLBACK)` | no override, and the app-level callback is not this installation | fix the app-level callback in the Meta App, then re-run |
+| `UNKNOWN` | Meta did not answer the read (permissions, or the field is unavailable) | reported as **BLOCKED, not FAIL**: unproven is not the same as failing, and it must not be read as a pass either. The `BLOCKED` line above it names the Meta error |
+
+Two details that make the verdict trustworthy:
+
+- **The override wins when both exist**, because that is Meta's precedence. A configuration whose `application`
+  field matches this installation while its `override_callback_uri` points elsewhere reads `MISMATCH`, which is
+  the truth about where the webhook will land.
+- **The printed values are scheme, host, port and path only.** An `override_callback_uri` carries its verify token
+  in the query string, and this report is meant to be pasted into an issue.
 
 ## 4. Per-item status — every live question in this phase
 

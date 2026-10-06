@@ -158,8 +158,14 @@ messages.
 | `providers/whatsapp_cloud_service.rb` `phone_numbers` | same, with `fields`/`limit` as proper query params |
 | `facebook_api_client.rb#fetch_phone_numbers` | `headers: request_headers`, matching `fetch_all_phone_numbers` and every other read in the same class |
 | `health_service.rb#fetch_graph_data` | `Authorization: Bearer` header, `fields` stays a query param |
+| `business_profile_service.rb#fetch` | `Authorization: Bearer` header, `fields` stays a query param |
 
 The first two ran on **every channel validation**, so a live credential was being written to logs routinely.
+
+The fifth was found by the regression, not by the sweep. `Whatsapp::BusinessProfileService` passed the token in a
+`query:` hash rather than interpolating it into the URL string, so a text search for `?access_token=` missed it
+entirely — and it runs on every health read. That is the reason the static guard added with these fixes matches
+two shapes rather than one (§9).
 
 **Two documented exceptions**, both left as they are because Meta's contract requires them:
 
@@ -199,3 +205,44 @@ useful signals, already guarded against repetition.
 | A media message whose download failed logs one warning and keeps an empty Conversation | now less severe, since §1 means the message itself persists. Worth revisiting with the attachment-failure UX |
 | `meta_token_verify_concern.rb:58`'s `channel.respond_to?(:app_secret)` branch can never be true | cosmetic; it drops nothing |
 | The `low` queue is seventh in Sidekiq's priority list | a latency consideration, not a drop. The diagnosis reports queue depth so it can be seen |
+
+## 9. The regression matrix
+
+All twenty required regressions live in `spec/requests/whatsapp/inbound_reliability_spec.rb` — 37 examples, green —
+except where an existing spec already owned the behaviour, in which case it is cited rather than duplicated.
+
+| # | Required test | Example |
+|---|---|---|
+| 1 | webhook setup error does not look successful | `raises from the bang version the explicit callers use`; `returns false from the after_commit version instead of nil`; `propagates out of the embedded signup service` |
+| 2 | setup error produces truthful channel/operator state | `latches the channel, reports to the exception tracker and logs a structured line` |
+| 3 | reauthorization-required inbound behaviour | `persists an inbound text message on a channel awaiting reauthorization` |
+| 4 | plain inbound message preservation where architecturally valid | same example, asserting content and `source_id` survive |
+| 5 | a media/API auth failure does not erase the whole inbound event | `persists the message and its caption with no attachment` |
+| 6 | correct authorization-error threshold semantics | `latches only once the threshold is reached`; the three `media authorization errors` examples; `does not latch the channel on a single non-OAuth media failure` |
+| 7 | the supported reauthorization clears the latch | `is cleared by the supported reauthorization path` |
+| 8 | stale latch behaviour | `does not suppress inbound while it is still set` |
+| 9 | missing app secret | `refuses every payload when no app secret is configured` |
+| 10 | webhook signature remains enforced | `rejects a payload whose signature does not match`; `accepts a correctly signed payload` |
+| 11 | dedup lock released on success | `is released once the message is persisted` |
+| 12 | dedup lock released on failure | `is released when ingestion raises, so a redelivery can still succeed`; `lets Meta's redelivery succeed after a failed attempt` |
+| 13 | duplicates still suppressed | `still suppresses a duplicate delivery of a message it already persisted` |
+| 14 | manual retry preserves the useful Meta error | `preserves the original Meta error after the retry clears it` |
+| 15 | no credential-bearing URL | `sends the token as a bearer header on a template read, not as a query value`; `keeps credential query parameters out of the WhatsApp request construction`; `limits credential parameters to the two endpoints Meta requires them on` |
+| 16 | callback source / override selection | the five `callback source and override selection` classification examples, plus `refuses a Cloud payload whose metadata matches no channel, rather than trusting the URL` |
+| 17 | the 24-hour local rejection is distinguished from a Meta rejection | `fails a plain reply locally, without calling Meta, and says why` |
+| 18 | an approved template bypasses the 24-hour plain-text restriction | `lets an approved template through the closed window` |
+| 19 | a persisted inbound message opens reply eligibility | `opens reply eligibility for the conversation it creates`; `leaves a conversation with no inbound message outside the window` |
+| 20 | no second ingestion engine | `routes inbound through the one existing job and service` |
+
+Two of these are worth naming as more than box-ticking.
+
+**#15's static guard is not a grep.** A search for the string `access_token` flags four innocent Ruby keyword
+arguments, and a guard that cries wolf teaches the next reader to ignore it. It matches two precise shapes
+instead — an interpolated URL query parameter, and an HTTParty `query:` hash holding a credential — which is
+exactly what a credential-bearing request looks like and nothing else. The companion example pins that
+`FacebookApiClient` still carries **exactly two** credential parameters, so the documented exceptions cannot
+quietly become three.
+
+**#5 is the example that justifies §1.** It posts a real image payload, stubs Meta's media read to 401, and
+asserts the message, its `source_id` and its caption all persist with no attachment, and that the channel is not
+latched. That is the architectural claim of this whole fix, executed rather than argued.

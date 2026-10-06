@@ -1,5 +1,10 @@
 # 01 — Channel identity (P5 Part A)
 
+> **Status, continuation.** This document is the P5 *diagnosis* of channel identity: it describes the code as it
+> stood when the symptoms were reported. The behaviours it reports as defects are fixed in `09`, and the
+> diagnosis report's sections were since restructured into the seven an operator reads down — `10` §2 has the
+> current shape. Kept as written, because the diagnosis is the evidence for the fix.
+
 Where every piece of the real channel's identity lives, so the operator's diagnosis run can be read against a map
 rather than guessed at.
 
@@ -78,21 +83,29 @@ value for the same number, so the comparison is a glance rather than an investig
 ## 5. What the diagnosis task reports for this part
 
 ```
-CHANNEL IDENTITY (P5 Part A) — inbox #<id>
+CHANNEL — inbox #<id>
 ids: account_id=… inbox_id=… channel_id=…
+account: "…" status=active
 inbox name: …
 provider: "whatsapp_cloud"
 stored phone_number: +9659•••01          ← masked
-business_account_id (WABA): …
-phone_number_id: …
-provider_config keys: api_key, business_account_id, phone_number_id, source
-source: "embedded_signup"
-access token: fixt…ey (11 chars)          ← masked
-channel-level app_secret: <blank>
-webhook_verify_token: <blank>
+source: embedded_signup
 coexistence indicators: none recorded in provider_config
-  [PASS/FAIL] a secret exists to verify Meta's webhook signature
-  [PASS/FAIL] the number is NOT on the inactive list
+provider_config keys: api_key, business_account_id, phone_number_id, source, webhook_verify_token
+authorization_error_count: 0 (threshold 2)
+  [PASS/FAIL] the channel is not awaiting reauthorization
+
+META IDENTITY — inbox #<id>
+Graph API version in use: v24.0 (default v24.0)
+WABA (business_account_id): …
+phone_number_id: …                       ← compare with Meta's own value below
+
+AUTH — inbox #<id>
+access token (provider_config.api_key): present     ← presence only, never the value
+channel-level app_secret: blank
+channel webhook_verify_token: present
+credential source: embedded_signup
+  [PASS/FAIL] a Meta app secret is configured (installation or channel)
 ```
 
 Phone numbers are masked as `+9659•••01` and secrets as `abcd…yz (N chars)`, so the report can be shared without

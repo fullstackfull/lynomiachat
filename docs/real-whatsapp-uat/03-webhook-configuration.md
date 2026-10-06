@@ -1,5 +1,9 @@
 # 03 — Webhook configuration (P5 Part D)
 
+> **Status, continuation.** This document is the P5 *diagnosis* of webhook configuration. The callback question it
+> raises is now reported as a classified verdict rather than a boolean — `10` §3 — and the diagnosis sections were
+> restructured. The configuration facts here are unchanged and still current.
+
 **Status in this environment: the code side is answered below; the live read is BLOCKED** on the real token.
 
 This document carries the finding most likely to be missed by someone checking the Meta App dashboard, so it leads

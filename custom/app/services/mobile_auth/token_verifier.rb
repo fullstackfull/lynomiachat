@@ -9,16 +9,16 @@ require 'net/http'
 #   - expiry                           -> a token is valid ~1 hour only
 #   - issuer                           -> really issued by Google / Apple
 #
-# Checked only when configured (ENV, comma separated):
-#   - audience = the token was issued for OUR app
+#   - audience = the token was issued for OUR app (ENV, comma separated):
 #     MOBILE_GOOGLE_CLIENT_IDS  Web + Android + iOS OAuth client IDs of the app
 #     MOBILE_APPLE_CLIENT_IDS   iOS bundle ID (+ Services ID if Apple sign-in is used on Android)
 #
-# Until the IDs are set, tokens issued for other apps are also accepted
-# (a warning is logged on every sign-in). Set them as soon as possible.
+# The audience check is what stops a token minted for somebody else's app being replayed here: without it an
+# attacker's own app collects a victim's provider token and signs in as them. So an unset client-ID list is a
+# deployment bug, not a lenient mode -- sign-in refuses with 503 until it is set, rather than accepting every app.
 class MobileAuth::TokenVerifier
   class InvalidToken < StandardError; end
-  # Kept for the controller's rescue list (no longer raised)
+  # Raised when the provider's client IDs are not configured; the controller renders 503 not_configured.
   class NotConfigured < StandardError; end
 
   PROVIDERS = {
@@ -58,20 +58,16 @@ class MobileAuth::TokenVerifier
   private
 
   def decode_options
-    options = {
+    raise NotConfigured, "#{@config[:client_ids_env]} is not set, so #{@provider} sign-in is unavailable" if client_ids.empty?
+
+    {
       algorithms: ['RS256'],
       jwks: jwks_loader,
       iss: @config[:issuers],
-      verify_iss: true
+      verify_iss: true,
+      aud: client_ids,
+      verify_aud: true
     }
-
-    if client_ids.any?
-      options.merge(aud: client_ids, verify_aud: true)
-    else
-      Rails.logger.warn("[MobileAuth] #{@config[:client_ids_env]} is not set: " \
-                        "#{@provider} tokens are accepted without checking they were issued for this app")
-      options.merge(verify_aud: false)
-    end
   end
 
   def client_ids

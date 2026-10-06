@@ -7,13 +7,14 @@ class Whatsapp::BusinessProfileService
     @api_version = api_version
   end
 
+  # The token travels in the Authorization header, not the query string. `fields` stays a query parameter because
+  # it is not a credential; the access token is, and in the query string it reaches access logs, proxy logs and
+  # exception messages. Meta accepts the bearer form on every read in this family.
   def fetch
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{@channel.provider_config['phone_number_id']}/whatsapp_business_profile",
-      query: {
-        fields: FIELDS.join(','),
-        access_token: @channel.provider_config['api_key']
-      }
+      query: { fields: FIELDS.join(',') },
+      headers: { 'Authorization' => "Bearer #{@channel.provider_config['api_key']}" }
     )
 
     unless response.success?

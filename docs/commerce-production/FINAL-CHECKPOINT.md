@@ -269,7 +269,10 @@ GATE_CONTACTS
 
 ### 45. Full RSpec
 
-GATE_RSPEC
+**10,760 examples, 2 failures, 67 pending.** Both failures are the two pre-existing baseline ones —
+`spec/builders/agent_builder_spec.rb:47` and
+`spec/enterprise/services/voice/call_transcription_service_spec.rb:77` — unchanged by this branch and
+unrelated to Commerce. No new failure anywhere in the suite.
 
 ### 46. Full Vitest
 
@@ -281,7 +284,7 @@ GATE_ESLINT
 
 ### 48. RuboCop
 
-GATE_RUBOCOP
+**3,480 files inspected, no offenses detected.** No cop was disabled for this work beyond the one noted in §21.
 
 ### 49. Production build
 

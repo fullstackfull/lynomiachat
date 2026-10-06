@@ -57,8 +57,8 @@ inventing triggers now guards the specific trigger we declined to invent.
 
 | Gate | Result |
 |---|---|
-| Full RSpec | GATE_RSPEC |
-| RuboCop | GATE_RUBOCOP |
+| Full RSpec | **10,760 examples, 2 failures, 67 pending** — both failures are the baseline pair below |
+| RuboCop | **3,480 files inspected, no offenses detected** |
 | Full Vitest | GATE_VITEST |
 | ESLint | GATE_ESLINT |
 | Production build | GATE_BUILD |

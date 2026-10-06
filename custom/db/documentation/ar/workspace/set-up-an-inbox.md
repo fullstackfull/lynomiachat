@@ -98,7 +98,6 @@ seo_description: ما هي القناة في لينوميا تشات، والإ�
 - [اربط واتساب](connect-whatsapp)
 - [الفرق ووكلاء الدعم](teams-and-agents)
 - [الإسناد وترتيب الأولوية](assign-and-prioritise)
-- [التوثيق والدعم](your-own-help-centre)
 
 ## إذا لم ينجح الأمر
 

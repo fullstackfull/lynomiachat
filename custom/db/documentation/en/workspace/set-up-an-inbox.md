@@ -89,7 +89,6 @@ inboxes or channels, so this cannot be delegated — see [Roles and permissions]
 - [Connect WhatsApp](connect-whatsapp)
 - [Teams and agents](teams-and-agents)
 - [Assign and prioritise](assign-and-prioritise)
-- [Documentation and support](your-own-help-centre)
 
 ## If it does not work
 

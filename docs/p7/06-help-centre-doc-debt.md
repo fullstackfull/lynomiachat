@@ -132,3 +132,19 @@ checked before being changed; two of its claims did not survive that and are rec
 for an inbox that carries a portal. That is the same legacy state as the public renderer: it cannot arise for a
 new inbox, and for an old one it is the customer-facing half of pages that are still online by design. It belongs
 with the decision above, not ahead of it.
+
+## A third pass, and a refuted headline
+
+The full mapping run finished after the two passes above had already shipped, having read the tree while it was
+being edited. Its headline finding — that the documentation now claims the **Manage knowledge base** permission
+is gone while the custom-role form still offers it — is **refuted**: `AVAILABLE_CUSTOM_ROLE_PERMISSIONS` holds
+six entries, `knowledge_base_manage` is not among them, and `CustomRoleModal.vue` renders one checkbox per entry,
+so the form shows six. The documentation is right as written. Two of its other findings (the dead reply-box
+article search, and the `ownHelpCentre` registry key) were likewise already closed.
+
+One finding was live and is now acted on: the **Related** entry pointing at this article from `set-up-an-inbox`
+in both locales. It was there because the inbox Settings tab carried an attached help centre; that is gone, so
+the entry had lost its reason to sit in a topical list. Removed rather than retargeted.
+
+Re-proved after that edit: `0 created, 5 updated, 81 unchanged` — the two Related edits plus the three files from
+the second pass that the local database had not yet seen — then `0 created, 0 updated, 86 unchanged`.

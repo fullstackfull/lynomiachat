@@ -62,7 +62,8 @@
       window.browserConfig = {
         browser_name: '<%= browser.name %>',
       }
-      window.errorLoggingConfig = '<%= ENV.fetch('SENTRY_FRONTEND_DSN', '') || ENV.fetch('SENTRY_DSN', '') %>'
+      <%# presence, not ||: ENV.fetch returns '' when the key is unset, and '' is truthy in Ruby, so a plain || never falls back %>
+      window.errorLoggingConfig = '<%= ENV['SENTRY_FRONTEND_DSN'].presence || ENV['SENTRY_DSN'].presence %>'
     </script>
     <% if @global_config['CLOUD_ANALYTICS_TOKEN'].present? %>
     <script>

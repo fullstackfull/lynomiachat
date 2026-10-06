@@ -145,6 +145,11 @@
       "ACTION": "Start from a recipe",
       "DESCRIPTION": "A recipe creates a normal automation rule, switched off, for you to read and change before it runs.",
       "PROVENANCE": "Created from the {name} recipe (v{version}).",
+      "COMMERCE_ABANDONED_CART_TEMPLATE": {
+        "NAME": "Abandoned cart gets an approved WhatsApp template",
+        "DESCRIPTION": "When a store reports a cart abandoned, send the customer an approved WhatsApp template. The rule is created switched off: choose the WhatsApp inbox, the approved template and its variables in the rule, then turn it on.",
+        "PROVIDER_NOTE": "Only Zid reports abandoned carts to Lynomia, and cart ingestion is still being verified against a real Zid store, so this rule will not run yet even once you switch it on."
+      },
       "COMMERCE_NEW_ORDER_ROUTING": {
         "NAME": "New order goes to a team",
         "DESCRIPTION": "When a store records a new order, label the customer's conversation and assign it to the team that handles orders."

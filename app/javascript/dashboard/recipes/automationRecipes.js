@@ -96,6 +96,25 @@ const NEW_CONVERSATION = () => [
 ];
 
 export const AUTOMATION_RECIPES = [
+  // The abandoned-cart starter (docs/pre-p7-closeout/04-abandoned-cart-recipe.md). It creates the trigger, the
+  // store condition and the approved-template action, and leaves the WhatsApp inbox, the template and its variable
+  // mapping for the person to choose in the rule editor — which is where the real template control lives, so the
+  // wizard grows no second template selector.
+  //
+  // It is created disabled like every recipe, and here that is load-bearing rather than merely cautious: an
+  // incomplete template action cannot be switched on (Custom::AutomationRule#template_action_configured), so the
+  // person must finish configuring it before anything can send. Zid is the only provider whose carts Lynomia
+  // observes, and Zid cart ingestion is PRE_UAT, so nothing fires until that gate is opened deliberately.
+  recipe({
+    id: 'commerce_abandoned_cart_template',
+    category: CATEGORIES.ECOMMERCE,
+    providerNote: true,
+    requires: [REQUIREMENTS.COMMERCE, REQUIREMENTS.COMMERCE_STORE],
+    inputs: [STORE_INPUT],
+    event: () => 'commerce_cart_abandoned',
+    conditions: eventStore,
+    actions: () => [action('send_whatsapp_template', [])],
+  }),
   recipe({
     id: 'commerce_new_order_routing',
     category: CATEGORIES.ECOMMERCE,

@@ -61,6 +61,9 @@ const ACTIONS = [
   'change_priority',
   'send_email_transcript',
   'add_private_note',
+  // Lynomia: the one customer-facing action a Commerce trigger may use, because an approved template is the
+  // only thing WhatsApp permits outside the 24-hour window (custom/app/models/custom/automation_rule.rb).
+  'send_whatsapp_template',
 ];
 // Commerce::OrderTransitions::EVENTS
 const COMMERCE_EVENTS = [
@@ -71,6 +74,7 @@ const COMMERCE_EVENTS = [
   'commerce_order_delivered',
   'commerce_order_cancelled',
   'commerce_order_refunded',
+  'commerce_cart_abandoned',
 ];
 // Custom::AutomationRule::CUSTOMER_MESSAGE_ACTIONS: never offered on a Commerce trigger.
 const CUSTOMER_MESSAGE_ACTIONS = ['send_message', 'send_attachment'];
@@ -165,17 +169,39 @@ describe('AUTOMATION_RECIPES', () => {
     );
   });
 
-  it('names only actions the rule model accepts', () => {
+  it('names only actions the rule model accepts, and fills every action it can', () => {
     built().forEach(([item, rule]) =>
       rule.actions.forEach(action => {
         expect(ACTIONS, item.id).toContain(action.action_name);
         expect(Array.isArray(action.action_params), item.id).toBe(true);
+        // The approved-template action is the one a recipe deliberately leaves empty: its inbox, template and
+        // variable mapping are chosen in the rule editor, where the real control lives, rather than duplicating a
+        // template selector into this wizard. The rule is created disabled and
+        // Custom::AutomationRule#template_action_configured refuses to switch on an incomplete one, so an empty
+        // action here can never run.
+        if (action.action_name === 'send_whatsapp_template') return;
+
         expect(
           action.action_params.length,
           `${item.id}/${action.action_name}`
         ).toBeGreaterThan(0);
       })
     );
+  });
+
+  // The abandoned-cart starter, and the properties that make it safe to ship while Zid cart ingestion is PRE_UAT.
+  it('ships the abandoned-cart starter disabled, on the cart trigger, with only the approved-template action', () => {
+    const [item, rule] = built().find(
+      ([recipe]) => recipe.id === 'commerce_abandoned_cart_template'
+    );
+
+    expect(rule.event_name).toBe('commerce_cart_abandoned');
+    expect(rule.active).toBe(false);
+    expect(rule.actions.map(action => action.action_name)).toEqual([
+      'send_whatsapp_template',
+    ]);
+    expect(item.inputs.map(input => input.key)).toEqual(['store']);
+    expect(item.providerNote).toBeTruthy();
   });
 
   it('gives at most one condition a null query operator, as the model requires', () => {

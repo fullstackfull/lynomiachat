@@ -1,5 +1,6 @@
 <script>
 import AutomationActionTeamMessageInput from './AutomationActionTeamMessageInput.vue';
+import AutomationActionWhatsappTemplateInput from './AutomationActionWhatsappTemplateInput.vue';
 import AutomationActionFileInput from './AutomationFileInput.vue';
 import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -12,6 +13,7 @@ const CONTACT_EMAIL_TOKEN = '{{contact.email}}';
 export default {
   components: {
     AutomationActionTeamMessageInput,
+    AutomationActionWhatsappTemplateInput,
     AutomationActionFileInput,
     WootMessageEditor,
     NextButton,
@@ -99,7 +101,12 @@ export default {
       }));
     },
     isVerticalLayout() {
-      return ['team_message', 'textarea', 'email'].includes(this.inputType);
+      return [
+        'team_message',
+        'textarea',
+        'email',
+        'whatsapp_template',
+      ].includes(this.inputType);
     },
     castMessageVmodel: {
       get() {
@@ -213,6 +220,11 @@ export default {
         v-else-if="inputType === 'team_message'"
         v-model="action_params"
         :teams="dropdownValues"
+        :dropdown-max-height="dropdownMaxHeight"
+      />
+      <AutomationActionWhatsappTemplateInput
+        v-else-if="inputType === 'whatsapp_template'"
+        v-model="action_params"
         :dropdown-max-height="dropdownMaxHeight"
       />
       <WootMessageEditor

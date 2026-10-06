@@ -90,6 +90,10 @@ export function useEditableAutomation() {
         [...params].includes(item.id)
       );
     }
+    // One config object rather than a list of ids, so it is handed back as-is for the control to edit.
+    if (inputType === 'whatsapp_template') {
+      return params[0] || {};
+    }
     if (inputType === 'team_message') {
       return {
         team_ids: [...getActionDropdownValues(action.action_name)].filter(

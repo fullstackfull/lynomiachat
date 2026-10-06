@@ -3,6 +3,7 @@ import { useMapGetter } from 'dashboard/composables/store';
 import {
   useLynomiaAutomation,
   COMMERCE_EVENTS,
+  TEMPLATE_ACTION,
   isCommerceEvent,
 } from './lynomiaAutomation';
 import { AUTOMATIONS } from './constants';
@@ -56,14 +57,19 @@ vi.mock('dashboard/components-next/filter/audienceProvider', () => ({
   }),
 }));
 
+const whatsappInboxes = ref([{ id: 7, name: 'KW Pharmacy' }]);
+
 describe('useLynomiaAutomation', () => {
   beforeEach(() => {
     commerceOn.value = true;
-    useMapGetter.mockReturnValue(
-      ref([
-        { id: 1, name: 'VIP', shared: true },
-        { id: 2, name: 'Mine', shared: false },
-      ])
+    whatsappInboxes.value = [{ id: 7, name: 'KW Pharmacy' }];
+    useMapGetter.mockImplementation(name =>
+      name === 'inboxes/getWhatsAppInboxes'
+        ? whatsappInboxes
+        : ref([
+            { id: 1, name: 'VIP', shared: true },
+            { id: 2, name: 'Mine', shared: false },
+          ])
     );
   });
 
@@ -156,5 +162,52 @@ describe('useLynomiaAutomation', () => {
 
     expect(dispatch).toHaveBeenCalledWith('customViews/get', 'contact');
     expect(loadAudienceFields).toHaveBeenCalled();
+  });
+
+  describe('the approved WhatsApp template action', () => {
+    it('includes the abandoned cart trigger among the Commerce triggers', () => {
+      expect(COMMERCE_EVENTS).toContain('commerce_cart_abandoned');
+      expect(isCommerceEvent('commerce_cart_abandoned')).toBe(true);
+    });
+
+    it('is offered on a Commerce trigger, because an approved template is not a free-form message', () => {
+      const { actionAllowed } = useLynomiaAutomation();
+
+      expect(actionAllowed('commerce_cart_abandoned', TEMPLATE_ACTION)).toBe(
+        true
+      );
+      expect(actionAllowed('commerce_order_paid', TEMPLATE_ACTION)).toBe(true);
+    });
+
+    it('still refuses a free-form customer message on a Commerce trigger', () => {
+      const { actionAllowed } = useLynomiaAutomation();
+
+      expect(actionAllowed('commerce_cart_abandoned', 'send_message')).toBe(
+        false
+      );
+      expect(actionAllowed('commerce_cart_abandoned', 'send_attachment')).toBe(
+        false
+      );
+    });
+
+    // Offering an action that cannot be configured is the invisible no-op this project keeps guarding against.
+    it('is not offered at all when the account has no WhatsApp inbox', () => {
+      whatsappInboxes.value = [];
+      const { actionAllowed } = useLynomiaAutomation();
+
+      expect(actionAllowed('commerce_cart_abandoned', TEMPLATE_ACTION)).toBe(
+        false
+      );
+      expect(actionAllowed('conversation_created', TEMPLATE_ACTION)).toBe(
+        false
+      );
+    });
+
+    it('leaves every other action alone', () => {
+      const { actionAllowed } = useLynomiaAutomation();
+
+      expect(actionAllowed('conversation_created', 'add_label')).toBe(true);
+      expect(actionAllowed('commerce_cart_abandoned', 'add_label')).toBe(true);
+    });
   });
 });

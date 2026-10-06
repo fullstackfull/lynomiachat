@@ -257,6 +257,54 @@ RSpec.describe 'Conversation Messages API', type: :request do
       end
     end
 
+    # Lynomia: a refusal Meta scoped to the RECIPIENT is one it will give again for the same message to the same
+    # person, so Retry is refused with Meta's reason instead of re-sending. Pressing it repeatedly therefore cannot
+    # hammer a recipient Meta has throttled, and each press is not another quality signal against the number.
+    context 'when Meta refused the message for this recipient (131049)' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let(:restricted) do
+        create(:message, account: account, status: :failed,
+                         content_attributes: {
+                           external_error: '131049: This message was not delivered to maintain healthy ecosystem engagement.'
+                         })
+      end
+
+      before { create(:inbox_member, inbox: restricted.conversation.inbox, user: agent) }
+
+      it 'refuses the retry, keeps the message failed and sends nothing' do
+        expect do
+          post "/api/v1/accounts/#{account.id}/conversations/#{restricted.conversation.display_id}/messages/#{restricted.id}/retry",
+               headers: agent.create_new_auth_token, as: :json
+        end.not_to have_enqueued_job(SendReplyJob)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(restricted.reload).to have_attributes(status: 'failed')
+        expect(restricted.reload.external_error).to include('131049')
+      end
+
+      it 'keeps refusing however many times it is pressed' do
+        3.times do
+          post "/api/v1/accounts/#{account.id}/conversations/#{restricted.conversation.display_id}/messages/#{restricted.id}/retry",
+               headers: agent.create_new_auth_token, as: :json
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+
+        expect(restricted.reload.status).to eq('failed')
+      end
+
+      # An account-scoped refusal is different: fixing billing outside Lynomia genuinely makes the same message
+      # send, so the operator keeps the retry.
+      it 'still allows a retry when the refusal was account-scoped billing (131042)' do
+        restricted.update!(external_error: '131042: Business eligibility payment issue')
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{restricted.conversation.display_id}/messages/#{restricted.id}/retry",
+             headers: agent.create_new_auth_token, as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(restricted.reload.status).to eq('sent')
+      end
+    end
+
     context 'when the message id is invalid' do
       let(:agent) { create(:user, account: account, role: :agent) }
 

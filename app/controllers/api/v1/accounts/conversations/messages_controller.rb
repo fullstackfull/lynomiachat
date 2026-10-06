@@ -25,8 +25,20 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     end
   end
 
+  # Lynomia: a refusal Meta scoped to the RECIPIENT is one it will give again for the same message to the same
+  # person (Whatsapp::DeliveryFailure), so Retry is refused with Meta's reason rather than silently re-sending.
+  # Re-sending would not bypass Meta's decision, only repeat it — and each attempt is another quality signal
+  # against the number. An account-scoped refusal such as a billing problem stays retryable, because fixing it
+  # outside Lynomia genuinely makes the same message send.
   def retry
     return if message.blank?
+
+    failure = Whatsapp::DeliveryFailure.for(message)
+    if failure.recipient_scoped?
+      return render_could_not_create_error(
+        I18n.t('errors.whatsapp.recipient_delivery_restricted', reason: message.external_error)
+      )
+    end
 
     ::SendReplyJob.perform_later(message.id) if claim_message_retry
   rescue StandardError => e

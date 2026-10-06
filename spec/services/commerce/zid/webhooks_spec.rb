@@ -27,8 +27,8 @@ RSpec.describe Commerce::Zid::Webhooks do
     expect(auth['webhook_username'].length).to be >= 32
     expect(auth['webhook_password'].length).to be >= 64
     expect(created).to all(include('target_url' => 'https://app.lynomia.test/webhooks/zid/318001', 'original_id' => '4821',
-                                   'authentication' => { 'type' => 'basic', 'username' => auth['webhook_username'],
-                                                         'password' => auth['webhook_password'] }))
+                                   'username' => auth['webhook_username'],
+                                   'password' => auth['webhook_password']))
     expect(store.metadata['zid_webhooks']['ids']).to eq(%w[wh-1 wh-2 wh-3])
     expect(store.credentials['authorization']).to eq('zid-authorization-factory')
   end

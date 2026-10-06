@@ -132,3 +132,5 @@ class Webhooks::Trigger
     error.message.to_s[/\A(\d{3})\b/, 1]&.to_i
   end
 end
+
+Webhooks::Trigger.prepend_mod_with('Webhooks::Trigger')

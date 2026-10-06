@@ -1,4 +1,4 @@
-import { nextTick, reactive } from 'vue';
+import { computed, nextTick, reactive } from 'vue';
 import { shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AutomationRuleForm from './AutomationRuleForm.vue';
@@ -15,6 +15,17 @@ vi.mock('dashboard/composables/useAccount', () => ({
 
 vi.mock('dashboard/components-next/filter/operators', () => ({
   useOperators: () => ({ operators: { value: {} } }),
+}));
+
+// The form asks useLynomiaAutomation whether each action is allowed, and that now reads the account's WhatsApp
+// inboxes to decide whether to offer the approved-template action. Without a store those getters throw, so the
+// spec provides the two the composable reads.
+vi.mock('dashboard/composables/store', () => ({
+  useStore: () => ({ dispatch: vi.fn().mockResolvedValue() }),
+  useMapGetter: name =>
+    computed(() =>
+      name === 'inboxes/getWhatsAppInboxes' ? [{ id: 7, name: 'WhatsApp' }] : []
+    ),
 }));
 
 const automationTypes = Object.fromEntries(

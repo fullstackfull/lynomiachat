@@ -114,7 +114,7 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
   end
 
   describe 'account and WABA isolation' do
-    it "refuses an inbox that belongs to another account" do
+    it 'refuses an inbox that belongs to another account' do
       other = create(:channel_whatsapp, provider: 'whatsapp_cloud', sync_templates: false, validate_provider_config: false)
 
       expect(run(config('inbox_id' => other.inbox.id)).reason).to eq('inbox_not_in_account')

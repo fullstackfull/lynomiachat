@@ -4,7 +4,26 @@
     "LOAD_MORE_CONVERSATIONS": "تحميل المزيد من المحادثات",
     "EOF": "تم تحميل كافة المحادثات 🎉",
     "LIST": {
-      "404": "لا توجد محادثات نشطة في هذه المجموعة."
+      "EMPTY": {
+        "NO_CONVERSATIONS": {
+          "TITLE": "لا توجد محادثات بعد",
+          "SUBTITLE": "ستظهر المحادثات الجديدة هنا بمجرد أن يكتب إليك أحد العملاء."
+        },
+        "STATUS_FILTERED": {
+          "TITLE": "لا توجد محادثات بهذه الحالة",
+          "SUBTITLE": "تصفية الحالة مضبوطة على {status}. المحادثات بحالات أخرى مخفية.",
+          "ACTION": "إظهار جميع المحادثات"
+        },
+        "FILTERED": {
+          "TITLE": "لا توجد محادثات تطابق هذه التصفية",
+          "SUBTITLE": "أزل التصفية للعودة إلى القائمة الكاملة.",
+          "ACTION": "إزالة التصفية"
+        },
+        "FOLDER": {
+          "TITLE": "لا توجد محادثات في هذا المجلد",
+          "SUBTITLE": "لا يوجد ما يطابق تصفية هذا المجلد حالياً."
+        }
+      }
     },
     "FAILED_TO_SEND": "Failed to send",
     "FETCH_ERROR": "Couldn't load conversations. Please try again.",
@@ -144,6 +163,11 @@
     "MESSAGE_READ": "قراءة",
     "SENDING": "Sending",
     "UNREAD_COUNT_OVERFLOW": "9+",
-    "SELECT_CONVERSATION": "تحديد المحادثة مع {name}"
+    "SELECT_CONVERSATION": "تحديد المحادثة مع {name}",
+    "FILTER_AND_SORT_TOOLTIP_LABEL": "تصفية وترتيب المحادثات",
+    "STATUS_FILTER": {
+      "TOOLTIP": "تغيير تصفية الحالة",
+      "ARIA_LABEL": "تصفية الحالة: {status}. اضغط للتغيير."
+    }
   }
 }

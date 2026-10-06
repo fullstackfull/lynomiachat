@@ -23,8 +23,12 @@ class ApiController < ApplicationController
     'failing'
   end
 
+  # A real query, not `connection.active?`: that only reports the pool's own view of a cached connection, and a
+  # connection left stale by a Postgres restart or an idle timeout reads as inactive even though the next request
+  # would reconnect and succeed. Reporting that as `failing` would drain a healthy instance out of rotation.
+  # `select_value` leases the connection, reconnects a stale one, and raises only if Postgres is really unreachable.
   def postgres_status
-    ActiveRecord::Base.connection.active? ? 'ok' : 'failing'
+    ActiveRecord::Base.connection.select_value('SELECT 1') == 1 ? 'ok' : 'failing'
   rescue ActiveRecord::ActiveRecordError
     'failing'
   end

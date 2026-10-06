@@ -18,6 +18,7 @@ import ConversationBulkActions from './widgets/conversation/conversationBulkActi
 import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirection.vue';
 import ConversationResolveAttributesModal from 'dashboard/components-next/ConversationWorkflow/ConversationResolveAttributesModal.vue';
 import EmptyStateLayout from 'dashboard/components-next/EmptyStateLayout.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -46,6 +47,10 @@ import {
   filterItemsByPermission,
 } from 'dashboard/helper/permissionsHelper.js';
 import { matchesFilters } from '../store/modules/conversations/helpers/filterHelpers';
+import {
+  EMPTY_STATE_KEYS,
+  conversationListEmptyStateKey,
+} from './widgets/conversation/helpers/emptyStateHelper';
 import { sortComparator } from '../store/modules/conversations/helpers';
 import { CONVERSATION_EVENTS } from '../helper/AnalyticsHelper/events';
 import { ASSIGNEE_TYPE_TAB_PERMISSIONS } from 'dashboard/constants/permissions.js';
@@ -61,7 +66,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['conversationLoad']);
-const { uiSettings } = useUISettings();
+const { uiSettings, updateUISettings } = useUISettings();
 const { t } = useI18n();
 const router = useRouter();
 const store = useStore();
@@ -621,9 +626,21 @@ function updateAssigneeTab(selectedTab) {
 function onBasicFilterChange(value, type) {
   if (type === 'status') {
     activeStatus.value = value;
+    store.dispatch('setChatStatusFilter', value);
   } else {
     activeSortBy.value = value;
+    store.dispatch('setChatSortFilter', value);
   }
+
+  // Status and order are persisted as one pair, so the pair is written from the one place that holds both
+  // halves. The filter panel and the empty state both route through here, which is what keeps the chip, the
+  // dropdown's own selection and the saved preference from drifting apart.
+  updateUISettings({
+    conversations_filter_by: {
+      status: activeStatus.value,
+      order_by: activeSortBy.value,
+    },
+  });
 
   if (type === 'sort' && hasAppliedFiltersOrActiveFolders.value) {
     resetBulkActions();
@@ -640,6 +657,32 @@ function onBasicFilterChange(value, type) {
 
   resetAndFetchData();
 }
+
+// Rendering one message for every empty list is what made the default `open` filter feel like data loss: an
+// agent with 400 resolved conversations and no open ones saw the same dead end as an account with no
+// conversations at all. This pairs the reason the list is empty with the way out of it, and lives below the
+// methods it hands to the template rather than up with the other computeds.
+const emptyState = computed(() => {
+  const key = conversationListEmptyStateKey({
+    hasActiveFolders: hasActiveFolders.value,
+    hasAppliedFilters: hasAppliedFilters.value,
+    activeStatus: activeStatus.value,
+  });
+
+  return {
+    key,
+    params: {
+      status: t(
+        `CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${activeStatus.value}.TEXT`
+      ),
+    },
+    action: {
+      [EMPTY_STATE_KEYS.FILTERED]: resetAndFetchData,
+      [EMPTY_STATE_KEYS.STATUS_FILTERED]: () =>
+        onBasicFilterChange(wootConstants.STATUS_TYPE.ALL, 'status'),
+    }[key],
+  };
+});
 
 function openLastSavedItemInFolder() {
   const lastItemOfFolder = folders.value[folders.value.length - 1];
@@ -933,9 +976,22 @@ watch(appliedFilters, () => resetBulkActions());
       compact
       :show-backdrop="false"
       icon="i-lucide-inbox"
-      :title="$t('CHAT_LIST.LIST.404')"
+      :title="$t(`CHAT_LIST.LIST.EMPTY.${emptyState.key}.TITLE`)"
+      :subtitle="
+        $t(`CHAT_LIST.LIST.EMPTY.${emptyState.key}.SUBTITLE`, emptyState.params)
+      "
       class="flex-1"
-    />
+    >
+      <template v-if="emptyState.action" #actions>
+        <NextButton
+          size="sm"
+          color="slate"
+          variant="faded"
+          :label="$t(`CHAT_LIST.LIST.EMPTY.${emptyState.key}.ACTION`)"
+          @click="emptyState.action()"
+        />
+      </template>
+    </EmptyStateLayout>
     <ConversationBulkActions
       :conversations="selectedConversations"
       :all-conversations-selected="allConversationsSelected"

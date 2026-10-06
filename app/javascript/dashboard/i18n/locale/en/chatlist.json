@@ -4,7 +4,26 @@
     "LOAD_MORE_CONVERSATIONS": "Load more conversations",
     "EOF": "All conversations loaded 🎉",
     "LIST": {
-      "404": "There are no active conversations in this group."
+      "EMPTY": {
+        "NO_CONVERSATIONS": {
+          "TITLE": "No conversations yet",
+          "SUBTITLE": "New conversations appear here as soon as a customer writes in."
+        },
+        "STATUS_FILTERED": {
+          "TITLE": "No conversations with this status",
+          "SUBTITLE": "The status filter is set to {status}. Conversations with another status are hidden.",
+          "ACTION": "Show all conversations"
+        },
+        "FILTERED": {
+          "TITLE": "No conversations match these filters",
+          "SUBTITLE": "Clear the filters to go back to the full list.",
+          "ACTION": "Clear filters"
+        },
+        "FOLDER": {
+          "TITLE": "No conversations in this folder",
+          "SUBTITLE": "Nothing matches this folder's filters right now."
+        }
+      }
     },
     "FAILED_TO_SEND": "Failed to send",
     "FETCH_ERROR": "Couldn't load conversations. Please try again.",
@@ -144,6 +163,11 @@
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
     "UNREAD_COUNT_OVERFLOW": "9+",
-    "SELECT_CONVERSATION": "Select the conversation with {name}"
+    "SELECT_CONVERSATION": "Select the conversation with {name}",
+    "FILTER_AND_SORT_TOOLTIP_LABEL": "Filter and sort conversations",
+    "STATUS_FILTER": {
+      "TOOLTIP": "Change the status filter",
+      "ARIA_LABEL": "Status filter: {status}. Change it."
+    }
   }
 }

@@ -61,7 +61,22 @@ df -Pk "$APP_DIR" | awk 'NR==2 && $4 < 2097152 { print "less than 2GB free on th
   || fail "not enough free disk for a build and a backup"
 
 # ---------------------------------------------------------------------------
-log "1. Database backup"
+log "1. Fetch the release"
+
+# Fetched and compared BEFORE the backup, so a no-op deploy costs nothing. It used to pull first and back up
+# first, which meant every re-run of an already-deployed revision took a full pg_dump and then returned early --
+# past the pruning at the end, so the directory grew unbounded on the one path most likely to be repeated.
+as_app 'git fetch --quiet'
+RELEASE_SHA="$(as_app 'git rev-parse @{u}')"
+
+if [[ $RELEASE_SHA == "$PREVIOUS_SHA" ]]; then
+  echo "already at $RELEASE_SHA; nothing to deploy"
+  exit 0
+fi
+echo "deploying: $RELEASE_SHA"
+
+# ---------------------------------------------------------------------------
+log "2. Database backup"
 
 install -d -m 750 -o "$APP_USER" -g "$APP_USER" "$BACKUP_DIR"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -76,26 +91,24 @@ sha256sum "$DUMP" | tee "$DUMP.sha256"
 echo "backup: $DUMP ($(du -h "$DUMP" | cut -f1))"
 
 # ---------------------------------------------------------------------------
-log "2. Fetch the release"
+log "3. Check out the release"
 
-as_app 'git pull --ff-only'
-RELEASE_SHA="$(as_app 'git rev-parse HEAD')"
-
-if [[ $RELEASE_SHA == "$PREVIOUS_SHA" ]]; then
-  echo "already at $RELEASE_SHA; nothing to deploy"
-  exit 0
-fi
+as_app 'git merge --ff-only @{u}'
+[[ "$(as_app 'git rev-parse HEAD')" == "$RELEASE_SHA" ]] || fail "working tree is not at $RELEASE_SHA after the fast-forward"
 as_app 'git log --oneline -1'
 
 # ---------------------------------------------------------------------------
-log "3. Dependencies"
+log "4. Dependencies"
 
-as_app 'bundle install --quiet'
+# BUNDLE_FROZEN refuses to rewrite Gemfile.lock. Without it an install that resolves differently from the
+# committed lock succeeds, leaves the tree dirty, and the NEXT deploy fails at step 0 for a reason that looks
+# unrelated. If this step fails, the fix is to resolve and commit the lock rather than to drop the flag.
+as_app 'BUNDLE_FROZEN=true bundle install --quiet'
 # Missing from the old script. Must run before any Vite build.
 as_app 'pnpm install --frozen-lockfile'
 
 # ---------------------------------------------------------------------------
-log "4. Migrations"
+log "5. Migrations"
 
 # POSTGRES_STATEMENT_TIMEOUT=0 only for this step: production's timeout is there to protect request-path queries,
 # and a migration is not a request. Without this a long index build is killed partway.
@@ -111,7 +124,7 @@ as_app 'RAILS_ENV=production bundle exec rails runner "
   puts %q(schema ok)"'
 
 # ---------------------------------------------------------------------------
-log "5. Frontend build"
+log "6. Frontend build"
 
 as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm vite build'
 as_app 'test -s public/vite/.vite/manifest.json' || fail "vite build produced no manifest"
@@ -121,12 +134,12 @@ as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm build:sdk'
 as_app 'test -s public/packs/js/sdk.js' || fail "sdk build produced no public/packs/js/sdk.js"
 
 # ---------------------------------------------------------------------------
-log "6. Restart"
+log "7. Restart"
 
 systemctl restart "$TARGET"
 
 # ---------------------------------------------------------------------------
-log "7. Verify"
+log "8. Verify"
 
 for attempt in $(seq 1 30); do
   code="$(curl -fsS -o /tmp/deploy-readiness.json -w '%{http_code}' "$HEALTH_URL" || true)"
@@ -153,7 +166,7 @@ as_app 'RAILS_ENV=production bundle exec rails runner "
   abort(%q(no sidekiq process registered)) if Sidekiq::ProcessSet.new.size.zero?"'
 
 # ---------------------------------------------------------------------------
-log "8. Done"
+log "9. Done"
 
 printf 'deployed  %s -> %s\nbackup    %s\nrollback  previous revision %s (deployment/ROLLBACK.md)\n' \
   "$PREVIOUS_SHA" "$RELEASE_SHA" "$DUMP" "$PREVIOUS_SHA"

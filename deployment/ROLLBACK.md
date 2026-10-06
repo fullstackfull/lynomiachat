@@ -19,7 +19,7 @@ previous `HEAD`, and `/var/backups/lynomia/` holds the dumps newest-first.
 | Errors on every request, or on sign-in | **Yes, now** |
 | One feature broken, rest of the product serving | Usually no — fix forward. A rollback re-runs nothing on the database and may be the larger risk. |
 | Migration failed partway | **Do not roll back the code first.** Read *What a rollback cannot undo* below. |
-| Slow but correct | No. Investigate; an invalid index from a killed `CREATE INDEX CONCURRENTLY` is the usual cause (deploy.sh step 4 now checks for this). |
+| Slow but correct | No. Investigate; an invalid index from a killed `CREATE INDEX CONCURRENTLY` is the usual cause (deploy.sh step 5 now checks for this). |
 
 Rolling back costs a second restart and loses whatever the new revision was fixing. It is the right call for
 "nothing works" and the wrong call for "one page is wrong".
@@ -97,5 +97,5 @@ systemctl start chatwoot.target
 1. Say so in the incident record (`deployment/INCIDENT.md`), with the revision you went back to and why.
 2. Leave the branch pointing at the release. The detached checkout is deliberate: the next deploy must be a
    deliberate roll-forward, not an accident of being on a branch.
-3. Do not re-run `deployment/deploy.sh` until the cause is understood — it would `git pull --ff-only` straight back
-   onto the revision you just rolled back from.
+3. Do not re-run `deployment/deploy.sh` until the cause is understood — it would fast-forward straight back onto the
+   revision you just rolled back from.

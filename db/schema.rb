@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_05_110000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -832,6 +832,34 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_110000) do
     t.index ["idempotency_key"], name: "index_commerce_action_runs_on_idempotency_key", unique: true
     t.index ["requested_by_id"], name: "index_commerce_action_runs_on_requested_by_id"
     t.index ["status", "updated_at"], name: "index_commerce_action_runs_on_status_and_updated_at"
+  end
+
+  create_table "commerce_carts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.string "provider", null: false
+    t.string "provider_cart_id", null: false
+    t.bigint "contact_id"
+    t.bigint "commerce_customer_link_id"
+    t.string "external_customer_id"
+    t.integer "state", default: 0, null: false
+    t.string "provider_phase"
+    t.string "currency"
+    t.decimal "visible_total", precision: 15, scale: 2
+    t.integer "item_count"
+    t.datetime "first_seen_at", null: false
+    t.datetime "last_provider_event_at", null: false
+    t.datetime "abandoned_at"
+    t.datetime "completed_at"
+    t.datetime "targeted_at"
+    t.string "provider_order_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "state", "abandoned_at"], name: "index_commerce_carts_on_account_state_and_abandoned_at"
+    t.index ["account_id"], name: "index_commerce_carts_on_account_id"
+    t.index ["commerce_store_id", "provider_cart_id"], name: "index_commerce_carts_on_store_and_provider_cart_id", unique: true
+    t.index ["commerce_store_id", "state"], name: "index_commerce_carts_on_commerce_store_id_and_state"
+    t.index ["contact_id"], name: "index_commerce_carts_on_contact_id"
   end
 
   create_table "commerce_contact_metrics", force: :cascade do |t|
@@ -1815,6 +1843,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_05_110000) do
   add_foreign_key "commerce_action_runs", "contacts", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "conversations", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "users", column: "requested_by_id", on_delete: :nullify
+  add_foreign_key "commerce_carts", "accounts", on_delete: :cascade
+  add_foreign_key "commerce_carts", "commerce_customer_links", on_delete: :nullify
+  add_foreign_key "commerce_carts", "commerce_stores", on_delete: :cascade
+  add_foreign_key "commerce_carts", "contacts", on_delete: :nullify
   add_foreign_key "commerce_contact_metrics", "accounts", on_delete: :cascade
   add_foreign_key "commerce_contact_metrics", "commerce_customer_links", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "accounts", on_delete: :cascade

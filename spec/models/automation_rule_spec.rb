@@ -306,8 +306,10 @@ RSpec.describe AutomationRule do
       end
     end
 
+    # `commerce_cart_recovered` is the right example precisely because it is the trigger P6 deliberately did not
+    # add: completion does not prove Lynomia recovered the cart (docs/commerce-production/07 §1).
     it 'refuses a trigger nothing dispatches to' do
-      invalid = rule('commerce_cart_abandoned')
+      invalid = rule('commerce_cart_recovered')
 
       expect(invalid).not_to be_valid
       expect(invalid.errors[:event_name]).to include('is not a trigger this installation can run')

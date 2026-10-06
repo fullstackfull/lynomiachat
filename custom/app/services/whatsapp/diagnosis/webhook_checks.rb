@@ -28,7 +28,7 @@ class Whatsapp::Diagnosis::WebhookChecks
   def run(channel, config, subscribed_fields:)
     report.heading("WEBHOOK — inbox ##{channel.inbox&.id}")
     report.say "route Meta should call: #{displayed_callback(channel)}"
-    report.say "app-level route (template status webhooks): #{CLASSIFICATION.safe(app_level_route)}"
+    report.say "app-level route (template status webhooks): #{safe_route(app_level_route)}"
     classify(config, expected_callback(channel))
     required_fields(subscribed_fields)
     verification_readiness(channel, config)
@@ -37,6 +37,12 @@ class Whatsapp::Diagnosis::WebhookChecks
   private
 
   attr_reader :report
+
+  # Scheme, host, port and path only — and the number in the path masked, because a callback path ends in the
+  # business number and this report gets pasted into issues.
+  def safe_route(value)
+    report.mask_phones_in(CLASSIFICATION.safe(value))
+  end
 
   def expected_callback(channel)
     "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/whatsapp/#{channel.phone_number}"
@@ -64,9 +70,9 @@ class Whatsapp::Diagnosis::WebhookChecks
   def report_classification(classification)
     report.rows(
       [
-        ['phone-level override', CLASSIFICATION.safe(classification.override)],
-        ['app-level callback', CLASSIFICATION.safe(classification.app_level)],
-        ['effective (an override wins)', CLASSIFICATION.safe(classification.effective)]
+        ['phone-level override', safe_route(classification.override)],
+        ['app-level callback', safe_route(classification.app_level)],
+        ['effective (an override wins)', safe_route(classification.effective)]
       ],
       indent: '  '
     )

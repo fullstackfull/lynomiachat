@@ -23,9 +23,24 @@ class Commerce::RecoveryListener < BaseListener
 
   def sent!(run, message)
     run.update!(status: :succeeded, completed_at: message.created_at, metadata: run.metadata.merge('message_id' => message.id))
+    claim_targeting(run, message.created_at)
     Commerce::AuditTrail.record('commerce.recovery.sent', auditable: run, user: message.sender.is_a?(User) ? message.sender : nil,
                                                           changes: { store_id: run.commerce_store_id, cart_id: run.external_resource_id,
                                                                      message_id: message.id })
     Commerce::Metrics.event('commerce.recovery.sent', provider: run.provider, store_id: run.commerce_store_id, run_id: run.id)
+  end
+
+  # `targeted_at` on the durable cart row means exactly one thing: a real Lynomia abandoned-cart outreach was
+  # successfully accepted for sending. This is that moment and the only one — a confirmed outgoing, non-private
+  # message carrying the link the recovery message was prepared with. It is deliberately NOT set when a rule merely
+  # matches, when a job is enqueued, when a template is chosen, or when a send fails or is refused.
+  #
+  # One atomic statement guarded on `targeted_at IS NULL`: two workers confirming near-simultaneous sends set it
+  # once, and the first send wins. That is the concurrency protection — not a read-then-write, which two workers
+  # can interleave, and not a new lock system. `update_all` is what makes it a single conditional UPDATE; the
+  # column is a timestamp with no validations to skip.
+  def claim_targeting(run, sent_at)
+    Commerce::Cart.where(commerce_store_id: run.commerce_store_id, provider_cart_id: run.external_resource_id, targeted_at: nil)
+                  .update_all(targeted_at: sent_at, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
   end
 end

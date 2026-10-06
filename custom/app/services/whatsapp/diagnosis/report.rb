@@ -78,6 +78,14 @@ class Whatsapp::Diagnosis::Report
     "#{value.to_s[0, 5]}•••#{value.to_s[-2, 2]}"
   end
 
+  # A callback URL carries the business number as a path segment — an override is registered as
+  # `/webhooks/whatsapp/<number>`, percent-encoded or not — so text holding one is masked by the same rule. Found
+  # by an adversarial pass over this diagnosis: the WEBHOOK section printed the number in full while every other
+  # line masked it.
+  def mask_phones_in(text)
+    text.to_s.gsub(/(?:%2B|\+)?\d{7,}/i) { |number| mask_phone(number) }
+  end
+
   def format_unix(value)
     return '<none>' if value.blank? || value.to_i.zero?
 
@@ -93,13 +101,20 @@ class Whatsapp::Diagnosis::Report
     say "        #{entry[:note]}" if entry[:state] == FAIL && entry[:note].present?
   end
 
+  # Collapsed, and deliberately NOT called an order. An installation-level failure is recorded once per channel,
+  # so the raw list repeated the same item three times on a three-inbox server; and the sequence is the order the
+  # checks ran, which is not severity. Presenting it as a priority order sent a real operator at a blank
+  # app-level verify token while a phone-level callback override was losing every inbound message.
   def fix_order
-    failures = checks.select { |entry| entry[:state] == FAIL }
+    failures = checks.select { |entry| entry[:state] == FAIL }.uniq { |entry| [entry[:name], entry[:detail]] }
     return if failures.empty?
 
-    heading('WHAT TO FIX, IN ORDER')
-    failures.each_with_index { |entry, index| say "#{index + 1}. #{entry[:name]} — #{entry[:detail]}" }
+    heading('WHAT FAILED')
+    failures.each { |entry| say "- #{entry[:name]} — #{entry[:detail]}" }
     say ''
-    say 'Fix the highest one first and re-run this task. Do not change Meta configuration for any check that passed.'
+    say 'Listed in the order the checks ran, duplicates collapsed — this is NOT a severity order. Read the notes:'
+    say 'a failed effective-callback check makes every inbound and delivery-status symptom below it unavoidable,'
+    say 'so settle that one before treating anything downstream as a separate fault.'
+    say 'Do not change Meta configuration for any check that passed.'
   end
 end

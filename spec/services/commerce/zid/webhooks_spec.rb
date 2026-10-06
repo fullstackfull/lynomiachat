@@ -18,18 +18,19 @@ RSpec.describe Commerce::Zid::Webhooks do
     end
   end
 
-  it 'subscribes the three order events with a new random Basic Auth pair, after removing the previous subscriptions' do
+  it 'subscribes the three order and two abandoned-cart events with a new random Basic Auth pair, after removing the previous subscriptions' do
     described_class.new(store).register
 
     expect(a_request(:delete, webhooks_url).with(query: { 'original_id' => '4821' })).to have_been_made.once
-    expect(created.pluck('event')).to eq(%w[order.create order.status.update order.payment_status.update])
+    expect(created.pluck('event'))
+      .to eq(%w[order.create order.status.update order.payment_status.update abandoned_cart.created abandoned_cart.completed])
     auth = store.reload.credentials.slice('webhook_username', 'webhook_password')
     expect(auth['webhook_username'].length).to be >= 32
     expect(auth['webhook_password'].length).to be >= 64
     expect(created).to all(include('target_url' => 'https://app.lynomia.test/webhooks/zid/318001', 'original_id' => '4821',
                                    'username' => auth['webhook_username'],
                                    'password' => auth['webhook_password']))
-    expect(store.metadata['zid_webhooks']['ids']).to eq(%w[wh-1 wh-2 wh-3])
+    expect(store.metadata['zid_webhooks']['ids']).to eq(%w[wh-1 wh-2 wh-3 wh-4 wh-5])
     expect(store.credentials['authorization']).to eq('zid-authorization-factory')
   end
 
@@ -40,7 +41,7 @@ RSpec.describe Commerce::Zid::Webhooks do
     described_class.new(store).register
 
     expect(a_request(:delete, webhooks_url).with(query: hash_including({}))).to have_been_made.twice
-    expect(created.size).to eq(6)
+    expect(created.size).to eq(10)
     expect(store.reload.credentials['webhook_password']).not_to eq(first)
   end
 
@@ -72,5 +73,19 @@ RSpec.describe Commerce::Zid::Webhooks do
     Commerce::StoreConnection.new(account: account, user: nil).disconnect(store)
 
     expect(store.reload).to have_attributes(status: 'disconnected', credentials: nil)
+  end
+
+  # The registration must not report success for a store where a subscription failed: a store recorded as
+  # registered but subscribed to nothing receives no order events at all, and nothing says so.
+  it 'raises when Zid does not return an id for a subscription, and records no metadata' do
+    stub_request(:delete, %r{/managers/webhooks})
+      .to_return(status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' })
+    stub_request(:post, %r{/managers/webhooks})
+      .to_return({ status: 200, body: { id: 'wh-1' }.to_json, headers: { 'Content-Type' => 'application/json' } },
+                 { status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' } })
+
+    expect { described_class.new(store).register }
+      .to raise_error(an_object_having_attributes(code: 'INVALID_RESPONSE', reason: 'zid_webhook_subscribe'))
+    expect(store.reload.metadata['zid_webhooks']).to be_nil
   end
 end

@@ -187,3 +187,27 @@ failed outgoing in the last 7 days: N
 If those errors read *"Message not sent because the WhatsApp 24-hour customer service window is closed…"* rather
 than anything from Meta, that is the confirmation that the sends never left the building — and the investigation
 belongs entirely in inbound.
+
+---
+
+## 6. What the continuation changed about this document
+
+Nothing in the send path, and that is the finding. `SendOnWhatsappService` was read closely for a defect that would
+explain symptom 4 and does not contain one: its refusal is correct WhatsApp policy, correctly reported, with the
+window message and no call to Meta. Two things did change around it.
+
+**The chain now completes.** Before the inbound fix, a new contact's message was discarded, so
+`conversation.can_reply?` stayed false and a plain reply kept failing locally — which is exactly how a broken
+inbound masquerades as an outbound fault. After the fix the chain is: new contact sends a message → the incoming
+message persists → `can_reply?` is true → a plain reply is allowed. Two regressions pin the ends of it
+(`opens reply eligibility for the conversation it creates`, and `leaves a conversation with no inbound message
+outside the window`).
+
+**The reason survives a retry.** §3's point — that Meta's specific error reaches the agent rather than a generic
+"failed" — used to be undone by the Retry button, which cleared `external_error` before anything could read it.
+`09` §5 keeps it as `content_attributes['previous_external_error']`.
+
+The error wording in §3 was checked rather than assumed: `errors.whatsapp.message_outside_messaging_window` already
+reads *"Message not sent because the WhatsApp 24-hour customer service window is closed and no template parameters
+were provided. Send an approved template message instead."* It names the cause and the next action, and it is not
+disguised as a Meta delivery failure, so it was left alone.

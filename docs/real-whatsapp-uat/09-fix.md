@@ -149,8 +149,8 @@ existing fields rather than an event store, and the useful thing is the most rec
 
 ## 6. Credentials travel in headers
 
-**Was:** four call sites sent the access token in the URL, where it reaches access logs, proxy logs and exception
-messages.
+**Was:** five call sites sent the access token in a URL query string or an HTTParty `query:` hash, where it
+reaches access logs, proxy logs and exception messages.
 
 | Site | Change |
 |---|---|

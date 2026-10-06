@@ -15,7 +15,7 @@ this repository regardless of what any particular installation is doing.
 | 3 | `Whatsapp::MessageDedupLock` was a 24-hour tombstone with no release, so one failed attempt made a message id unprocessable for a day while Meta's redeliveries were swallowed | `09` §3; fixed |
 | 4 | A media-download 401 counted as an authorization error on HTTP status alone, so a per-resource failure could latch the channel | `09` §4; fixed |
 | 5 | Pressing Retry erased the provider's failure reason | `09` §5; fixed |
-| 6 | The access token travelled in the URL query string at four call sites | `09` §6; fixed |
+| 6 | The access token travelled in a URL query string or a `query:` hash at five call sites, two of them on the channel-validation path | `09` §6; fixed. The fifth was found by the regression, not the sweep |
 
 **A repository containing defect 1 and defect 2 is capable of producing exactly the four symptoms reported.** That
 is the strongest claim the evidence supports, and it is the claim this document makes.

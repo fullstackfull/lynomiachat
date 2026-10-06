@@ -34,15 +34,45 @@ bundle exec rails whatsapp:diagnose INBOX_ID=12
 bundle exec rails whatsapp:diagnose INBOX_ID=12 CONTACT=+9655XXXXXXX
 ```
 
-**What it does and does not do**, guaranteed by construction rather than by a flag:
+**What it does and does not do**, guaranteed by construction and by `spec/services/whatsapp/diagnosis_spec.rb`:
 
 - every Meta call is a **GET**, through the installation's existing `Whatsapp::FacebookApiClient`
-- **nothing is written** — not to Meta, not to the database, not to Redis. The service has no write path. It does
-  not subscribe, register, re-register, rotate, delete or clear anything, including the reauthorization flag
-- every token, secret and app id is **masked** (`abcd…yz (211 chars)`); customer phone numbers are masked as
-  `+9655•••21`; a callback override is printed as scheme/host/port/path only, never with its query string
-- one unavailable endpoint is recorded `BLOCKED` and the rest of the report still runs
+- **nothing in Meta is changed.** It does not subscribe, register, re-register, rotate or delete
+- **nothing in Redis is changed.** No key is written, and the reauthorization flag is neither set nor cleared
+- **no credential is ever written anywhere.** Configuration is read with a plain `SELECT`
+  (`Whatsapp::Diagnosis::StoredConfig`), not through `GlobalConfigService.load` — see the note below, because this
+  distinction is not cosmetic
+- every token, secret and app id is reported as **present / absent only**, never as a value; customer phone
+  numbers are masked as `+9655•••21`; a callback override prints as scheme, host, port and path, never with its
+  query string
+- one unavailable endpoint, or one response in an unexpected shape, is recorded `BLOCKED` and the rest of the
+  report still runs
 - the output is **safe to paste back** into this phase or into an issue
+
+> **The one database row a run can add, named explicitly.** `GlobalConfigService.load` — the ordinary way this
+> codebase reads installation configuration — ends in
+> `InstallationConfig.where(name:).first_or_create(value: …)` followed by `GlobalConfig.clear_cache`. It is
+> create-on-read by design, to migrate installations that still rely on ENV. A diagnosis must not use it, and no
+> longer does.
+>
+> What remains is not the diagnosis's own doing: nine production call sites resolve the Graph version through that
+> accessor, `Whatsapp::FacebookApiClient#initialize` among them, so constructing the API client can create a
+> `WHATSAPP_API_VERSION` row holding a version string — exactly as the first WhatsApp request of any kind on that
+> server would. A regression pins that this is the **only** name a run may add.
+>
+> The dangerous case is closed. `/debug_token` is authorized with an app access token built as
+> `app_id|app_secret`, so reading those through the ordinary accessor would have written **the app secret into the
+> database** on any server where it is set in ENV but has no row. The diagnosis is that endpoint's only caller, so
+> it now skips the token-debug read entirely unless both values are already stored, and says so:
+>
+> ```
+> [BLOCKED] token debug (validity, scopes, expiry) — skipped: WHATSAPP_APP_SECRET has no stored value, and Meta
+>           authorizes /debug_token with an app access token built from both. …
+> ```
+>
+> If you want the `AUTH` section's token validity, scopes and expiry, configure `WHATSAPP_APP_ID` and
+> `WHATSAPP_APP_SECRET` in Super Admin first and re-run. That is a deliberate trade: an unanswered check is
+> cheaper than a credential written to the database by a tool that promised not to write.
 
 ## 2. The report's sections, and what each answers
 

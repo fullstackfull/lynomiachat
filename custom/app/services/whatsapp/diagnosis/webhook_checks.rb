@@ -9,6 +9,8 @@
 #
 # One GET, and only when a phone_number_id exists. Nothing is written.
 class Whatsapp::Diagnosis::WebhookChecks
+  include Whatsapp::Diagnosis::StoredConfig
+
   CLASSIFICATION = Whatsapp::Diagnosis::CallbackClassification
 
   FIELDS_NOTE = 'Without `messages` Meta never posts customer messages or delivery statuses, so inbound is silent ' \
@@ -91,7 +93,7 @@ class Whatsapp::Diagnosis::WebhookChecks
   # section's single check, and is only referenced here so the two are read together.
   def verification_readiness(channel, config)
     verify = config[:webhook_verify_token].presence
-    secret = config[:app_secret].presence || GlobalConfigService.load('WHATSAPP_APP_SECRET', nil)
+    secret = config[:app_secret].presence || stored_config('WHATSAPP_APP_SECRET')
     report.check("inbox ##{channel.inbox&.id}: this number has a webhook verify token",
                  verify.present?, verify.present? ? 'present' : 'MISSING',
                  note: VERIFICATION_NOTE)

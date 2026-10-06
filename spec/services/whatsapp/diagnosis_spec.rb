@@ -51,6 +51,63 @@ RSpec.describe Whatsapp::Diagnosis do
     expect(channel.reload.provider_config).to eq(channel.provider_config)
   end
 
+  # The regressions for the defect this spec's first version missed, and for the one real write that remains.
+  #
+  # GlobalConfigService.load ends in `InstallationConfig.where(name:).first_or_create` plus
+  # `GlobalConfig.clear_cache`, so every key the diagnosis read through it was a potential INSERT. On a server
+  # where WHATSAPP_APP_SECRET is set in ENV but has no row, the diagnosis would have written the app secret into
+  # the database. Reading configuration must not write it, least of all a credential —
+  # Whatsapp::Diagnosis::StoredConfig is now the one place that reads, with a plain SELECT.
+  describe 'what it may and may not write to installation_configs' do
+    let(:secret_keys) do
+      %w[WHATSAPP_APP_SECRET WHATSAPP_APP_ID WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN INSTALLATION_NAME
+         INACTIVE_WHATSAPP_NUMBERS]
+    end
+
+    before { channel }
+
+    it 'never creates a row for a key it reads, even when ENV supplies a value' do
+      InstallationConfig.where(name: secret_keys).delete_all
+
+      with_modified_env WHATSAPP_APP_SECRET: 'a-real-secret', WHATSAPP_APP_ID: '123', INSTALLATION_NAME: 'Lynomia' do
+        report
+      end
+
+      expect(InstallationConfig.where(name: secret_keys)).to be_empty
+    end
+
+    it 'never writes a credential into the database' do
+      with_modified_env WHATSAPP_APP_SECRET: 'a-real-secret' do
+        report
+      end
+
+      expect(InstallationConfig.pluck(:name)).not_to include('WHATSAPP_APP_SECRET')
+    end
+
+    # The one row a run can add, and it is not the diagnosis's own doing: nine production call sites resolve the
+    # Graph version through GlobalConfigService.load, Whatsapp::FacebookApiClient#initialize among them
+    # (app/services/whatsapp/facebook_api_client.rb:13), so the first WhatsApp request of any kind on that server
+    # creates the same row with the same value. It holds a version string, never a credential. This example
+    # exists so that the set can never widen unnoticed.
+    it 'adds at most the Graph version row, created by the installation own API client' do
+      before_names = InstallationConfig.pluck(:name)
+
+      report
+
+      expect(InstallationConfig.pluck(:name) - before_names).to all(eq('WHATSAPP_API_VERSION'))
+    end
+
+    it 'reports a stored value and an ENV fallback without writing either' do
+      create(:installation_config, name: 'WHATSAPP_APP_ID', value: 'stored-app-id', locked: false)
+
+      with_modified_env WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN: 'env-verify-token' do
+        expect(report).to include('stored-app-id')
+      end
+
+      expect(InstallationConfig.find_by(name: 'WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN')).to be_nil
+    end
+  end
+
   it 'writes nothing to Redis' do
     channel
     allow(Redis::Alfred).to receive(:set).and_call_original

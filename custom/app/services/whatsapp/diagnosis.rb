@@ -20,6 +20,8 @@
 #   * no credential value is printed, masked or otherwise; customer phone numbers are masked in one place
 #   * the service never writes to stdout; the caller is handed each line and decides what to do with it
 class Whatsapp::Diagnosis
+  include Whatsapp::Diagnosis::StoredConfig
+
   def initialize(inbox_id: nil, contact_identifier: nil, &emit)
     @inbox_id = inbox_id.presence
     @report = Whatsapp::Diagnosis::Report.new(&emit)
@@ -46,7 +48,7 @@ class Whatsapp::Diagnosis
   def preamble
     @report.heading('LYNOMIA REAL WHATSAPP DIAGNOSIS — READ ONLY')
     @report.say "generated at #{Time.current.iso8601}"
-    @report.say "installation #{GlobalConfig.get_value('INSTALLATION_NAME').inspect}, Rails env #{Rails.env}"
+    @report.say "installation #{stored_config('INSTALLATION_NAME').inspect}, Rails env #{Rails.env}"
     @report.say 'This task performs GETs only. It writes nothing to Meta, the database or Redis.'
   end
 

@@ -6,6 +6,8 @@
 # Every call here is a GET. Nothing subscribes, registers, rotates or deletes — P5 Part T forbids it, and a
 # diagnosis that mutates the thing it is diagnosing is worthless anyway.
 class Whatsapp::Diagnosis::MetaChecks
+  include Whatsapp::Diagnosis::StoredConfig
+
   # The webhook fields Lynomia's own inbound path needs, taken from the client so the two cannot drift. `messages`
   # carries customer messages and delivery statuses; `smb_message_echoes` carries the Business-App side of a
   # Coexistence number; `message_template_status_update` carries Meta's template approvals.
@@ -49,7 +51,7 @@ class Whatsapp::Diagnosis::MetaChecks
   def auth(config)
     client = client_for(config, 'token validity and scopes') or return
 
-    token_state(client, config[:api_key])
+    token_state(client, config[:api_key]) if app_credentials_stored?
     permissions(client)
   end
 
@@ -70,7 +72,7 @@ class Whatsapp::Diagnosis::MetaChecks
 
   attr_reader :report
 
-  def api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
+  def api_version = stored_config('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)
 
   # One client per token, so a channel's four sections share a single object. A blank token is reported once per
   # section rather than raised, because the rest of the section may still have something to say.
@@ -80,6 +82,24 @@ class Whatsapp::Diagnosis::MetaChecks
 
     @client_cache ||= {}
     @client_cache[token] ||= Whatsapp::FacebookApiClient.new(token)
+  end
+
+  # Meta authorizes /debug_token with an APP access token, which Whatsapp::FacebookApiClient builds as
+  # `app_id|app_secret` through GlobalConfigService.load (facebook_api_client.rb:223-227). That accessor is
+  # create-on-read: on a server where WHATSAPP_APP_SECRET is set in ENV but has no installation_configs row, the
+  # call would WRITE the app secret into the database. This is the diagnosis's only caller of debug_token, so the
+  # write is the diagnosis's to prevent — and it is prevented by not making the call unless both values are
+  # already stored, in which case GlobalConfigService.load returns early and creates nothing.
+  def app_credentials_stored?
+    missing = %w[WHATSAPP_APP_ID WHATSAPP_APP_SECRET].reject { |key| InstallationConfig.exists?(name: key) }
+    return true if missing.empty?
+
+    report.blocked('token debug (validity, scopes, expiry)',
+                   "skipped: #{missing.join(' and ')} #{missing.one? ? 'has' : 'have'} no stored value, and Meta " \
+                   'authorizes /debug_token with an app access token built from both. Reading them through the ' \
+                   'ordinary accessor would create the row — including one holding the app secret — so this ' \
+                   'read-only task does not make the call. Configure them in Super Admin and re-run.')
+    false
   end
 
   def token_state(client, token)
@@ -180,7 +200,7 @@ class Whatsapp::Diagnosis::MetaChecks
   end
 
   def configured_app_is_subscribed(apps)
-    configured = GlobalConfigService.load('WHATSAPP_APP_ID', nil)
+    configured = stored_config('WHATSAPP_APP_ID')
     return if configured.blank? || apps.empty?
 
     ids = apps.map { |entry| (entry['whatsapp_business_api_data'] || {})['id'].to_s }

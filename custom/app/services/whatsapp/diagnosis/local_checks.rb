@@ -5,6 +5,8 @@
 #
 # Reads only. Nothing here writes to the database, to Redis or to Meta.
 class Whatsapp::Diagnosis::LocalChecks
+  include Whatsapp::Diagnosis::StoredConfig
+
   SIGNATURE_FAILURE_NOTE = 'Webhooks::WhatsappController#verify_meta_signature! answers 401 and drops the payload. ' \
                            'This is the most commonly missed cause of "inbound never arrives", and it is silent ' \
                            'apart from a Rails.logger.warn.'
@@ -45,7 +47,7 @@ class Whatsapp::Diagnosis::LocalChecks
   def auth(channel, config)
     report.heading("AUTH — inbox ##{channel.inbox&.id}")
     report.rows(credential_rows(config))
-    report.say "WHATSAPP_APP_ID: #{GlobalConfigService.load('WHATSAPP_APP_ID', nil).presence || '<blank>'}"
+    report.say "WHATSAPP_APP_ID: #{stored_config('WHATSAPP_APP_ID').presence || '<blank>'}"
     app_secret_check(config)
     verify_token_check
   end
@@ -65,7 +67,7 @@ class Whatsapp::Diagnosis::LocalChecks
 
   def app_secret_check(config)
     channel_secret = config[:app_secret].presence
-    installation = GlobalConfigService.load('WHATSAPP_APP_SECRET', nil)
+    installation = stored_config('WHATSAPP_APP_SECRET')
     present = channel_secret.present? || installation.present?
     report.check(
       'a Meta app secret is configured (installation or channel)',
@@ -77,7 +79,7 @@ class Whatsapp::Diagnosis::LocalChecks
   end
 
   def verify_token_check
-    token = GlobalConfigService.load('WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN', nil)
+    token = stored_config('WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN')
     report.check(
       'WHATSAPP_APP_WEBHOOK_VERIFY_TOKEN is configured',
       token.present?,

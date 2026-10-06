@@ -9,6 +9,8 @@
 #
 # Reads only, and nothing here calls Meta.
 class Whatsapp::Diagnosis::PipelineChecks
+  include Whatsapp::Diagnosis::StoredConfig
+
   QUEUE_NOTE = 'A job enqueued to a queue no worker consumes is invisible and looks exactly like "Meta never ' \
                'called us": the controller answers 200, Sidekiq holds the job, and nothing processes it.'
 
@@ -116,7 +118,7 @@ class Whatsapp::Diagnosis::PipelineChecks
   end
 
   def inactive_numbers
-    @inactive_numbers ||= GlobalConfig.get_value('INACTIVE_WHATSAPP_NUMBERS').to_s.split(',').map(&:strip)
+    @inactive_numbers ||= stored_config('INACTIVE_WHATSAPP_NUMBERS').to_s.split(',').map(&:strip)
   end
 
   def sidekiq_queues

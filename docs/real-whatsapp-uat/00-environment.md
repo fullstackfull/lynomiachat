@@ -138,11 +138,43 @@ That matters because the central defect is a Redis latch. With Redis running, th
 test, the inbound payload posted, and the drop observed — which is the difference between "this code looks wrong"
 and "this code does this". Each claim in `08` marked **PROVEN** is proven that way.
 
-**One environment hazard, recorded because it cost time twice.** Editing files under an autoload path while the
-full suite is running causes Rails to reload constants mid-run, and the result is a wave of failures that look real
-and are not — the previous phase lost an hour to 75 of them. Two consequences, both followed here: the suite's
-verdict is only taken from a run with no concurrent edits, and while a run is in flight only `docs/` is touched,
-since it is not an autoload path. Separately, `rails runner` writes land in the **test** database when `RAILS_ENV`
-says so and are not rolled back by spec transactions; seven spurious failures in
-`spec/services/whatsapp/incoming_message_service_spec.rb` came from exactly that, and the fix was to clean the rows
-rather than to believe them.
+**One environment hazard, recorded because it has now cost time three times.** Two distinct traps, and the second
+is the expensive one.
+
+*Editing an autoload path while the suite runs* makes Rails reload constants mid-run, and the result is a wave of
+failures that look real and are not — the previous phase lost an hour to 75 of them. So the suite's verdict is
+only taken from a run with no concurrent edits, and while a run is in flight only `docs/` is touched.
+
+*`rails runner` against `RAILS_ENV=test` commits rows that no spec transaction will roll back*, and a surprising
+number of assertions in this suite query a table **globally** rather than scoping to the records the example
+created. One stray row then fails a spec that is perfectly correct. Three rounds of this:
+
+| Round | Leftover | What failed |
+|---|---|---|
+| P4 | debug rows from a `rails runner` session | 75 spurious failures |
+| continuation, first | a `Contact` named "Jane" | 7 in `incoming_message_service_spec.rb` |
+| continuation, second | 2 `audits`, 14 orphaned `working_hours`, 1 `installation_configs` | 11, across three unrelated files |
+
+The third round is worth dissecting, because each failure was a *correct* spec meeting a global query:
+
+- `Audited::Audit.where(auditable_type: 'Inbox', action: 'create').count == 1` → `got: 3`, the example's own audit
+  plus two leftovers.
+- `InstallationConfig.count == 0` as a **precondition** → `got: 1`.
+- `WorkingHour.today` resolves its timezone via `first.inbox` — an unscoped `ORDER BY id LIMIT 1`. An orphaned row
+  has the lowest id, so `inbox` is nil and `inbox.timezone` raises. Orphans are structurally possible because
+  `working_hours` has **no foreign key** to `inboxes` and `out_of_offisable.rb` associates them with
+  `dependent: :destroy_async`, so the destroy job never runs under `Sidekiq::Testing` — even a correct `destroy`,
+  not just a `delete_all`, strands seven rows per inbox, permanently.
+
+Each was reproduced deliberately — insert the row, watch exactly those lines fail with exactly that message; remove
+it, watch the file pass — before being called pollution. None was called a flake. The fix is
+`rails db:test:prepare`, which rebuilds the schema rather than guessing which tables to clean, and the
+authoritative suite result is only ever taken from a run that started on a rebuilt database.
+
+**And the same trap produced a real finding against this phase's own work.** The leftover
+`installation_configs` row was named `WHATSAPP_API_VERSION`, timestamped to the minute the diagnosis task was
+first run by hand. That row was the diagnosis writing to the database: `GlobalConfigService.load` is
+create-on-read, and `/debug_token`'s app access token is built from `WHATSAPP_APP_ID` and `WHATSAPP_APP_SECRET`
+through the same accessor — so on a production server the "read-only" task would have written the app secret into
+`installation_configs`. `FINAL-CHECKPOINT.md` §27 records what was changed. A piece of test-database rubbish is a
+strange place to find a security defect, which is the argument for root-causing pollution instead of deleting it.

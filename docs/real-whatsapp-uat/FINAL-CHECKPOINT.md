@@ -224,15 +224,41 @@ table.
 restructured into the seven sections the phase specified: `CHANNEL`, `META IDENTITY`, `AUTH`, `WABA SUBSCRIPTION`,
 `WEBHOOK`, `LOCAL PIPELINE`, `CONTACT TEST`, then `SUMMARY` and `WHAT TO FIX, IN ORDER`. Executed end to end
 against a throwaway channel in a rolled-back transaction: all seven sections render, the Meta reads return Meta's
-own `OAuthException 190` for a fixture token, and the fix order is prioritised. Nine specs pin its contract.
+own `OAuthException 190` for a fixture token, and the fix order is prioritised. Thirteen specs pin its contract,
+including the write-freedom ones §27 describes.
 
 ### 27. Confirmation the diagnostic is read-only
 
-**Confirmed, by construction and by test.** No collaborator has a write path: every Meta call is a GET through the
-existing `Whatsapp::FacebookApiClient`, and there is no `set`, `update`, `save`, `register`, `subscribe` or
-`delete` anywhere in the service. `spec/services/whatsapp/diagnosis_spec.rb` asserts it: no POST, PUT, PATCH or
-DELETE to `graph.facebook.com`; Message, Contact, Conversation, Channel and Inbox counts unchanged; `Redis::Alfred`
-never receives `set`, `delete` or `incr`; and an existing reauthorization flag is still set after the run.
+**Confirmed for Meta and Redis without qualification; for the database, with one named row.**
+
+Meta: every call is a GET through the existing `Whatsapp::FacebookApiClient`. No subscribe, register, rotate or
+delete exists anywhere in the service. Redis: no key is written, and the reauthorization flag is neither set nor
+cleared. `spec/services/whatsapp/diagnosis_spec.rb` asserts all of it — no POST, PUT, PATCH or DELETE to
+`graph.facebook.com`; Message, Contact, Conversation, Channel and Inbox counts unchanged; `Redis::Alfred` never
+receives `set`, `delete` or `incr`; an existing reauthorization flag still set after the run.
+
+The database qualification is worth stating plainly, because the first version of this work got it wrong and the
+evidence that caught it was a stray row in the test database.
+
+`GlobalConfigService.load` — the ordinary accessor, used by the diagnosis's first version — ends in
+`InstallationConfig.where(name:).first_or_create(value: …)` plus `GlobalConfig.clear_cache`. It is create-on-read
+by design, to migrate installations still relying on ENV. So the diagnosis was writing: it left a
+`WHATSAPP_API_VERSION` row behind every run, and on a production server where `WHATSAPP_APP_SECRET` is set in ENV
+but has no row it would have written **the app secret into the database**. Two fixes:
+
+- `Whatsapp::Diagnosis::StoredConfig` is now the one place configuration is read, with a plain
+  `InstallationConfig.find_by` then ENV then the caller's default. No create, no cache write.
+- `/debug_token` is authorized with an app access token built as `app_id|app_secret` inside
+  `FacebookApiClient#build_app_access_token`, which uses that accessor. The diagnosis is that endpoint's only
+  caller in the repository, so it now skips the token-debug read unless **both** values are already stored, and
+  reports `BLOCKED` naming what to configure. An unanswered check is cheaper than a credential written by a tool
+  that promised not to write.
+
+What remains is one row, and it is not the diagnosis's own doing: nine production call sites resolve the Graph
+version through `GlobalConfigService.load`, `FacebookApiClient#initialize` among them, so constructing the API
+client can create a `WHATSAPP_API_VERSION` row — a version string equal to the default already in use, exactly as
+the first WhatsApp request of any kind on that server would create it. A regression pins that this is the **only**
+name a run may add, so the set cannot widen unnoticed.
 
 ### 28. Confirmation the diagnostic masks secrets
 
@@ -388,7 +414,9 @@ environment was GET reads that returned `OAuthException 190` for a fixture token
 ### 49. Production Redis changed?
 
 **No.** No key was written and none was deleted. No reauthorization flag was cleared. The diagnosis has no Redis
-write path, and a spec asserts it.
+write path, and a spec asserts that `Redis::Alfred` receives no `set`, `delete` or `incr` during a run. Note that
+this is why the diagnosis reads configuration with a plain `SELECT` rather than through `GlobalConfig`, whose
+`load_from_cache` writes a cache key with a one-day TTL whenever the cache is cold (§27).
 
 ### 50. Graph API changed?
 

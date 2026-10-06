@@ -22,7 +22,7 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
 
   # GET /platform/api/v1/billing/plans/:id/subscribers?status=active,trialing&page=1&per_page=25
   def subscribers
-    scope = @plan.subscriptions.order(id: :desc)
+    scope = @plan.subscriptions.where(account_id: permissible_account_ids).order(id: :desc)
     statuses = list_param(:status)
     scope = scope.where(status: statuses) if statuses.any?
     render_subscriptions_page(scope)

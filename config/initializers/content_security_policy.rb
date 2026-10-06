@@ -1,6 +1,21 @@
 # Be sure to restart your server when you modify this file.
 
-# Define an application-wide content security policy
+# Stage one of a content security policy: only the directives that cannot break what the product legitimately loads.
+#
+#   object-src 'none'  no <object>/<embed>/<applet> anywhere in this product, so this closes a plugin-injection
+#                      vector with nothing to regress.
+#   base-uri 'self'    a <base> tag injected into a page can repoint every relative URL on it, including the API
+#                      calls the dashboard makes. Nothing here sets <base>.
+#
+# No default-src, script-src or style-src yet, deliberately. Those have to be enumerated from what the dashboard, the
+# widget, the SDK and the portal actually load (own assets, ASSET_CDN_HOST, Stripe, the Facebook SDK, fonts), and a
+# policy that misses one source breaks a feature in production. frame-ancestors is deliberately absent too: the
+# widget is meant to be framed by customer sites. Stage two adds those, report-only first.
+Rails.application.config.content_security_policy do |policy|
+  policy.object_src :none
+  policy.base_uri :self
+end
+
 # For further information see the following documentation
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
 

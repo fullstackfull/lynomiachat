@@ -73,4 +73,18 @@ RSpec.describe Commerce::Zid::Webhooks do
 
     expect(store.reload).to have_attributes(status: 'disconnected', credentials: nil)
   end
+
+  # The registration must not report success for a store where a subscription failed: a store recorded as
+  # registered but subscribed to nothing receives no order events at all, and nothing says so.
+  it 'raises when Zid does not return an id for a subscription, and records no metadata' do
+    stub_request(:delete, %r{/managers/webhooks})
+      .to_return(status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' })
+    stub_request(:post, %r{/managers/webhooks})
+      .to_return({ status: 200, body: { id: 'wh-1' }.to_json, headers: { 'Content-Type' => 'application/json' } },
+                 { status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' } })
+
+    expect { described_class.new(store).register }
+      .to raise_error(an_object_having_attributes(code: 'INVALID_RESPONSE', reason: 'zid_webhook_subscribe'))
+    expect(store.reload.metadata['zid_webhooks']).to be_nil
+  end
 end

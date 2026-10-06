@@ -20,7 +20,7 @@ class Commerce::Zid::Webhooks
         remove(client)
         auth = { 'webhook_username' => SecureRandom.hex(16), 'webhook_password' => SecureRandom.urlsafe_base64(48) }
         @store.update!(credentials: @store.reload.credentials.merge(auth))
-        ids = EVENTS.filter_map { |event| client.post_json(PATH, subscription(event, auth)).then { |body| body['id'].to_s if body.is_a?(Hash) } }
+        ids = EVENTS.map { |event| subscribe(client, event, auth) }
         @store.update!(metadata: @store.metadata.merge('zid_webhooks' => { 'ids' => ids, 'registered_at' => Time.current.iso8601 }))
       end
     end
@@ -32,6 +32,18 @@ class Commerce::Zid::Webhooks
   end
 
   private
+
+  # One subscription, and a failure is a failure. This used to be a `filter_map` that dropped any response without an
+  # id, so a store where two of the three POSTs failed was recorded as registered with one id and `register` returned
+  # normally — the same shape of untruthful success as the webhook-setup defect in docs/real-whatsapp-uat/09-fix.md.
+  # Raising leaves the caller to decide, and the store's metadata is only written once every event is subscribed.
+  def subscribe(client, event, auth)
+    body = client.post_json(PATH, subscription(event, auth))
+    id = body['id'].to_s.presence if body.is_a?(Hash)
+    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'zid_webhook_subscribe') if id.nil?
+
+    id
+  end
 
   def remove(client)
     client.delete(PATH, original_id: Commerce::Zid::Config.client_id)

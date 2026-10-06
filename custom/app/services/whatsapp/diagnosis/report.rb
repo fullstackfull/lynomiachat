@@ -40,8 +40,9 @@ class Whatsapp::Diagnosis::Report
     say "  [#{BLOCKED}] #{name} — #{reason}"
   end
 
-  # One read-only call. A failure is recorded as BLOCKED rather than raised, so one unavailable endpoint never costs
-  # the rest of the report.
+  # One read-only call AND the reporting of what it returned, both inside the rescue. A failure is recorded as
+  # BLOCKED rather than raised, so neither an unavailable endpoint nor a response in an unexpected shape costs the
+  # rest of the report. Callers therefore interpret the response inside this block, not after it.
   def read(label)
     say "#{label}:"
     yield

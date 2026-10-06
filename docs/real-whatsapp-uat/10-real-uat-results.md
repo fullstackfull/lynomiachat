@@ -108,40 +108,54 @@ Nothing in this table is marked passed, and nothing is marked failed. They are u
 
 ## 5. PRODUCTION OPERATOR RUNBOOK
 
-**Step 1 — diagnose, change nothing.**
+### STEP 1 — diagnose, change nothing
 
 ```bash
-bundle exec rails whatsapp:diagnose INBOX_ID=<the real inbox id>
+bundle exec rails whatsapp:diagnose INBOX_ID=<id> CONTACT=+<old_test_number>
 ```
 
-Read `WHAT TO FIX, IN ORDER` at the bottom. Do not change any Meta configuration for a check that passed. In
-particular: do not create a Meta App, do not create a WABA, do not re-register the number (destructive on
-Coexistence — `07` §2), do not disconnect Coexistence, do not rotate the token, do not delete a subscription or a
-production template, and do not change the webhook configuration because a check looks suspicious.
+Use the **old** test contact — the one outbound already reaches. Its conversation is the one with a persisted
+inbound message, so its window state is the control against which the new contact's is read.
 
-**Step 2 — fix the top finding, and only that one.** The common findings and their existing, supported fix:
+### STEP 2 — paste the complete masked output back
 
-| Finding | Fix | Never |
-|---|---|---|
-| `LOCAL PIPELINE`: no app secret configured | set `WHATSAPP_APP_SECRET` to the Meta App's secret. This alone turns every inbound 401 into a 200 (`04` §3) | disable signature verification |
-| `WABA SUBSCRIPTION`: no subscribed app | re-run the inbox's webhook setup, which calls `Whatsapp::FacebookApiClient#subscribe_app_to_waba` | hand-roll a subscription call |
-| `WEBHOOK`: `MISMATCH` | re-register the callback via `Whatsapp::WebhookSetupService#register_callback`, after confirming `FRONTEND_URL` is the public URL | edit the override by hand |
-| `CHANNEL`: `phone_number_id` ≠ Meta's | correct it on the inbox, then re-register the callback | change the number at Meta |
-| `CHANNEL`: reauthorization flag set | complete the reauthorization flow for that inbox in the dashboard, which is the only supported clear | `redis-cli DEL` the key — it hides the cause and the flag returns |
-| `LOCAL PIPELINE`: no Sidekiq process, or a deep `low` queue | restart or scale the worker | nothing — this is infrastructure |
-| `CONTACT TEST`: window closed for the new contact | send an approved template, which is what the window is for (`05`) | retry the plain text; it will fail locally again with the same error |
+Into §6 below, whole and unedited. It is already masked: no token, no secret, no customer number in full, no
+message body, and a callback override printed as host and path only. Add the observed behaviour at the time of the
+run, because the report says what the configuration is and only the operator can say what the phone did.
 
-**Step 3 — re-run the diagnosis.** Confirm the finding you fixed now reads `PASS` and that nothing that previously
-passed has regressed. Then send one real inbound message from a handset, and check:
+### STEP 3 — only after interpretation, choose one action
 
-- an incoming message appears in the conversation, in the dashboard, without a refresh
-- `CONTACT TEST`'s incoming count has increased and its newest timestamp is the message you just sent
-- `log/production.log` has no `[WHATSAPP INGEST] event=…` line for that delivery. If it does, the line names the
-  exact step that refused and why (`04` §1)
+Not before. `WHAT TO FIX, IN ORDER` at the bottom of the report names the top finding; this table says what each
+one means and, as importantly, what not to reach for.
 
-**Step 4 — outbound.** With the window now open, send a plain text reply to that same contact and confirm it
-reaches `delivered`. A message frozen on `sent` means status callbacks are not being ingested either, which is
-`06` §1 row 2 and sends you back to the `WEBHOOK` section.
+| Choose | When the report says | Do | Never |
+|---|---|---|---|
+| **NO CHANGE** | every check passes and `CONTACT TEST` shows inbound arriving | nothing. The remaining suspect is the host — §4 item 9. Pull the access log for the callback path | change Meta configuration because a result was surprising |
+| **REAUTHORIZE** | `CHANNEL` shows reauthorization required | complete the reauthorization flow for that inbox in the dashboard, which is the only supported clear | `redis-cli DEL` the key. It hides the cause, and the flag returns on the next two authorization errors |
+| **FIX CALLBACK** | `WEBHOOK` reads `MISMATCH (…)` | confirm `FRONTEND_URL` is the public URL, then re-register via `Whatsapp::WebhookSetupService#register_callback` | edit the override by hand, or re-register the **number** (`/register` is destructive on Coexistence — `07` §2) |
+| **FIX WABA SUBSCRIPTION** | `WABA SUBSCRIPTION` shows no subscribed app, or the wrong app | re-run the inbox's webhook setup, which calls `Whatsapp::FacebookApiClient#subscribe_app_to_waba` | hand-roll a subscription call, or unsubscribe the production WABA to "reset" it |
+| **FIX SECRET CONFIGURATION** | `AUTH` shows no Meta app secret | set `WHATSAPP_APP_SECRET` to the Meta App's secret. This alone turns every inbound 401 into a 200 (`04` §3) | disable signature validation. That is never the fix |
+| **OTHER PROVEN ACTION** | `CHANNEL`'s `phone_number_id` ≠ Meta's, or `LOCAL PIPELINE` shows no Sidekiq process | correct the stored id and re-register the callback; or restart/scale the worker | act on a check that reads `BLOCKED` — that is unproven, and the Meta error beside it is what to resolve first |
+
+Then re-run STEP 1 and confirm the finding you fixed reads `PASS` and nothing that passed has regressed.
+
+### STEP 4 — run the live matrix
+
+Seven results, in this order, because each one depends on the last:
+
+| # | Test | What it proves | Expected after the fix |
+|---|---|---|---|
+| 1 | old contact → Lynomia | inbound ingestion end to end | the message appears in the conversation without a refresh |
+| 2 | Lynomia → old contact | outbound inside an open window | delivered, and the ticks advance |
+| 3 | approved template → new contact | outbound with no window, which is the only legitimate first contact | delivered. P5 is explicit: the first send to a truly new contact must be an approved template, never free-form text |
+| 4 | new contact → Lynomia | the inbound that opens the window | a conversation is created with a persisted incoming message |
+| 5 | plain reply → new contact | that 4 opened the window | accepted and delivered. Before 4 it fails **locally** with the 24-hour-window reason and Meta is never contacted — that distinction is the point |
+| 6 | sent / delivered / read | status callbacks are being ingested | the ticks advance. Frozen on `sent` means `06` §1 row 2, and sends you back to `WEBHOOK` |
+| 7 | coexistence | the Business App side still works | a reply sent from the WhatsApp Business app appears in Lynomia as an outgoing message (an `smb_message_echoes` delivery) |
+
+While running these, watch for `[WHATSAPP INGEST] event=…` in `log/production.log`. If a step produces one, the
+line names the exact step that refused and why (`04` §1) — that is the whole purpose of this phase's observability
+work, and it contains no secrets and no message bodies.
 
 ## 6. Paste-back
 

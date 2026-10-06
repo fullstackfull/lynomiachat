@@ -83,9 +83,12 @@ class Whatsapp::Diagnosis::MetaChecks
   end
 
   def token_state(client, token)
-    data = report.read('token debug (validity, scopes, expiry)') { client.debug_token(token) }
-    return if data.nil?
+    report.read('token debug (validity, scopes, expiry)') do
+      report_token_state(client.debug_token(token))
+    end
+  end
 
+  def report_token_state(data)
     info = data['data'] || {}
     report.rows(
       [
@@ -102,9 +105,10 @@ class Whatsapp::Diagnosis::MetaChecks
   end
 
   def permissions(client)
-    data = report.read('token permissions (/me/permissions)') { client.fetch_permissions }
-    return if data.nil?
+    report.read('token permissions (/me/permissions)') { report_permissions(client.fetch_permissions) }
+  end
 
+  def report_permissions(data)
     granted = Array(data['data']).select { |entry| entry['status'] == 'granted' }.pluck('permission')
     report.say "  granted: #{granted.join(', ')}"
     TOKEN_PERMISSIONS.each do |needed|
@@ -119,10 +123,9 @@ class Whatsapp::Diagnosis::MetaChecks
       return
     end
 
-    data = report.read("phone number state (/#{phone_number_id})") do
-      client.fetch_phone_number(phone_number_id, fields: PHONE_FIELDS)
+    report.read("phone number state (/#{phone_number_id})") do
+      report_phone_number(client.fetch_phone_number(phone_number_id, fields: PHONE_FIELDS))
     end
-    report_phone_number(data) if data
   end
 
   def report_phone_number(data)
@@ -152,9 +155,12 @@ class Whatsapp::Diagnosis::MetaChecks
 
   # P5 Part C. The primary suspect for "inbound never arrives".
   def subscribed_apps(client, waba_id)
-    data = report.read("WABA app subscription (/#{waba_id}/subscribed_apps)") { client.fetch_subscribed_apps(waba_id) }
-    return if data.nil?
+    report.read("WABA app subscription (/#{waba_id}/subscribed_apps)") do
+      report_subscribed_apps(client.fetch_subscribed_apps(waba_id))
+    end
+  end
 
+  def report_subscribed_apps(data)
     apps = Array(data['data'])
     report.say "  subscribed apps: #{apps.size}"
     apps.each { |entry| subscribed_app(entry) }
@@ -186,11 +192,12 @@ class Whatsapp::Diagnosis::MetaChecks
 
   # P5 Part H needs an approved template to reach a contact whose window is closed.
   def templates(client, waba_id)
-    data = report.read("templates owned by this WABA (/#{waba_id}/message_templates)") do
-      client.fetch_message_templates(waba_id)
+    report.read("templates owned by this WABA (/#{waba_id}/message_templates)") do
+      report_templates(client.fetch_message_templates(waba_id))
     end
-    return if data.nil?
+  end
 
+  def report_templates(data)
     all = Array(data['data'])
     approved = all.select { |template| template['status'].to_s.upcase == 'APPROVED' }
     report.say "  templates: #{all.size} total, #{approved.size} APPROVED"

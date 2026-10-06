@@ -53,12 +53,10 @@ class Whatsapp::Diagnosis::WebhookChecks
     return report.blocked('effective callback', 'provider_config has no phone_number_id') if phone_number_id.blank?
 
     client = Whatsapp::FacebookApiClient.new(config[:api_key])
-    data = report.read("what Meta holds for this number (/#{phone_number_id}?fields=webhook_configuration)") do
-      client.fetch_phone_number(phone_number_id, fields: 'webhook_configuration')
+    report.read("what Meta holds for this number (/#{phone_number_id}?fields=webhook_configuration)") do
+      data = client.fetch_phone_number(phone_number_id, fields: 'webhook_configuration')
+      report_classification(CLASSIFICATION.new(expected: expected, configuration: data['webhook_configuration']))
     end
-    report_classification(
-      CLASSIFICATION.new(expected: expected, configuration: data && data['webhook_configuration'])
-    )
   end
 
   def report_classification(classification)

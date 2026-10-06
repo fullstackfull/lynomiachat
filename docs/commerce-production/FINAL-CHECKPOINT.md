@@ -261,11 +261,25 @@ listener specs, and the automation-rules controller.
 
 ### 43. WhatsApp regressions
 
-GATE_WHATSAPP
+**635 examples, 0 failures** — `spec/services/whatsapp`, `spec/requests/whatsapp`, the WhatsApp webhook controller
+and events job, `Channel::Whatsapp`, the WhatsApp API controllers and the template-sync jobs. P5's inbound
+hardening is intact. It is worth being precise about why: this is a no-regression result, not evidence that the
+cart path sends WhatsApp — §23 and §24 say it does not send at all.
 
 ### 44. Contacts regressions
 
-GATE_CONTACTS
+**247 examples, 0 failures** — the contacts controller and its nested controllers, `Contact`,
+`spec/services/contacts`, `spec/jobs/contacts`. This is the suite that matters most for §28, which changed when a
+durable `commerce_customer_link` may be created.
+
+The other four named suites the brief listed are green on the same run:
+
+| Suite | Result |
+|---|---|
+| Audience | **61 examples, 0 failures** |
+| Campaign | **49 examples, 0 failures** |
+| Flow | **72 examples, 0 failures** |
+| Template Manager | **138 examples, 0 failures** |
 
 ### 45. Full RSpec
 
@@ -276,11 +290,13 @@ unrelated to Commerce. No new failure anywhere in the suite.
 
 ### 46. Full Vitest
 
-GATE_VITEST
+**493 test files, 5,177 tests, all passed.** P6 changed no frontend file (17 `.rb`, 12 `.md`, 1 `.yml`),
+so this is a pure no-regression check.
 
 ### 47. ESLint
 
-GATE_ESLINT
+**0 errors.** 510 warnings, every one pre-existing — no `.js`, `.vue`, `.ts` or stylesheet was touched in
+this phase, so the warning count is the branch's inherited baseline and not something this work added.
 
 ### 48. RuboCop
 
@@ -288,7 +304,10 @@ GATE_ESLINT
 
 ### 49. Production build
 
-GATE_BUILD
+**Built, not skipped: `✓ built in 1m 48s`, `Build with Vite complete: public/vite`.** Run as
+`SECRET_KEY_BASE=… NODE_ENV=production RAILS_ENV=production bin/vite build --force`. The explicit
+`SECRET_KEY_BASE` matters: without it `bin/vite build` prints "Missing secret_key_base… Skipping vite build"
+and **exits 0**, which is a false green this project has already been caught by once (P5).
 
 ### 50. Migration count
 
@@ -328,7 +347,38 @@ once-per-rule claim are untouched. No new dispatcher, no new trigger registry, n
 
 ## P6 SOFTWARE RESULT
 
-GATE_SOFTWARE_VERDICT
+**SOFTWARE READY.**
+
+Every gate is green and every number above is from a real run, not an inference:
+
+| Gate | Result |
+|---|---|
+| Full RSpec | 10,760 examples, 2 failures — both the pre-existing baseline pair |
+| RuboCop | 3,480 files, no offenses |
+| Vitest | 493 files, 5,177 tests, 0 failures |
+| ESLint | 0 errors (510 inherited warnings; no frontend file changed) |
+| Production build | really built, 1m 48s |
+| Named suites | WhatsApp 635, Contacts 247, Audience 61, Campaign 49, Flow 72, Template Manager 138 — 0 failures |
+| Commerce + Automation | 974 examples |
+
+Three defects were found and fixed on the way, and two of them were silent in production:
+
+1. Zid webhook credentials were sent in a field Zid does not define, so **every Zid order event was being
+   rejected while registration reported success** — the worst shape of failure, because the store looked
+   connected.
+2. Registration reported success when only some subscriptions were created, so a store could be recorded as
+   registered while subscribed to nothing.
+3. A stale provider read could create a **durable** customer link, binding a contact to an identity the store no
+   longer held.
+
+What this verdict deliberately does **not** say:
+
+- It is **not** a production go. Cart ingestion is PRE_UAT for all four providers and nothing records a cart in
+  production until an operator opens the gate.
+- It is **not** a claim that the Zid cart contract is proven. The identity field and the envelope shape are
+  `UNVERIFIED`, confined to one file, and refused rather than guessed when absent.
+- It is **not** a claim that Lynomia recovers carts. It records detection, targeting and completion, and §39
+  lists the four phrases this work refuses to use.
 
 ## REAL ZID UAT RESULT
 

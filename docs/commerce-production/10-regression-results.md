@@ -18,6 +18,20 @@ concurrent edits, for the reason recorded in `docs/real-whatsapp-uat/00-environm
 
 39 examples are new in Stage B, plus 6 for the stale-cache findings.
 
+## 1b. Named regression suites
+
+The six the brief named, each run as its own process after the full suite so the numbers are per-suite rather
+than inferred from the whole run.
+
+| Suite | Paths | Result |
+|---|---|---|
+| WhatsApp | `services/whatsapp`, `requests/whatsapp`, `webhooks/whatsapp_controller`, `webhooks/whatsapp_events_job`, `models/channel/whatsapp`, `api/v1/accounts/whatsapp`, `channels/whatsapp` | **635 examples, 0 failures** |
+| Contacts | `contacts_controller`, `accounts/contacts/`, `models/contact`, `services/contacts`, `jobs/contacts` | **247 examples, 0 failures** |
+| Audience | `contacts/audiences`, `filter_service_audience`, `conditions_filter_service_audience`, `campaign_audience`, `campaigns_audience` | **61 examples, 0 failures** |
+| Campaign | `models/campaign`, `campaigns_controller`, `jobs/campaigns`, `liquid/campaign_template_service` | **49 examples, 0 failures** |
+| Flow | `services/flows`, `jobs/flows`, `flows_controller`, `agent_bot_listener_flow` | **72 examples, 0 failures** |
+| Template Manager | `whatsapp/message_templates_controller`, the six WhatsApp template services, both template-sync jobs, `flows/template_validator`, `flows/nodes/send_template` | **138 examples, 0 failures** |
+
 ## 2. Three existing specs encoded the old truth
 
 Found by the suite, not by inspection, and each updated rather than worked around:
@@ -59,9 +73,9 @@ inventing triggers now guards the specific trigger we declined to invent.
 |---|---|
 | Full RSpec | **10,760 examples, 2 failures, 67 pending** — both failures are the baseline pair below |
 | RuboCop | **3,480 files inspected, no offenses detected** |
-| Full Vitest | GATE_VITEST |
-| ESLint | GATE_ESLINT |
-| Production build | GATE_BUILD |
+| Full Vitest | **493 test files, 5,177 tests, 0 failures** |
+| ESLint | **0 errors**, 510 pre-existing warnings — no frontend file was changed in P6 |
+| Production build | **`✓ built in 1m 48s` / `Build with Vite complete: public/vite`** — with `SECRET_KEY_BASE` set, so it really built rather than skipping and exiting 0 |
 | Browser journeys | **not run — no UI was changed in Stage B.** The cart lifecycle is server-side; `CartQueue.vue` and `CommerceCarts.vue` are untouched |
 
 Baseline known failures, unchanged and expected: `spec/builders/agent_builder_spec.rb:47` and

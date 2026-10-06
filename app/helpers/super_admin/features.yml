@@ -44,8 +44,9 @@ voice_calls:
 # ------- Product Features ------- #
 help_center:
   name: 'Help Center'
-  description: 'Allow agents to create help center articles and publish them in a portal.'
-  enabled: true
+  description: 'Retired. Lynomia publishes the documentation; a workspace does not author its own. Leaving this on
+    grants nothing, and a help centre published before the change stays public either way.'
+  enabled: false
   icon: 'icon-book-2-line'
 captain:
   name: 'Captain'

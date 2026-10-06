@@ -39,7 +39,7 @@ This is the more useful list. Nothing below leaves an entry:
 - Contacts created, edited, merged or deleted; [imports](import-contacts) and
   [bulk actions](bulk-actions).
 - Campaigns — created, edited or sent. See [WhatsApp campaigns](whatsapp-campaigns).
-- Canned responses, custom attributes, help centre articles, custom roles.
+- Canned responses, custom attributes, custom roles.
 - Commerce store connections and order actions, and flow changes, are written to the same table, but the page has
   no label or filter for them, so they appear in the list **without a description**.
 

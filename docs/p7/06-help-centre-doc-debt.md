@@ -103,3 +103,32 @@ Carried to the readiness matrix rather than decided here.
 The unreachable Help Center frontend — `routes/dashboard/helpcenter/**`, `components-next/HelpCenter/**`, the
 three `helpCenter*` Vuex modules and the `api/helpCenter` clients — now has no reachable importer. It is a large
 mechanical deletion with its own review surface and no user-visible effect, so it is not folded into this commit.
+
+## A second pass, from an adversarial sweep
+
+A parallel read of the whole repository against the removal turned up six more surfaces. Each was opened and
+checked before being changed; two of its claims did not survive that and are recorded here as refuted.
+
+| Surface | What was wrong | Fix |
+| --- | --- | --- |
+| `config/features.yml` | `help_center` shipped `enabled: true`, so every newly created account got a feature it cannot use | `enabled: false`. The entry **stays where it is**: `Featurable` maps a feature to a bit by its index in this list (`featurable.rb:22-24`), so removing or moving one would shift every later feature and corrupt the stored flags of every existing account. `before_create :enable_default_features` means the default applies only at account creation, so existing accounts are untouched — verified live: the local account still reports `feature_enabled?('help_center') == true`, and `help_center` is still index 7, bit 8 |
+| `app/helpers/super_admin/features.yml` | the toggle a super admin reads said "Allow agents to create help center articles and publish them in a portal" | rewritten to say it is retired, grants nothing, and does not affect a help centre published before the change |
+| `lib/seeders/seed_data.yml` | `rails db:seed`, the standard local seed in CLAUDE.md, created a **Knowledge Manager** custom role built on `knowledge_base_manage` | role removed; the remaining five seeded roles use only permissions that grant something |
+| `CustomRolePaywall.vue` | the preview table behind the custom-roles paywall advertised the retired permission to administrators on plans without custom roles | removed from the dummy data |
+| `administration/audit-logs.md` (both locales) | listing "help centre articles" among things a workspace's audit log does not record implies the workspace has some | removed. The line was literally true — nothing in `enterprise/app/models/enterprise/audit/` audits `Article` — but true by implication of something false |
+| `your-own-help-centre.md` | the article wrote the sidebar item as "Contact support"; the product writes **Contact Support** | corrected |
+
+**Refuted.** Two findings were reported as defects and are not:
+
+- *"The Captain Copilot article tools bypass ArticlePolicy."* They read `Article` directly rather than through the
+  policy, which is true, but both are explicitly account-scoped —
+  `Article.where(account_id: @assistant.account_id)` and `find_by(id:, account_id: @assistant.account_id)`. The
+  platform documentation portal has `account_id: nil`, so neither tool can reach it, and neither can cross
+  accounts. Their `active?` also requires `knowledge_base_manage`, which is no longer grantable. No change.
+- *"The custom-role form still offers Manage knowledge base", and the documentation's "six" is wrong.* The
+  reading agent saw the tree mid-edit. The form offers six, and the documentation is right.
+
+**Noted, not changed.** The live-chat widget still renders a "Popular articles" block and a link into `/hc/<slug>`
+for an inbox that carries a portal. That is the same legacy state as the public renderer: it cannot arise for a
+new inbox, and for an old one it is the customer-facing half of pages that are still online by design. It belongs
+with the decision above, not ahead of it.

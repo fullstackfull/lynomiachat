@@ -39,10 +39,11 @@
 - name: email_continuity_on_api_channel
   display_name: Email Continuity on API Channel
   enabled: false
+# Lynomia publishes the documentation; a workspace does not author one. The entry stays where it is because a
+# feature's bit is its index in this list, so removing or moving it would shift every feature after it.
 - name: help_center
   display_name: Help Center
-  enabled: true
-  help_url: https://chwt.app/hc/help-center
+  enabled: false
 - name: agent_bots
   display_name: Agent Bots
   enabled: true

@@ -39,7 +39,7 @@ from the reply box with `/`, and it carries variables so the customer's name and
 |---|---|
 | **Documentation** | the pages you are reading. **Help & Support → Documentation** in the sidebar, or `/docs` |
 | **Changelog** | what changed in each release, at `/changelog` |
-| **Support** | **Help & Support → Contact support** in the sidebar |
+| **Support** | **Help & Support → Contact Support** in the sidebar |
 
 Both open in a new tab, and both are configured by whoever runs your installation, so a self-hosted install points
 at its own addresses.

@@ -64,11 +64,11 @@ the reload hazard recorded in `docs/real-whatsapp-uat/00-environment.md` §5.
 
 | Gate | Result |
 |---|---|
-| Full RSpec | GATE_RSPEC |
-| RuboCop | GATE_RUBOCOP |
-| Full Vitest | GATE_VITEST |
-| ESLint | GATE_ESLINT |
-| Production build | GATE_BUILD |
+| Full RSpec | **10,807 examples, 2 failures, 67 pending** — both failures are the baseline pair below |
+| RuboCop | **3,486 files inspected, no offenses detected** |
+| Full Vitest | **494 test files, 5,191 tests, 0 failures** |
+| ESLint | **0 errors**, 510 inherited warnings |
+| Production build | **`✓ built in 1m 44s` / `Build with Vite complete: public/vite`** — with `SECRET_KEY_BASE` set, so it really built rather than skipping and exiting 0 |
 
 Baseline failures expected to remain, and only these: `spec/builders/agent_builder_spec.rb:47` and
 `spec/enterprise/services/voice/call_transcription_service_spec.rb:77`.
@@ -85,3 +85,18 @@ Baseline failures expected to remain, and only these: `spec/builders/agent_build
 
 **ZERO new migrations.** `Whatsapp::MessageTemplate` already exists at `db/schema.rb:1796-1814`, and
 `commerce_carts` was P6's one approved migration. Nothing in this phase changed the schema.
+
+## 6. What the gates caught, and why that matters
+
+The first run on the clean tree was **not** green, and the failures were real rather than noise:
+
+| Failure | Cause | Resolution |
+|---|---|---|
+| `automation_rule_listener_commerce_spec.rb:41` — `payload[:commerce]` nil | **A regression I introduced.** `custom/app/services/custom/automation_rules/action_service.rb` already existed (`38f3ddc6`) and carried the `send_webhook_event` override that puts the Commerce event into the webhook payload. I created the template action by writing that path with a heredoc instead of editing it, destroying the override — which would have silently broken every external tool receiving Commerce events. | Original recovered from git; both actions now live in the one module |
+| RuboCop, 1 offense | a double-quoted string needing no interpolation | single-quoted |
+| `catalogue.spec.js` × 3 | the repository **enforces** that the two recipe locale files stay structurally identical, so a recipe needs Arabic copy as well as English — which overrides the general en-only rule for this file, because a spec asserts it | Arabic copy added |
+| `catalogue.spec.js` × 1 | the catalogue size assertion, whose own comment calls it *"a tripwire: a catalogue that changes size should change this line too, deliberately"* | 11 → 12 |
+| `AutomationRuleForm.spec.js` × 3 | the spec mounts the form with no store. That was fine while nothing forced a store-backed computed; the form now asks whether the approved-template action is allowed, and that reads the account's WhatsApp inboxes | the spec provides the two getters the composable reads |
+
+The webhook regression is the one worth recording as a lesson: it came from `cat >` onto an existing file in
+`custom/` rather than editing it, and nothing but the full suite would have caught it.

@@ -53,7 +53,7 @@ describe Whatsapp::FacebookApiClient do
     context 'when successful' do
       before do
         stub_request(:get, "https://graph.facebook.com/#{api_version}/#{waba_id}/phone_numbers")
-          .with(query: { access_token: access_token })
+          .with(headers: { 'Authorization' => "Bearer #{access_token}" })
           .to_return(
             status: 200,
             body: { data: [{ id: '123', display_phone_number: '1234567890' }] }.to_json,
@@ -71,7 +71,7 @@ describe Whatsapp::FacebookApiClient do
     context 'when failed' do
       before do
         stub_request(:get, "https://graph.facebook.com/#{api_version}/#{waba_id}/phone_numbers")
-          .with(query: { access_token: access_token })
+          .with(headers: { 'Authorization' => "Bearer #{access_token}" })
           .to_return(status: 403, body: { error: 'Access denied' }.to_json)
       end
 

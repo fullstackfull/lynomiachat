@@ -87,10 +87,8 @@ class Whatsapp::HealthService
   def fetch_graph_data(resource_id, fields)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{resource_id}",
-      query: {
-        fields: fields,
-        access_token: @access_token
-      }
+      headers: { 'Authorization' => "Bearer #{@access_token}" },
+      query: { fields: fields }
     )
 
     handle_response(response)

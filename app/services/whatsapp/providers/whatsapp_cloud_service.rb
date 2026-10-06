@@ -61,14 +61,19 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     response['data']
   end
 
+  # The token travels in the Authorization header, not the query string: these two run on every channel validation,
+  # so an interpolated `?access_token=` put a live credential into every access log, proxy log and exception
+  # message along the way. `api_headers` below is the same Bearer form the rest of this class already uses.
   def validate_provider_config?
     config = whatsapp_channel.provider_config
-    response = HTTParty.get("#{business_account_path}/message_templates?access_token=#{config['api_key']}")
+    response = HTTParty.get("#{business_account_path}/message_templates", headers: api_headers)
     return log_transfer_failure('waba_or_token_check', response) unless response.success?
     # The templates check only proves the WABA/token pair, so verify the phone_number_id belongs to this WABA when it changes.
     return true unless whatsapp_channel.provider_config_changed?
 
-    phone_response = HTTParty.get("#{business_account_path}/phone_numbers?fields=id&limit=100&access_token=#{config['api_key']}")
+    phone_response = HTTParty.get(
+      "#{business_account_path}/phone_numbers", headers: api_headers, query: { fields: 'id', limit: 100 }
+    )
     ids = phone_response.parsed_response.is_a?(Hash) ? Array(phone_response.parsed_response['data']) : []
     return true if phone_response.success? && ids.any? { |number| number['id'] == config['phone_number_id'].to_s }
 

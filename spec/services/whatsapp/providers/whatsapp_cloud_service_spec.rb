@@ -29,7 +29,7 @@ describe Whatsapp::Providers::WhatsappCloudService do
   let(:media_upload_url) { "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/media" }
 
   before do
-    stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates?access_token=test_key")
+    stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates")
     stub_request(:post, media_upload_url)
       .to_return(status: 200, body: { id: 'uploaded_media_id' }.to_json, headers: response_headers)
   end
@@ -523,13 +523,13 @@ describe Whatsapp::Providers::WhatsappCloudService do
   describe '#validate_provider_config' do
     context 'when called' do
       it 'returns true if valid' do
-        stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates?access_token=test_key")
+        stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates")
         expect(subject.validate_provider_config?).to be(true)
         expect(whatsapp_channel.errors.present?).to be(false)
       end
 
       it 'returns false if invalid' do
-        stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates?access_token=test_key")
+        stub_request(:get, "https://graph.facebook.com/#{Whatsapp::FacebookApiClient::DEFAULT_API_VERSION}/123456789/message_templates")
           .to_return(status: 401)
         expect(subject.validate_provider_config?).to be(false)
       end

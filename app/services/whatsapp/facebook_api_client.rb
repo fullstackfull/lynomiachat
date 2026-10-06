@@ -13,6 +13,9 @@ class Whatsapp::FacebookApiClient
     @api_version = GlobalConfigService.load('WHATSAPP_API_VERSION', DEFAULT_API_VERSION)
   end
 
+  # EXCEPTION, deliberate: this is the token exchange itself, so there is no bearer token to send yet. Meta's
+  # documented contract for /oauth/access_token takes client_id, client_secret and code as parameters. It cannot
+  # use header auth and is not changed.
   def exchange_code_for_token(code)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/oauth/access_token",
@@ -26,10 +29,12 @@ class Whatsapp::FacebookApiClient
     handle_response(response, 'Token exchange failed')
   end
 
+  # Header auth, matching `fetch_all_phone_numbers` below and every other read in this class; this one was the
+  # single holdout that still sent the token as a query parameter.
   def fetch_phone_numbers(waba_id)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{waba_id}/phone_numbers",
-      query: { access_token: @access_token }
+      headers: request_headers
     )
 
     handle_response(response, 'WABA phone numbers fetch failed')
@@ -102,6 +107,8 @@ class Whatsapp::FacebookApiClient
     handle_response(response, 'Phone number fetch failed')
   end
 
+  # EXCEPTION, deliberate: /debug_token's `input_token` is the subject being inspected rather than a credential,
+  # and Meta's contract passes the authorizing app token alongside it as `access_token`. Left as documented.
   def debug_token(input_token)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/debug_token",

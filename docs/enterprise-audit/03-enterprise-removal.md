@@ -5,12 +5,16 @@ core (`app/`, `lib/`) plus Lynomia's own code (`custom/`)**, proved by booting t
 `RAILS_ENV=production` with eager loading on, with the directory physically absent and
 `DISABLE_ENTERPRISE` set nowhere in the repository or the environment.
 
-Verdict in section 18.
+**The external production-data gates are now satisfied for the removal.** All eight read-only checks
+have been run against `chatwoot_production` and their results are recorded in section 16. The three
+values that could have broken a live request path all came back **zero**. Two checks returned live
+data — 123 contacts with a legacy `company_id`, and 0 accounts entitled to the audit log page — and
+both are non-blocking follow-ups rather than removal defects, described below. Verdict in section 19.
 
 **Inputs:** `00-enterprise-dependency-audit.md` (the dependency map),
 `01-zero-dependency-readiness.md` (*READY AFTER SMALL REPLACEMENTS*),
 `02-zero-dependency-implementation.md` (*READY FOR ENTERPRISE REMOVAL WITH PRODUCTION DATA GATE*),
-and the three production data gates the operator returned:
+and the three production data gates the operator returned before the removal:
 
 | Gate | Value | Consequence |
 |:--|:--|:--|
@@ -18,9 +22,18 @@ and the three production data gates the operator returned:
 | accounts with `advanced_assignment` enabled | 0 | no flag remediation needed |
 | `audits` rows | 4845 | **history exists and is preserved** — and must stay readable (section 7) |
 
-Nothing was deployed. No production data was read or written by this phase, no production SQL was
-run, no credentials were rotated, no Google OAuth setting was touched, no WhatsApp token was revoked.
-No table was dropped, no column or foreign key was removed, and no migration was added.
+Two findings carry forward, neither of them an Enterprise-removal defect and neither blocking.
+**One:** **123 contacts still carry a `company_id`** into the orphaned `companies` table, which holds
+**97 rows**; **the `companies` table must not be dropped** before a reviewed backfill and cleanup
+phase, because it is the only remaining source of those company names (sections 12 and 16).
+**Two:** **0 accounts** have the `audit_logs` feature enabled, so the reader restored in section 7 is
+inert in production until an administrator turns the feature on — hidden exactly as it was before the
+removal, so not a regression (sections 7 and 16).
+
+Nothing was deployed. No production data was written by this phase — the eight gates in section 16
+are read-only `count(*)` queries run inside `SET TRANSACTION READ ONLY`. No production SQL changed
+anything, no credentials were rotated, no Google OAuth setting was touched, no WhatsApp token was
+revoked. No table was dropped, no column or foreign key was removed, and no migration was added.
 
 ---
 
@@ -39,7 +52,7 @@ No table was dropped, no column or foreign key was removed, and no migration was
 | Frontend baseline | 499 test files passed, 1 failed (pre-existing); `pnpm test` 492 files / 5206 tests after the phase's own corrections |
 | **POST_REMOVAL_SHA (final HEAD)** | `db9132860e4b0f5741962b4bf021de1c887aedcf` |
 
-The tag is the rollback point (section 17). It was created before the first removal commit, from a
+The tag is the rollback point (section 18). It was created before the first removal commit, from a
 clean tree, so a revert needs no file reconstruction.
 
 ## 2. Commits
@@ -299,6 +312,16 @@ controller is the one under `custom/`, the audit class, the absence of `Enterpri
 administrator-allowed / agent-denied pair, the empty result when the feature is off, each filter, and
 the IPv4 and IPv6 masking. The page's own 34 frontend tests pass unchanged.
 
+**Production result: accounts with the `audit_logs` feature enabled = 0** (section 16, check 4).
+
+So the restored reader is **currently inert in production**: with the flag off everywhere, the
+controller returns `associated_audits.none` and the page stays hidden. This is **not** a regression
+and **not** a blocker — the same account feature gated the page before the removal, so it is hidden
+now exactly as it was hidden then, and the 4845 rows are preserved either way. It does mean the
+repair in this section cannot be observed in production until an administrator enables `audit_logs`
+for the accounts that should see Settings → Audit Logs. That is a configuration decision, carried
+forward in section 19 as a non-Enterprise follow-up.
+
 ## 8. Permissions and custom roles
 
 ```
@@ -327,10 +350,26 @@ assignment_v2 present in config/features.yml = true
 
 With 0 accounts having `advanced_assignment` enabled, no flag remediation was required. The
 distinction worth recording: **`advanced_assignment` was the Enterprise feature flag**;
-**`assignment_v2` is the OSS assignment engine** and is untouched — not disabled, not degraded. The
-`assignment_order` enum keeps only `round_robin` because the other member lived in `enterprise/`; the
-column default is `"round_robin"`, so no row can hold a value the enum cannot name. No dead
-advanced-assignment UI and no missing constant remain (sections 5, 10, 14).
+**`assignment_v2` is the OSS assignment engine** and is untouched — not disabled, not degraded. No
+dead advanced-assignment UI and no missing constant remain (sections 5, 10, 14).
+
+**Production result: `assignment_policies` with `assignment_order <> 0` = 0** (section 16, check 3).
+
+An earlier version of this section argued that *"the column default is `round_robin`, so no row can
+hold a value the enum cannot name"*. **That reasoning was wrong and has been struck.** A column
+default only governs rows where no value was supplied; it says nothing about a row written while the
+overlay was installed with `balanced` explicitly set. Chatwoot Enterprise added `balanced: 1`
+(`enterprise/app/models/enterprise/concerns/assignment_policy.rb:5` at `65e57b6f`), and an
+`assignment_policies` row is not gated by the feature flag — a policy created while
+`advanced_assignment` was on survives the flag being turned off. So such a row was entirely possible
+and the gate was right to exist.
+
+Had one existed, the consequence would have been **silent degradation rather than a crash**. What was
+measured: `AssignmentPolicy.type_for_attribute('assignment_order').deserialize(1)` returns `nil`, and
+assigning `1` raises `ArgumentError` — so the row reads its order back as nil and could not be
+re-saved as-is. What the consuming assignment code then does with a nil order was *not* traced, so
+the precise behaviour is unestablished; it is simply not a raise at read time. Production returned 0,
+so the question is moot.
 
 ## 10. Captain and AI — reported separately, as asked
 
@@ -412,9 +451,10 @@ known counterexamples are the two `components-next/captain/` files that survive:
 `CompanySelector`, rendered when the `companies` account feature is on, talking to the deleted
 `Api::V1::Accounts::CompaniesController`. The selector, its create dialog and the `companyId`
 plumbing are removed, and `COMPANY_NAME` falls through to the plain `additionalAttributes.companyName`
-input OSS already renders. **This is an external gate** (section 15): an account with `companies`
-enabled and `contacts.company_id` values set loses nothing at runtime, but those values become
-unreferenced.
+input OSS already renders. **This was an external gate, now answered** (section 16, check 5):
+**123 contacts** still carry a `company_id`. Nothing at runtime breaks, but those values are now
+unreferenced — and the id is still emitted to API clients where the `companies` feature is on, so the
+names behind them need backfilling from the 97 surviving `companies` rows before any cleanup.
 
 **Retained orphan inventory** — 8 generic upstream primitives that merely lost their last consumer.
 They are not Enterprise files, keeping them costs nothing, and deleting them would widen every future
@@ -449,8 +489,19 @@ removal. Nothing was objectively required for boot: production eager load and `r
 **Orphaned-table inventory for a future, optional cleanup phase.** Computed from a booted,
 eager-loaded production app: 110 tables, 86 mapped to a surviving ActiveRecord model, **24
 unmapped**. Every one has **zero inbound foreign keys from a live table**, so a future drop would not
-cascade. Row counts below are from the local throwaway database; **production counts are an external
-gate** (section 15).
+cascade.
+
+**Production row counts are now in** (section 16, check 6): of the 22 tables this removal orphaned,
+**21 hold 0 rows** and **`companies` holds 97**.
+
+> **`companies` must NOT be dropped.** Those 97 rows are the only remaining source of the company
+> names for the **123 contacts** that still carry a `company_id` (section 16, check 5). A cleanup
+> phase that drops `companies` before those names are backfilled destroys them irrecoverably. The
+> required order is: **backfill first, review, then consider cleanup.** No cleanup is authorized by
+> this phase, and none has been performed.
+
+The other 21 tables are empty, so a future cleanup phase would be dropping nothing but structure.
+That is still a separate, reviewed decision — this phase drops no table.
 
 | Table | Orphaned by | Table | Orphaned by |
 |:--|:--|:--|:--|
@@ -530,7 +581,7 @@ gone, not because a switch is off.
 | 2 | Tenant dashboard | PASS | `/app/accounts/1/dashboard` 200 |
 | 3 | Inbox / conversations | PASS | suite green; policies unchanged (§8) |
 | 4 | Conversation reporting events | NOT APPLICABLE | the route was enterprise-gated; capability absent, 404 |
-| 5 | Contacts | PASS | suite green; `CompanySelector` removed, free-text company name restored (§11) |
+| 5 | Contacts | PASS | suite green; `CompanySelector` removed, free-text company name restored (§11); 123 contacts hold a legacy `company_id` — backfill item, not a defect (§16 check 5) |
 | 6 | Contact import / bulk actions | PASS | suite green, OSS DataImport path untouched |
 | 7 | Labels / audiences | PASS | suite green |
 | 8 | Campaigns (WhatsApp) | PASS | full lifecycle probe, §6 |
@@ -548,14 +599,14 @@ gone, not because a switch is off.
 | 20 | Flow Builder | PASS | routes intact; `Flows::Audit` writes to `audits` (§7) |
 | 21 | Automations / macros | PASS | suite green; both are among the 11 audited models |
 | 22 | Custom roles / permissions | PASS | §8; paywall rewritten as a Lynomia plan notice |
-| 23 | **Audit logs** | PASS | reader relocated to `custom/`, 6 examples (§7) |
-| 24 | Advanced assignment | NOT APPLICABLE | 0 accounts enabled; `assignment_v2` intact (§9) |
+| 23 | **Audit logs** | PASS | reader relocated to `custom/`, 6 examples (§7); 0 accounts have the feature on, so the page is hidden in production exactly as before the removal (§16 check 4) |
+| 24 | Advanced assignment | NOT APPLICABLE | 0 accounts enabled; 0 policies with a non-`round_robin` order (§16 check 3); `assignment_v2` intact (§9) |
 | 25 | Captain / Copilot product | NOT APPLICABLE | removed with the overlay; 7 OSS Captain task services remain (§10) |
 | 26 | Captain task services (summary, rewrite, labels, reply, follow-up, CSAT) | PASS | live OSS callers (§10) |
 | 27 | Tenant OpenAI → `ruby_llm` | PASS | hook and `Llm::Config` intact, `ruby_llm` 1.15.0 (§10) |
 | 28 | SLA | NOT APPLICABLE | Enterprise feature, removed; `applied_slas` / `sla_policies` retained as orphan tables |
-| 29 | Voice / calls | NOT APPLICABLE | Enterprise feature, removed; all call routes 404 |
-| 30 | Companies | NOT APPLICABLE | Enterprise feature, removed; see the external gate below |
+| 29 | Voice / calls | NOT APPLICABLE | Enterprise feature, removed; all call routes 404; 0 Twilio channels with `voice_enabled` and 0 with `api_key_secret` (§16 checks 1, 8) |
+| 30 | Companies | NOT APPLICABLE | Enterprise feature, removed; 97 rows retained, **not to be dropped** before the backfill (§12, §16 check 6) |
 | 31 | SAML | NOT APPLICABLE | Enterprise feature, removed; `account_saml_settings` retained |
 | 32 | Chatwoot Cloud billing | NOT APPLICABLE | removed in the previous phase; Lynomia billing under `custom/` is intact |
 | 33 | Super Admin | PASS | `/super_admin/sign_in` 200; Administrate dashboards eager-load |
@@ -567,20 +618,160 @@ gone, not because a switch is off.
 | 39 | Production boot + eager load | PASS | §14 |
 | 40 | Audit history (4845 rows) | PASS | same table, same class, no migration (§7) |
 
-**External gates** — facts only production can answer, which the three supplied gates did not cover.
-None of these can break boot; each decides whether some rows are now unreferenced:
+**External gates — now run and satisfied.** These were the facts only production could answer, which
+the three pre-removal gates did not cover. **All eight have been run read-only against
+`chatwoot_production`; the results and the SQL for each are in section 16.**
 
-| Query | Why it matters |
+An earlier version of this section introduced them with *"None of these can break boot; each decides
+whether some rows are now unreferenced."* **The first clause is true but was read as reassurance it
+does not support, and the second was wrong for three of them. Both have been struck.** Nothing here
+breaks *boot* — the application starts and eager-loads with any of these values. But three of the
+eight would have broken a **live request path**, which was then measured rather than argued. For the
+two `Captain::Assistant` cases the HTTP 500 itself was measured; for the Twilio case the raise on the
+reachable code path was measured, and the 500 is the inference from that path being reached by a live
+endpoint:
+
+| Dangling value | Measured consequence |
 |:--|:--|
-| `SELECT count(*) FROM conversations WHERE ai_assignee_type = 'Captain::Assistant'` | polymorphic column; surviving code dereferences `ai_assignee` |
-| `SELECT count(*) FROM messages WHERE sender_type = 'Captain::Assistant'` | same; `app/models/message.rb` compares the **string**, so Ruby is safe, but `message.sender` on such a row would not resolve |
-| `SELECT count(*) FROM contacts WHERE company_id IS NOT NULL` | the removed `CompanySelector` wrote this |
-| `SELECT count(*) FROM assignment_policies WHERE assignment_order <> 0` | the enum now names only `round_robin` |
-| `SELECT count(*) FROM channel_twilio_sms WHERE voice_enabled = true` | the Twilio voice callbacks are gone |
-| `SELECT count(*) FROM accounts WHERE 'audit_logs' = ANY(...)` / feature check | confirms the restored reader is reachable for the accounts that had it |
-| Row counts for the 22 orphaned tables | sizes the optional cleanup phase |
+| `conversations.ai_assignee_type = 'Captain::Assistant'` | `conv.ai_assignee` → `NameError: uninitialized constant Captain::Assistant`; `GET /api/v1/accounts/:id/conversations` → **500**; `GET …/conversations/:id` → **500** |
+| `messages.sender_type = 'Captain::Assistant'` | `msg.sender` → the same `NameError`; `GET …/conversations/:id/messages` → **500**, and `GET …/conversations` → **500** for any conversation holding such a message |
+| `channel_twilio_sms.voice_enabled = true` | `Twilio::HealthService#phone_number_webhooks` → `NoMethodError: undefined method 'voice_call_webhook_url'`; reachable at `GET …/inboxes/:id/health`. With the flag false, no error |
 
-## 16. Test gate
+The specific error in the old wording: it said `app/models/message.rb` *"compares the string, so Ruby
+is safe."* The string comparisons at `message.rb:229` and `:376` are only two of the readers. The
+polymorphic **association** is dereferenced by the serializers and the conversation preloads, and
+that raises.
+
+**Production returned 0 for all three.** Section 16 has every count.
+
+## 16. Production data gates — all eight, run and recorded
+
+**Provenance.** The results below were **returned by the operator** against `chatwoot_production` and
+are recorded here as supplied. This phase did not connect to production and does not assert how the
+queries were executed — only what came back.
+
+The procedure specified for them was: each check as a bare `count(*)` inside
+`BEGIN; SET TRANSACTION READ ONLY; SET LOCAL search_path = public, pg_catalog; SET LOCAL statement_timeout; SET LOCAL lock_timeout; … COMMIT;`
+run through `psql -X -v ON_ERROR_STOP=1`, authenticating via `~/.pgpass` so no password reaches a
+command line, and `psql` rather than `rails runner` — because booting the application is not
+read-only: `lib/global_config_service.rb:12` is
+`InstallationConfig.where(name: config_key).first_or_create(…)`, a read-named API that INSERTs, and
+that is how a production-mode `rails runner` wrote 4 rows into `installation_configs` earlier in this
+work (section 17). A read-only transaction was separately verified to refuse `INSERT`, `UPDATE`,
+`DELETE` and `DROP TABLE`.
+
+By construction a `count(*)` returns an integer and nothing else, so no credential or row content can
+appear in the output of any of the eight.
+
+| # | Check | Result | Verdict |
+|:--|:--|:--|:--|
+| 1 | `channel_twilio_sms` with `voice_enabled = true` | **0** | **CLEAR** — blocker ruled out |
+| 2 | `messages` with `sender_type = 'Captain::Assistant'` | **0** | **CLEAR** — blocker ruled out |
+| 3 | `assignment_policies` with `assignment_order <> 0` | **0** | CLEAR (section 9) |
+| 4 | `accounts` with `audit_logs` enabled (`feature_flags & 134217728 = 134217728`) | **0** | Not a blocker — the restored reader is inert until the flag is enabled (section 7) |
+| 5 | `contacts` with `company_id IS NOT NULL` | **123** | Not a blocker — **backfill item**, carried forward |
+| 6 | Row counts for the 22 removal-orphaned tables | **`companies` = 97; the other 21 = 0** | Not a blocker — **`companies` must not be dropped** (section 12) |
+| 7 | `conversations` with `ai_assignee_type = 'Captain::Assistant'` | **0** | **CLEAR** — blocker ruled out |
+| 8 | `channel_twilio_sms` with `api_key_secret IS NOT NULL` | **0** | **CLEAR** — the encryption-compatibility finding below cannot bite |
+
+Checks 1–7 are the seven external gates of section 15. Check 8 was added after the removal, from the
+finding below, and is not one of the seven.
+
+The queries as specified, in the intended execution order:
+
+```sql
+-- 1
+SELECT count(*) AS twilio_voice_enabled           FROM channel_twilio_sms  WHERE voice_enabled = true;
+-- 2
+SELECT count(*) AS captain_sender_messages        FROM messages            WHERE sender_type = 'Captain::Assistant';
+-- 3
+SELECT count(*) AS non_round_robin_policies       FROM assignment_policies WHERE assignment_order <> 0;
+-- 4  134217728 = 2^27, the audit_logs flag_shih_tzu bit (config/features.yml via
+--    app/models/concerns/featurable.rb:19-25); matches the app's own generated predicate.
+SELECT count(*) AS accounts_with_audit_logs       FROM accounts            WHERE (feature_flags & 134217728) = 134217728;
+-- 5
+SELECT count(*) AS contacts_with_company          FROM contacts            WHERE company_id IS NOT NULL;
+-- 6  one UNION ALL over the 22 tables of section 12, so a single surprise cannot cost the other 21 counts
+SELECT 'companies' AS orphaned_table, count(*) AS rows FROM companies
+UNION ALL SELECT 'captain_assistants', count(*) FROM captain_assistants
+--   … abridged here: the full statement names all 22 tables listed in section 12 …
+ORDER BY rows DESC, orphaned_table;
+-- 7  no index on ai_assignee_type: EXPLAIN first, and never record a statement_timeout as a zero
+SELECT count(*) AS captain_ai_assignee_conversations FROM conversations    WHERE ai_assignee_type = 'Captain::Assistant';
+-- 8  count only; never SELECT the column itself
+SELECT count(*) AS twilio_rows_with_api_key_secret  FROM channel_twilio_sms WHERE api_key_secret IS NOT NULL;
+```
+
+A note on cost rather than on what was actually run: four of the eight predicates are unindexed
+(`channel_twilio_sms.voice_enabled`, `assignment_policies.assignment_order`, `accounts.feature_flags`
+and `conversations.ai_assignee_type`), but only check 7 sits on a large table, so it is the only one
+whose cost is unpredictable. Checks 2 and 5 are index-served
+(`index_messages_on_sender_type_and_sender_id`, `index_contacts_on_company_id`); the other three
+unindexed ones are on small tables. Check 7 was therefore specified to run after the cheap
+ones and behind `EXPLAIN`, with the standing instruction that a `statement_timeout` there must never
+be recorded as a zero. Check 8 is a count on the same small table as check 1, so its position after
+check 7 in the list costs nothing.
+
+### The three blockers, and why zero is durable
+
+Checks 1, 2 and 7 are the values that would have broken a live request path (section 15) — a measured
+500 for the two `Captain::Assistant` cases, a measured raise on a reachable path for the Twilio one.
+They came back zero, and that zero does not depend on luck — **no surviving code can write any of these values**:
+
+- `conversations.ai_assignee` has **two** writers that supply a value, and both supply an `AgentBot`:
+  `Conversations::AssignmentService#assign_ai_assignee`, whose only caller is
+  `assign_agent_bot` → `assign_ai_assignee(agent_bot)`; and `Conversation#324`,
+  `self.ai_assignee = inbox.agent_bot`. The remaining four assignments
+  (`conversations_controller.rb:182`, `assignment_service.rb:23`, `conversation.rb:185`, `:304`) are
+  `= nil`. So the column can only hold `AgentBot` or NULL.
+- `messages.sender_type`: there is no surviving writer that names any `Captain::` class.
+- `channel_twilio_sms.voice_enabled` has no surviving writer at all — no surviving controller permits
+  the parameter and no surviving service sets it. Before the removal it was writable because
+  `enterprise/app/controllers/enterprise/api/v1/accounts/inboxes_controller.rb:106` added
+  `:voice_enabled` to the permitted inbox-update attributes (and `:126` set it when creating a voice
+  channel). That controller went with the overlay.
+
+So these are not "zero today, unknown tomorrow". The classes are gone, the writers are gone, and the
+columns cannot reacquire the values through the application.
+
+One case check 7 could not see, for completeness: `ai_assignee` is polymorphic over the shared foreign
+key `assignee_agent_bot_id`, and the two applied backfills
+(`db/migrate/20260811000000`, `20260811000001`) set `ai_assignee_type = 'AgentBot'` for any row that
+had a bot id but no type. A conversation that had been Captain-assigned could therefore have been
+relabelled `AgentBot` over an id with no matching `agent_bots` row. The association is
+`optional: true` (`app/models/conversation.rb:117-121`), so such a row resolves to `nil` rather than
+raising, and the conversation shows no AI assignee. Neither backfill can write `'Captain::Assistant'`
+— each writes only `'AgentBot'` or `nil`.
+
+### Carried forward: the Companies backfill
+
+**123 contacts** hold a `company_id`; **`companies` holds 97 rows.** Nothing dereferences the column —
+there is no surviving `belongs_to :company` and no foreign key — so this breaks nothing at runtime.
+But the value is **still emitted to API clients** when an account has the `companies` feature on:
+`app/views/api/v1/models/_contact.json.jbuilder:9` and `app/models/contact.rb:163`. Clients receive
+an id they can no longer resolve.
+
+Those 97 rows are the only remaining source of the company names behind the 123 references. The
+order is **backfill, review, then consider cleanup** — never cleanup first. See the boxed rule in
+section 12.
+
+### Carried forward: Twilio `api_key_secret` encryption compatibility
+
+A separate finding, surfaced while preparing the gates, recorded here because check 8 settles it.
+`encrypts :api_key_secret if Chatwoot.encryption_configured?` existed only at
+`enterprise/app/models/enterprise/channel/twilio_sms.rb:7` (verified at `65e57b6f`); the surviving
+`app/models/channel/twilio_sms.rb:36` declares only `encrypts :auth_token`, while
+`app/services/twilio/media_download_service.rb:12` still reads
+`channel.api_key_secret.presence || channel.auth_token`. Any row written with that column populated
+while the overlay was installed **and** `Chatwoot.encryption_configured?` was true at that time would
+now be read back as **raw ciphertext**, failing Twilio media auth. Where encryption was not
+configured the column was stored in clear and still reads correctly.
+
+**Check 8 returned 0, so no such row exists and this is not a production blocker.** The code gap is
+real and remains: if `api_key_secret` is ever used again, the `encrypts` declaration must be restored
+under `custom/` first. Recorded as a Lynomia maintenance surface in section 20.
+
+## 17. Test gate
 
 Isolated environment: PostgreSQL database `chatwoot_test` (reset with `db:test:prepare`,
 `installation_configs` verified at 0 rows) and Redis logical database 2 (`FLUSHDB`), on a clean
@@ -638,7 +829,7 @@ in `spec/controllers/super_admin/accounts_controller_spec.rb`, `b2b3d695` rebase
 assertion onto the absence of the path rather than the presence of a `Custom::` override, and
 `0811f4c9` (previous phase) re-pointed 24 audit assertions at `Custom::AuditLog`.
 
-## 17. Rollback
+## 18. Rollback
 
 Rollback is a revert to the commit immediately before the first removal commit. No file needs
 reconstructing — every deleted file is in git history at that commit.
@@ -661,9 +852,15 @@ Nothing about the rollback touches the database: no migration was added and no s
 made, so `db/schema.rb` is identical at both SHAs and the same database serves either. **No
 production rollback action has been executed** — this records the procedure only.
 
-## 18. Verdict
+## 19. Verdict
 
-**ENTERPRISE REMOVAL PASS WITH EXTERNAL GATES**
+**ENTERPRISE REMOVAL PASS**
+
+Upgraded from *PASS WITH EXTERNAL GATES* once the eight production data gates were run. That qualifier
+rested on two things: the production queries, and the unanswered question of whether the restored
+audit log reader was reachable. **Both are now answered** (section 16). The queries returned zero for
+every value that could have broken a request path; the audit question returned 0 accounts, which
+settles it as a configuration follow-up rather than an open risk.
 
 `enterprise/` and `spec/enterprise/` are gone — 823 tracked files. The namespace does not load, the
 directory does not exist, `ChatwootApp.extensions` is `["custom"]`, and **no runtime path depends on
@@ -683,21 +880,35 @@ controller missing, Sidekiq with 12/12 cron classes resolving, the WhatsApp camp
 RuboCop 2706 files clean, the frontend suite at 472 files / 5100 tests / 0 failures, ESLint 0 errors,
 and `vite build` and `build:sdk` both exit 0.
 
-**Why "with external gates" and not a bare PASS.** Two things are outside what a repository phase can
-settle:
+**The external gates are closed.** All eight checks have been run read-only against
+`chatwoot_production` (section 16). The three that would have broken a live endpoint — dangling
+`Captain::Assistant` rows in `conversations.ai_assignee_type` and `messages.sender_type`, and
+`channel_twilio_sms.voice_enabled = true` — each returned **0**, and no surviving code can write any
+of those values, so the result is durable rather than incidental. `assignment_order <> 0` returned 0.
+The `api_key_secret` encryption-compatibility finding returned 0 and cannot bite.
 
-1. **Seven production queries** (section 15) decide whether any rows now point at a removed class or
-   capability. None can break boot — the polymorphic columns are compared as strings, and the removed
-   UI simply stops writing — but an operator should know the numbers before deploying, and before
-   deciding on the optional table cleanup.
-2. **The audit log reader** is restored from Lynomia's own tree and proved by spec and by HTTP, but
-   whether the `audit_logs` account feature is enabled for the production accounts that were using the
-   page is a production fact. If it is enabled, the page returns exactly as before; if it is not, the
-   page is correctly hidden. Either way no data was touched.
+**What an earlier version of this verdict got wrong.** It argued the gates could not break anything,
+on reasoning about string comparison that was incorrect. The correction and the measurements are in
+section 15. The conclusion is unchanged only because production returned zero for all three values;
+had any been non-zero, this phase would have been blocked.
 
-Neither is a defect in the removal. Both are facts to collect before the deploy phase.
+**Two follow-ups carry forward. Neither is an Enterprise-removal defect, and neither blocks the
+removal:**
 
-## 19. Upgradeability, and what Lynomia now maintains
+1. **Companies backfill.** 123 contacts hold a `company_id`; `companies` holds 97 rows. Nothing
+   dereferences the column, but the id is still emitted to API clients when an account has the
+   `companies` feature on. Those 97 rows are the only source of the names behind the 123 references,
+   so **`companies` must not be dropped before a reviewed backfill and cleanup phase** (sections 12
+   and 16). No cleanup is authorized by this phase and none has been performed.
+2. **Audit log entitlement.** 0 accounts have the `audit_logs` feature enabled, so the reader
+   restored in section 7 is inert in production. This is not a regression — the same flag gated the
+   page before the removal — but the repair cannot be observed until an administrator enables the
+   feature for the accounts that should see Settings → Audit Logs. A configuration decision.
+
+Both are product decisions about Lynomia's own features, not residue of the overlay. `enterprise/`
+is gone and nothing in the running system depends on it.
+
+## 20. Upgradeability, and what Lynomia now maintains
 
 **What gets easier.** Chatwoot upstream ships `app/` and `enterprise/` as separate trees. With the
 overlay gone, an upstream merge no longer has to reconcile `enterprise/` at all — 823 files of merge
@@ -713,6 +924,15 @@ maintenance surfaces**, and each needs a deliberate decision at every upstream m
 | **WhatsApp campaign recipient behaviour** | `Custom::Whatsapp::IncomingMessageBaseService`, `campaign_recipients`, `UpdateRecipientStatusJob` | upstream reworking `process_statuses` changes what the `Custom::` prepend wraps |
 | **Audit behaviour** | `Custom::AuditLog`, the 11 mirrored `audited` declarations, the relocated reader and its view | upstream adding an `audited` model means mirroring it; upstream changing the audit payload means updating the jbuilder |
 | **Permissions / custom roles** | `CustomRole`, `Custom::AccountUser#permissions` | upstream adding a permission constant needs merging into `CustomRole::PERMISSIONS` |
+
+**One known code gap, dormant rather than closed.** `encrypts :api_key_secret` lived only in the
+overlay (`enterprise/app/models/enterprise/channel/twilio_sms.rb:7` at `65e57b6f`); the surviving
+`app/models/channel/twilio_sms.rb:36` encrypts `auth_token` only, while
+`app/services/twilio/media_download_service.rb:12` still reads `api_key_secret`. Production holds no
+such row (section 16, check 8), so nothing is broken now — but **before `api_key_secret` is used
+again, the `encrypts` declaration must be restored under `custom/`** — and restored *before* anything
+writes to the column, so the first stored value and every later one are handled the same way. Check 8
+found no existing values, so there is nothing to reconcile today.
 
 Two further standing items:
 

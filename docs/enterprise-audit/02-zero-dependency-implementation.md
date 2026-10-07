@@ -512,32 +512,67 @@ its own PostgreSQL database and its own Redis logical database. The first attemp
 had both runs sharing one Redis namespace and was discarded as contaminated — the numbers below are
 from the isolated re-run.
 
-**This comparison is still running at the time of writing** and will be filled in when both runs
-land. Interim state, roughly four minutes in: both at 245 examples, **0 failures**, tracking each
-other almost exactly. Each is pinned at ~87% of a core, so the pair is CPU-bound rather than stalled;
-the first solo run of this suite in this container did 8,585 examples in 37m22s, and two concurrent
-runs are costing more than 2x that, so expect a long tail.
+```
+with    enterprise/ :  8648 examples, 0 failures, 70 pending   in 40m29s
+without enterprise/ :  8638 examples, 19 failures, 73 pending   in 39m33s
+```
 
-Nothing in sections 1-8 or 10-11 depends on this result. Each of those conclusions rests on its own
-measurement -- the worktree probes in 9.1-9.5, the per-workstream spec runs quoted in sections 3-8,
-and the route counts in section 7 -- and the verdict in section 11 is set by a blocker that no suite
-result can clear.
+**With `enterprise/` installed the suite is completely clean: 0 failures.** That is the first thing
+worth stating, because it means none of the seven commits in this phase breaks anything in the
+composition the application boots with today.
 
-What this comparison is for is the one thing the per-workstream runs cannot show: whether removal
-breaks something nobody thought to check. The three categories will be separated the same way the
-audit separated them, and reported whole:
+The 19 failures without it are **not** the removal delta. Every failing file was re-run in a fresh
+worktree at the final commit, with `installation_configs` truncated first:
 
-| Category | How it is identified |
-|:--|:--|
-| baseline failure | fails in **both** runs -- same commit, same spec, enterprise present or not. Not caused by removal |
-| environment / test-database failure | a baseline failure traceable to this container rather than the code. The previous phase found 21 of these: leftover `installation_configs` rows and a globally exported `FRONTEND_URL`. Both are fixed in this harness (`noee_test_env.sh` no longer exports `FRONTEND_URL`; the table is truncated), so this category is expected to be empty or near it |
-| **removal delta** | fails **only** without `enterprise/`. This is the number that matters |
+```
+85 examples, 1 failure
+```
 
-For the record, the per-workstream runs already quoted above cover the capabilities the gate is meant
-to protect, and all passed: 26 examples across the campaign model, job, analytics controller, send
-path and shared audiences; 9 for audit ownership; 66 across the Commerce policy, the custom role, both
-controllers and the order-actions service; 25 for tenant Help Center authorization; 11 vitest examples
-for the billing frontend.
+| Category | Count | What they are |
+|:--|--:|:--|
+| baseline failure | **0** | nothing fails in both runs |
+| environment / test database | **17** | leftover `installation_configs` rows in `chatwoot_test` |
+| test correction, found by this gate | **1** | the onboarding example; fixed in `ffd15dc5` |
+| **removal delta** | **1** | the known blocker |
+
+**The 17 environment failures.** `spec/lib/config_loader_spec.rb` asserts
+`InstallationConfig.count == 0` and found 4; `spec/lib/global_config_service_spec.rb` found a
+persisted `ENABLE_ACCOUNT_SIGNUP = "false"` row, which is also why five
+`POST /api/v1/accounts` and five `POST /api/v2/accounts` examples saw 404 instead of success, and why
+three `omniauth_callbacks` examples redirected to `no-account-found`; the two `vapid_service`
+examples expect an `InstallationConfig.find_by` the leftover rows short-circuit. They are an artefact
+of the comparison, not of the code: the with-enterprise run used a freshly created database and the
+without-enterprise run reused `chatwoot_test`, which had re-accumulated those four rows across the
+per-workstream runs of this phase. Truncating the table and re-running the same six files without
+`enterprise/` gives 0 failures. Reported rather than filtered, because a 19 silently presented as a
+1 is not checkable.
+
+**The one test correction this gate found**, which no earlier sweep could have:
+`spec/requests/custom/tenant_help_center_removal_spec.rb` stubbed
+`Onboarding::HelpCenterCreationService` — an Enterprise constant — so without the overlay there was
+nothing to stub and the example raised `NameError`. It now asserts the invariant at its cause
+(`Custom::Api::V1::Accounts::OnboardingsController#create_help_center` returning nil in the
+controller's ancestor chain) rather than at Chatwoot's service, so it holds either way. Fixed in
+`ffd15dc5`; 25 examples pass.
+
+**The removal delta is exactly one example**, and it is the blocker in section 11:
+
+```
+Custom::Whatsapp::IncomingMessageBaseService
+  defers a campaign status when neither a recipient nor a message is persisted yet
+    expected to enqueue exactly 1 jobs … but enqueued 0
+```
+
+Enqueued **0** without `enterprise/`, because the status path still lives there. Note the symmetry
+with the reason it cannot simply be moved: with both copies present the same example enqueues **2**.
+That one example is the whole remaining gap, and it is the capability this phase was told not to
+regress.
+
+For the record, the per-workstream runs quoted above cover the capabilities the gate protects, and
+all passed: 26 examples across the campaign model, job, analytics controller, send path and shared
+audiences; 9 for audit ownership; 66 across the Commerce policy, the custom role, both controllers
+and the order-actions service; 25 for tenant Help Center authorization; 11 vitest examples for the
+billing frontend.
 
 ---
 
@@ -642,6 +677,9 @@ If `enterprise/` were deleted today, campaign recipients would still be created 
 and the analytics page would still load — but no recipient would ever progress to `delivered`, `read`
 or `failed`. Partial reporting that looks like working reporting is worse than none, so this is a
 blocker rather than a caveat.
+
+It is also, measurably, **the only** thing left: the full suite without `enterprise/` fails exactly
+one example, and this is it (section 9.6).
 
 **Why it is not done.** The fix is four lines of `Custom::` overlay, written and verified, then
 reverted. Adding it while the Enterprise copy is present puts both in the ancestor chain: Custom runs,

@@ -1,6 +1,8 @@
 import accountAPI from '../account';
 import ApiClient from '../../ApiClient';
 
+// Only Captain's usage quota is left here; Lynomia bills through its own API, so the cloud billing and
+// account self-deletion endpoints are gone.
 describe('#enterpriseAccountAPI', () => {
   it('creates correct instance', () => {
     expect(accountAPI).toBeInstanceOf(ApiClient);
@@ -9,11 +11,11 @@ describe('#enterpriseAccountAPI', () => {
     expect(accountAPI).toHaveProperty('create');
     expect(accountAPI).toHaveProperty('update');
     expect(accountAPI).toHaveProperty('delete');
-    expect(accountAPI).toHaveProperty('checkout');
-    expect(accountAPI).toHaveProperty('billingSummary');
-    expect(accountAPI).toHaveProperty('toggleDeletion');
-    expect(accountAPI).toHaveProperty('createTopupCheckout');
     expect(accountAPI).toHaveProperty('getLimits');
+    expect(accountAPI).not.toHaveProperty('checkout');
+    expect(accountAPI).not.toHaveProperty('billingSummary');
+    expect(accountAPI).not.toHaveProperty('toggleDeletion');
+    expect(accountAPI).not.toHaveProperty('createTopupCheckout');
   });
 
   describe('API calls', () => {
@@ -31,63 +33,6 @@ describe('#enterpriseAccountAPI', () => {
 
     afterEach(() => {
       window.axios = originalAxios;
-    });
-
-    it('#checkout', () => {
-      accountAPI.checkout();
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        '/enterprise/api/v1/checkout'
-      );
-    });
-
-    it('#subscription', () => {
-      accountAPI.subscription();
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        '/enterprise/api/v1/subscription'
-      );
-    });
-
-    it('#billingSummary', () => {
-      accountAPI.billingSummary({ refresh: true });
-      expect(axiosMock.get).toHaveBeenCalledWith(
-        '/enterprise/api/v1/billing_summary',
-        { params: { refresh: true } }
-      );
-    });
-
-    it('#toggleDeletion with delete action', () => {
-      accountAPI.toggleDeletion('delete');
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        '/enterprise/api/v1/toggle_deletion',
-        { action_type: 'delete' }
-      );
-    });
-
-    it('#toggleDeletion with undelete action', () => {
-      accountAPI.toggleDeletion('undelete');
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        '/enterprise/api/v1/toggle_deletion',
-        { action_type: 'undelete' }
-      );
-    });
-
-    it('#createTopupCheckout with credits', () => {
-      accountAPI.createTopupCheckout(1000);
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        '/enterprise/api/v1/topup_checkout',
-        { credits: 1000 }
-      );
-    });
-
-    it('#createTopupCheckout with different credit amounts', () => {
-      const creditAmounts = [1000, 2500, 6000, 12000];
-      creditAmounts.forEach(credits => {
-        accountAPI.createTopupCheckout(credits);
-        expect(axiosMock.post).toHaveBeenCalledWith(
-          '/enterprise/api/v1/topup_checkout',
-          { credits }
-        );
-      });
     });
 
     it('#getLimits', () => {

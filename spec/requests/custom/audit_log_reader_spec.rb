@@ -67,6 +67,32 @@ RSpec.describe 'Lynomia audit log reader', type: :request do
     expect(response).to have_http_status(:success)
   end
 
+  # The Access family: rows the relocated session writer inserts with insert_all! must come back
+  # through the relocated reader, under the same `types: ['User']` filter the UI's ACCESS group sends
+  # (app/javascript/dashboard/helper/auditlogHelper.js EVENT_TYPE_GROUPS).
+  it 'returns the sign-in and sign-out rows the session writer inserts' do
+    Custom::AuditLog.insert_all!( # rubocop:disable Rails/SkipsModelValidations
+      [
+        { auditable_id: admin.id, auditable_type: 'User', user_id: admin.id, user_type: 'User',
+          username: admin.email, action: 'sign_in', associated_id: account.id, associated_type: 'Account',
+          version: 1, request_uuid: SecureRandom.uuid, remote_address: '203.0.113.42', created_at: Time.zone.now },
+        { auditable_id: admin.id, auditable_type: 'User', user_id: admin.id, user_type: 'User',
+          username: admin.email, action: 'sign_out', associated_id: account.id, associated_type: 'Account',
+          version: 2, request_uuid: SecureRandom.uuid, remote_address: '203.0.113.42', created_at: Time.zone.now }
+      ]
+    )
+
+    get "/api/v1/accounts/#{account.id}/audit_logs", params: { types: ['User'] },
+                                                     headers: admin.create_new_auth_token, as: :json
+
+    expect(response).to have_http_status(:success)
+    rows = response.parsed_body['audit_logs'].select { |r| r['auditable_type'] == 'User' }
+    expect(rows.map { |r| r['action'] }).to contain_exactly('sign_in', 'sign_out')
+    expect(rows.map { |r| r['username'] }.uniq).to eq([admin.email])
+    # masked, because the account does not have audit_log_ip_address
+    expect(rows.map { |r| r['remote_address'] }.uniq).to eq(['203.0.113.x'])
+  end
+
   it 'masks the address unless the account has audit_log_ip_address' do
     row = Custom::AuditLog.new(remote_address: '203.0.113.42')
     expect(row.masked_remote_address).to eq('203.0.113.x')

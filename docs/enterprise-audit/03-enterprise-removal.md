@@ -319,36 +319,67 @@ controller is the one under `custom/`, the audit class, the absence of `Enterpri
 administrator-allowed / agent-denied pair, the empty result when the feature is off, each filter, and
 the IPv4 and IPv6 masking. The page's own 34 frontend tests pass unchanged.
 
-### OPEN DEFECT: the Access family is no longer recorded
+### The Access family: a second relocation, found late and now closed
 
-**The claim above that "Lynomia owns the entire write side; only the *reader* was Chatwoot Enterprise"
-is false, and it is this report's error.** One writer was Enterprise and was not relocated.
+**The sentence above — "Lynomia owns the entire write side. Only the *reader* was Chatwoot
+Enterprise" — was wrong when written.** It is kept, struck here rather than quietly edited, because
+the sequence matters: the reader was relocated first, and only a later adversarial review of that
+relocation found that a *writer* had gone with the overlay too.
 
-`Enterprise::DeviseOverrides::SessionsController` wrote the **sign-in and sign-out** audit rows by
-hand — `create_audit_event('sign_in')` from `render_create_success`, `create_audit_event('sign_out')`
-from `destroy`, both inserting into `audits` via `Enterprise::AuditLog.insert_all!`. It was deleted
-with the overlay. The OSS controller it prepended onto survives
-(`app/controllers/devise_overrides/sessions_controller.rb:27` still defines `render_create_success`),
-but **no surviving code writes a sign-in or sign-out audit row** — verified by grepping every
-`insert_all`, `Audited::Audit.create` and `*AuditLog.create*` call in `app/`, `custom/` and `lib/`.
-`Enterprise::Audit::User` was also not mirrored, though its own attribute auditing was deliberately
-inert (`unless: proc { |_u| true }`), so the loss there is the class registration, not attributes.
+**What was missing.** `Enterprise::DeviseOverrides::SessionsController` wrote the **sign-in and
+sign-out** rows by hand — `create_audit_event('sign_in')` from `render_create_success`,
+`create_audit_event('sign_out')` from `destroy`, both inserting into `audits` via
+`Enterprise::AuditLog.insert_all!`. `User` is deliberately not attribute-audited (its Enterprise
+`audited` declaration carried `unless: proc { |_u| true }`, whose only job was to register the class),
+so those two events existed **only** in that controller. It went with the overlay, the OSS controller
+it prepended onto survived, and for the interval between the removal and this fix **no code wrote a
+sign-in or sign-out audit row** — confirmed by grepping every `insert_all`, `Audited::Audit.create`
+and `*AuditLog.create*` call in `app/`, `custom/` and `lib/`.
 
-**Product consequence.** Lynomia's own documentation
+Lynomia's own documentation
 (`custom/db/documentation/{en,ar}/administration/audit-logs.md`) describes the audit log as a record of
-"configuration changes **and sign-ins**", and lists **Access — sign-in and sign-out** as one of four
-event families. That family stops being recorded. The other three families are intact: all eleven
-mirrored `audited` declarations cover them, including agent availability, which is audited on
-`AccountUser` with a declaration identical to the Enterprise one.
+"configuration changes **and sign-ins**" and lists **Access — sign-in and sign-out** as one of four
+event families, so the gap was 2 of its 14 documented events.
 
-**Scope: 2 of the 14 documented events.** Not boot-affecting, not an error at runtime — rows simply
-stop being written.
+**Why it was missed.** The mirroring exercise compared `audited` *declarations* — eleven of them — and
+never looked for *manual* audit writers. The other three families were never affected: the eleven
+declarations cover them, agent availability included, which is audited on `AccountUser` with a
+declaration identical to the Enterprise one.
 
-This is the same class of regression as the reader loss repaired above, and it was missed for the
-same reason in reverse: the mirroring exercise checked `audited` *declarations* and never looked for
-*manual* audit writers. It is recorded here rather than fixed because fixing it is a feature
-restoration, not a documentation correction, and this phase was scoped to documentation. Section 19
-reflects it in the verdict.
+**Relocated, not restored.** `custom/app/controllers/custom/devise_overrides/sessions_controller.rb`
+is a `Custom::` module prepended through the OSS controller's own
+`prepend_mod_with('DeviseOverrides::SessionsController')` hook. It reproduces the Enterprise writer
+field for field: the same `audits` table through `Custom::AuditLog`, the same `insert_all!` (so no
+model callback fires and `username` is written explicitly), one row per account the user belongs to,
+versions continuing that user's own sequence via the `audited` gem's `auditable_finder` scope, one
+shared `request_uuid` and `created_at` per request, and `remote_address` as the `Audited::Sweeper`
+captured it. No Enterprise namespace, no second audit system, no migration, no new table.
+
+Two deliberate differences, neither of them a change to the rows:
+
+- **No IP-geolocation enqueue.** The Enterprise writer queued
+  `Enterprise::AuditLogSessionIpLookupJob` to resolve `remote_address` into a city and country. That
+  job needed the `ip_lookup` feature (`config/features.yml`, `enabled: false`) and died with the
+  overlay. `remote_address` is still recorded; `city`, `country` and `country_code` stay null — the
+  same decision `Custom::AuditLog` already documents for the reader.
+- **The helpers are private.** The Enterprise module left them public, which on a prepended
+  controller makes them candidate actions. Nothing calls them from outside.
+
+The SAML guard that shared the Enterprise module is **not** relocated: SAML left with the overlay.
+
+**Historical rows were not touched.** The fix only adds new rows going forward; no existing `audits`
+row was read, updated or deleted, and no migration was written.
+
+`spec/controllers/custom/devise_overrides/sessions_controller_spec.rb` (10 examples) pins the
+behaviour: **8 of its 10 examples failed before the fix and all 10 pass after.** It covers one
+`sign_in` row on success with every column asserted, one `sign_out` row, nothing on failed
+authentication, nothing for a user belonging to no account, one row per account with versions in
+order sharing a `request_uuid` and timestamp, version continuation across repeated sign-ins,
+`remote_address` matching what the sweeper captured, geolocation left null, that the writer's owner is
+`Custom::DeviseOverrides::SessionsController` with no Enterprise module in the ancestor chain, and
+that one sign-in produces exactly one row. `spec/requests/custom/audit_log_reader_spec.rb` gained an
+example proving the inserted rows come back through the relocated reader under the same
+`types: ['User']` filter the UI's ACCESS group sends.
 
 **Production result: accounts with the `audit_logs` feature enabled = 0** (section 16, check 4).
 
@@ -900,34 +931,22 @@ production rollback action has been executed** — this records the procedure on
 
 ## 19. Verdict
 
-**ENTERPRISE REMOVAL PASS WITH ONE OPEN REGRESSION**
+**ENTERPRISE REMOVAL PASS**
 
-The *EXTERNAL GATES* qualifier is discharged: it rested on the production queries and on whether the
-restored audit log reader was reachable, and **both are now answered** (section 16). The queries
-returned zero for every value that could have broken a request path; the audit entitlement returned 0
-accounts, a configuration follow-up rather than an open risk.
+Both qualifiers are discharged.
 
-**But this is not a clean PASS, because a defect found while reviewing this very correction is still
-open.** The removal deleted the sign-in/sign-out audit writer without a `Custom::` replacement, so the
-**Access family of Lynomia's documented audit log — 2 of its 14 events — silently stopped being
-recorded** (section 7). It breaks nothing at runtime and no data is lost; rows simply stop being
-written, and Lynomia's own documentation still promises them.
+The *EXTERNAL GATES* qualifier rested on the production queries and on whether the restored audit log
+reader was reachable; **both are answered** (section 16). The queries returned zero for every value
+that could have broken a request path, and the audit entitlement returned 0 accounts — a
+configuration follow-up, not an open risk.
 
-This verdict deliberately departs from the three-verdict vocabulary the phase brief set
-(*PASS / PASS WITH EXTERNAL GATES / FAILED*). **FAILED** overstates it: `enterprise/` is gone, the
-namespace does not load, every gate and every suite is green, and the production data is clear.
-**PASS** understates it: a removal that silently drops a documented capability is not clean. The
-honest position is PASS on everything the phase set out to verify, with one bounded regression owed a
-decision:
-
-- **Restore it** — re-create the sign-in/sign-out audit writer under `custom/`, as the reader was
-  relocated in section 7. Small and bounded: one controller concern writing the same rows to the same
-  table through `Custom::AuditLog`.
-- **Or accept the loss** — and amend `custom/db/documentation/{en,ar}/administration/audit-logs.md` so
-  the product stops promising a record it no longer keeps.
-
-Either closes it. Neither is done here, because both are changes this documentation phase was not
-scoped to make.
+The *OPEN REGRESSION* qualifier rested on the sign-in/sign-out audit writer that went with the
+overlay. **It has been relocated to Lynomia's own code** (section 7):
+`custom/app/controllers/custom/devise_overrides/sessions_controller.rb`, prepended through the OSS
+controller's own hook, writing the same rows to the same `audits` table through `Custom::AuditLog`.
+The Access family is recorded again, there is exactly one session audit writer in the tree, the rows
+read back through the relocated reader, and no historical row was modified. Pinned by 10 examples that
+failed 8/10 before the fix and pass 10/10 after.
 
 `enterprise/` and `spec/enterprise/` are gone — 823 tracked files. The namespace does not load, the
 directory does not exist, `ChatwootApp.extensions` is `["custom"]`, and **no runtime path depends on
@@ -991,8 +1010,14 @@ maintenance surfaces**, and each needs a deliberate decision at every upstream m
 | Surface | Lynomia owner | What an upstream change could do |
 |:--|:--|:--|
 | **WhatsApp campaign recipient behaviour** | `Custom::Whatsapp::IncomingMessageBaseService`, `campaign_recipients`, `UpdateRecipientStatusJob` | upstream reworking `process_statuses` changes what the `Custom::` prepend wraps |
-| **Audit behaviour** | `Custom::AuditLog`, the 11 mirrored `audited` declarations, the relocated reader and its view | upstream adding an `audited` model means mirroring it; upstream changing the audit payload means updating the jbuilder |
+| **Audit behaviour** | `Custom::AuditLog`, the 11 mirrored `audited` declarations, the relocated reader and its view, and the relocated sign-in/sign-out writer in `custom/app/controllers/custom/devise_overrides/sessions_controller.rb` | upstream adding an `audited` model means mirroring it; upstream changing the audit payload means updating the jbuilder; upstream reworking `DeviseOverrides::SessionsController#render_create_success` or `#destroy` changes what the session writer's prepend wraps |
 | **Permissions / custom roles** | `CustomRole`, `Custom::AccountUser#permissions` | upstream adding a permission constant needs merging into `CustomRole::PERMISSIONS` |
+
+**A lesson this phase paid for twice.** Both audit regressions — the reader, then the writer — were
+missed by the same method: comparing `audited` *declarations* between the two trees. Declarations are
+not the whole audit surface. When checking audit coverage against an upstream change, grep for manual
+writers too (`insert_all`, `Audited::Audit.create`, `*AuditLog.create*`) and for controllers that
+prepend onto an authentication or session action.
 
 **One known code gap, dormant rather than closed.** `encrypts :api_key_secret` lived only in the
 overlay (`enterprise/app/models/enterprise/channel/twilio_sms.rb:7` at `65e57b6f`); the surviving

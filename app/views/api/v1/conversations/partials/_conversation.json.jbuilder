@@ -72,4 +72,3 @@ json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
 sla_applicable = conversation.account.feature_enabled?('sla')
 json.sla_policy_id sla_applicable ? conversation.sla_policy_id : nil
-

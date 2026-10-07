@@ -13,9 +13,10 @@
 # module rather than edits to upstream policies and routes -- so the Help Center engine keeps merging cleanly from
 # upstream.
 #
-# A custom role with every permission still cannot author: these refusals are unconditional, so they hold both
-# while Enterprise::PortalPolicy's `knowledge_base_manage` grant is installed (Custom:: prepends after it) and
-# after it is gone, with Lynomia's own CustomRole still granting that permission.
+# A custom role with every permission still cannot author: the refusals are unconditional. They were written to hold
+# both while Chatwoot Enterprise's PortalPolicy granted `knowledge_base_manage` (Custom:: prepends after it) and
+# after that overlay was removed, which it now has -- Custom::PortalPolicy prepends onto the OSS PortalPolicy, and
+# Lynomia's own CustomRole still offers the permission.
 #
 # The Super Admin side is untouched: custom/app/controllers/super_admin/{portals,categories,articles}_controller.rb
 # is Administrate, authorizes through the super admin session, and never consults this policy. Neither does the

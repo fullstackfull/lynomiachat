@@ -14,7 +14,7 @@ RSpec.describe 'Custom Roles API', type: :request do
         get "/api/v1/accounts/#{account.id}/custom_roles",
             headers: administrator.create_new_auth_token
         expect(response).to have_http_status(:success)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
 
         expect(body[0]).to include('name' => custom_role.name)
       end
@@ -45,7 +45,7 @@ RSpec.describe 'Custom Roles API', type: :request do
             headers: administrator.create_new_auth_token
 
         expect(response).to have_http_status(:success)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
 
         expect(body).to include('name' => custom_role.name)
       end
@@ -84,7 +84,7 @@ RSpec.describe 'Custom Roles API', type: :request do
         end.to change(CustomRole, :count).by(1)
 
         expect(response).to have_http_status(:success)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
 
         expect(body).to include('name' => 'Support')
       end
@@ -120,7 +120,7 @@ RSpec.describe 'Custom Roles API', type: :request do
             headers: administrator.create_new_auth_token
 
         expect(response).to have_http_status(:success)
-        body = JSON.parse(response.body)
+        body = response.parsed_body
 
         expect(body).to include('name' => 'Updated Role')
       end

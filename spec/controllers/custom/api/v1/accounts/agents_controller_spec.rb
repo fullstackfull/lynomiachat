@@ -17,7 +17,7 @@ RSpec.describe 'Agents API with a custom role', type: :request do
         expect(response).to have_http_status(:success)
         agent = account.agents.last
         expect(agent.account_users.first.custom_role_id).to eq(custom_role.id)
-        expect(JSON.parse(response.body)['custom_role_id']).to eq(custom_role.id)
+        expect(response.parsed_body['custom_role_id']).to eq(custom_role.id)
       end
     end
   end
@@ -34,7 +34,7 @@ RSpec.describe 'Agents API with a custom role', type: :request do
 
         expect(response).to have_http_status(:success)
         expect(other_agent.account_users.first.reload.custom_role_id).to eq(custom_role.id)
-        expect(JSON.parse(response.body)['custom_role_id']).to eq(custom_role.id)
+        expect(response.parsed_body['custom_role_id']).to eq(custom_role.id)
       end
     end
 

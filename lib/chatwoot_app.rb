@@ -37,14 +37,16 @@ module ChatwootApp
     ENV.fetch('HELPCENTER_URL', nil) || ENV.fetch('FRONTEND_URL', nil)
   end
 
+  # Derived from what is actually on disk, in injection order: an extension listed here is asked for at every
+  # prepend_mod_with / include_mod_with site, so listing one that is absent made every site rely on
+  # const_get_maybe_false returning false (config/initializers/01_inject_enterprise_edition_module.rb:78).
+  # Order matters and is preserved: `custom` is applied last, so Custom:: sits ahead of Enterprise:: in the
+  # ancestor chain and a `super` from Custom:: reaches Enterprise:: while it is installed.
   def self.extensions
-    if custom?
-      %w[enterprise custom]
-    elsif enterprise?
-      %w[enterprise]
-    else
-      %w[]
-    end
+    extensions = []
+    extensions << 'enterprise' if enterprise?
+    extensions << 'custom' if custom?
+    extensions
   end
 
   def self.advanced_search_allowed?

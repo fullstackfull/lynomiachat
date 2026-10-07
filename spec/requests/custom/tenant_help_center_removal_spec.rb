@@ -7,7 +7,8 @@ require 'rails_helper'
 # at the policy, not by hiding navigation, so the API is closed too.
 #
 # Every principal a tenant can be is checked: an administrator, an agent, and a custom role holding EVERY
-# permission including knowledge_base_manage, which Enterprise::{Portal,Article}Policy would otherwise accept.
+# permission including knowledge_base_manage, which Chatwoot's policies grant on. The custom role is Lynomia's
+# own (custom/app/models/custom_role.rb), so this arm keeps working with or without the Enterprise overlay.
 RSpec.describe 'Tenant Help Center removal', type: :request do
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
@@ -20,6 +21,16 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
   before do
     role = CustomRole.create!(account: account, name: 'everything', permissions: CustomRole::PERMISSIONS)
     account.account_users.find_by(user: power_user).update!(custom_role: role)
+  end
+
+  # ssl_status used to be checked alongside the other portal member actions. Its only implementation was
+  # Enterprise::Api::V1::Accounts::PortalsController#ssl_status (Cloudflare custom domains, which Lynomia does not
+  # ship), so the route declaration was removed when the route tree was prepared for Enterprise removal. The
+  # surface is closed harder than before -- there is nothing to authorize -- and Custom::PortalPolicy#ssl_status?
+  # still refuses, so a restored route would still be denied. Both halves are asserted below.
+  it 'offers tenants no portal ssl_status endpoint, and would refuse one' do
+    expect(Rails.application.routes.routes.map { |route| route.defaults[:action] }).not_to include('ssl_status')
+    expect(Custom::PortalPolicy.instance_method(:ssl_status?).bind_call(PortalPolicy.allocate)).to be(false)
   end
 
   # 401 is what Chatwoot's Pundit rescue renders for a denied policy, so that is the contract being asserted.
@@ -41,12 +52,11 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
         expect_refused(:delete, "#{base}/#{portal.slug}", user)
       end
 
-      it 'cannot manage a portal logo, instructions, archive or ssl' do
+      it 'cannot manage a portal logo, instructions or archive' do
         base = "/api/v1/accounts/#{account.id}/portals/#{portal.slug}"
         expect_refused(:delete, "#{base}/logo", user)
         expect_refused(:post, "#{base}/send_instructions", user)
         expect_refused(:patch, "#{base}/archive", user)
-        expect_refused(:get, "#{base}/ssl_status", user)
       end
 
       it 'cannot list, create, update, delete or reorder articles' do

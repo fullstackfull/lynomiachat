@@ -167,7 +167,7 @@ document: every one was re-established here, and the stale rows in `docs/p7/13-r
 | 15 | **Audiences** | `PASS` | `spec/controllers/api/v1/accounts/contacts/audiences_spec.rb`, `spec/controllers/api/v1/accounts/custom_filters_shared_spec.rb`, `spec/models/custom_filter_spec.rb`, `spec/services/automation_rules/conditions_filter_service_audience_spec.rb`; show/update/destroy isolation and the agent's refusal to **share** are both in `spec/requests/custom/cross_account_isolation_spec.rb` |
 | 16 | **Automations** | `PASS` | `spec/services/automation_rules/` (the rule engine, conditions filter and action service), plus the Lynomia action itself: `spec/services/custom/automation_rules/template_action_spec.rb`, `spec/models/custom/automation_rule_template_action_spec.rb`. The `send_whatsapp_template` action's first real send shares row 8's gate |
 | 17 | **Flow Builder** | `PASS` | `spec/services/flows/` — runner, runner security, graph validator, versions, and the `send_template`, `choice`, `commerce_lookup`, `set_attribute_labels_assignment` nodes; `spec/controllers/api/v1/accounts/flows_controller_spec.rb`; show/update/publish/destroy isolation in the cross-account spec |
-| 18 | **Audit** | `PASS` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. Writer (sign-in / sign-out), relocated into `custom/` in this release's HEAD commit: `spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`. Production holds 4,845 audit rows (operator-reported) and they are preserved — nothing in this release deletes or migrates them |
+| 18 | **Audit** | `PASS WITH CONFIG DECISION` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. Sign-in / sign-out writer, relocated into `custom/` in this release's HEAD commit: `spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`. Production holds 4,845 audit rows (operator-reported) and they are preserved. **But two further Enterprise audit writers were never relocated** — message deletion and channel-credential changes — which is why this row is not a clean `PASS`. Nothing fails and no production account can read the audit log today, so it does not block the deploy; it does gate enabling the `audit_logs` feature. §5.4 |
 | 19 | **Auth** | `PASS` | `spec/controllers/devise_overrides/` including the Lynomia session overlay; Rack::Attack throttles sign-in by IP and by email, super-admin sign-in, password reset, confirmation resend and MFA verification. MFA itself is off because encryption keys are unset (§5.3) — that is the shipped state, not a defect |
 | 20 | **Super Admin** | `PASS` | `custom/app/controllers/super_admin/{portals,categories,articles,billing_plans,billing_subscriptions}_controller.rb`; the documentation corpus is managed here and is explicitly unaffected by the tenant-side policy denial (`spec/requests/custom/tenant_help_center_removal_spec.rb`) |
 | 21 | **Help & Support** | `PASS` | Tenant Help Center authoring is closed at the policy, not merely hidden: `spec/requests/custom/tenant_help_center_removal_spec.rb` covers administrator, agent and a custom role holding **every** permission, over every verb of portals, categories and articles plus the four bulk actions. Contextual help links resolve through `DocumentationController#article`, which 404s on an unpublished slug rather than dropping the reader on a home page |
@@ -280,7 +280,7 @@ is a product defect and would reopen this gate.
 
 ## 5. Production configuration decisions
 
-Three, and each has one defensible answer.
+Four, and each has one defensible answer.
 
 ### 5.1 Captain / `ruby_llm`
 
@@ -339,8 +339,23 @@ library is loaded but never invoked.
 
 1. **Leave `CAPTAIN_OPEN_AI_API_KEY` unset.** This single value is what keeps Captain inert, the advisories
    unreachable, and the spend at zero. It is also the whole decision: nothing else needs changing.
-2. **Leave `config/features.yml` alone.** Editing `captain_tasks` would affect only accounts created after the deploy
-   and would be a cosmetic change to an OSS default while the key gates everything anyway.
+2. **Leave `config/features.yml` alone — and know that editing it would do nothing here anyway.** This is worth
+   stating precisely, because the obvious move is the wrong one. `ConfigLoader::DEFAULT_OPTIONS` sets
+   `reconcile_only_new: true` (`lib/config_loader.rb:2-5`) and both seeding invocations take that default
+   (`db/seeds.rb:3`, `lib/tasks/db_enhancements.rake:5`), so `compare_and_save_feature` computes
+   `(config.value + account_features).uniq { |h| h['name'] }` — **existing row first**, which means the already-seeded
+   `captain_tasks: true` wins and a `features.yml` edit is silently discarded (`:81-90`). The real controls are:
+   - **New-account default** → `rake feature_defaults:toggle`, which writes `ACCOUNT_LEVEL_FEATURE_DEFAULTS` and
+     clears the cache. Its own description says "affects new account signups only" (`lib/tasks/feature_defaults.rake:5`).
+   - **Existing accounts** → they already have it on, and not by accident: the applied migration
+     `db/migrate/20260120121402_enable_captain_tasks_for_existing_accounts.rb` does
+     `account.enable_features!('captain_tasks')` over every account in batches. That is the explanation for the
+     broad enablement observed in production. Turning it back off for existing accounts has **no rake task** — it
+     would take a new migration in the repo's own established style (there are seven precedents, e.g.
+     `20260226153427_disable_report_rollup_for_all_accounts.rb`), or a per-account change through Super Admin or the
+     Platform API (`app/controllers/platform/api/v1/accounts_controller.rb:43`).
+
+   None of that is needed for this release, because the credential — not the flag — is what keeps both doors shut.
 3. **If a key is ever set, two things must be done first**, because Enterprise removal took the guard rails with it:
    - **Add a Rack::Attack throttle covering both doors.** `config/initializers/rack_attack.rb` has no Captain rule
      at all; the only applicable limit is the global `req/ip` of 3000/minute. The Enterprise wrapper that enforced
@@ -433,6 +448,51 @@ No key is generated or configured in this phase, per the brief.
 
 ---
 
+### 5.4 Two Enterprise audit writers were never relocated
+
+Found by an adversarial review of this report after it was first written, and verified here against the
+`pre-enterprise-removal` tag rather than taken on the reviewer's word. **This is a second instance of the same
+regression class as the sign-in / sign-out writer**, which the Enterprise-removal phase closed and declared clean.
+That declaration was premature: comparing `audited` declarations and manual writers found one of three.
+
+**Two real losses.** Both are OSS extension points that are live `prepend_mod_with` sites with an empty body and no
+`Custom::` counterpart, so nothing raises — the audit row simply is not written:
+
+| Lost writer | Pre-removal source | Current state |
+| --- | --- | --- |
+| **Channel-credential / configuration changes on an inbox** | `enterprise/app/models/enterprise/channelable.rb:12` — prepended `create_audit_log_entry`, writing an `Inbox` `update` row from `saved_changes.except('updated_at', 'secret')`, and deliberately skipping a `message_templates_last_updated`-only change | `app/models/concerns/channelable.rb:10` is `def create_audit_log_entry; end`, with `after_update :create_audit_log_entry` at `:7` and `Channelable.prepend_mod_with('Channelable')` live at `:13`. No `Custom::Channelable` exists |
+| **Message deletion** | `enterprise/app/controllers/enterprise/api/v1/accounts/conversations/messages_controller.rb` — overrode `#destroy`, snapshotted content / conversation / inbox / sender under `with_lock` **before** the soft delete, and wrote a `destroy` row with `remote_address` | `app/controllers/api/v1/accounts/conversations/messages_controller.rb:21` has the OSS `destroy` and `:132` the live `prepend_mod_with`. No `Custom::` counterpart exists |
+
+**Two claims in the same review that do not survive checking, and are recorded so nobody acts on them:**
+
+- *"Inbox deletion lost its audit."* **False.** `Enterprise::Audit::Inbox` declared
+  `audited associated_with: :account, on: [:create, :update]` — byte-for-byte what `Custom::Audit::Inbox` declares
+  now. Inbox `destroy` was never audited upstream either. Nothing was lost.
+- *"`Enterprise::Audit::User` was not relocated."* **Not a loss.** Its `audited` block carried
+  `unless: proc { |_u| true }` — permanently false by design, as its own comment says: it existed only to register
+  `User` as auditable for the sign-in / sign-out rows that were written manually. That manual writer **is** relocated,
+  and `spec/controllers/custom/devise_overrides/sessions_controller_spec.rb` asserts the rows land.
+
+**Why this is not a release blocker.** The audit log reader refuses before it reads:
+`custom/app/controllers/api/v1/accounts/audit_logs_controller.rb:24-28` returns
+`Current.account.associated_audits.none` unless the account has the `audit_logs` feature — and the production gate
+for this release measured **`accounts_with_audit_logs = 0`**. No production account can open the audit log at all, so
+no user-visible behaviour differs, and no request path fails: both sites are no-ops, not errors.
+
+**The configuration decision, and it is a real one:**
+
+> **Do not enable the `audit_logs` feature for any account until these two writers are relocated into `custom/`.**
+> The gap is invisible while nobody can read the log, and becomes a silently incomplete audit trail the moment
+> somebody can. Audit history is not back-fillable: rows not written during the window are gone.
+
+Relocating them is a small, well-specified change — the pre-removal implementations are above and the pattern is the
+one `custom/app/controllers/custom/devise_overrides/sessions_controller.rb` already follows. It is deliberately **not**
+done in this phase, which is an assessment and was instructed not to reopen the Enterprise-removal work without a
+release regression. This is a latent gap, not a release regression. It should be closed before the feature is turned
+on, and it is the first item for the phase after this one.
+
+---
+
 ## 6. OpenSearch — an obsolete gate
 
 `docs/p7/14-readiness-matrix.md` carries row `S18` as `NOT TESTED` for want of a reachable OpenSearch, and both that
@@ -495,9 +555,16 @@ inbox #77 reads its own credential from `chatwoot_production`.
 **Safe post-release cleanup, in this order, after the deploy has been verified:**
 
 1. `pg_dump -Fc` the dormant database, so every step below is recoverable.
-2. Re-run the fingerprint comparison in `05-security-cleanup.md` §B and confirm the two still differ. Do not act on
-   the earlier reading alone — an unknown credential is not touched until its identity is proven **at the time of
-   acting**.
+2. Re-run the fingerprint comparison in **`docs/pre-p7-closeout/05-security-cleanup.md` §B** and confirm the two
+   still differ. Do not act on the earlier reading alone — an unknown credential is not touched until its identity is
+   proven **at the time of acting**.
+
+   > **Use §B and not the variant in `docs/p7/01-secrets-remediation.md`.** That one queries
+   > `SELECT api_key FROM channel_api`, and `channel_api` **has no `api_key` column** (`db/schema.rb`: it carries
+   > `hmac_token` and `secret`). With `2>/dev/null` swallowing the error and `head -c 16` truncating empty output, it
+   > prints an empty fingerprint for *both* databases — which reads as a MATCH, and MATCH is exactly the outcome that
+   > says "do not revoke". A broken query would therefore manufacture agreement. §B reads the right place:
+   > `channel_whatsapp.provider_config->>'api_key'`, which is where a WhatsApp token actually lives.
 3. Revoke that token at Meta. This is the only irreversible step, and it is also the only one that closes the
    exposure, which is why it comes after 1 and 2 and not before.
 4. Confirm inbox #77 is still sending and receiving — the direct check that the right token was revoked.
@@ -575,10 +642,12 @@ For the record, since the brief requires no stale gates:
 4. **`COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent from the environment and from both systemd units** (§5.2).
 5. **`CAPTAIN_OPEN_AI_API_KEY` unset** (§5.1).
 6. **Active Record encryption keys: all three, or none.** Not required for this deploy (§5.3).
-7. **The release SHA is pushed and is the branch's upstream tip**, so `git merge --ff-only @{u}` resolves to it.
-8. **Disk:** at least 2 GB free on the application filesystem — the script checks, but checking late costs a window.
-9. **Deploy with `deployment/deploy.sh`**, not `/root/deploy-lynomia.sh` (§3).
-10. **`rails db:migrate` must run through the application's own configuration**, so that
+7. **The `audit_logs` account feature stays off** until the two un-relocated audit writers are restored (§5.4). It is
+   off on every production account today, so this is a hold, not a change.
+8. **The release SHA is pushed and is the branch's upstream tip**, so `git merge --ff-only @{u}` resolves to it.
+9. **Disk:** at least 2 GB free on the application filesystem — the script checks, but checking late costs a window.
+10. **Deploy with `deployment/deploy.sh`**, not `/root/deploy-lynomia.sh` (§3).
+11. **`rails db:migrate` must run through the application's own configuration**, so that
     `config/application.rb:52` contributes `custom/db/migrate`. 16 of the 196 migrations live there.
 
 ### Rollback prerequisites
@@ -615,12 +684,17 @@ What is left divides cleanly:
   from a repository, and nothing short of doing it honestly would close it. Everything that depends on it — WhatsApp
   campaigns, the `send_whatsapp_template` automation action, the template picker in flows — is green in code and
   waits on the same single transaction.
-- **Three configuration values must be set deliberately**, and all three are "leave it as it is, knowingly":
-  `CAPTAIN_OPEN_AI_API_KEY` unset (which is what keeps **both** `ruby_llm` doors inert and the two ReDoS advisories
-  unreachable), the three Commerce provider switches off, and `COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent. Active
-  Record encryption keys are a precondition for Commerce and MFA, not for this deploy.
+- **Four configuration decisions**, three of them "leave it as it is, knowingly": `CAPTAIN_OPEN_AI_API_KEY` unset
+  (which is what keeps **both** `ruby_llm` doors inert and the two ReDoS advisories unreachable), the three Commerce
+  provider switches off, and `COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent. Active Record encryption keys are a
+  precondition for Commerce and MFA, not for this deploy. The fourth is a **hold**: do not enable the `audit_logs`
+  feature for any account until the two un-relocated audit writers are restored (§5.4) — invisible today because no
+  production account can read the log, and an incomplete trail the moment one can.
 - **Four items are owned outside this release** and gate nothing: the Google OAuth rotation, the dormant database's
   token, the `companies` legacy rows, and the host's pending restart and updates.
+- **One latent gap, found by reviewing this report against the pre-removal tag**: two Enterprise audit writers —
+  message deletion and channel-credential changes — were never relocated (§5.4). It does not block the deploy and it
+  is the first item for the next phase.
 
 **The recommendation is to deploy under control, with the WhatsApp UAT run immediately afterwards on the live
 release**, in this order: host window → Google OAuth rotation → application deploy via `deployment/deploy.sh` →
@@ -637,8 +711,9 @@ prove something about code that is about to be replaced.
 > ## READY AFTER REAL UAT
 
 Zero release blockers. One real-UAT item: the approved-template-to-new-contact WhatsApp send (§4), which must be run
-against the deployed release. Three configuration decisions, all resolved as deliberate no-ops (§5). Four external
-maintenance items, none gating (§7).
+against the deployed release. Four configuration decisions (§5) — three deliberate no-ops and one hold, on the
+`audit_logs` feature, until §5.4's two un-relocated audit writers are restored. Four external maintenance items, none
+gating (§7).
 
 **Nothing in this phase deployed, modified production, rotated a credential, dropped a table or changed production
 data.**

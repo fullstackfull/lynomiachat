@@ -1,6 +1,6 @@
 # loaded once here; per-row lookups below would otherwise cost a query per membership
 account_users = resource.account_users.includes(:account)
-account_users = account_users.includes(:custom_role) if ChatwootApp.enterprise?
+account_users = account_users.includes(:custom_role)
 # full-precision timestamps, nils last, matching ORDER BY active_at DESC NULLS LAST
 active_account_user = account_users.max_by { |account_user| [account_user.active_at ? 1 : 0, account_user.active_at || Time.at(0).utc] }
 

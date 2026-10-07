@@ -985,29 +985,89 @@ Contacts, Inbox and conversations, Commerce, audiences, automations, Flow Builde
 Template Manager and the documentation engine through their own request, service, model and job
 specs.
 
-**This run is still in progress at the time of writing.** Interim state: **6129 examples, 46
-failures** after 32 minutes, against a with-enterprise baseline of 11,269 examples / 1 failure / 70
-pending in 46m40s (the one baseline failure is the OpenSearch environment gate, which cannot pass in
-this container). The final count and a per-file characterisation of each failure will be added to
-this section when the run completes; nothing in sections 1-6 or 8-10 depends on it, because each of
-those conclusions rests on its own measurement.
+```
+8585 examples, 46 failures, 73 pending          Finished in 37 minutes 22 seconds
+```
 
-What the failures are expected to be, stated in advance so the characterisation can be checked
-against it rather than fitted to it: specs outside `spec/enterprise/` that exercise behaviour the
-overlay supplies. The candidates were enumerated before the run — 40 spec files outside
-`spec/enterprise/` mention an enterprise concept, and the ones that look load-bearing are
-`spec/models/enterprise/audit/conversation_spec.rb` (an enterprise spec that lives outside the
-excluded directory, so it was not skipped), the seven `spec/lib/captain/*_spec.rb` files (the task
-services are OSS but their specs may assert the enterprise quota wrapper's refusals),
-`spec/controllers/api/v1/accounts/captain/preferences_controller_spec.rb` and
-`spec/models/concerns/captain_featurable_spec.rb`. A failure in any Lynomia-feature spec — WhatsApp,
-Contacts, Inbox, Commerce, audiences, automations, Flow Builder, campaigns, Template Manager,
-documentation — would be a finding that changes the verdict, and will be reported as one.
+Baseline for comparison: **11,269 examples, 1 failure, 70 pending in 46m40s** with enterprise
+present (the one baseline failure is the OpenSearch environment gate, which cannot pass in this
+container). The 2,684-example difference is `spec/enterprise/`, excluded by the pattern.
 
-The two independent runtime proofs of the same ground are already in hand and do not depend on the
-suite: Sidekiq executed `Commerce::ActionSweepJob` and `Lynomia::QueueHealthJob` to completion
-(7.3), and the campaign-path reflection in section 4.4 confirms the Lynomia shared-audience overlay
-survives with `super` landing on OSS.
+46 failures is not the delta. Every failing file was **re-run in the primary checkout with
+enterprise present**, the same way every other probe in this document was baselined:
+
+```
+bundle exec rspec <the 9 failing files>        # primary checkout, enterprise PRESENT
+98 examples, 21 failures
+```
+
+| File | Failures without `enterprise/` | Failures **with** `enterprise/` | Caused by removal |
+|:--|--:|--:|:--|
+| `spec/controllers/api/v1/accounts_controller_spec.rb` | 5 | 5 | no |
+| `spec/controllers/api/v2/accounts_controller_spec.rb` | 5 | 5 | no |
+| `spec/controllers/slack_uploads_controller_spec.rb` | 4 | 4 | no |
+| `spec/controllers/devise/omniauth_callbacks_controller_spec.rb` | 3 | 3 | no |
+| `spec/lib/vapid_service_spec.rb` | 2 | 2 | no |
+| `spec/lib/global_config_service_spec.rb` | 1 | 1 | no |
+| `spec/lib/config_loader_spec.rb` | 1 | 1 | no |
+| `spec/models/campaign_audience_spec.rb` | 1 | **0** | **yes** |
+| `spec/requests/custom/tenant_help_center_removal_spec.rb` | 24 | **0** | **yes** |
+| | **46** | **21** | **25** |
+
+**21 failures are pre-existing** — identical file, identical count, identical message with the
+overlay in place. They are this container's test-database state, not the overlay: `ConfigLoader`
+asserts `InstallationConfig.count == 0` and gets 4, `GlobalConfigService` finds a leftover
+`ENABLE_ACCOUNT_SIGNUP = "false"` row (which is also why three `POST /api/v1/accounts` examples see
+404 instead of success), `SlackUploadsController` raises
+`ActionController::Redirecting::UnsafeRedirectError`, and the two `VapidService` examples expect an
+`InstallationConfig.find_by` that the leftover rows short-circuit. They are reported here rather
+than filtered out, because filtering them silently is how a 46 becomes a 25 without anyone being
+able to check.
+
+**25 failures are caused by removal, and they are two things:**
+
+**1. `spec/models/campaign_audience_spec.rb` — 1 failure. This is the `D`, found independently.**
+
+```
+Campaign sending records and sends a WhatsApp campaign once to each contact of its labels and audiences
+  Failure/Error: expect(campaign.campaign_recipients.pluck(:contact_id, :status))
+                   .to contain_exactly([vip.id, 'sent'], [tagged.id, 'sent'])
+  NoMethodError: undefined method 'campaign_recipients' for an instance of Campaign
+```
+
+This spec is Lynomia's own, added by commit `7f9f053a`, and it asserts exactly the capability
+section 4.4 identified by reading: the campaign still *sends* (the example's own send assertions
+pass up to this line) but writes no recipient rows. A Lynomia-authored test detecting the one
+`D` without being told to look for it is the best corroboration available that the classification
+is right and that it is the only one.
+
+**2. `spec/requests/custom/tenant_help_center_removal_spec.rb` — 24 failures, all one line, in the
+fixture rather than the product.**
+
+```
+Failure/Error: role = CustomRole.create!(account: account, name: 'everything',
+                                         permissions: CustomRole::PERMISSIONS)
+NameError: uninitialized constant CustomRole
+```
+
+All 24 are that single `before` block at `:20-23`, which every example inherits. The spec guards
+Lynomia's removal of tenant Help Center authoring against three principals — administrator, agent,
+and a custom role holding every permission *including* `knowledge_base_manage` — and its own comment
+says why the third exists: *"which `Enterprise::{Portal,Article}Policy` would otherwise accept."*
+
+So the third principal is there **because** of the enterprise policies. Remove the overlay and
+`Enterprise::PortalPolicy` and `Enterprise::ArticlePolicy` go with it, so the attack the arm defends
+against becomes unconstructible at the same moment the arm stops compiling. The behaviour under test
+— the OSS/Lynomia policy refusal that returns 401 to administrators and agents — is untouched; it is
+the fixture that reaches for an enterprise model. The fix during removal is to drop the `power_user`
+arm and its `before` block, or to keep the arm against a Lynomia-owned permission source if one is
+built (section 8). Either way it is a few lines in one spec file, and it is **spec work, not product
+work**.
+
+**Per-Lynomia-feature result.** Zero failures across WhatsApp send and receive, Contacts (including
+bulk actions and import), Inbox and conversations, Commerce (stores, orders, carts, action runs,
+Salla/Zid/Shopify token managers), audiences, automations, Flow Builder, Template Manager and the
+documentation engine. Campaigns had exactly one failure, and it is the `D`.
 
 ### 7.8 Remaining runtime constant resolution
 
@@ -1091,6 +1151,9 @@ Captain rather than core messaging, and `app/dashboards/account_dashboard.rb` is
 The overlay is removable: the application boots, eager-loads, serves, schedules and runs jobs with
 the `Enterprise::` namespace absent, every affected route degrades to 404 rather than 500, the
 schema does not change, and no OSS or Lynomia code calls a method that only `enterprise/` provides.
+The 8,585-example non-enterprise suite confirms it: of 46 failures, 21 fail identically *with* the
+overlay in place, and the 25 that removal causes are one product capability (1 failure) and one
+spec fixture (24 failures on a single line) — section 7.7.
 Of 136 overlay behaviours, 117 are either inert (38) or enterprise features Lynomia does not ship
 (79). What stands between here and removal is **one capability to relocate and four small edits**,
 all of which move existing code onto existing tables.
@@ -1107,6 +1170,8 @@ bounded, measurable and reversible, and that the bound is known.
 | 3 | **Remove the cloud billing frontend** | 3 files | section 3.3 | It is the only frontend code that calls `/enterprise/api/v1/…`; those endpoints vanish. |
 | 4 | **Delete the dead route declarations** — all 162 entries in section 4.3, both the gated blocks and the 119 ungated ones | `config/routes.rb` | section 4.2 | They answer 404 either way; deleting them makes `rails routes` honest and removes 29 phantom controller references. |
 | 5 | **Drop `'enterprise'` from `ChatwootApp.extensions`** | `lib/chatwoot_app.rb:40-47` | section 7.2 | Today the list is returned unconditionally whenever `custom?` is true, so every injection site asks for a namespace that cannot exist. Harmless, but the code should say what it does. |
+
+| 6 | **Adjust two specs** — drop the `CustomRole` arm of `spec/requests/custom/tenant_help_center_removal_spec.rb:20-23`, and point `spec/models/campaign_audience_spec.rb` at whatever item 1 decides | a few lines in 2 files | section 7.7 | They are the only two specs that removal breaks, and both break in the fixture, not the assertion. |
 
 ### 10.3 Decisions to take, not work to do
 

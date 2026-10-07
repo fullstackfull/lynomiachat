@@ -5,6 +5,6 @@ module Custom::Audit::CustomFilter
   extend ActiveSupport::Concern
 
   included do
-    audited associated_with: :account, if: :contact? if defined?(Enterprise::AuditLog)
+    audited associated_with: :account, if: :contact?
   end
 end

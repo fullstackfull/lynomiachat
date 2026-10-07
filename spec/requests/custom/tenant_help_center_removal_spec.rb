@@ -177,16 +177,21 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
       allow(ChatwootApp).to receive(:chatwoot_cloud?).and_return(true)
     end
 
+    # Asserted through the override rather than by stubbing Onboarding::HelpCenterCreationService, which is an
+    # Enterprise constant: the service is what Chatwoot's onboarding calls to create a tenant portal, and once the
+    # overlay is gone there is no such constant to stub. The invariant and its cause are both pinned here, so this
+    # holds with the overlay installed and after it is removed.
     it 'does not create a Help Center for the tenant' do
-      allow(Onboarding::HelpCenterCreationService).to receive(:new)
-
       expect do
         patch "/api/v1/accounts/#{account.id}/onboarding",
               params: { website: 'acme.com', onboarding_step: 'account_details' },
               headers: admin.create_new_auth_token, as: :json
       end.not_to(change { account.portals.count })
 
-      expect(Onboarding::HelpCenterCreationService).not_to have_received(:new)
+      expect(Api::V1::Accounts::OnboardingsController.ancestors).to include(Custom::Api::V1::Accounts::OnboardingsController)
+      expect(Custom::Api::V1::Accounts::OnboardingsController
+               .instance_method(:create_help_center)
+               .bind_call(Api::V1::Accounts::OnboardingsController.allocate)).to be_nil
     end
   end
 end

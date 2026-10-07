@@ -4,6 +4,25 @@
 module Custom::Whatsapp::IncomingMessageBaseService
   private
 
+  # Lynomia Campaigns (docs/campaigns/02-recipients.md): Meta reports delivered / read / failed for a campaign's
+  # template message against the id the send recorded on the recipient, so a status is a recipient update first and
+  # an ordinary message update second. A status that arrives before the recipient's source id is persisted is
+  # deferred to Campaigns::UpdateRecipientStatusJob rather than dropped -- but only when it matched no recipient AND
+  # no message, because a status for an ordinary conversation message is not a campaign's to reconcile.
+  def process_statuses
+    status = @processed_params[:statuses].first
+    recipient = CampaignRecipient.find_by(account_id: inbox.account_id, inbox_id: inbox.id, source_id: status[:id])
+    recipient&.update_from_whatsapp_status!(status)
+
+    super
+
+    return if recipient || @message
+    return unless inbox.account.feature_enabled?(:whatsapp_campaign)
+    return unless %w[delivered read failed].include?(status[:status].to_s)
+
+    Campaigns::UpdateRecipientStatusJob.set(wait: 2.seconds).perform_later(inbox.id, status.to_h)
+  end
+
   def message_content_attributes(message)
     attributes = super
     reply = message.dig(:interactive, :button_reply) || message.dig(:interactive, :list_reply)

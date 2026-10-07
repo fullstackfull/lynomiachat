@@ -1,8 +1,13 @@
 # Lynomia Chat — enterprise zero-dependency implementation
 
-**Status:** the small replacements the audit identified are implemented, with one named blocker left
-(section 11). `enterprise/` has **not** been removed. No table was dropped, no migration was added,
-no production data was read or written, and no feature flag or licensing file was changed.
+**Status:** every small replacement the audit identified is implemented and measured, and the full
+suite is green both with `enterprise/` installed and without it — **removal delta 0** (section 9.6).
+Verdict in section 11: *READY FOR ENTERPRISE REMOVAL WITH PRODUCTION DATA GATE*.
+
+`enterprise/` has **not** been removed. Two files inside it were deleted, on explicit approval and
+named in section 11, because the campaign status path could not be relocated while they existed; the
+other 541 files are untouched. No table was dropped, no migration was added, no production data was
+read or written, and no feature flag or licensing file was changed.
 
 **Inputs:** `docs/enterprise-audit/00-enterprise-dependency-audit.md` (the dependency map) and
 `docs/enterprise-audit/01-zero-dependency-readiness.md` (the verdict this phase acts on:
@@ -19,9 +24,19 @@ no production data was read or written, and no feature flag or licensing file wa
 | `7a7779cb` | 113 enterprise-only route declarations removed |
 | `60b43f64` | `ChatwootApp.extensions` derived from what is on disk; two test corrections |
 | `46553231` | `custom_role_id` shipped to the dashboard without the enterprise gate |
+| `a5c36358` | this report (first version) |
+| `ffd15dc5` | the onboarding example re-asserted without an Enterprise constant, found by the gate |
+| `47e1adc6` | the measured no-enterprise gate written up |
+| `1e4a7250` | the campaign recipient status path → Lynomia, with the two approved deletions |
+| `0811f4c9` | 24 audit assertions re-pointed at `Custom::AuditLog`, found by the two-way gate |
 
-64 files changed: 462 insertions, 808 deletions. 16 of them are `git mv` relocations out of
-`enterprise/` or `spec/enterprise/`; nothing inside `enterprise/` was edited or deleted.
+Measured over the whole phase (`git diff -M 92211aba~1..HEAD`), excluding this report: **80 files
+changed, 560 insertions, 945 deletions**, of which **23 are `git mv` relocations** — 14 out of
+`enterprise/` and 9 out of `spec/enterprise/`, content preserved. Four files were genuinely deleted:
+two dead Vue components (section 6) and two inside `enterprise/` (`1e4a7250`, 543 → 541 tracked
+files, section 11). No file inside `enterprise/` was edited. One more file changed path,
+`spec/models/enterprise/audit/` → `spec/models/custom/audit/`, and git records it as a delete plus an
+add rather than a rename because its contents were rewritten at the same time (section 8).
 
 ---
 
@@ -29,13 +44,13 @@ no production data was read or written, and no feature flag or licensing file wa
 
 | # | Dependency, as the audit stated it | How it is now satisfied | Resolves an `Enterprise::` constant? |
 |--:|:--|:--|:--|
-| 1 | `CampaignRecipient`, its associations, the recipient-writing send path, the status updater and its job, `last_provider_error`, the analytics controller — all under `enterprise/` | relocated to `custom/`, with three `Custom::` overlays on injection sites OSS already carries | no, except item 7 below |
+| 1 | `CampaignRecipient`, its associations, the recipient-writing send path, the status updater and its job, `last_provider_error`, the analytics controller — all under `enterprise/` | relocated to `custom/`, with three `Custom::` overlays on injection sites OSS already carries | **no** |
 | 2 | `Enterprise::AuditLog`, named by `config/initializers/audited.rb` and by three guarded Lynomia call sites | `Custom::AuditLog < Audited::Audit` on the same `audits` table; the guards removed | **no** |
 | 3 | `CustomRole` + `AccountUser#custom_role`, without which `commerce_order_manage` cannot be granted | relocated to `custom/` with `Custom::AccountUser#permissions` and two association overlays | **no** |
 | 4 | The cloud billing frontend, calling `/enterprise/api/v1/accounts/:id/*` | removed | n/a (frontend) |
 | 5 | 113 ungated route declarations naming enterprise-only controllers or actions | removed from `config/routes.rb` | n/a |
 | 6 | `ChatwootApp.extensions` listing `enterprise` unconditionally | derived from `enterprise?` / `custom?` | **no** |
-| 7 | `Enterprise::Whatsapp::IncomingMessageBaseService#process_statuses` — the delivered / read / failed path | **NOT relocated.** Blocked; see section 11 | **yes** |
+| 7 | `Enterprise::Whatsapp::IncomingMessageBaseService#process_statuses` — the delivered / read / failed path | relocated to `Custom::Whatsapp::IncomingMessageBaseService`, beside the Lynomia interactive-reply behaviour already there; the two Enterprise files it could not coexist with were deleted on approval | **no** |
 
 **The measured bottom line.** Across `app/`, `lib/`, `custom/`, `config/` and `db/` there is now
 exactly **one** line of code naming an `Enterprise::` constant:
@@ -51,11 +66,15 @@ the constant. It is left as-is because it needs no change to be correct, and rec
 "safe by evaluation order" is worth knowing about rather than discovering. Six further mentions in
 those trees are comments.
 
+The suite is now clean too, which it was not when that paragraph was first written: occurrences of
+`Enterprise::AuditLog` across `spec/**` outside `spec/enterprise/` are **0**, down from 24
+(sections 8 and 9.6).
+
 ---
 
 ## 2. Exact files changed
 
-### Relocated out of `enterprise/` (16 `git mv`s, content preserved)
+### Relocated out of `enterprise/` (14 `git mv`s, content preserved; 9 more out of `spec/enterprise/`, section 8)
 
 | From | To |
 |:--|:--|
@@ -77,7 +96,7 @@ controllers, the job) or a module whose name changes (`Enterprise::Whatsapp::One
 relocation — not duplication — was the only correct option for these. That is why they moved while
 nothing else in `enterprise/` was touched.
 
-### Added under `custom/` (16 files)
+### Added under `custom/` (18 files)
 
 ```
 custom/app/models/custom/audit_log.rb                  the audit class
@@ -107,7 +126,7 @@ single best evidence that this is a relocation rather than a redesign:
 | `Custom::Concerns::Account` | `app/models/account.rb:242` |
 | `Custom::Audit::<Name>` ×11 | `app/models/<name>.rb` → `include_mod_with('Audit::<Name>')` |
 
-### Edited elsewhere (11 files)
+### Edited elsewhere (19 files)
 
 ```
 config/initializers/audited.rb                    audit_class → 'Custom::AuditLog'
@@ -118,10 +137,24 @@ app/views/api/v1/models/_agent.json.jbuilder      custom_role_id gate dropped
 custom/app/services/flows/audit.rb                guard dropped, Custom::AuditLog
 custom/app/services/commerce/audit_trail.rb       guard dropped, Custom::AuditLog
 custom/app/models/custom/audit/custom_filter.rb   guard dropped
-custom/app/services/custom/whatsapp/providers/base_service.rb   last_error capture added
+custom/app/services/custom/whatsapp/providers/base_service.rb          last_error capture added
+custom/app/services/custom/whatsapp/incoming_message_base_service.rb   process_statuses added
 custom/app/policies/custom/portal_policy.rb       comment corrected
-app/javascript/… (7 files)                        see section 6
+app/javascript/… (8 files, plus 2 deleted)        see section 6
 ```
+
+### Deleted inside `enterprise/` (2 files, on explicit approval)
+
+```
+enterprise/app/services/enterprise/whatsapp/incoming_message_base_service.rb   17 lines
+enterprise/app/services/enterprise/whatsapp/providers/base_service.rb          25 lines
+```
+
+Both held campaign-recipient behaviour only, and both had to go for the relocation to be correct
+rather than doubled — the reasoning, and the approval, are in section 11. `enterprise/` went from 543
+tracked files to 541; the only file left under
+`enterprise/app/services/enterprise/whatsapp/` is `providers/whatsapp_cloud_service.rb`, which is
+voice calling and has nothing to do with campaigns.
 
 ---
 
@@ -164,7 +197,35 @@ block. Measured over HTTP without `enterprise/`:
 `GET /api/v1/accounts/1/campaigns/1/analytics/metrics` → **401**, i.e. the route exists and demands
 authentication, rather than the 404 it answered before this phase.
 
-**What is not yet relocated** is the delivered / read / failed status path. See section 11.
+**The delivered / read / failed path.** Meta reports a campaign template's delivery against the id
+the send recorded on the recipient, so a status is a recipient update first and an ordinary message
+update second. That is now `Custom::Whatsapp::IncomingMessageBaseService#process_statuses`, in the
+file that already held Lynomia's interactive-reply behaviour:
+
+```ruby
+def process_statuses
+  status = @processed_params[:statuses].first
+  recipient = CampaignRecipient.find_by(account_id: inbox.account_id, inbox_id: inbox.id, source_id: status[:id])
+  recipient&.update_from_whatsapp_status!(status)
+
+  super
+
+  return if recipient || @message
+  return unless inbox.account.feature_enabled?(:whatsapp_campaign)
+  return unless %w[delivered read failed].include?(status[:status].to_s)
+
+  Campaigns::UpdateRecipientStatusJob.set(wait: 2.seconds).perform_later(inbox.id, status.to_h)
+end
+```
+
+Same behaviour as the Enterprise copy, including the deferral: a status that arrives before the
+recipient's `source_id` is persisted is retried by `Campaigns::UpdateRecipientStatusJob` rather than
+dropped — but only when it matched neither a recipient nor a message, because a status for an
+ordinary conversation message is not a campaign's to reconcile. Account and inbox are both in the
+`find_by`, so one account's wamid cannot touch another's recipient; that case has its own example.
+
+Relocating it required deleting the Enterprise copy, which is the one deletion this phase asked for
+and received. The measurement and the reasoning are in sections 9.7 and 11.
 
 ---
 
@@ -190,6 +251,15 @@ as they already are.
 `Custom::Audit::CustomFilter` were each wrapped in `defined?(Enterprise::AuditLog)`. They now write
 unconditionally — which, for the audience audit, *restores* coverage the guard was silently
 disabling.
+
+**So do the assertions about them,** which is the part the first pass missed and the gate found
+(`0811f4c9`, section 9.6). Twenty-four audit assertions across fourteen spec files still named
+`Enterprise::AuditLog` behind `defined?`. They were green only because that class is a subclass on
+the same table, so it reads back the rows `Custom::AuditLog` writes — remove the overlay and the
+constant goes, taking with it six examples that are never generated, three that skip, and a dozen
+assertion blocks stepped over inside examples that still report success. Every one now names
+`Custom::AuditLog` and runs unconditionally. That is what "removal must not silently reduce audit
+coverage" means on the test side, and nothing but the full two-way gate would have surfaced it.
 
 **Chatwoot's own coverage is mirrored, not dropped.** Eleven `Custom::Audit::*` concerns carry the
 same declarations for Account, AccountUser, AgentBot, AutomationRule, Conversation, Inbox,
@@ -389,6 +459,37 @@ removal gate, so coverage that lived there was invisible to the gate.
   25 examples pass — the original 24 across administrator, agent and a maximally-privileged custom
   role, plus the new one.
 
+* **fourteen spec files whose audit assertions named `Enterprise::AuditLog`** (`0811f4c9`). This is
+  the largest correction in the phase and the one only the gate could find. The shapes, and what each
+  would have cost after removal:
+
+  | Shape | Sites | What removal would have done |
+  |:--|--:|:--|
+  | `it '…', if: defined?(Enterprise::AuditLog) do` | 6 | the example is never generated — the suite simply gets smaller |
+  | `skip '…' unless defined?(Enterprise::AuditLog)` | 3 | the example reports pending |
+  | `if defined?(Enterprise::AuditLog) … end` inside an example | 9 | **the example still passes, asserting nothing** |
+  | `x = defined?(…) ? Enterprise::AuditLog.where(…) : []` | 3 | the assertion compares against an empty array |
+  | trailing `… if defined?(Enterprise::AuditLog)` | 3 | the assertion is skipped |
+
+  Each now names `Custom::AuditLog` — the class that actually writes the rows — and runs
+  unconditionally. The third shape is the one worth pausing on: nine assertions sat inside examples
+  that would have gone on reporting green with nothing behind them.
+
+  Chatwoot's conversation-audit spec moved with them, `spec/models/enterprise/audit/` →
+  `spec/models/custom/audit/`, because the module it exercises is `Custom::Audit::Conversation` now;
+  one example was added asserting the concern is in `Conversation.ancestors`, so the inclusion site
+  is pinned and not just its effect. Running it for the first time also showed its two original
+  examples had been wrong: they counted `Audited::Audit` rows from **inside** the expectation block,
+  where building the conversation also creates an audited account and inbox (a change of 3, not 1),
+  and read the row back through `Audited::Audit` rather than the active class. Both are corrected at
+  the cause — the conversation is built in a `let!` — rather than relaxed to match.
+
+  190 examples across the fourteen files, 0 failures, with the overlay installed. One single
+  occurrence of a `webhook_job_spec` failure appeared in the first run after the edit and did not
+  reproduce in four identical re-runs of the set, nor in five consecutive runs of that file alone; its
+  message was not captured, so it is recorded as unreproduced rather than explained, and the file runs
+  again inside the gate below.
+
 **A consequence to be explicit about.** Removing 113 route declarations means the `spec/enterprise/`
 specs for those capabilities now exercise routes that no longer exist, so the *enterprise* suite no
 longer passes. That is the intended direction — those capabilities are being dropped — but it is a
@@ -444,6 +545,9 @@ Production eager loading is the strongest available boot test: it loads every cl
 and `custom/` and resolves every constant referenced at class-definition time. No error, no warning
 beyond the two pre-existing ones (a RubyLLM deprecation and the GeoIP setup notice).
 
+Re-measured at the final commit `1e4a7250`, after the status path moved and the two Enterprise files
+were deleted: identical, with `Audited.audit_class` → `Custom::AuditLog` read in the same boot.
+
 ### 9.3 Sidekiq and the Lynomia cron registration
 
 ```
@@ -463,6 +567,23 @@ It did more than boot: six job classes ran to completion. The log also carries f
 `ActiveJob::DeserializationError: Couldn't find Account with 'id'=…` lines — stale jobs left in Redis
 by earlier spec runs referencing records that no longer exist. Environment noise, not a removal
 consequence, and recorded rather than filtered.
+
+Re-run at the final commit `0811f4c9`: booted, ran `Inboxes::FetchImapEmailInboxesJob` to completion,
+and logged **0** `ERROR`, `FATAL` or `uninitialized constant` lines. The "added job" lines are absent
+from that second boot because sidekiq-cron only logs a registration it creates, and the schedule was
+already in Redis — so the schedule was read back directly instead, which is the better measurement:
+
+```
+Sidekiq::Cron::Job.all.size                  → 12
+  commerce_action_sweep_job, delete_accounts_job, internal_check_new_versions_job,
+  lynomia_queue_health_job, periodic_assignment_job, remove_old_notification_job,
+  remove_orphan_conversations_job, remove_stale_contact_inboxes_job.rb,
+  remove_stale_redis_keys_job.rb, trigger_hourly_scheduled_items_job,
+  trigger_imap_email_inboxes_job, trigger_scheduled_items_job
+every job class constantizes                 → true
+```
+
+No scheduled job names a class that lives in `enterprise/`.
 
 ### 9.4 HTTP surfaces
 
@@ -504,75 +625,150 @@ Measured in the same worktree. Every line is a thing that would have been `nil`,
 | failure detail | `Channel::Whatsapp#last_provider_error` → true; `Whatsapp::Providers::BaseService#last_error` → true |
 | campaign reporting | `Campaigns::UpdateRecipientStatusJob` and `Api::V1::Accounts::Campaigns::AnalyticsController` both resolve |
 | Commerce permission | `CustomRole::PERMISSIONS` includes `commerce_order_manage`; `AccountUser#permissions` owner is `Custom::AccountUser`; both associations present; controller resolves |
+| campaign status path | `process_statuses` defined in `Custom::Whatsapp::IncomingMessageBaseService` and `Whatsapp::IncomingMessageBaseService`, nowhere else; `CampaignRecipient#update_from_whatsapp_status!` owner is `CampaignRecipient` |
+| Chatwoot's conversation audit | `Conversation.ancestors` carries `Custom::Audit::Conversation` |
+| spec-side audit coverage | occurrences of `Enterprise::AuditLog` across `spec/**` outside `spec/enterprise/` → **0** |
+
+Re-measured in full at the final commit `0811f4c9`; every row above is from that run.
 
 ### 9.6 The full test suite, with the three categories separated
 
-Both runs are of **the same commit**, differing only in whether `enterprise/` is present, each against
-its own PostgreSQL database and its own Redis logical database. The first attempt at this comparison
-had both runs sharing one Redis namespace and was discarded as contaminated — the numbers below are
-from the isolated re-run.
+Both runs are of **the same commit**, differing only in whether `enterprise/` is present, each
+against its own PostgreSQL database and its own Redis logical database, with `installation_configs`
+truncated in both first. (Two earlier attempts at this comparison were discarded rather than
+reported: the first had the two runs sharing one Redis namespace, the second compared a fresh
+database against a reused one. Both produced failures that were artefacts of the harness, and the
+fixes — separate Redis databases, separate PostgreSQL databases, truncate first — are now part of
+the procedure.)
+
+At the final commit `0811f4c9`:
 
 ```
-with    enterprise/ :  8648 examples, 0 failures, 70 pending   in 40m29s
-without enterprise/ :  8638 examples, 19 failures, 73 pending   in 39m33s
-```
-
-**With `enterprise/` installed the suite is completely clean: 0 failures.** That is the first thing
-worth stating, because it means none of the seven commits in this phase breaks anything in the
-composition the application boots with today.
-
-The 19 failures without it are **not** the removal delta. Every failing file was re-run in a fresh
-worktree at the final commit, with `installation_configs` truncated first:
-
-```
-85 examples, 1 failure
+with    enterprise/ :  8649 examples, 0 failures, 70 pending
+without enterprise/ :  8645 examples, 0 failures, 70 pending
 ```
 
 | Category | Count | What they are |
 |:--|--:|:--|
-| baseline failure | **0** | nothing fails in both runs |
-| environment / test database | **17** | leftover `installation_configs` rows in `chatwoot_test` |
-| test correction, found by this gate | **1** | the onboarding example; fixed in `ffd15dc5` |
-| **removal delta** | **1** | the known blocker |
+| baseline failure | **0** | nothing fails in either run |
+| environment / test database | **0** | truncating `installation_configs` first removes the whole class |
+| test correction, found by this gate | **0 outstanding** | two were found and fixed: `ffd15dc5`, `0811f4c9` |
+| **removal delta** | **0** | — |
 
-**The 17 environment failures.** `spec/lib/config_loader_spec.rb` asserts
-`InstallationConfig.count == 0` and found 4; `spec/lib/global_config_service_spec.rb` found a
-persisted `ENABLE_ACCOUNT_SIGNUP = "false"` row, which is also why five
-`POST /api/v1/accounts` and five `POST /api/v2/accounts` examples saw 404 instead of success, and why
-three `omniauth_callbacks` examples redirected to `no-account-found`; the two `vapid_service`
-examples expect an `InstallationConfig.find_by` the leftover rows short-circuit. They are an artefact
-of the comparison, not of the code: the with-enterprise run used a freshly created database and the
-without-enterprise run reused `chatwoot_test`, which had re-accumulated those four rows across the
-per-workstream runs of this phase. Truncating the table and re-running the same six files without
-`enterprise/` gives 0 failures. Reported rather than filtered, because a 19 silently presented as a
-1 is not checkable.
+**The removal delta is zero.** Not "one known blocker", not "flakes aside": the suite is green in
+both compositions, and the pending count is identical, so nothing silently became pending either.
 
-**The one test correction this gate found**, which no earlier sweep could have:
-`spec/requests/custom/tenant_help_center_removal_spec.rb` stubbed
-`Onboarding::HelpCenterCreationService` — an Enterprise constant — so without the overlay there was
-nothing to stub and the example raised `NameError`. It now asserts the invariant at its cause
-(`Custom::Api::V1::Accounts::OnboardingsController#create_help_center` returning nil in the
-controller's ancestor chain) rather than at Chatwoot's service, so it holds either way. Fixed in
-`ffd15dc5`; 25 examples pass.
-
-**The removal delta is exactly one example**, and it is the blocker in section 11:
+**The 4-example difference is accounted for, example by example.** A count difference is not
+self-explanatory, so both runs were also listed with `--dry-run --format json` and the example sets
+diffed:
 
 ```
-Custom::Whatsapp::IncomingMessageBaseService
-  defers a campaign status when neither a recipient nor a message is persisted yet
-    expected to enqueue exactly 1 jobs … but enqueued 0
+only in the WITH-enterprise run (4):
+  spec/controllers/super_admin/accounts_controller_spec.rb
+    shows effective Captain model routing
+    shows the installation model for internal routing on self-hosted Enterprise
+    renders separate Captain model selectors for customer and internal AI features
+    shows the Captain V2 assistant default in the model selector
+only in the WITHOUT-enterprise run: 0
 ```
 
-Enqueued **0** without `enterprise/`, because the status path still lives there. Note the symmetry
-with the reason it cannot simply be moved: with both copies present the same example enqueues **2**.
-That one example is the whole remaining gap, and it is the capability this phase was told not to
-regress.
+All four carry `if: ChatwootApp.enterprise?` and all four test Captain model routing — a capability
+on the removal list in section 11. They stop existing because the feature stops existing, which is
+correct, and they are the *only* examples that do.
+
+**What this same diff caught the first time it was run**, before the correction, is the more useful
+result. The example sets then differed by **10 examples and 3 pending**, and the extra six were not
+Captain:
+
+```
+spec/controllers/api/v1/accounts/contacts/audiences_spec.rb    audience audit rows
+spec/services/commerce/salla/installation_spec.rb              connect / reauthorize / uninstall audits
+spec/services/commerce/salla/token_manager_spec.rb             refresh + needs_reauth audit, no secrets
+spec/services/commerce/store_connection_spec.rb                store connection audit, no credentials
+```
+
+Those are Lynomia audit assertions, still written against `Enterprise::AuditLog` behind `defined?`,
+and section 8 has the full tally: 24 sites, of which nine would have gone on passing while asserting
+nothing. Fixed in `0811f4c9` and re-gated above. Had the gate been run only as a pass/fail count, all
+of it would have been invisible — a suite that gets quietly smaller still reports 0 failures.
+
+**One failure was reported by the earlier gate run and is worth recording** because it did not
+recur: in the with-enterprise half, `spec/models/conversation_spec.rb:1144` asserted a first-response
+time `be_within(1.second).of(1.hour)` and measured 3602.0 — two seconds of drift, from two full
+suites competing for four cores. Run alone on an idle machine the file gives 119 examples, 0 failures,
+and the no-enterprise half passed that same example at the same commit. Environment, not code, and
+certainly not the removal delta; stated here rather than dropped.
 
 For the record, the per-workstream runs quoted above cover the capabilities the gate protects, and
-all passed: 26 examples across the campaign model, job, analytics controller, send path and shared
-audiences; 9 for audit ownership; 66 across the Commerce policy, the custom role, both controllers
-and the order-actions service; 25 for tenant Help Center authorization; 11 vitest examples for the
-billing frontend.
+all passed: 40 examples across the campaign model, deferral job, analytics controller, inbound status
+path, send path, shared audiences and the two audit specs (section 9.7); 66 across the Commerce
+policy, the custom role, both controllers and the order-actions service; 25 for tenant Help Center
+authorization; 190 across the fourteen corrected audit spec files; 11 vitest examples for the billing
+frontend.
+
+---
+
+### 9.7 The campaign status path, end to end, without `enterprise/`
+
+The relocated path was not accepted on the strength of its unit specs. One campaign was driven the
+whole way in the no-enterprise worktree — the real send service, the real inbound webhook service,
+the real analytics API — with only Meta's HTTP endpoint stubbed:
+
+```
+STEP 1 sent      {"Delivered contact"=>["sent","wamid.e2e.delivered"],
+                  "Read contact"=>["sent","wamid.e2e.read"],
+                  "Failed contact"=>["sent","wamid.e2e.failed"]}
+STEP 2 delivered [["Failed contact","sent",nil],
+                  ["Delivered contact","delivered",1700000600],
+                  ["Read contact","delivered",1700000601]]
+STEP 3 final     "Delivered contact" => {status: "delivered", delivered_at: 1700000600}
+                 "Read contact"      => {status: "read", delivered_at: 1700000601, read_at: 1700000700}
+                 "Failed contact"    => {status: "failed", failed_at: 1700000800,
+                                         error: "This message was not delivered to maintain healthy
+                                                 ecosystem engagement."}
+STEP 4 metrics   {"audience"=>3, "sent"=>3, "delivered"=>2, "read"=>1, "failed"=>1, "skipped"=>0,
+                  "status_counts"=>{"queued"=>0,"skipped"=>0,"sent"=>0,
+                                    "delivered"=>1,"read"=>1,"failed"=>1}}
+                 == the same counts read straight from campaign_recipients
+STEP 5 contacts  delivered → [26405]   read → [26406]   failed → [26407]
+                 == campaign_recipients.where(status:).pluck(:contact_id) for each
+```
+
+Four things in there are the actual claims. Each recipient was created and marked `sent` with the
+message id Meta returned. `delivered`, `read` and `failed` all landed, and `read` kept the earlier
+`delivered_at` instead of overwriting it. The failed recipient carries Meta's own wording for 131049,
+which only exists on the provider response — that is `Custom::Channel::Whatsapp#send_template` keeping
+the provider instance, working after removal. And analytics reports **those rows**: the status counts
+are compared against a `GROUP BY` of the table rather than against literals, and the contacts
+endpoint returns exactly the recipient ids per status.
+
+**No duplicate enqueue.** The hazard the deletion resolves is double execution, so it was counted
+rather than inferred, in both compositions:
+
+```
+with    enterprise/ :  process_statuses owners → [Custom::Whatsapp::IncomingMessageBaseService,
+                                                  Whatsapp::IncomingMessageBaseService]
+                       enqueued UpdateRecipientStatusJob count → 1
+without enterprise/ :  process_statuses owners → [Custom::Whatsapp::IncomingMessageBaseService,
+                                                  Whatsapp::IncomingMessageBaseService]
+                       enqueued UpdateRecipientStatusJob count → 1
+```
+
+`Enterprise::Whatsapp::IncomingMessageBaseService` is no longer in the chain in either, so the two
+remaining definitions are Lynomia's and Chatwoot's. The chain is now **identical with and without
+`enterprise/`** — which is the whole point of the phase, expressed in one measurement.
+
+The focused suite over the campaign model, the deferral job, the analytics controller, the inbound
+service, the send path, shared audiences and both audit specs gives the same result in both
+compositions:
+
+```
+with enterprise/     :  26 examples, 0 failures   (campaign set, at 1e4a7250)
+without enterprise/  :  40 examples, 0 failures   (same set + both audit specs + both probes, at 0811f4c9)
+```
+
+The regression spec was not weakened to get there. `have_enqueued_job` without a count means exactly
+once, which is why it caught the duplication in the first place, and it is unchanged.
 
 ---
 
@@ -660,65 +856,54 @@ the same count is still there and still growing, rather than taking it on trust.
 
 ## 11. Removal readiness verdict
 
-# NOT READY FOR ENTERPRISE REMOVAL
+# READY FOR ENTERPRISE REMOVAL WITH PRODUCTION DATA GATE
 
-Six of the seven dependencies the audit named are closed and measured. **One is not**, and because it
-is part of the capability this phase was told not to regress, the verdict cannot be anything else.
+All seven dependencies the audit named are closed, and the gate that would show a gap shows none:
+the full suite is green with `enterprise/` installed and green without it, with an identical pending
+count and a 4-example difference that is four Captain tests for a capability being dropped on purpose
+(section 9.6). The gate being named in the verdict is §10.1, which is a read-only count, plus the one
+check that can require an action before release, §10.2.
 
-### The single blocker
+### The blocker, and how it was cleared
 
-`Enterprise::Whatsapp::IncomingMessageBaseService#process_statuses`
-(`enterprise/app/services/enterprise/whatsapp/incoming_message_base_service.rb`, 17 lines) is the
-delivered / read / failed path for campaign recipients. It updates the recipient from Meta's status
-callback, and defers a status that arrives before the recipient's `source_id` is persisted to
-`Campaigns::UpdateRecipientStatusJob`.
+The first version of this report ended at **NOT READY**, on one dependency:
+`Enterprise::Whatsapp::IncomingMessageBaseService#process_statuses`, the delivered / read / failed
+path for campaign recipients. Without it, recipients would still be created and marked `sent` and the
+analytics page would still load, but nothing would ever progress — partial reporting that looks like
+working reporting.
 
-If `enterprise/` were deleted today, campaign recipients would still be created and marked `sent`,
-and the analytics page would still load — but no recipient would ever progress to `delivered`, `read`
-or `failed`. Partial reporting that looks like working reporting is worse than none, so this is a
-blocker rather than a caveat.
+It could not simply be copied. Unlike every other overlay in this phase, the Enterprise and Custom
+copies are neither disjoint nor idempotent: with both in the ancestor chain, Custom runs, calls
+`super`, Enterprise runs, and the deferral job is enqueued **twice**. The relocated spec caught that
+at exactly 2, and it was not weakened to accommodate it.
 
-It is also, measurably, **the only** thing left: the full suite without `enterprise/` fails exactly
-one example, and this is it (section 9.6).
-
-**Why it is not done.** The fix is four lines of `Custom::` overlay, written and verified, then
-reverted. Adding it while the Enterprise copy is present puts both in the ancestor chain: Custom runs,
-calls `super`, Enterprise runs, and the deferral job is enqueued **twice**. That is not a theoretical
-concern — the relocated spec catches it:
+Clearing it needed a deletion inside `enterprise/`, which this environment refuses without approval.
+That was requested with the two filenames and the reason, and granted:
 
 ```
-Custom::Whatsapp::IncomingMessageBaseService
-  defers a campaign status when neither a recipient nor a message is persisted yet
-    expected to enqueue exactly 1 jobs … but enqueued 2
+enterprise/app/services/enterprise/whatsapp/incoming_message_base_service.rb   17 lines, the status path
+enterprise/app/services/enterprise/whatsapp/providers/base_service.rb          25 lines, the last_error capture
 ```
 
-Unlike every other overlay in this phase, the two copies are not disjoint and not idempotent, so they
-cannot coexist. The relocation therefore requires the Enterprise copy to go, and that is a deletion
-inside `enterprise/` — which this environment's permission policy refused
-(*"Irreversible Local Destruction"*). I did not route around it, and I did not weaken the spec to
-accommodate the duplication.
+Both held campaign-recipient behaviour only. Measured afterwards: `enterprise/` went from 543 tracked
+files to 541, exactly those two paths left the tree, and no other file inside it was edited or
+deleted. The only file remaining under `enterprise/app/services/enterprise/whatsapp/` is
+`providers/whatsapp_cloud_service.rb`, which is voice calling.
 
-**What is needed to clear it: permission to delete two files inside `enterprise/`.**
+What that bought, measured in both compositions (section 9.7): `process_statuses` defined in exactly
+two places, Lynomia's and Chatwoot's; **one** enqueue per webhook, counted rather than inferred; and
+a campaign driven end to end through `sent → delivered / read / failed` with Meta's own 131049 wording
+on the failed recipient and analytics reporting those same rows.
 
-```
-enterprise/app/services/enterprise/whatsapp/incoming_message_base_service.rb
-enterprise/app/services/enterprise/whatsapp/providers/base_service.rb
-```
+### The production gate this verdict names
 
-Both contain *only* campaign-recipient behaviour that this phase has relocated — the first is the
-status path, the second is the `last_error` capture whose Custom:: replacement is already in place and
-harmlessly duplicated. With those two gone, `process_statuses` moves into
-`custom/app/services/custom/whatsapp/incoming_message_base_service.rb` beside the Lynomia behaviour
-already there, the spec passes at exactly one enqueue, and item 7 closes.
+Nothing above can be answered from this container, and §10 has the three checks in full. In short:
 
-For reference, 16 files have already moved out of `enterprise/` in this phase by `git mv`, which the
-same policy allowed; it is specifically deletion that was refused.
-
-### After that blocker is cleared
-
-The verdict becomes **READY FOR ENTERPRISE REMOVAL WITH PRODUCTION DATA GATE** — the gate being the
-three read-only checks in section 10, of which only §10.2 (`advanced_assignment`) can require an
-action before the release.
+| Check | Why | Can it block? |
+|:--|:--|:--|
+| §10.1 `SELECT count(*) FROM campaign_recipients` | the relocation moved no data, but the count should be known before, not after | **no** — informational either way, and the reasoning for why a non-zero count still needs no migration is in §10.1 |
+| §10.2 `advanced_assignment` | after removal nothing disables premium flags, so an account carrying this one keeps a capability whose Enterprise implementation is gone | **yes** — this is the one that may need an action before release |
+| §10.3 audit history continuity | `audits` rows written as `Enterprise::AuditLog` are read back by `Custom::AuditLog` on the same table; worth confirming on real history | no |
 
 ### What removal will still change, by design
 
@@ -731,9 +916,21 @@ These are consequences, not defects, and each was a decision recorded above:
 | `advanced_assignment` and other premium flags | nothing disables them any more. §10.2 |
 | 25 enterprise-owned tables | left in place, unreferenced. No table is dropped; nothing has an inbound foreign key |
 | The `spec/enterprise/` suite | no longer passes, because 113 of the routes it exercises are gone. Section 8 |
+| 4 Super Admin Captain examples | stop being generated — they carry `if: ChatwootApp.enterprise?` and test Captain model routing. The whole 4-example gate difference, nothing more (§9.6) |
 
 ### What was explicitly not done
 
-`enterprise/` was not removed. No file inside it was edited or deleted — only relocated, 16 times, by
-`git mv`. No table dropped, no migration added, no production data read or written, no feature flag or
-licensing file changed, no second audit store, no second RBAC system, no replacement billing.
+`enterprise/` was **not** removed: 541 of its 543 files are exactly as they were, and no file inside
+it was edited. Two were deleted, on explicit approval, named above and nowhere else. 23 files were
+relocated out of `enterprise/` and `spec/enterprise/` by `git mv`, content preserved. No table
+dropped, no migration added, no production data read or written, no feature flag or licensing file
+changed, no second audit store, no second RBAC system, no replacement billing, and no regression spec
+weakened or deleted to reach this verdict.
+
+### What the next phase is, and is not
+
+Removing `enterprise/` is now a `git rm -r enterprise/` plus the four lines in `config/application.rb`
+that add its paths, with the §10.2 check settled first. It is not a product rewrite. The three things
+to expect from it, all already measured here: the directory's 41 remaining gated routes stop being
+declared, `spec/enterprise/**` stops passing, and the four Captain examples above stop being
+generated.

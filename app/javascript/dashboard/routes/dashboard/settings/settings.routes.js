@@ -28,6 +28,7 @@ import data from './data/data.routes';
 import subscription from './subscription/subscription.routes';
 import commerce from './commerce/commerce.routes';
 import flows from './flows/flows.routes';
+import auditlogs from './auditlogs/audit.routes';
 
 export default {
   routes: [
@@ -71,5 +72,6 @@ export default {
     ...subscription.routes,
     ...commerce.routes,
     ...flows.routes,
+    ...auditlogs.routes,
   ],
 };

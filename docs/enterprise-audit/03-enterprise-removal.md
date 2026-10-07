@@ -5,8 +5,9 @@ core (`app/`, `lib/`) plus Lynomia's own code (`custom/`)**, proved by booting t
 `RAILS_ENV=production` with eager loading on, with the directory physically absent and
 `DISABLE_ENTERPRISE` set nowhere in the repository or the environment.
 
-**The external production-data gates are now satisfied for the removal.** All eight read-only checks
-have been run against `chatwoot_production` and their results are recorded in section 16. The three
+**The external production-data gates are now satisfied for the removal.** All eight checks have been
+run against `chatwoot_production` and the operator returned the results, recorded as supplied in
+section 16. The three
 values that could have broken a live request path all came back **zero**. Two checks returned live
 data — 123 contacts with a legacy `company_id`, and 0 accounts entitled to the audit log page — and
 both are non-blocking follow-ups rather than removal defects, described below. Verdict in section 19.
@@ -30,9 +31,9 @@ phase, because it is the only remaining source of those company names (sections 
 inert in production until an administrator turns the feature on — hidden exactly as it was before the
 removal, so not a regression (sections 7 and 16).
 
-Nothing was deployed. No production data was written by this phase — the eight gates in section 16
-are read-only `count(*)` queries run inside `SET TRANSACTION READ ONLY`. No production SQL changed
-anything, no credentials were rotated, no Google OAuth setting was touched, no WhatsApp token was
+Nothing was deployed. **This phase did not connect to production** — the eight gates in section 16
+were specified as bare `count(*)` statements to run inside `SET TRANSACTION READ ONLY`, and the
+operator returned the counts. No production SQL was issued from this phase, no credentials were rotated, no Google OAuth setting was touched, no WhatsApp token was
 revoked. No table was dropped, no column or foreign key was removed, and no migration was added.
 
 ---
@@ -138,7 +139,7 @@ That is what found the four files in `b2b3d695` — the earlier sweep could not 
 | Class | Count | Disposition |
 |:--|:--|:--|
 | **A — obsolete, removed** | 4 Ruby files + 153 frontend files | sections 9, 10 |
-| **B — compatibility-safe, justified** | 9 call sites in 6 migrations, 4 methods in `lib/chatwoot_app.rb` | below |
+| **B — compatibility-safe, justified** | 8 call sites in 6 migrations, 4 methods in `lib/chatwoot_app.rb` | below |
 | **C — Lynomia-owned replacement, verified** | campaign recipients, audit behaviour, permissions | sections 6, 7, 8 |
 | **D — test-only, updated** | `spec/requests/custom/tenant_help_center_removal_spec.rb` | section 9 |
 | **E — explanatory, corrected or kept** | 8 comments | below |
@@ -156,8 +157,14 @@ Six already-applied migrations name deleted constants in their bodies, each behi
 | `20260428120000_backfill_captain_document_sync_metadata` | `Captain::Document` |
 | `20260803000000_enqueue_copy_captain_auto_resolve_mode_to_assistants_job` | `Migration::CopyCaptainAutoResolveModeToAssistantsJob` |
 
-One `false` keeps all nine inert. Deleting the method would mean rewriting applied migration history,
-which is strictly worse. `app/helpers/super_admin/features.yml` also interpolates it through ERB.
+One `false` keeps all eight inert. Deleting the method would mean rewriting applied migration
+history, which is strictly worse. An earlier version of this section, and the comment in
+`lib/chatwoot_app.rb`, also claimed `app/helpers/super_admin/features.yml` interpolates the predicate
+through ERB and that "roughly forty callers" read it. **Both were false** — that file contains no
+`enterprise` reference and no ERB, and the measured inventory is 8 migration call sites, the 3
+internal `enterprise? &&` uses below, and 2 stubs in `spec/lib/chatwoot_app_spec.rb`, with no other
+caller anywhere in `app/`, `custom/`, `lib/`, `config/`, `spec/` or `bin/`. The code comment has been
+corrected to match.
 `chatwoot_cloud?`, `self_hosted_paid?` and `advanced_search_allowed?` each begin `enterprise? &&`, so
 they are permanently false and are left verbatim for upstream parity.
 `self_hosted_enterprise?` had zero callers and is deleted.
@@ -311,6 +318,37 @@ Repaired in `8f3a7891`, relocated rather than revived in place:
 controller is the one under `custom/`, the audit class, the absence of `Enterprise::AuditLog`, the
 administrator-allowed / agent-denied pair, the empty result when the feature is off, each filter, and
 the IPv4 and IPv6 masking. The page's own 34 frontend tests pass unchanged.
+
+### OPEN DEFECT: the Access family is no longer recorded
+
+**The claim above that "Lynomia owns the entire write side; only the *reader* was Chatwoot Enterprise"
+is false, and it is this report's error.** One writer was Enterprise and was not relocated.
+
+`Enterprise::DeviseOverrides::SessionsController` wrote the **sign-in and sign-out** audit rows by
+hand — `create_audit_event('sign_in')` from `render_create_success`, `create_audit_event('sign_out')`
+from `destroy`, both inserting into `audits` via `Enterprise::AuditLog.insert_all!`. It was deleted
+with the overlay. The OSS controller it prepended onto survives
+(`app/controllers/devise_overrides/sessions_controller.rb:27` still defines `render_create_success`),
+but **no surviving code writes a sign-in or sign-out audit row** — verified by grepping every
+`insert_all`, `Audited::Audit.create` and `*AuditLog.create*` call in `app/`, `custom/` and `lib/`.
+`Enterprise::Audit::User` was also not mirrored, though its own attribute auditing was deliberately
+inert (`unless: proc { |_u| true }`), so the loss there is the class registration, not attributes.
+
+**Product consequence.** Lynomia's own documentation
+(`custom/db/documentation/{en,ar}/administration/audit-logs.md`) describes the audit log as a record of
+"configuration changes **and sign-ins**", and lists **Access — sign-in and sign-out** as one of four
+event families. That family stops being recorded. The other three families are intact: all eleven
+mirrored `audited` declarations cover them, including agent availability, which is audited on
+`AccountUser` with a declaration identical to the Enterprise one.
+
+**Scope: 2 of the 14 documented events.** Not boot-affecting, not an error at runtime — rows simply
+stop being written.
+
+This is the same class of regression as the reader loss repaired above, and it was missed for the
+same reason in reverse: the mirroring exercise checked `audited` *declarations* and never looked for
+*manual* audit writers. It is recorded here rather than fixed because fixing it is a feature
+restoration, not a documentation correction, and this phase was scoped to documentation. Section 19
+reflects it in the verdict.
 
 **Production result: accounts with the `audit_logs` feature enabled = 0** (section 16, check 4).
 
@@ -494,11 +532,17 @@ cascade.
 **Production row counts are now in** (section 16, check 6): of the 22 tables this removal orphaned,
 **21 hold 0 rows** and **`companies` holds 97**.
 
-> **`companies` must NOT be dropped.** Those 97 rows are the only remaining source of the company
-> names for the **123 contacts** that still carry a `company_id` (section 16, check 5). A cleanup
-> phase that drops `companies` before those names are backfilled destroys them irrecoverably. The
-> required order is: **backfill first, review, then consider cleanup.** No cleanup is authorized by
-> this phase, and none has been performed.
+> **`companies` must NOT be dropped.** For any of the **123 contacts** that carry a `company_id`
+> (section 16, check 5) and whose `additional_attributes->>'company_name'` is blank, those 97 rows are
+> the only remaining source of the company name. Contacts may **also** hold a free-text name there
+> independently — `ContactsForm.vue` maps the form's company field to
+> `additionalAttributes.companyName` — so the overlap is unknown from here and is a production
+> question. Until it is answered, dropping `companies` risks destroying names irrecoverably. The
+> required order is: **establish the gap, backfill, review, then consider cleanup.** No cleanup is
+> authorized by this phase, and none has been performed.
+>
+> The gap is one more read-only query, not run and not part of the eight:
+> `SELECT count(*) FROM contacts WHERE company_id IS NOT NULL AND (additional_attributes->>'company_name') IS NULL;`
 
 The other 21 tables are empty, so a future cleanup phase would be dropping nothing but structure.
 That is still a separate, reviewed decision — this phase drops no table.
@@ -619,8 +663,8 @@ gone, not because a switch is off.
 | 40 | Audit history (4845 rows) | PASS | same table, same class, no migration (§7) |
 
 **External gates — now run and satisfied.** These were the facts only production could answer, which
-the three pre-removal gates did not cover. **All eight have been run read-only against
-`chatwoot_production`; the results and the SQL for each are in section 16.**
+the three pre-removal gates did not cover. **All eight have been run against `chatwoot_production` and
+the results returned to this phase; the counts, and the SQL as specified, are in section 16.**
 
 An earlier version of this section introduced them with *"None of these can break boot; each decides
 whether some rows are now unreferenced."* **The first clause is true but was read as reassurance it
@@ -720,7 +764,7 @@ They came back zero, and that zero does not depend on luck — **no surviving co
 
 - `conversations.ai_assignee` has **two** writers that supply a value, and both supply an `AgentBot`:
   `Conversations::AssignmentService#assign_ai_assignee`, whose only caller is
-  `assign_agent_bot` → `assign_ai_assignee(agent_bot)`; and `Conversation#324`,
+  `assign_agent_bot` → `assign_ai_assignee(agent_bot)`; and `app/models/conversation.rb:324`,
   `self.ai_assignee = inbox.agent_bot`. The remaining four assignments
   (`conversations_controller.rb:182`, `assignment_service.rb:23`, `conversation.rb:185`, `:304`) are
   `= nil`. So the column can only hold `AgentBot` or NULL.
@@ -751,9 +795,11 @@ But the value is **still emitted to API clients** when an account has the `compa
 `app/views/api/v1/models/_contact.json.jbuilder:9` and `app/models/contact.rb:163`. Clients receive
 an id they can no longer resolve.
 
-Those 97 rows are the only remaining source of the company names behind the 123 references. The
-order is **backfill, review, then consider cleanup** — never cleanup first. See the boxed rule in
-section 12.
+Those 97 rows are the only remaining source of the company name **for whichever of the 123 contacts
+has no free-text `additional_attributes->>'company_name'` already** — contacts can hold that
+independently, so the size of the real gap is a production question the eight checks did not ask. The
+order is **establish the gap, backfill, review, then consider cleanup** — never cleanup first. See the
+boxed rule in section 12.
 
 ### Carried forward: Twilio `api_key_secret` encryption compatibility
 
@@ -854,13 +900,34 @@ production rollback action has been executed** — this records the procedure on
 
 ## 19. Verdict
 
-**ENTERPRISE REMOVAL PASS**
+**ENTERPRISE REMOVAL PASS WITH ONE OPEN REGRESSION**
 
-Upgraded from *PASS WITH EXTERNAL GATES* once the eight production data gates were run. That qualifier
-rested on two things: the production queries, and the unanswered question of whether the restored
-audit log reader was reachable. **Both are now answered** (section 16). The queries returned zero for
-every value that could have broken a request path; the audit question returned 0 accounts, which
-settles it as a configuration follow-up rather than an open risk.
+The *EXTERNAL GATES* qualifier is discharged: it rested on the production queries and on whether the
+restored audit log reader was reachable, and **both are now answered** (section 16). The queries
+returned zero for every value that could have broken a request path; the audit entitlement returned 0
+accounts, a configuration follow-up rather than an open risk.
+
+**But this is not a clean PASS, because a defect found while reviewing this very correction is still
+open.** The removal deleted the sign-in/sign-out audit writer without a `Custom::` replacement, so the
+**Access family of Lynomia's documented audit log — 2 of its 14 events — silently stopped being
+recorded** (section 7). It breaks nothing at runtime and no data is lost; rows simply stop being
+written, and Lynomia's own documentation still promises them.
+
+This verdict deliberately departs from the three-verdict vocabulary the phase brief set
+(*PASS / PASS WITH EXTERNAL GATES / FAILED*). **FAILED** overstates it: `enterprise/` is gone, the
+namespace does not load, every gate and every suite is green, and the production data is clear.
+**PASS** understates it: a removal that silently drops a documented capability is not clean. The
+honest position is PASS on everything the phase set out to verify, with one bounded regression owed a
+decision:
+
+- **Restore it** — re-create the sign-in/sign-out audit writer under `custom/`, as the reader was
+  relocated in section 7. Small and bounded: one controller concern writing the same rows to the same
+  table through `Custom::AuditLog`.
+- **Or accept the loss** — and amend `custom/db/documentation/{en,ar}/administration/audit-logs.md` so
+  the product stops promising a record it no longer keeps.
+
+Either closes it. Neither is done here, because both are changes this documentation phase was not
+scoped to make.
 
 `enterprise/` and `spec/enterprise/` are gone — 823 tracked files. The namespace does not load, the
 directory does not exist, `ChatwootApp.extensions` is `["custom"]`, and **no runtime path depends on
@@ -868,10 +935,12 @@ an Enterprise constant**: the operational dependency count is **ZERO**. Lynomia 
 loads, serves and schedules on Chatwoot core plus `custom/` alone, proved in production mode with the
 directory physically absent and `DISABLE_ENTERPRISE` present nowhere.
 
-The 17 remaining textual occurrences are accounted for individually in section 4: nine are inert
-`enterprise?` guards in `lib/chatwoot_app.rb` and six already-applied migrations whose bodies name
+The remaining textual occurrences partition exactly as section 4 enumerates them: **8** inert
+`ChatwootApp.enterprise?` call sites across the six already-applied migrations whose bodies name
 deleted constants — the reason that predicate stays as a literal `false` rather than being deleted —
-and eight are comments or an assertion of absence.
+**4** methods in `lib/chatwoot_app.rb` (the predicate plus the three that begin `enterprise? &&`),
+and **8** comments or assertions of absence. The two `enterprise?` stubs in
+`spec/lib/chatwoot_app_spec.rb` belong to none of those classes.
 
 Every gate is green: production boot and eager load, `zeitwerk:check`, 786 routes with no Enterprise
 controller missing, Sidekiq with 12/12 cron classes resolving, the WhatsApp campaign lifecycle
@@ -880,8 +949,8 @@ controller missing, Sidekiq with 12/12 cron classes resolving, the WhatsApp camp
 RuboCop 2706 files clean, the frontend suite at 472 files / 5100 tests / 0 failures, ESLint 0 errors,
 and `vite build` and `build:sdk` both exit 0.
 
-**The external gates are closed.** All eight checks have been run read-only against
-`chatwoot_production` (section 16). The three that would have broken a live endpoint — dangling
+**The external gates are closed.** All eight checks have been run against `chatwoot_production` and
+the operator returned the results (section 16). The three that would have broken a live endpoint — dangling
 `Captain::Assistant` rows in `conversations.ai_assignee_type` and `messages.sender_type`, and
 `channel_twilio_sms.voice_enabled = true` — each returned **0**, and no surviving code can write any
 of those values, so the result is durable rather than incidental. `assignment_order <> 0` returned 0.

@@ -12,10 +12,10 @@ module ChatwootApp
   end
 
   # Chatwoot Enterprise is not part of this codebase. The predicate is kept, rather than deleted, because it is
-  # the single point that keeps every upstream enterprise? guard inert: roughly forty callers read it, six of them
-  # already-applied migrations in db/migrate whose bodies name Captain:: constants that no longer exist, and
-  # app/helpers/super_admin/features.yml interpolates it through ERB. One `false` here is what makes all of them
-  # safe; deleting the method would mean rewriting applied migration history.
+  # the single point that keeps every upstream enterprise? guard inert. Measured: 8 call sites across 6
+  # already-applied migrations in db/migrate, whose bodies name Captain:: constants that no longer exist, plus the
+  # three methods below that each begin `enterprise? &&`. One `false` here is what makes all of them safe; deleting
+  # the method would mean rewriting applied migration history.
   def self.enterprise?
     false
   end

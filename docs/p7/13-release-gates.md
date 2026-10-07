@@ -1,5 +1,10 @@
 # P7 — Full release gates on a clean tree
 
+> **Superseded in part.** This document records the gates as they stood when the Chatwoot Enterprise overlay
+> was still present. The authoritative gate list for the current release is
+> [`FINAL-PRODUCTION-RELEASE-READINESS.md`](FINAL-PRODUCTION-RELEASE-READINESS.md); its §7.5 names every row here
+> that is now stale and gives the correct position. Rows not listed there still stand.
+
 Every gate re-run at the final tree of this session, with `git status --porcelain` carrying only the files this
 session intends to commit. Where a gate could not be run here, it says so rather than being left out.
 

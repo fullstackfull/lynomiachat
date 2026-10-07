@@ -1,5 +1,10 @@
 # P7 — Production readiness matrix and verdict
 
+> **Superseded in part.** This document records the gates as they stood when the Chatwoot Enterprise overlay
+> was still present. The authoritative gate list for the current release is
+> [`FINAL-PRODUCTION-RELEASE-READINESS.md`](FINAL-PRODUCTION-RELEASE-READINESS.md); its §7.5 names every row here
+> that is now stale and gives the correct position. Rows not listed there still stand.
+
 One line per gate, one status from a closed set, and the evidence behind it. Nothing is marked `PASS` on the
 strength of an argument: either a command was run here and its output is quoted or referenced, or the status says
 why it could not be.

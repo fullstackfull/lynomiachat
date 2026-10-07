@@ -80,7 +80,8 @@ module InjectEnterpriseEditionModule
   end
 
   def const_get_maybe_false(mod, name)
-    # mod is false when the extension namespace is missing (e.g. custom/ without enterprise/)
+    # mod is false when the extension namespace is missing, which is the ordinary case at a site that only
+    # Chatwoot Enterprise ever overrode -- Lynomia is the sole extension, so most of the ~125 call sites no-op.
     return false unless mod
 
     mod.const_defined?(name, false) && mod.const_get(name, false)

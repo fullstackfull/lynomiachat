@@ -18,7 +18,7 @@ json.meta do
     end
     json.assignee_type 'User'
   end
-  json.partial! 'enterprise/api/v1/conversations/partials/assignee', conversation: conversation if ChatwootApp.enterprise?
+
   if conversation.team.present?
     json.team do
       json.partial! 'api/v1/models/team', formats: [:json], resource: conversation.team
@@ -70,6 +70,6 @@ json.last_non_activity_message conversation.messages.where(account_id: conversat
 json.last_activity_at conversation.last_activity_at.to_i
 json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
-sla_applicable = conversation.account.feature_enabled?('sla') && (!conversation.respond_to?(:sla_applicable?) || conversation.sla_applicable?)
+sla_applicable = conversation.account.feature_enabled?('sla')
 json.sla_policy_id sla_applicable ? conversation.sla_policy_id : nil
-json.partial! 'enterprise/api/v1/conversations/partials/conversation', conversation: conversation if ChatwootApp.enterprise?
+

@@ -4,7 +4,6 @@ module ActivityMessageHandler
   include AssigneeActivityMessageHandler
   include PriorityActivityMessageHandler
   include LabelActivityMessageHandler
-  include SlaActivityMessageHandler
   include TeamActivityMessageHandler
 
   private
@@ -15,7 +14,6 @@ module ActivityMessageHandler
     handle_status_change(user_name)
     handle_priority_change(user_name)
     handle_label_change(user_name)
-    handle_sla_policy_change(user_name)
   end
 
   def determine_user_name
@@ -38,13 +36,6 @@ module ActivityMessageHandler
     return unless saved_change_to_label_list?
 
     create_label_change(activity_message_owner(user_name))
-  end
-
-  def handle_sla_policy_change(user_name)
-    return unless saved_change_to_sla_policy_id?
-
-    sla_change_type = determine_sla_change_type
-    create_sla_change_activity(sla_change_type, activity_message_owner(user_name))
   end
 
   def status_change_activity(user_name)

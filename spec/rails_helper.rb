@@ -93,9 +93,9 @@ RSpec.configure do |config|
   # (spec/builders/agent_builder_spec.rb after spec/builders/account_builder_spec.rb) and, left alone, a source of
   # more.
   #
-  # `before`, not `after`, and that is the whole point: specs set message expectations ON `Current` itself --
-  # spec/enterprise/jobs/captain/conversation/response_builder_job_spec.rb asserts `executed_by=` is called with
-  # nil exactly once -- and an `after` hook resetting it counts as a second call against a stub that is still
+  # `before`, not `after`, and that is the whole point: a spec may set a message expectation ON `Current` itself
+  # and assert a setter is called an exact number of times -- an `after` hook resetting it counts as a second call
+  # against a stub that is still
   # installed. Resetting on the way in gives every example the clean `Current` a request starts with, and cannot be
   # counted by anything the example sets up.
   config.before { Current.reset }

@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 # Who may act on a store order (docs/commerce/32-actions-security.md): administrators everything; agents nothing unless a
-# custom role grants commerce_order_manage (spec/enterprise), and never refunds or cancellations.
+# custom role grants commerce_order_manage (spec/policies/commerce/action_policy_custom_role_spec.rb), and never refunds or cancellations.
 RSpec.describe Commerce::ActionPolicy, type: :policy do
   subject(:policy) { described_class }
 

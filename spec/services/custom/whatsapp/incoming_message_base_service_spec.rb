@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Enterprise::Whatsapp::IncomingMessageBaseService do
+RSpec.describe Custom::Whatsapp::IncomingMessageBaseService do
   let(:channel) { create(:channel_whatsapp, sync_templates: false, validate_provider_config: false) }
   let(:status) do
     {

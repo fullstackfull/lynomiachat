@@ -1,4 +1,11 @@
-module Enterprise::Whatsapp::OneoffCampaignService
+# Lynomia Campaigns (docs/campaigns/02-recipients.md): a one-off WhatsApp campaign keeps one
+# CampaignRecipient per contact, so the campaign can report who it reached. This replaces the OSS
+# fire-and-forget #perform outright -- every contact is recorded before it is sent, marked sent with
+# the provider's message id, or marked skipped or failed with the reason -- and the delivery and read
+# states arrive later through Custom::Whatsapp::IncomingMessageBaseService#process_statuses.
+# Recipients come from Campaign#audience_contacts, which Custom::CampaignAudience extends to resolve
+# the account's shared contact audiences beside its labels.
+module Custom::Whatsapp::OneoffCampaignService
   def perform
     validate_campaign!
     recipients = create_recipients

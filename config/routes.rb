@@ -149,10 +149,10 @@ Rails.application.routes.draw do
             end
           end
           resources :campaigns, only: [:index, :create, :show, :update, :destroy] do
-            if ChatwootApp.enterprise?
-              get 'analytics/metrics', to: 'campaigns/analytics#metrics'
-              get 'analytics/contacts', to: 'campaigns/analytics#contacts'
-            end
+            # Lynomia Campaigns: campaign recipient reporting is Lynomia-owned
+            # (custom/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb), so these are not gated.
+            get 'analytics/metrics', to: 'campaigns/analytics#metrics'
+            get 'analytics/contacts', to: 'campaigns/analytics#contacts'
           end
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do

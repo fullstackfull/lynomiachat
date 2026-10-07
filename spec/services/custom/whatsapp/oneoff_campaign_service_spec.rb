@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Enterprise::Whatsapp::OneoffCampaignService do
+RSpec.describe Custom::Whatsapp::OneoffCampaignService do
   let(:account) { create(:account) }
   let(:whatsapp_channel) do
     create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', validate_provider_config: false, sync_templates: false)

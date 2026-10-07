@@ -1,3 +1,8 @@
+# Lynomia Campaigns (docs/campaigns/02-recipients.md): one row per contact a one-off WhatsApp campaign
+# addressed, on the campaign_recipients table that ships in the OSS schema (db/schema.rb:401). The
+# status ladder is queued -> skipped | sent -> delivered -> read | failed; #update_from_whatsapp_status!
+# is the only writer for the states Meta reports, and it refuses to move a recipient backwards down
+# that ladder because Meta redelivers statuses out of order.
 class CampaignRecipient < ApplicationRecord
   belongs_to :account
   belongs_to :campaign

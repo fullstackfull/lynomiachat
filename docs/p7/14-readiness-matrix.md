@@ -22,7 +22,7 @@ A gate is never moved from `BLOCKED` to `PASS` by reasoning about what would pro
 
 | # | Gate | Status | Evidence |
 | --- | --- | --- | --- |
-| S1 | Ruby suite, whole repository, `enterprise` and `custom` both composed | `PASS` with one `NOT TESTED`, pending re-verification | `bundle exec rspec`, `enterprise` and `custom` both composed, on a truncated test database — run three: **11,269 examples, 2 failures, 70 pending** in 34m09s. One failure is `S18`, which needs an OpenSearch this container does not have. The other was caused by this session's own first attempt at `S19` and is fixed; the three groups that fix could disturb were re-run directly (43/0, 71/0, 340/0). **The full re-run at the committed tree has not reported yet** — it was killed by a container restart and restarted — so this row is the measured run-three figure plus a named, separately-verified one-line delta, not a number from the committed tree. It is updated when that run lands |
+| S1 | Ruby suite, whole repository, `enterprise` and `custom` both composed | `PASS` with one `NOT TESTED` | `bundle exec rspec`, `enterprise` and `custom` both composed, on a truncated test database, at this tree — **11,269 examples, 1 failure, 70 pending** in 46m40s. The one failure is `S18`, which needs an OpenSearch this container does not have; nothing else fails. `git log 07dfffe6..HEAD -- spec app enterprise custom lib config` is empty, so the run measured the code this document ships with |
 | S2 | JavaScript suite | `PASS` | `npx vitest run` — **500 files, 5253 tests, 5253 passed**, re-run at the final tree |
 | S3 | Ruby style | `PASS` | `bundle exec rubocop --parallel` — **3515 files, no offenses**, re-run at the final tree |
 | S4 | JavaScript and Vue lint | `PASS` | `npx eslint app/javascript` — 0 errors (517 pre-existing `no-dynamic-keys` warnings, reported in `13-release-gates.md`) |
@@ -242,14 +242,17 @@ would have broken — checked before making the change rather than discovered by
 
 ### Run four — the gate
 
-**Not yet measured at the committed tree.** Run four was started twice. The first attempt was killed when the
-container was restarted; the second is in flight at the time of writing, on a rebuilt database. Until it reports,
-this document's Ruby-suite figure is run three's, and `S1` says so rather than quoting a number nobody has seen.
+**11,269 examples, 1 failure, 70 pending, 46m40s.** The one failure is `S18` — the OpenSearch-gated example —
+and nothing else. The order-dependent failure is gone, the Captain spec my first attempt at the fix broke is
+green, the policy specs assert the contract the product has, and no other example moved.
 
-What is known about the delta between run three and the committed tree: it is one hook moving from `after` to
-`before`, and the three groups it could disturb were each run directly — 43/0, 71/0 and 340/0 above. What is not
-known is that nothing else in the other 11,000-odd examples moved. That is what run four is for, and this section
-will carry its result.
+Run four was started twice: the first attempt was killed when the container was restarted, which also wiped the
+PostgreSQL data directory; the figure above is the second, on a database rebuilt from `db/schema.rb`. It took
+46m40s rather than the ~33m of earlier runs, on a freshly started cluster with cold caches — the example count and
+the failure list are what matter, and both are stable across runs.
+
+`git log 07dfffe6..HEAD -- spec app enterprise custom lib config` is empty, so this run measured the code this
+document ships with; the only commit after it is this document.
 
 `spec/requests/custom/cross_account_isolation_spec.rb` was written after run two had started, so it is absent
 from that count; it is in runs three and four, and separately at **16 examples, 0 failures**.

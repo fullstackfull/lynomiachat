@@ -25,7 +25,7 @@ count is reported rather than hidden; what matters for a gate is that there are 
 | Gate | Result |
 | --- | --- |
 | JavaScript, full suite (`npx vitest run`) | **500 files, 5253 tests, 5253 passed** |
-| Ruby, full suite (`bundle exec rspec`) | run three: **11,269 examples, 2 failures, 70 pending** in 34m09s — both attributed; see `14-readiness-matrix.md` §"What the full suite found" |
+| Ruby, full suite (`bundle exec rspec`) | **11,269 examples, 1 failure, 70 pending** in 46m40s — the one failure needs an OpenSearch this container has none of; see `14-readiness-matrix.md` §"What the full suite found" |
 
 The Ruby suite ran with the overlay composed the way production composes it — `enterprise` and `custom` both
 active — which is deliberate: the upstream FOSS workflow deletes `enterprise/` before running, so it never

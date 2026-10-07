@@ -5,7 +5,7 @@ core (`app/`, `lib/`) plus Lynomia's own code (`custom/`)**, proved by booting t
 `RAILS_ENV=production` with eager loading on, with the directory physically absent and
 `DISABLE_ENTERPRISE` set nowhere in the repository or the environment.
 
-Verdict in section 17.
+Verdict in section 18.
 
 **Inputs:** `00-enterprise-dependency-audit.md` (the dependency map),
 `01-zero-dependency-readiness.md` (*READY AFTER SMALL REPLACEMENTS*),
@@ -39,7 +39,7 @@ No table was dropped, no column or foreign key was removed, and no migration was
 | Frontend baseline | 499 test files passed, 1 failed (pre-existing); `pnpm test` 492 files / 5206 tests after the phase's own corrections |
 | **POST_REMOVAL_SHA (final HEAD)** | `db9132860e4b0f5741962b4bf021de1c887aedcf` |
 
-The tag is the rollback point (section 16). It was created before the first removal commit, from a
+The tag is the rollback point (section 17). It was created before the first removal commit, from a
 clean tree, so a revert needs no file reconstruction.
 
 ## 2. Commits
@@ -575,7 +575,65 @@ None of these can break boot; each decides whether some rows are now unreference
 | `SELECT count(*) FROM accounts WHERE 'audit_logs' = ANY(...)` / feature check | confirms the restored reader is reachable for the accounts that had it |
 | Row counts for the 22 orphaned tables | sizes the optional cleanup phase |
 
-## 16. Rollback
+## 16. Test gate
+
+Isolated environment: PostgreSQL database `chatwoot_test` (reset with `db:test:prepare`,
+`installation_configs` verified at 0 rows) and Redis logical database 2 (`FLUSHDB`), on a clean
+working tree with nothing else running against either.
+
+| Gate | Result |
+|:--|:--|
+| **Backend — `bundle exec rspec`** | **8651 examples, 0 failures, 70 pending, exit 0** |
+| **RuboCop — `bundle exec rubocop`** | **2706 files inspected, 0 offenses** |
+| **Frontend unit — `pnpm test`** | **472 files, 5100 tests, 0 failures, exit 0** |
+| **ESLint — `pnpm eslint`** | **0 errors** (450 pre-existing `no-raw-text` / `no-dynamic-keys` warnings) |
+| **Production frontend build — `vite build`** | **exit 0** |
+| **SDK build — `pnpm run build:sdk`** | **exit 0** |
+
+The 70 pending are upstream Chatwoot `skip`/`pending` markers, unchanged by this phase.
+
+Frontend totals moved from 492 files / 5206 tests to 472 / 5100 — 20 files and 106 tests fewer,
+which are the deleted Captain, Copilot, Companies, Calls and SLA specs, against the audit log
+reader's 6 new backend examples.
+
+### The first run, and why its 92 failures were not real
+
+An earlier full run of the same suite reported **92 failures**. They are recorded here rather than
+quietly replaced, because the reason matters.
+
+Both causes were **mine, not the removal's**. I ran that suite while continuing to work:
+
+1. A production-mode `rails runner` and a Sidekiq boot (the section 13 and 14 gates) were pointed at
+   **the same `chatwoot_test` database**, and wrote 4 `installation_configs` rows into it.
+   `spec/lib/config_loader_spec.rb` says it outright — `expected: 0, got: 4` — and
+   `global_config_service_spec`, `vapid_service_spec` and the two `accounts_controller` specs read the
+   same table.
+2. I edited and deleted files on disk mid-run. With reloading enabled in the test environment, that
+   reloads the autoload paths, and the suite ended up holding **two different `Account` class
+   objects**: `ActiveRecord::AssociationTypeMismatch: Account(#151632) expected, got … Account(#35096)`.
+   The same artefact explains `expected MutexApplicationJob::LockAcquisitionError, got
+   #<MutexApplicationJob::LockAcquisitionError: …>` — the object *is* of the expected class, under a
+   different class identity. This is the hazard `CLAUDE.md` already names for this repository
+   ("prefer comparing `error.class.name` over constant class equality when asserting raised errors").
+
+Rather than assert that, it was verified: **every file that failed was re-run in isolation on the
+second, untouched database — 568 examples plus 37, 0 failures.** That covers all 92, including the two
+in the removal's own blast radius (`Campaigns::UpdateRecipientStatusJob`) and
+`spec/jobs/flows/run_job_spec.rb`. The clean full run above then returned 0 failures over the same
+8651 examples.
+
+Classification per the four categories asked for: **92 class B (environment / test harness), 0 class
+A (pre-existing failure), 0 class C (stale Enterprise test assumption), 0 class D (real removal
+regression).** No assertion was weakened and no spec was skipped, disabled or quarantined to reach
+this.
+
+Stale Enterprise test assumptions were handled earlier and separately, as code changes with their own
+commits: `f8827681` removed the orphan factories and the four `if: ChatwootApp.enterprise?` examples
+in `spec/controllers/super_admin/accounts_controller_spec.rb`, `b2b3d695` rebased the onboarding
+assertion onto the absence of the path rather than the presence of a `Custom::` override, and
+`0811f4c9` (previous phase) re-pointed 24 audit assertions at `Custom::AuditLog`.
+
+## 17. Rollback
 
 Rollback is a revert to the commit immediately before the first removal commit. No file needs
 reconstructing — every deleted file is in git history at that commit.
@@ -598,7 +656,7 @@ Nothing about the rollback touches the database: no migration was added and no s
 made, so `db/schema.rb` is identical at both SHAs and the same database serves either. **No
 production rollback action has been executed** — this records the procedure only.
 
-## 17. Verdict
+## 18. Verdict
 
 **ENTERPRISE REMOVAL PASS WITH EXTERNAL GATES**
 
@@ -616,8 +674,9 @@ and eight are comments or an assertion of absence.
 Every gate is green: production boot and eager load, `zeitwerk:check`, 786 routes with no Enterprise
 controller missing, Sidekiq with 12/12 cron classes resolving, the WhatsApp campaign lifecycle
 `sent → delivered / read / failed` with analytics agreeing with the database, the audit class and its
-4845 rows, the permission triple, RuboCop 2706 files clean, ESLint 0 errors, `vite build` and
-`build:sdk` both exit 0, and the frontend suite at 472 files / 5100 tests / 0 failures.
+4845 rows, the permission triple, **the backend suite at 8651 examples / 0 failures / 70 pending**,
+RuboCop 2706 files clean, the frontend suite at 472 files / 5100 tests / 0 failures, ESLint 0 errors,
+and `vite build` and `build:sdk` both exit 0.
 
 **Why "with external gates" and not a bare PASS.** Two things are outside what a repository phase can
 settle:
@@ -633,7 +692,7 @@ settle:
 
 Neither is a defect in the removal. Both are facts to collect before the deploy phase.
 
-## 18. Upgradeability, and what Lynomia now maintains
+## 19. Upgradeability, and what Lynomia now maintains
 
 **What gets easier.** Chatwoot upstream ships `app/` and `enterprise/` as separate trees. With the
 overlay gone, an upstream merge no longer has to reconcile `enterprise/` at all — 823 files of merge

@@ -8,7 +8,6 @@ import {
   ICON_BOT,
   ICON_BRIEFCASE,
   ICON_CHART,
-  ICON_CLOCK_ALERT,
   ICON_CODE,
   ICON_CONTACT,
   ICON_CREDIT_CARD,
@@ -55,14 +54,6 @@ const GO_TO_COMMANDS = [
     section: SECTION_GENERAL,
     icon: ICON_CONTACT,
     routeName: 'contacts_dashboard_index',
-  },
-  {
-    id: 'goto_captain',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_CAPTAIN',
-    section: SECTION_GENERAL,
-    icon: ICON_BOT,
-    routeName: 'captain_assistants_index',
-    params: { navigationPath: 'captain_assistants_overview_index' },
   },
   {
     id: 'goto_campaigns',
@@ -126,13 +117,6 @@ const GO_TO_COMMANDS = [
     section: SECTION_REPORTS,
     icon: ICON_BOT,
     routeName: 'bot_reports',
-  },
-  {
-    id: 'open_sla_reports',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_SLA_REPORTS',
-    section: SECTION_REPORTS,
-    icon: ICON_CLOCK_ALERT,
-    routeName: 'sla_reports',
   },
   {
     id: 'open_agent_settings',
@@ -213,13 +197,6 @@ const GO_TO_COMMANDS = [
     routeName: 'canned_list',
   },
   {
-    id: 'open_sla_settings',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_SLA',
-    section: SECTION_SETTINGS,
-    icon: ICON_CLOCK_ALERT,
-    routeName: 'sla_list',
-  },
-  {
     id: 'open_applications_settings',
     title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_APPLICATIONS',
     section: SECTION_SETTINGS,
@@ -232,13 +209,6 @@ const GO_TO_COMMANDS = [
     section: SECTION_SETTINGS,
     icon: ICON_DATABASE,
     routeName: 'settings_data_imports',
-  },
-  {
-    id: 'open_audit_logs_settings',
-    title: 'COMMAND_BAR.COMMANDS.GO_TO_SETTINGS_AUDIT_LOGS',
-    section: SECTION_SETTINGS,
-    icon: ICON_BRIEFCASE,
-    routeName: 'auditlogs_list',
   },
   {
     id: 'open_billing_settings',

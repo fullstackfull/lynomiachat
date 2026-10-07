@@ -22,7 +22,6 @@ const {
   DOCUMENTATION_URL: documentationURL,
   SUPPORT_URL: supportURL,
   CHANGELOG_URL: changelogURL,
-  IS_ENTERPRISE: isEnterprise,
   TERMS_URL: termsURL,
   WIDGET_BRAND_URL: widgetBrandURL,
   DISABLE_USER_PROFILE_UPDATE: disableUserProfileUpdate,
@@ -59,7 +58,6 @@ const state = {
   changelogURL,
   termsURL,
   widgetBrandURL,
-  isEnterprise: parseBoolean(isEnterprise),
   activePlatformBanners: activePlatformBanners || [],
 };
 

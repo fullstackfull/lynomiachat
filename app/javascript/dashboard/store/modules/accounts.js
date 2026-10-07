@@ -3,7 +3,6 @@ import * as types from '../mutation-types';
 import AccountAPI from '../../api/account';
 import OnboardingAPI from '../../api/onboarding';
 import { differenceInDays } from 'date-fns';
-import EnterpriseAccountAPI from '../../api/enterprise/account';
 import WhatsappChannel from '../../api/channel/whatsappChannel';
 import { getLanguageDirection } from 'dashboard/components/widgets/conversation/advancedFilterItems/languages';
 
@@ -18,7 +17,6 @@ const state = {
     isFetching: false,
     isFetchingItem: false,
     isUpdating: false,
-    isFetchingLimits: false,
   },
 };
 
@@ -126,18 +124,6 @@ export const actions = {
     }
   },
 
-  limits: async ({ commit }) => {
-    commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
-    try {
-      const response = await EnterpriseAccountAPI.getLimits();
-      commit(types.default.SET_ACCOUNT_LIMITS, response.data);
-    } catch (error) {
-      // silent error
-    } finally {
-      commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
-    }
-  },
-
   getCacheKeys: async () => {
     return AccountAPI.getCacheKeys();
   },
@@ -152,7 +138,6 @@ export const mutations = {
   },
   [types.default.ADD_ACCOUNT]: MutationHelpers.setSingleRecord,
   [types.default.EDIT_ACCOUNT]: MutationHelpers.update,
-  [types.default.SET_ACCOUNT_LIMITS]: MutationHelpers.updateAttributes,
 };
 
 export default {

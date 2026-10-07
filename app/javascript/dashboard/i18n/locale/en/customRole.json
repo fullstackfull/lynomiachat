@@ -21,6 +21,10 @@
       "UPGRADE_PROMPT": "Upgrade to a paid plan to access advanced features like audit logs, agent capacity, and more.",
       "ASK_ADMIN": "Please reach out to your administrator for the upgrade."
     },
+    "PLAN_NOTICE": {
+      "TEXT": "Custom roles are not included in your current plan.",
+      "VIEW_PLANS": "View plans"
+    },
     "LIST": {
       "404": "There are no custom roles available in this account.",
       "TITLE": "Manage custom roles",

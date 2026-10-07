@@ -13,7 +13,6 @@ import CaptainAssistant from 'dashboard/api/captain/assistant';
 import CaptainAssistantStats from 'dashboard/api/captain/assistantStats';
 
 import PageLayout from 'dashboard/components-next/captain/PageLayout.vue';
-import CaptainPaywall from 'dashboard/components-next/captain/pageComponents/Paywall.vue';
 import RangeSelector from 'dashboard/components-next/captain/pageComponents/overview/RangeSelector.vue';
 import InboxBanner from 'dashboard/components-next/captain/pageComponents/overview/InboxBanner.vue';
 import CoverageBanner from 'dashboard/components-next/captain/pageComponents/overview/CoverageBanner.vue';
@@ -367,9 +366,6 @@ const reviewFaqs = () =>
         v-model="selectedRange"
         :stats-start-date="statsStartDate"
       />
-    </template>
-    <template #paywall>
-      <CaptainPaywall />
     </template>
     <template #body>
       <div class="flex flex-col gap-5 pb-8">

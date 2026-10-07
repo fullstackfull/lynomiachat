@@ -26,10 +26,7 @@ export default {
           meta: {
             permissions: ['administrator'],
             featureFlag: FEATURE_FLAGS.CAPTAIN,
-            installationTypes: [
-              INSTALLATION_TYPES.ENTERPRISE,
-              INSTALLATION_TYPES.CLOUD,
-            ],
+            installationTypes: [INSTALLATION_TYPES.CLOUD],
           },
         },
       ],

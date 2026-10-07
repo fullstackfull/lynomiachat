@@ -5,13 +5,11 @@ import {
   useStore,
 } from 'dashboard/composables/store';
 import { useAccount } from 'dashboard/composables/useAccount';
-import { useConfig } from 'dashboard/composables/useConfig';
 import { useI18n } from 'vue-i18n';
 import TasksAPI from 'dashboard/api/captain/tasks';
 
 vi.mock('dashboard/composables/store');
 vi.mock('dashboard/composables/useAccount');
-vi.mock('dashboard/composables/useConfig');
 vi.mock('vue-i18n');
 vi.mock('dashboard/api/captain/tasks');
 vi.mock('dashboard/helper/AnalyticsHelper/index', async importOriginal => {
@@ -50,9 +48,6 @@ describe('useCaptain', () => {
     useAccount.mockReturnValue({
       isCloudFeatureEnabled: vi.fn().mockReturnValue(true),
       currentAccount: { value: { limits: { captain: {} } } },
-    });
-    useConfig.mockReturnValue({
-      isEnterprise: false,
     });
   });
 

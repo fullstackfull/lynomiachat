@@ -611,23 +611,6 @@ const menuItems = computed(() => {
       ],
     },
     {
-      name: 'Companies',
-      label: t('SIDEBAR.COMPANIES'),
-      icon: 'i-lucide-building-2',
-      children: [
-        {
-          name: 'All Companies',
-          label: t('SIDEBAR.ALL_COMPANIES'),
-          to: accountScopedRoute(
-            'companies_dashboard_index',
-            {},
-            { page: 1, search: undefined }
-          ),
-          activeOn: ['companies_dashboard_index', 'companies_dashboard_show'],
-        },
-      ],
-    },
-    {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-chart-spline',
@@ -647,11 +630,6 @@ const menuItems = computed(() => {
           name: 'Reports CSAT',
           label: t('SIDEBAR.CSAT'),
           to: accountScopedRoute('csat_reports'),
-        },
-        {
-          name: 'Reports SLA',
-          label: t('SIDEBAR.REPORTS_SLA'),
-          to: accountScopedRoute('sla_reports'),
         },
         {
           name: 'Reports Bot',
@@ -903,12 +881,6 @@ const menuItems = computed(() => {
                   },
                 ]
               : []),
-            {
-              name: 'Settings Audit Logs',
-              label: t('SIDEBAR.AUDIT_LOGS'),
-              icon: 'i-lucide-scroll-text',
-              to: accountScopedRoute('auditlogs_list'),
-            },
           ],
         },
       ],

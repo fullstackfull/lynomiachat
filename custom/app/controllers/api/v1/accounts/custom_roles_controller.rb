@@ -1,4 +1,8 @@
-class Api::V1::Accounts::CustomRolesController < Api::V1::Accounts::EnterpriseAccountsController
+# Lynomia keeps custom roles because Commerce order management is granted through one
+# (custom/app/policies/commerce/action_policy.rb). Administrator-only, per account, behind the
+# `custom_roles` feature flag, exactly as Chatwoot had it -- only the base class changes, from the
+# Enterprise passthrough to the OSS controller it was a passthrough for.
+class Api::V1::Accounts::CustomRolesController < Api::V1::Accounts::BaseController
   before_action :ensure_custom_roles_feature_enabled
   before_action :fetch_custom_role, only: [:show, :update, :destroy]
   before_action :check_authorization

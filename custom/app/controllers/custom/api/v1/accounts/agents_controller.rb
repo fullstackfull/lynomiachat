@@ -1,4 +1,6 @@
-module Enterprise::Api::V1::Accounts::AgentsController
+# Lynomia: attaching a custom role to an agent, so the role that grants Commerce order management can
+# actually be given out (custom/app/models/custom_role.rb).
+module Custom::Api::V1::Accounts::AgentsController
   def create
     super
     return if @agent.blank?

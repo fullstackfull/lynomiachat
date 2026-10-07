@@ -26,6 +26,22 @@ RSpec.describe Commerce::ActionPolicy, type: :policy do
     end
   end
 
+  permissions :perform? do
+    # Tenant isolation: the policy reads the membership of the account being acted on, so a role defined in
+    # another account cannot carry a grant across. Asserted here rather than assumed, because the role and the
+    # membership are now Lynomia-owned (custom/app/models/custom_role.rb).
+    it 'does not let a role from another account grant anything' do
+      other_account = create(:account)
+      foreign_role = create(:custom_role, account: other_account, permissions: %w[commerce_order_manage])
+      foreign_member = create(:account_user, user: create(:user), account: other_account, role: :agent, custom_role: foreign_role)
+      context_in_this_account = { user: foreign_member.user, account: account, account_user: account_user }
+
+      custom_role.update!(permissions: %w[conversation_manage])
+
+      Commerce::ActionRun::ORDER_ACTIONS.each { |action_type| expect(policy).not_to permit(context_in_this_account, action_type) }
+    end
+  end
+
   it 'is a permission custom roles can be given' do
     expect(CustomRole::PERMISSIONS).to include('commerce_order_manage')
     expect(build(:custom_role, account: account, permissions: %w[commerce_order_manage])).to be_valid

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'Enterprise Agents API', type: :request do
+RSpec.describe 'Agents API with a custom role', type: :request do
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
   let!(:custom_role) { create(:custom_role, account: account) }

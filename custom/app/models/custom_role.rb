@@ -26,6 +26,9 @@
 # - 'commerce_order_manage': Lynomia Commerce: can change store order statuses and resend store emails (refunds and
 #   cancellations stay administrator-only).
 
+# Lynomia-owned: `commerce_order_manage` below is what lets a non-administrator act on a store order
+# (custom/app/policies/commerce/action_policy.rb), so the role storage is Lynomia's, on the
+# custom_roles table that ships in the OSS schema (db/schema.rb).
 class CustomRole < ApplicationRecord
   belongs_to :account
   has_many :account_users, dependent: :nullify

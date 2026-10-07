@@ -161,8 +161,12 @@ they are permanently false and are left verbatim for upstream parity.
 | `app/models/portal.rb` | **corrected** in `db913286`: the reserved-slug list no longer claims a live service explains it |
 | `custom/app/policies/custom/portal_policy.rb` | **corrected** in `db913286`: no longer says the Enterprise grant "is installed" |
 
-`DISABLE_ENTERPRISE`: **0 occurrences** anywhere in the repository. `isEnterprise` / `IS_ENTERPRISE`:
-**0** in `app/javascript` and `app/views`.
+`DISABLE_ENTERPRISE`: **0 occurrences in code or configuration**. All 21 occurrences in the
+repository are in `docs/` — this report (6), `00-enterprise-dependency-audit.md` (5),
+`02-zero-dependency-implementation.md` (4), `docs/p7/00-discovery-findings.md` (3),
+`docs/product-enablement/07-branding-audit.md` (2) and `docs/p7/00b-discovery-informational.md` (1) —
+audit prose discussing the variable, read by nothing. `isEnterprise` / `IS_ENTERPRISE`: **0** in
+`app/javascript` and `app/views`.
 
 ## 5. Routes
 
@@ -496,8 +500,9 @@ section 6 lifecycle run, which goes through `UpdateRecipientStatusJob`.
 ## 14. Production boot simulation — no `DISABLE_ENTERPRISE`
 
 `RAILS_ENV=production`, `eager_load = true`, `enterprise/` physically absent,
-`DISABLE_ENTERPRISE in ENV = false` and **0 occurrences of the name anywhere in the repository**, so
-the simulation cannot be leaning on it.
+`DISABLE_ENTERPRISE in ENV = false` and **0 occurrences of the name in code or configuration**
+(section 4), so the simulation cannot be leaning on it. Enterprise is absent because the files are
+gone, not because a switch is off.
 
 | Check | Result |
 |:--|:--|

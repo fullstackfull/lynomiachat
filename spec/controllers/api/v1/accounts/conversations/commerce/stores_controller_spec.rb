@@ -186,11 +186,9 @@ RSpec.describe 'Conversation commerce API', type: :request do
       expect(response).to have_http_status(:ok)
       expect(store.customer_links.sole).to have_attributes(match_source: 'suppressed', confirmed_by: agent)
 
-      if defined?(Enterprise::AuditLog)
-        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').order(:id).pluck(:comment, :audited_changes))
-          .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
-                  ['commerce.customer_link_removed', { 'match_source' => %w[manual suppressed] }]])
-      end
+      expect(Custom::AuditLog.where(auditable_type: 'Commerce::CustomerLink').order(:id).pluck(:comment, :audited_changes))
+        .to eq([['commerce.customer_link_created', { 'match_source' => 'manual' }],
+                ['commerce.customer_link_removed', { 'match_source' => %w[manual suppressed] }]])
     end
 
     it 'audits a changed link with the previous match source' do
@@ -201,10 +199,8 @@ RSpec.describe 'Conversation commerce API', type: :request do
                                        params: { token: response.parsed_body['candidates'].sole['token'] }
 
       expect(store.customer_links.sole).to have_attributes(external_customer_id: 'guest:omar.khalil@example.com', match_source: 'manual')
-      if defined?(Enterprise::AuditLog)
-        expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').last)
-          .to have_attributes(comment: 'commerce.customer_link_changed', audited_changes: { 'match_source' => %w[verified_phone manual] })
-      end
+      expect(Custom::AuditLog.where(auditable_type: 'Commerce::CustomerLink').last)
+        .to have_attributes(comment: 'commerce.customer_link_changed', audited_changes: { 'match_source' => %w[verified_phone manual] })
     end
 
     it 'refuses a forged or foreign token' do

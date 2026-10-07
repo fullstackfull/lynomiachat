@@ -234,8 +234,8 @@ RSpec.describe Commerce::Shopify::TokenManager do
     described_class.new(store).with_credentials(&access_token)
     error = travel(58.minutes) { error_for { described_class.new(store.reload).with_credentials(&access_token) } }
 
-    audit = defined?(Enterprise::AuditLog) ? Enterprise::AuditLog.where(auditable: store).order(:id) : []
-    expect(audit.map(&:comment)).to eq(%w[commerce.shopify.token_refreshed commerce.shopify.needs_reauth]) if defined?(Enterprise::AuditLog)
+    audit = Custom::AuditLog.where(auditable: store).order(:id)
+    expect(audit.map(&:comment)).to eq(%w[commerce.shopify.token_refreshed commerce.shopify.needs_reauth])
     everything = [logged.join, error.to_json, audit.to_json].join
     %w[access-1 refresh-1 access-2 refresh-2].push(shopify_client_secret).each { |secret| expect(everything).not_to include(secret) }
   end

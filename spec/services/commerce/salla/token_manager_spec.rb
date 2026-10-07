@@ -168,7 +168,7 @@ RSpec.describe Commerce::Salla::TokenManager do
     end
   end
 
-  it 'audits refreshes and re-authorization needs without any token or secret', if: defined?(Enterprise::AuditLog) do
+  it 'audits refreshes and re-authorization needs without any token or secret' do
     stub_refresh
     described_class.new(store).access_token
     travel(14.days) do
@@ -176,7 +176,7 @@ RSpec.describe Commerce::Salla::TokenManager do
       error_for { described_class.new(store.reload).access_token }
     end
 
-    logs = Enterprise::AuditLog.where(auditable: store).order(:id)
+    logs = Custom::AuditLog.where(auditable: store).order(:id)
     expect(logs.pluck(:comment)).to eq(%w[commerce.salla.token_refreshed commerce.salla.needs_reauth])
     expect(logs.to_json).not_to include('access-1', 'refresh-1', 'access-2', 'refresh-2', salla_client_secret)
   end

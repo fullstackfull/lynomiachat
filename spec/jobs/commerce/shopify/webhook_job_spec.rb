@@ -63,7 +63,7 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     expect(Redis::Alfred.exists?(cache_key.call('7002'))).to be(false)
     expect([sara, guest, other].map { |contact| Contact.exists?(contact.id) }).to all(be(true))
     expect(Conversation.exists?(conversation.id)).to be(true)
-    expect(Enterprise::AuditLog.where(auditable: store).pluck(:comment)).to include('commerce.shopify.uninstalled') if defined?(Enterprise::AuditLog)
+    expect(Custom::AuditLog.where(auditable: store).pluck(:comment)).to include('commerce.shopify.uninstalled')
   end
 
   it 'ignores an uninstall whose signed body names another shop, or that is older than the current authorization' do
@@ -81,23 +81,19 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     expect(store.customer_links.pluck(:external_customer_id)).to eq(['7002'])
     expect(Redis::Alfred.exists?(cache_key.call('7002'))).to be(false)
     expect([sara, guest].map { |contact| Contact.exists?(contact.id) }).to all(be(true))
-    if defined?(Enterprise::AuditLog)
-      audit = Enterprise::AuditLog.find_by!(comment: 'commerce.shopify.customer_redacted')
-      expect(audit.audited_changes).to eq('customer_links_removed' => 2)
-      expect(audit.to_json).not_to include('sara.ali', '966551112233', '7001')
-    end
+    audit = Custom::AuditLog.find_by!(comment: 'commerce.shopify.customer_redacted')
+    expect(audit.audited_changes).to eq('customer_links_removed' => 2)
+    expect(audit.to_json).not_to include('sara.ali', '966551112233', '7001')
   end
 
   it 'records a customer data request for the operator, with the link ids to export and no personal data, removing nothing' do
     run('customers/data_request', { 'shop_id' => 68_210_001, 'shop_domain' => shop, 'customer' => customer, 'data_request' => { 'id' => 9999 } })
 
     expect(store.customer_links.count).to eq(3)
-    if defined?(Enterprise::AuditLog)
-      audit = Enterprise::AuditLog.find_by!(comment: 'commerce.shopify.customer_data_requested')
-      expect(audit.audited_changes).to eq('customer_link_ids' => store.customer_links.where(contact: [sara, guest]).order(:id).pluck(:id),
-                                          'data_request_id' => 9999)
-      expect(audit.to_json).not_to include('sara.ali', '966551112233')
-    end
+    audit = Custom::AuditLog.find_by!(comment: 'commerce.shopify.customer_data_requested')
+    expect(audit.audited_changes).to eq('customer_link_ids' => store.customer_links.where(contact: [sara, guest]).order(:id).pluck(:id),
+                                        'data_request_id' => 9999)
+    expect(audit.to_json).not_to include('sara.ali', '966551112233')
   end
 
   it 'deletes the store, its links and cache on shop/redact, keeping contacts, conversations and a minimal audit' do
@@ -110,11 +106,9 @@ RSpec.describe Commerce::Shopify::WebhookJob do
     expect(Redis::Alfred.exists?(cache_key.call('7001'))).to be(false)
     expect(Conversation.exists?(conversation.id)).to be(true)
     expect(Contact.where(id: [sara.id, guest.id, other.id]).count).to eq(3)
-    if defined?(Enterprise::AuditLog)
-      audit = Enterprise::AuditLog.find_by!(comment: 'commerce.shopify.shop_redacted')
-      expect(audit).to have_attributes(auditable: account)
-      expect(audit.audited_changes).to eq('store_id' => store.id, 'customer_links_removed' => 3)
-    end
+    audit = Custom::AuditLog.find_by!(comment: 'commerce.shopify.shop_redacted')
+    expect(audit).to have_attributes(auditable: account)
+    expect(audit.audited_changes).to eq('store_id' => store.id, 'customer_links_removed' => 3)
   end
 
   it 'applies the privacy topics only to the shop named in the signed body' do

@@ -105,7 +105,7 @@ RSpec.describe Commerce::ActionExecutor do
 
       expect(run.reload).to have_attributes(status: 'succeeded', provider_request_id: '9001')
       expect(provider).to have_received(:perform_action).once
-      expect(Enterprise::AuditLog.where(auditable: run).pluck(:comment)).to eq(%w[commerce.action.reconciled]) if defined?(Enterprise::AuditLog)
+      expect(Custom::AuditLog.where(auditable: run).pluck(:comment)).to eq(%w[commerce.action.reconciled])
     end
 
     it 'is failed once the store shows it did not happen, so the agent can ask again' do

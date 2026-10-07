@@ -91,8 +91,14 @@ RSpec.configure do |config|
   # example happens to run next, and `User#send_devise_notification` then parameterizes the mail with an account it
   # should know nothing about. That is one real, reproducible order-dependent failure in this suite
   # (spec/builders/agent_builder_spec.rb after spec/builders/account_builder_spec.rb) and, left alone, a source of
-  # more. This mirrors the per-request reset rather than introducing a test-only rule.
-  config.after { Current.reset }
+  # more.
+  #
+  # `before`, not `after`, and that is the whole point: specs set message expectations ON `Current` itself --
+  # spec/enterprise/jobs/captain/conversation/response_builder_job_spec.rb asserts `executed_by=` is called with
+  # nil exactly once -- and an `after` hook resetting it counts as a second call against a stub that is still
+  # installed. Resetting on the way in gives every example the clean `Current` a request starts with, and cannot be
+  # counted by anything the example sets up.
+  config.before { Current.reset }
 end
 
 Shoulda::Matchers.configure do |config|

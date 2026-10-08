@@ -272,13 +272,14 @@ no double deferral.
 No replacement campaign engine was built. The existing `campaign_recipients` table is reused
 unchanged; with 0 production rows, no migration was needed and none was written.
 
-## 7. Auditing — and the one regression this phase had to repair
+## 7. Auditing — and the four severed writers this phase had to repair
 
 ```
 Audited.audit_class      = Custom::AuditLog   on table "audits"
 'Enterprise::AuditLog'.safe_constantize = nil
 audited declarations (11): Account, AccountUser, AgentBot, AutomationRule, Conversation,
                            CustomFilter, Inbox, Macro, Team, Webhook, Whatsapp::MessageTemplate
+manual writers (4):        sign-in/sign-out, Channelable, message destroy, DeleteObjectJob
 ```
 
 The existing `audits` table is reused. No second audit table, no migration, nothing that would
@@ -390,6 +391,138 @@ now exactly as it was hidden then, and the 4845 rows are preserved either way. I
 repair in this section cannot be observed in production until an administrator enables `audit_logs`
 for the accounts that should see Settings → Audit Logs. That is a configuration decision, carried
 forward in section 19 as a non-Enterprise follow-up.
+
+### Three more manual writers, and the sweep that should have been run the first time
+
+**The subsection above closed one manual writer and implied the surface was then complete. It was
+not.** Two rounds of "found late and now closed" is itself the finding: both earlier passes looked
+for a *kind* of writer they already had in mind, rather than enumerating writers by mechanism. The
+sweep that settles it is one query, and it should have been the first thing run:
+
+```
+git grep -n -E "AuditLog\.(create|create!|new|insert_all)|Audited::Audit\.(create|create!|new|insert_all)|insert_all!?\(" \
+    pre-enterprise-removal -- enterprise app lib
+```
+
+It returns **six** manual Enterprise audit writers, and nothing else. Three were already accounted
+for; three were not:
+
+| # | Pre-removal writer | Status before this round |
+| --- | --- | --- |
+| 1 | `enterprise/app/controllers/enterprise/devise_overrides/sessions_controller.rb:37` | relocated, previous subsection |
+| 2 | `enterprise/app/models/enterprise/audit/inbox_member.rb:22` | relocated with the declarations |
+| 3 | `enterprise/app/models/enterprise/audit/team_member.rb:22` | relocated with the declarations |
+| 4 | `enterprise/app/models/enterprise/channelable.rb:27` | **missing** |
+| 5 | `enterprise/app/controllers/enterprise/api/v1/accounts/conversations/messages_controller.rb:30` | **missing** |
+| 6 | `enterprise/app/jobs/enterprise/delete_object_job.rb:17` | **missing** |
+
+All three share one shape, which is why a declaration-by-declaration comparison could never find
+them: an OSS extension point that is still **wired** — a live callback or a live
+`prepend_mod_with` — whose body is an **empty method**, with no `Custom::` counterpart. Nothing
+raises. No request fails. The row is simply never written.
+
+**4. Channel credential and configuration changes.** `app/models/concerns/channelable.rb` declares
+`after_update :create_audit_log_entry` at `:7`, defines it as `def create_audit_log_entry; end` at
+`:10`, and calls `Channelable.prepend_mod_with('Channelable')` at `:13`. The Enterprise module
+prepended a real body writing an `Inbox` / `update` row from `saved_changes`. Now
+`custom/app/models/custom/channelable.rb`, reached identically — the method's owner is
+`Custom::Channelable::InstanceMethods` on all **twelve** models that include the concern.
+
+> **One deliberate difference, and it is a security fix rather than a port.** The Enterprise payload
+> was `saved_changes.except('updated_at', 'secret')`. That excluded exactly one credential column —
+> `secret`, which only `channel_api` has — so **every other channel credential went into
+> `audits.audited_changes` in plaintext, both the old value and the new**, on a row the reader
+> renders verbatim to any administrator of the account. Across the twelve models that is
+> `imap_password`, `smtp_password`, `user_access_token`, `page_access_token`, `access_token`,
+> `refresh_token`, `line_channel_secret`, `line_channel_token`, `bot_token`, `auth_token`,
+> `api_key_sid`, `api_key_secret`, `twitter_access_token`, `twitter_access_token_secret`,
+> `website_token`, `hmac_token`, `business_management_token`, and the `provider_config` blob that
+> carries the WhatsApp `api_key`. The relocated writer keeps the key and replaces the value with
+> `[FILTERED]`, so the audit still records *that* a credential was rotated and by whom. Which
+> changes write a row at all is unchanged, including that a `secret`-only change still writes
+> nothing.
+
+**5. Message deletion.** `app/controllers/api/v1/accounts/conversations/messages_controller.rb:132`
+declares the `prepend_mod_with`; the OSS `destroy` at `:21` soft-deletes and audits nothing. Now
+`custom/app/controllers/custom/api/v1/accounts/conversations/messages_controller.rb`, a field-for-field
+port: `with_lock` before the `deleted` check so two concurrent deletes cannot both write a row, the
+six-key snapshot taken *before* `super` overwrites the content, then `Custom::AuditLog.create!`. The
+deletion itself stays the OSS controller's — `super` is the only thing that touches the message.
+
+**6. Inbox and conversation deletion.** `app/jobs/delete_object_job.rb` calls
+`process_post_deletion_tasks(object, user, ip)` after `object.destroy!`, defines it empty at `:16`,
+and declares the `prepend_mod_with` at `:43`. Two OSS call sites thread a user and a request IP all
+the way through to that empty method for no other purpose than this row:
+`app/controllers/api/v1/accounts/inboxes_controller.rb:81` and
+`app/services/conversations/delete_service.rb:6`. Now `custom/app/jobs/custom/delete_object_job.rb`.
+One necessary narrowing: the original audited `%w[Inbox Conversation SlaPolicy]`, and `SlaPolicy`
+left with the overlay, so the list is `%w[Inbox Conversation]`.
+
+This writer also explains an apparent orphan in the dashboard's activity map. `inbox:destroy` has a
+translation key (`app/javascript/dashboard/helper/auditlogHelper.js`), yet `Custom::Audit::Inbox` is
+declared `on: [:create, :update]` — as `Enterprise::Audit::Inbox` was, byte for byte. Inbox deletion
+rows never came from the declaration; they came from this job. Without it that row type could never
+appear, however long the feature stayed enabled.
+
+**Two claims checked and refuted**, recorded so nobody acts on them. *Inbox deletion lost its
+`audited` declaration* — no: both the Enterprise and the Lynomia declaration are
+`associated_with: :account, on: [:create, :update]`. *`Enterprise::Audit::User` was not relocated* —
+not a loss: its declaration carried `unless: proc { |_u| true }`, permanently false, and existed only
+to register the class; the real writer is the one relocated in the previous subsection.
+
+**Evidence.** `spec/models/custom/channelable_audit_spec.rb`,
+`spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb` and
+`spec/jobs/custom/delete_object_job_audit_spec.rb` — **43 examples. With the three modules moved
+aside: 31 failures. With them in place: 0.** The examples that pass either way are the ones asserting
+the product behaviour (the message is still soft-deleted, its attachments still destroyed) and the
+ones asserting that no row is written — which is the exact shape of this gap: the product worked, the
+audit trail did not. The credential matrix is eleven separate examples, one per credential column
+with a factory, each asserting that the secret string itself is absent from the payload rather than
+merely that a marker is present.
+
+**The strongest evidence that these were severed writers and not absent features is Lynomia's own user
+documentation, which describes all three.** `custom/db/documentation/en/administration/audit-logs.md`
+lists "conversation deletions, message deletions" as one of the four event families and "inboxes"
+under Configuration, and its worked example is this exact row:
+
+> A WhatsApp number stops receiving on a Thursday. An administrator opens **Settings → Audit Logs**,
+> filters to **Inboxes** [...] One entry shows a colleague updated that inbox on Wednesday evening.
+> The entry lists the attributes that changed, which is enough to know what to put back.
+
+That entry is the Channelable writer's. Until this round it could not be produced, so the documented
+procedure would have returned nothing. The same file's limits section already states "**Deleted
+messages show no content.** The deletion is recorded; the text is deliberately withheld from the
+list" — which is precisely the serializer's `audited_changes.except('content')` behaviour, and the
+reason the message writer stores `content` on the row while the reader never renders it. The
+documentation needed no change in this round; the code caught up with it.
+
+Reader compatibility is proven through the real endpoint rather than argued: both new row types come
+back from `GET /api/v1/accounts/:id/audit_logs` under the `types: ['Inbox']` and `types: ['Message']`
+filters the dashboard already sends, the message row arrives without its deleted body, and the
+channel row arrives with the credential filtered. **No frontend change was needed** — the serializer
+already special-cased `auditable_type == 'Message'`, the activity map already had `message:destroy`
+and `inbox:destroy`, and both types were already filterable. That is the clearest sign these were
+severed writers rather than absent features.
+
+**Still 0 production accounts with `audit_logs` enabled**, so as with the reader, none of this is
+observable in production until an administrator enables the feature. Nothing in this round reads,
+updates or deletes an existing `audits` row, and no migration was written.
+
+**What the sweep also surfaced, and why none of it is a writer.** Four further Enterprise sites touch
+the `audits` table without creating a row: `Enterprise::AuditLogSessionIpLookupJob`
+(`audits.update_all(city:, country:, country_code:)`), `Enterprise::AuditLog#resolve_ip_location!`
+(`update_columns` on one existing row), `Enterprise::AuditLogIpLocationBackfillJob` (a batched walk
+calling the former) and the `after_create_commit :enqueue_ip_lookup` hook that drives them. They
+*enrich* rows that already exist; they never write one. All four are the IP-geolocation path this
+removal deliberately dropped and already documents — `ip_lookup` ships `enabled: false`
+(`config/features.yml:32`), the job left with the overlay, and `city`, `country` and `country_code`
+stay null while `remote_address` is still recorded. The one sibling hook that *is* load-bearing,
+`log_additional_information`, which fills `username` on every row, **was** carried over
+(`custom/app/models/custom/audit_log.rb:14`).
+
+**Known Enterprise audit writers unaccounted for: 0** — twelve `audited` declarations mirrored, six
+manual writers enumerated by the sweep above and each one placed, and the four non-writing
+enrichment paths classified.
 
 ## 8. Permissions and custom roles
 

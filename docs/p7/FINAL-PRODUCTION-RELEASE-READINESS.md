@@ -69,6 +69,7 @@ re-confirmation of each matrix row plus the environment-dependent gates.
 | --- | --- | --- |
 | Matrix-evidence suite — every product row | `rspec` over `spec/{controllers/devise_overrides,requests/custom,requests/documentation,models/custom,custom,services/custom,services/flows,services/whatsapp,lib/captain,models/commerce,services/commerce,policies/commerce}` and the Inbox, Audience, Flow, WhatsApp and Captain controller specs | **1,767 examples, 0 failures, 10 pending** in 4m34s |
 | Contacts, Audiences, Campaigns, Automations | `rspec` over `spec/{controllers/api/v1/accounts/contacts,services/contacts,jobs/contacts,services/data_import,services/automation_rules}` plus the campaign and custom-filter model and controller specs | **249 examples, 0 failures** in 1m09s |
+| The three relocated audit writers (§5.4) | `rspec spec/models/custom/channelable_audit_spec.rb spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb spec/jobs/custom/delete_object_job_audit_spec.rb` | **43 examples, 0 failures** — and **31 failures** with the three modules moved aside |
 | Ruby style | `bundle exec rubocop --parallel` | **2,708 files inspected, no offenses** |
 | JavaScript suite | `pnpm test` (vitest) | **472 files, 5,100 tests, all passed** |
 | JavaScript / Vue lint — the repo's own gate | `pnpm eslint` (`eslint app/**/*.{js,vue}`) | exit 0 — **450 problems, 0 errors, 450 warnings**, all pre-existing `@intlify/vue-i18n/no-dynamic-keys` |
@@ -167,7 +168,7 @@ document: every one was re-established here, and the stale rows in `docs/p7/13-r
 | 15 | **Audiences** | `PASS` | `spec/controllers/api/v1/accounts/contacts/audiences_spec.rb`, `spec/controllers/api/v1/accounts/custom_filters_shared_spec.rb`, `spec/models/custom_filter_spec.rb`, `spec/services/automation_rules/conditions_filter_service_audience_spec.rb`; show/update/destroy isolation and the agent's refusal to **share** are both in `spec/requests/custom/cross_account_isolation_spec.rb` |
 | 16 | **Automations** | `PASS` | `spec/services/automation_rules/` (the rule engine, conditions filter and action service), plus the Lynomia action itself: `spec/services/custom/automation_rules/template_action_spec.rb`, `spec/models/custom/automation_rule_template_action_spec.rb`. The `send_whatsapp_template` action's first real send shares row 8's gate |
 | 17 | **Flow Builder** | `PASS` | `spec/services/flows/` — runner, runner security, graph validator, versions, and the `send_template`, `choice`, `commerce_lookup`, `set_attribute_labels_assignment` nodes; `spec/controllers/api/v1/accounts/flows_controller_spec.rb`; show/update/publish/destroy isolation in the cross-account spec |
-| 18 | **Audit** | `PASS WITH CONFIG DECISION` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. Sign-in / sign-out writer, relocated into `custom/` in this release's HEAD commit: `spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`. Production holds 4,845 audit rows (operator-reported) and they are preserved. **But two further Enterprise audit writers were never relocated** — message deletion and channel-credential changes — which is why this row is not a clean `PASS`. Nothing fails and no production account can read the audit log today, so it does not block the deploy; it does gate enabling the `audit_logs` feature. §5.4 |
+| 18 | **Audit** | `PASS` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. All **four** manual Enterprise writers are now relocated into `custom/`: sign-in / sign-out (`spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`), channel credential changes, message deletion and inbox / conversation deletion (§5.4, 43 further examples). Twelve `audited` declarations mirrored. Known Enterprise audit writers unaccounted for: **0**. Production holds 4,845 audit rows (operator-reported) and they are preserved — nothing in this release reads, updates or deletes one |
 | 19 | **Auth** | `PASS` | `spec/controllers/devise_overrides/` including the Lynomia session overlay; Rack::Attack throttles sign-in by IP and by email, super-admin sign-in, password reset, confirmation resend and MFA verification. MFA itself is off because encryption keys are unset (§5.3) — that is the shipped state, not a defect |
 | 20 | **Super Admin** | `PASS` | `custom/app/controllers/super_admin/{portals,categories,articles,billing_plans,billing_subscriptions}_controller.rb`; the documentation corpus is managed here and is explicitly unaffected by the tenant-side policy denial (`spec/requests/custom/tenant_help_center_removal_spec.rb`) |
 | 21 | **Help & Support** | `PASS` | Tenant Help Center authoring is closed at the policy, not merely hidden: `spec/requests/custom/tenant_help_center_removal_spec.rb` covers administrator, agent and a custom role holding **every** permission, over every verb of portals, categories and articles plus the four bulk actions. Contextual help links resolve through `DocumentationController#article`, which 404s on an unpublished slug rather than dropping the reader on a home page |
@@ -280,7 +281,8 @@ is a product defect and would reopen this gate.
 
 ## 5. Production configuration decisions
 
-Four, and each has one defensible answer.
+Three, each with one defensible answer, plus §5.4 — which was a fourth decision when this report was first written
+and is now a closed item rather than a decision.
 
 ### 5.1 Captain / `ruby_llm`
 
@@ -448,48 +450,66 @@ No key is generated or configured in this phase, per the brief.
 
 ---
 
-### 5.4 Two Enterprise audit writers were never relocated
+### 5.4 Three severed Enterprise audit writers — found, and now closed
 
-Found by an adversarial review of this report after it was first written, and verified here against the
-`pre-enterprise-removal` tag rather than taken on the reviewer's word. **This is a second instance of the same
-regression class as the sign-in / sign-out writer**, which the Enterprise-removal phase closed and declared clean.
-That declaration was premature: comparing `audited` declarations and manual writers found one of three.
+**This section previously recorded two un-relocated writers as an open gap and a hold on the `audit_logs` feature.
+All three are now closed** (a sweep by mechanism rather than by kind found a third), so the hold is lifted and the
+only remaining decision about `audit_logs` is the ordinary one of whether to turn the feature on.
 
-**Two real losses.** Both are OSS extension points that are live `prepend_mod_with` sites with an empty body and no
-`Custom::` counterpart, so nothing raises — the audit row simply is not written:
+The sweep that settles the surface is one query, and it is the one that should have been run in the removal phase:
 
-| Lost writer | Pre-removal source | Current state |
+```
+git grep -n -E "AuditLog\.(create|create!|new|insert_all)|Audited::Audit\.(create|create!|new|insert_all)|insert_all!?\(" \
+    pre-enterprise-removal -- enterprise app lib
+```
+
+Six manual Enterprise audit writers, and nothing else. Three had come across with the declarations or in the earlier
+repair; three had not, and all three shared one shape — a **live** OSS extension point (a callback or a
+`prepend_mod_with`) whose body is an **empty method**, with no `Custom::` counterpart. Nothing raises, no request
+fails, the row is simply never written:
+
+| Writer | OSS extension point, still wired | Relocated to |
 | --- | --- | --- |
-| **Channel-credential / configuration changes on an inbox** | `enterprise/app/models/enterprise/channelable.rb:12` — prepended `create_audit_log_entry`, writing an `Inbox` `update` row from `saved_changes.except('updated_at', 'secret')`, and deliberately skipping a `message_templates_last_updated`-only change | `app/models/concerns/channelable.rb:10` is `def create_audit_log_entry; end`, with `after_update :create_audit_log_entry` at `:7` and `Channelable.prepend_mod_with('Channelable')` live at `:13`. No `Custom::Channelable` exists |
-| **Message deletion** | `enterprise/app/controllers/enterprise/api/v1/accounts/conversations/messages_controller.rb` — overrode `#destroy`, snapshotted content / conversation / inbox / sender under `with_lock` **before** the soft delete, and wrote a `destroy` row with `remote_address` | `app/controllers/api/v1/accounts/conversations/messages_controller.rb:21` has the OSS `destroy` and `:132` the live `prepend_mod_with`. No `Custom::` counterpart exists |
+| Channel credential / configuration change → `Inbox` `update` row | `app/models/concerns/channelable.rb` — `after_update` at `:7`, empty body at `:10`, `prepend_mod_with` at `:13` | `custom/app/models/custom/channelable.rb` (owner on all **twelve** Channelable models) |
+| Message deletion → `Message` `destroy` row | `app/controllers/api/v1/accounts/conversations/messages_controller.rb` — OSS `destroy` at `:21`, `prepend_mod_with` at `:132` | `custom/app/controllers/custom/api/v1/accounts/conversations/messages_controller.rb` |
+| Inbox and conversation deletion → `destroy` row with attributes | `app/jobs/delete_object_job.rb` — empty `process_post_deletion_tasks` at `:16`, `prepend_mod_with` at `:43`; `inboxes_controller.rb:81` and `conversations/delete_service.rb:6` thread a user and an IP through to it for no other purpose | `custom/app/jobs/custom/delete_object_job.rb` |
 
-**Two claims in the same review that do not survive checking, and are recorded so nobody acts on them:**
+The third was the one a declaration-level comparison could never have reached, and it also explains an apparent
+orphan: `inbox:destroy` has a translation key in the dashboard's activity map while `Custom::Audit::Inbox` is
+declared `on: [:create, :update]`. Inbox deletion rows never came from the declaration — they came from that job.
 
-- *"Inbox deletion lost its audit."* **False.** `Enterprise::Audit::Inbox` declared
-  `audited associated_with: :account, on: [:create, :update]` — byte-for-byte what `Custom::Audit::Inbox` declares
-  now. Inbox `destroy` was never audited upstream either. Nothing was lost.
-- *"`Enterprise::Audit::User` was not relocated."* **Not a loss.** Its `audited` block carried
-  `unless: proc { |_u| true }` — permanently false by design, as its own comment says: it existed only to register
-  `User` as auditable for the sign-in / sign-out rows that were written manually. That manual writer **is** relocated,
-  and `spec/controllers/custom/devise_overrides/sessions_controller_spec.rb` asserts the rows land.
+**One deliberate deviation, and it is a security fix rather than a port.** The Enterprise channel writer audited
+`saved_changes.except('updated_at', 'secret')`, excluding exactly one credential column — `secret`, which only
+`channel_api` has. Every other channel credential would have gone into `audits.audited_changes` in plaintext, old
+value and new, on a row the reader renders verbatim to any administrator: `imap_password`, `smtp_password`,
+`page_access_token`, `access_token`, `refresh_token`, `line_channel_secret`, `bot_token`, `auth_token`,
+`api_key_secret`, `twitter_access_token_secret`, `website_token`, `hmac_token`, `business_management_token` and the
+`provider_config` blob carrying the WhatsApp `api_key`. The relocated writer keeps the key and replaces the value
+with `[FILTERED]`; which changes write a row at all is unchanged. **Reported rather than copied, per the brief's
+instruction not to weaken security for behavioural parity.**
 
-**Why this is not a release blocker.** The audit log reader refuses before it reads:
-`custom/app/controllers/api/v1/accounts/audit_logs_controller.rb:24-28` returns
-`Current.account.associated_audits.none` unless the account has the `audit_logs` feature — and the production gate
-for this release measured **`accounts_with_audit_logs = 0`**. No production account can open the audit log at all, so
-no user-visible behaviour differs, and no request path fails: both sites are no-ops, not errors.
+**Evidence.** `spec/models/custom/channelable_audit_spec.rb`,
+`spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb` and
+`spec/jobs/custom/delete_object_job_audit_spec.rb` — **43 examples; 31 fail with the three modules moved aside and 0
+fail with them in place.** The examples that pass either way assert the product behaviour (the message is still
+soft-deleted, its attachments still destroyed) and the cases where no row is expected, which is exactly the shape of
+this gap: the product worked, the audit trail did not. Secret safety is eleven separate examples, one per credential
+column with a factory, each asserting the secret string itself is absent from the payload rather than that a marker
+is present.
 
-**The configuration decision, and it is a real one:**
+**No frontend change and no documentation change were needed**, which is the clearest sign these were severed
+writers and not absent features: the serializer already special-cased `auditable_type == 'Message'`, the activity map
+already carried `message:destroy` and `inbox:destroy`, both types were already filterable, and Lynomia's own user
+documentation (`custom/db/documentation/en/administration/audit-logs.md`) already lists message and conversation
+deletions as an event family — its worked example is an administrator filtering to **Inboxes** and finding the entry
+that says a colleague changed that inbox, which is the channel writer's row and could not be produced until now. Reader compatibility is proven through the real
+endpoint — both row types come back under the `types: ['Inbox']` and `types: ['Message']` filters the dashboard
+sends, the message row without its deleted body and the channel row with the credential filtered.
 
-> **Do not enable the `audit_logs` feature for any account until these two writers are relocated into `custom/`.**
-> The gap is invisible while nobody can read the log, and becomes a silently incomplete audit trail the moment
-> somebody can. Audit history is not back-fillable: rows not written during the window are gone.
-
-Relocating them is a small, well-specified change — the pre-removal implementations are above and the pattern is the
-one `custom/app/controllers/custom/devise_overrides/sessions_controller.rb` already follows. It is deliberately **not**
-done in this phase, which is an assessment and was instructed not to reopen the Enterprise-removal work without a
-release regression. This is a latent gap, not a release regression. It should be closed before the feature is turned
-on, and it is the first item for the phase after this one.
+**Known Enterprise audit writers unaccounted for: 0.** Twelve `audited` declarations mirrored, six manual writers
+enumerated and each one placed. `accounts_with_audit_logs` remains **0** in production and nothing here enables the
+feature, so none of this is observable in production until an administrator turns it on — which is now a plain
+product decision rather than a decision gated on missing writers.
 
 ---
 
@@ -642,8 +662,8 @@ For the record, since the brief requires no stale gates:
 4. **`COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent from the environment and from both systemd units** (§5.2).
 5. **`CAPTAIN_OPEN_AI_API_KEY` unset** (§5.1).
 6. **Active Record encryption keys: all three, or none.** Not required for this deploy (§5.3).
-7. **The `audit_logs` account feature stays off** until the two un-relocated audit writers are restored (§5.4). It is
-   off on every production account today, so this is a hold, not a change.
+7. **The `audit_logs` account feature needs no hold.** All four manual writers are relocated (§5.4), so enabling it
+   is now an ordinary product decision. It is off on every production account today; leaving it off changes nothing.
 8. **The release SHA is pushed and is the branch's upstream tip**, so `git merge --ff-only @{u}` resolves to it.
 9. **Disk:** at least 2 GB free on the application filesystem — the script checks, but checking late costs a window.
 10. **Deploy with `deployment/deploy.sh`**, not `/root/deploy-lynomia.sh` (§3).
@@ -684,17 +704,16 @@ What is left divides cleanly:
   from a repository, and nothing short of doing it honestly would close it. Everything that depends on it — WhatsApp
   campaigns, the `send_whatsapp_template` automation action, the template picker in flows — is green in code and
   waits on the same single transaction.
-- **Four configuration decisions**, three of them "leave it as it is, knowingly": `CAPTAIN_OPEN_AI_API_KEY` unset
-  (which is what keeps **both** `ruby_llm` doors inert and the two ReDoS advisories unreachable), the three Commerce
-  provider switches off, and `COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent. Active Record encryption keys are a
-  precondition for Commerce and MFA, not for this deploy. The fourth is a **hold**: do not enable the `audit_logs`
-  feature for any account until the two un-relocated audit writers are restored (§5.4) — invisible today because no
-  production account can read the log, and an incomplete trail the moment one can.
+- **Three configuration decisions**, all "leave it as it is, knowingly": `CAPTAIN_OPEN_AI_API_KEY` unset (which is
+  what keeps **both** `ruby_llm` doors inert and the two ReDoS advisories unreachable), the three Commerce provider
+  switches off, and `COMMERCE_ALLOW_PRE_UAT_PROVIDERS` absent. Active Record encryption keys are a precondition for
+  Commerce and MFA, not for this deploy.
 - **Four items are owned outside this release** and gate nothing: the Google OAuth rotation, the dormant database's
   token, the `companies` legacy rows, and the host's pending restart and updates.
-- **One latent gap, found by reviewing this report against the pre-removal tag**: two Enterprise audit writers —
-  message deletion and channel-credential changes — were never relocated (§5.4). It does not block the deploy and it
-  is the first item for the next phase.
+- **The audit-provenance gap this report opened is closed.** Three severed Enterprise audit writers — channel
+  credential changes, message deletion, and inbox / conversation deletion — are relocated into `custom/` with 43
+  examples behind them, and the pre-removal writer surface is now enumerated by mechanism with **0 unaccounted**
+  (§5.4). The channel writer no longer stores credentials, which the Enterprise original did.
 
 **The recommendation is to deploy under control, with the WhatsApp UAT run immediately afterwards on the live
 release**, in this order: host window → Google OAuth rotation → application deploy via `deployment/deploy.sh` →
@@ -711,9 +730,9 @@ prove something about code that is about to be replaced.
 > ## READY AFTER REAL UAT
 
 Zero release blockers. One real-UAT item: the approved-template-to-new-contact WhatsApp send (§4), which must be run
-against the deployed release. Four configuration decisions (§5) — three deliberate no-ops and one hold, on the
-`audit_logs` feature, until §5.4's two un-relocated audit writers are restored. Four external maintenance items, none
-gating (§7).
+against the deployed release. Three configuration decisions (§5), all deliberate no-ops. Four external maintenance
+items, none gating (§7). The audit-provenance gap recorded in §5.4 is closed, with 0 Enterprise audit writers
+unaccounted for.
 
 **Nothing in this phase deployed, modified production, rotated a credential, dropped a table or changed production
 data.**

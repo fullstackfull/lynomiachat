@@ -678,10 +678,21 @@ For the record, since the brief requires no stale gates:
    checking out old code does not restore old assets, and a new-asset/old-code mix fails in the browser rather than on
    the server. This is the step people skip (`ROLLBACK.md` step 3).
 3. **Know what the release migrated before assuming old code is safe on the new schema.**
-   `git diff --name-only $PREVIOUS_SHA..dfc8bf6e -- db/migrate custom/db/migrate`. This release's migrations are
-   additive.
+   `git diff --name-only $PREVIOUS_SHA..<release-sha> -- db/migrate custom/db/migrate`. That check has since been
+   performed for this release, migration by migration, in
+   `docs/p7/CONTROLLED-PRODUCTION-DEPLOY-RUNBOOK.md` §3 — **and it found one exception to the generic
+   "the migrations are additive" assumption.** `custom/db/migrate/20261004110000_add_unique_phone_number_index_to_contacts.rb`
+   adds a unique index whose satisfiability depends on `app/models/contact.rb:231`, a blank→NULL normalisation that
+   ships in the same release (commit `6cc48231`). A code-only rollback therefore leaves the index enforcing a rule
+   nothing upholds, and a contact write with a blank phone number raises `ActiveRecord::RecordNotUnique` on the second
+   one in an account — verified by executing it. That one migration must be reversed by
+   `rails db:migrate:down VERSION=20261004110000` (its own `down` re-adds the plain index before dropping the unique
+   one), **before** the old code is checked out. The runbook's §3, §4 and **M6** are the authority on this; where
+   `ROLLBACK.md`'s release-agnostic wording differs, they govern.
 4. **Do not reflexively `db:rollback`.** It runs the `down` of the last migration only, knows nothing about a release
-   boundary, and raises on an irreversible migration.
+   boundary, and raises `IrreversibleMigration` on the ten `def up`-only migrations the runbook's §3 enumerates.
+   `db:migrate:down VERSION=` targeting one known version is a different command and is the only database rollback
+   the runbook sanctions.
 5. **A dump restore loses every message, conversation and order written since the dump.** On a live messaging product
    that is minutes of real customer conversations. It needs the service owner's explicit decision, not an operator's
    judgment call mid-incident.

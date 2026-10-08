@@ -8,9 +8,22 @@
 
 Branch `claude/practical-thompson-9xfqed`. Architecture: Chatwoot OSS core + Lynomia custom, no `enterprise/`.
 
-Run the steps **one at a time, in order**. Every step says what to expect and what to do if it differs. Steps
-`B*` and `C2`–`C8` only read. The first step that changes anything on the host is **C1**, and it is marked. No step
-in this runbook connects to `chatwoot2_production`, drops or alters a table, rotates a credential, or changes a
+Run the steps **one at a time, in order**. Every step says what to expect and what to do if it differs.
+
+**What each phase touches, stated precisely rather than as "read-only".** No step in phase B or C changes the
+application, the database or any service — but four of them do write something, and saying otherwise would teach you
+to discount this document's own warnings:
+
+| Step | Writes |
+| --- | --- |
+| B12, H1 | a response body to `/tmp` |
+| C6 | `/root/deploy-1447a10d.sh` |
+| C8, C9, H5, H7, K1, K2 | a bootsnap compile cache under `tmp/cache` as Rails boots |
+| K2 | up to eight `GlobalConfig` cache keys in production Redis (a cache read populates them; no stored value changes) |
+
+**The first step that changes the repository state is C1** (a `git fetch`), **the first that changes the database is
+`deploy.sh` stage 5**, and **the first irreversible action is `deploy.sh` stage 5's data write**, not the restart —
+see §3. No step connects to `chatwoot2_production`, drops or alters a table, rotates a credential, or changes a
 feature flag.
 
 **This document was prepared without connecting to production.** Every expected value below comes from the
@@ -28,9 +41,9 @@ and tells you to record it.
 | Is that script production-ready | **Yes.** All twenty required safety items present (§2); 0 pre-deploy blockers |
 | First production command | **STEP B1** `id -un; hostname -f` — read-only |
 | First command that changes anything | **STEP C1**, a `git fetch` run as `chatwoot` |
-| First irreversible action | `deploy.sh` stage 7, `systemctl restart chatwoot.target`, reached only if every stage before it succeeded |
+| First irreversible action | `deploy.sh` **stage 5**, the phone-uniqueness migration's `UPDATE contacts SET phone_number = NULL WHERE phone_number = ''`, plus any upstream `def up`-only backfill **C4** lists. A code rollback does not undo a data write. The restart at stage 7 is the first *service* interruption, which is a different thing |
 | Required production config changes | **none.** Phase K asserts that five things stayed as they were |
-| Rollback | code-only is sufficient; needs `PRE_DEPLOY_SHA` (B7) and `OPERATOR_BACKUP` (D5), both recorded before the deploy. Phase M |
+| Rollback | code-only, **with one named exception**: `20261004110000` must be reversed by its own `db:migrate:down` (§3, §4, **M6**), because the blank-phone guard the new index depends on ships in this release. Needs `PRE_DEPLOY_SHA` (B7) and `OPERATOR_BACKUP` (D5), both recorded before the deploy. Phase M |
 | Post-deploy scope | Phase H readiness, Phase I 18-row smoke, Phase J audit writers, Phase K config non-change |
 | Release-completion gate | Phase L, the WhatsApp approved-template-to-new-contact UAT. **Prepared, not executed** |
 
@@ -101,9 +114,9 @@ proves independently.
 | 2 Database backup | 78–91 | creates `/var/backups/lynomia` mode 750 owned by `chatwoot`; UTC timestamp; `pg_dump -Fc` with credentials sourced from `.env` so none appear on the command line; refuses on an empty dump; writes a `.sha256` beside it; prints path and size |
 | 3 Check out the release | 93–98 | `git merge --ff-only @{u}`; **asserts HEAD equals `RELEASE_SHA`**; prints the new head commit |
 | 4 Dependencies | 100–108 | `BUNDLE_FROZEN=true bundle install --quiet`; `pnpm install --frozen-lockfile` |
-| 5 Migrations | 110–124 | `RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 rails db:migrate`; then `ActiveRecord::Migration.check_all_pending!` and a `pg_index WHERE NOT indisvalid` query that aborts if any invalid index exists |
+| 5 Migrations | 110–124 | **the first irreversible stage** — §3's data-writing migrations run here. `RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 rails db:migrate`; then `ActiveRecord::Migration.check_all_pending!` and a `pg_index WHERE NOT indisvalid` query that aborts if any invalid index exists |
 | 6 Frontend build | 126–134 | `pnpm vite build` then asserts `public/vite/.vite/manifest.json` is non-empty; `pnpm build:sdk` then asserts `public/packs/js/sdk.js` is non-empty |
-| 7 Restart | 136–139 | `systemctl restart chatwoot.target` — **the first irreversible service action, and everything above must have succeeded to reach it** |
+| 7 Restart | 136–139 | `systemctl restart chatwoot.target` — **the first service interruption**, and everything above must have succeeded to reach it. Not the first irreversible action; stage 5 is |
 | 8 Verify | 141–166 | up to 30 × `curl` on `HEALTH_URL` two seconds apart (60 s budget), printing the last body and naming the rollback document on failure; `systemctl is-active` on the target and on `chatwoot-web.1.service` and `chatwoot-worker.1.service`; a `rails runner` that aborts unless a Sidekiq process is registered |
 | 9 Done | 168–178 | prints outgoing SHA → release SHA, the backup path and the rollback pointer; prunes `*.dump` beyond `KEEP_BACKUPS=14`, oldest first, removing the `.sha256` with each; clears the `ERR` trap |
 
@@ -149,13 +162,67 @@ migration in this repository.
 
 | Migration | Forward risk | Rollback class |
 | --- | --- | --- |
-| `custom/db/migrate/20261004110000_add_unique_phone_number_index_to_contacts.rb` | **the only high-risk migration in the set.** `disable_ddl_transaction!`; refuses up front if duplicate `(account_id, phone_number)` rows exist, naming the rake task to resolve them; drops a leftover INVALID index and rebuilds; **writes data** — `UPDATE contacts SET phone_number = NULL WHERE phone_number = ''` in batches of 1000; then `CREATE UNIQUE INDEX CONCURRENTLY` and drops the plain index. Long-running on a large `contacts`. Sets its own `statement_timeout = '0'` | **CODE ROLLBACK ONLY.** `down` restores the plain index before dropping the unique one, so the column is never unindexed — but it deliberately does not undo the blank→NULL normalisation, and that is correct (`''` and NULL both mean "no number"). Old code runs fine against the new index |
+| `custom/db/migrate/20261004110000_add_unique_phone_number_index_to_contacts.rb` | **the highest-risk migration in the set.** `disable_ddl_transaction!`; refuses up front if duplicate `(account_id, phone_number)` rows exist, naming the rake task to resolve them; drops a leftover INVALID index and rebuilds; **writes data** — `UPDATE contacts SET phone_number = NULL WHERE phone_number = ''` in batches of 1000; then `CREATE UNIQUE INDEX CONCURRENTLY` and drops the plain index. Long-running on a large `contacts`. Sets its own `statement_timeout = '0'` | **MANUAL REVIEW REQUIRED** — see the note below. A code-only rollback leaves the unique index in place while removing the application guard that keeps it satisfiable. Its own `down` is the remedy, run on its own: `rails db:migrate:down VERSION=20261004110000` |
 | `custom/db/migrate/20261003100000_add_shared_to_custom_filters.rb` | relaxes `custom_filters.user_id` to nullable; additive column | **CODE ROLLBACK ONLY.** `down` re-tightens `NOT NULL` and will fail if any shared filter with a null `user_id` exists by then |
 | `custom/db/migrate/20261005110000_add_platform_ownership_to_help_center.rb` | relaxes `account_id` to nullable on `portals`, `categories`, `articles` | **CODE ROLLBACK ONLY.** `down` re-tightens all three and will fail if a platform-owned row exists |
 | The other 13 `custom/db/migrate/*` (`create_billing_*`, `create_mobile_auth_identities`, `create_commerce_*`, `create_flow_*`, `create_whatsapp_message_templates`, `add_order_states_to_commerce_contact_metrics`) | pure `create_table` / `add_column`; new tables carry no production rows | **SAFE TO ROLLBACK**, and unnecessary — old code simply ignores them |
+| Any upstream `db/migrate/*` that is **`def up`-only and writes data**. Ten exist in this repository. Two write `conversations`: `20260811000000_add_ai_assignee_type_to_conversations` and `20260811000001_backfill_missing_ai_assignee_types`. Eight write `accounts.feature_flags` or `installation_configs`: `20260120121402`, `20260226153427`, `20260324102005`, `20260426011444`, `20260430114500`, `20260508000000`, `20260629000000`, `20260706000001` | the two `conversations` ones `update_all` inside `Conversation.in_batches(of: 100_000, use_ranges: true)` with an inner batch of 1000, and declare `disable_ddl_transaction!` — **long-running in proportion to the conversation count, and an abort leaves the backfill half-applied** (both are idempotent on a re-run, which is why `20260811000001` exists at all). The eight flag migrations iterate accounts in batches of 100 and are quick | **CODE ROLLBACK ONLY, and the data write is not reversible at all.** None defines `down`, so `rails db:rollback` raises `IrreversibleMigration` on them rather than undoing anything. A code rollback is nonetheless safe: the previous revision does not read `ai_assignee_type`, and a feature flag it does not know is inert. The rows stay changed, and only the D5 dump restores them, at the cost §4 names |
 | `db/migrate/20260814000000_add_associated_created_at_index_to_audits.rb` | adds an index on `audits` concurrently. **No audit row is read, updated or deleted** — an index build does not modify rows | **SAFE TO ROLLBACK**, and unnecessary |
 | Any upstream `db/migrate/*` with `algorithm: :concurrently` | index build, long-running on a large table, cannot run inside a transaction | **SAFE TO ROLLBACK**, and unnecessary |
 | Any upstream `db/migrate/*` with `drop_table`, `remove_column` or a narrowing `change_column` | these exist in the repository's history (`drop_channel_voice`, `remove_portal_members`, `drop_telegram_bots`, the Captain table work) but all predate the production checkout by a wide margin and will not appear in **C4**. If **C4** lists one, **stop** | **MANUAL REVIEW REQUIRED** |
+
+### Why `20261004110000` is MANUAL REVIEW REQUIRED and not CODE ROLLBACK ONLY
+
+The unique index and the application guard that keeps it satisfiable **ship in the same release**.
+`app/models/contact.rb:231`, `self.phone_number = nil if phone_number.blank?` in `prepare_contact_attributes`, was
+added by commit `6cc48231`, which is an ancestor of `1447a10d` and is not in the production checkout. Before it,
+nothing normalised a blank phone number, and `contacts.phone_number`'s uniqueness validation carries
+`allow_blank: true` (`contact.rb:54-55`) — so a blank number skips validation entirely and goes to the database.
+
+A code-only rollback therefore produces a state that has never existed: the new `uniq_phone_number_per_account_contact`
+index enforcing uniqueness over a column whose blank values are no longer being turned into NULLs. `PATCH
+/contacts/:id` with `phone_number: ""`, and a CSV import with an empty phone column, then raise
+`ActiveRecord::RecordNotUnique` on the **second** such contact in an account — a 500 that did not exist before this
+deploy and that the previous revision has no guard against. The migration's own header comment says exactly this
+about `identifier`, which has always been unique: it "could answer 500 on the second contact in an account".
+
+So if you roll the code back, roll this one migration back with it, immediately after **M1** and before **M4**:
+
+```
+sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 bundle exec rails db:migrate:down VERSION=20261004110000'
+```
+
+This is **not** `rails db:rollback`, which stays refused (§4). It targets one version by number. Its `down`
+(`20261004110000:27-35`) adds the plain `(phone_number, account_id)` index concurrently **first**, so the column is
+never left unindexed while inbound messages look contacts up by number, then drops the unique one. It deliberately
+does not un-normalise the blank→NULL writes, which is correct and harmless: `NULL` is what every other identity
+column on `contacts` already uses for "no value", and the old code reads a NULL phone number exactly as it reads an
+empty one.
+
+Two conditions on running it. It needs the **release** code checked out to find the migration file, because
+`20261004110000` lives in `custom/db/migrate` and the previous revision does not contain it — so run it **before**
+M1's checkout, or temporarily from the release SHA. And `CREATE INDEX CONCURRENTLY` cannot run inside a transaction
+and will take as long on the way down as it did on the way up; `POSTGRES_STATEMENT_TIMEOUT=0` is not optional, since
+`config/database.yml` sets a 14-second statement timeout on every production connection.
+
+If the application-level consequence is acceptable for your incident window — no contact writes with blank phone
+numbers until the roll-forward — leaving the index in place is a legitimate choice. Make it deliberately, not by
+default.
+
+**Both halves of this were executed, not reasoned about.** On a database at the release schema, two
+`INSERT INTO contacts (... phone_number ...) VALUES (..., '')` in one account — bypassing the model, which is what a
+code rollback leaves you with — gave:
+
+```
+first blank-phone contact: inserted
+second blank-phone contact: RecordNotUnique -> PG::UniqueViolation: ERROR:  duplicate key value violates unique constraint "uniq_phone_number_per_account_contact"
+```
+
+`rails db:migrate:down VERSION=20261004110000` then ran clean, in the documented order — `add_index` for the plain
+index first, `remove_index` for the unique one second — leaving
+`index_contacts_on_phone_number_and_account_id` valid and non-unique, after which the same pair of inserts both
+succeeded. `rails db:migrate:up VERSION=20261004110000` restored the release state. The procedure works; the risk it
+addresses is real.
 
 **No Enterprise cleanup migration exists**: nothing in `db/migrate` or `custom/db/migrate` drops an
 Enterprise-associated table. `companies` and `contacts.company_id` are untouched by every migration in the release —
@@ -165,8 +232,16 @@ the 97 `companies` rows and 123 contacts with a `company_id` are preserved, as r
 
 ## 4. Rollback, prepared before you need it
 
-Full procedure: `deployment/ROLLBACK.md`. The decision table there is the one to use; what follows is the part you
-must have **recorded before the deploy**.
+Full procedure: `deployment/ROLLBACK.md`, which the deploy script names on every failure path. Its decision table —
+roll back or fix forward — is the one to use.
+
+**One place where this runbook overrides it.** ROLLBACK.md is release-agnostic and says old code against the new
+schema is "usually fine, because this project's migrations are additive", then tells you to "check what the release
+added before assuming it". §3 **is** that check, performed for this release, and it found one migration where the
+generic assumption does not hold: `20261004110000`. Where the two documents differ, §3 and **M6** govern, because
+they were written against this specific diff.
+
+What follows is the part you must have **recorded before the deploy**.
 
 | Needed for rollback | Where it comes from |
 | --- | --- |
@@ -175,10 +250,29 @@ must have **recorded before the deploy**.
 | Your verified DB backup path | step **D5** |
 | The script's own DB backup path | printed by stage 2 and again at stage 9 |
 
-**Code rollback alone is sufficient for this release.** Every migration is additive or a constraint relaxation (§3),
-so the previous revision runs against the new schema. Do **not** run `rails db:rollback`: it runs the `down` of the
-last migration only, knows nothing about a release boundary, and for the three `CODE ROLLBACK ONLY` migrations above
-would try to re-tighten constraints that may now be legitimately violated.
+**Code rollback plus one targeted migration down.** Every migration in this release is additive, a constraint
+relaxation, or a data backfill the old code tolerates (§3) — with one exception. `20261004110000`'s unique index and
+the application guard that keeps it satisfiable ship together, so a code-only rollback leaves the index enforcing a
+rule nothing upholds. Roll that one version back with its own `down`, as §3's note sets out and **M6** repeats:
+
+```
+sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 bundle exec rails db:migrate:down VERSION=20261004110000'
+```
+
+Run it **before M1 checks out the old code**, because the migration file is new in this release and the previous
+revision does not contain it.
+
+Do **not** run `rails db:rollback`. It is a different command and it stays refused: it runs the `down` of whichever
+migration happens to be last, knows nothing about a release boundary, would try to re-tighten the constraints the
+two `CODE ROLLBACK ONLY` relaxations loosened — which may by then be legitimately violated — and raises
+`IrreversibleMigration` on any of the ten `def up`-only migrations in §3. `db:migrate:down VERSION=` targets one
+known version and is the only database rollback this runbook sanctions.
+
+**What no rollback reverses:** the data writes. `UPDATE contacts SET phone_number = NULL WHERE phone_number = ''`,
+`conversations.ai_assignee_type`, and the account feature-flag rewrites all stay as the migrations left them. That is
+by design and is harmless to the previous revision — it reads a NULL phone number as it read an empty one, does not
+read `ai_assignee_type`, and ignores a flag it does not know — but it is not reversible by code, and the only thing
+that restores those rows is the D5 dump, at the cost named below.
 
 Rollback sequence, from `ROLLBACK.md`: detach to the previous SHA → `bundle install` and `pnpm install
 --frozen-lockfile` → **rebuild both bundles** (`pnpm vite build` *and* `pnpm build:sdk`; `public/vite` and
@@ -397,14 +491,29 @@ sudo -u chatwoot git -C /home/chatwoot/chatwoot diff --name-only --diff-filter=A
 **STOP** if any listed file contains `drop_table`, `remove_column`, or a narrowing `change_column` — §3 marks those
 `MANUAL REVIEW REQUIRED` and none is expected in this range.
 
-### STEP C5 — confirm nothing destructive hid in the list
+### STEP C5 — look for destructive operations, and read the context of every hit
 
 ```
-sudo -u chatwoot git -C /home/chatwoot/chatwoot grep -nE "drop_table|remove_column|rename_table|DELETE FROM|TRUNCATE" 1447a10d9fdac191ffa3a081c6c2d85fc0bad8d3 -- custom/db/migrate
+sudo -u chatwoot git -C /home/chatwoot/chatwoot grep -nE "drop_table|remove_column|rename_table|DELETE FROM|TRUNCATE" 1447a10d9fdac191ffa3a081c6c2d85fc0bad8d3 -- db/migrate custom/db/migrate
 ```
 
-**Expect:** no output.
-**STOP** on any output — the Lynomia migrations in this release are additive and a hit here contradicts §3.
+**Expect:** hits, and most of them harmless. **Do not treat output as a failure** — read where each one sits.
+
+**Only a hit inside `def up` matters.** A `remove_column` inside `def down` is the rollback path and never runs
+during a deploy. At the release SHA this grep matches, among others,
+`custom/db/migrate/20261005110000_add_platform_ownership_to_help_center.rb:29` — `remove_column :portals,
+:platform_owned` — which is in `def down` and is expected.
+
+For each hit **that C4 listed as new to this deploy**, open the file and check which method it is in:
+
+```
+sudo -u chatwoot git -C /home/chatwoot/chatwoot show 1447a10d9fdac191ffa3a081c6c2d85fc0bad8d3:<path> | sed -n '1,80p'
+```
+
+**STOP** only if a destructive statement sits in `def up` (or in a bare `def change`) of a migration C4 says is new.
+None is expected. No `drop_table`, `remove_column` or narrowing `change_column` sits in the `up` of any Lynomia
+migration in this release: they are additive, constraint relaxations, or — for `20261004110000` — an index swap plus
+a blank→NULL data write, which this grep does not match and which §3 classifies separately.
 
 ### STEP C6 — extract the release's deploy script **without moving HEAD**
 
@@ -583,14 +692,90 @@ This is the irreversible part of the window. The script prints a banner per stag
 
 - **Any failure before stage 7**: the script aborts with `!!! deploy aborted at line N. Nothing was restarted; the
   previous version is still serving.` **The old version is still live.** Do not restart anything by hand. Read the
-  line number against §2, fix the cause, and re-run F1 — it is safe to re-run, because stage 1 re-compares and
-  stages 2–6 are idempotent.
+  line number against §2 and fix the cause. Then **do not blindly re-run F1** — whether that works depends on
+  whether HEAD moved, and **F2** below decides it for you.
 - **A failure at stage 5 (migrations)**: **do not restart services.** The code has fast-forwarded but the schema may
-  be partly migrated. Re-run F1 after fixing the cause; `db:migrate` resumes from where it stopped. If you cannot
-  fix it, roll the code back per §4 — the previous revision runs against a partly-migrated additive schema.
+  be partly migrated. Resume per **F2**; `db:migrate` picks up from the migration that failed. If you cannot fix it,
+  roll the code back per §4 — and note that §4's one targeted `db:migrate:down` only applies if
+  `20261004110000` actually completed.
 - **A failure at stage 8 (verify)**: the new code **is** live and failing its own readiness check. Go to §4 and roll
   back. The script's message names your previous revision.
 - **Clean completion**: proceed to G.
+
+### STEP F2 — resume after a failed stage. Read this before re-running anything.
+
+`deploy.sh` is **not uniformly safe to re-run.** Stage 3 fast-forwards HEAD onto the release (lines 93–98), and
+stage 1 then derives both `RELEASE_SHA` (from `@{u}`) and `PREVIOUS_SHA` (from `HEAD`) and exits 0 when they match
+(lines 72–75). So after a failure at **stage 4, 5 or 6** — dependencies, migrations, frontend build — HEAD is
+already at the release, and re-running the script prints `already at 1447a10d... nothing to deploy`, exits 0, and
+**runs none of the remaining stages.** It looks like a successful no-op. It is an un-migrated, un-built,
+un-restarted server.
+
+First, find out where you are. Read-only:
+
+```
+sudo -u chatwoot git -C /home/chatwoot/chatwoot rev-parse HEAD
+```
+
+| That prints | Meaning | Do this |
+| --- | --- | --- |
+| `<PRE_DEPLOY_SHA>` from B7 | the failure was at stage 0, 1, 2 or 3; nothing moved | fix the cause and **re-run F1**. That is the correct path and the one to prefer |
+| `1447a10d9fdac191ffa3a081c6c2d85fc0bad8d3` | stage 3 completed; the failure was at stage 4, 5 or 6 | **do not re-run F1.** Run the remaining stages by hand, below |
+| anything else | unexpected | **stop** and report it before running anything further |
+
+**Resuming by hand, one command at a time.** These are the script's own stage 4–7 commands, verbatim, in order.
+Start at the stage that failed — all of them are idempotent on a second run. Each must succeed before you run the
+next; the script's `set -Eeuo pipefail` is what you are replacing, so **read every exit status yourself.**
+
+Stage 4, dependencies:
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && BUNDLE_FROZEN=true bundle install --quiet"
+```
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && pnpm install --frozen-lockfile"
+```
+
+Stage 5, migrations. The timeout override is not optional — `config/database.yml` sets 14 seconds and the
+phone-uniqueness index build takes longer:
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 bundle exec rails db:migrate"
+```
+
+Stage 5's own check. It must print `schema ok`; if it names an invalid index, **stop** — that is the failure mode
+C8 exists to pre-empt and it is not fixed by restarting:
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production bundle exec rails runner '
+  ActiveRecord::Migration.check_all_pending!
+  invalid = ActiveRecord::Base.connection.select_values(
+    %q(SELECT indexrelid::regclass::text FROM pg_index WHERE NOT indisvalid))
+  abort(%q(invalid indexes present: ) + invalid.join(%q(, ))) if invalid.any?
+  puts %q(schema ok)'"
+```
+
+Stage 6, frontend build. Several minutes each:
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && NODE_OPTIONS=--max-old-space-size=4096 pnpm vite build && test -s public/vite/.vite/manifest.json && echo 'vite manifest ok'"
+```
+
+```
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && NODE_OPTIONS=--max-old-space-size=4096 pnpm build:sdk && test -s public/packs/js/sdk.js && echo 'sdk ok'"
+```
+
+Stage 7, the restart. **★ Do not run this until every command above has succeeded ★** — by hand there is no
+`pipefail` to stop you:
+
+```
+systemctl restart chatwoot.target
+```
+
+Then go to **PHASE H**, which is stage 8's verification and more. Stage 9 only prints a summary and prunes old
+backups; skipping it costs nothing, but record the SHAs and the backup path yourself, and note in **M7** that this
+deploy was resumed by hand rather than completed by the script.
 
 ---
 
@@ -808,13 +993,19 @@ and the audit row would (correctly) show `[FILTERED]` rather than the value, so 
 
 ### STEP J3 — confirm no credential is stored in any channel audit row
 
+**This must be bounded to rows written since the deploy.** Chatwoot Enterprise's own channel writer stored these
+values in the clear before it was removed, and those historical rows are still in the table — the release preserves
+all 4,845 of them. An unbounded query would return a non-zero count from legacy data and look like a regression it
+is not.
+
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*) from audits where auditable_type = '"'"'Inbox'"'"' and audited_changes::text ~ '"'"'(provider_config|access_token|api_key|hmac_token|business_management_token)'"'"' and audited_changes::text not like '"'"'%FILTERED%'"'"'"'
+sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*) from audits where auditable_type = '"'"'Inbox'"'"' and created_at > now() - interval '"'"'2 hours'"'"' and audited_changes::text ~ '"'"'(provider_config|access_token|api_key|hmac_token|business_management_token)'"'"' and audited_changes::text not like '"'"'%FILTERED%'"'"'"'
 ```
 
 **Expect:** `0`.
-**STOP** on anything above 0 — a credential has reached an audit row in the clear, and that is the one defect the
-relocated channel writer exists to prevent. Report the row id without printing the value.
+**STOP** on anything above 0 — a credential written **by this release** has reached an audit row in the clear, which
+is the one defect the relocated channel writer exists to prevent. Report the row id without printing the value.
+Widen the interval only if the deploy was longer ago than two hours; do not remove the bound.
 
 ### STEP J4 — message-delete and conversation-delete writers
 
@@ -1005,6 +1196,12 @@ status APPROVED at Meta.
 
 Only for an actual release regression or production instability. **Not** for an external Meta failure at L4.
 
+### STEP M0 — before you check out the old code, decide the one migration question
+
+Read **M6** now, not after. `20261004110000` is the one migration that may need its own `down`, and the command needs
+the **release** code checked out — which it is, right now, and will not be after M1. Running it later means rolling
+forward and back again.
+
 ### STEP M1 — go back to the previous revision
 
 ```
@@ -1013,6 +1210,10 @@ sudo -u chatwoot git -C /home/chatwoot/chatwoot checkout --detach <PRE_DEPLOY_SH
 
 `--detach` is deliberate: the branch keeps pointing at the release, so the next deploy has to be a deliberate
 roll-forward rather than an accident of being on a branch.
+
+**It also disables `deploy.sh` until you undo it.** The script's stage 1 is `git rev-parse @{u}`, which on a detached
+HEAD fails with `fatal: HEAD does not point to a branch` and aborts the deploy at line 70 under the `ERR` trap — so
+re-arming the deploy path is a deliberate step, **M8**, and not something that happens on its own.
 
 ### STEP M2 — the previous revision's dependencies
 
@@ -1039,12 +1240,28 @@ systemctl restart chatwoot.target
 
 Re-run **H1**, **H2** and **H3**. `/api` must return 200 with both dependencies `ok`.
 
-### STEP M6 — do NOT roll the database back
+### STEP M6 — the database: one targeted down, and `rails db:rollback` never
 
-Every migration in this release is additive or a constraint relaxation (§3), so the previous revision runs against
-the new schema. `rails db:rollback` runs the `down` of the last migration only, knows nothing about a release
-boundary, and for the three `CODE ROLLBACK ONLY` migrations would try to re-tighten constraints that may now be
-legitimately violated.
+**Do not run `rails db:rollback`.** It runs the `down` of whichever migration happens to be last, knows nothing about
+a release boundary, would try to re-tighten the constraints the two `CODE ROLLBACK ONLY` relaxations loosened, and
+raises `IrreversibleMigration` on any of the ten `def up`-only migrations in §3.
+
+**One migration does need reversing, and it had to be done before M1.** `20261004110000`'s unique index and
+`app/models/contact.rb:231`'s blank→NULL guard ship in the same release, so the old code plus the new index is a
+state that has never run: a contact write with a blank phone number raises `ActiveRecord::RecordNotUnique` on the
+second one in an account. §3's note has the reasoning. The command, which needs the **release** code checked out
+because the migration file is new in this release:
+
+```
+sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 bundle exec rails db:migrate:down VERSION=20261004110000'
+```
+
+If you reached M6 having already checked out the old code at M1, you have two options: roll forward to the release
+SHA, run the command, and roll back again; or leave the index in place and accept that contact writes with a blank
+phone number fail until the roll-forward. Either is defensible. Choosing by accident is not — record which one you
+took at M7.
+
+Nothing else in §3 needs a database action, and the data writes are not reversible by code at all (§4).
 
 A dump restore (`OPERATOR_BACKUP` from D5) **loses every message, conversation and order written since the dump** —
 minutes of real customer conversations on a live messaging product. It needs the service owner's explicit decision,
@@ -1052,9 +1269,46 @@ not an operator's judgement call mid-incident.
 
 ### STEP M7 — record it
 
-Append what happened to `deployment/INCIDENT.md`: the revision you went back to, why, and what you observed. Do not
-re-run the deploy until the cause is understood — `deploy.sh` would fast-forward straight back onto the revision you
-just rolled back from.
+Append what happened to `deployment/INCIDENT.md`: the revision you went back to, why, what you observed, whether you
+ran M6's `db:migrate:down` or deliberately left the unique index in place, and whether the deploy itself was
+completed by the script or resumed by hand per **F2**.
+
+The checkout is detached, so `deploy.sh` **cannot** run until M8 re-attaches the branch. That is the intended state:
+leave it there until the cause is understood.
+
+### STEP M8 — re-arm the deploy path, only when you are ready to roll forward again
+
+Not part of the rollback. Do this when the cause is understood and you intend to deploy again — either the same
+release or a fix on top of it.
+
+First see what the branch points at. Read-only:
+
+```
+sudo -u chatwoot git -C /home/chatwoot/chatwoot rev-parse claude/practical-thompson-9xfqed
+```
+
+It should still be `1447a10d9fdac191ffa3a081c6c2d85fc0bad8d3`, the revision you rolled back from. M1 detached HEAD
+and moved nothing, so the branch was never rewound.
+
+**Re-attaching puts the release back on disk.** `git checkout <branch>` is itself the roll-forward of the code — it
+is not a harmless preparation step you take and then decide about. The moment it returns, the host has release code
+on disk, the previous revision's gems and assets from M2 and M3, and a running process serving neither consistently.
+So do not run it until you are ready to go straight through to a restart, and expect to be in that mixed state for
+as long as the rebuild takes.
+
+```
+sudo -u chatwoot git -C /home/chatwoot/chatwoot checkout claude/practical-thompson-9xfqed
+```
+
+What happens next depends on whether the upstream branch has moved since the rollback:
+
+| Upstream tip | After re-attaching | Why |
+| --- | --- | --- |
+| **A fix commit has been pushed**, so the tip is past `1447a10d` | **run `deploy.sh` normally.** It is the preferred path — use the script, not F2's hand commands, whenever the script can run | HEAD is on a branch so `@{u}` resolves; `PREVIOUS_SHA` is `1447a10d` and `RELEASE_SHA` is the fix, so stage 1's equality test does not fire and all nine stages run, backup and verification included |
+| **Still `1447a10d`** — you are re-deploying the same release unchanged | **do not run `deploy.sh`.** Use **F2**'s stage 4–7 commands against the re-attached checkout, then PHASE H. Or push a fix commit so there is a new tip and take the row above | Re-attaching put HEAD at `1447a10d`, which is also `@{u}`, so stage 1 exits 0 at lines 72–75 — §1's trap, reached from the other direction. No backup, no migration, no build, no restart, and a success-looking message |
+
+Either way the re-attach itself has already restored the release code to disk, so the dependency, migration and
+build state on the host no longer matches the checkout until you finish. Do not leave it between the two.
 
 ---
 

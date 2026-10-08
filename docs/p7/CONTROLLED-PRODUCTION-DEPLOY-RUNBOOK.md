@@ -102,8 +102,10 @@ proves independently.
 
 ## 2. Deployment-stage map of `deployment/deploy.sh` at the release SHA
 
-178 lines, self-contained. It calls **no helper script** — only `sudo`, `git`, `bundle`, `pnpm`, `pg_dump`,
-`rails runner`, `systemctl`, `curl`, `sha256sum`, `install`, `df`, `awk`, `du`, `find`. The unit files beside it in
+232 lines, self-contained. It calls **no helper script** — only `sudo`, `git`, `bundle`, `pnpm`, `ruby`,
+`pg_dump`, `rails runner`, `systemctl`, `curl`, `sha256sum`, `install`, `df`, `awk`, `du`, `find`. The only
+embedded program is stage 2's dotenv credential reader (§5), a quoted heredoc fed to `ruby -` through `as_app`, so
+`git show <sha>:deployment/deploy.sh` still yields everything the deploy needs in one file. The unit files beside it in
 `deployment/` are reference copies, not inputs.
 
 | Stage | Lines | What it does |
@@ -111,39 +113,39 @@ proves independently.
 | preamble | 29–45 | `set -Eeuo pipefail`; `APP_USER`/`APP_DIR`/`BACKUP_DIR`/`TARGET`/`HEALTH_URL`/`KEEP_BACKUPS` defaults; `as_app()` runs every repository command as `chatwoot`; `ERR` trap; refuses unless root; refuses if `APP_DIR` is missing |
 | 0 Pre-deploy checks | 47–61 | refuses a dirty tree; records `PREVIOUS_SHA` and `PREVIOUS_BRANCH` and prints them; notes if the target unit is already inactive; refuses if under 2 GB free on the app filesystem |
 | 1 Fetch the release | 63–76 | `git fetch` **as `chatwoot`**; `RELEASE_SHA=$(git rev-parse @{u})`; early `exit 0` if already there; prints the SHA being deployed |
-| 2 Database backup | 78–91 | creates `/var/backups/lynomia` mode 750 owned by `chatwoot`; UTC timestamp; `pg_dump -Fc` with credentials sourced from `.env` so none appear on the command line; refuses on an empty dump; writes a `.sha256` beside it; prints path and size |
-| 3 Check out the release | 93–98 | `git merge --ff-only @{u}`; **asserts HEAD equals `RELEASE_SHA`**; prints the new head commit |
-| 4 Dependencies | 100–108 | `BUNDLE_FROZEN=true bundle install --quiet`; `pnpm install --frozen-lockfile` |
-| 5 Migrations | 110–124 | **the first irreversible stage** — §3's data-writing migrations run here. `RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 rails db:migrate`; then `ActiveRecord::Migration.check_all_pending!` and a `pg_index WHERE NOT indisvalid` query that aborts if any invalid index exists |
-| 6 Frontend build | 126–134 | `pnpm vite build` then asserts `public/vite/.vite/manifest.json` is non-empty; `pnpm build:sdk` then asserts `public/packs/js/sdk.js` is non-empty |
-| 7 Restart | 136–139 | `systemctl restart chatwoot.target` — **the first service interruption**, and everything above must have succeeded to reach it. Not the first irreversible action; stage 5 is |
-| 8 Verify | 141–166 | up to 30 × `curl` on `HEALTH_URL` two seconds apart (60 s budget), printing the last body and naming the rollback document on failure; `systemctl is-active` on the target and on `chatwoot-web.1.service` and `chatwoot-worker.1.service`; a `rails runner` that aborts unless a Sidekiq process is registered |
-| 9 Done | 168–178 | prints outgoing SHA → release SHA, the backup path and the rollback pointer; prunes `*.dump` beyond `KEEP_BACKUPS=14`, oldest first, removing the `.sha256` with each; clears the `ERR` trap |
+| 2 Database backup | 78–145 | creates `/var/backups/lynomia` mode 750 owned by `chatwoot`; UTC timestamp; reads the five `POSTGRES_*` keys with dotenv's own tokenizer and none of its substitutions (§5, lines 92–141), then `exec`s `pg_dump -Fc` so the password reaches it only through `PGPASSWORD` in that one process and never through an argv; refuses on an empty dump; writes a `.sha256` beside it; prints path and size |
+| 3 Check out the release | 147–152 | `git merge --ff-only @{u}`; **asserts HEAD equals `RELEASE_SHA`**; prints the new head commit |
+| 4 Dependencies | 154–162 | `BUNDLE_FROZEN=true bundle install --quiet`; `pnpm install --frozen-lockfile` |
+| 5 Migrations | 164–178 | **the first irreversible stage** — §3's data-writing migrations run here. `RAILS_ENV=production POSTGRES_STATEMENT_TIMEOUT=0 rails db:migrate`; then `ActiveRecord::Migration.check_all_pending!` and a `pg_index WHERE NOT indisvalid` query that aborts if any invalid index exists |
+| 6 Frontend build | 180–188 | `pnpm vite build` then asserts `public/vite/.vite/manifest.json` is non-empty; `pnpm build:sdk` then asserts `public/packs/js/sdk.js` is non-empty |
+| 7 Restart | 190–193 | `systemctl restart chatwoot.target` — **the first service interruption**, and everything above must have succeeded to reach it. Not the first irreversible action; stage 5 is |
+| 8 Verify | 195–220 | up to 30 × `curl` on `HEALTH_URL` two seconds apart (60 s budget), printing the last body and naming the rollback document on failure; `systemctl is-active` on the target and on `chatwoot-web.1.service` and `chatwoot-worker.1.service`; a `rails runner` that aborts unless a Sidekiq process is registered |
+| 9 Done | 222–232 | prints outgoing SHA → release SHA, the backup path and the rollback pointer; prunes `*.dump` beyond `KEEP_BACKUPS=14`, oldest first, removing the `.sha256` with each; clears the `ERR` trap |
 
 ### The twenty required safety items
 
 | # | Item | Present | Where |
 | --- | --- | --- | --- |
 | 1 | repository sanity | yes | 44–45, 50–52 |
-| 2 | exact SHA checkout / release identification | yes, **with a procedural condition** | 70, 96, 97 — the SHA is derived from the upstream tip, not supplied. Pinned here by verifying the tip at **C2** and re-proving HEAD at **G1** |
+| 2 | exact SHA checkout / release identification | yes, **with a procedural condition** | 70, 150, 151 — the SHA is derived from the upstream tip, not supplied. Pinned here by verifying the tip at **C2** and re-proving HEAD at **G1** |
 | 3 | dirty tree protection | yes | 50–52 |
-| 4 | dependency install | yes | 106, 108 |
-| 5 | frozen Ruby dependencies | yes | 106 `BUNDLE_FROZEN=true` |
-| 6 | frozen pnpm lockfile | yes | 108 `--frozen-lockfile` |
-| 7 | database backup | yes | 81–87 |
-| 8 | backup verification | yes, **strengthened here** | 89 non-empty, 90 sha256. It does not validate the archive TOC, so step **D4** adds `pg_restore --list` to the operator's own backup |
-| 9 | backup retention | yes | 175–176 |
-| 10 | migration timeout | yes | 115, and the phone-uniqueness migration also sets `statement_timeout = '0'` itself |
-| 11 | `db:migrate` | yes | 115 |
-| 12 | pending migration check | yes | 120 |
-| 13 | invalid PostgreSQL index check | yes | 121–123 |
-| 14 | frontend production build | yes | 129–130 |
-| 15 | `build:sdk` | yes | 133–134 |
-| 16 | service restart | yes | 139 |
-| 17 | readiness check | yes | 144–153 |
-| 18 | application health check | yes | 155–166 |
-| 19 | failure / abort behaviour | yes | 29, 42; the restart at 139 is unreachable unless every step above succeeded |
-| 20 | rollback reference | yes | 149, 156, 159, 171–172 |
+| 4 | dependency install | yes | 157, 162 |
+| 5 | frozen Ruby dependencies | yes | 157 `BUNDLE_FROZEN=true` |
+| 6 | frozen pnpm lockfile | yes | 162 `--frozen-lockfile` |
+| 7 | database backup | yes | 81–141 |
+| 8 | backup verification | yes, **strengthened here** | 143 non-empty, 144 sha256. It does not validate the archive TOC, so step **D4** adds `pg_restore --list` to the operator's own backup |
+| 9 | backup retention | yes | 229–230 |
+| 10 | migration timeout | yes | 169, and the phone-uniqueness migration also sets `statement_timeout = '0'` itself |
+| 11 | `db:migrate` | yes | 169 |
+| 12 | pending migration check | yes | 174 |
+| 13 | invalid PostgreSQL index check | yes | 175–177 (`indisvalid` at 176) |
+| 14 | frontend production build | yes | 183–184 |
+| 15 | `build:sdk` | yes | 187–188 |
+| 16 | service restart | yes | 193 |
+| 17 | readiness check | yes | 198–207 |
+| 18 | application health check | yes | 209–220 |
+| 19 | failure / abort behaviour | yes | 29, 42; the restart at 193 is unreachable unless every step above succeeded |
+| 20 | rollback reference | yes | 203, 210, 213, 225–226 |
 
 **Pre-deploy blockers: 0.** Items 2 and 8 are satisfied by the script plus an operator step in this runbook, not by
 a change to the script and not by an undocumented command. Nothing is missing that would require patching.
@@ -285,6 +287,97 @@ state, delivered webhooks, sent emails, and Sidekiq jobs the new code already en
 
 ---
 
+## 5. What production pre-deploy verification exposed, and what changed because of it
+
+**This is a real defect found on the real host, not a hypothetical.** Pre-deploy verification ran the backup
+command on production and it failed. `deploy.sh` stage 2 used to load the database credentials like this:
+
+```
+set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -Fc ...
+```
+
+Production's `.env` is a valid dotenv file and **not a valid Bash script**, so sourcing it aborted:
+
+```
+chat: command not found
+syntax error near `<'
+```
+
+Two ordinary production entries cause it, and both were reproduced here:
+
+| `.env` line | What Bash does with it |
+| --- | --- |
+| `MAILER_SENDER_EMAIL=Lynomia <otp@lynomia.com>` | `<` is a redirection, so the line is `syntax error near unexpected token 'newline'` and the shell exits 2 |
+| `INSTALLATION_NAME=Lynomia Chat` | the unquoted space splits the word, so Bash runs `Chat` as a command: `Chat: command not found` |
+
+**The deploy was not run.** Without this fix, stage 2 aborts before the backup, which under `set -Eeuo pipefail`
+aborts the whole deploy — so the failure was safe, but it made the release undeployable.
+
+### Why the fix does not simply call dotenv either
+
+The obvious repair is to let the dotenv gem parse the file, since that is what the application does
+(`chatwoot-web.1.service` runs `bin/rails server` and `chatwoot-worker.1.service` runs `dotenv bundle exec
+sidekiq`; neither unit has an `EnvironmentFile=`). But `Dotenv::Parser` runs two substitution passes on every value
+that is **not** single-quoted, and one of them executes shell commands —
+`dotenv-3.1.2/lib/dotenv/substitutions/command.rb` evaluates `$(...)` through Ruby backticks. Verified by running it:
+a `.env` containing `SOME_BUILD_STAMP=$(touch /tmp/PWNED; echo stamped)` created `/tmp/PWNED`. Calling
+`Dotenv.parse` from a root-invoked deploy would therefore hand `.env` arbitrary code execution, which is the same
+class of problem as sourcing it.
+
+The variable pass is worse than it looks, too: `$VAR` resolves from the **invoking** environment, so the same
+`.env` yields different values for different callers. Measured on one fixture:
+
+| Invoked with | `POSTGRES_PASSWORD` dotenv returns |
+| --- | --- |
+| `HOME=/root` | `pre/root-post` |
+| `HOME=/home/chatwoot` | `pre/home/chatwoot-post` |
+| `HOME=/srv/app` | `pre/srv/app-post` |
+
+There is no single correct answer to copy, so the backup must not guess one.
+
+### What stage 2 does now
+
+It takes dotenv's **tokenizer** — `Dotenv::Parser::LINE`, the exact grammar the application reads this file with —
+keeps only `POSTGRES_DATABASE`, `POSTGRES_USERNAME`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` and `POSTGRES_PORT`,
+applies dotenv's quote-stripping and backslash-unescaping, resolves an escaped `\$` to a literal `$` exactly as both
+of dotenv's passes do, and runs **neither** substitution pass itself. Then `exec` replaces ruby with `pg_dump`, so
+`PGPASSWORD` lives only in `pg_dump`'s own environment and in no argv anywhere. `-Fc`, the dump path, the non-empty
+check, the `.sha256` sidecar and stage 9's retention are all unchanged.
+
+Measured against the real gem on seventeen `.env` fixtures: **eleven byte-identical on all five keys, six refused by
+design, zero divergences.** The refusals are the cases where dotenv's answer would require executing something, or
+would depend on the caller, or where a required key is missing or blank. Two of the seventeen exist because a first
+version of this parser got them wrong: a value containing `\$HOME` must yield a literal `$HOME`, because dotenv's
+substitution passes drop the escaping backslash, and keeping it would have authenticated with the wrong password.
+
+### The three messages stage 2 can now abort with
+
+| Message | Meaning | Fix |
+| --- | --- | --- |
+| `<KEY> is missing from .env, so the backup cannot run.` | the key is absent | add it; **B13** catches this before the window |
+| `<KEY> is blank in .env, so the backup cannot run.` | present but empty or whitespace | give it a value |
+| `<KEY> in .env holds an unescaped $ … Single-quote the value in .env` | dotenv would expand or execute it | wrap that one value in single quotes, which makes it literal for the application and the backup alike |
+
+All three abort before the backup, so they abort the deploy with nothing restarted. None of them prints a value.
+
+### The same pattern was removed from this runbook
+
+Eleven steps in this document used the same `set -a && . ./.env` idiom and would all have failed on this host the
+same way. Ten were read-only `psql` queries and now use `sudo -u postgres psql -d chatwoot_production`, which is
+what **K6** already did and what `deployment/ROLLBACK.md` already uses, and which needs no credential at all. The
+eleventh, **D3**, is the operator's own `pg_dump` and now uses the same credential-free path. **B13** was rewritten
+separately: it never sourced anything, but its `grep` was wrong in three ways and its explanation referred to the
+removed `set -a` line.
+
+**One place still contains the pattern, deliberately.** `docs/p7/00-discovery-findings.md` records six commands in
+this shape as the historical log of a completed investigation, and rewriting that log would falsify it. They are
+not deploy steps and **must not be copy-pasted onto the host** — they would fail exactly as described above. For
+the queries they perform, use the `sudo -u postgres psql -d chatwoot_production` form this runbook now uses
+throughout. `deployment/setup_18.04.sh` and `setup_20.04.sh` also mention `.env`, but only to *write* it with
+`sed` during first-time provisioning; neither evaluates its contents and neither runs during a deploy.
+
+---
+
 # PHASE B — Inspect production. Nothing here changes anything.
 
 ### STEP B1 — confirm you are root on the application host
@@ -412,17 +505,26 @@ unless both answer. Note the `version` field as your before value.
 ### STEP B13 — confirm the database credentials exist, without printing them
 
 ```
-sudo -u chatwoot grep -c '^POSTGRES_\(DATABASE\|USERNAME\|PASSWORD\)=..*' /home/chatwoot/chatwoot/.env
+sudo -u chatwoot sed -nE 's/^[[:space:]]*(export[[:space:]]+)?(POSTGRES_(DATABASE|USERNAME|PASSWORD))[[:space:]]*[=:].*/\2/p' /home/chatwoot/chatwoot/.env | sort -u | wc -l
 ```
 
-**Expect:** `3`.
-**STOP** on anything less: `deploy.sh` sources `.env` for the backup (line 85) and the backup would fail. This prints
-a count only — no value is echoed anywhere in this runbook.
+**Expect, exactly:** `3`.
+**STOP** on anything less — `deploy.sh` stage 2 aborts with `<KEY> is missing from .env, so the backup cannot run.`
+and you would have no pre-deploy dump.
+
+This prints a count of **distinct key names** and never a value. It deliberately replaces the earlier
+`grep -c '^POSTGRES_\(...\)=..*'`, which was wrong three ways: it missed `export POSTGRES_…`, a key written with
+spaces around `=`, and dotenv's `KEY: value` form; it required a value of at least two characters; and it counted
+*lines*, so a key repeated twice plus one missing key still totalled `3` and read as a pass.
+
+A value containing an unescaped `$` is the other thing stage 2 refuses on, and it is not reliably detectable with
+`grep` — whether dotenv treats `$` literally depends on the quoting of that specific value. Do not try. Stage 2
+performs that check itself and names the offending key if it fires; §5 records the message and the one-line fix.
 
 ### STEP B14 — baseline applied-migration count
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*) from schema_migrations"'
+sudo -u postgres psql -d chatwoot_production -Atc "select count(*) from schema_migrations"
 ```
 
 **Expect:** a number. **Record it.** The release's schema version is `20261006100000` and the repository holds 196
@@ -564,7 +666,7 @@ Both rake tasks only read and neither takes a lock (`lib/tasks/contact_phone_uni
 If C4 did list `20261004110000`, size the table so you know what stage 5 is about to do:
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*) from contacts"'
+sudo -u postgres psql -d chatwoot_production -Atc "select count(*) from contacts"
 ```
 
 **Expect:** a row count. A `CREATE UNIQUE INDEX CONCURRENTLY` on a few hundred thousand rows is minutes, not
@@ -582,7 +684,7 @@ Two dumps is deliberate: the script's is the one its own rollback message names,
 ### STEP D1 — size the database and check the backup filesystem
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select pg_size_pretty(pg_database_size(current_database()))"'
+sudo -u postgres psql -d chatwoot_production -Atc "select pg_size_pretty(pg_database_size(current_database()))"
 ```
 
 **Expect:** a size. Compare it against the free space on the backup filesystem from B11.
@@ -597,15 +699,27 @@ install -d -m 750 -o chatwoot -g chatwoot /var/backups/lynomia
 
 **Expect:** no output. Same path, mode and ownership `deploy.sh` uses at line 81, so this is idempotent with it.
 
-### STEP D3 — take the backup. No credential appears on the command line.
+### STEP D3 — take the backup. No credential is involved at all.
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -Fc -h "${POSTGRES_HOST:-localhost}" -p "${POSTGRES_PORT:-5432}" -U "$POSTGRES_USERNAME" "$POSTGRES_DATABASE" -f "/var/backups/lynomia/$(date -u +%Y%m%dT%H%M%SZ)-operator-pre-deploy.dump"'
+sudo -u postgres pg_dump -Fc chatwoot_production > "/var/backups/lynomia/$(date -u +%Y%m%dT%H%M%SZ)-operator-pre-deploy.dump"
 ```
 
 **Expect:** no output on success. It may take minutes.
-**STOP** on any error — do not continue without a backup. This dumps **`chatwoot_production` only**, taken from
-`.env`. It does not touch `chatwoot2_production`.
+**STOP** on any error — do not continue without a backup. This dumps **`chatwoot_production` only** and does not
+touch `chatwoot2_production`.
+
+Why this shape. `postgres` connects over the local socket under peer authentication, so the operator's own backup
+needs no password, no `.env` and no parsing — the same access `deployment/ROLLBACK.md` already uses to *restore*
+(`sudo -u postgres pg_restore …`), which keeps dump and restore symmetric. **Your shell, running as root, owns the
+redirect**, which is what lets the file land in a `chatwoot`-owned `750` directory that `postgres` could not write to
+itself; the file is then root-owned, and stage 9's `*.dump` retention prunes it as root regardless of owner, exactly
+as before. The earlier form sourced `.env` through bash and could not run on this host at all (§5).
+
+This is deliberately *not* the same mechanism `deploy.sh` stage 2 uses. The script must authenticate as the
+application's own role so its dump provably covers the database the application is configured against — including
+the case where `POSTGRES_HOST` names a remote server where peer authentication does not exist. A read-only operator
+step on this host has no such obligation, so it takes the simpler, credential-free path.
 
 ### STEP D4 — verify the backup is non-empty, checksummed, and a readable archive
 
@@ -911,7 +1025,7 @@ it just gets slow. **STOP** and rebuild the named index rather than leaving it.
 ### STEP H8 — applied-migration count
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*), max(version) from schema_migrations"'
+sudo -u postgres psql -d chatwoot_production -Atc "select count(*), max(version) from schema_migrations"
 ```
 
 **Expect:** `196|20261006100000`.
@@ -969,7 +1083,7 @@ gated on that account feature, but the rows exist regardless, so query the table
 You already signed in at I2. Sign out and in once more, then:
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select action, count(*) from audits where auditable_type = '"'"'User'"'"' and created_at > now() - interval '"'"'30 minutes'"'"' group by action"'
+sudo -u postgres psql -d chatwoot_production -Atc "select action, count(*) from audits where auditable_type = 'User' and created_at > now() - interval '30 minutes' group by action"
 ```
 
 **Expect:** `sign_in|` and `sign_out|` with non-zero counts.
@@ -981,7 +1095,7 @@ Pick a **test** web-widget inbox — not a customer-facing one. Change its **wid
 then:
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select auditable_id, action, audited_changes from audits where auditable_type = '"'"'Inbox'"'"' and action = '"'"'update'"'"' order by id desc limit 3"'
+sudo -u postgres psql -d chatwoot_production -Atc "select auditable_id, action, audited_changes from audits where auditable_type = 'Inbox' and action = 'update' order by id desc limit 3"
 ```
 
 **Expect:** a row for that inbox whose `audited_changes` contains `widget_color` with the old and new value in the
@@ -999,7 +1113,7 @@ all 4,845 of them. An unbounded query would return a non-zero count from legacy 
 is not.
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select count(*) from audits where auditable_type = '"'"'Inbox'"'"' and created_at > now() - interval '"'"'2 hours'"'"' and audited_changes::text ~ '"'"'(provider_config|access_token|api_key|hmac_token|business_management_token)'"'"' and audited_changes::text not like '"'"'%FILTERED%'"'"'"'
+sudo -u postgres psql -d chatwoot_production -Atc "select count(*) from audits where auditable_type = 'Inbox' and created_at > now() - interval '2 hours' and audited_changes::text ~ '(provider_config|access_token|api_key|hmac_token|business_management_token)' and audited_changes::text not like '%FILTERED%'"
 ```
 
 **Expect:** `0`.
@@ -1018,7 +1132,7 @@ accept the specs as the evidence (46 examples cover all three writers), or use t
 4. Check the row:
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select auditable_id, action, audited_changes -> '"'"'display_id'"'"' from audits where auditable_type = '"'"'Message'"'"' order by id desc limit 3"'
+sudo -u postgres psql -d chatwoot_production -Atc "select auditable_id, action, audited_changes -> 'display_id' from audits where auditable_type = 'Message' order by id desc limit 3"
 ```
 
 **Expect:** one `destroy` row for that message, carrying the conversation's `display_id`.
@@ -1026,7 +1140,7 @@ sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env &
 5. Then delete **that disposable conversation**, which exercises `Conversations::DeleteService` → `DeleteObjectJob`:
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select auditable_type, action, count(*) from audits where auditable_type in ('"'"'Conversation'"'"','"'"'Inbox'"'"') and action = '"'"'destroy'"'"' and created_at > now() - interval '"'"'15 minutes'"'"' group by 1,2"'
+sudo -u postgres psql -d chatwoot_production -Atc "select auditable_type, action, count(*) from audits where auditable_type in ('Conversation','Inbox') and action = 'destroy' and created_at > now() - interval '15 minutes' group by 1,2"
 ```
 
 **Expect:** two `Conversation|destroy` rows — one from the `audited` declaration and one from the job, which is the
@@ -1151,7 +1265,7 @@ exist, and therefore prints an empty fingerprint for both databases and reads as
 ### STEP K7 — the companies legacy data is intact
 
 ```
-sudo -u chatwoot -H bash -lc 'cd /home/chatwoot/chatwoot && set -a && . ./.env && set +a && PGPASSWORD="$POSTGRES_PASSWORD" psql -h "${POSTGRES_HOST:-localhost}" -U "$POSTGRES_USERNAME" -d "$POSTGRES_DATABASE" -Atc "select (select count(*) from companies) as companies, (select count(*) from contacts where company_id is not null) as contacts_with_company"'
+sudo -u postgres psql -d chatwoot_production -Atc "select (select count(*) from companies) as companies, (select count(*) from contacts where company_id is not null) as contacts_with_company"
 ```
 
 **Expect, exactly:** `97|123`.

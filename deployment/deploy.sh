@@ -82,9 +82,68 @@ install -d -m 750 -o "$APP_USER" -g "$APP_USER" "$BACKUP_DIR"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 DUMP="$BACKUP_DIR/$STAMP-pre-deploy-$PREVIOUS_SHA.dump"
 
-as_app "set -a && . ./.env && set +a && PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_dump -Fc \
-  -h \"\${POSTGRES_HOST:-localhost}\" -p \"\${POSTGRES_PORT:-5432}\" -U \"\$POSTGRES_USERNAME\" \
-  \"\$POSTGRES_DATABASE\" -f '$DUMP'"
+# `.env` is a dotenv file, not a shell script, and production's is valid as the first and invalid as the second.
+# `MAILER_SENDER_EMAIL=Lynomia <otp@lynomia.com>` is a redirection syntax error and
+# `INSTALLATION_NAME=Lynomia Chat` runs `Chat` as a command, so the `set -a && . ./.env` this used to do aborted
+# the backup on the real host. Sourcing was also the wrong tool in principle: the file is data, and evaluating it
+# runs whatever it contains as root.
+#
+# Nor can dotenv do it for us. `Dotenv::Parser.call` performs variable AND command substitution on any value that
+# is not single-quoted (substitutions/command.rb executes `$(...)` through backticks), so calling it would hand
+# `.env` arbitrary code execution during the deploy, and `$VAR` would resolve differently depending on who ran it.
+#
+# So: take dotenv's own tokenizer -- `Dotenv::Parser::LINE`, the exact grammar the application reads this file
+# with, so the dump authenticates with the same credentials the app does -- keep only the five PostgreSQL keys,
+# run none of the substitutions, and refuse rather than guess if a value holds an unescaped `$`. `exec` then
+# replaces ruby with pg_dump, so PGPASSWORD exists only in pg_dump's own environment, never in this script's and
+# never in any argv.
+as_app "bundle exec ruby - '$DUMP'" <<'PG_DUMP_WITH_DOTENV_CREDENTIALS'
+require 'dotenv'
+
+REQUIRED = %w[POSTGRES_DATABASE POSTGRES_USERNAME POSTGRES_PASSWORD].freeze
+OPTIONAL = { 'POSTGRES_HOST' => 'localhost', 'POSTGRES_PORT' => '5432' }.freeze
+
+abort 'no .env in the application directory, so the backup cannot read its credentials' unless File.exist?('.env')
+
+found = {}
+File.read('.env', encoding: 'BINARY').gsub(/\r\n?/, "\n").scan(Dotenv::Parser::LINE) do |key, value|
+  next unless REQUIRED.include?(key) || OPTIONAL.key?(key)
+
+  # dotenv's own value phase, minus the substitutions: strip a matching pair of surrounding quotes, then undo
+  # backslash escapes unless the value was single-quoted. Later occurrences of a key win, as they do in dotenv.
+  v = (value || '').strip
+  quote = (v.length >= 2 && v[0] == v[-1] && %w[' "].include?(v[0])) ? v[0] : nil
+  v = v[1..-2] if quote
+  v = v.gsub(/\\([^$])/, '\1') unless quote == "'"
+  found[key] = [v, quote]
+end
+
+found.each do |key, (value, quote)|
+  next if quote == "'" || value !~ /(?<!\\)\$/
+
+  abort "#{key} in .env holds an unescaped `$`. dotenv would expand a variable or run a command there, and the " \
+        'result depends on which user and environment invoked it, so this backup will not guess which password ' \
+        'it should use. Single-quote the value in .env to make it literal for the application and the backup alike.'
+end
+
+# dotenv emits a literal `$` for an escaped `\$`: both substitution passes drop the backslash and keep the rest
+# (Variable#substitute returns `variable[1..]`, Command returns `$LAST_MATCH_INFO[0][1..]`). The check above has
+# already established that every `$` still present is an escaped one, so this is the last thing left to match.
+values = found.transform_values do |(value, quote)|
+  quote == "'" ? value : value.gsub(/\\\$/, '$')
+end
+REQUIRED.each do |key|
+  abort "#{key} is missing from .env, so the backup cannot run." if values[key].nil?
+  abort "#{key} is blank in .env, so the backup cannot run." if values[key].strip.empty?
+end
+OPTIONAL.each { |key, default| values[key] = default if values[key].nil? || values[key].strip.empty? }
+
+ENV['PGPASSWORD'] = values['POSTGRES_PASSWORD']
+exec('pg_dump', '-Fc',
+     '-h', values['POSTGRES_HOST'], '-p', values['POSTGRES_PORT'],
+     '-U', values['POSTGRES_USERNAME'], values['POSTGRES_DATABASE'],
+     '-f', ARGV.fetch(0))
+PG_DUMP_WITH_DOTENV_CREDENTIALS
 
 [[ -s $DUMP ]] || fail "backup is empty: $DUMP"
 sha256sum "$DUMP" | tee "$DUMP.sha256"

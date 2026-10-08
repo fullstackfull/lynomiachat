@@ -13,9 +13,16 @@
 # `api_key_sid`, `api_key_secret`, `twitter_access_token`, `twitter_access_token_secret`, `website_token`,
 # `hmac_token`, `business_management_token`, and the `provider_config` blob that carries the WhatsApp `api_key`.
 #
-# So the value is replaced and the key is kept: the audit still records THAT a credential was rotated, and by whom,
-# without becoming a place to read it from. Everything else is the original behaviour, including which changes write
-# a row at all.
+# So the value is replaced and the key is kept: where a row is written at all, the audit records THAT a credential
+# changed, and by whom, without becoming a place to read it from.
+#
+# Everything else is the original behaviour, including which changes write a row at all -- and that has one
+# consequence worth naming rather than discovering later. `secret` is `except`-ed, not filtered, so a change to it
+# ALONE leaves the hash blank and writes nothing. `POST .../inboxes/:id/reset_secret`
+# (app/controllers/api/v1/accounts/concerns/inbox_secret_management.rb:4) does exactly that: rotating a Channel::Api
+# webhook signing secret is unaudited. That was true before the overlay was removed and is preserved here on
+# purpose, because which changes trigger a row is behaviour this relocation was asked not to alter. Auditing it is a
+# product change, not a port.
 module Custom::Channelable
   extend ActiveSupport::Concern
 
@@ -23,9 +30,24 @@ module Custom::Channelable
   FILTERED = '[FILTERED]'.freeze
 
   # An attribute whose name carries one of these never has its value recorded. Checked against every column of all
-  # twelve Channelable models rather than guessed; `hmac_mandatory` and `smtp_authentication` deliberately do not
-  # match, because they are a policy boolean and an auth *method* name, both worth auditing.
+  # twelve Channelable models rather than guessed. `hmac_mandatory` and `smtp_authentication` deliberately do not
+  # match, because they are a policy boolean and an auth *method* name, both worth auditing. It over-matches once,
+  # on `channel_tiktok.refresh_token_expires_at`: a timestamp, filtered because it carries `token`. Left as is --
+  # over-filtering a refresh deadline costs nothing, and narrowing the regex to spare it would be the kind of
+  # special case that later lets a real credential through.
   CREDENTIAL_NAME = /token|secret|password|key|credential|signature/i
+
+  # The one credential-bearing jsonb column on these models, named because its name matches nothing above: it is
+  # where the WhatsApp `api_key` lives, and it exists on the email, sms, twilio_sms and whatsapp channels.
+  #
+  # Deliberately NOT a blanket rule over every structured value. Five of the nine jsonb columns on these twelve
+  # tables hold no credential and are exactly what an administrator changes and would later want to read back:
+  # `channel_api.additional_attributes` (`agent_reply_time_window`, in that model's EDITABLE_ATTRS),
+  # `channel_web_widgets.pre_chat_form_options` (the pre-chat form's fields, likewise editable),
+  # `channel_whatsapp.message_templates`, `channel_twilio_sms.content_templates` and
+  # `channel_whatsapp.phone_number_health`. Redacting those would say an inbox changed without saying what
+  # changed, which is the audit row's whole purpose, and would lose it with no security gained.
+  CREDENTIAL_BLOBS = %w[provider_config].freeze
 
   # ActiveSupport::Concern's `included` reorders the method lookup chain, so the instance methods are prepended
   # explicitly to sit ahead of the OSS no-op. Same manual prepend as the implementation this replaces.
@@ -66,17 +88,16 @@ module Custom::Channelable
     private
 
     # Keeps the key and the `[before, after]` shape, so the reader and its `audited_changes` rendering are unchanged.
+    # `provider_config` is filtered whole rather than key by key: it is a credential blob, and filtering inside it
+    # would mean tracking which of a provider's keys are secret, in a hash this installation does not define.
     def filter_credentials(changes)
       changes.to_h do |attribute, values|
-        [attribute, filter_attribute?(attribute, values) ? values.map { FILTERED } : values]
+        [attribute, filter_attribute?(attribute) ? values.map { FILTERED } : values]
       end
     end
 
-    # A structured value is filtered whole: every jsonb column on these models is a provider configuration blob, and
-    # `provider_config` is where the WhatsApp `api_key` lives. Default-deny, so a key an upstream release adds to one
-    # of those blobs is redacted rather than leaked.
-    def filter_attribute?(attribute, values)
-      CREDENTIAL_NAME.match?(attribute) || values.any? { |value| value.is_a?(Hash) || value.is_a?(Array) }
+    def filter_attribute?(attribute)
+      CREDENTIAL_NAME.match?(attribute) || CREDENTIAL_BLOBS.include?(attribute)
     end
   end
 end

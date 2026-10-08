@@ -135,6 +135,39 @@ RSpec.describe Channelable do
       expect(Custom::AuditLog.last.audited_changes.fetch('provider').last).to eq('whatsapp_cloud')
     end
 
+    # Only `provider_config` is filtered wholesale. The other jsonb columns on these models hold administrator-
+    # editable configuration, and blanking them would say an inbox changed without saying what changed.
+    it 'records an administrator-editable jsonb column in the clear' do
+      widget = create(:channel_widget, account: account)
+      widget.reload
+      # `pre_chat_fields` has to be present or Channel::WebWidget#validate_pre_chat_options overwrites the value
+      # with its defaults, which is what an administrator's real edit sends.
+      options = { 'pre_chat_message' => 'Ask away', 'pre_chat_fields' => [{ 'name' => 'emailAddress', 'enabled' => true }] }
+
+      widget.update!(pre_chat_form_options: options)
+
+      audit = Custom::AuditLog.where(auditable_type: 'Inbox').last
+      expect(audit.audited_changes.fetch('pre_chat_form_options').last).to eq(options)
+    end
+
+    it 'records the API channel additional_attributes in the clear' do
+      api_channel = create(:channel_api, account: account)
+      api_channel.reload
+
+      api_channel.update!(additional_attributes: { 'agent_reply_time_window' => 10 })
+
+      audit = Custom::AuditLog.where(auditable_type: 'Inbox').last
+      expect(audit.audited_changes.fetch('additional_attributes').last).to eq('agent_reply_time_window' => 10)
+    end
+
+    it 'records the synced WhatsApp template snapshot in the clear, since it carries no credential' do
+      snapshot = [{ 'name' => 'order_delivered', 'status' => 'approved' }]
+
+      channel.update!(message_templates: snapshot)
+
+      expect(Custom::AuditLog.last.audited_changes.fetch('message_templates').last).to eq(snapshot)
+    end
+
     it 'does not filter the hmac_mandatory policy flag, which is not a credential' do
       api_channel = create(:channel_api, account: account)
       api_channel.reload

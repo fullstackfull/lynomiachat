@@ -472,13 +472,47 @@ to register the class; the real writer is the one relocated in the previous subs
 
 **Evidence.** `spec/models/custom/channelable_audit_spec.rb`,
 `spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb` and
-`spec/jobs/custom/delete_object_job_audit_spec.rb` — **43 examples. With the three modules moved
-aside: 31 failures. With them in place: 0.** The examples that pass either way are the ones asserting
+`spec/jobs/custom/delete_object_job_audit_spec.rb` — **46 examples. With the three modules moved
+aside: 36 failures. With them in place: 0.** The examples that pass either way are the ones asserting
 the product behaviour (the message is still soft-deleted, its attachments still destroyed) and the
 ones asserting that no row is written — which is the exact shape of this gap: the product worked, the
 audit trail did not. The credential matrix is eleven separate examples, one per credential column
 with a factory, each asserting that the secret string itself is absent from the payload rather than
-merely that a marker is present.
+merely that a marker is present, and three more pin the non-credential jsonb columns as recorded in
+the clear.
+
+**Four limits of the relocated channel writer, named rather than left to be discovered.** An adversarial
+review of the first version of this work found all four; two were defects and are fixed, two are
+deliberate.
+
+- **Fixed.** The first version filtered *every* structured value, on the stated grounds that "every
+  jsonb column on these models is a provider configuration blob". That was false: five of the nine
+  are not — `channel_api.additional_attributes`, `channel_web_widgets.pre_chat_form_options`,
+  `channel_whatsapp.message_templates`, `channel_twilio_sms.content_templates` and
+  `channel_whatsapp.phone_number_health`. Two of those are in their model's `EDITABLE_ATTRS` and are
+  exactly what an administrator changes, so blanking them said an inbox changed without saying what
+  changed. Redaction is now scoped to `CREDENTIAL_BLOBS = %w[provider_config]`, and three examples
+  pin the others as recorded in the clear.
+- **Fixed.** The regex over-matches `channel_tiktok.refresh_token_expires_at`, a timestamp. Left
+  over-filtered on purpose — the cost is nil and carving out an exception is how a real credential
+  later slips through — but the comment now says so instead of claiming a clean sweep.
+- **Deliberate, and a parity limit.** `secret` is `except`-ed rather than filtered, so a change to it
+  **alone** writes no row at all. `POST .../inboxes/:id/reset_secret` does exactly that, which means
+  rotating a `Channel::Api` webhook signing secret is unaudited. That was true before the removal and
+  is preserved, because §2 of this round's brief required that which changes trigger a row not be
+  altered. Auditing it is a product change, and a reasonable one to make deliberately later.
+- **Deliberate.** `channel_api.webhook_url` is recorded in full. Webhook endpoints are sometimes
+  capability URLs carrying their own token in the path, so this is a judgement rather than an
+  oversight: it is a configuration field, not a credential field, it is the single most useful thing
+  an inbox audit row can tell you, and redacting it would set a precedent that ends with every string
+  column filtered. The original recorded it too.
+
+The message writer has one of the same shape: the deleted message's `content` is stored on the audit
+row, which is what makes a deletion audit worth having, and the reader never renders it — the
+serializer strips `content` and the user documentation states that "the text is deliberately withheld
+from the list". Audit rows have no retention policy (the documentation says "Indefinitely"), so the
+body outlives the soft delete that overwrote it. That is the original's design, and the documented
+contract; changing it is a retention decision, not a port.
 
 **The strongest evidence that these were severed writers and not absent features is Lynomia's own user
 documentation, which describes all three.** `custom/db/documentation/en/administration/audit-logs.md`

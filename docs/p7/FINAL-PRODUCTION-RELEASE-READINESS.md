@@ -69,7 +69,7 @@ re-confirmation of each matrix row plus the environment-dependent gates.
 | --- | --- | --- |
 | Matrix-evidence suite — every product row | `rspec` over `spec/{controllers/devise_overrides,requests/custom,requests/documentation,models/custom,custom,services/custom,services/flows,services/whatsapp,lib/captain,models/commerce,services/commerce,policies/commerce}` and the Inbox, Audience, Flow, WhatsApp and Captain controller specs | **1,767 examples, 0 failures, 10 pending** in 4m34s |
 | Contacts, Audiences, Campaigns, Automations | `rspec` over `spec/{controllers/api/v1/accounts/contacts,services/contacts,jobs/contacts,services/data_import,services/automation_rules}` plus the campaign and custom-filter model and controller specs | **249 examples, 0 failures** in 1m09s |
-| The three relocated audit writers (§5.4) | `rspec spec/models/custom/channelable_audit_spec.rb spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb spec/jobs/custom/delete_object_job_audit_spec.rb` | **43 examples, 0 failures** — and **31 failures** with the three modules moved aside |
+| The three relocated audit writers (§5.4) | `rspec spec/models/custom/channelable_audit_spec.rb spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb spec/jobs/custom/delete_object_job_audit_spec.rb` | **46 examples, 0 failures** — and **36 failures** with the three modules moved aside |
 | Ruby style | `bundle exec rubocop --parallel` | **2,708 files inspected, no offenses** |
 | JavaScript suite | `pnpm test` (vitest) | **472 files, 5,100 tests, all passed** |
 | JavaScript / Vue lint — the repo's own gate | `pnpm eslint` (`eslint app/**/*.{js,vue}`) | exit 0 — **450 problems, 0 errors, 450 warnings**, all pre-existing `@intlify/vue-i18n/no-dynamic-keys` |
@@ -168,7 +168,7 @@ document: every one was re-established here, and the stale rows in `docs/p7/13-r
 | 15 | **Audiences** | `PASS` | `spec/controllers/api/v1/accounts/contacts/audiences_spec.rb`, `spec/controllers/api/v1/accounts/custom_filters_shared_spec.rb`, `spec/models/custom_filter_spec.rb`, `spec/services/automation_rules/conditions_filter_service_audience_spec.rb`; show/update/destroy isolation and the agent's refusal to **share** are both in `spec/requests/custom/cross_account_isolation_spec.rb` |
 | 16 | **Automations** | `PASS` | `spec/services/automation_rules/` (the rule engine, conditions filter and action service), plus the Lynomia action itself: `spec/services/custom/automation_rules/template_action_spec.rb`, `spec/models/custom/automation_rule_template_action_spec.rb`. The `send_whatsapp_template` action's first real send shares row 8's gate |
 | 17 | **Flow Builder** | `PASS` | `spec/services/flows/` — runner, runner security, graph validator, versions, and the `send_template`, `choice`, `commerce_lookup`, `set_attribute_labels_assignment` nodes; `spec/controllers/api/v1/accounts/flows_controller_spec.rb`; show/update/publish/destroy isolation in the cross-account spec |
-| 18 | **Audit** | `PASS` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. All **four** manual Enterprise writers are now relocated into `custom/`: sign-in / sign-out (`spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`), channel credential changes, message deletion and inbox / conversation deletion (§5.4, 43 further examples). Twelve `audited` declarations mirrored. Known Enterprise audit writers unaccounted for: **0**. Production holds 4,845 audit rows (operator-reported) and they are preserved — nothing in this release reads, updates or deletes one |
+| 18 | **Audit** | `PASS` | Single system, single table: `Custom::AuditLog < Audited::Audit` on OSS `audits`. Reader: `spec/requests/custom/audit_log_reader_spec.rb`. All **four** manual Enterprise writers are now relocated into `custom/`: sign-in / sign-out (`spec/controllers/custom/devise_overrides/sessions_controller_spec.rb`), channel credential changes, message deletion and inbox / conversation deletion (§5.4, 46 further examples). Twelve `audited` declarations mirrored. Known Enterprise audit writers unaccounted for: **0**. Production holds 4,845 audit rows (operator-reported) and they are preserved — nothing in this release reads, updates or deletes one |
 | 19 | **Auth** | `PASS` | `spec/controllers/devise_overrides/` including the Lynomia session overlay; Rack::Attack throttles sign-in by IP and by email, super-admin sign-in, password reset, confirmation resend and MFA verification. MFA itself is off because encryption keys are unset (§5.3) — that is the shipped state, not a defect |
 | 20 | **Super Admin** | `PASS` | `custom/app/controllers/super_admin/{portals,categories,articles,billing_plans,billing_subscriptions}_controller.rb`; the documentation corpus is managed here and is explicitly unaffected by the tenant-side policy denial (`spec/requests/custom/tenant_help_center_removal_spec.rb`) |
 | 21 | **Help & Support** | `PASS` | Tenant Help Center authoring is closed at the policy, not merely hidden: `spec/requests/custom/tenant_help_center_removal_spec.rb` covers administrator, agent and a custom role holding **every** permission, over every verb of portals, categories and articles plus the four bulk actions. Contextual help links resolve through `DocumentationController#article`, which 404s on an unpublished slug rather than dropping the reader on a home page |
@@ -490,7 +490,7 @@ instruction not to weaken security for behavioural parity.**
 
 **Evidence.** `spec/models/custom/channelable_audit_spec.rb`,
 `spec/controllers/custom/api/v1/accounts/conversations/messages_controller_audit_spec.rb` and
-`spec/jobs/custom/delete_object_job_audit_spec.rb` — **43 examples; 31 fail with the three modules moved aside and 0
+`spec/jobs/custom/delete_object_job_audit_spec.rb` — **46 examples; 36 fail with the three modules moved aside and 0
 fail with them in place.** The examples that pass either way assert the product behaviour (the message is still
 soft-deleted, its attachments still destroyed) and the cases where no row is expected, which is exactly the shape of
 this gap: the product worked, the audit trail did not. Secret safety is eleven separate examples, one per credential
@@ -711,7 +711,7 @@ What is left divides cleanly:
 - **Four items are owned outside this release** and gate nothing: the Google OAuth rotation, the dormant database's
   token, the `companies` legacy rows, and the host's pending restart and updates.
 - **The audit-provenance gap this report opened is closed.** Three severed Enterprise audit writers — channel
-  credential changes, message deletion, and inbox / conversation deletion — are relocated into `custom/` with 43
+  credential changes, message deletion, and inbox / conversation deletion — are relocated into `custom/` with 46
   examples behind them, and the pre-removal writer surface is now enumerated by mechanism with **0 unaccounted**
   (§5.4). The channel writer no longer stores credentials, which the Enterprise original did.
 

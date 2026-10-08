@@ -34,59 +34,22 @@ as well as a link to its edit page.
   <section class="main-content__body">
     <div class="pr-16">
       <% page.attributes.each do |title, attributes| %>
-        <% if title.present? && title == 'all_features' %>
-          <% regular_features, premium_features =
-            attributes.partition do |attr|
-              !SuperAdmin::AccountFeaturesHelper.account_premium_features.include?(
-                attr.data.keys.first,
-              )
-            end %>
+        <fieldset class="<%= "field-unit--nested" if title.present? %>">
+          <% if title.present? %>
+            <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
+          <% end %>
 
-          <div class="space-y-4">
-            <% regular_features.each do |attribute| %>
-              <div class="attribute-label" id="<%= attribute.name %>">
-                <%= t(
-                  "helpers.label.#{resource_name}.#{attribute.name}",
-                  default: page.resource.class.human_attribute_name(attribute.name),
-                ) %>
-              </div>
+          <% attributes.each do |attribute| %>
+            <div class="attribute-label" id="<%= attribute.name %>">
+              <%= t(
+                "helpers.label.#{resource_name}.#{attribute.name}",
+                default: page.resource.class.human_attribute_name(attribute.name),
+              ) %>
+            </div>
 
-              <div class="attribute-data attribute-data--<%=attribute.html_class%>"><%= render_field attribute, page: page %></div>
-            <% end %>
-          </div>
-
-          <hr class="my-8 border-n-weak">
-
-          <div class="space-y-4">
-            <% premium_features.each do |attribute| %>
-              <div class="attribute-label" id="<%= attribute.name %>">
-                <%= t(
-                  "helpers.label.#{resource_name}.#{attribute.name}",
-                  default: page.resource.class.human_attribute_name(attribute.name),
-                ) %>
-              </div>
-
-              <div class="attribute-data attribute-data--<%=attribute.html_class%>"><%= render_field attribute, page: page %></div>
-            <% end %>
-          </div>
-        <% else %>
-          <fieldset class="<%= "field-unit--nested" if title.present? %>">
-            <% if title.present? %>
-              <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
-            <% end %>
-
-            <% attributes.each do |attribute| %>
-              <div class="attribute-label" id="<%= attribute.name %>">
-                <%= t(
-                  "helpers.label.#{resource_name}.#{attribute.name}",
-                  default: page.resource.class.human_attribute_name(attribute.name),
-                ) %>
-              </div>
-
-              <div class="attribute-data attribute-data--<%=attribute.html_class%>"><%= render_field attribute, page: page %></div>
-            <% end %>
-          </fieldset>
-        <% end %>
+            <div class="attribute-data attribute-data--<%=attribute.html_class%>"><%= render_field attribute, page: page %></div>
+          <% end %>
+        </fieldset>
       <% end %>
     </div>
   </section>

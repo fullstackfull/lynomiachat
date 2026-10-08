@@ -30,11 +30,44 @@ class Whatsapp::Templates::StatusUpdate
     # A template Meta has just created in WhatsApp Manager has no row yet, and the payload carries no components to
     # build one from; the next sync mirrors it.
     Whatsapp::MessageTemplate.without_auditing do
-      rows.each { |row| row.update!(attributes_for(row)) }
+      rows.each do |row|
+        was = row.meta_status
+        row.update!(attributes_for(row))
+        report_status_change(row, was)
+      end
     end
   end
 
   private
+
+  # A template that Meta rejects, pauses or disables stops being sendable, and until now that happened with no log
+  # line, no audit row (this runs inside without_auditing) and no notification: the first anyone knew was a campaign
+  # or an automation quietly refusing to send. Only a real transition is reported, so the repeated events Meta sends
+  # about an unchanged template do not become noise.
+  #
+  # APPROVED is the one an operator was waiting for, so it is findable at info. PAUSED, REJECTED and LIMIT_EXCEEDED
+  # are recoverable and expected enough not to page. DISABLED is terminal -- the template can never be sent again and
+  # has to be replaced -- so it is the one error.
+  TERMINAL_STATUSES = %w[DISABLED DELETED].freeze
+  ACTIONABLE_STATUSES = %w[REJECTED PAUSED LIMIT_EXCEEDED IN_APPEAL PENDING_DELETION].freeze
+
+  def report_status_change(row, previous_status)
+    return if row.meta_status == previous_status
+
+    Lynomia::OperatorLog.emit(
+      status_level(row.meta_status), 'WHATSAPP_TEMPLATE_STATUS_CHANGED',
+      account: row.account_id, waba: row.business_account_id, template: row.name, language: row.language,
+      category: row.category, from: previous_status.presence || 'none', to: row.meta_status,
+      reason: row.meta_payload['rejected_reason'], detail: row.meta_payload['rejection_info']
+    )
+  end
+
+  def status_level(status)
+    return :error if TERMINAL_STATUSES.include?(status)
+    return :warn if ACTIONABLE_STATUSES.include?(status)
+
+    :info
+  end
 
   def rows
     scope = Whatsapp::MessageTemplate.where(business_account_id: @waba_id)

@@ -90,10 +90,6 @@ properties:
 
       Available for: `API` `LINE` `Telegram` `WhatsApp` `SMS`
     example: true
-  portal_id:
-    type: integer
-    description: Id of the help center portal to attach to the inbox.
-    example: 1
   sender_name_type:
     type: string
     description: |

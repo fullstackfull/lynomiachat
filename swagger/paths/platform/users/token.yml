@@ -2,41 +2,56 @@ tags:
   - Users
 operationId: post-user-token
 summary: Get User Access Token
-description: Get the access token of a user
+description: |
+  Returns the user's access token, which can then be sent as `api_access_token` to act on their behalf.
+  Treat the response as a credential: it grants whatever the user themselves can do.
 security:
   - platformAppApiKey: []
 responses:
-  200:
+  '200':
     description: Success
-    schema:
-      type: object
-      properties:
-        access_token:
-          type: string
-          description: Access token of the user
-        expiry:
-          type: [integer, "null"]
-          description: Expiry timestamp
-        user:
+    content:
+      application/json:
+        schema:
           type: object
           properties:
-            id:
-              type: integer
-              description: User ID
-            name:
+            access_token:
               type: string
-              description: User's full name
-            display_name:
-              type: string
-              description: User's display name
-            email:
-              type: string
-              description: User's email address
-            pubsub_token:
-              type: string
-              description: User's pubsub token
-  401:
+              description: The user's access token
+            expiry:
+              type:
+                - string
+                - 'null'
+              description: Always null. Access tokens issued here do not expire on their own.
+            user:
+              type: object
+              properties:
+                id:
+                  type: number
+                  description: The ID of the user
+                name:
+                  type: string
+                  description: The name of the user
+                display_name:
+                  type:
+                    - string
+                    - 'null'
+                  description: The display name of the user
+                email:
+                  type: string
+                  description: The email of the user
+                pubsub_token:
+                  type: string
+                  description: The token to be used to connect to the websocket
+  '401':
     description: Unauthorized
-  404:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/bad_request_error'
+  '404':
     description: The given user does not exist
-    
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/bad_request_error'

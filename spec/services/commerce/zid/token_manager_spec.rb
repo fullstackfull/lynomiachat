@@ -190,8 +190,8 @@ RSpec.describe Commerce::Zid::TokenManager do
     described_class.new(store).with_credentials(&manager_token)
     error = travel(330.days) { error_for { described_class.new(store.reload).with_credentials(&manager_token) } }
 
-    audit = defined?(Enterprise::AuditLog) ? Enterprise::AuditLog.where(auditable: store).order(:id) : []
-    expect(audit.map(&:comment)).to eq(%w[commerce.zid.token_refreshed commerce.zid.needs_reauth]) if defined?(Enterprise::AuditLog)
+    audit = Custom::AuditLog.where(auditable: store).order(:id)
+    expect(audit.map(&:comment)).to eq(%w[commerce.zid.token_refreshed commerce.zid.needs_reauth])
     everything = [logged.join, error.to_json, audit.to_json].join
     %w[auth-1 manager-1 refresh-1 auth-2 manager-2 refresh-2 hook-password].push(zid_client_secret).each do |secret|
       expect(everything).not_to include(secret)

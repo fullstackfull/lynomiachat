@@ -69,12 +69,12 @@ RSpec.describe 'Audiences API', type: :request do
       expect(account.contacts.count).to eq(2)
     end
 
-    it 'records audience changes in the audit log, and leaves conversation folders out', if: defined?(Enterprise::AuditLog) do
+    it 'records audience changes in the audit log, and leaves conversation folders out' do
       audience.update!(name: 'VIP')
       audience.destroy!
       CustomFilter.create!(account: account, user: admin, name: 'Open', filter_type: :conversation, query: { payload: [] })
 
-      expect(Enterprise::AuditLog.where(auditable_type: 'CustomFilter').order(:id).pluck(:action, :associated_id))
+      expect(Custom::AuditLog.where(auditable_type: 'CustomFilter').order(:id).pluck(:action, :associated_id))
         .to eq([['create', account.id], ['update', account.id], ['destroy', account.id]])
     end
 

@@ -335,6 +335,30 @@ class Rack::Attack
   end
 
   ## ----------------------------------------------- ##
+
+  # Provider webhooks. Nothing throttled these before, so a store stuck in a delivery loop -- or anyone who learned a
+  # store id -- could drive the whole queue on its own. Keyed per store where the path carries one, so one store
+  # cannot starve the others, and per IP for the app-level endpoints that do not.
+  #
+  # The limit is deliberately well above real traffic: every one of these providers retries a failed delivery, so a
+  # throttle that bites during a normal burst would cost events. It exists to stop a loop, not to shape traffic.
+  COMMERCE_WEBHOOK_LIMIT = ENV.fetch('RATE_LIMIT_COMMERCE_WEBHOOK', '600').to_i
+  COMMERCE_WEBHOOK_STORE_PATHS = %r{\A/webhooks/(?<provider>zid|woocommerce)/(?<store_id>\d+)\z}
+  COMMERCE_WEBHOOK_APP_PATHS = %r{\A/webhooks/(?<provider>salla|shopify_commerce)\z}
+
+  throttle('commerce webhook per store', limit: COMMERCE_WEBHOOK_LIMIT, period: 1.minute) do |req|
+    next unless req.post?
+
+    match_data = COMMERCE_WEBHOOK_STORE_PATHS.match(req.path_without_extensions)
+    "#{match_data[:provider]}:#{match_data[:store_id]}" if match_data.present?
+  end
+
+  throttle('commerce webhook per ip', limit: COMMERCE_WEBHOOK_LIMIT, period: 1.minute) do |req|
+    next unless req.post?
+
+    match_data = COMMERCE_WEBHOOK_APP_PATHS.match(req.path_without_extensions)
+    "#{match_data[:provider]}:#{req.ip}" if match_data.present?
+  end
 end
 
 # Log blocked events

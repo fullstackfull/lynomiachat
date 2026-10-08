@@ -1,5 +1,8 @@
 require 'rails_helper'
 
+# Tenants consume Lynomia documentation; they do not author it, so CategoryPolicy grants nothing to a tenant role
+# (custom/app/policies/custom/category_policy.rb). The endpoint-level matrix across every principal and verb is
+# spec/requests/custom/tenant_help_center_removal_spec.rb.
 RSpec.describe CategoryPolicy, type: :policy do
   subject(:category_policy) { described_class }
 
@@ -12,19 +15,9 @@ RSpec.describe CategoryPolicy, type: :policy do
   let(:administrator_context) { { user: administrator, account: account, account_user: account.account_users.first } }
   let(:agent_context) { { user: agent, account: account, account_user: account.account_users.first } }
 
-  permissions :index? do
+  permissions :index?, :update?, :show?, :edit?, :create?, :destroy? do
     context 'when administrator' do
-      it { expect(category_policy).to permit(administrator_context, category) }
-    end
-
-    context 'when agent' do
-      it { expect(category_policy).to permit(agent_context, category) }
-    end
-  end
-
-  permissions :update?, :show?, :edit?, :create?, :destroy? do
-    context 'when administrator' do
-      it { expect(category_policy).to permit(administrator_context, category) }
+      it { expect(category_policy).not_to permit(administrator_context, category) }
     end
 
     context 'when agent' do

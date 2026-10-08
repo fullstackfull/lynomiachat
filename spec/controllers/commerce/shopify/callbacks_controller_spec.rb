@@ -69,7 +69,7 @@ RSpec.describe 'Shopify Commerce OAuth callback', type: :request do
       expect(response.location).not_to include(secret)
     end
     expect(io.string).to include('/commerce/shopify/callback')
-    audit = defined?(Enterprise::AuditLog) ? Enterprise::AuditLog.where(auditable: account.commerce_stores.sole).pluck(:audited_changes) : []
+    audit = Custom::AuditLog.where(auditable: account.commerce_stores.sole).pluck(:audited_changes)
     expect(audit.to_json).not_to include('shpat_', 'shprt_')
   end
 

@@ -11,9 +11,10 @@ class Instagram::SendOnInstagramService < Instagram::BaseSendService
     access_token = channel.access_token
     query = { access_token: access_token }
     instagram_id = channel.instagram_id.presence || 'me'
+    api_version = GlobalConfigService.load('INSTAGRAM_API_VERSION', Channel::Instagram::DEFAULT_API_VERSION)
 
     response = HTTParty.post(
-      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/#{instagram_id}/messages",
+      "https://graph.instagram.com/#{api_version}/#{instagram_id}/messages",
       body: message_content,
       query: query
     )

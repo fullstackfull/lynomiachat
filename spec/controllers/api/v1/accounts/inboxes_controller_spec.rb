@@ -647,8 +647,11 @@ RSpec.describe 'Inboxes API', type: :request do
 
     context 'when it is an authenticated user' do
       let(:admin) { create(:user, account: account, role: :administrator) }
-      let!(:portal) { create(:portal, account_id: account.id) }
-      let(:valid_params) { { name: 'new test inbox', enable_auto_assignment: false, portal_id: portal.id } }
+      # Lynomia owns the documentation, so an inbox is no longer linked to a Help Center and `portal_id` is
+      # refused at the request boundary (custom/app/controllers/custom/api/v1/accounts/inboxes_controller.rb).
+      # The refusal itself is covered in spec/requests/custom/tenant_help_center_removal_spec.rb; these examples
+      # are about everything else this endpoint updates.
+      let(:valid_params) { { name: 'new test inbox', enable_auto_assignment: false } }
 
       it 'will not update inbox for agent' do
         agent = create(:user, account: account, role: :agent)
@@ -670,7 +673,6 @@ RSpec.describe 'Inboxes API', type: :request do
         expect(response).to have_http_status(:success)
         expect(response).to conform_schema(200)
         expect(inbox.reload.enable_auto_assignment).to be_falsey
-        expect(inbox.reload.portal_id).to eq(portal.id)
         expect(response.parsed_body['name']).to eq 'new test inbox'
       end
 

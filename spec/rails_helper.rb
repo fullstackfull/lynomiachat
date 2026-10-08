@@ -84,6 +84,21 @@ RSpec.configure do |config|
   # OpenAPI response validation via Skooma
   path_to_openapi = Rails.root.join('swagger/swagger.json')
   config.include Skooma::RSpec[path_to_openapi], type: :request
+
+  # `Current` is a plain `thread_mattr_accessor` module, not ActiveSupport::CurrentAttributes, so nothing resets it
+  # on its own -- production does it explicitly, in RequestExceptionHandler's `ensure`. Without the same reset here,
+  # any example that runs code setting `Current.account` (AccountBuilder#perform, for one) hands it to whatever
+  # example happens to run next, and `User#send_devise_notification` then parameterizes the mail with an account it
+  # should know nothing about. That is one real, reproducible order-dependent failure in this suite
+  # (spec/builders/agent_builder_spec.rb after spec/builders/account_builder_spec.rb) and, left alone, a source of
+  # more.
+  #
+  # `before`, not `after`, and that is the whole point: a spec may set a message expectation ON `Current` itself
+  # and assert a setter is called an exact number of times -- an `after` hook resetting it counts as a second call
+  # against a stub that is still
+  # installed. Resetting on the way in gives every example the clean `Current` a request starts with, and cannot be
+  # counted by anything the example sets up.
+  config.before { Current.reset }
 end
 
 Shoulda::Matchers.configure do |config|

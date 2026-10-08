@@ -3,6 +3,7 @@
 # Subscriptions are addressed by ACCOUNT id: /platform/api/v1/billing/subscriptions/:account_id
 class Platform::Api::V1::Billing::SubscriptionsController < Platform::Api::V1::Billing::BaseController
   before_action :set_account, except: [:index]
+  before_action :validate_account_permissible, except: [:index]
 
   rescue_from ::Billing::AdminActions::Error, ::Billing::PlanChange::Error, ::Billing::Checkout::Error do |e|
     render_error('billing_error', e.message, :unprocessable_entity)
@@ -14,7 +15,7 @@ class Platform::Api::V1::Billing::SubscriptionsController < Platform::Api::V1::B
 
   # GET /platform/api/v1/billing/subscriptions?plan_id=1&status=active,trialing&source=manual&page=1&per_page=25
   def index
-    scope = BillingSubscription.order(id: :desc)
+    scope = BillingSubscription.where(account_id: permissible_account_ids).order(id: :desc)
     scope = scope.where(plan_id: params[:plan_id]) if params[:plan_id].present?
     statuses = list_param(:status)
     scope = scope.where(status: statuses) if statuses.any?

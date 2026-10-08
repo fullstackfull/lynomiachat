@@ -30,9 +30,9 @@ RSpec.describe Commerce::StoreConnection do
       expect(store.inspect).not_to include('ck_')
     end
 
-    it 'records the connection in the audit log without credentials', if: defined?(Enterprise::AuditLog) do
+    it 'records the connection in the audit log without credentials' do
       store = connect
-      audit = Enterprise::AuditLog.where(auditable: store).last
+      audit = Custom::AuditLog.where(auditable: store).last
 
       expect(audit).to have_attributes(comment: 'commerce.store_connected', user: admin, action: 'create')
       expect(audit.audited_changes.to_json).not_to include('ck_', 'cs_')

@@ -104,10 +104,13 @@ RSpec.describe 'Global documentation ownership', type: :request do
   end
 
   describe 'managing, for nobody but a super admin' do
-    it 'does not list the documentation portal for an account administrator' do
+    # Stronger than it used to be. This listed the account's own portals and proved the platform one was absent;
+    # now that workspaces do not author documentation at all, the endpoint is refused outright
+    # (custom/app/policies/custom/portal_policy.rb), so there is no listing for it to be absent from.
+    it 'does not let an account administrator list portals at all' do
       get "/api/v1/accounts/#{account.id}/portals", headers: admin.create_new_auth_token
-      expect(response).to have_http_status(:success)
-      expect(response.parsed_body['payload'].pluck('slug')).not_to include(docs_portal.slug)
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.body).not_to include(docs_portal.slug)
     end
 
     it 'refuses an account administrator who names the portal directly' do

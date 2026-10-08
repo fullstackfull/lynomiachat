@@ -96,11 +96,11 @@ RSpec.describe Commerce::Salla::Installation do
       expect(salla_store.attributes.to_json).not_to include('testuser@email.partners')
     end
 
-    it 'records the connection in the audit log without credentials', if: defined?(Enterprise::AuditLog) do
+    it 'records the connection in the audit log without credentials' do
       process(settings(code_for(account, admin)))
       process(authorize)
 
-      logs = Enterprise::AuditLog.where(associated: account).where("comment LIKE 'commerce.%'").order(:id)
+      logs = Custom::AuditLog.where(associated: account).where("comment LIKE 'commerce.%'").order(:id)
       expect(logs.pluck(:comment, :user_id)).to eq([['commerce.salla.connect_started', admin.id], ['commerce.salla.connected', admin.id]])
       expect(logs.to_json).not_to include('salla-access-token-fixture', 'salla-refresh-token-fixture')
     end
@@ -182,10 +182,10 @@ RSpec.describe Commerce::Salla::Installation do
       expect(salla_store).to be_disabled
     end
 
-    it 'audits a re-authorization without tokens', if: defined?(Enterprise::AuditLog) do
+    it 'audits a re-authorization without tokens' do
       process(authorize)
 
-      log = Enterprise::AuditLog.where(auditable: salla_store, comment: 'commerce.salla.reauthorized').sole
+      log = Custom::AuditLog.where(auditable: salla_store, comment: 'commerce.salla.reauthorized').sole
       expect(log.to_json).not_to include('salla-access-token-fixture', 'salla-refresh-token-fixture')
     end
 
@@ -220,10 +220,10 @@ RSpec.describe Commerce::Salla::Installation do
       expect([Contact.exists?(contact.id), Conversation.exists?(conversation.id)]).to eq([true, true])
     end
 
-    it 'audits the uninstall', if: defined?(Enterprise::AuditLog) do
+    it 'audits the uninstall' do
       process(uninstalled)
 
-      expect(Enterprise::AuditLog.where(auditable: salla_store).order(:id).last)
+      expect(Custom::AuditLog.where(auditable: salla_store).order(:id).last)
         .to have_attributes(comment: 'commerce.salla.disconnected', action: 'destroy', user_id: nil)
     end
 

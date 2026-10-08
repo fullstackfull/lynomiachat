@@ -126,6 +126,21 @@ export function useConversationFilterContext() {
       filterOperators: equalityOperators.value,
       attributeModel: 'standard',
     },
+    // Not a column on the conversation: it asks whether the conversation CONTAINS a message with this delivery
+    // status, which is the only way to find one whose reply failed.
+    {
+      attributeKey: CONVERSATION_ATTRIBUTES.MESSAGE_STATUS,
+      value: CONVERSATION_ATTRIBUTES.MESSAGE_STATUS,
+      attributeName: t('FILTER.ATTRIBUTES.MESSAGE_STATUS'),
+      label: t('FILTER.ATTRIBUTES.MESSAGE_STATUS'),
+      inputType: 'multiSelect',
+      options: ['failed', 'sent', 'delivered', 'read'].map(id => {
+        return { id, name: t(`FILTER.MESSAGE_STATUS_OPTIONS.${id}`) };
+      }),
+      dataType: 'text',
+      filterOperators: equalityOperators.value,
+      attributeModel: 'standard',
+    },
     {
       attributeKey: CONVERSATION_ATTRIBUTES.PRIORITY,
       value: CONVERSATION_ATTRIBUTES.PRIORITY,

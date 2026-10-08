@@ -1,51 +1,12 @@
 # TODO: Move this values to features.yml itself
 # No need to replicate the same values in two places
 
-# ------- Premium Features ------- #
-saml:
-  name: 'SAML SSO'
-  description: 'Configuration for controlling SAML Single Sign-On availability'
-  enabled: <%= ChatwootApp.enterprise? %>
-  icon: 'icon-lock-line'
-  config_key: 'saml'
-  enterprise: true
-custom_branding:
-  name: 'Custom Branding'
-  description: 'Apply your own branding to this installation.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-paint-brush-line'
-  config_key: 'custom_branding'
-  enterprise: true
-agent_capacity:
-  name: 'Agent Capacity'
-  description: 'Set limits to auto-assigning conversations to your agents.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-hourglass-line'
-  enterprise: true
-audit_logs:
-  name: 'Audit Logs'
-  description: 'Track and trace account activities with ease with detailed audit logs.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-menu-search-line'
-  enterprise: true
-disable_branding:
-  name: 'Disable Branding'
-  description: 'Disable branding on live-chat widget and external emails.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-sailbot-fill'
-  enterprise: true
-voice_calls:
-  name: 'Voice Calls'
-  description: 'Enable voice calling capabilities for your agents and customers.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-voice-line'
-  enterprise: true
-
 # ------- Product Features ------- #
 help_center:
   name: 'Help Center'
-  description: 'Allow agents to create help center articles and publish them in a portal.'
-  enabled: true
+  description: 'Retired. Lynomia publishes the documentation; a workspace does not author its own. Leaving this on
+    grants nothing, and a help centre published before the change stays public either way.'
+  enabled: false
   icon: 'icon-book-2-line'
 captain:
   name: 'Captain'

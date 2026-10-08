@@ -53,6 +53,20 @@ class Whatsapp::DeliveryFailure
   # or the installation makes Meta accept it, so re-sending it is refused rather than offered.
   def recipient_scoped? = entry.present? && entry[:scope] == :recipient
 
+  # What the dashboard needs in order to explain the refusal in the agent's own language and to decide whether
+  # offering Retry would be honest. `retry_policy` is deliberately left out: it is about the background job, and a
+  # UI reading it would confuse "Lynomia never re-sends this by itself" with "a person may not try again" -- which
+  # for 131042 is exactly wrong, because an operator can fix the billing and the same message will then send.
+  #
+  # Nothing is reported for an unclassified code. The refusal itself is already on the message and the dashboard
+  # already shows it; naming a classification for a code this installation has never seen would be inventing the
+  # meaning this class exists to avoid inventing.
+  def push_event_data
+    return unless classified?
+
+    { code: code, classification: classification, recipient_scoped: recipient_scoped? }
+  end
+
   private
 
   def entry = CODES[@code]

@@ -1,4 +1,13 @@
 class Instagram::Messenger::SendOnInstagramService < Instagram::BaseSendService
+  # The Graph version this send path talks. It is NOT `INSTAGRAM_API_VERSION`: that one governs
+  # graph.instagram.com, where the Instagram Login generation lives, and this is the older Facebook-Page
+  # generation on graph.facebook.com. Bumping one must not silently bump the other, so they are separate keys.
+  #
+  # The default is the version this path has always sent on. It is stated here, and overridable, so that Meta
+  # retiring it is an environment change rather than a code change and a deploy -- which is what it was when the
+  # version was written into the URL.
+  DEFAULT_API_VERSION = 'v11.0'.freeze
+
   private
 
   def channel_class
@@ -14,12 +23,16 @@ class Instagram::Messenger::SendOnInstagramService < Instagram::BaseSendService
     query[:appsecret_proof] = app_secret_proof if app_secret_proof
 
     response = HTTParty.post(
-      'https://graph.facebook.com/v11.0/me/messages',
+      "https://graph.facebook.com/#{api_version}/me/messages",
       body: message_content,
       query: query
     )
 
     process_response(response, message_content)
+  end
+
+  def api_version
+    GlobalConfigService.load('INSTAGRAM_MESSENGER_API_VERSION', DEFAULT_API_VERSION)
   end
 
   def calculate_app_secret_proof(app_secret, access_token)

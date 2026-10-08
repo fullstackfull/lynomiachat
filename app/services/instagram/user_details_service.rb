@@ -12,7 +12,7 @@ class Instagram::UserDetailsService
 
   def perform
     response = HTTParty.get(
-      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/me",
+      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', Channel::Instagram::DEFAULT_API_VERSION)}/me",
       query: {
         fields: 'id,username,user_id,name,profile_picture_url,account_type',
         access_token: access_token

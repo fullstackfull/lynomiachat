@@ -40,8 +40,7 @@ RSpec.describe Conversations::EventDataPresenter do
     end
 
     it 'returns push event payload' do
-      # the exceptions are the values that would be added in enterprise edition.
-      expect(presenter.push_data.except(:applied_sla, :sla_events)).to include(expected_data)
+      expect(presenter.push_data).to include(expected_data)
     end
   end
 

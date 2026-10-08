@@ -24,19 +24,6 @@ export function useConfig() {
   const enabledLanguages = config.enabledLanguages;
 
   /**
-   * Indicates whether the current instance is an enterprise version.
-   * @type {boolean}
-   */
-  const isEnterprise = config.isEnterprise === 'true';
-
-  /**
-   * The name of the enterprise plan, if applicable.
-   * Returns "community" or "enterprise"
-   * @type {string|undefined}
-   */
-  const enterprisePlanName = config.enterprisePlanName;
-
-  /**
    * Indicates whether inbox webhook events (ENABLE_INBOX_EVENTS) are enabled.
    * @type {boolean}
    */
@@ -46,8 +33,6 @@ export function useConfig() {
     hostURL,
     vapidPublicKey,
     enabledLanguages,
-    isEnterprise,
-    enterprisePlanName,
     inboxEventsEnabled,
   };
 }

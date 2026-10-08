@@ -23,6 +23,9 @@ class Channel::Instagram < ApplicationRecord
   encrypts :access_token if Chatwoot.encryption_configured?
 
   AUTHORIZATION_ERROR_THRESHOLD = 1
+  # The one default for the Instagram Login API, overridable by INSTAGRAM_API_VERSION. It used to be pasted into
+  # each of the five graph.instagram.com call sites, which could then disagree with each other.
+  DEFAULT_API_VERSION = 'v22.0'.freeze
 
   validates :access_token, presence: true
   validates :instagram_id, uniqueness: true, presence: true
@@ -76,6 +79,6 @@ class Channel::Instagram < ApplicationRecord
   private
 
   def base_uri
-    "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}"
+    "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', DEFAULT_API_VERSION)}"
   end
 end

@@ -98,6 +98,29 @@ the conversation to escalate.
 - **A number can only be connected once across the whole installation.** If adding it is refused because the phone
   number is taken, it is already connected somewhere — possibly in another account.
 
+## When you have a code
+
+Where WhatsApp's refusal begins with a number, there is a page about that number. Those are the ones this
+installation has actually seen; a code with no page here is one nobody here has met, and inventing an explanation
+for it would be worse than leaving it to WhatsApp's own words.
+
+- [131049 — refused for this one person](whatsapp-error-131049)
+- [131042 — the account cannot be billed](whatsapp-error-131042)
+- [131053 — WhatsApp could not fetch the file](whatsapp-error-131053)
+- [131060 — an incoming message WhatsApp will not hand over](whatsapp-error-131060)
+- [190 — the access token is no longer valid](whatsapp-error-190)
+
+And for the symptoms that carry no code:
+[the number's status](whatsapp-number-status) ·
+[quality and limits](whatsapp-quality-and-limits) ·
+[the display name](whatsapp-display-name) ·
+[nothing is arriving](whatsapp-nothing-arrives) ·
+[reconnecting a number](whatsapp-reconnect-a-number) ·
+[the number is already connected](whatsapp-number-already-connected) ·
+[contact information requests](whatsapp-contact-info-requests) ·
+[business-scoped contacts](whatsapp-business-scoped-contacts) ·
+[finding a failed message](whatsapp-find-a-failed-message)
+
 ## Related
 
 - [Connect a WhatsApp number](connect-whatsapp)

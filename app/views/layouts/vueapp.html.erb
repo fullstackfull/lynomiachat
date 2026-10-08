@@ -46,11 +46,8 @@
         whatsappConfigurationId: '<%= @global_config['WHATSAPP_CONFIGURATION_ID'] %>',
         whatsappApiVersion: '<%= @global_config['WHATSAPP_API_VERSION'] %>',
         signupEnabled: '<%= @global_config['ENABLE_ACCOUNT_SIGNUP'] %>',
-        isEnterprise: '<%= @global_config['IS_ENTERPRISE'] %>',
         isMfaEnabled: '<%= Chatwoot.mfa_enabled? %>',
-        <% if @global_config['IS_ENTERPRISE'] %>
-        enterprisePlanName: '<%= @global_config['INSTALLATION_PRICING_PLAN'] %>',
-        <% end %>
+
         <% if @global_config['VAPID_PUBLIC_KEY'] %>
         vapidPublicKey: new Uint8Array(<%= Base64.urlsafe_decode64(@global_config['VAPID_PUBLIC_KEY']).bytes %>),
         <% end %>
@@ -62,7 +59,8 @@
       window.browserConfig = {
         browser_name: '<%= browser.name %>',
       }
-      window.errorLoggingConfig = '<%= ENV.fetch('SENTRY_FRONTEND_DSN', '') || ENV.fetch('SENTRY_DSN', '') %>'
+      <%# presence, not ||: ENV.fetch returns '' when the key is unset, and '' is truthy in Ruby, so a plain || never falls back %>
+      window.errorLoggingConfig = '<%= ENV['SENTRY_FRONTEND_DSN'].presence || ENV['SENTRY_DSN'].presence %>'
     </script>
     <% if @global_config['CLOUD_ANALYTICS_TOKEN'].present? %>
     <script>

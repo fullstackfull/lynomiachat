@@ -1,5 +1,5 @@
-# Named Lynomia Commerce audit events. Written to the Enterprise audit log when it is present (Lynomia runs the
-# Enterprise overlay); the Community edition keeps the tagged log line only. Never pass credentials in `changes`.
+# Named Lynomia Commerce audit events, written to Lynomia's audit log beside the tagged log line.
+# Never pass credentials in `changes`.
 # `auditable` is a store, a customer link, or the account itself (commerce.salla.connect_started, before any store).
 module Commerce::AuditTrail
   # Events without an entry are recorded as 'update': store_enabled, store_disabled, store_needs_reauth, order_actions_changed,
@@ -24,9 +24,7 @@ module Commerce::AuditTrail
   def self.record(event, auditable:, user: nil, changes: {})
     account = auditable.is_a?(Account) ? auditable : auditable.account
     Rails.logger.info("[Commerce] #{event} account_id=#{account.id} #{auditable.class.name}##{auditable.id} user_id=#{user&.id}")
-    return unless defined?(Enterprise::AuditLog)
-
-    Enterprise::AuditLog.create!(
+    Custom::AuditLog.create!(
       auditable: auditable, associated: account, user: user,
       action: ACTIONS.fetch(event, 'update'), comment: event, audited_changes: changes
     )

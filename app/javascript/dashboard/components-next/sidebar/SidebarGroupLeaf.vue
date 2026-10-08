@@ -7,7 +7,10 @@ import SidebarUnreadBadge from './SidebarUnreadBadge.vue';
 
 const props = defineProps({
   label: { type: String, required: true },
-  to: { type: [String, Object], required: true },
+  // Exactly one of `to` (an in-app route) or `href` (a destination outside the Vue router -- a server-rendered page
+  // such as /docs, or another site) is given.
+  to: { type: [String, Object], default: null },
+  href: { type: String, default: '' },
   icon: { type: [String, Object], default: null },
   active: { type: Boolean, default: false },
   component: { type: Function, default: null },
@@ -20,6 +23,12 @@ const { resolvePermissions, resolveFeatureFlag } = useSidebarContext();
 
 const shouldRenderComponent = computed(() => {
   return typeof props.component === 'function' || isVNode(props.component);
+});
+
+const linkTag = computed(() => {
+  if (props.href) return 'a';
+
+  return props.to ? 'router-link' : 'div';
 });
 
 // Tree-line connector per leaf: vertical line (::before) + rounded elbow on the
@@ -41,8 +50,11 @@ const TREE_CONNECTOR =
     }"
   >
     <component
-      :is="to ? 'router-link' : 'div'"
-      :to="to"
+      :is="linkTag"
+      :to="to || undefined"
+      :href="href || undefined"
+      :target="href ? '_blank' : undefined"
+      :rel="href ? 'noopener noreferrer' : undefined"
       :title="label"
       class="flex h-8 items-center gap-2 px-2 py-1 rounded-lg ltr:hover:bg-gradient-to-r rtl:hover:bg-gradient-to-l from-transparent via-n-slate-3/70 to-n-slate-3/70 group min-w-0"
       :class="{

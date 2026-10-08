@@ -2,8 +2,12 @@
 
 # Base for the billing Platform API: /platform/api/v1/billing/...
 #
-# Authentication: header `api_access_token: <token>` of a Platform App
-# (Super Admin -> Platform Apps). Platform App tokens get full billing access.
+# Authentication: header `api_access_token: <token>` of a Platform App (Super Admin -> Platform Apps).
+#
+# Authorization follows the Platform API's own rule, the one upstream applies in
+# app/controllers/platform/api/v1/*: a Platform App reaches an account only when that account is among its
+# platform_app_permissibles. The plan catalogue, the Stripe settings and the installation-wide stats are
+# deliberately not account-scoped -- they are the platform's own configuration, not a customer's records.
 class Platform::Api::V1::Billing::BaseController < ActionController::API
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE = 100
@@ -32,6 +36,17 @@ class Platform::Api::V1::Billing::BaseController < ActionController::API
     return if @platform_app
 
     render_error('unauthorized', 'A valid Platform App access token is required.', :unauthorized)
+  end
+
+  # The accounts this Platform App was granted, as a scope, so a listing cannot reach past them.
+  def permissible_account_ids
+    @platform_app.platform_app_permissibles.where(permissible_type: 'Account').select(:permissible_id)
+  end
+
+  def validate_account_permissible
+    return if @platform_app.platform_app_permissibles.exists?(permissible: @account)
+
+    render_error('unauthorized', 'Non permissible resource', :unauthorized)
   end
 
   def render_data(data, status: :ok, meta: nil)

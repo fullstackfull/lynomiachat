@@ -81,9 +81,19 @@ import { useBranding } from 'shared/composables/useBranding';
  */
 
 /**
+ * What the server made of the provider's refusal, for the codes it classifies. Derived on read rather than stored,
+ * so a failure already on record carries it too (custom/app/models/custom/message.rb).
+ * @typedef {Object} DeliveryFailure
+ * @property {number} code - the provider's own error code
+ * @property {string} classification - the Lynomia classification the explanatory copy is keyed on
+ * @property {boolean} recipientScoped - whether re-sending the same message to the same person would be refused again
+ */
+
+/**
  * @typedef {Object} Props
  * @property {('sent'|'delivered'|'read'|'failed'|'progress')} status - The delivery status of the message
  * @property {ContentAttributes} [contentAttributes={}] - Additional attributes of the message content
+ * @property {DeliveryFailure|null} [deliveryFailure=null] - What the provider's refusal means, when it is classified
  * @property {Attachment[]} [attachments=[]] - The attachments associated with the message
  * @property {Sender|null} [sender=null] - The sender information
  * @property {boolean} [private=false] - Whether the message is private
@@ -119,6 +129,7 @@ const props = defineProps({
   call: { type: Object, default: null }, // eslint-disable-line vue/no-unused-properties
   content: { type: String, default: null },
   contentAttributes: { type: Object, default: () => ({}) },
+  deliveryFailure: { type: Object, default: null },
   contentType: {
     type: String,
     default: 'text',
@@ -605,6 +616,7 @@ provideMessageContext({
         class="[grid-area:meta]"
         :class="flexOrientationClass"
         :error="contentAttributes.externalError"
+        :delivery-failure="deliveryFailure"
         @retry="emit('retry')"
       />
     </div>

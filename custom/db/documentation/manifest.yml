@@ -54,6 +54,16 @@ sections:
       name: واتساب
       description: ربط واتساب، والقواعد التي يفرضها واتساب.
 
+  - slug: whatsapp-errors
+    position: 55
+    icon: alert-triangle
+    en:
+      name: WhatsApp errors
+      description: What WhatsApp's refusals mean, and which ones you can do something about.
+    ar:
+      name: أخطاء واتساب
+      description: ماذا تعني رفوضات واتساب، وأيّها يمكنك فعل شيء بشأنه.
+
   - slug: automation
     position: 60
     icon: workflow

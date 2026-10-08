@@ -25,12 +25,10 @@ RSpec.describe 'Commerce link suppression', type: :request do
     unlink.call(woo)
     expect(response).to have_http_status(:not_found)
 
-    if defined?(Enterprise::AuditLog)
-      removed = Enterprise::AuditLog.where(comment: 'commerce.customer_link_removed')
-      expect(removed.pluck(:audited_changes)).to all(eq('match_source' => %w[verified_phone suppressed]))
-      expect(removed.pluck(:user_id).uniq).to eq([agent.id])
-      expect(removed.to_json).not_to include('551112233', 'guest:', '1227534533', '90001')
-    end
+    removed = Custom::AuditLog.where(comment: 'commerce.customer_link_removed')
+    expect(removed.pluck(:audited_changes)).to all(eq('match_source' => %w[verified_phone suppressed]))
+    expect(removed.pluck(:user_id).uniq).to eq([agent.id])
+    expect(removed.to_json).not_to include('551112233', 'guest:', '1227534533', '90001')
   end
 
   it 'lets an agent link the customer again by hand' do
@@ -42,10 +40,8 @@ RSpec.describe 'Commerce link suppression', type: :request do
 
     expect(response.parsed_body).to include('state' => 'linked')
     expect(salla.customer_links.sole).to have_attributes(contact: contact, match_source: 'manual', confirmed_by: agent)
-    if defined?(Enterprise::AuditLog)
-      expect(Enterprise::AuditLog.where(auditable_type: 'Commerce::CustomerLink').last)
-        .to have_attributes(comment: 'commerce.customer_link_changed', audited_changes: { 'match_source' => %w[suppressed manual] })
-    end
+    expect(Custom::AuditLog.where(auditable_type: 'Commerce::CustomerLink').last)
+      .to have_attributes(comment: 'commerce.customer_link_changed', audited_changes: { 'match_source' => %w[suppressed manual] })
   end
 
   it 'no longer refreshes a removed link on the store\'s order events' do

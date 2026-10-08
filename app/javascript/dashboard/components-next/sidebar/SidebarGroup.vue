@@ -108,10 +108,12 @@ const handleWindowBlur = () => {
   closeActivePopover();
 };
 
+// An `href` child points outside the Vue router (a server-rendered page or another site), so there is no route to
+// resolve permissions or a feature flag against: it is visible to anyone who can see the group.
+const isReachable = child => child.href || (child.to && isAllowed(child.to));
+
 const hasAccessibleSubChildren = child => {
-  return child.children?.some(
-    subChild => subChild.to && isAllowed(subChild.to)
-  );
+  return child.children?.some(subChild => isReachable(subChild));
 };
 
 const visibleChildren = computed(() => {
@@ -120,7 +122,7 @@ const visibleChildren = computed(() => {
   return props.children.filter(child => {
     if (child.children) return hasAccessibleSubChildren(child);
 
-    return child.to && isAllowed(child.to);
+    return isReachable(child);
   });
 });
 
@@ -129,7 +131,7 @@ const accessibleItems = computed(() => {
 
   return visibleChildren.value
     .flatMap(child => child.children || child)
-    .filter(child => child.to && isAllowed(child.to));
+    .filter(child => isReachable(child));
 });
 
 const hasAccessibleChildren = computed(() => {
@@ -319,7 +321,7 @@ watch(
             @update-sort="child.onSortChange"
           />
           <SidebarGroupLeaf
-            v-else-if="isAllowed(child.to)"
+            v-else-if="isReachable(child)"
             v-show="isExpanded || activeChild?.name === child.name"
             v-bind="child"
             :active="activeChild?.name === child.name"

@@ -395,12 +395,10 @@
     "BETA": "Beta",
     "REPORTS_OVERVIEW": "Overview",
     "REAUTHORIZE": "Your inbox connection has expired, please reconnect\n to continue receiving and sending messages",
-    "HELP_CENTER": {
-      "TITLE": "Help Center",
-      "ARTICLES": "Articles",
-      "CATEGORIES": "Categories",
-      "LOCALES": "Locales",
-      "SETTINGS": "Settings"
+    "HELP_AND_SUPPORT": {
+      "TITLE": "Help & Support",
+      "DOCUMENTATION": "Documentation",
+      "CONTACT_SUPPORT": "Contact Support"
     },
     "CHANNELS": "Channels",
     "SET_AUTO_OFFLINE": {

@@ -39,26 +39,7 @@
         </button>
       </div>
     </div>
-    <% if ChatwootApp.enterprise? %>
-      <div class="flex p-4 outline outline-1 outline-n-container rounded-lg items-start md:items-center shadow-sm flex-col md:flex-row">
-        <div class="flex flex-col flex-grow gap-1">
-          <div class="flex items-center gap-2">
-            <h2 class="h-5 leading-5 text-n-slate-12 text-sm font-medium">Current plan</h2>
-            <a href="<%= refresh_super_admin_settings_url %>" class="inline-flex gap-1 text-xs font-medium items-center text-woot-500 hover:text-woot-700">
-              <svg width="16" height="16"><use xlink:href="#icon-refresh-line" /></svg>
-              <span>Refresh</span>
-            </a>
-          </div>
-          <p class="text-n-slate-11 m-0 text-sm"><%= SuperAdmin::FeaturesHelper.plan_details.html_safe %></p>
-        </div>
-        <a href="<%= ChatwootHub.billing_url %>" target="_blank" rel="noopener noreferrer">
-          <button class="mt-4 md:mt-0 flex gap-1 items-center bg-transparent shadow-sm h-9 hover:text-n-slate-12 hover:bg-slate-50 outline outline-1 outline-n-container rounded text-n-slate-11 font-medium p-2 focus:outline-none">
-            <svg width="16" height="16"><use xlink:href="#icon-settings-2-line" /></svg>
-            <span class="px-1">Manage</span>
-          </button>
-        </a>
-      </div>
-    <% end %>
+
 
     <% if ChatwootHub.pricing_plan != 'community' &&  User.count > ChatwootHub.pricing_plan_quantity %>
     <div role="alert">
@@ -104,11 +85,7 @@
           </div>
           <% if !attrs[:enabled] %>
           <div class="flex h-9 absolute top-5 items-center invisible group-hover:visible">
-            <% if ChatwootApp.enterprise? %>
-              <%= render 'upgrade_button_enterprise' %>
-            <% else %>
-              <%= render 'upgrade_button_community' %>
-            <% end %>
+            <%= render 'upgrade_button_community' %>
           </div>
           <% end %>
           <div class="flex items-center justify-between mb-1.5 mt-4">

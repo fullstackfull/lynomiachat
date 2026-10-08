@@ -394,12 +394,10 @@
     "BETA": "تجريبي",
     "REPORTS_OVERVIEW": "نظرة عامة",
     "REAUTHORIZE": "انتهت صلاحية اتصال صندوق الوارد الخاص بك، يرجى إعادة الاتصال\n لمواصلة تلقي وإرسال الرسائل",
-    "HELP_CENTER": {
-      "TITLE": "مركز المساعدة",
-      "ARTICLES": "Articles",
-      "CATEGORIES": "الفئات",
-      "LOCALES": "اللغات",
-      "SETTINGS": "الإعدادات"
+    "HELP_AND_SUPPORT": {
+      "TITLE": "المساعدة والدعم",
+      "DOCUMENTATION": "التوثيق",
+      "CONTACT_SUPPORT": "اتصل بالدعم"
     },
     "CHANNELS": "القنوات",
     "SET_AUTO_OFFLINE": {

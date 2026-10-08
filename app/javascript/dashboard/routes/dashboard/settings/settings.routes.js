@@ -10,7 +10,6 @@ import assignmentPolicy from './assignmentPolicy/assignmentPolicy.routes';
 import agentBot from './agentBots/agentBot.routes';
 import attributes from './attributes/attributes.routes';
 import automation from './automation/automation.routes';
-import auditlogs from './auditlogs/audit.routes';
 import billing from './billing/billing.routes';
 import canned from './canned/canned.routes';
 import inbox from './inbox/inbox.routes';
@@ -20,17 +19,16 @@ import labels from './labels/labels.routes';
 import macros from './macros/macros.routes';
 import reports from './reports/reports.routes';
 import store from '../../../store';
-import sla from './sla/sla.routes';
 import teams from './teams/teams.routes';
 import customRoles from './customRoles/customRole.routes';
 import profile from './profile/profile.routes';
-import security from './security/security.routes';
 import conversationWorkflow from './conversationWorkflow/conversationWorkflow.routes';
 import captain from './captain/captain.routes';
 import data from './data/data.routes';
 import subscription from './subscription/subscription.routes';
 import commerce from './commerce/commerce.routes';
 import flows from './flows/flows.routes';
+import auditlogs from './auditlogs/audit.routes';
 
 export default {
   routes: [
@@ -57,7 +55,6 @@ export default {
     ...agentBot.routes,
     ...attributes.routes,
     ...automation.routes,
-    ...auditlogs.routes,
     ...billing.routes,
     ...canned.routes,
     ...inbox.routes,
@@ -67,15 +64,14 @@ export default {
     ...labels.routes,
     ...macros.routes,
     ...reports.routes,
-    ...sla.routes,
     ...teams.routes,
     ...customRoles.routes,
     ...profile.routes,
-    ...security.routes,
     ...conversationWorkflow.routes,
     ...captain.routes,
     ...subscription.routes,
     ...commerce.routes,
     ...flows.routes,
+    ...auditlogs.routes,
   ],
 };

@@ -35,12 +35,6 @@ responses:
       application/json:
         schema:
           $ref: '#/components/schemas/contact_base'
-  '400':
-    description: Bad request - invalid contact IDs or contacts cannot be merged
-    content:
-      application/json:
-        schema:
-          $ref: '#/components/schemas/bad_request_error'
   '401':
     description: Unauthorized
     content:

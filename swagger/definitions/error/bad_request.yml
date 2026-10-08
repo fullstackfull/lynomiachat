@@ -1,9 +1,8 @@
-title: data
+title: error
 type: object
+description: >
+  The error body this API returns. A write that fails validation returns `validation_error` instead.
 properties:
-  description:
+  error:
     type: string
-  errors:
-    type: array
-    items:
-      $ref: '#/components/schemas/request_error'
+    description: What went wrong

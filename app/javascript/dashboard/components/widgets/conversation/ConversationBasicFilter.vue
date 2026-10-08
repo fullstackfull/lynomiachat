@@ -3,13 +3,11 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useToggle } from '@vueuse/core';
 import { vOnClickOutside } from '@vueuse/components';
-import { useUISettings } from 'dashboard/composables/useUISettings';
-import { useMapGetter, useStore } from 'dashboard/composables/store.js';
-import wootConstants from 'dashboard/constants/globals';
+import { useMapGetter } from 'dashboard/composables/store.js';
 import SelectMenu from 'dashboard/components-next/selectmenu/SelectMenu.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
-defineProps({
+const props = defineProps({
   isOnExpandedLayout: {
     type: Boolean,
     required: true,
@@ -22,25 +20,12 @@ defineProps({
 
 const emit = defineEmits(['changeFilter']);
 
-const store = useStore();
 const { t } = useI18n();
-
-const { updateUISettings } = useUISettings();
 
 const chatStatusFilter = useMapGetter('getChatStatusFilter');
 const chatSortFilter = useMapGetter('getChatSortFilter');
 
 const [showActionsDropdown, toggleDropdown] = useToggle();
-
-const currentStatusFilter = computed(() => {
-  return chatStatusFilter.value || wootConstants.STATUS_TYPE.OPEN;
-});
-
-const currentSortBy = computed(() => {
-  return (
-    chatSortFilter.value || wootConstants.SORT_BY_TYPE.LAST_ACTIVITY_AT_DESC
-  );
-});
 
 const chatStatusOptions = computed(() => [
   {
@@ -108,6 +93,14 @@ const chatSortOptions = computed(() => [
   },
 ]);
 
+// The panel holds the status filter as well as the sort order, so the trigger has to say so: naming it
+// "Sort conversations" is what hid the status filter from everyone who never thought to look under sorting.
+const triggerLabel = computed(() =>
+  props.showStatusFilter
+    ? t('CHAT_LIST.FILTER_AND_SORT_TOOLTIP_LABEL')
+    : t('CHAT_LIST.SORT_TOOLTIP_LABEL')
+);
+
 const activeChatStatusLabel = computed(
   () =>
     chatStatusOptions.value.find(m => m.value === chatStatusFilter.value)
@@ -120,33 +113,26 @@ const activeChatSortLabel = computed(
     ''
 );
 
-const saveSelectedFilter = (type, value) => {
-  updateUISettings({
-    conversations_filter_by: {
-      status: type === 'status' ? value : currentStatusFilter.value,
-      order_by: type === 'sort' ? value : currentSortBy.value,
-    },
-  });
+// The status filter is reachable from two places now -- this panel and the header chip that names it -- so
+// applying it, mirroring it into the store and persisting the pair all live with the list that owns both
+// halves (ChatList.onBasicFilterChange). This panel only reports the choice.
+const changeFilter = (value, type) => {
+  emit('changeFilter', value, type);
 };
 
-const handleStatusChange = value => {
-  emit('changeFilter', value, 'status');
-  store.dispatch('setChatStatusFilter', value);
-  saveSelectedFilter('status', value);
+// The header's status chip opens this same panel, so there is one status control rather than two.
+const openDropdown = () => {
+  showActionsDropdown.value = true;
 };
 
-const handleSortChange = value => {
-  emit('changeFilter', value, 'sort');
-  store.dispatch('setChatSortFilter', value);
-  saveSelectedFilter('sort', value);
-};
+defineExpose({ openDropdown });
 </script>
 
 <template>
   <div class="relative flex">
     <NextButton
-      v-tooltip.right="$t('CHAT_LIST.SORT_TOOLTIP_LABEL')"
-      :aria-label="$t('CHAT_LIST.SORT_TOOLTIP_LABEL')"
+      v-tooltip.right="triggerLabel"
+      :aria-label="triggerLabel"
       icon="i-lucide-arrow-up-down"
       slate
       faded
@@ -174,7 +160,7 @@ const handleSortChange = value => {
           :options="chatStatusOptions"
           :label="activeChatStatusLabel"
           :sub-menu-position="isOnExpandedLayout ? 'left' : 'right'"
-          @update:model-value="handleStatusChange"
+          @update:model-value="value => changeFilter(value, 'status')"
         />
       </div>
       <div
@@ -189,7 +175,7 @@ const handleSortChange = value => {
           :options="chatSortOptions"
           :label="activeChatSortLabel"
           :sub-menu-position="isOnExpandedLayout ? 'left' : 'right'"
-          @update:model-value="handleSortChange"
+          @update:model-value="value => changeFilter(value, 'sort')"
         />
       </div>
     </div>

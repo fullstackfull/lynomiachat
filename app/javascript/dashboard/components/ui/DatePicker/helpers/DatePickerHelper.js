@@ -18,6 +18,7 @@ import {
   isSameDay,
   isWithinInterval,
 } from 'date-fns';
+import { toIntlLocale } from 'shared/helpers/localeHelper';
 
 // Constants for calendar and date ranges
 export const calendarWeeks = [
@@ -90,9 +91,9 @@ export const getIntlDateFormatForLocale = () => {
   const month = 12;
   const day = 15;
   const date = new Date(year, month - 1, day);
-  const formattedDate = new Intl.DateTimeFormat(navigator.language).format(
-    date
-  );
+  const formattedDate = new Intl.DateTimeFormat(
+    toIntlLocale(navigator.language)
+  ).format(date);
   return formattedDate
     .replace(`${year}`, 'yyyy')
     .replace(`${month}`, 'MM')

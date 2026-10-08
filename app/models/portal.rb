@@ -31,11 +31,12 @@ class Portal < ApplicationRecord
   DEFAULT_COLOR = '#1f93ff'.freeze
 
   # Portal slugs are a first-come-first-served global namespace (`slug` is UNIQUE and there is no reservation list
-  # upstream), and tenant onboarding reaches for exactly these names on its own:
-  # `[base, first_token, "#{first_token}-docs", "#{first_token}-help"]`
-  # (enterprise/app/services/onboarding/help_center_creation_service.rb). An account called "Docs" would otherwise
-  # squat the name Lynomia's own documentation needs, with no human in the loop. Platform portals are exempt, since
-  # these names are reserved FOR them.
+  # upstream). Tenant onboarding used to reach for exactly these names on its own --
+  # `[base, first_token, "#{first_token}-docs", "#{first_token}-help"]` in Chatwoot Enterprise's
+  # Onboarding::HelpCenterCreationService, now removed with the overlay -- and an account called "Docs" would have
+  # squatted the name Lynomia's own documentation needs, with no human in the loop. The list stays: a tenant can
+  # still name a portal by hand, and it is what an upstream merge reintroducing that service would run into.
+  # Platform portals are exempt, since these names are reserved FOR them.
   RESERVED_SLUGS = %w[docs documentation help helpcenter changelog releases release-notes support status api lynomia
                       lynomia-docs lynomia-changelog].freeze
 

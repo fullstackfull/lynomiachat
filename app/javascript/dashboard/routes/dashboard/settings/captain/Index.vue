@@ -3,9 +3,7 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useAlert } from 'dashboard/composables';
-import { useAccount } from 'dashboard/composables/useAccount';
 import { useCaptain } from 'dashboard/composables/useCaptain';
-import { useConfig } from 'dashboard/composables/useConfig';
 import { useCaptainConfigStore } from 'dashboard/store/captain/preferences';
 
 import SettingsLayout from '../SettingsLayout.vue';
@@ -13,12 +11,9 @@ import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import SectionLayout from '../account/components/SectionLayout.vue';
 import ModelSelector from './components/ModelSelector.vue';
 import FeatureToggle from './components/FeatureToggle.vue';
-import CaptainPaywall from 'next/captain/pageComponents/Paywall.vue';
 
 const { t } = useI18n();
 const { captainEnabled } = useCaptain();
-const { isEnterprise, enterprisePlanName } = useConfig();
-const { isOnChatwootCloud } = useAccount();
 
 const captainConfigStore = useCaptainConfigStore();
 const { uiFlags } = storeToRefs(captainConfigStore);
@@ -31,67 +26,13 @@ const modelFeatures = computed(() => [
     title: t('CAPTAIN_SETTINGS.MODEL_CONFIG.EDITOR.TITLE'),
     description: t('CAPTAIN_SETTINGS.MODEL_CONFIG.EDITOR.DESCRIPTION'),
   },
-  {
-    key: 'assistant',
-    title: t('CAPTAIN_SETTINGS.MODEL_CONFIG.ASSISTANT.TITLE'),
-    description: t('CAPTAIN_SETTINGS.MODEL_CONFIG.ASSISTANT.DESCRIPTION'),
-    enterprise: true,
-  },
-  {
-    key: 'copilot',
-    title: t('CAPTAIN_SETTINGS.MODEL_CONFIG.COPILOT.TITLE'),
-    description: t('CAPTAIN_SETTINGS.MODEL_CONFIG.COPILOT.DESCRIPTION'),
-    enterprise: true,
-  },
 ]);
 
 const featureToggles = computed(() => [
   {
     key: 'label_suggestion',
   },
-  {
-    key: 'help_center_search',
-    enterprise: true,
-  },
-  {
-    key: 'audio_transcription',
-    enterprise: true,
-  },
 ]);
-
-const shouldShowFeature = feature => {
-  // Cloud will always see these features as long as captain is enabled
-  if (isOnChatwootCloud.value && captainEnabled) {
-    return true;
-  }
-
-  if (feature.enterprise) {
-    // if the app is in enterprise mode, then we can show the feature
-    // this is not the installation plan, but when the enterprise folder is missing
-    return isEnterprise;
-  }
-
-  return true;
-};
-
-const isFeatureAccessible = feature => {
-  // Cloud will always see these features as long as captain is enabled
-  if (isOnChatwootCloud.value && captainEnabled) {
-    return true;
-  }
-
-  if (feature.enterprise) {
-    // plan is shown, but is it accessible?
-    // Paid self-hosted installations can access these Captain settings.
-    return (
-      isEnterprise &&
-      !isOnChatwootCloud.value &&
-      ['premium', 'enterprise'].includes(enterprisePlanName)
-    );
-  }
-
-  return true;
-};
 
 async function handleFeatureToggle({ feature, enabled }) {
   try {
@@ -146,9 +87,8 @@ onMounted(() => {
           <div class="grid gap-4">
             <ModelSelector
               v-for="feature in modelFeatures"
-              v-show="shouldShowFeature(feature)"
               :key="feature.key"
-              :is-allowed="isFeatureAccessible(feature)"
+              is-allowed
               :feature-key="feature.key"
               :title="feature.title"
               :description="feature.description"
@@ -166,18 +106,14 @@ onMounted(() => {
           <div class="grid gap-4">
             <FeatureToggle
               v-for="feature in featureToggles"
-              v-show="shouldShowFeature(feature)"
               :key="feature.key"
-              :is-allowed="isFeatureAccessible(feature)"
+              is-allowed
               :feature-key="feature.key"
               @change="handleFeatureToggle"
               @model-change="handleModelChange"
             />
           </div>
         </SectionLayout>
-      </div>
-      <div v-else>
-        <CaptainPaywall />
       </div>
     </template>
   </SettingsLayout>

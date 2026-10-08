@@ -10,6 +10,10 @@ if ENV['SENTRY_DSN'].present?
     config.excluded_exceptions += ['Rack::Timeout::RequestTimeoutException', 'MutexApplicationJob::LockAcquisitionError']
 
     # to track post data in sentry
-    config.send_default_pii = true unless ENV['DISABLE_SENTRY_PII']
+    # Off unless asked for. send_default_pii ships the request body, every cookie and the Authorization and
+    # api_access_token headers to Sentry, and filter_parameters cannot redact any of them -- so a Sentry incident
+    # would hand over live session and API credentials. Explicitly set user context instead; that still reaches
+    # Sentry with this off.
+    config.send_default_pii = ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_SENTRY_PII', false))
   end
 end

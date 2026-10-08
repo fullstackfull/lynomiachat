@@ -26,17 +26,21 @@ properties:
   audience:
     type: array
     minItems: 1
-    description: Required when creating a one-off SMS or WhatsApp campaign. Provide at least one label from this account. Contacts matching any selected label are included. When updating, omit this field to retain the existing audience.
+    description: |
+      Required when creating a one-off SMS or WhatsApp campaign. Each entry names either a label or a shared
+      contact audience of this account. The recipients are the contacts in any of the named labels or
+      audiences, each once. An `Audience` entry is accepted on one-off campaigns only. When updating, omit this
+      field to retain the existing audience.
     items:
       type: object
       required: [type, id]
       properties:
         type:
           type: string
-          enum: [Label]
+          enum: [Label, Audience]
         id:
           type: integer
-          description: ID of a label in this account.
+          description: ID of a label in this account, or of one of its shared contact audiences.
   trigger_rules:
     type: object
     additionalProperties: true

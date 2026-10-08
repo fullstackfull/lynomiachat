@@ -12,6 +12,7 @@ import subDays from 'date-fns/subDays';
 import { vOnClickOutside } from '@vueuse/components';
 import Button from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
+import { toIntlLocale } from 'shared/helpers/localeHelper';
 
 const emit = defineEmits(['rangeTypeChange', 'monthOffsetChange']);
 
@@ -52,12 +53,14 @@ const dayMenuItemConfigs = computed(() => [
   },
 ]);
 
-const resolvedLocale = computed(() => {
-  const currentLocale =
+// One normaliser for both sources: the app's own locale arrives Rails-shaped (pt_BR) and the browser's can
+// arrive as something Intl refuses outright (en-US@posix).
+const resolvedLocale = computed(() =>
+  toIntlLocale(
     locale.value ||
-    (typeof navigator !== 'undefined' ? navigator.language : 'en');
-  return currentLocale.replace('_', '-');
-});
+      (typeof navigator !== 'undefined' ? navigator.language : 'en')
+  )
+);
 
 const monthFormatter = computed(
   () =>

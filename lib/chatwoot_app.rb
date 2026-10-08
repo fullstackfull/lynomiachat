@@ -11,18 +11,17 @@ module ChatwootApp
     100_000
   end
 
+  # Chatwoot Enterprise is not part of this codebase. The predicate is kept, rather than deleted, because it is
+  # the single point that keeps every upstream enterprise? guard inert. Measured: 8 call sites across 6
+  # already-applied migrations in db/migrate, whose bodies name Captain:: constants that no longer exist, plus the
+  # three methods below that each begin `enterprise? &&`. One `false` here is what makes all of them safe; deleting
+  # the method would mean rewriting applied migration history.
   def self.enterprise?
-    return if ENV.fetch('DISABLE_ENTERPRISE', false)
-
-    @enterprise ||= root.join('enterprise').exist?
+    false
   end
 
   def self.chatwoot_cloud?
     enterprise? && GlobalConfig.get_value('DEPLOYMENT_ENV') == 'cloud'
-  end
-
-  def self.self_hosted_enterprise?
-    enterprise? && !chatwoot_cloud? && GlobalConfig.get_value('INSTALLATION_PRICING_PLAN') == 'enterprise'
   end
 
   def self.self_hosted_paid?
@@ -37,14 +36,11 @@ module ChatwootApp
     ENV.fetch('HELPCENTER_URL', nil) || ENV.fetch('FRONTEND_URL', nil)
   end
 
+  # The extensions asked for at every prepend_mod_with / include_mod_with site. Lynomia is the only overlay, so
+  # this is ['custom'] on any install that has the directory, and a `super` from Custom:: reaches the OSS
+  # implementation directly.
   def self.extensions
-    if custom?
-      %w[enterprise custom]
-    elsif enterprise?
-      %w[enterprise]
-    else
-      %w[]
-    end
+    custom? ? ['custom'] : []
   end
 
   def self.advanced_search_allowed?

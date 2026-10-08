@@ -1,16 +1,22 @@
 openapi: '3.1.0'
 info:
-  title: Chatwoot
-  description: This is the API documentation for Chatwoot server.
+  title: Lynomia Chat
+  description: |
+    This is the API documentation for the Lynomia Chat server.
+
+    Lynomia Chat publishes the product documentation itself, so a workspace has no knowledge base of
+    its own and this API has no Help Center endpoints. The inherited
+    `/api/v1/accounts/{account_id}/portals` routes and their category and article routes still exist,
+    but they are refused for every caller and are not part of this contract. For the same reason an
+    inbox has no portal to attach: sending `portal_id` to the inbox endpoints is refused with `422`.
   version: 1.1.0
-  termsOfService: https://www.chatwoot.com/terms-of-service/
-  contact:
-    email: hello@chatwoot.com
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
 servers:
-  - url: https://app.chatwoot.com/
+  # Relative, because this is a self-hostable product: the API lives on whatever host serves this document.
+  - url: /
+    description: This installation
 paths:
   $ref: ./paths/index.yml
 components:
@@ -45,8 +51,12 @@ tags:
     description: User management APIs
   - name: Account AgentBots
     description: Account-specific Agent Bots
+  - name: Account
+    description: Details and settings of the account you are calling as
   - name: Agents
     description: Agent management APIs
+  - name: Audit Logs
+    description: Configuration change and sign-in records
   - name: Campaigns
     description: Create, schedule, and manage campaigns. Requires an account administrator and API access enabled for the account.
   - name: Canned Responses
@@ -83,8 +93,8 @@ tags:
     description: Event notification webhooks
   - name: Automation Rule
     description: Workflow automation rules
-  - name: Help Center
-    description: Knowledge base management
+  - name: Inbox API
+    description: Public inbox APIs
   - name: Contacts API
     description: Public contact APIs
   - name: Conversations API
@@ -124,9 +134,9 @@ x-tagGroups:
       - Teams
       - Webhooks
       - Automation Rule
-      - Help Center
   - name: Client
     tags:
+      - Inbox API
       - Contacts API
       - Conversations API
       - Messages API

@@ -44,3 +44,5 @@ class Messages::StatusUpdateService
     status == 'failed' || current_status == 'failed' || new_priority >= current_priority
   end
 end
+
+Messages::StatusUpdateService.prepend_mod_with('Messages::StatusUpdateService')

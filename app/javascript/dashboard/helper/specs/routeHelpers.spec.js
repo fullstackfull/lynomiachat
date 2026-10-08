@@ -39,9 +39,12 @@ describe('#defaultRedirectPage', () => {
     );
   });
 
-  it('should return portals route for users with portal permissions', () => {
+  // Lynomia publishes the documentation, so there is no portals route to land on. A role created before that
+  // change still carries the permission; it must fall through to the default rather than be redirected to a path
+  // the router no longer has.
+  it('falls back to the dashboard for the retired knowledge base permission', () => {
     const permissions = ['knowledge_base_manage'];
-    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/portals');
+    expect(defaultRedirectPage(to, permissions)).toBe('accounts/2/dashboard');
   });
 
   it('should return dashboard route as default for users with custom roles', () => {

@@ -1,5 +1,4 @@
 require Rails.root.join('lib/redis/config')
-require Rails.root.join('lib/captain_response_dequeued_logger')
 
 schedule_file = 'config/schedule.yml'
 
@@ -20,8 +19,6 @@ Sidekiq.configure_server do |config|
   config.redis = Redis::Config.app
 
   config.server_middleware do |chain|
-    chain.add CaptainResponseDequeuedLogger
-
     chain.add ChatwootDequeuedLogger if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_SIDEKIQ_DEQUEUE_LOGGER', false))
   end
 

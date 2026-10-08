@@ -113,13 +113,12 @@ RSpec.describe 'Commerce order search', type: :request do
   end
 
   it 'audits each search with its number and counts' do
-    skip 'Enterprise audit log not loaded' unless defined?(Enterprise::AuditLog)
     shopify_names.call('26').to_return(status: 200, body: { data: { orders: { nodes: [] } } }.to_json)
     stub_request(:get, "#{woo_api}/orders/26").to_return(status: 200, body: woo_orders[26].to_json)
 
     search.call('26')
 
-    expect(Enterprise::AuditLog.where(comment: 'commerce.orders_searched').sole)
+    expect(Custom::AuditLog.where(comment: 'commerce.orders_searched').sole)
       .to have_attributes(user_id: agent.id, audited_changes: { 'number' => '26', 'stores' => 4, 'orders' => 1 })
   end
 

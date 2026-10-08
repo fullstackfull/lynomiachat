@@ -3,10 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { vOnClickOutside } from '@vueuse/components';
-import { useVuelidate } from '@vuelidate/core';
-import { minValue } from '@vuelidate/validators';
 import { useAlert } from 'dashboard/composables';
-import { useConfig } from 'dashboard/composables/useConfig';
 import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
 import SettingsAccordion from 'dashboard/components-next/Settings/SettingsAccordion.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -28,12 +25,10 @@ const store = useStore();
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
-const { isEnterprise } = useConfig();
 
 const selectedAgentIds = ref([]);
 const isAgentListUpdating = ref(false);
 const enableAutoAssignment = ref(false);
-const maxAssignmentLimit = ref(null);
 const assignmentPolicy = ref(null);
 const isLoadingPolicy = ref(false);
 const isDeletingPolicy = ref(false);
@@ -116,15 +111,6 @@ const assignmentMethodLabel = computed(() => {
   return order;
 });
 
-// Vuelidate validation rules
-const rules = {
-  maxAssignmentLimit: {
-    minValue: minValue(1),
-  },
-};
-
-const v$ = useVuelidate(rules, { maxAssignmentLimit });
-
 const assignmentHeader = computed(() =>
   hasAssignmentV2.value
     ? t('INBOX_MGMT.ASSIGNMENT.ENABLE_AUTO_ASSIGNMENT')
@@ -136,13 +122,6 @@ const assignmentDescription = computed(() =>
     ? t('INBOX_MGMT.ASSIGNMENT.DESCRIPTION')
     : t('INBOX_MGMT.SETTINGS_POPUP.AUTO_ASSIGNMENT_SUB_TEXT')
 );
-
-const maxAssignmentLimitErrors = computed(() => {
-  if (v$.value.maxAssignmentLimit.$error) {
-    return t('INBOX_MGMT.AUTO_ASSIGNMENT.MAX_ASSIGNMENT_LIMIT_RANGE_ERROR');
-  }
-  return '';
-});
 
 const fetchAttachedAgents = async () => {
   try {
@@ -275,23 +254,6 @@ const updateAgents = async () => {
   isAgentListUpdating.value = false;
 };
 
-const updateInbox = async () => {
-  try {
-    const payload = {
-      id: props.inbox.id,
-      formData: false,
-      enable_auto_assignment: enableAutoAssignment.value,
-      auto_assignment_config: {
-        max_assignment_limit: maxAssignmentLimit.value,
-      },
-    };
-    await store.dispatch('inboxes/updateInbox', payload);
-    useAlert(t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
-  } catch (error) {
-    useAlert(t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
-  }
-};
-
 const navigateToCreatePolicy = () => {
   const accountId = route.params.accountId;
   router.push({
@@ -343,8 +305,6 @@ const deleteAssignmentPolicy = async () => {
 
 const setDefaults = () => {
   enableAutoAssignment.value = props.inbox.enable_auto_assignment;
-  maxAssignmentLimit.value =
-    props.inbox.auto_assignment_config?.max_assignment_limit || null;
   fetchAttachedAgents();
   if (showAdvancedAssignmentUI.value) {
     fetchAssignmentPolicy();
@@ -406,10 +366,7 @@ onMounted(() => {
         :description="assignmentDescription"
         @update:model-value="handleToggleAutoAssignment"
       >
-        <template
-          v-if="enableAutoAssignment && (isEnterprise || hasAssignmentV2)"
-          #editor
-        >
+        <template v-if="enableAutoAssignment && hasAssignmentV2" #editor>
           <!-- assignment_v2 UI -->
           <template v-if="hasAssignmentV2">
             <!-- Policy Card - When policy is attached -->
@@ -632,35 +589,6 @@ onMounted(() => {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Old UI for non-assignment_v2 -->
-          <template v-else-if="isEnterprise">
-            <div class="p-4">
-              <woot-input
-                v-model="maxAssignmentLimit"
-                type="number"
-                :class="{ error: v$.maxAssignmentLimit.$error }"
-                :error="maxAssignmentLimitErrors"
-                :label="$t('INBOX_MGMT.AUTO_ASSIGNMENT.MAX_ASSIGNMENT_LIMIT')"
-                class="[&>input]:!mb-0"
-                @blur="v$.maxAssignmentLimit.$touch"
-              />
-
-              <p class="mt-1.5 text-label-small text-n-slate-11">
-                {{
-                  $t('INBOX_MGMT.AUTO_ASSIGNMENT.MAX_ASSIGNMENT_LIMIT_SUB_TEXT')
-                }}
-              </p>
-
-              <div class="flex justify-end mt-4">
-                <NextButton
-                  :label="$t('INBOX_MGMT.SETTINGS_POPUP.UPDATE')"
-                  :disabled="v$.maxAssignmentLimit.$invalid"
-                  @click="updateInbox"
-                />
               </div>
             </div>
           </template>

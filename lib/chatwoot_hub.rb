@@ -36,16 +36,13 @@ class ChatwootHub
     "#{billing_base_url}?installation_identifier=#{installation_identifier}"
   end
 
+  # There is no enterprise overlay on this installation, so it is permanently on the community plan.
   def self.pricing_plan
-    return 'community' unless ChatwootApp.enterprise?
-
-    InstallationConfig.find_by(name: 'INSTALLATION_PRICING_PLAN')&.value || 'community'
+    'community'
   end
 
   def self.pricing_plan_quantity
-    return 0 unless ChatwootApp.enterprise?
-
-    InstallationConfig.find_by(name: 'INSTALLATION_PRICING_PLAN_QUANTITY')&.value || 0
+    0
   end
 
   def self.support_config

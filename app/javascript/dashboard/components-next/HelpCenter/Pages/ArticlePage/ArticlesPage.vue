@@ -4,7 +4,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { OnClickOutside } from '@vueuse/components';
 import { useStore, useMapGetter } from 'dashboard/composables/store.js';
-import { useConfig } from 'dashboard/composables/useConfig';
 import { debounce } from '@chatwoot/utils';
 import {
   ARTICLE_TABS,
@@ -12,7 +11,6 @@ import {
   ARTICLE_STATUSES,
 } from 'dashboard/helper/portalHelper';
 import { hasPendingChanges } from 'dashboard/helper/articleDiffHelper';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useAlert } from 'dashboard/composables';
 import articlesAPI from 'dashboard/api/helpCenter/articles';
 
@@ -27,7 +25,6 @@ import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
-import BulkTranslateDialog from './BulkTranslateDialog.vue';
 
 const props = defineProps({
   articles: {
@@ -70,10 +67,6 @@ const { t } = useI18n();
 
 const isSwitchingPortal = useMapGetter('portals/isSwitchingPortal');
 const isFetching = useMapGetter('articles/isFetching');
-const currentAccountId = useMapGetter('getCurrentAccountId');
-const isFeatureEnabledonAccount = useMapGetter(
-  'accounts/isFeatureEnabledonAccount'
-);
 
 const selectedArticleIds = ref(new Set());
 const isArticleDragging = ref(false);
@@ -82,17 +75,6 @@ const isCategoryMenuOpen = ref(false);
 const searchQuery = ref(route.query.search || '');
 
 const debouncedSearch = debounce(() => emit('search', searchQuery.value), 500);
-
-const { isEnterprise } = useConfig();
-
-const isTranslationAvailable = computed(
-  () =>
-    isEnterprise &&
-    isFeatureEnabledonAccount.value(
-      currentAccountId.value,
-      FEATURE_FLAGS.CAPTAIN_TASKS
-    )
-);
 
 const allItems = computed(() => props.articles.map(a => ({ id: a.id })));
 const visibleArticleIds = computed(() => props.articles.map(a => a.id));
@@ -109,8 +91,6 @@ const selectedCountLabel = computed(() =>
     count: selectedArticleIds.value.size,
   })
 );
-
-const bulkTranslateDialogRef = ref(null);
 
 const hasNoArticles = computed(
   () => !isFetching.value && !props.articles.length
@@ -215,15 +195,6 @@ const handleToggleSelect = articleId => {
 
 const clearSelection = () => {
   selectedArticleIds.value = new Set();
-};
-
-const handleTranslateArticle = articleId => {
-  selectedArticleIds.value = new Set([articleId]);
-  bulkTranslateDialogRef.value?.dialogRef?.open();
-};
-
-const openTranslateDialog = () => {
-  bulkTranslateDialogRef.value?.dialogRef?.open();
 };
 
 const onBulkActionSuccess = message => {
@@ -467,16 +438,6 @@ watch(
                   </OnClickOutside>
                 </div>
                 <Button
-                  v-if="isTranslationAvailable"
-                  sm
-                  faded
-                  slate
-                  icon="i-lucide-languages"
-                  :label="t('HELP_CENTER.ARTICLES_PAGE.BULK_ACTIONS.TRANSLATE')"
-                  class="[&>span:nth-child(2)]:hidden sm:[&>span:nth-child(2)]:inline w-fit"
-                  @click="openTranslateDialog"
-                />
-                <Button
                   sm
                   faded
                   ruby
@@ -497,7 +458,6 @@ watch(
           :current-page="Number(meta.currentPage)"
           :total-pages="totalPages"
           class="relative z-0"
-          @translate-article="handleTranslateArticle"
           @toggle-select="handleToggleSelect"
           @navigate-page="handlePageChange"
           @dragging="isArticleDragging = $event"
@@ -515,12 +475,6 @@ watch(
         @click="navigateToNewArticlePage"
       />
     </template>
-    <BulkTranslateDialog
-      ref="bulkTranslateDialogRef"
-      :selected-article-ids="[...selectedArticleIds]"
-      :allowed-locales="allowedLocales"
-      @translate-started="clearSelection"
-    />
     <Dialog
       ref="deleteConfirmDialogRef"
       type="alert"

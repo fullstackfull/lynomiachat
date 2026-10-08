@@ -1,0 +1,45 @@
+tags:
+  - Reports
+operationId: get-conversation-metrics
+summary: Conversation Metrics
+security:
+  - userApiKey: []
+description: |
+  Live conversation counts, either for the account as a whole or per agent. `type` decides which, and the
+  response shape follows from it: an object for `account`, an array of per-agent rows for `agent`.
+responses:
+  '200':
+    description: Success
+    content:
+      application/json:
+        schema:
+          oneOf:
+            - type: object
+              title: Account metrics
+              description: Returned when type=account
+              properties:
+                open:
+                  type: number
+                unattended:
+                  type: number
+                unassigned:
+                  type: number
+            - type: array
+              title: Agent metrics
+              description: Returned when type=agent
+              items:
+                $ref: '#/components/schemas/agent_conversation_metrics'
+  '422':
+    description: type was not supplied
+  '404':
+    description: reports not found
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/bad_request_error'
+  '403':
+    description: Access denied
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/bad_request_error'

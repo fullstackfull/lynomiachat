@@ -196,11 +196,6 @@ custom_roles:
       - 'conversation_unassigned_manage'
       - 'conversation_participating_manage'
       - 'contact_manage'
-  - name: 'Knowledge Manager'
-    description: 'Manages knowledge base and participates in conversations'
-    permissions:
-      - 'knowledge_base_manage'
-      - 'conversation_participating_manage'
   - name: 'Junior Agent'
     description: 'Entry-level agent with basic conversation access'
     permissions:

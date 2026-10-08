@@ -81,3 +81,11 @@ commerce_action_sweep_job:
   cron: '*/10 * * * *'
   class: 'Commerce::ActionSweepJob'
   queue: scheduled_jobs
+
+# executed every 5 minutes
+# reports Sidekiq queue depth, latency and dead-set growth to the log, so an operator can see a stalled or
+# backlogged worker without signing in to /monitoring/sidekiq or opening a console
+lynomia_queue_health_job:
+  cron: '*/5 * * * *'
+  class: 'Lynomia::QueueHealthJob'
+  queue: housekeeping

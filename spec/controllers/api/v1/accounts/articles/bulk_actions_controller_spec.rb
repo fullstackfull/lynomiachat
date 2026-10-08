@@ -31,59 +31,6 @@ RSpec.describe 'Article Bulk Actions API', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
-
-    context 'when authenticated as admin' do
-      it 'publishes multiple articles' do
-        patch update_status_url,
-              headers: admin.create_new_auth_token,
-              params: { ids: [article_one.id, article_two.id], status: 'published' },
-              as: :json
-
-        expect(response).to have_http_status(:ok)
-        expect(article_one.reload.status).to eq('published')
-        expect(article_two.reload.status).to eq('published')
-      end
-
-      it 'archives multiple articles' do
-        patch update_status_url,
-              headers: admin.create_new_auth_token,
-              params: { ids: [article_one.id, article_three.id], status: 'archived' },
-              as: :json
-
-        expect(response).to have_http_status(:ok)
-        expect(article_one.reload.status).to eq('archived')
-        expect(article_three.reload.status).to eq('archived')
-      end
-
-      it 'sets articles to draft' do
-        patch update_status_url,
-              headers: admin.create_new_auth_token,
-              params: { ids: [article_three.id], status: 'draft' },
-              as: :json
-
-        expect(response).to have_http_status(:ok)
-        expect(article_three.reload.status).to eq('draft')
-      end
-
-      it 'does not affect articles not in the list' do
-        patch update_status_url,
-              headers: admin.create_new_auth_token,
-              params: { ids: [article_one.id], status: 'published' },
-              as: :json
-
-        expect(article_one.reload.status).to eq('published')
-        expect(article_three.reload.status).to eq('published')
-      end
-
-      it 'returns unprocessable entity when no articles found' do
-        patch update_status_url,
-              headers: admin.create_new_auth_token,
-              params: { ids: [0], status: 'published' },
-              as: :json
-
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-    end
   end
 
   describe 'DELETE articles/bulk_actions/delete_articles' do
@@ -105,36 +52,46 @@ RSpec.describe 'Article Bulk Actions API', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+  end
 
-    context 'when authenticated as admin' do
-      it 'deletes multiple articles' do
-        expect do
-          delete destroy_url,
-                 headers: admin.create_new_auth_token,
-                 params: { ids: [article_one.id, article_two.id] },
-                 as: :json
-        end.to change(Article, :count).by(-2)
+  # Publishing is authoring: Articles::BulkActionsController authorizes through authorize(Article, :create?), so the
+  # article policy denial closes every bulk verb at once (custom/app/policies/custom/article_policy.rb).
+  describe 'tenant bulk article authoring' do
+    let(:headers) { admin.create_new_auth_token }
+    let(:ids) { [article_one.id, article_two.id] }
 
-        expect(response).to have_http_status(:ok)
+    context 'when publishing articles in bulk' do
+      let(:perform_request) do
+        patch "#{base_url}/update_status", params: { ids: ids, status: 'published' }, headers: headers, as: :json
       end
 
-      it 'does not delete articles not in the list' do
-        delete destroy_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [article_one.id] },
-               as: :json
+      it_behaves_like 'a refused tenant Help Center request'
 
-        expect(Article.exists?(article_one.id)).to be(false)
-        expect(Article.exists?(article_three.id)).to be(true)
+      it 'leaves the articles as they were, inside the id list and outside it' do
+        perform_request
+
+        expect(article_one.reload.status).to eq('draft')
+        expect(article_two.reload.status).to eq('draft')
+        expect(article_three.reload.status).to eq('published')
+      end
+    end
+
+    context 'when moving articles to another category in bulk' do
+      let(:perform_request) do
+        patch "#{base_url}/update_category", params: { ids: ids, category_id: category.id }, headers: headers,
+                                             as: :json
       end
 
-      it 'returns unprocessable entity when no articles found' do
-        delete destroy_url,
-               headers: admin.create_new_auth_token,
-               params: { ids: [0] },
-               as: :json
+      it_behaves_like 'a refused tenant Help Center request'
+    end
 
-        expect(response).to have_http_status(:unprocessable_entity)
+    context 'when deleting articles in bulk' do
+      let(:perform_request) { delete "#{base_url}/delete_articles", params: { ids: ids }, headers: headers, as: :json }
+
+      it_behaves_like 'a refused tenant Help Center request'
+
+      it 'deletes nothing' do
+        expect { perform_request }.not_to(change { Article.where(id: ids).count })
       end
     end
   end

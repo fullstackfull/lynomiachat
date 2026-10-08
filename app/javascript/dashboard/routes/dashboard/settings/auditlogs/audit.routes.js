@@ -1,5 +1,4 @@
 import { FEATURE_FLAGS } from '../../../../featureFlags';
-import { INSTALLATION_TYPES } from 'dashboard/constants/installationTypes';
 import { frontendURL } from '../../../../helper/URLHelper';
 
 import SettingsWrapper from '../SettingsWrapper.vue';
@@ -22,11 +21,10 @@ export default {
           name: 'auditlogs_list',
           meta: {
             reuseOnQueryChange: true,
+            // Lynomia's own feature, gated by the `audit_logs` account flag and the administrator
+            // permission. No installationTypes: Chatwoot gated this page on cloud-or-enterprise, and
+            // with the Enterprise overlay gone there is no enterprise installation type to name.
             featureFlag: FEATURE_FLAGS.AUDIT_LOGS,
-            installationTypes: [
-              INSTALLATION_TYPES.CLOUD,
-              INSTALLATION_TYPES.ENTERPRISE,
-            ],
             permissions: ['administrator'],
           },
           component: AuditLogsHome,

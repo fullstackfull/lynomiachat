@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import FilterSelect from 'dashboard/components-next/filter/inputs/FilterSelect.vue';
+import { toIntlLocale } from 'shared/helpers/localeHelper';
 
 const props = defineProps({
   table: {
@@ -43,7 +44,7 @@ const pageSizeOptions = [
 ];
 
 const getFormattedPages = (start, end) => {
-  const formatter = new Intl.NumberFormat(navigator.language);
+  const formatter = new Intl.NumberFormat(toIntlLocale(navigator.language));
   return Array.from({ length: end - start + 1 }, (_, i) =>
     formatter.format(start + i)
   );

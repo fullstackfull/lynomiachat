@@ -38,6 +38,23 @@ export const DOC_ARTICLES = Object.freeze({
   whatsappTemplates: 'whatsapp-templates',
   whatsappTemplateLifecycle: 'whatsapp-template-lifecycle',
   whatsappTroubleshooting: 'whatsapp-troubleshooting',
+  // whatsapp, when something is refused. The five coded ones are the codes this installation classifies
+  // (custom/app/services/whatsapp/delivery_failure.rb and the call sites that name them); there is deliberately
+  // no article for a code nobody here has seen.
+  whatsappError131049: 'whatsapp-error-131049',
+  whatsappError131042: 'whatsapp-error-131042',
+  whatsappError131053: 'whatsapp-error-131053',
+  whatsappError131060: 'whatsapp-error-131060',
+  whatsappError190: 'whatsapp-error-190',
+  whatsappNumberStatus: 'whatsapp-number-status',
+  whatsappQualityAndLimits: 'whatsapp-quality-and-limits',
+  whatsappDisplayName: 'whatsapp-display-name',
+  whatsappNothingArrives: 'whatsapp-nothing-arrives',
+  whatsappReconnect: 'whatsapp-reconnect-a-number',
+  whatsappNumberTaken: 'whatsapp-number-already-connected',
+  whatsappContactInfoRequests: 'whatsapp-contact-info-requests',
+  whatsappBusinessScopedContacts: 'whatsapp-business-scoped-contacts',
+  whatsappFindAFailedMessage: 'whatsapp-find-a-failed-message',
   // automation and bots
   automation: 'automation-rules',
   flows: 'flow-builder',
@@ -55,7 +72,6 @@ export const DOC_ARTICLES = Object.freeze({
   inboxes: 'set-up-an-inbox',
   teams: 'teams-and-agents',
   permissions: 'roles-and-permissions',
-  ownHelpCentre: 'your-own-help-centre',
   // platform
   integrations: 'integrations',
   webhooks: 'webhooks',
@@ -74,4 +90,20 @@ export function documentationArticleUrl(base, key) {
   if (!base || !slug) return '';
 
   return `${base.replace(/\/+$/, '')}/${slug}`;
+}
+
+/**
+ * The registry key for one WhatsApp error code, for a surface that has the code and wants the article about it.
+ *
+ * Only codes with an article resolve. That is the same rule the server's classifier follows: a code this
+ * installation has never seen gets no explanation invented for it, and the caller falls back to the general
+ * troubleshooting article rather than linking somewhere that does not answer the question.
+ * @param {number|string} code - the provider's numeric error code
+ * @returns {keyof typeof DOC_ARTICLES | undefined} the registry key, or undefined when there is no article
+ */
+export function whatsappErrorArticle(code) {
+  if (code === null || code === undefined || code === '') return undefined;
+
+  const key = `whatsappError${code}`;
+  return key in DOC_ARTICLES ? key : undefined;
 }

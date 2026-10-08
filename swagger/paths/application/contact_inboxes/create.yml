@@ -48,4 +48,4 @@ post:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/bad_request_error'
+            $ref: '#/components/schemas/validation_error'

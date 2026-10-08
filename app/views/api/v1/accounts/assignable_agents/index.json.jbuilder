@@ -13,6 +13,4 @@ json.payload do
       json.availability_status 'offline'
     end
   end
-
-  json.partial! 'enterprise/api/v1/accounts/assignable_agents/assistants' if ChatwootApp.enterprise?
 end

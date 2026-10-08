@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { formatNumber } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
@@ -28,7 +29,14 @@ const emit = defineEmits([
   'filtersModal',
 ]);
 
+const { t } = useI18n();
 const { uiSettings, updateUISettings } = useUISettings();
+
+const basicFilterRef = ref(null);
+
+const statusLabel = computed(() =>
+  t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${props.activeStatus}.TEXT`)
+);
 
 const onBasicFilterChange = (value, type) => {
   emit('basicFilterChange', value, type);
@@ -102,14 +110,31 @@ const toggleConversationLayout = () => {
       >
         {{ formattedAllCount }}
       </span>
-      <WootLabel
+      <!-- The chip already named the active status, but only as decoration: the one control that could change
+           it sat behind a button labelled "Sort conversations". Making the chip open that same panel means the
+           filter that is hiding conversations is also the way out of it. -->
+      <button
         v-if="!hasAppliedFiltersOrActiveFolders"
-        compact
-        variant="subtle"
-        tone="neutral"
-        class="mx-1 my-0.5 capitalize"
-        :label="$t(`CHAT_LIST.CHAT_STATUS_FILTER_ITEMS.${activeStatus}.TEXT`)"
-      />
+        v-tooltip.bottom="$t('CHAT_LIST.STATUS_FILTER.TOOLTIP')"
+        :aria-label="
+          $t('CHAT_LIST.STATUS_FILTER.ARIA_LABEL', { status: statusLabel })
+        "
+        type="button"
+        class="mx-1 my-0.5 shrink-0 rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-n-brand"
+        @click="basicFilterRef?.openDropdown()"
+      >
+        <WootLabel
+          compact
+          variant="subtle"
+          tone="neutral"
+          class="capitalize"
+          :label="statusLabel"
+        >
+          <template #action>
+            <span class="i-lucide-chevron-down size-3 text-n-slate-10" />
+          </template>
+        </WootLabel>
+      </button>
     </div>
     <div class="flex items-center gap-1">
       <template v-if="hasAppliedFilters && !hasActiveFolders">
@@ -178,6 +203,7 @@ const toggleConversationLayout = () => {
       </div>
       <ConversationBasicFilter
         v-if="!isContactScoped"
+        ref="basicFilterRef"
         :is-on-expanded-layout="isOnExpandedLayout"
         :show-status-filter="!hasAppliedFiltersOrActiveFolders"
         @change-filter="onBasicFilterChange"

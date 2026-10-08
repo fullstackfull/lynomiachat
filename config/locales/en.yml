@@ -203,6 +203,7 @@ en:
     openai:
       invalid_api_key: 'OpenAI API key is invalid or revoked. Please check your key in your OpenAI dashboard.'
     inboxes:
+      help_center_not_available: Lynomia manages the documentation, so an inbox cannot be linked to a Help Center.
       imap:
         socket_error: Please check the network connection, IMAP address and try again.
         no_response_error: Please check the IMAP credentials and try again.

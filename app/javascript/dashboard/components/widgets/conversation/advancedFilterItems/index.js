@@ -78,6 +78,16 @@ const filterTypes = [
     filterOperators: OPERATOR_TYPES_2,
     attributeModel: 'standard',
   },
+  // Not a column on the conversation: it asks whether the conversation contains a message with this delivery
+  // status, which is the only way to find one whose reply failed.
+  {
+    attributeKey: 'message_status',
+    attributeI18nKey: 'MESSAGE_STATUS',
+    inputType: 'multi_select',
+    dataType: 'text',
+    filterOperators: OPERATOR_TYPES_1,
+    attributeModel: 'standard',
+  },
   {
     attributeKey: 'browser_language',
     attributeI18nKey: 'BROWSER_LANGUAGE',
@@ -156,6 +166,10 @@ export const filterAttributeGroups = [
       {
         key: 'labels',
         i18nKey: 'LABELS',
+      },
+      {
+        key: 'message_status',
+        i18nKey: 'MESSAGE_STATUS',
       },
       {
         key: 'created_at',

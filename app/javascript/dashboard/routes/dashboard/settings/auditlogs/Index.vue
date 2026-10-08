@@ -22,7 +22,6 @@ import {
   auditLogFiltersFromQuery,
   buildAuditLogRouteQuery,
 } from 'dashboard/helper/auditlogHelper';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const SEARCH_DEBOUNCE_DELAY = 500;
 const MIN_SEARCH_LENGTH = 3;
@@ -104,20 +103,15 @@ const generateLogText = auditLogItem => {
   return t(translationKey, mergedPayload);
 };
 
-const showsRawIpAddress = computed(() =>
-  getters['accounts/isFeatureEnabledonAccount'].value(
-    getters.getCurrentAccountId.value,
-    FEATURE_FLAGS.AUDIT_LOG_IP_ADDRESS
-  )
-);
-
+// Chatwoot's Enterprise audit log resolved each row's IP to a city and country through an Enterprise
+// job and showed that under a "Location" heading. Lynomia runs no such job, so `city` and `country`
+// stay null and the column is always the address itself -- masked, unless the account has
+// `audit_log_ip_address` on, which the server honours.
 const tableHeaders = computed(() => {
   return [
     t('AUDIT_LOGS.LIST.TABLE_HEADER.ACTIVITY'),
     t('AUDIT_LOGS.LIST.TABLE_HEADER.TIME'),
-    showsRawIpAddress.value
-      ? t('AUDIT_LOGS.LIST.TABLE_HEADER.IP_ADDRESS')
-      : t('AUDIT_LOGS.LIST.TABLE_HEADER.LOCATION'),
+    t('AUDIT_LOGS.LIST.TABLE_HEADER.IP_ADDRESS'),
   ];
 });
 
@@ -242,7 +236,7 @@ onMounted(() => {
 
                 <BaseTableCell class="w-36 hidden sm:table-cell">
                   <span class="text-body-main text-n-slate-11">
-                    {{ auditLogItem.location || auditLogItem.remote_address }}
+                    {{ auditLogItem.remote_address }}
                   </span>
                 </BaseTableCell>
               </template>

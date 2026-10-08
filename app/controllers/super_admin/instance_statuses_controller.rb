@@ -10,13 +10,7 @@ class SuperAdmin::InstanceStatusesController < SuperAdmin::ApplicationController
   end
 
   def chatwoot_edition
-    @metrics['Chatwoot edition'] = if ChatwootApp.enterprise?
-                                     'Enterprise'
-                                   elsif ChatwootApp.custom?
-                                     'Custom'
-                                   else
-                                     'Community'
-                                   end
+    @metrics['Chatwoot edition'] = ChatwootApp.custom? ? 'Custom' : 'Community'
   end
 
   def instance_meta

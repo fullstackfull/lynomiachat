@@ -65,4 +65,26 @@ describe ConfigLoader do
       end
     end
   end
+
+  # GlobalConfigService reads the InstallationConfig row this loader seeds, so on a seeded install the YAML value
+  # wins and the code constant is only the fallback. If the two disagree the constant is a lie about what the
+  # product talks: a P7 audit found 'v22.0' pasted into five Instagram call sites for exactly that reason.
+  describe 'the seeded Meta Graph API versions' do
+    let(:seeded) { described_class.new.general_configs.to_h { |config| [config['name'], config['value']] } }
+
+    {
+      'WHATSAPP_API_VERSION' => 'Whatsapp::FacebookApiClient::DEFAULT_API_VERSION',
+      'INSTAGRAM_API_VERSION' => 'Channel::Instagram::DEFAULT_API_VERSION',
+      'INSTAGRAM_MESSENGER_API_VERSION' => 'Instagram::Messenger::SendOnInstagramService::DEFAULT_API_VERSION'
+    }.each do |key, constant|
+      it "seeds #{key} with the same value as #{constant}" do
+        expect(seeded).to include(key)
+        expect(seeded[key]).to eq(constant.constantize)
+      end
+
+      it "prefixes #{key} with v, as its own description requires" do
+        expect(seeded[key]).to match(/\Av\d+\.\d+\z/)
+      end
+    end
+  end
 end

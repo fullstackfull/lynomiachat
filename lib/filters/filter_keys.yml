@@ -114,6 +114,14 @@ conversations:
       - "is_greater_than"
       - "is_less_than"
       - "days_before"
+  # Not a column on conversations: it asks whether the conversation CONTAINS a message with this status, which
+  # app/helpers/filters/filter_helper.rb resolves to an EXISTS over messages.
+  message_status:
+    attribute_type: "standard"
+    data_type: "message_status"
+    filter_operators:
+      - "equal_to"
+      - "not_equal_to"
   mail_subject:
     attribute_type: "additional_attributes"
     data_type: "text"

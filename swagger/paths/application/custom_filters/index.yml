@@ -2,9 +2,18 @@ tags:
   - Custom Filters
 operationId: list-all-filters
 summary: List all custom filters
-description: List all custom filters in a category of a user
+description: |
+  Lists the caller's own saved filters of one kind, plus the account's shared audiences of that kind.
 security:
   - userApiKey: []
+parameters:
+  - in: query
+    name: filter_type
+    schema:
+      type: string
+      enum: ['conversation', 'contact', 'report']
+      default: conversation
+    description: Which kind to list. Defaults to conversation.
 responses:
   '200':
     description: Success

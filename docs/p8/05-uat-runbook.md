@@ -344,3 +344,59 @@ coexistence_echoes 1`.
 | U20 | needs an account whose existing Reports screens have enough history to compare |
 | U24 by eye | the automated check asserted no credential-shaped value in any payload; a reviewer should still read one response of each family |
 | Everything in §5 | explicitly out of scope for this runbook |
+
+---
+
+## 8. UAT matrix
+
+Every item the phase brief named, with the strongest level of verification it actually reached. The levels are
+ordered: **REAL DATA PASS** > **SIMULATED PASS** (the real stack and the real browser, over seeded data) >
+**AUTOMATED PASS** (asserted by the test suite only). A simulated pass is never reported as real.
+
+No item is **BLOCKED**.
+
+### Analytics
+
+| Item | Classification | Evidence |
+| --- | --- | --- |
+| Overview | SIMULATED PASS | §7: the screen rendered with KPIs, series, breakdown and footnote, and its numbers matched the seeded fixtures. Also `analytics_overview_spec.rb` and `conversations/metrics_spec.rb` |
+| Date range | SIMULATED PASS | §7 U2/U3: three requested ranges resolved to the expected UTC windows. The grouping control's ceiling is **AUTOMATED PASS** — `useAnalyticsQuery.spec.js` checks it over 72,000 range/grouping combinations |
+| Timezone | SIMULATED PASS | §7 U2, the blocker: the account timezone moved the window (`Asia/Kuwait`, `America/New_York`, `UTC`), three different viewer timezones did not move a single number |
+| Inbox | AUTOMATED PASS | Narrowing asserted in every family's metrics spec. The **refusal** of an inbox id from another account is SIMULATED PASS (§7 U23, live `422`) |
+| Agent / team | AUTOMATED PASS | `conversations/metrics_spec.rb` breakdown examples and `analytics_overview_spec.rb`. The browser rendered the default (inbox) dimension; the per-dimension switcher was not driven by hand |
+| Messages | SIMULATED PASS | §7: seeded inbound and outbound counts matched, with activity rows and private notes excluded |
+| WhatsApp | SIMULATED PASS | §7, and the one defect this execution found and fixed. Real Meta echoes and real error codes remain PENDING REAL UAT |
+| Campaign | SIMULATED PASS | §7 U21, the blocker: the family and the per-campaign screen agreed on all six numbers |
+| Automation | SIMULATED PASS | §7: delayed executions counted on their outcome time; the immediate-rule warning present in `meta` |
+| Flow | SIMULATED PASS | §7: the seeded session's lifecycle and duration; no node metrics offered |
+| Commerce | SIMULATED PASS | §7 and the browser's U9: cart lifecycle and order actions, with no money anywhere on the screen |
+
+### Contact activity timeline
+
+| Item | Classification | Evidence |
+| --- | --- | --- |
+| Contact open | SIMULATED PASS | §7 U13: the Activity tab exists beside History, both open, History still works |
+| Messages | SIMULATED PASS | §7 U14: the contact's messages in one descending order, private notes included as they are in the conversation |
+| Conversation activity | SIMULATED PASS | §7 U14: conversation openings, status changes, reporting events and CSAT interleaved in the same order |
+| Campaign event | SIMULATED PASS | §7 U15: the Campaigns filter returned the seeded recipient rows and nothing else |
+| Automation event | SIMULATED PASS | §7 U15: the Automations filter returned the seeded delayed execution |
+| Commerce event | SIMULATED PASS | §7 U15: the Commerce filter returned the cart and the order action |
+| Filters | SIMULATED PASS | §7: all six filters driven in the browser, including narrowing to one category and restoring to all |
+| Pagination | SIMULATED PASS | §7 U16: 22 entries walked as 8 pages of 3, identical order, 0 duplicates, nothing lost at a boundary |
+| Authorization | SIMULATED PASS | §7 U12 (agent → `401` on all six analytics endpoints) and U17. Foreign administrator `401` and foreign contact `404` are AUTOMATED PASS, in `contact_activity_spec.rb` |
+| Tenant isolation | AUTOMATED PASS | `p8_tenant_isolation_spec.rb` against a **mirrored** two-tenant fixture, which is stronger evidence than a single live account can give: a missing predicate shows up as a doubled count. The live `422` on a foreign filter id is SIMULATED PASS (§7 U23) |
+
+### What remains, and what does not apply
+
+| Item | Classification | Why |
+| --- | --- | --- |
+| Coexistence echoes on a real coexistence account (U6) | PENDING REAL UAT | Needs an account whose WhatsApp Business app traffic actually produces echoes |
+| Meta failure-code breakdown (U7) | PENDING REAL UAT | Needs real Meta error codes; the seeded instance can only carry invented ones |
+| Agreement with the existing Reports screens (U20) | PENDING REAL UAT | Needs an account with enough real history for the two regimes to be compared meaningfully |
+| Leakage review by eye (U24) | PENDING REAL UAT | The automated check asserts no credential-shaped value in any payload; a human should still read one response per family |
+| Production rollup coverage | PENDING REAL UAT | The read-only operator check in `00b-rollup-production-check.md`. P8 correctness does not depend on it: every screen reads source records today and says so |
+| Genuine WhatsApp template UAT (`order_delivered`) | PENDING REAL UAT | Its own operator gate, unchanged by P8 |
+| A real WhatsApp send | NOT APPLICABLE | P8 added no send path. Nothing in this phase can send |
+| Rollup-served analytics | NOT APPLICABLE | `report_rollup` is disabled for every account, so the rollup read path cannot be reached in production today. The decision logic that would choose it is AUTOMATED PASS in `rollup_coverage_spec.rb` |
+| Captain / OpenAI | NOT APPLICABLE | Untouched by P8 |
+| Migrations and backfills | NOT APPLICABLE | P8 added none |

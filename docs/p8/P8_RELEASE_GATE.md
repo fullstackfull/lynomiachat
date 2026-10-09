@@ -1,6 +1,6 @@
 # P8 release gate
 
-36 questions, each with the evidence that answers it. A question with no evidence is a **NO**, not an
+39 questions, each with the evidence that answers it. A question with no evidence is a **NO**, not an
 assumption.
 
 Scope: branch `claude/p8-analytics-contact-timeline`, cut from `lynomia-custom` at
@@ -73,6 +73,9 @@ Scope: branch `claude/p8-analytics-contact-timeline`, cut from `lynomia-custom` 
 | --- | --- | --- | --- |
 | 35 | Do the gates pass on a clean tree? | see the completion report §T | `bundle exec rspec`, `bundle exec rubocop`, `pnpm test`, `npx vite build` |
 | 36 | Is there a runbook a non-author can execute? | **Yes** | `05-uat-runbook.md`: 24 numbered checks, their pass criteria, the five that are release blockers, and what the runbook deliberately does not test |
+| 37 | Was the runbook actually executed, or only written? | **Executed** | Against a locally seeded instance through the real HTTP stack and a real browser. All eight automatable checks passed, including the four blockers that can be automated (U2, U17, U21, U23); 28 of 29 browser assertions passed. Recorded in `05-uat-runbook.md` §7 with the environment, the results and the one failure's classification |
+| 38 | Did executing it find anything the specs had not? | **Yes, one defect, fixed** | Private notes were counted as WhatsApp sends: 4 sends and 75% where 3 and 66.7% were correct. 351 Ruby and 65 JS examples had not caught it. Fixed in `Analytics::Whatsapp::Metrics` with a spec labelled as found by the runbook |
+| 39 | Is the one browser failure a P8 defect? | **No** | A single `404` on a resource with an empty `href` (the favicon this deployment leaves blank). The companion "no failed P8 requests" assertion passed and no analytics or timeline path appears among the non-2xx responses. Evidence in `05-uat-runbook.md` §7 |
 
 ---
 

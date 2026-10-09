@@ -13,10 +13,22 @@ this runbook cannot send a message, change an order, or alter a record.
 | --- | --- |
 | An **administrator** login | every analytics screen follows `ReportPolicy#view?`, which is administrator-only |
 | An **agent** login, member of **some** inboxes but not all | needed for U12 and U13, the permission checks |
+| The **`reports` feature flag enabled on the account** | the Analytics sidebar group carries `featureFlag: FEATURE_FLAGS.REPORTS`, so with the flag off the group is not rendered at all and every check below is unreachable |
 | The account's **reporting timezone** set (Settings → Account) | the analytics screens cut their buckets in it; with none set they fall back to UTC and the footnote says so |
 | A date range with real activity | an empty range is a valid pass for the empty-state checks only |
 
-Nothing has to be enabled, configured or seeded. If a family has no data the screen says so rather than
+The `reports` flag is the one hard prerequisite, and the only one whose absence looks like a missing feature
+rather than an empty screen. Enable it in Super Admin → Accounts → *account* → Features, or from a console:
+
+```ruby
+Account.find(<id>).enable_features!('reports')
+```
+
+**U21 additionally needs the `campaigns` flag** (and `whatsapp_campaign` for a WhatsApp campaign), because it
+cross-checks the Campaigns analytics screen against the per-campaign screen, which lives behind the campaigns
+UI. If those flags are off, U21 is not a failure — record it as not applicable.
+
+Beyond the flags nothing has to be configured or seeded. If a family has no data the screen says so rather than
 breaking, and that is itself one of the checks.
 
 ---
@@ -263,3 +275,72 @@ provider customer id. **Fail**: anything else.
 A failed **U2**, **U9**, **U17**, **U21** or **U24** is a release blocker: those are the timezone contract, the
 no-money rule, the permission narrowing, the one-definition rule and the leakage rule. Everything else is a
 defect to triage.
+
+---
+
+## 7. Record of the pre-release execution
+
+This runbook was executed before release against a **locally seeded development instance**, not against
+production and not against a real provider. It is recorded here so a reviewer can see which checks have already
+been exercised and which still need a human on the real account — §6 is still the operator's to fill in.
+
+### Environment
+
+| | |
+| --- | --- |
+| Database | a dedicated `chatwoot_p8uat`, schema-loaded, separate from the test database |
+| Rails | `RAILS_ENV=test` with `RAILS_SERVE_STATIC_FILES=true` (the development group is not installed in this container) |
+| Frontend | the real Vite build, served as static assets |
+| Data | one seeded account with two inboxes (WhatsApp + web), one contact with activity across eight sources, one quiet contact, one administrator, one agent restricted to a single inbox |
+| Providers | none. No outbound call was made, no message was sent, no template was submitted |
+
+### API-level checks, through the real HTTP stack
+
+| Check | Result |
+| --- | --- |
+| U1 | all six family endpoints returned numbers that matched the seeded fixtures, each with a populated `meta` naming the timezone and the source |
+| **U2** | the account's timezone moves the window and the viewer's does not. `Asia/Kuwait` resolved the same requested dates to a window starting `2026-10-03T21:00:00Z`, `America/New_York` to `2026-10-04T04:00:00Z`, `UTC` to `2026-10-04T00:00:00Z`. Re-requesting as viewers in `UTC`, `America/Los_Angeles` and `Asia/Tokyo` returned byte-identical totals |
+| **U12** | every analytics endpoint returned `401` for the agent login |
+| U14 | the administrator's timeline returned 22 entries interleaving 8 distinct sources in one descending time order |
+| **U17** | the inbox-restricted agent's timeline returned 19 entries, with **0** rows from the inbox they are not a member of |
+| U16 | the cursor walk returned the same 22 entries in 8 pages of 3, in identical order, with 0 duplicates and no entry lost at a page boundary |
+| **U21** | per-campaign `{audience: 2, sent: 1, delivered: 1, read: 1, failed: 0, skipped: 1}` matched the Campaigns family exactly: `{recipients_targeted: 2, sent: 1, delivered: 1, read: 1, failed: 0, skipped: 1}` |
+| **U23** | ten malformed requests (bad dates, inverted range, unknown grouping, unknown breakdown, unknown family, a filter id from another account, a bad cursor, an out-of-range limit, an unknown category) each returned `422` naming the reason and, where the parameter is an enumeration, the allowed values |
+
+### Browser checks
+
+Driven headlessly against the served dashboard: login, sidebar, all six analytics screens, the contact Activity
+tab, its filters and its paging. **28 of 29 assertions passed.**
+
+The one failure was the "no console errors" assertion: a single `404` on a resource that is **not** a P8 request.
+Classified as **not a P8 defect**, on three pieces of evidence:
+
+- the companion assertion "no failed P8 requests" passed, and the list of every non-2xx response seen contained
+  no analytics or timeline path;
+- the 404 is for a resource the served HTML requests with an **empty** `href` — the favicon link, which this
+  deployment leaves blank. An empty `href` resolves to the current document URL under a path the asset server
+  does not serve;
+- it reproduces on pages with no P8 code on them.
+
+It is left recorded rather than silenced: the assertion is correct to be strict, and a reviewer should see the
+one thing it caught.
+
+### What this execution found
+
+One real product defect, now fixed: **private notes were being counted as WhatsApp sends.** The screen reported
+4 sends and a 75% delivery rate where 3 sends and 66.7% were correct. A private note is an internal message that
+is never handed to Meta, so its `status` is written locally and is not a delivery receipt. 351 Ruby examples and
+65 JS examples had not caught it; running the runbook did.
+
+Re-verified after the fix, live: `messages_sent 3, delivered 2, read 1, failed 1, delivery_rate 66.7,
+coexistence_echoes 1`.
+
+### Still requires a human on the real account
+
+| | Why |
+| --- | --- |
+| U2 by hand | the automated check proved the contract through the API; a human should still confirm the rendered footnote and totals do not move when they change their own profile timezone |
+| U6, U7 | need an account with real coexistence echoes and real Meta error codes |
+| U20 | needs an account whose existing Reports screens have enough history to compare |
+| U24 by eye | the automated check asserted no credential-shaped value in any payload; a reviewer should still read one response of each family |
+| Everything in §5 | explicitly out of scope for this runbook |

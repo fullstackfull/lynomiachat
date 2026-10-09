@@ -5,7 +5,9 @@ import { useAlert } from 'dashboard/composables';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useRoute, useRouter } from 'vue-router';
 import { useAccount } from 'dashboard/composables/useAccount';
+import { usePolicy } from 'dashboard/composables/usePolicy';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+import { CONTACT_PERMISSIONS } from 'dashboard/constants/permissions';
 
 import ContactsDetailsLayout from 'dashboard/components-next/Contacts/ContactsDetailsLayout.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
@@ -18,6 +20,7 @@ import ContactCases from 'dashboard/components-next/Contacts/ContactsSidebar/Con
 import ContactMedia from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMedia.vue';
 import ContactMerge from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMerge.vue';
 import ContactCustomAttributes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCustomAttributes.vue';
+import ContactIdentities from 'dashboard/components-next/Contacts/ContactsSidebar/ContactIdentities.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -42,9 +45,23 @@ const showSpinner = computed(
 const { t } = useI18n();
 
 const { isCloudFeatureEnabled } = useAccount();
+const { checkPermissions } = usePolicy();
 
 const isSupportTicketsEnabled = computed(() =>
   isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_SUPPORT_TICKETS)
+);
+
+// The identities tab, like the cases tab, stays out of the list entirely when the account does not have the
+// feature: the endpoint answers 404 for such an account, so an always-present tab would only ever fail.
+const isUnifiedIdentityEnabled = computed(() =>
+  isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_UNIFIED_IDENTITY)
+);
+
+// Linking decides where the next message carrying a number is delivered, so it follows the merge boundary --
+// administrator, or an agent whose custom role grants contact management. Reading the list does not; everyone
+// who may open the contact sees it, which is why this gates the controls and not the tab.
+const canManageIdentities = computed(() =>
+  checkPermissions(['administrator', CONTACT_PERMISSIONS])
 );
 
 // `when` is how a tab that depends on an account feature stays out of the list entirely rather than rendering
@@ -58,6 +75,10 @@ const CONTACT_TABS_OPTIONS = [
   // This contact's support cases (docs/p9/02-support-tickets.md). Beside Activity rather than inside it: the
   // timeline says what happened, this says what is still open and who owns it.
   { key: 'CASES', value: 'cases', when: isSupportTicketsEnabled },
+  // Everything this customer can be reached at (docs/p10/05-omnichannel-customer-360.md). Beside History
+  // rather than inside Attributes: an attribute is a field on the record, this is the set of values that
+  // resolve to the record.
+  { key: 'IDENTITIES', value: 'identities', when: isUnifiedIdentityEnabled },
   { key: 'HISTORY', value: 'history' },
   { key: 'NOTES', value: 'notes' },
   { key: 'MEDIA', value: 'media' },
@@ -199,6 +220,11 @@ onMounted(() => {
           <ContactActivity v-if="activeTab === 'activity'" />
           <ContactCases
             v-if="activeTab === 'cases' && isSupportTicketsEnabled"
+          />
+          <ContactIdentities
+            v-if="activeTab === 'identities'"
+            :contact="selectedContact"
+            :can-manage="canManageIdentities"
           />
           <ContactNotes v-if="activeTab === 'notes'" />
           <ContactHistory v-if="activeTab === 'history'" />

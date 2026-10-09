@@ -58,6 +58,7 @@ export const FEATURE_FLAGS = {
   LYNOMIA_COMMERCE: 'lynomia_commerce',
   LYNOMIA_FLOW_BUILDER: 'lynomia_flow_builder',
   LYNOMIA_SUPPORT_TICKETS: 'lynomia_support_tickets',
+  LYNOMIA_UNIFIED_IDENTITY: 'lynomia_unified_identity',
 };
 
 export const PREMIUM_FEATURES = [

@@ -10,6 +10,7 @@ import AnalyticsWhatsapp from './AnalyticsWhatsapp.vue';
 import AnalyticsCampaigns from './AnalyticsCampaigns.vue';
 import AnalyticsAutomations from './AnalyticsAutomations.vue';
 import AnalyticsFlows from './AnalyticsFlows.vue';
+import AnalyticsCommerce from './AnalyticsCommerce.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -51,6 +52,12 @@ export default {
           name: 'analytics_flows',
           meta,
           component: AnalyticsFlows,
+        },
+        {
+          path: 'commerce',
+          name: 'analytics_commerce',
+          meta,
+          component: AnalyticsCommerce,
         },
       ],
     },

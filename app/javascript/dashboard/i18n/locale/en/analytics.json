@@ -273,6 +273,68 @@
         "FAILURE": "Error",
         "END_REASON": "End reason"
       }
+    },
+    "COMMERCE": {
+      "HEADER": "Commerce",
+      "DESCRIPTION": "What your stores reported about abandoned carts, what your team did about them, and how the order actions went.",
+      "EMPTY": "No store reported a cart and no order action ran in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CARTS_SEEN": {
+          "LABEL": "Carts seen",
+          "HINT": "Carts your stores first told Lynomia about in this period."
+        },
+        "CARTS_ABANDONED": {
+          "LABEL": "Reported abandoned",
+          "HINT": "Carts a store said were abandoned. Lynomia runs no inactivity timer of its own, so silence from a store is never counted as abandonment."
+        },
+        "CARTS_TARGETED": {
+          "LABEL": "Messaged",
+          "HINT": "Carts where recovery outreach was accepted for sending."
+        },
+        "CARTS_COMPLETED": {
+          "LABEL": "Checkout completed",
+          "HINT": "Carts a store said were completed. That proves checkout completion and nothing more."
+        },
+        "POST_TARGET_COMPLETIONS": {
+          "LABEL": "Completed after messaging",
+          "HINT": "Completions that happened after outreach went out. This is the order of two recorded times, not proof the message caused it: the shopper may have returned on their own, or in response to the store's own reminder."
+        },
+        "UNTARGETED_COMPLETIONS": {
+          "LABEL": "Completed with no messaging",
+          "HINT": "Completions on carts Lynomia never messaged. Shown beside the figure above so the two can be compared."
+        },
+        "TARGETING_RATE": {
+          "LABEL": "Messaged rate",
+          "HINT": "Messaged as a share of the carts reported abandoned in this period."
+        },
+        "ORDER_ACTIONS_REQUESTED": {
+          "LABEL": "Order actions",
+          "HINT": "Refunds, cancellations, status changes and resends your team asked a store to make."
+        },
+        "ORDER_ACTIONS_FAILED": {
+          "LABEL": "Actions refused",
+          "HINT": "Order actions a store refused. Nothing changed in the store."
+        },
+        "RECOVERY_MESSAGES_PREPARED": {
+          "LABEL": "Recovery messages prepared",
+          "HINT": "Recovery messages drafted for an abandoned cart. Whether one reached the customer is a WhatsApp delivery question."
+        },
+        "OPEN_ABANDONED_NOW": {
+          "LABEL": "Open abandoned carts",
+          "HINT": "Carts a store called abandoned and has never called completed."
+        },
+        "ACTIONS_UNRESOLVED_NOW": {
+          "LABEL": "Actions unsettled",
+          "HINT": "Order actions with no final answer, including the ones where the request reached the store but the reply was lost. Those are never re-sent automatically and need checking in the store. Above zero is worth a look."
+        }
+      },
+      "BREAKDOWN": {
+        "PROVIDER": "Platform",
+        "STORE": "Store",
+        "CURRENCY": "Currency",
+        "ACTION_TYPE": "Action",
+        "ACTION_ERROR": "Refusal"
+      }
     }
   }
 }

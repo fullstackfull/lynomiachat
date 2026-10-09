@@ -640,6 +640,11 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ANALYTICS_FLOWS'),
           to: accountScopedRoute('analytics_flows'),
         },
+        {
+          name: 'Analytics Commerce',
+          label: t('SIDEBAR.ANALYTICS_COMMERCE'),
+          to: accountScopedRoute('analytics_commerce'),
+        },
       ],
     },
     {

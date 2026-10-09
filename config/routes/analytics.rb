@@ -16,6 +16,7 @@ namespace :api, defaults: { format: 'json' } do
         get 'analytics/campaigns', to: 'analytics#campaigns'
         get 'analytics/automations', to: 'analytics#automations'
         get 'analytics/flows', to: 'analytics#flows'
+        get 'analytics/commerce', to: 'analytics#commerce'
       end
     end
   end

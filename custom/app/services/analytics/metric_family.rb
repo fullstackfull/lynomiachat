@@ -74,11 +74,14 @@ module Analytics::MetricFamily
     ),
     commerce: Family.new(
       key: :commerce,
-      metrics: %i[carts_seen carts_abandoned carts_completed completed_after_abandonment carts_targeted provider_distribution],
+      metrics: Analytics::Commerce::Metrics::ALL_METRICS,
       filters: %i[provider],
       rollup_metrics: [],
-      notes: 'commerce_carts lifecycle and commerce_action_runs. No revenue: spend is per-currency and ' \
-             'deliberately unconverted, and there is no order store.'
+      notes: 'commerce_carts lifecycle and commerce_action_runs, provider-neutral. No revenue, GMV or profit: ' \
+             'visible_total is never summed because carts carry a per-cart currency and nothing converts ' \
+             'between currencies, so the currency breakdown reports cart counts. No recovery attribution: ' \
+             'post_target_completions is a completion that followed outreach, which is a time ordering and not ' \
+             'a proof of cause, and untargeted_completions sits beside it. No order store.'
     )
   }.freeze
 

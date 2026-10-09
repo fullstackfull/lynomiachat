@@ -62,3 +62,11 @@ export const FLOW_BREAKDOWN_DIMENSIONS = [
   'failure',
   'end_reason',
 ];
+
+export const COMMERCE_BREAKDOWN_DIMENSIONS = [
+  'provider',
+  'store',
+  'currency',
+  'action_type',
+  'action_error',
+];

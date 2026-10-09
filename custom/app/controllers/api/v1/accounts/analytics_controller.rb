@@ -61,6 +61,16 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
     ).call.as_json
   end
 
+  # Cart lifecycle and order actions, provider-neutral. No revenue: see docs/p8/02d-commerce-analytics.md.
+  def commerce
+    render json: Analytics::Commerce::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:commerce),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
   def meta
     render json: {
       timezone: {
@@ -95,7 +105,8 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
       whatsapp: breakdown_entry(Analytics::Whatsapp::Overview),
       campaigns: breakdown_entry(Analytics::Campaigns::Overview),
       automations: breakdown_entry(Analytics::Automations::Overview),
-      flows: breakdown_entry(Analytics::Flows::Overview)
+      flows: breakdown_entry(Analytics::Flows::Overview),
+      commerce: breakdown_entry(Analytics::Commerce::Overview)
     }
   end
 

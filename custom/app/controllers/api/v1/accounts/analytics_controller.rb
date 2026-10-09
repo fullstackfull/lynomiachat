@@ -21,6 +21,26 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
     ).call.as_json
   end
 
+  # Is WhatsApp actually delivering? Every WhatsApp send in the account -- campaign, flow, automation or agent.
+  def whatsapp
+    render json: Analytics::Whatsapp::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:whatsapp),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
+  # How the period's one-off campaigns performed, from the recipient snapshot that is also their audience record.
+  def campaigns
+    render json: Analytics::Campaigns::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:campaigns),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
   def meta
     render json: {
       timezone: {
@@ -32,8 +52,7 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
       range: date_range.to_meta,
       buckets: { count: date_range.bucket_count, maximum: Analytics::DateRange::MAX_BUCKETS[date_range.group_by] },
       group_by: { requested: date_range.group_by, supported: Analytics::DateRange::SUPPORTED_GROUP_BY },
-      breakdowns: { supported: Analytics::Conversations::Overview::BREAKDOWN_DIMENSIONS.map(&:to_s),
-                    default: Analytics::Conversations::Overview::DEFAULT_BREAKDOWN.to_s },
+      breakdowns: breakdowns_meta,
       current_state_metrics: Analytics::MetricFamily::CURRENT_STATE_METRICS.map(&:to_s),
       families: families_meta
     }
@@ -47,6 +66,19 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
   # `authorize @campaign, :show?`, and the contact timeline will follow the contact's policy for the same reason.
   def authorize_analytics
     authorize :report, :view?
+  end
+
+  # Per family, so a screen can render its dimension switcher from the contract instead of a hardcoded list.
+  def breakdowns_meta
+    {
+      conversations: breakdown_entry(Analytics::Conversations::Overview),
+      whatsapp: breakdown_entry(Analytics::Whatsapp::Overview),
+      campaigns: breakdown_entry(Analytics::Campaigns::Overview)
+    }
+  end
+
+  def breakdown_entry(assembler)
+    { supported: assembler::BREAKDOWN_DIMENSIONS.map(&:to_s), default: assembler::DEFAULT_BREAKDOWN.to_s }
   end
 
   def families_meta

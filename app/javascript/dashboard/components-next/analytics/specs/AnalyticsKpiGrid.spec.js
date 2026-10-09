@@ -4,13 +4,19 @@ import AnalyticsKpiGrid from '../AnalyticsKpiGrid.vue';
 
 withFullI18n();
 
-const mountGrid = kpis => mount(AnalyticsKpiGrid, { props: { kpis } });
+const mountGrid = (kpis, scope = 'CONVERSATIONS') =>
+  mount(AnalyticsKpiGrid, { props: { kpis, scope } });
 
 describe('AnalyticsKpiGrid', () => {
   it('renders a card per KPI with its translated label', () => {
     const wrapper = mountGrid([
       { key: 'conversations_created', value: 12, unit: 'count', kind: 'event' },
-      { key: 'unresolved_backlog', value: 3, unit: 'count', kind: 'current_state' },
+      {
+        key: 'unresolved_backlog',
+        value: 3,
+        unit: 'count',
+        kind: 'current_state',
+      },
     ]);
 
     expect(wrapper.text()).toContain('Conversations started');
@@ -90,5 +96,43 @@ describe('AnalyticsKpiGrid', () => {
     ]);
 
     expect(wrapper.text()).toContain('1,234,567');
+  });
+});
+
+describe('AnalyticsKpiGrid, per-family scopes', () => {
+  it('formats a percent metric with its unit', () => {
+    const wrapper = mount(AnalyticsKpiGrid, {
+      props: {
+        scope: 'WHATSAPP',
+        kpis: [
+          {
+            key: 'delivery_rate',
+            value: 93.5,
+            unit: 'percent',
+            kind: 'event',
+          },
+        ],
+      },
+    });
+
+    expect(wrapper.text()).toContain('93.5%');
+    expect(wrapper.text()).toContain('Delivery rate');
+  });
+
+  it('reads the same metric key differently per family', () => {
+    const kpis = [{ key: 'delivered', value: 7, unit: 'count', kind: 'event' }];
+    const whatsapp = mount(AnalyticsKpiGrid, {
+      props: { scope: 'WHATSAPP', kpis },
+    });
+    const campaigns = mount(AnalyticsKpiGrid, {
+      props: { scope: 'CAMPAIGNS', kpis },
+    });
+
+    expect(
+      whatsapp.find('button[aria-label]').attributes('aria-label')
+    ).toContain('Messages Meta confirmed');
+    expect(
+      campaigns.find('button[aria-label]').attributes('aria-label')
+    ).toContain('Recipients Meta confirmed');
   });
 });

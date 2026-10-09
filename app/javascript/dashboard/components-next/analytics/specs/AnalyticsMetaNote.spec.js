@@ -61,7 +61,11 @@ describe('AnalyticsMetaNote', () => {
   });
 
   it('renders without a source rather than guessing one', () => {
-    const wrapper = mountNote({ ...meta, source: undefined, source_reason: undefined });
+    const wrapper = mountNote({
+      ...meta,
+      source: undefined,
+      source_reason: undefined,
+    });
 
     expect(wrapper.text()).not.toContain('Computed from source records');
     expect(wrapper.text()).toContain('2026-03-01 to 2026-03-31');

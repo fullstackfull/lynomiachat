@@ -34,19 +34,24 @@ module Analytics::MetricFamily
     ),
     whatsapp: Family.new(
       key: :whatsapp,
-      metrics: %i[template_messages_sent delivered read failed delivery_rate read_rate failure_rate],
+      metrics: Analytics::Whatsapp::Metrics::EVENT_METRICS + %i[coexistence_echoes],
       filters: %i[inbox_id template_id],
       rollup_metrics: [],
-      notes: 'Meta-authoritative delivery state from messages.status and campaign_recipients timestamps. ' \
-             'Delivered and read are counted from the timestamp being present, never from status equality, ' \
-             'because both ladders are monotonic and keep only the furthest state reached.'
+      notes: 'Outgoing WhatsApp messages. delivered means the status ladder reached delivered or read, because ' \
+             'messages.status carries no timestamps and keeps only the furthest state reached; a later failed ' \
+             'overwrites it, so delivery is understated for a message that was delivered and then failed. ' \
+             'Coexistence echoes are excluded from every count and rate and reported separately: their ' \
+             'delivered status is written locally, not by Meta.'
     ),
     campaigns: Family.new(
       key: :campaigns,
-      metrics: %i[recipients_targeted sent delivered read failed pending delivery_rate read_rate failure_rate],
+      metrics: Analytics::Campaigns::Metrics::EVENT_METRICS,
       filters: %i[inbox_id campaign_id],
       rollup_metrics: [],
-      notes: 'campaign_recipients is the snapshot and the funnel; no separate execution engine.'
+      notes: 'campaign_recipients is the snapshot and the funnel; no separate execution engine. Delivered and ' \
+             'read come from the timestamps being present, never from status equality. The audience breakdown ' \
+             'counts campaigns per targeted audience, not recipients: a campaign keeps only a reference to each ' \
+             'audience and membership is resolved at send time, so no recipient can be attributed to a source.'
     ),
     automations: Family.new(
       key: :automations,

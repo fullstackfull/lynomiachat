@@ -325,6 +325,8 @@
     "UNATTENDED_CONVERSATIONS": "Unattended",
     "ANALYTICS": "Analytics",
     "ANALYTICS_OVERVIEW": "Overview",
+    "ANALYTICS_WHATSAPP": "WhatsApp delivery",
+    "ANALYTICS_CAMPAIGNS": "Campaigns",
     "REPORTS": "Reports",
     "SETTINGS": "Settings",
     "CONTACTS": "Contacts",

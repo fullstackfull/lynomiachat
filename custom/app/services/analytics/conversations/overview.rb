@@ -13,7 +13,7 @@ class Analytics::Conversations::Overview
     @account = account
     @date_range = date_range
     @filters = filters
-    @breakdown_by = resolve_breakdown(breakdown_by)
+    @breakdown_by = Analytics::Breakdown.resolve(breakdown_by, BREAKDOWN_DIMENSIONS, DEFAULT_BREAKDOWN)
     @metrics = Analytics::Conversations::Metrics.new(account: account, date_range: date_range, filters: filters)
   end
 
@@ -53,16 +53,5 @@ class Analytics::Conversations::Overview
       account: @account, date_range: @date_range, family: :conversations,
       metric: :resolutions_count, dimension_type: 'account'
     ).decide
-  end
-
-  def resolve_breakdown(value)
-    return DEFAULT_BREAKDOWN if value.blank?
-
-    normalized = value.to_s.to_sym
-    return normalized if BREAKDOWN_DIMENSIONS.include?(normalized)
-
-    raise CustomExceptions::Analytics::UnsupportedBreakdown.new(
-      breakdown: value.to_s, allowed: BREAKDOWN_DIMENSIONS.map(&:to_s)
-    )
   end
 end

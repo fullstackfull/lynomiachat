@@ -17,6 +17,11 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  // The i18n namespace the labels live under: ANALYTICS.<scope>.KPI.<KEY>.
+  scope: {
+    type: String,
+    required: true,
+  },
   loading: {
     type: Boolean,
     default: false,
@@ -32,6 +37,7 @@ const EMPTY_VALUE = '—';
 const formatValue = kpi => {
   if (kpi.value === null || kpi.value === undefined) return EMPTY_VALUE;
   if (kpi.unit === ANALYTICS_UNIT.SECONDS) return formatTime(kpi.value);
+  if (kpi.unit === ANALYTICS_UNIT.PERCENT) return `${kpi.value}%`;
   return Number(kpi.value).toLocaleString();
 };
 
@@ -40,12 +46,12 @@ const cards = computed(() =>
     const isCurrentState = kpi.kind === ANALYTICS_KPI_KIND.CURRENT_STATE;
     return {
       key: kpi.key,
-      label: t(`ANALYTICS.KPI.${kpi.key.toUpperCase()}.LABEL`),
+      label: t(`ANALYTICS.${props.scope}.KPI.${kpi.key.toUpperCase()}.LABEL`),
       // A current-state reading is taken now, so its hint says so instead of letting the date range imply it
       // was measured over the selected period.
       hint: isCurrentState
         ? t('ANALYTICS.KPI.CURRENT_STATE_HINT')
-        : t(`ANALYTICS.KPI.${kpi.key.toUpperCase()}.HINT`),
+        : t(`ANALYTICS.${props.scope}.KPI.${kpi.key.toUpperCase()}.HINT`),
       value: formatValue(kpi),
     };
   })

@@ -6,6 +6,8 @@ import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 // permission the existing report routes declare.
 import ReportsWrapper from 'dashboard/routes/dashboard/settings/reports/components/ReportsWrapper.vue';
 import AnalyticsOverview from './AnalyticsOverview.vue';
+import AnalyticsWhatsapp from './AnalyticsWhatsapp.vue';
+import AnalyticsCampaigns from './AnalyticsCampaigns.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -23,6 +25,18 @@ export default {
           name: 'analytics_overview',
           meta,
           component: AnalyticsOverview,
+        },
+        {
+          path: 'whatsapp',
+          name: 'analytics_whatsapp',
+          meta,
+          component: AnalyticsWhatsapp,
+        },
+        {
+          path: 'campaigns',
+          name: 'analytics_campaigns',
+          meta,
+          component: AnalyticsCampaigns,
         },
       ],
     },

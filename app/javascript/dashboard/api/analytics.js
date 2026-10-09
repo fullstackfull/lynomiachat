@@ -23,6 +23,14 @@ class AnalyticsAPI extends ApiClient {
   getOverview(params = {}, { signal } = {}) {
     return axios.get(`${this.url}/overview`, { params, signal });
   }
+
+  getWhatsapp(params = {}, { signal } = {}) {
+    return axios.get(`${this.url}/whatsapp`, { params, signal });
+  }
+
+  getCampaigns(params = {}, { signal } = {}) {
+    return axios.get(`${this.url}/campaigns`, { params, signal });
+  }
 }
 
 export default new AnalyticsAPI();

@@ -38,6 +38,15 @@ class Api::V1::Accounts::Campaigns::AnalyticsController < Api::V1::Accounts::Bas
     authorize @campaign, :show?
   end
 
+  # Delivery and read come from the TIMESTAMP being present, not from status equality: the ladder keeps only the
+  # furthest state reached, so a recipient Meta reported as read before it reported delivered carries `read_at`
+  # with `delivered_at` still null until a later delivered event backfills it
+  # (custom/app/models/campaign_recipient.rb:53-57). Reading `delivered_at` alone would therefore undercount.
+  # `failed_at` is terminal because the writer refuses to fail a delivered or read recipient.
+  #
+  # `skipped` has no timestamp: Lynomia decided the contact was unsendable before attempting a send, so status is
+  # the only record of it. `status_counts` stays exactly as it was -- it is the raw ladder, and the dashboard's
+  # per-status recipient list is driven by it.
   def delivery_metrics
     recipients = @campaign.campaign_recipients
     counts = recipients.group(:status).count
@@ -45,9 +54,9 @@ class Api::V1::Accounts::Campaigns::AnalyticsController < Api::V1::Accounts::Bas
     {
       audience: recipients.count,
       sent: recipients.where.not(source_id: nil).count,
-      delivered: counts['delivered'].to_i + counts['read'].to_i,
-      read: counts['read'].to_i,
-      failed: counts['failed'].to_i,
+      delivered: recipients.where(Analytics::Campaigns::Metrics::DELIVERED_SQL).count,
+      read: recipients.where.not(read_at: nil).count,
+      failed: recipients.where.not(failed_at: nil).count,
       skipped: counts['skipped'].to_i,
       status_counts: CampaignRecipient.statuses.keys.index_with { |status| counts[status].to_i }
     }

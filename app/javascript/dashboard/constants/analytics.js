@@ -29,11 +29,23 @@ export const ANALYTICS_KPI_KIND = {
 export const ANALYTICS_UNIT = {
   COUNT: 'count',
   SECONDS: 'seconds',
+  PERCENT: 'percent',
 };
 
+// The dimensions each screen offers, mirroring the assemblers' BREAKDOWN_DIMENSIONS. `GET /analytics` reports
+// the same lists under `breakdowns` and is the authority if the two ever disagree.
 export const ANALYTICS_BREAKDOWN_DIMENSIONS = [
   'inbox',
   'channel',
   'team',
   'agent',
+];
+
+export const WHATSAPP_BREAKDOWN_DIMENSIONS = ['template', 'inbox', 'failure'];
+
+export const CAMPAIGN_BREAKDOWN_DIMENSIONS = [
+  'campaign',
+  'audience',
+  'failure',
+  'skip_reason',
 ];

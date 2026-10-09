@@ -620,6 +620,16 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ANALYTICS_OVERVIEW'),
           to: accountScopedRoute('analytics_overview'),
         },
+        {
+          name: 'Analytics WhatsApp',
+          label: t('SIDEBAR.ANALYTICS_WHATSAPP'),
+          to: accountScopedRoute('analytics_whatsapp'),
+        },
+        {
+          name: 'Analytics Campaigns',
+          label: t('SIDEBAR.ANALYTICS_CAMPAIGNS'),
+          to: accountScopedRoute('analytics_campaigns'),
+        },
       ],
     },
     {

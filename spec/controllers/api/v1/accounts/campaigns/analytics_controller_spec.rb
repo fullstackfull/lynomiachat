@@ -14,13 +14,20 @@ RSpec.describe 'Campaign analytics API', type: :request do
   let(:failed_contact) { create(:contact, :with_phone_number, account: account) }
   let(:skipped_contact) { create(:contact, account: account) }
 
+  # Timestamps are set alongside the status, because that is what the only writer of these states does:
+  # #update_from_whatsapp_status! always writes `"#{status}_at"` with the status, and #mark_failed! writes
+  # failed_at (custom/app/models/campaign_recipient.rb). A fixture that sets status alone describes no row this
+  # product can produce. `skipped` has no timestamp column, so status is all it has.
   before do
     account.enable_features!(:whatsapp_campaign)
     CampaignRecipient.create!(account: account, campaign: campaign, inbox: inbox, contact: delivered_contact,
-                              status: :delivered, source_id: 'wamid.delivered')
+                              status: :delivered, source_id: 'wamid.delivered', sent_at: 2.hours.ago,
+                              delivered_at: 1.hour.ago)
     CampaignRecipient.create!(account: account, campaign: campaign, inbox: inbox, contact: read_contact,
-                              status: :read, source_id: 'wamid.read')
-    CampaignRecipient.create!(account: account, campaign: campaign, inbox: inbox, contact: failed_contact, status: :failed)
+                              status: :read, source_id: 'wamid.read', sent_at: 2.hours.ago,
+                              delivered_at: 1.hour.ago, read_at: 30.minutes.ago)
+    CampaignRecipient.create!(account: account, campaign: campaign, inbox: inbox, contact: failed_contact,
+                              status: :failed, failed_at: 1.hour.ago)
     CampaignRecipient.create!(account: account, campaign: campaign, inbox: inbox, contact: skipped_contact, status: :skipped)
   end
 

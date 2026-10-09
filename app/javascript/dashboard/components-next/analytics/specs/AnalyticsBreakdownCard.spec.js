@@ -17,6 +17,7 @@ const mountCard = props =>
       title: 'Where the volume sits',
       dimension: 'inbox',
       dimensions: ['inbox', 'channel', 'team', 'agent'],
+      scope: 'CONVERSATIONS',
       ...props,
     },
     global: { stubs: { TabBar: TabBarStub } },
@@ -85,5 +86,43 @@ describe('AnalyticsBreakdownCard', () => {
     const wrapper = mountCard({ rows: [] });
 
     expect(wrapper.text()).toContain('Nothing was recorded in this period.');
+  });
+});
+
+describe('AnalyticsBreakdownCard, unlabelled rows', () => {
+  it('shows a placeholder rather than an empty row when nothing was recorded', () => {
+    const wrapper = mount(AnalyticsBreakdownCard, {
+      props: {
+        title: 'Where the volume sits',
+        dimension: 'failure',
+        dimensions: ['failure'],
+        scope: 'WHATSAPP',
+        rows: [{ id: null, label: null, value: 4 }],
+      },
+      global: { stubs: { TabBar: TabBarStub } },
+    });
+
+    expect(wrapper.text()).toContain('Not recorded');
+    expect(wrapper.text()).toContain('4');
+  });
+
+  it("names each family's own dimensions", () => {
+    const wrapper = mount(AnalyticsBreakdownCard, {
+      props: {
+        title: 'Where the volume sits',
+        dimension: 'skip_reason',
+        dimensions: ['campaign', 'audience', 'failure', 'skip_reason'],
+        scope: 'CAMPAIGNS',
+        rows: [],
+      },
+      global: { stubs: { TabBar: TabBarStub } },
+    });
+
+    expect(
+      wrapper
+        .findComponent(TabBarStub)
+        .props('tabs')
+        .map(tab => tab.label)
+    ).toEqual(['Campaign', 'Audience used', 'Refusal code', 'Skip reason']);
   });
 });

@@ -21,6 +21,11 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  // The i18n namespace the dimension names live under: ANALYTICS.<scope>.BREAKDOWN.<DIMENSION>.
+  scope: {
+    type: String,
+    required: true,
+  },
   loading: {
     type: Boolean,
     default: false,
@@ -38,9 +43,14 @@ const total = computed(() =>
   props.rows.reduce((sum, row) => sum + Number(row.value || 0), 0)
 );
 
+// A row can legitimately arrive without a label: a WhatsApp send that failed with no provider error string, or
+// a skip with no recorded reason. The row is real and its count matters, so it is shown with a placeholder
+// rather than dropped or rendered blank.
 const visibleRows = computed(() =>
   props.rows.slice(0, VISIBLE_ROWS).map(row => ({
     ...row,
+    key: row.id ?? 'unlabelled',
+    name: row.label || t('ANALYTICS.BREAKDOWN.UNLABELLED'),
     share: total.value ? Math.round((row.value / total.value) * 100) : 0,
   }))
 );
@@ -51,7 +61,7 @@ const remainingCount = computed(() =>
 
 const dimensionTabs = computed(() =>
   props.dimensions.map(value => ({
-    label: t(`ANALYTICS.BREAKDOWN.DIMENSION.${value.toUpperCase()}`),
+    label: t(`ANALYTICS.${props.scope}.BREAKDOWN.${value.toUpperCase()}`),
     value,
   }))
 );
@@ -89,12 +99,12 @@ const activeDimensionIndex = computed(() =>
     <div v-else-if="visibleRows.length" class="flex flex-col gap-3">
       <div
         v-for="row in visibleRows"
-        :key="row.id"
+        :key="row.key"
         class="flex flex-col gap-1.5"
       >
         <div class="flex items-center justify-between gap-3 min-w-0">
           <span class="truncate text-body-main text-n-slate-11">
-            {{ row.label }}
+            {{ row.name }}
           </span>
           <span class="flex items-center gap-2 shrink-0">
             <span

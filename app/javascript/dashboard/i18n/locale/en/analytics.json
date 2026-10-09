@@ -14,6 +14,15 @@
     "ERROR": {
       "UNEXPECTED": "This report could not be loaded. Try again, and if it keeps failing contact support."
     },
+    "KPI": {
+      "CURRENT_STATE_HINT": "A reading taken now, not a count over the selected dates."
+    },
+    "BREAKDOWN": {
+      "TITLE": "Where the volume sits",
+      "SHARE": "{value}%",
+      "REMAINING": "and {count} more",
+      "UNLABELLED": "Not recorded"
+    },
     "META": {
       "FOOTNOTE": "{since} to {until}, grouped by {grouping}, in {timezone}.",
       "WARNING": "{scope} could not be included: {reason}.",
@@ -30,56 +39,155 @@
         "INCOMPLETE_COVERAGE": "rollup totals did not match the source records, so the source records were used"
       }
     },
-    "KPI": {
-      "CURRENT_STATE_HINT": "A reading taken now, not a count over the selected dates.",
-      "CONVERSATIONS_CREATED": {
-        "LABEL": "Conversations started",
-        "HINT": "Conversations opened in this period, however they arrived."
+    "CONVERSATIONS": {
+      "HEADER": "Analytics overview",
+      "DESCRIPTION": "How much work arrived, how much was closed, how fast your team responded, and what is still open.",
+      "EMPTY": "No conversations or messages were recorded in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CONVERSATIONS_CREATED": {
+          "LABEL": "Conversations started",
+          "HINT": "Conversations opened in this period, however they arrived."
+        },
+        "CONVERSATIONS_RESOLVED": {
+          "LABEL": "Conversations resolved",
+          "HINT": "Times a conversation was marked resolved in this period."
+        },
+        "CONVERSATIONS_REOPENED": {
+          "LABEL": "Conversations reopened",
+          "HINT": "Times a resolved conversation was opened again in this period."
+        },
+        "AVG_FIRST_RESPONSE_TIME": {
+          "LABEL": "Average first response",
+          "HINT": "How long a customer waited for the first human reply."
+        },
+        "AVG_RESOLUTION_TIME": {
+          "LABEL": "Average resolution time",
+          "HINT": "How long a conversation stayed open before it was resolved."
+        },
+        "INBOUND_MESSAGES": {
+          "LABEL": "Messages received",
+          "HINT": "Customer messages. Activity notes and private notes are not counted."
+        },
+        "OUTBOUND_MESSAGES": {
+          "LABEL": "Messages sent",
+          "HINT": "Replies sent to customers, including approved template sends. Activity notes and private notes are not counted."
+        },
+        "UNRESOLVED_BACKLOG": {
+          "LABEL": "Open right now",
+          "HINT": "Conversations currently open or pending. Snoozed conversations are not counted."
+        }
       },
-      "CONVERSATIONS_RESOLVED": {
-        "LABEL": "Conversations resolved",
-        "HINT": "Times a conversation was marked resolved in this period."
-      },
-      "CONVERSATIONS_REOPENED": {
-        "LABEL": "Conversations reopened",
-        "HINT": "Times a resolved conversation was opened again in this period."
-      },
-      "AVG_FIRST_RESPONSE_TIME": {
-        "LABEL": "Average first response",
-        "HINT": "How long a customer waited for the first human reply."
-      },
-      "AVG_RESOLUTION_TIME": {
-        "LABEL": "Average resolution time",
-        "HINT": "How long a conversation stayed open before it was resolved."
-      },
-      "INBOUND_MESSAGES": {
-        "LABEL": "Messages received",
-        "HINT": "Customer messages. Activity notes and private notes are not counted."
-      },
-      "OUTBOUND_MESSAGES": {
-        "LABEL": "Messages sent",
-        "HINT": "Replies sent to customers, including approved template sends. Activity notes and private notes are not counted."
-      },
-      "UNRESOLVED_BACKLOG": {
-        "LABEL": "Open right now",
-        "HINT": "Conversations currently open or pending. Snoozed conversations are not counted."
-      }
-    },
-    "BREAKDOWN": {
-      "TITLE": "Where the volume sits",
-      "SHARE": "{value}%",
-      "REMAINING": "and {count} more",
-      "DIMENSION": {
+      "BREAKDOWN": {
         "INBOX": "Inbox",
         "CHANNEL": "Channel",
         "TEAM": "Team",
         "AGENT": "Agent"
       }
     },
-    "OVERVIEW": {
-      "HEADER": "Analytics overview",
-      "DESCRIPTION": "How much work arrived, how much was closed, how fast your team responded, and what is still open.",
-      "EMPTY": "No conversations or messages were recorded in this period. Pick a wider date range to see more."
+    "WHATSAPP": {
+      "HEADER": "WhatsApp delivery",
+      "DESCRIPTION": "Whether your WhatsApp messages are reaching people, which templates carry the volume, and what Meta is refusing.",
+      "EMPTY": "No WhatsApp messages were sent in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "MESSAGES_SENT": {
+          "LABEL": "Messages sent",
+          "HINT": "Outgoing WhatsApp messages Lynomia handed to Meta in this period."
+        },
+        "TEMPLATE_MESSAGES_SENT": {
+          "LABEL": "Template sends",
+          "HINT": "Of those, the ones sent as an approved template."
+        },
+        "DELIVERED": {
+          "LABEL": "Delivered",
+          "HINT": "Messages Meta confirmed as delivered or read. A message delivered and later marked failed is counted only as failed."
+        },
+        "READ": {
+          "LABEL": "Read",
+          "HINT": "Messages Meta confirmed the recipient opened."
+        },
+        "FAILED": {
+          "LABEL": "Failed",
+          "HINT": "Messages Meta refused to deliver."
+        },
+        "DELIVERY_RATE": {
+          "LABEL": "Delivery rate",
+          "HINT": "Delivered as a share of what was sent."
+        },
+        "READ_RATE": {
+          "LABEL": "Read rate",
+          "HINT": "Read as a share of what was sent."
+        },
+        "FAILURE_RATE": {
+          "LABEL": "Failure rate",
+          "HINT": "Refused as a share of what was sent."
+        },
+        "COEXISTENCE_ECHOES": {
+          "LABEL": "Synced from the app",
+          "HINT": "Messages you sent from the WhatsApp Business app, synced into Lynomia. They are left out of every count and rate above, because their delivered status is recorded locally rather than confirmed by Meta."
+        }
+      },
+      "BREAKDOWN": {
+        "TEMPLATE": "Template",
+        "INBOX": "Inbox",
+        "FAILURE": "Refusal"
+      }
+    },
+    "CAMPAIGNS": {
+      "HEADER": "Campaign performance",
+      "DESCRIPTION": "How the period's campaigns reached their audiences: who was addressed, who received it, and why anyone missed out.",
+      "EMPTY": "No campaign addressed anyone in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CAMPAIGNS_RUN": {
+          "LABEL": "Campaigns run",
+          "HINT": "Campaigns that addressed at least one contact in this period."
+        },
+        "RECIPIENTS_TARGETED": {
+          "LABEL": "Recipients addressed",
+          "HINT": "Contacts the period's campaigns selected, each counted once per campaign."
+        },
+        "SENT": {
+          "LABEL": "Sent",
+          "HINT": "Recipients Meta accepted a message for."
+        },
+        "DELIVERED": {
+          "LABEL": "Delivered",
+          "HINT": "Recipients Meta confirmed as delivered or read."
+        },
+        "READ": {
+          "LABEL": "Read",
+          "HINT": "Recipients Meta confirmed opened the message."
+        },
+        "FAILED": {
+          "LABEL": "Failed",
+          "HINT": "Recipients Meta refused to deliver to."
+        },
+        "SKIPPED": {
+          "LABEL": "Skipped",
+          "HINT": "Recipients Lynomia did not attempt, for example a contact with no phone number."
+        },
+        "PENDING": {
+          "LABEL": "Still queued",
+          "HINT": "Recipients addressed but with no outcome yet."
+        },
+        "DELIVERY_RATE": {
+          "LABEL": "Delivery rate",
+          "HINT": "Delivered as a share of the recipients addressed."
+        },
+        "READ_RATE": {
+          "LABEL": "Read rate",
+          "HINT": "Read as a share of the recipients addressed."
+        },
+        "FAILURE_RATE": {
+          "LABEL": "Failure rate",
+          "HINT": "Refused as a share of the recipients addressed."
+        }
+      },
+      "BREAKDOWN": {
+        "CAMPAIGN": "Campaign",
+        "AUDIENCE": "Audience used",
+        "FAILURE": "Refusal code",
+        "SKIP_REASON": "Skip reason"
+      }
     }
   }
 }

@@ -649,6 +649,7 @@ Rails.application.routes.draw do
   resources :widget_tests, only: [:index] unless Rails.env.production?
 
   draw :billing
+  draw :analytics
   draw :commerce
   draw :flows
   draw :campaign_audiences

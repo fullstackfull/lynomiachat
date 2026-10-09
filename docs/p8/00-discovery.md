@@ -101,6 +101,17 @@ day double-counts unless the caller clears first — relevant to any P8 backfill
 > production data depends on whether the production account has `reporting_timezone` set. **NOT ESTABLISHED**
 > here. P8 must therefore not assume rollups are populated; A1 trend queries are designed against raw
 > `reporting_events` with rollups as an optimisation, not a prerequisite.
+>
+> **Status at P8.1.** Still NOT ESTABLISHED. This session has no path to production — verified in the container:
+> no `ssh` binary, no `~/.ssh` keys, no `.env`, no `POSTGRES_*` environment and no production host in any git
+> remote. The read-only check is written up as seven operator queries in
+> `docs/p8/00b-rollup-production-check.md`, every one of them validated against this schema, with the coverage
+> query (R5) additionally proved on a fixture where it correctly reported valid coverage for one account and drift
+> for another. Record the output here when you have run it.
+>
+> **P8.1 does not depend on the answer.** `Analytics::RollupCoverage` refuses the rollup unless all four of its
+> conditions hold, and the first — the `report_rollup` feature — is off by default, so the foundation reads raw
+> regardless (`docs/p8/01-architecture.md` §2).
 
 ### 1.5 Date range and timezone handling — A9 is already solved, with one real inconsistency
 

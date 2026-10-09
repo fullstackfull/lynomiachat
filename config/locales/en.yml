@@ -219,6 +219,15 @@ en:
         name: should not start or end with symbols, and it should not have < > / \ @ characters.
     campaigns:
       audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
+    analytics:
+      missing_date: "%{field} is required and must be a date in YYYY-MM-DD form."
+      invalid_date: "%{field} must be a date in %{expected_format} form, got '%{value}'."
+      inverted_range: "since (%{since}) cannot be later than until (%{until})."
+      invalid_group_by: "group_by '%{group_by}' is not supported. Allowed: %{allowed}."
+      range_too_large: "That range is %{buckets} %{group_by} buckets, above the maximum of %{maximum}. Narrow the range or group by a longer period."
+      unsupported_filter: "'%{filter}' is not a filter the %{family} metrics support. Allowed: %{allowed}."
+      unknown_filter_value: "The value given for '%{filter}' does not exist in this account."
+      unknown_metric_family: "'%{family}' is not a known metric family. Allowed: %{allowed}."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.

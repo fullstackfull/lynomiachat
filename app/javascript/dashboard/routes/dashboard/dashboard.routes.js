@@ -6,6 +6,7 @@ import { routes as inboxRoutes } from './inbox/routes';
 import { frontendURL } from '../../helper/URLHelper';
 import campaignsRoutes from './campaigns/campaigns.routes';
 import analyticsRoutes from './analytics/analytics.routes';
+import ticketsRoutes from './tickets/tickets.routes';
 import AppContainer from './Dashboard.vue';
 import Suspended from './suspended/Index.vue';
 import NoAccounts from './noAccounts/Index.vue';
@@ -25,6 +26,7 @@ export default {
         ...searchRoutes,
         ...campaignsRoutes.routes,
         ...analyticsRoutes.routes,
+        ...ticketsRoutes.routes,
       ],
     },
     {

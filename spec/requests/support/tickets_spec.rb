@@ -197,9 +197,9 @@ RSpec.describe 'Support tickets API', type: :request do
       body = response.parsed_body['payload']
       expect(body.keys).to contain_exactly(
         'id', 'reference', 'reference_number', 'title', 'description', 'category', 'status', 'priority',
-        'label_list', 'conversation_id', 'conversation_display_id', 'contact_id', 'inbox_id', 'assignee_id',
-        'team_id', 'created_by_id', 'source_type', 'source_id', 'sla', 'last_activity_at', 'resolved_at',
-        'closed_at', 'created_at', 'updated_at'
+        'label_list', 'conversation_id', 'conversation_display_id', 'contact_id', 'contact_name', 'inbox_id',
+        'assignee_id', 'team_id', 'created_by_id', 'source_type', 'source_id', 'sla', 'last_activity_at',
+        'resolved_at', 'closed_at', 'created_at', 'updated_at'
       )
       expect(response.body).not_to match(/token|secret|password|provider_config/i)
     end

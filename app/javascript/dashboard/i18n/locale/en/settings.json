@@ -440,8 +440,12 @@
       "CHANNELS": "Channels",
       "AUTOMATION": "Automation",
       "CONVERSATION_DATA": "Conversation data",
+      "SUPPORT": "Support",
       "RECORDS": "Records"
-    }
+    },
+    "ANALYTICS_TICKETS": "Support cases",
+    "SUPPORT": "Support",
+    "SUPPORT_SLA_POLICIES": "SLA policies"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

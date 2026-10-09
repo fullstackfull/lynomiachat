@@ -34,6 +34,10 @@ class Support::Tickets::Query
   # as the audit log reader (custom/app/controllers/api/v1/accounts/audit_logs_controller.rb:12).
   MAX_EPOCH = 253_402_300_799
 
+  # What the list serializer reads beyond the row itself: the linked conversation's display id, the contact's
+  # name, and the labels. Loaded with the page so a page of 25 costs three extra queries rather than 75.
+  PRELOADS = [:conversation, :contact, :taggings].freeze
+
   def initialize(account:, scope:, user:, params: {})
     @account = account
     @scope = scope
@@ -44,7 +48,7 @@ class Support::Tickets::Query
   def call
     relation = filtered
     relation = relation.order(SORTS.fetch(sort_key))
-    relation.page(@params[:page]).per(per_page)
+    relation.includes(PRELOADS).page(@params[:page]).per(per_page)
   end
 
   def per_page

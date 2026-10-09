@@ -22,6 +22,7 @@ import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
 import CommercePanel from 'dashboard/components/widgets/conversation/commerce/CommercePanel.vue';
+import ConversationTicketsPanel from 'dashboard/components-next/SupportTickets/ConversationTicketsPanel.vue';
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
@@ -61,6 +62,10 @@ const isLinearFeatureEnabled = computed(() =>
 
 const isCommerceEnabled = computed(() =>
   isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_COMMERCE)
+);
+
+const isSupportTicketsEnabled = computed(() =>
+  isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_SUPPORT_TICKETS)
 );
 
 const linearIntegration = useFunctionGetter(
@@ -278,6 +283,24 @@ onMounted(() => {
               @toggle="() => toggleSidebarUIState('is_shopify_orders_open')"
             >
               <ShopifyOrdersList :contact-id="contactId" />
+            </AccordionItem>
+          </div>
+          <div
+            v-else-if="
+              element.name === 'support_tickets' && isSupportTicketsEnabled
+            "
+          >
+            <AccordionItem
+              :title="$t('SUPPORT_TICKETS.CONVERSATION_PANEL.TITLE')"
+              :is-open="isContactSidebarItemOpen('is_support_tickets_open')"
+              compact
+              @toggle="() => toggleSidebarUIState('is_support_tickets_open')"
+            >
+              <ConversationTicketsPanel
+                :conversation-id="conversationId"
+                :contact-id="contactId"
+                :inbox-id="currentChat.inbox_id"
+              />
             </AccordionItem>
           </div>
           <div v-else-if="element.name === 'commerce' && isCommerceEnabled">

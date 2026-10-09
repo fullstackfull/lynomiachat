@@ -57,6 +57,7 @@ export const FEATURE_FLAGS = {
   UNREAD_COUNT_FOR_FILTERS: 'unread_count_for_filters',
   LYNOMIA_COMMERCE: 'lynomia_commerce',
   LYNOMIA_FLOW_BUILDER: 'lynomia_flow_builder',
+  LYNOMIA_SUPPORT_TICKETS: 'lynomia_support_tickets',
 };
 
 export const PREMIUM_FEATURES = [

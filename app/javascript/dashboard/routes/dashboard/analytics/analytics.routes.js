@@ -11,6 +11,7 @@ import AnalyticsCampaigns from './AnalyticsCampaigns.vue';
 import AnalyticsAutomations from './AnalyticsAutomations.vue';
 import AnalyticsFlows from './AnalyticsFlows.vue';
 import AnalyticsCommerce from './AnalyticsCommerce.vue';
+import AnalyticsTickets from './AnalyticsTickets.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -58,6 +59,12 @@ export default {
           name: 'analytics_commerce',
           meta,
           component: AnalyticsCommerce,
+        },
+        {
+          path: 'tickets',
+          name: 'analytics_tickets',
+          meta,
+          component: AnalyticsTickets,
         },
       ],
     },

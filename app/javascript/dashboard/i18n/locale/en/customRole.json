@@ -43,7 +43,8 @@
       "CONTACT_MANAGE": "Manage contacts",
       "REPORT_MANAGE": "Manage reports",
       "KNOWLEDGE_BASE_MANAGE": "Manage knowledge base",
-      "COMMERCE_ORDER_MANAGE": "Manage store orders (status changes, resend store emails)"
+      "COMMERCE_ORDER_MANAGE": "Manage store orders (status changes, resend store emails)",
+      "SUPPORT_TICKET_MANAGE": "Manage every support case in the account"
     },
     "FORM": {
       "NAME": {

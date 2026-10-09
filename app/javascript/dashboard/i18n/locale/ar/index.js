@@ -42,6 +42,7 @@ import sessionLimit from './sessionLimit.json';
 import settings from './settings.json';
 import signup from './signup.json';
 import sla from './sla.json';
+import supportTickets from './supportTickets.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import whatsappTemplateMgmt from './whatsappTemplateMgmt.json';
@@ -91,6 +92,7 @@ export default {
   ...settings,
   ...signup,
   ...sla,
+  ...supportTickets,
   ...teamsSettings,
   ...whatsappTemplates,
   ...whatsappTemplateMgmt,

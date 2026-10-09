@@ -8,6 +8,7 @@ export const AVAILABLE_CUSTOM_ROLE_PERMISSIONS = [
   'contact_manage',
   'report_manage',
   'commerce_order_manage',
+  'support_ticket_manage',
 ];
 
 export const ROLES = ['agent', 'administrator'];

@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useRoute, useRouter } from 'vue-router';
+import { useAccount } from 'dashboard/composables/useAccount';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import ContactsDetailsLayout from 'dashboard/components-next/Contacts/ContactsDetailsLayout.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
@@ -12,6 +14,7 @@ import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import ContactNotes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactNotes.vue';
 import ContactHistory from 'dashboard/components-next/Contacts/ContactsSidebar/ContactHistory.vue';
 import ContactActivity from 'dashboard/components-next/Contacts/ContactsSidebar/ContactActivity.vue';
+import ContactCases from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCases.vue';
 import ContactMedia from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMedia.vue';
 import ContactMerge from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMerge.vue';
 import ContactCustomAttributes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCustomAttributes.vue';
@@ -38,26 +41,42 @@ const showSpinner = computed(
 
 const { t } = useI18n();
 
+const { isCloudFeatureEnabled } = useAccount();
+
+const isSupportTicketsEnabled = computed(() =>
+  isCloudFeatureEnabled(FEATURE_FLAGS.LYNOMIA_SUPPORT_TICKETS)
+);
+
+// `when` is how a tab that depends on an account feature stays out of the list entirely rather than rendering
+// an error the moment it is opened: the support endpoints answer 404 for an account without the module, so an
+// always-present Cases tab would be a tab that only ever fails.
 const CONTACT_TABS_OPTIONS = [
   { key: 'ATTRIBUTES', value: 'attributes' },
   // The unified activity timeline (docs/p8/03-contact-activity-timeline.md). It sits beside History rather than
   // replacing it: History is the contact's conversation list, this is everything that happened in order.
   { key: 'ACTIVITY', value: 'activity' },
+  // This contact's support cases (docs/p9/02-support-tickets.md). Beside Activity rather than inside it: the
+  // timeline says what happened, this says what is still open and who owns it.
+  { key: 'CASES', value: 'cases', when: isSupportTicketsEnabled },
   { key: 'HISTORY', value: 'history' },
   { key: 'NOTES', value: 'notes' },
   { key: 'MEDIA', value: 'media' },
   { key: 'MERGE', value: 'merge' },
 ];
 
+const availableTabs = computed(() =>
+  CONTACT_TABS_OPTIONS.filter(tab => tab.when?.value ?? true)
+);
+
 const tabs = computed(() => {
-  return CONTACT_TABS_OPTIONS.map(tab => ({
+  return availableTabs.value.map(tab => ({
     label: t(`CONTACTS_LAYOUT.SIDEBAR.TABS.${tab.key}`),
     value: tab.value,
   }));
 });
 
 const activeTabIndex = computed(() => {
-  return CONTACT_TABS_OPTIONS.findIndex(v => v.value === activeTab.value);
+  return availableTabs.value.findIndex(v => v.value === activeTab.value);
 });
 
 const goToContactsList = () => {
@@ -178,6 +197,9 @@ onMounted(() => {
             :selected-contact="selectedContact"
           />
           <ContactActivity v-if="activeTab === 'activity'" />
+          <ContactCases
+            v-if="activeTab === 'cases' && isSupportTicketsEnabled"
+          />
           <ContactNotes v-if="activeTab === 'notes'" />
           <ContactHistory v-if="activeTab === 'history'" />
           <ContactMedia v-if="activeTab === 'media'" />

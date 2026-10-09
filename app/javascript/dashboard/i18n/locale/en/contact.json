@@ -590,6 +590,7 @@
       "TABS": {
         "ATTRIBUTES": "Attributes",
         "ACTIVITY": "Activity",
+        "CASES": "Cases",
         "HISTORY": "History",
         "NOTES": "Notes",
         "MEDIA": "Media",
@@ -671,7 +672,8 @@
           "CONVERSATIONS": "Conversations",
           "CAMPAIGNS": "Campaigns",
           "AUTOMATIONS": "Automations",
-          "COMMERCE": "Commerce"
+          "COMMERCE": "Commerce",
+          "TICKETS": "Cases"
         },
         "KIND": {
           "MESSAGE_INCOMING": "Message received",
@@ -706,8 +708,29 @@
           "COMMERCE_ACTION_SUCCEEDED": "Order action completed",
           "COMMERCE_ACTION_FAILED": "Order action refused",
           "COMMERCE_ACTION_UNKNOWN": "Order action answer lost",
-          "COMMERCE_CUSTOMER_LINKED": "Linked to a store customer"
+          "COMMERCE_CUSTOMER_LINKED": "Linked to a store customer",
+          "TICKET_CREATED": "Case opened",
+          "TICKET_NOTE": "Note added to a case",
+          "TICKET_STATUS_CHANGED": "Case status changed",
+          "TICKET_PRIORITY_CHANGED": "Case priority changed",
+          "TICKET_ASSIGNED": "Case assignee changed",
+          "TICKET_TEAM_CHANGED": "Case team changed",
+          "TICKET_CATEGORY_CHANGED": "Case category changed",
+          "TICKET_CONVERSATION_LINKED": "Conversation linked to a case",
+          "TICKET_CONVERSATION_UNLINKED": "Conversation unlinked from a case",
+          "TICKET_SLA_APPLIED": "SLA policy attached to a case",
+          "TICKET_SLA_FIRST_RESPONSE_MET": "Case first response on time",
+          "TICKET_SLA_FIRST_RESPONSE_BREACHED": "Case first response target missed",
+          "TICKET_SLA_RESOLUTION_BREACHED": "Case resolution target missed",
+          "TICKET_RESOLVED": "Case resolved",
+          "TICKET_REOPENED": "Case reopened",
+          "TICKET_CLOSED": "Case closed"
         }
+      },
+      "CASES": {
+        "EMPTY_STATE": "No support case has been opened for this contact.",
+        "ERROR": "These cases could not be loaded. Try again, and if it keeps failing contact support.",
+        "VIEW_ALL": "View all cases for this contact"
       }
     },
     "EMPTY_STATE": {

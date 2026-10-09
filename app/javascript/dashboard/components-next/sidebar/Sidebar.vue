@@ -101,6 +101,13 @@ const hasDataImport = computed(() => {
   );
 });
 
+const hasSupportTickets = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.LYNOMIA_SUPPORT_TICKETS
+  );
+});
+
 const fetchConversationUnreadCounts = ([currentAccountId, isEnabled]) => {
   if (!currentAccountId) return;
 
@@ -610,6 +617,19 @@ const menuItems = computed(() => {
         },
       ],
     },
+    ...(hasSupportTickets.value
+      ? [
+          {
+            // Lynomia Support cases. A leaf rather than a group: the workspace is one screen whose views are
+            // query parameters, so a group here would be six entries that all open the same page.
+            name: 'Support',
+            label: t('SIDEBAR.SUPPORT'),
+            icon: 'i-lucide-ticket',
+            to: accountScopedRoute('support_tickets_index'),
+            activeOn: ['support_tickets_index', 'support_tickets_show'],
+          },
+        ]
+      : []),
     {
       name: 'Analytics',
       label: t('SIDEBAR.ANALYTICS'),
@@ -645,6 +665,15 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ANALYTICS_COMMERCE'),
           to: accountScopedRoute('analytics_commerce'),
         },
+        ...(hasSupportTickets.value
+          ? [
+              {
+                name: 'Analytics Tickets',
+                label: t('SIDEBAR.ANALYTICS_TICKETS'),
+                to: accountScopedRoute('analytics_tickets'),
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -902,6 +931,24 @@ const menuItems = computed(() => {
             },
           ],
         },
+        ...(hasSupportTickets.value
+          ? [
+              {
+                name: 'Settings Support',
+                label: t('SIDEBAR.SETTINGS_GROUPS.SUPPORT'),
+                icon: 'i-lucide-ticket',
+                collapsible: false,
+                children: [
+                  {
+                    name: 'Settings Support SLA',
+                    label: t('SIDEBAR.SUPPORT_SLA_POLICIES'),
+                    icon: 'i-lucide-timer',
+                    to: accountScopedRoute('support_sla_policies_index'),
+                  },
+                ],
+              },
+            ]
+          : []),
         {
           name: 'Settings Records',
           label: t('SIDEBAR.SETTINGS_GROUPS.RECORDS'),

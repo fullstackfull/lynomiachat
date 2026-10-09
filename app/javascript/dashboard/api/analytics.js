@@ -43,6 +43,10 @@ class AnalyticsAPI extends ApiClient {
   getCommerce(params = {}, { signal } = {}) {
     return axios.get(`${this.url}/commerce`, { params, signal });
   }
+
+  getTickets(params = {}, { signal } = {}) {
+    return axios.get(`${this.url}/tickets`, { params, signal });
+  }
 }
 
 export default new AnalyticsAPI();

@@ -29,7 +29,8 @@
     },
     "CONVERSATIONS": {
       "NO_RECORDS_FOUND": "لا توجد محادثات سابقة مرتبطة بجهة الاتصال هذه.",
-      "TITLE": "المحادثات السابقة"
+      "TITLE": "المحادثات السابقة",
+      "VIEW_ALL": "عرض كل المحادثات"
     },
     "LABELS": {
       "CONTACT": {
@@ -589,6 +590,7 @@
       "TABS": {
         "ATTRIBUTES": "السمات",
         "ACTIVITY": "النشاط",
+        "CASES": "الحالات",
         "HISTORY": "History",
         "NOTES": "ملاحظات",
         "MEDIA": "Media",
@@ -670,7 +672,8 @@
           "CONVERSATIONS": "المحادثات",
           "CAMPAIGNS": "الحملات",
           "AUTOMATIONS": "الأتمتة",
-          "COMMERCE": "التجارة"
+          "COMMERCE": "التجارة",
+          "TICKETS": "الحالات"
         },
         "KIND": {
           "MESSAGE_INCOMING": "رسالة واردة",
@@ -705,8 +708,29 @@
           "COMMERCE_ACTION_SUCCEEDED": "تم إجراء الطلب",
           "COMMERCE_ACTION_FAILED": "رُفض إجراء الطلب",
           "COMMERCE_ACTION_UNKNOWN": "ضاع رد إجراء الطلب",
-          "COMMERCE_CUSTOMER_LINKED": "تم ربطه بعميل في المتجر"
+          "COMMERCE_CUSTOMER_LINKED": "تم ربطه بعميل في المتجر",
+          "TICKET_CREATED": "فُتحت حالة",
+          "TICKET_NOTE": "أُضيفت ملاحظة إلى حالة",
+          "TICKET_STATUS_CHANGED": "تغيّرت حالة القضية",
+          "TICKET_PRIORITY_CHANGED": "تغيّرت أولوية الحالة",
+          "TICKET_ASSIGNED": "تغيّر المُسند إليه في الحالة",
+          "TICKET_TEAM_CHANGED": "تغيّر فريق الحالة",
+          "TICKET_CATEGORY_CHANGED": "تغيّر تصنيف الحالة",
+          "TICKET_CONVERSATION_LINKED": "تم ربط محادثة بحالة",
+          "TICKET_CONVERSATION_UNLINKED": "تم إلغاء ربط محادثة بحالة",
+          "TICKET_SLA_APPLIED": "تم إرفاق سياسة اتفاقية خدمة بحالة",
+          "TICKET_SLA_FIRST_RESPONSE_MET": "تم الرد الأول على الحالة في الوقت المحدد",
+          "TICKET_SLA_FIRST_RESPONSE_BREACHED": "تم تفويت هدف الرد الأول للحالة",
+          "TICKET_SLA_RESOLUTION_BREACHED": "تم تفويت هدف حل الحالة",
+          "TICKET_RESOLVED": "تم حل الحالة",
+          "TICKET_REOPENED": "أُعيد فتح الحالة",
+          "TICKET_CLOSED": "أُغلقت الحالة"
         }
+      },
+      "CASES": {
+        "EMPTY_STATE": "لم تُفتح أي حالة دعم لجهة الاتصال هذه.",
+        "ERROR": "تعذّر تحميل هذه الحالات. حاول مرة أخرى، وإذا تكرر الفشل فتواصل مع الدعم.",
+        "VIEW_ALL": "عرض كل حالات جهة الاتصال هذه"
       }
     },
     "EMPTY_STATE": {

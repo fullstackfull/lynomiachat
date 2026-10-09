@@ -13,6 +13,9 @@ json.label_list ticket.label_list
 json.conversation_id ticket.conversation_id
 json.conversation_display_id ticket.conversation&.display_id
 json.contact_id ticket.contact_id
+# The contact's display name, so a list of cases does not need one request per row to label itself. It tells
+# the caller nothing new: contacts are readable account-wide, and the id is already here.
+json.contact_name ticket.contact&.name
 json.inbox_id ticket.inbox_id
 json.assignee_id ticket.assignee_id
 json.team_id ticket.team_id

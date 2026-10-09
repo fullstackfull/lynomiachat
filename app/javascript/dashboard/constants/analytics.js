@@ -63,6 +63,14 @@ export const FLOW_BREAKDOWN_DIMENSIONS = [
   'end_reason',
 ];
 
+export const TICKET_BREAKDOWN_DIMENSIONS = [
+  'priority',
+  'category',
+  'status',
+  'team',
+  'assignee',
+];
+
 export const COMMERCE_BREAKDOWN_DIMENSIONS = [
   'provider',
   'store',

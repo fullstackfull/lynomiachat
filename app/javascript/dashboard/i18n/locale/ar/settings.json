@@ -439,8 +439,12 @@
       "CHANNELS": "القنوات",
       "AUTOMATION": "الأتمتة",
       "CONVERSATION_DATA": "بيانات المحادثات",
+      "SUPPORT": "الدعم",
       "RECORDS": "السجلات"
-    }
+    },
+    "ANALYTICS_TICKETS": "حالات الدعم",
+    "SUPPORT": "الدعم",
+    "SUPPORT_SLA_POLICIES": "سياسات اتفاقية الخدمة"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

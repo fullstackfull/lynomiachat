@@ -68,6 +68,7 @@ describe('ContactActivity', () => {
       'Campaigns',
       'Automations',
       'Commerce',
+      'Cases',
     ]);
   });
 

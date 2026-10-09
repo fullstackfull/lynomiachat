@@ -9,6 +9,7 @@ export const CONTACT_ACTIVITY_CATEGORIES = {
   CAMPAIGNS: 'campaigns',
   AUTOMATIONS: 'automations',
   COMMERCE: 'commerce',
+  TICKETS: 'tickets',
 };
 
 export const CONTACT_ACTIVITY_FILTERS = Object.values(
@@ -54,6 +55,24 @@ export const CONTACT_ACTIVITY_ICONS = {
   commerce_action_failed: 'i-lucide-circle-alert',
   commerce_action_unknown: 'i-lucide-circle-help',
   commerce_customer_linked: 'i-lucide-link',
+  // Support cases (P9). The server emits one entry per history event, with the event type as the kind's
+  // suffix, so every type Support::TicketEvent can record needs an icon here.
+  ticket_created: 'i-lucide-circle-plus',
+  ticket_note: 'i-lucide-sticky-note',
+  ticket_status_changed: 'i-lucide-circle-dot',
+  ticket_priority_changed: 'i-lucide-flag',
+  ticket_assigned: 'i-lucide-user-round',
+  ticket_team_changed: 'i-lucide-users',
+  ticket_category_changed: 'i-lucide-tag',
+  ticket_conversation_linked: 'i-lucide-link',
+  ticket_conversation_unlinked: 'i-lucide-unlink',
+  ticket_sla_applied: 'i-lucide-timer',
+  ticket_sla_first_response_met: 'i-lucide-timer-reset',
+  ticket_sla_first_response_breached: 'i-lucide-timer-off',
+  ticket_sla_resolution_breached: 'i-lucide-circle-alert',
+  ticket_resolved: 'i-lucide-circle-check',
+  ticket_reopened: 'i-lucide-rotate-ccw',
+  ticket_closed: 'i-lucide-archive',
 };
 
 export const CONTACT_ACTIVITY_FALLBACK_ICON = 'i-lucide-dot';

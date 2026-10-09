@@ -335,6 +335,56 @@
         "ACTION_TYPE": "Action",
         "ACTION_ERROR": "Refusal"
       }
+    },
+    "TICKETS": {
+      "HEADER": "Support cases",
+      "DESCRIPTION": "How much support work arrived, how much closed, how much came back, and how often a target was missed.",
+      "EMPTY": "No case was opened, resolved or breached in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "TICKETS_CREATED": {
+          "LABEL": "Cases opened",
+          "HINT": "Cases opened in this period, however they started: by an agent, from a conversation, or from an operational signal."
+        },
+        "TICKETS_RESOLVED": {
+          "LABEL": "Cases resolved",
+          "HINT": "Cases whose resolution was recorded in this period. A case resolved, reopened and resolved again counts each time it was resolved in range."
+        },
+        "TICKETS_REOPENED": {
+          "LABEL": "Cases reopened",
+          "HINT": "Reopenings recorded in this period, counted from the case history rather than inferred from the current status, so a case reopened and resolved again is still counted."
+        },
+        "FIRST_RESPONSE_BREACHES": {
+          "LABEL": "First-response targets missed",
+          "HINT": "First-response targets recorded as missed in this period. Only cases with an SLA policy attached can appear here."
+        },
+        "RESOLUTION_BREACHES": {
+          "LABEL": "Resolution targets missed",
+          "HINT": "Resolution targets recorded as missed in this period. Only cases with an SLA policy attached can appear here."
+        },
+        "AVERAGE_RESOLUTION_TIME": {
+          "LABEL": "Average time to resolve",
+          "HINT": "From opening to resolution, averaged over the cases resolved in this period. Absent when nothing was resolved, which is not the same as zero."
+        },
+        "OPEN_NOW": {
+          "LABEL": "Open right now",
+          "HINT": "Cases in one of the four active statuses at this moment."
+        },
+        "OVERDUE_NOW": {
+          "LABEL": "Overdue right now",
+          "HINT": "Active cases whose resolution time has already passed."
+        },
+        "UNASSIGNED_NOW": {
+          "LABEL": "Unassigned right now",
+          "HINT": "Active cases with nobody assigned."
+        }
+      },
+      "BREAKDOWN": {
+        "PRIORITY": "Priority",
+        "CATEGORY": "Category",
+        "STATUS": "Status",
+        "TEAM": "Team",
+        "ASSIGNEE": "Assignee"
+      }
     }
   }
 }

@@ -1737,9 +1737,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_100100) do
     t.datetime "updated_at", null: false
     t.index ["account_id", "assignee_id", "status"], name: "index_support_tickets_on_account_assignee_status"
     t.index ["account_id", "first_response_due_at"], name: "index_support_tickets_on_awaiting_first_response", where: "((first_response_due_at IS NOT NULL) AND (first_responded_at IS NULL) AND (first_response_breached_at IS NULL) AND (status < 4))"
+    t.index ["account_id", "last_activity_at"], name: "index_support_tickets_on_account_and_activity", order: { last_activity_at: :desc }
     t.index ["account_id", "reference_number"], name: "index_support_tickets_on_account_and_reference", unique: true
     t.index ["account_id", "resolution_due_at"], name: "index_support_tickets_on_open_resolution_due", where: "((resolution_due_at IS NOT NULL) AND (resolution_breached_at IS NULL) AND (status < 4))"
-    t.index ["account_id", "status", "last_activity_at"], name: "index_support_tickets_on_account_status_activity", order: { last_activity_at: :desc }
     t.index ["account_id", "team_id", "status"], name: "index_support_tickets_on_account_team_status"
     t.index ["contact_id"], name: "index_support_tickets_on_contact_id"
     t.index ["conversation_id"], name: "index_support_tickets_on_conversation_id"

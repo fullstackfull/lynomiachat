@@ -43,15 +43,26 @@ describe('AnalyticsMetaNote', () => {
     expect(wrapper.text()).toContain('matched the source records');
   });
 
-  it('shows what was left out when the response is partial', () => {
+  it('shows what was left out, in words rather than in the server tokens', () => {
+    const wrapper = mountNote({
+      ...meta,
+      warnings: [{ scope: 'sla', reason: 'active_cases_without_a_policy' }],
+    });
+
+    expect(wrapper.text()).toContain(
+      'SLA breach counts: some open cases have no SLA policy attached'
+    );
+  });
+
+  // A scope or reason this build has no wording for still has to read as something: a warning the server took
+  // the trouble to send is not allowed to render as a blank line.
+  it('falls back to the raw token for a reason it has no wording for', () => {
     const wrapper = mountNote({
       ...meta,
       warnings: [{ scope: 'by_team', reason: 'no_teams_configured' }],
     });
 
-    expect(wrapper.text()).toContain(
-      'by_team could not be included: no_teams_configured.'
-    );
+    expect(wrapper.text()).toContain('by_team: no_teams_configured.');
   });
 
   it('renders no warning list when nothing was left out', () => {

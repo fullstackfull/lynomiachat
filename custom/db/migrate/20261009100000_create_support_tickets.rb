@@ -72,13 +72,18 @@ class CreateSupportTickets < ActiveRecord::Migration[7.2]
     table.timestamps
   end
 
-  # Seven indexes, chosen from the query shapes the product actually issues rather than one per filter. The
-  # reasoning, and the two indexes deliberately left out, are in docs/p9/01-architecture.md §3.
+  # Eight indexes, chosen from the query shapes the product actually issues rather than one per filter, and each
+  # of them measured (docs/p9/06-security-performance.md §2). The reasoning, and the indexes deliberately left
+  # out, are in docs/p9/01-architecture.md §3.
   def add_ticket_indexes
     add_index :support_tickets, [:account_id, :reference_number], unique: true,
                                                                   name: 'index_support_tickets_on_account_and_reference'
-    add_index :support_tickets, [:account_id, :status, :last_activity_at],
-              order: { last_activity_at: :desc }, name: 'index_support_tickets_on_account_status_activity'
+    # The workspace's default ordering, and the only index that can answer it with an ordered scan:
+    # `account_id = ? ORDER BY last_activity_at DESC LIMIT 25`. An earlier draft put `status` between the
+    # equality column and the sort column, which cannot produce that order at all -- the plan fell to a
+    # parallel sequential scan and a top-N sort (39.997 ms at 500,000 cases; 0.057 ms with this index).
+    add_index :support_tickets, [:account_id, :last_activity_at],
+              order: { last_activity_at: :desc }, name: 'index_support_tickets_on_account_and_activity'
     add_index :support_tickets, [:account_id, :assignee_id, :status], name: 'index_support_tickets_on_account_assignee_status'
     add_index :support_tickets, [:account_id, :team_id, :status], name: 'index_support_tickets_on_account_team_status'
     add_index :support_tickets, :conversation_id

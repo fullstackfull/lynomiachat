@@ -73,7 +73,17 @@ class Support::Ticket < ApplicationRecord
   scope :active, -> { where(status: ACTIVE_STATUSES) }
   scope :terminal, -> { where(status: TERMINAL_STATUSES) }
   scope :unassigned, -> { where(assignee_id: nil) }
-  scope :overdue, -> { active.where.not(resolution_due_at: nil).where(resolution_due_at: ...Time.current) }
+  # Late, but not yet recorded as a miss. A case whose breach the sweep has already written is BREACHED, which
+  # is a different state the UI draws differently (TICKET_SLA_STATE in dashboard/constants/supportTickets.js
+  # resolves `breached` before `overdue`), so counting it as overdue too would double-report the same case under
+  # two labels. Excluding it is also what lets `index_support_tickets_on_open_resolution_due` serve this scope:
+  # that partial index holds `resolution_breached_at IS NULL`, and a query that does not ask for it cannot use
+  # the index at all (23.697 ms -> 12.826 ms at 500,000 cases, docs/p9/06-security-performance.md §2).
+  scope :overdue, lambda {
+    active.where(resolution_breached_at: nil)
+          .where.not(resolution_due_at: nil)
+          .where(resolution_due_at: ...Time.current)
+  }
   scope :breached, -> { where.not(first_response_breached_at: nil).or(where.not(resolution_breached_at: nil)) }
 
   # Rendered form. The column holds a bare per-account integer; the prefix is presentation, so changing it never

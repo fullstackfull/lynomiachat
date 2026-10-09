@@ -29,6 +29,21 @@ class Operations::SignalRecorder
 
   MAX_REASON = 500
 
+  REDACTED = '[redacted]'.freeze
+
+  # Credentials written inline in prose. A provider's own error text is a provider response body, which the
+  # secrets rule says to sanitize rather than store: an IMAP server answering a failed LOGIN, or a library
+  # quoting the request it sent, can put the credential it was given straight into the message.
+  #
+  # Two patterns, both structural rather than guesses about what a secret looks like: a URL's userinfo, and a
+  # `key=value` pair whose KEY names a credential. Nothing is matched on entropy or length, because that would
+  # redact order ids and message ids -- the identifiers an operator needs -- while still missing a short password.
+  SECRET_NAMES = 'password|passwd|pwd|token|api_key|apikey|secret|credential|authorization|bearer'.freeze
+  CREDENTIAL_PATTERNS = [
+    [%r{(//)[^/\s:@]+:[^/\s@]+(@)}, "\\1#{REDACTED}\\2"],
+    [/\b(#{SECRET_NAMES})([\s:=]{1,3})[^\s&"'<>]+/i, "\\1\\2#{REDACTED}"]
+  ].freeze
+
   # A detail value must be a scalar a reader can act on. A token-shaped string has no whitespace, which is what
   # keeps provider prose out: prose belongs in `reason`, where it is bounded and collapsed.
   SAFE_TOKEN = %r{\A[\w.:+@/-]{0,100}\z}
@@ -118,12 +133,47 @@ class Operations::SignalRecorder
     levels.key([levels.fetch(current.to_s), levels.fetch(observed.to_s)].max)
   end
 
-  # One grep-able line. Whitespace collapsed so a multi-line provider error becomes one line, and truncated so
-  # its prose cannot fill a column.
+  # One grep-able line with no credential in it. Whitespace collapsed so a multi-line provider error becomes one
+  # line, the subject's own secrets taken out by value, the two inline-credential shapes taken out by pattern,
+  # and the result truncated so prose cannot fill the column.
   def sanitized_reason(raw)
     return nil if raw.blank?
 
-    raw.to_s.gsub(/\s+/, ' ').strip.truncate(MAX_REASON)
+    text = raw.to_s.gsub(/\s+/, ' ').strip
+    subject_secrets.each { |secret| text = text.gsub(secret, REDACTED) }
+    CREDENTIAL_PATTERNS.each { |pattern, replacement| text = text.gsub(pattern, replacement) }
+    text.truncate(MAX_REASON)
+  end
+
+  # The secret values held by the record this observation is about, so they can be removed by value rather than
+  # guessed at. This is the one place in the product that knows both "what failed" and "what its credentials
+  # are", which is what makes an exact match possible here and nowhere else.
+  #
+  # Reads are defensive on purpose: a subject may be any of several classes, and a signal must still be
+  # recorded if one of them does not answer.
+  def subject_secrets
+    @subject_secrets ||= collect_subject_secrets.flatten.compact.map(&:to_s).select { |value| value.length > 3 }.uniq
+  end
+
+  # The two shapes a credential is stored in across this product: a hash column (`provider_config` on a channel,
+  # `credentials` on a commerce store) and a plain column (an IMAP or SMTP password).
+  SECRET_STORES = %i[provider_config credentials].freeze
+  SECRET_COLUMNS = %i[imap_password smtp_password].freeze
+
+  def collect_subject_secrets
+    holder = @subject.respond_to?(:channel) ? @subject.channel : @subject
+    return [] if holder.nil?
+
+    stored = SECRET_STORES.filter_map { |name| read_secret(holder, name) }
+                          .flat_map { |store| store.respond_to?(:values) ? store.values : [] }
+    stored + SECRET_COLUMNS.filter_map { |name| read_secret(holder, name) }
+  end
+
+  def read_secret(holder, name)
+    holder.public_send(name) if holder.respond_to?(name)
+  rescue StandardError => e
+    Rails.logger.error("[Operations] could not read #{@source} #{name} for redaction: #{e.class}")
+    nil
   end
 
   def sanitized_detail(raw)

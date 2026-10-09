@@ -25,7 +25,17 @@
     },
     "META": {
       "FOOTNOTE": "{since} to {until}, grouped by {grouping}, in {timezone}.",
-      "WARNING": "{scope} could not be included: {reason}.",
+      "WARNING": "{scope}: {reason}.",
+      "WARNING_SCOPE": {
+        "IMMEDIATE_RULES": "Immediate automation rules",
+        "RETENTION_WINDOW": "Part of this date range",
+        "SLA": "SLA breach counts"
+      },
+      "WARNING_REASON": {
+        "ACTIVE_CASES_WITHOUT_A_POLICY": "some open cases have no SLA policy attached, so a zero breach count does not mean nothing was late",
+        "NO_EXECUTION_RECORD": "they run inline and record nothing, so they are absent here rather than counted as zero",
+        "TERMINAL_ROWS_PURGED_AFTER_30_DAYS": "finished episodes are kept for 30 days, so earlier days are incomplete"
+      },
       "SOURCE": {
         "RAW": "Computed from source records",
         "ROLLUP": "Served from daily rollups"

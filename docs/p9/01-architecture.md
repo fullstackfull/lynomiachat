@@ -81,23 +81,36 @@ neither.
 
 ### Indexes, and why each one
 
-Seven, not the eleven the brief's filter list would suggest:
+Eight, not the eleven the brief's filter list would suggest:
 
 | Index | Serves |
 | --- | --- |
 | `(account_id, reference_number)` UNIQUE | identity, and reference lookup |
-| `(account_id, status, last_activity_at DESC)` | the default list and every status tab |
+| `(account_id, last_activity_at DESC)` | the default list, every status tab, and paging |
 | `(account_id, assignee_id, status)` | My Tickets, Unassigned (`assignee_id IS NULL` uses the same index) |
 | `(account_id, team_id, status)` | Team Tickets |
 | `(conversation_id)` | the conversation panel's reverse lookup |
 | `(contact_id)` | Contact 360 |
-| `(account_id, resolution_due_at)` partial `WHERE resolution_due_at IS NOT NULL AND resolution_breached_at IS NULL AND status < 4` | the overdue list and the breach sweeper — the only query that runs on a schedule across every account |
+| `(account_id, resolution_due_at)` partial `WHERE resolution_due_at IS NOT NULL AND resolution_breached_at IS NULL AND status < 4` | the overdue list and the resolution sweeper |
+| `(account_id, first_response_due_at)` partial `WHERE first_response_due_at IS NOT NULL AND first_responded_at IS NULL AND first_response_breached_at IS NULL AND status < 4` | the first-response sweeper — one of the two queries that run on a schedule across every account |
 
-Deliberately **not** added: `(account_id, priority)` — priority is a low-cardinality filter that the status
-index already narrows, and an index per filter combination is how a write-heavy table gets slow. `(account_id,
+The second row is a **correction P9.8 made from measurement**, and it is worth stating plainly because the
+original choice looked right and was not. This table first carried `(account_id, status, last_activity_at DESC)`
+on the reasoning that the list is always filtered by status and always sorted by activity. But `status` sits
+between the equality column and the sort column, so that index cannot produce `ORDER BY last_activity_at DESC`
+for a given account at all: the plan fell to a parallel sequential scan and a top-N sort. At 500,000 cases with
+the account holding 30% of them the default list took **39.997 ms**; with `(account_id, last_activity_at DESC)`
+it takes **0.057 ms**. Status is then a cheap filter over the ordered scan. The replaced index earns nothing
+beside the new one — measured on the worst case for the new one, an account with 150,000 cases of which only 200
+are still active and those the oldest, the planner picks the activity index either way. Full plans in
+`06-security-performance.md` §2.
+
+Deliberately **not** added: `(account_id, priority)` — priority is a low-cardinality filter that the ordered
+scan already narrows, and an index per filter combination is how a write-heavy table gets slow. `(account_id,
 updated_at)` — `last_activity_at` is the sort the product actually uses, and two near-identical indexes is one
-too many. Both decisions are re-checked with `EXPLAIN (ANALYZE, BUFFERS)` against a 100,000-row fixture in
-`06-security-performance.md`; the fixture is built inside a rolled-back transaction, as P8 established.
+too many. `(account_id, status)` for the tab counts — tried, measured, and rejected: it moved the grouped count
+from 28.3 ms to 24.6 ms, which does not buy a 3.4 MB index. Every decision here is taken with
+`EXPLAIN (ANALYZE, BUFFERS)` against fixtures built inside a rolled-back transaction, as P8 established.
 
 ### Reference numbering
 

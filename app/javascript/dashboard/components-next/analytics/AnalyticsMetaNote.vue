@@ -10,7 +10,7 @@ const props = defineProps({
   },
 });
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 // Which source answered, and why it was chosen. The server names the reason so an operator can tell a rollup
 // that was skipped because the feature is off from one skipped because its coverage disagreed with raw events.
@@ -38,7 +38,23 @@ const footnote = computed(() =>
   })
 );
 
-const warnings = computed(() => props.meta.warnings || []);
+// A warning names its scope and its reason as snake_case tokens, which are identifiers and not copy. Each is
+// looked up, and falls back to the token itself so a reason this build has no wording for is still readable
+// rather than a blank line.
+const localized = (group, token) => {
+  const key = `ANALYTICS.META.${group}.${token.toUpperCase()}`;
+  return te(key) ? t(key) : token;
+};
+
+const warnings = computed(() =>
+  (props.meta.warnings || []).map(warning => ({
+    key: `${warning.scope}-${warning.reason}`,
+    text: t('ANALYTICS.META.WARNING', {
+      scope: localized('WARNING_SCOPE', warning.scope),
+      reason: localized('WARNING_REASON', warning.reason),
+    }),
+  }))
+);
 </script>
 
 <template>
@@ -49,15 +65,10 @@ const warnings = computed(() => props.meta.warnings || []);
     >
       <li
         v-for="warning in warnings"
-        :key="`${warning.scope}-${warning.reason}`"
+        :key="warning.key"
         class="text-body-main text-n-amber-11"
       >
-        {{
-          t('ANALYTICS.META.WARNING', {
-            scope: warning.scope,
-            reason: warning.reason,
-          })
-        }}
+        {{ warning.text }}
       </li>
     </ul>
     <p class="m-0 text-label-small text-n-slate-10">{{ footnote }}</p>

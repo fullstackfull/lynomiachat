@@ -104,6 +104,16 @@ RSpec.describe Support::Ticket do
       expect(described_class.overdue).to contain_exactly(overdue)
     end
 
+    # Overdue and breached are two states the UI draws differently, so a case must be in one or the other and
+    # never counted under both (docs/p9/06-security-performance.md 2.4).
+    it 'stops counting a case overdue once its breach has been recorded' do
+      still_overdue = create(:support_ticket, account: account, status: :open, resolution_due_at: 2.hours.ago)
+      create(:support_ticket, account: account, status: :open, resolution_due_at: 2.hours.ago,
+                              resolution_breached_at: 1.hour.ago)
+
+      expect(described_class.overdue).to contain_exactly(still_overdue)
+    end
+
     it 'treats either breach as breached' do
       first = create(:support_ticket, account: account, first_response_breached_at: 1.hour.ago)
       second = create(:support_ticket, account: account, resolution_breached_at: 1.hour.ago)

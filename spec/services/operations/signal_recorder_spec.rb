@@ -112,6 +112,35 @@ RSpec.describe Operations::SignalRecorder do
       expect(Operations::Signal.first.detail).to eq('size' => 7, 'queue' => 'default')
     end
 
+    it "takes the subject's own credentials out of the reason, by value" do
+      channel = create(:channel_email, :imap_email, account: account)
+      channel.update!(imap_password: 'hunter2-not-in-a-row')
+
+      signal = described_class.new(source: :email_channel, account: account, subject: channel.inbox)
+                              .record(:authentication_failed,
+                                      reason: 'LOGIN failed for care@example.com with hunter2-not-in-a-row')
+
+      expect(signal.reason).to eq('LOGIN failed for care@example.com with [redacted]')
+    end
+
+    it 'takes a credential written inline in prose out of the reason, by shape' do
+      signal = described_class.new(source: :webhook, account: account)
+                              .record(:delivery_failed,
+                                      reason: 'POST https://bot:s3cr3t@hooks.example.com/x failed; ' \
+                                              'api_key=AKIAIOSFODNN7EXAMPLE token: abc.def.ghi')
+
+      expect(signal.reason).to eq('POST https://[redacted]@hooks.example.com/x failed; ' \
+                                  'api_key=[redacted] token: [redacted]')
+    end
+
+    it 'leaves the identifiers an operator needs alone' do
+      signal = described_class.new(source: :whatsapp_channel, account: account)
+                              .record(:delivery_failed,
+                                      reason: 'Meta returned 131049 for wamid.HBgMOTY1NTAwMTEyMjMzFQIAERgSN0Y')
+
+      expect(signal.reason).to eq('Meta returned 131049 for wamid.HBgMOTY1NTAwMTEyMjMzFQIAERgSN0Y')
+    end
+
     it 'collapses and bounds the reason so provider prose cannot fill the column' do
       recorder.record(:authentication_failed, reason: "line one\n\n  line two   \ttail")
       expect(Operations::Signal.first.reason).to eq('line one line two tail')

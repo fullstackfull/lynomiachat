@@ -611,6 +611,18 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Analytics',
+      label: t('SIDEBAR.ANALYTICS'),
+      icon: 'i-lucide-chart-no-axes-combined',
+      children: [
+        {
+          name: 'Analytics Overview',
+          label: t('SIDEBAR.ANALYTICS_OVERVIEW'),
+          to: accountScopedRoute('analytics_overview'),
+        },
+      ],
+    },
+    {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-chart-spline',

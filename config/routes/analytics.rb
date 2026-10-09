@@ -11,8 +11,7 @@ namespace :api, defaults: { format: 'json' } do
       scope module: :accounts do
         # The canonical analytics contract for this account: timezone, resolved range, families and filters.
         get 'analytics', to: 'analytics#meta'
-        # The metric endpoints land here as their screens arrive (P8.2 onwards), on the same controller:
-        #   get 'analytics/overview', to: 'analytics#overview'
+        get 'analytics/overview', to: 'analytics#overview'
       end
     end
   end

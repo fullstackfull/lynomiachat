@@ -1,0 +1,85 @@
+{
+  "ANALYTICS": {
+    "NO_DATA": "Nothing was recorded in this period.",
+    "TIMEZONE_LABEL": "Grouped in {timezone}",
+    "TIMEZONE_NOTE": "Days, weeks and months are cut in the account's reporting timezone, so everyone viewing this account sees the same totals for the same dates.",
+    "GROUP_BY": {
+      "DAY": "Day",
+      "WEEK": "Week",
+      "MONTH": "Month"
+    },
+    "SERIES": {
+      "TOTAL": "{value} total"
+    },
+    "ERROR": {
+      "UNEXPECTED": "This report could not be loaded. Try again, and if it keeps failing contact support."
+    },
+    "META": {
+      "FOOTNOTE": "{since} to {until}, grouped by {grouping}, in {timezone}.",
+      "WARNING": "{scope} could not be included: {reason}.",
+      "SOURCE": {
+        "RAW": "Computed from source records",
+        "ROLLUP": "Served from daily rollups"
+      },
+      "REASON": {
+        "COVERAGE_VERIFIED": "rollup totals matched the source records for every day in range",
+        "FEATURE_DISABLED": "rollups are turned off for this account",
+        "NO_ACCOUNT_REPORTING_TIMEZONE": "no reporting timezone is set, so no rollups were written",
+        "NO_ROLLUP_DIMENSION": "this grouping has no rollup",
+        "NO_ROLLUP_METRIC": "this metric has no rollup",
+        "INCOMPLETE_COVERAGE": "rollup totals did not match the source records, so the source records were used"
+      }
+    },
+    "KPI": {
+      "CURRENT_STATE_HINT": "A reading taken now, not a count over the selected dates.",
+      "CONVERSATIONS_CREATED": {
+        "LABEL": "Conversations started",
+        "HINT": "Conversations opened in this period, however they arrived."
+      },
+      "CONVERSATIONS_RESOLVED": {
+        "LABEL": "Conversations resolved",
+        "HINT": "Times a conversation was marked resolved in this period."
+      },
+      "CONVERSATIONS_REOPENED": {
+        "LABEL": "Conversations reopened",
+        "HINT": "Times a resolved conversation was opened again in this period."
+      },
+      "AVG_FIRST_RESPONSE_TIME": {
+        "LABEL": "Average first response",
+        "HINT": "How long a customer waited for the first human reply."
+      },
+      "AVG_RESOLUTION_TIME": {
+        "LABEL": "Average resolution time",
+        "HINT": "How long a conversation stayed open before it was resolved."
+      },
+      "INBOUND_MESSAGES": {
+        "LABEL": "Messages received",
+        "HINT": "Customer messages. Activity notes and private notes are not counted."
+      },
+      "OUTBOUND_MESSAGES": {
+        "LABEL": "Messages sent",
+        "HINT": "Replies sent to customers, including approved template sends. Activity notes and private notes are not counted."
+      },
+      "UNRESOLVED_BACKLOG": {
+        "LABEL": "Open right now",
+        "HINT": "Conversations currently open or pending. Snoozed conversations are not counted."
+      }
+    },
+    "BREAKDOWN": {
+      "TITLE": "Where the volume sits",
+      "SHARE": "{value}%",
+      "REMAINING": "and {count} more",
+      "DIMENSION": {
+        "INBOX": "Inbox",
+        "CHANNEL": "Channel",
+        "TEAM": "Team",
+        "AGENT": "Agent"
+      }
+    },
+    "OVERVIEW": {
+      "HEADER": "Analytics overview",
+      "DESCRIPTION": "How much work arrived, how much was closed, how fast your team responded, and what is still open.",
+      "EMPTY": "No conversations or messages were recorded in this period. Pick a wider date range to see more."
+    }
+  }
+}

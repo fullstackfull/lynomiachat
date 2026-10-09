@@ -227,6 +227,7 @@ en:
       range_too_large: "That range is %{buckets} %{group_by} buckets, above the maximum of %{maximum}. Narrow the range or group by a longer period."
       unsupported_filter: "'%{filter}' is not a filter the %{family} metrics support. Allowed: %{allowed}."
       unknown_filter_value: "The value given for '%{filter}' does not exist in this account."
+      unsupported_breakdown: "'%{breakdown}' is not a breakdown this report supports. Allowed: %{allowed}."
       unknown_metric_family: "'%{family}' is not a known metric family. Allowed: %{allowed}."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.

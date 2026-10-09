@@ -10,6 +10,17 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
 
   before_action :authorize_analytics
 
+  # The operational overview: how much work arrived, how much closed, how much is still open, how fast we
+  # respond, and where the volume sits. One request rather than eight.
+  def overview
+    render json: Analytics::Conversations::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:conversations),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
   def meta
     render json: {
       timezone: {
@@ -21,6 +32,9 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
       range: date_range.to_meta,
       buckets: { count: date_range.bucket_count, maximum: Analytics::DateRange::MAX_BUCKETS[date_range.group_by] },
       group_by: { requested: date_range.group_by, supported: Analytics::DateRange::SUPPORTED_GROUP_BY },
+      breakdowns: { supported: Analytics::Conversations::Overview::BREAKDOWN_DIMENSIONS.map(&:to_s),
+                    default: Analytics::Conversations::Overview::DEFAULT_BREAKDOWN.to_s },
+      current_state_metrics: Analytics::MetricFamily::CURRENT_STATE_METRICS.map(&:to_s),
       families: families_meta
     }
   end

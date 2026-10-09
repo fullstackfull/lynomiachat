@@ -41,6 +41,15 @@ RSpec.describe Analytics::Result do
       expect(build.add_kpi(:conversations_count, 3)).not_to be_empty
     end
 
+    it 'treats a nil value as no data rather than as a value' do
+      expect(build.add_kpi(:avg_resolution_time, nil)).to be_empty
+    end
+
+    it 'labels a current-state KPI so a chart cannot plot it on a time axis' do
+      json = build.add_kpi(:unresolved_backlog, 4, kind: :current_state).as_json
+      expect(json[:kpis].first[:kind]).to eq('current_state')
+    end
+
     it 'is not empty when something failed, so no-data and broken never look alike' do
       result = build.add_kpi(:conversations_count, 0).degrade(:commerce, :adapter_unavailable)
       expect(result).not_to be_empty
@@ -70,7 +79,7 @@ RSpec.describe Analytics::Result do
   describe 'payload primitives' do
     it 'serialises a KPI, omitting an absent comparison' do
       json = build.add_kpi(:resolutions_count, 12, unit: :count).as_json
-      expect(json[:kpis]).to eq([{ key: 'resolutions_count', value: 12, unit: 'count' }])
+      expect(json[:kpis]).to eq([{ key: 'resolutions_count', value: 12, unit: 'count', kind: 'event' }])
     end
 
     it 'keeps a comparison when one is given' do

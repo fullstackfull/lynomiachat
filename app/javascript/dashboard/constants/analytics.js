@@ -1,0 +1,39 @@
+// Lynomia Analytics client constants (docs/p8/02a-overview-conversation-analytics.md).
+//
+// These mirror Analytics::DateRange on the server. They are kept in sync by hand rather than fetched, because
+// the group-by control has to render before any request is made; `GET /analytics` reports the same ceilings and
+// is the authority if the two ever disagree.
+export const ANALYTICS_GROUP_BY = {
+  DAY: 'day',
+  WEEK: 'week',
+  MONTH: 'month',
+};
+
+export const ANALYTICS_MAX_BUCKETS = {
+  [ANALYTICS_GROUP_BY.DAY]: 366,
+  [ANALYTICS_GROUP_BY.WEEK]: 104,
+  [ANALYTICS_GROUP_BY.MONTH]: 60,
+};
+
+export const ANALYTICS_DATE_FORMAT = 'yyyy-MM-dd';
+
+export const DEFAULT_ANALYTICS_RANGE_DAYS = 30;
+
+// `kind` on a KPI. A current-state reading is taken now, so it carries no period comparison and must not be
+// drawn on a time axis.
+export const ANALYTICS_KPI_KIND = {
+  EVENT: 'event',
+  CURRENT_STATE: 'current_state',
+};
+
+export const ANALYTICS_UNIT = {
+  COUNT: 'count',
+  SECONDS: 'seconds',
+};
+
+export const ANALYTICS_BREAKDOWN_DIMENSIONS = [
+  'inbox',
+  'channel',
+  'team',
+  'agent',
+];

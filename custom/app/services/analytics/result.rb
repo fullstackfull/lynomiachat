@@ -9,9 +9,13 @@
 class Analytics::Result
   # A single headline number. `comparison` is the same metric over the preceding period of equal length when a
   # caller asked for it, so "up or down" is answerable without a second request.
-  Kpi = Data.define(:key, :value, :unit, :comparison) do
+  #
+  # `kind` is `event` for something that happened inside the requested range or `current_state` for a reading
+  # taken now. The distinction travels with the number because a current reading must not be drawn on a time
+  # axis or compared against a previous period, and nothing else in the payload would tell a chart that.
+  Kpi = Data.define(:key, :value, :unit, :kind, :comparison) do
     def as_json(*)
-      { key: key.to_s, value: value, unit: unit.to_s, comparison: comparison }.compact
+      { key: key.to_s, value: value, unit: unit.to_s, kind: kind.to_s, comparison: comparison }.compact
     end
   end
 
@@ -47,8 +51,8 @@ class Analytics::Result
     @warnings = []
   end
 
-  def add_kpi(key, value, unit: :count, comparison: nil)
-    @kpis << Kpi.new(key: key, value: value, unit: unit, comparison: comparison)
+  def add_kpi(key, value, unit: :count, kind: :event, comparison: nil)
+    @kpis << Kpi.new(key: key, value: value, unit: unit, kind: kind, comparison: comparison)
     self
   end
 
@@ -91,7 +95,7 @@ class Analytics::Result
   private
 
   def blank_kpis?
-    @kpis.all? { |kpi| kpi.value.to_f.zero? }
+    @kpis.all? { |kpi| kpi.value.nil? || kpi.value.to_f.zero? }
   end
 
   def blank_series?

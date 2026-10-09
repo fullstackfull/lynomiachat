@@ -53,6 +53,12 @@ module CustomExceptions::Analytics
     end
   end
 
+  class UnsupportedBreakdown < Base
+    def message
+      I18n.t('errors.analytics.unsupported_breakdown', breakdown: @data[:breakdown], allowed: @data[:allowed].join(', '))
+    end
+  end
+
   class UnknownMetricFamily < Base
     def message
       I18n.t('errors.analytics.unknown_metric_family', family: @data[:family], allowed: @data[:allowed].join(', '))

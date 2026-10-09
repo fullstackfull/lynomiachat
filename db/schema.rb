@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_09_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_09_100100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1539,6 +1539,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_100000) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "operations_signals", force: :cascade do |t|
+    t.bigint "account_id"
+    t.string "source", null: false
+    t.string "signal", null: false
+    t.integer "severity", default: 1, null: false
+    t.string "subject_type"
+    t.bigint "subject_id"
+    t.string "reason"
+    t.jsonb "detail", default: {}, null: false
+    t.datetime "first_seen_at", null: false
+    t.datetime "last_seen_at", null: false
+    t.integer "occurrences", default: 1, null: false
+    t.datetime "resolved_at"
+    t.bigint "support_ticket_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "COALESCE(account_id, (0)::bigint), source, COALESCE(subject_type, ''::character varying), COALESCE(subject_id, (0)::bigint), signal", name: "index_operations_signals_on_open_identity", unique: true, where: "(resolved_at IS NULL)"
+    t.index ["account_id", "last_seen_at"], name: "index_operations_signals_on_account_open", order: { last_seen_at: :desc }, where: "(resolved_at IS NULL)"
+    t.index ["last_seen_at"], name: "index_operations_signals_on_open_feed", order: :desc, where: "(resolved_at IS NULL)"
+    t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
+  end
+
   create_table "platform_app_permissibles", force: :cascade do |t|
     t.bigint "platform_app_id", null: false
     t.string "permissible_type", null: false
@@ -1917,6 +1939,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_100000) do
   add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
+  add_foreign_key "operations_signals", "accounts", on_delete: :cascade
+  add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
   add_foreign_key "support_ticket_events", "accounts", on_delete: :cascade
   add_foreign_key "support_ticket_events", "support_tickets", on_delete: :cascade
   add_foreign_key "support_ticket_events", "users", on_delete: :nullify

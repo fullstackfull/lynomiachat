@@ -114,3 +114,5 @@ class Inboxes::FetchImapEmailsJob < MutexApplicationJob
     GlobalConfigService.load('EMAIL_PROCESSING_TIMEOUT_SECONDS', 60).to_i
   end
 end
+
+Inboxes::FetchImapEmailsJob.prepend_mod_with('Inboxes::FetchImapEmailsJob')

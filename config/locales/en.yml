@@ -700,6 +700,16 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    operations:
+      case_title: "Operational issue: %{source} %{signal}"
+      case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."
+      case_seen: "First seen %{first}, last seen %{last}, observed %{count} times."
+      case_reason: "Reason: %{reason}"
+      case_detail: "Diagnostics: %{detail}"
+      case_opened: "Opened %{reference} for this issue."
+      case_exists: "%{reference} already covers this issue."
+      case_no_account: "This issue is installation wide, so it cannot be opened as an account support case."
+      signal_not_found: "That operational issue no longer exists."
     account_suspension:
       categories:
         spam: 'Spam'

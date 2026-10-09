@@ -657,5 +657,6 @@ Rails.application.routes.draw do
   draw :campaign_audiences
   draw :whatsapp_templates
   draw :support
+  draw :operations
   draw :documentation
 end

@@ -15,6 +15,13 @@ class Support::Ticket < ApplicationRecord
 
   self.table_name = 'support_tickets'
 
+  # Audited through the existing architecture, the same way the Template Manager is
+  # (custom/app/models/whatsapp/message_template.rb). `associated_with: :account` is how a case's audit rows
+  # become account-scoped, because the `audits` table has no account_id of its own (db/schema.rb:264-287) --
+  # the association IS the scope. `description` is excluded: it is free text a customer may have dictated, and
+  # an audit row is not the place for a second copy of it.
+  audited associated_with: :account, except: [:description]
+
   # The same four values, in the same order, as Conversation (app/models/conversation.rb:87), so an agent learns
   # one scale. No separate severity field: see docs/p9/01-architecture.md §5.
   enum :priority, { low: 0, medium: 1, high: 2, urgent: 3 }, prefix: :priority

@@ -1,0 +1,14 @@
+<nav class="flex gap-1 mb-6 border-b border-slate-100" role="navigation">
+  <%
+    tabs = [
+      ['Overview', super_admin_operations_path],
+      ['Accounts', accounts_super_admin_operations_path],
+      ['Issues', issues_super_admin_operations_path]
+    ]
+  %>
+  <% tabs.each do |label, url| %>
+    <% active = current_page?(url) %>
+    <%= link_to label, url,
+                class: "px-3 py-2 text-sm border-b-2 #{active ? 'border-woot-500 text-woot-500' : 'border-transparent text-slate-600 hover:text-woot-500'}" %>
+  <% end %>
+</nav>

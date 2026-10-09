@@ -1,7 +1,8 @@
 # P8 analytics — the API contract
 
-Companion to `docs/p8/01-architecture.md`. At P8.1 one endpoint exists; the metric endpoints arrive with the
-screens that read them.
+Companion to `docs/p8/01-architecture.md`. The shared contract every P8 analytics endpoint obeys. Per-family
+detail lives in `02a` (conversations), `02b` (WhatsApp and campaigns), `02c` (automations and flows) and `02d`
+(commerce).
 
 ---
 
@@ -58,14 +59,14 @@ A family declares the metrics a screen reads, the filters meaningful for it, and
 `conversations` points at `ReportingEvents::MetricRegistry::REPORT_METRICS` so there is one definition of a
 conversation metric, not two.
 
-| Family | Filters | Rollup-capable | Honesty note |
-| --- | --- | --- | --- |
-| `conversations` | `inbox_id`, `channel_type`, `team_id`, `agent_id` | 6 of 9 metrics | reuses the OSS metric definitions |
-| `whatsapp` | `inbox_id`, `template_id` | none | delivered and read counted from the **timestamp being present**, never from status equality |
-| `campaigns` | `inbox_id`, `campaign_id` | none | `campaign_recipients` is both the snapshot and the funnel |
-| `automations` | `automation_rule_id` | none | delayed rules only, 30-day retention; immediate rules are **absent**, not zero |
-| `flows` | `inbox_id` | none | session lifecycle only; no node-level metrics exist |
-| `commerce` | `provider` | none | no revenue: `spend` is per-currency and unconverted, and there is no order store |
+| Family | Filters | Rollup-capable | Honesty note | Detail |
+| --- | --- | --- | --- | --- |
+| `conversations` | `inbox_id`, `channel_type`, `team_id`, `agent_id` | 6 of 9 metrics | reuses the OSS metric definitions | `02a` |
+| `whatsapp` | `inbox_id`, `template_id` | none | `messages` has no delivery timestamps, so delivered means the ladder reached delivered **or read**; coexistence echoes excluded and reported | `02b` |
+| `campaigns` | `inbox_id`, `campaign_id` | none | delivered is `delivered_at IS NOT NULL OR read_at IS NOT NULL`; the audience breakdown counts campaigns, never recipients | `02b` |
+| `automations` | `automation_rule_id` | none | delayed rules only, 30-day retention; immediate rules are **absent**, not zero, and the response warns | `02c` |
+| `flows` | `inbox_id` | none | session lifecycle only; no node-level metrics and no invented abandoned state | `02c` |
+| `commerce` | `provider` | none | no revenue, GMV or profit at all, not even per currency; no recovery attribution | `02d` |
 
 **Most families are rollup-incapable by nature, not by omission.** `ReportingEvents::RollupService` only writes
 the `account`, `agent` and `inbox` dimensions (`rollup_service.rb:33-39`), so a campaign, template, automation,
@@ -132,5 +133,27 @@ It exists at P8.1 because the frontend needs it before it can render a date pick
 requests — and because it exercises the whole foundation end to end rather than leaving it as untested
 scaffolding.
 
-Metric endpoints land on the same controller as their screens arrive:
-`analytics#overview`, `analytics#conversations`, and so on.
+### The metric endpoints
+
+All on `Api::V1::Accounts::AnalyticsController`, all administrator only, all taking the request contract above
+plus a per-family `breakdown_by`.
+
+| Endpoint | Family | `breakdown_by` | Detail |
+| --- | --- | --- | --- |
+| `GET …/analytics/overview` | conversations | `inbox` (default), `channel`, `team`, `agent` | `02a` |
+| `GET …/analytics/whatsapp` | whatsapp | `template` (default), `inbox`, `failure` | `02b` |
+| `GET …/analytics/campaigns` | campaigns | `campaign` (default), `audience`, `failure`, `skip_reason` | `02b` |
+| `GET …/analytics/automations` | automations | `rule` (default), `skip_reason`, `status` | `02c` |
+| `GET …/analytics/flows` | flows | `bot` (default), `status`, `failure`, `end_reason` | `02c` |
+| `GET …/analytics/commerce` | commerce | `provider` (default), `store`, `currency`, `action_type`, `action_error` | `02d` |
+
+`GET …/analytics` (the meta endpoint) reports each family's supported breakdowns and its default, so a screen can
+build its dimension switcher from the contract instead of a hardcoded list.
+
+The contact activity timeline is **not** on this controller and does not use this contract: it is one record's
+own history, follows the contact's permission, and is cursor-paged. See `03-contact-activity-timeline.md`.
+
+### `UnsupportedBreakdown`
+
+A seventh 422: a `breakdown_by` the requested family has no meaning for, with that family's allowed list in the
+message. Resolved in one place, `Analytics::Breakdown.resolve`, so the list and the error cannot drift apart.

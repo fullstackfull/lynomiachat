@@ -26,6 +26,14 @@ class Support::TicketPolicy < ApplicationPolicy
   end
 
   class Scope < ApplicationPolicy::Scope
+    # For callers outside a Pundit controller -- the contact activity timeline adapter -- so the visibility rule
+    # has exactly one definition and cannot drift between the list and the timeline.
+    def self.for(user:, account:, scope: Support::Ticket.all)
+      context = { user: user, account: account,
+                  account_user: AccountUser.find_by(account_id: account.id, user_id: user&.id) }
+      new(context, scope.where(account_id: account.id)).resolve
+    end
+
     def resolve
       return scope if manage_all?
 

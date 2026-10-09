@@ -14,7 +14,13 @@ module Analytics::MetricFamily
 
   # Metrics that describe how things stand now rather than what happened inside a range. The response labels
   # them so a screen cannot plot a current reading as if it were a historical series.
-  CURRENT_STATE_METRICS = Analytics::Conversations::Metrics::CURRENT_STATE_METRICS
+  # The union across every family that has one, so `meta.current_state_metrics` is the complete list a screen
+  # needs in order to refuse to plot a reading taken now as if it were a history. Collected from the families
+  # rather than written out, so adding a family cannot leave this behind. Whatsapp and Campaigns declare none.
+  CURRENT_STATE_METRICS = [
+    Analytics::Conversations::Metrics, Analytics::Automations::Metrics, Analytics::Flows::Metrics,
+    Analytics::Commerce::Metrics, Analytics::Tickets::Metrics
+  ].flat_map { |family| family::CURRENT_STATE_METRICS }.uniq.freeze
 
   # Filters a family may accept. Each is validated against the account before it reaches a query
   # (Analytics::FilterSet), so an id from another tenant cannot select rows.
@@ -71,6 +77,17 @@ module Analytics::MetricFamily
       notes: 'flow_sessions lifecycle only. No node-level metrics, because no per-node history is stored, and ' \
              'no abandoned state, because the product has none: a session with no further replies stays ' \
              'waiting until something ends it. Duration is wall-clock finished_at - created_at.'
+    ),
+    tickets: Family.new(
+      key: :tickets,
+      metrics: Analytics::Tickets::Metrics::ALL_METRICS,
+      filters: %i[inbox_id team_id agent_id],
+      rollup_metrics: [],
+      notes: 'Support cases (P9). Counts and the resolution average only: no SLA attainment percentage, no ' \
+             'first-response average and no reopen rate, because every SLA figure in this product begins when a ' \
+             'policy is first attached to a case, so a rate over a range that predates the policy would divide ' \
+             'two different populations. Reopens are counted from the durable event trail rather than inferred ' \
+             'from the current status, so a case reopened and resolved again is still counted.'
     ),
     commerce: Family.new(
       key: :commerce,

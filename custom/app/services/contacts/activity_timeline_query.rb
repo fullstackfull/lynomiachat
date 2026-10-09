@@ -40,7 +40,8 @@ class Contacts::ActivityTimelineQuery
     ],
     campaigns: [Contacts::ActivityTimeline::CampaignsAdapter],
     automations: [Contacts::ActivityTimeline::AutomationsAdapter],
-    commerce: [Contacts::ActivityTimeline::CommerceAdapter]
+    commerce: [Contacts::ActivityTimeline::CommerceAdapter],
+    tickets: [Contacts::ActivityTimeline::TicketsAdapter]
   }.freeze
 
   # The contact's own communication. If one of these cannot be read, the timeline is not partial -- it is wrong.
@@ -82,8 +83,7 @@ class Contacts::ActivityTimelineQuery
 
   def gather
     adapter_classes.flat_map do |klass|
-      adapter = klass.new(account: @account, contact: @contact, visible_conversations: visible_conversations,
-                          visible_inbox_ids: visible_inbox_ids, cursor: @cursor)
+      adapter = klass.new(account: @account, contact: @contact, visibility: visibility, cursor: @cursor)
       fetch_from(klass, adapter)
     end
   end
@@ -102,6 +102,14 @@ class Contacts::ActivityTimelineQuery
 
   def adapter_classes
     @categories.flat_map { |category| CATEGORIES.fetch(category) }.uniq
+  end
+
+  # Assembled once and shared by every adapter: who is asking, which of this contact's conversations they may
+  # open, and which inboxes they may see.
+  def visibility
+    @visibility ||= Contacts::ActivityTimeline::Visibility.new(
+      user: @user, conversations: visible_conversations, inbox_ids: visible_inbox_ids
+    )
   end
 
   # The conversations of this contact that the caller may see. One query, shared by every adapter that needs it.

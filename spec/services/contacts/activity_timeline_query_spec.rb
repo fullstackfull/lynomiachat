@@ -190,7 +190,7 @@ RSpec.describe Contacts::ActivityTimelineQuery do
     end
 
     it 'defaults to every category' do
-      expect(query.call[:meta][:categories]).to eq(%w[messages conversations campaigns automations commerce])
+      expect(query.call[:meta][:categories]).to eq(%w[messages conversations campaigns automations commerce tickets])
     end
 
     it 'narrows to one category' do

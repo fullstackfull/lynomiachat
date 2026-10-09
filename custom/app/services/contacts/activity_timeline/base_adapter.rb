@@ -4,15 +4,16 @@
 # newest first, at most `limit` rows". It is account-scoped and contact-scoped on its own, independently of every
 # other adapter, so no adapter can rely on another having filtered for it.
 #
-# Conversation-derived adapters read `visible_conversations`, which is the same permission filter the contact's
-# attachment list already uses (Conversations::PermissionFilterService). An agent restricted to some inboxes must
-# not learn through a timeline what happened in a conversation they cannot open.
+# What a caller may see arrives as one Visibility value rather than three keyword arguments. Conversation-derived
+# adapters read its `conversations`, which is the same permission filter the contact's attachment list already
+# uses (Conversations::PermissionFilterService): an agent restricted to some inboxes must not learn through a
+# timeline what happened in a conversation they cannot open. A source whose visibility is ownership rather than
+# channel reads its `user` and asks that source's own policy.
 class Contacts::ActivityTimeline::BaseAdapter
-  def initialize(account:, contact:, visible_conversations:, visible_inbox_ids:, cursor: nil)
+  def initialize(account:, contact:, visibility:, cursor: nil)
     @account = account
     @contact = contact
-    @visible_conversations = visible_conversations
-    @visible_inbox_ids = visible_inbox_ids
+    @visibility = visibility
     @cursor = cursor
   end
 
@@ -47,7 +48,7 @@ class Contacts::ActivityTimeline::BaseAdapter
 
   # Conversations of this contact the current caller is allowed to see.
   def contact_conversations
-    @visible_conversations
+    @visibility.conversations
   end
 
   def conversation_ids
@@ -57,5 +58,12 @@ class Contacts::ActivityTimeline::BaseAdapter
   # The inboxes the caller may see, for the sources that carry an inbox but no conversation -- campaign
   # recipients above all. Derived from the caller's role by the query service, not from which conversations this
   # contact happens to have, because a campaign can address a contact in an inbox they have never written in.
-  attr_reader :visible_inbox_ids
+  def visible_inbox_ids
+    @visibility.inbox_ids
+  end
+
+  # The caller. Only a source whose visibility is ownership rather than channel needs this.
+  def caller_user
+    @visibility.user
+  end
 end

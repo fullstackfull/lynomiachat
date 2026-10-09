@@ -71,6 +71,16 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
     ).call.as_json
   end
 
+  # Support cases (P9). Counts and the resolution average only; the family note says what is deliberately absent.
+  def tickets
+    render json: Analytics::Tickets::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:tickets),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
   def meta
     render json: {
       timezone: {
@@ -106,7 +116,8 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
       campaigns: breakdown_entry(Analytics::Campaigns::Overview),
       automations: breakdown_entry(Analytics::Automations::Overview),
       flows: breakdown_entry(Analytics::Flows::Overview),
-      commerce: breakdown_entry(Analytics::Commerce::Overview)
+      commerce: breakdown_entry(Analytics::Commerce::Overview),
+      tickets: breakdown_entry(Analytics::Tickets::Overview)
     }
   end
 

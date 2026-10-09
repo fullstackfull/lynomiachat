@@ -70,7 +70,7 @@ RSpec.describe 'Analytics meta', type: :request do
             params: valid_range, headers: administrator.create_new_auth_token
 
         families = response.parsed_body['families']
-        expect(families.keys).to match_array(%w[conversations whatsapp campaigns automations flows commerce])
+        expect(families.keys).to match_array(%w[conversations whatsapp campaigns automations flows commerce tickets])
         expect(families['conversations']['filters']).to match_array(%w[inbox_id channel_type team_id agent_id])
         expect(families['commerce']['filters']).to eq(['provider'])
         expect(families['whatsapp']['rollup_capable_metrics']).to be_empty

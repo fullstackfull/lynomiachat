@@ -276,7 +276,9 @@
     "SUMMARY": {
       "TITLE": "ملخص",
       "DELETE_WARNING": "سيتم حذف جهة الاتصال <strong>{primaryContactName}</strong>.",
-      "ATTRIBUTE_WARNING": "سيتم نسخ تفاصيل الاتصال من <strong>{primaryContactName}</strong> إلى <strong>{parentContactName}</strong>."
+      "ATTRIBUTE_WARNING": "سيتم نسخ تفاصيل الاتصال من <strong>{primaryContactName}</strong> إلى <strong>{parentContactName}</strong>.",
+      "IRREVERSIBLE": "لا يمكن التراجع عن هذا الإجراء. يُسجَّل الدمج في سجل التدقيق.",
+      "CARRIED_OVER": "تنتقل المحادثات والرسائل والملاحظات والوسوم وسجل الحملات وحالات الدعم وروابط المتجر إلى جهة الاتصال التي يتم الاحتفاظ بها."
     },
     "SEARCH": {
       "ERROR_MESSAGE": "Something went wrong. Please try again later."
@@ -642,7 +644,9 @@
         "BUTTONS": {
           "CANCEL": "إلغاء",
           "CONFIRM": "دمج جهة الاتصال"
-        }
+        },
+        "IRREVERSIBLE": "لا يمكن التراجع عن هذا الإجراء. يُسجَّل الدمج في سجل التدقيق.",
+        "CARRIED_OVER": "تنتقل المحادثات والرسائل والملاحظات والوسوم وسجل الحملات وحالات الدعم وروابط المتجر إلى جهة الاتصال التي يتم الاحتفاظ بها."
       },
       "NOTES": {
         "PLACEHOLDER": "إضافة ملاحظة",

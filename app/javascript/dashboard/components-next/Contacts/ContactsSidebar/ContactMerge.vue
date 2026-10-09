@@ -111,6 +111,12 @@ const onMergeContacts = async () => {
       <p class="text-sm text-n-slate-11">
         {{ t('CONTACTS_LAYOUT.SIDEBAR.MERGE.DESCRIPTION') }}
       </p>
+      <p class="text-sm text-n-slate-11">
+        {{ t('CONTACTS_LAYOUT.SIDEBAR.MERGE.CARRIED_OVER') }}
+      </p>
+      <p class="text-sm font-medium text-n-amber-11">
+        {{ t('CONTACTS_LAYOUT.SIDEBAR.MERGE.IRREVERSIBLE') }}
+      </p>
     </div>
     <ContactMergeForm
       v-model:primary-contact-id="state.primaryContactId"

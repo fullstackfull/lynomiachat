@@ -44,6 +44,12 @@ export default {
           "
         />
       </li>
+      <li class="ms-6">
+        <span>{{ $t('MERGE_CONTACTS.SUMMARY.CARRIED_OVER') }}</span>
+      </li>
     </ul>
+    <p class="mt-2 mb-0 text-sm font-medium text-n-amber-11">
+      {{ $t('MERGE_CONTACTS.SUMMARY.IRREVERSIBLE') }}
+    </p>
   </div>
 </template>

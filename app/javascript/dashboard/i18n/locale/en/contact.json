@@ -276,7 +276,9 @@
     "SUMMARY": {
       "TITLE": "Summary",
       "DELETE_WARNING": "Contact of <strong>{primaryContactName}</strong> will be deleted.",
-      "ATTRIBUTE_WARNING": "Contact details of <strong>{primaryContactName}</strong> will be copied to <strong>{parentContactName}</strong>."
+      "ATTRIBUTE_WARNING": "Contact details of <strong>{primaryContactName}</strong> will be copied to <strong>{parentContactName}</strong>.",
+      "IRREVERSIBLE": "This cannot be undone. The merge is recorded in the audit log.",
+      "CARRIED_OVER": "Conversations, messages, notes, labels, campaign history, support cases and commerce links move to the contact that is kept."
     },
     "SEARCH": {
       "ERROR_MESSAGE": "Something went wrong. Please try again later."
@@ -642,7 +644,9 @@
         "BUTTONS": {
           "CANCEL": "Cancel",
           "CONFIRM": "Merge contact"
-        }
+        },
+        "IRREVERSIBLE": "This cannot be undone. The merge is recorded in the audit log.",
+        "CARRIED_OVER": "Conversations, messages, notes, labels, campaign history, support cases and commerce links move to the contact that is kept."
       },
       "NOTES": {
         "PLACEHOLDER": "Add a note",

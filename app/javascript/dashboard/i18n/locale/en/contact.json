@@ -589,6 +589,7 @@
     "SIDEBAR": {
       "TABS": {
         "ATTRIBUTES": "Attributes",
+        "ACTIVITY": "Activity",
         "HISTORY": "History",
         "NOTES": "Notes",
         "MEDIA": "Media",
@@ -655,6 +656,58 @@
         "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
         "DELETE": "Delete note",
         "LOADING": "Loading notes"
+      },
+      "ACTIVITY": {
+        "EMPTY_STATE": "Nothing has been recorded for this contact yet.",
+        "ERROR": "This activity could not be loaded. Try again, and if it keeps failing contact support.",
+        "PARTIAL": "Some activity could not be loaded ({sources}). Everything else is shown.",
+        "LOAD_MORE": "Load more",
+        "LOADING": "Loading…",
+        "RATING": "Rated {value}/5",
+        "DURATION": "{value}s",
+        "FILTER": {
+          "ALL": "All",
+          "MESSAGES": "Messages",
+          "CONVERSATIONS": "Conversations",
+          "CAMPAIGNS": "Campaigns",
+          "AUTOMATIONS": "Automations",
+          "COMMERCE": "Commerce"
+        },
+        "KIND": {
+          "MESSAGE_INCOMING": "Message received",
+          "MESSAGE_OUTGOING": "Message sent",
+          "MESSAGE_SYSTEM_TEMPLATE": "Automatic message",
+          "PRIVATE_NOTE": "Private note",
+          "CONVERSATION_CREATED": "Conversation started",
+          "CONVERSATION_STATUS_CHANGED": "Conversation status changed",
+          "CONVERSATION_ACTIVITY": "Conversation updated",
+          "CONVERSATION_REOPENED": "Conversation reopened",
+          "CONVERSATION_RESOLVED": "Conversation resolved",
+          "FIRST_RESPONSE": "First reply sent",
+          "BOT_HANDOFF": "Handed to the team",
+          "BOT_RESOLVED": "Resolved by the bot",
+          "CSAT_RESPONSE": "Rated the conversation",
+          "CAMPAIGN_QUEUED": "Added to a campaign",
+          "CAMPAIGN_SKIPPED": "Skipped by a campaign",
+          "CAMPAIGN_SENT": "Campaign message sent",
+          "CAMPAIGN_DELIVERED": "Campaign message delivered",
+          "CAMPAIGN_READ": "Campaign message read",
+          "CAMPAIGN_FAILED": "Campaign message refused",
+          "AUTOMATION_EXECUTED": "Automation acted",
+          "AUTOMATION_SKIPPED": "Automation declined to act",
+          "FLOW_COMPLETED": "Flow reached the end",
+          "FLOW_FAILED": "Flow stopped on an error",
+          "FLOW_CANCELLED": "Flow ended from outside",
+          "FLOW_HANDED_OFF": "Flow handed to the team",
+          "CART_ABANDONED": "Cart reported abandoned",
+          "CART_COMPLETED": "Cart checkout completed",
+          "COMMERCE_ACTION_PENDING": "Order action requested",
+          "COMMERCE_ACTION_RUNNING": "Order action in progress",
+          "COMMERCE_ACTION_SUCCEEDED": "Order action completed",
+          "COMMERCE_ACTION_FAILED": "Order action refused",
+          "COMMERCE_ACTION_UNKNOWN": "Order action answer lost",
+          "COMMERCE_CUSTOMER_LINKED": "Linked to a store customer"
+        }
       }
     },
     "EMPTY_STATE": {

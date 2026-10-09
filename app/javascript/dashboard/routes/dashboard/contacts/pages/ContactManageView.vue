@@ -11,6 +11,7 @@ import ContactDetails from 'dashboard/components-next/Contacts/Pages/ContactDeta
 import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import ContactNotes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactNotes.vue';
 import ContactHistory from 'dashboard/components-next/Contacts/ContactsSidebar/ContactHistory.vue';
+import ContactActivity from 'dashboard/components-next/Contacts/ContactsSidebar/ContactActivity.vue';
 import ContactMedia from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMedia.vue';
 import ContactMerge from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMerge.vue';
 import ContactCustomAttributes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCustomAttributes.vue';
@@ -39,6 +40,9 @@ const { t } = useI18n();
 
 const CONTACT_TABS_OPTIONS = [
   { key: 'ATTRIBUTES', value: 'attributes' },
+  // The unified activity timeline (docs/p8/03-contact-activity-timeline.md). It sits beside History rather than
+  // replacing it: History is the contact's conversation list, this is everything that happened in order.
+  { key: 'ACTIVITY', value: 'activity' },
   { key: 'HISTORY', value: 'history' },
   { key: 'NOTES', value: 'notes' },
   { key: 'MEDIA', value: 'media' },
@@ -173,6 +177,7 @@ onMounted(() => {
             v-if="activeTab === 'attributes'"
             :selected-contact="selectedContact"
           />
+          <ContactActivity v-if="activeTab === 'activity'" />
           <ContactNotes v-if="activeTab === 'notes'" />
           <ContactHistory v-if="activeTab === 'history'" />
           <ContactMedia v-if="activeTab === 'media'" />

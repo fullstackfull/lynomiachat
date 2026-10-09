@@ -588,6 +588,7 @@
     "SIDEBAR": {
       "TABS": {
         "ATTRIBUTES": "السمات",
+        "ACTIVITY": "النشاط",
         "HISTORY": "History",
         "NOTES": "ملاحظات",
         "MEDIA": "Media",
@@ -654,6 +655,58 @@
         "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
         "DELETE": "حذف الملاحظة",
         "LOADING": "جارٍ تحميل الملاحظات"
+      },
+      "ACTIVITY": {
+        "EMPTY_STATE": "لم يُسجَّل شيء لجهة الاتصال هذه بعد.",
+        "ERROR": "تعذّر تحميل هذا النشاط. أعد المحاولة، وإن تكرر الخطأ فتواصل مع الدعم.",
+        "PARTIAL": "تعذّر تحميل بعض النشاط ({sources}). وكل ما سواه معروض.",
+        "LOAD_MORE": "تحميل المزيد",
+        "LOADING": "جارٍ التحميل…",
+        "RATING": "تقييم {value}/5",
+        "DURATION": "{value} ث",
+        "FILTER": {
+          "ALL": "الكل",
+          "MESSAGES": "الرسائل",
+          "CONVERSATIONS": "المحادثات",
+          "CAMPAIGNS": "الحملات",
+          "AUTOMATIONS": "الأتمتة",
+          "COMMERCE": "التجارة"
+        },
+        "KIND": {
+          "MESSAGE_INCOMING": "رسالة واردة",
+          "MESSAGE_OUTGOING": "رسالة مُرسلة",
+          "MESSAGE_SYSTEM_TEMPLATE": "رسالة تلقائية",
+          "PRIVATE_NOTE": "ملاحظة خاصة",
+          "CONVERSATION_CREATED": "بدأت محادثة",
+          "CONVERSATION_STATUS_CHANGED": "تغيّرت حالة المحادثة",
+          "CONVERSATION_ACTIVITY": "تحديث على المحادثة",
+          "CONVERSATION_REOPENED": "أُعيد فتح المحادثة",
+          "CONVERSATION_RESOLVED": "تم حل المحادثة",
+          "FIRST_RESPONSE": "أُرسل أول رد",
+          "BOT_HANDOFF": "سُلِّمت إلى الفريق",
+          "BOT_RESOLVED": "حلّها البوت",
+          "CSAT_RESPONSE": "قيّم المحادثة",
+          "CAMPAIGN_QUEUED": "أُضيف إلى حملة",
+          "CAMPAIGN_SKIPPED": "تخطّته حملة",
+          "CAMPAIGN_SENT": "أُرسلت رسالة حملة",
+          "CAMPAIGN_DELIVERED": "سُلِّمت رسالة الحملة",
+          "CAMPAIGN_READ": "قُرئت رسالة الحملة",
+          "CAMPAIGN_FAILED": "رُفضت رسالة الحملة",
+          "AUTOMATION_EXECUTED": "نفّذت الأتمتة",
+          "AUTOMATION_SKIPPED": "امتنعت الأتمتة عن التنفيذ",
+          "FLOW_COMPLETED": "وصل المسار إلى النهاية",
+          "FLOW_FAILED": "توقف المسار على خطأ",
+          "FLOW_CANCELLED": "أُنهي المسار من الخارج",
+          "FLOW_HANDED_OFF": "سلّم المسار المحادثة للفريق",
+          "CART_ABANDONED": "مُبلَّغ عن ترك السلة",
+          "CART_COMPLETED": "أُكمل دفع السلة",
+          "COMMERCE_ACTION_PENDING": "طُلب إجراء على الطلب",
+          "COMMERCE_ACTION_RUNNING": "إجراء الطلب جارٍ",
+          "COMMERCE_ACTION_SUCCEEDED": "تم إجراء الطلب",
+          "COMMERCE_ACTION_FAILED": "رُفض إجراء الطلب",
+          "COMMERCE_ACTION_UNKNOWN": "ضاع رد إجراء الطلب",
+          "COMMERCE_CUSTOMER_LINKED": "تم ربطه بعميل في المتجر"
+        }
       }
     },
     "EMPTY_STATE": {

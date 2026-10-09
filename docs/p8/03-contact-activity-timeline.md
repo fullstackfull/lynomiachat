@@ -191,3 +191,70 @@ catch everything, so an authorization error can never be downgraded to a warning
 | `spec/services/contacts/activity_timeline_query_spec.rb` | 24 | composition, ordering, truncation, tenant and record isolation, inbox-restricted agents, cursor walk with no gap or repeat, limit and cursor rejection, categories, core-vs-optional degradation |
 | `spec/services/contacts/activity_timeline_spec.rb` | 11 | one example per source, plus the money and encrypted-field exclusions |
 | `spec/requests/contacts/contact_activity_spec.rb` | 12 | authorization (agent allowed, foreign administrator refused, foreign contact 404), payload shape, category narrowing, inbox narrowing, cursor following, the three 422s |
+
+---
+
+## 8. The Activity tab (P8.7)
+
+A new tab in the contact detail sidebar, registered through the existing `CONTACT_TABS_OPTIONS` list in
+`ContactManageView.vue` and rendered with the same `TabBar` the other tabs use.
+
+It sits **beside** History rather than replacing it, and `ContactHistory.vue` is untouched. The two answer
+different questions: History is the contact's conversation list, Activity is everything that happened in order.
+Renaming or repurposing `ContactHistory` would have broken a surface agents already rely on.
+
+| File | Role |
+| --- | --- |
+| `dashboard/api/contactActivity.js` | the endpoint, with `signal` passed through |
+| `dashboard/constants/contactActivity.js` | categories, page size, the per-kind icon map |
+| `dashboard/composables/useContactActivity.js` | cursor paging, filter state, request lifecycle |
+| `components-next/Contacts/ContactsSidebar/ContactActivity.vue` | the panel: filters, list, load more, states |
+| `components-next/Contacts/ContactsSidebar/ContactActivityEntry.vue` | one row |
+
+### Filters
+
+All, Messages, Conversations, Campaigns, Automations, Commerce — rendered as a wrapping chip row rather than a
+tab bar, because six options do not fit a sidebar tab bar at phone width. `All` is the **absence** of a filter,
+not a category the server knows: it omits `categories` entirely, which is what asks for every one.
+
+Changing the filter starts a new list and drops the cursor, because a cursor from one filter is meaningless in
+another. A spec asserts the second request carries no cursor.
+
+### Paging reads downwards
+
+"Load more" **appends**, because a timeline is read downwards; it never replaces the list. The button appears
+only while the server returned a cursor, and disappears when it did not — so the end of the timeline is visible
+rather than guessed at. Requests go through the repository's shared `useAbortableRequest`, so switching filters
+quickly cannot let a slow earlier response append rows the viewer no longer asked for.
+
+### An unknown kind still renders
+
+`ContactActivityEntry` looks the kind's label up in i18n with the raw kind as the fallback, and its icon in a
+map with a neutral dot as the fallback. So a kind the server starts sending before the client knows it renders
+as a readable row rather than a blank one. A spec covers exactly that.
+
+Chips come only from the entry's own typed `meta` — rule name, campaign title, flow name, template name, action
+type, provider, error or failure code, skip or end reason, match source, currency. Nothing is derived or
+guessed: a value the server did not send simply has no chip.
+
+### States
+
+| State | What is shown |
+| --- | --- |
+| first load | spinner |
+| empty | "Nothing has been recorded for this contact yet." — not an empty list |
+| partial | an amber banner naming the sources that could not be loaded, above the rows that could |
+| rejected | the server's own 422 reason, or a generic message for anything else |
+
+The partial banner is the `degrade` warnings from §5 surfaced to the agent, so a commerce outage is visible as
+an outage rather than as a contact who has never bought anything.
+
+### Tests
+
+| Spec | Count |
+| --- | --- |
+| `composables/spec/useContactActivity.spec.js` | 8 |
+| `ContactsSidebar/specs/ContactActivity.spec.js` | 9 |
+| `ContactsSidebar/specs/ContactActivityEntry.spec.js` | 8 |
+
+Copy is in EN and AR, keys matched one to one.

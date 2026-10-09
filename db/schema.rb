@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_09_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_09_130000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -975,6 +975,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_120000) do
     t.string "country_code", default: ""
     t.boolean "blocked", default: false, null: false
     t.bigint "company_id"
+    t.index "account_id, ((additional_attributes ->> 'social_tiktok_user_id'::text))", name: "index_contacts_on_social_tiktok_user_id", where: "(additional_attributes ? 'social_tiktok_user_id'::text)"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"

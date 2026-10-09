@@ -89,6 +89,12 @@ end
 if resource.email?
   ## Email Channel Attributes
   json.email resource.channel.try(:email)
+  # Lynomia (docs/p10/06-channel-lifecycle-health.md): `Inboxes::FetchImapEmailsJob` latches an authorization
+  # error for ANY email channel, but this was reported only for Google and Microsoft inboxes and only to
+  # administrators -- so a plain IMAP inbox whose password changed showed no warning anywhere, to anyone, which
+  # is the common case on a self-hosted installation. A boolean is not a credential; the reconnect banners in
+  # Settings.vue stay scoped to the OAuth providers that can act on it.
+  json.reauthorization_required resource.channel.try(:reauthorization_required?)
   json.forwarding_enabled ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
   json.forward_to_email resource.channel.try(:forward_to_email) if ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
   if Current.account_user&.administrator? && defined?(with_branded_email_layout) && with_branded_email_layout.present? &&
@@ -106,6 +112,8 @@ if resource.email?
     json.imap_enable_ssl resource.channel.try(:imap_enable_ssl)
     json.imap_authentication resource.channel.try(:imap_authentication)
 
+    # An OAuth inbox with no stored authorization at all is also waiting to be connected, which the latch alone
+    # does not say. Overrides the general value above for exactly those inboxes.
     if resource.channel.try(:microsoft?) || resource.channel.try(:google?) || resource.channel.try(:legacy_google?)
       json.reauthorization_required resource.channel.try(:provider_config).empty? || resource.channel.try(:reauthorization_required?)
     end
@@ -152,11 +160,13 @@ if resource.whatsapp?
      (resource.channel.try(:provider_config) || {}).to_h['source'] == 'embedded_signup'
     json.business_management_token_configured resource.channel.try(:business_management_token).present?
   end
-  # Only show reauthorization for embedded signup; manual flow uses API keys, not OAuth
-  json.reauthorization_required(
-    (resource.channel.try(:provider_config) || {}).to_h['source'] == 'embedded_signup' &&
-    resource.channel.try(:reauthorization_required?)
-  )
+  # Lynomia (docs/p10/06-channel-lifecycle-health.md): this used to be reported only for embedded signup, on the
+  # grounds that the manual flow uses API keys rather than OAuth. But `Channel::Whatsapp#setup_webhooks!` latches
+  # reauthorization for BOTH providers, and an API key can be revoked just as an authorization can -- so a
+  # manually configured number that could no longer authenticate showed no warning at all. The latch is now
+  # reported whichever way the number was set up; `whatsappUnauthorized` in Settings.vue still gates the
+  # reconnect flow on embedded signup, because that is the only flow that can complete it.
+  json.reauthorization_required resource.channel.try(:reauthorization_required?)
 end
 
 ## Voice attributes for TwilioSms
@@ -180,3 +190,9 @@ if resource.channel_type == 'Channel::Whatsapp' && resource.channel.respond_to?(
   json.recording_enabled resource.channel.try(:recording_enabled?)
   json.transcription_enabled resource.channel.try(:transcription_enabled?)
 end
+
+## Lynomia: one honest connection state per channel (docs/p10/06-channel-lifecycle-health.md).
+## `reauthorization_required` above stays exactly as it is -- the existing UI reads it. This says the same thing
+## for the channels that have no latch, and says `unknown` rather than nothing for the five that report no
+## health at all. It is P9's Operations::Health::Component, not a second vocabulary.
+json.connection_state Channels::ConnectionState.new(resource).call.as_json

@@ -9,11 +9,35 @@
 # Deterministic by construction: `contact_identities` is UNIQUE on (account_id, identity_type, value), so a
 # value resolves to exactly one contact or to none. Email is tried before phone, matching the OSS precedence.
 # Nothing here compares names, avatars, usernames or email local-parts, and nothing merges.
+# A SECOND, SEPARATE GAP, on TikTok only. TikTok writes the CONVERSATION id to `contact_inboxes.source_id` and
+# the customer's real TikTok user id only to `additional_attributes['social_tiktok_user_id']`, which nothing
+# reads back -- so every new TikTok conversation created a brand-new Contact for a customer the account already
+# had (docs/p10/02-channel-capability-matrix.md §TikTok). That lookup is the third fallback below. It is an
+# exact match on a provider-issued id, so it is as deterministic as the `source_id` match itself.
 module Custom::ContactInboxWithContactBuilder
+  # Channel type => [the attribute key, the WHERE fragment that the partial expression index on `contacts` can
+  # answer]. The fragment names the key literally because an expression index is only used when the query
+  # contains the same literal expression, and it is a frozen constant here rather than interpolated at the call
+  # site so no caller can put anything of its own into the SQL.
+  SOCIAL_IDENTITY_LOOKUPS = {
+    'Channel::Tiktok' => ['social_tiktok_user_id',
+                          "contacts.additional_attributes ->> 'social_tiktok_user_id' = ?"]
+  }.freeze
+
   private
 
   def find_contact
-    super || find_contact_by_linked_identity
+    super || find_contact_by_linked_identity || find_contact_by_social_identity
+  end
+
+  def find_contact_by_social_identity
+    key, condition = SOCIAL_IDENTITY_LOOKUPS[inbox.channel_type]
+    return if key.blank?
+
+    value = contact_attributes[:additional_attributes].to_h.with_indifferent_access[key]
+    return if value.blank?
+
+    account.contacts.where(condition, value).first
   end
 
   # Downcased for the same reason the OSS email lookup downcases (`Contact.from_email`): a stored identity is

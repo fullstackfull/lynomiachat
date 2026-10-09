@@ -389,7 +389,7 @@ that record nothing, and a `channels_component` that reads it.
 
 ---
 
-## 10. Permission facts P10 must preserve (and two leaks it must close)
+## 10. Permission facts P10 must preserve (and the one existence gap it found)
 
 `Conversations::PermissionFilterService` is the canonical filter: administrators see everything, everyone else
 sees `conversations.where(inbox: user.inboxes.where(account_id: account.id))`. P8's timeline uses it. P9's
@@ -401,13 +401,19 @@ answers `index?`, `show?`, `search?`, `update?` and `create?` with `true` for ev
 conversation visibility is filtered separately. Any P10 surface that hangs conversation data off a Contact must
 apply the filter itself.
 
-Two existing gaps, both about *existence* rather than content:
+One existing gap, about *existence* rather than content:
 
 1. `SearchService#filter_contacts` searches all account contacts with no inbox filter — deliberate and
    consistent with `ContactPolicy#index?`. Conversations and messages in the same response *are* filtered.
-2. `Contacts::ContactableInboxesService#get` iterates `account.inboxes` with **no permission filter**, and
-   `ContactPolicy#contactable_inboxes?` is `true`. A restricted agent therefore learns every inbox in the
-   account and can initiate a conversation in one they are not a member of.
+
+**Correction to an earlier reading of this document.** A second item was listed here, claiming that
+`Contacts::ContactableInboxesService` leaked inbox existence to a restricted agent. It does not. The service
+itself iterates `account.inboxes` with no filter, but its only caller filters the result:
+`Api::V1::Accounts::ContactsController#contactable_inboxes` keeps only the entries where
+`policy(contactable_inbox[:inbox]).show?`, and `InboxPolicy#show?` is
+`Current.user.assigned_inboxes.include?(record)`. So no inbox a restricted agent cannot see is ever returned,
+and P10 has nothing to close here. What remains true, and is worth naming as a trap rather than a defect: the
+filter lives in the controller, not in the service, so a second caller added later would not inherit it.
 
 ---
 

@@ -242,11 +242,3 @@ export const getInboxIconByType = (
 
   return iconMap[type] ?? defaultIcon;
 };
-
-export const getInboxWarningIconClass = (type, reauthorizationRequired) => {
-  const allowedInboxTypes = [INBOX_TYPES.FB, INBOX_TYPES.EMAIL];
-  if (allowedInboxTypes.includes(type) && reauthorizationRequired) {
-    return 'warning';
-  }
-  return '';
-};

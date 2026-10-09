@@ -5,7 +5,6 @@ import {
   getInboxIconByType,
   getInboxIdentifier,
   getInboxVoiceIcon,
-  getInboxWarningIconClass,
   getVoiceCallIcon,
   searchInboxes,
 } from '../inbox';
@@ -269,14 +268,6 @@ describe('#Inbox Helpers', () => {
           );
         });
       });
-    });
-  });
-
-  describe('getInboxWarningIconClass', () => {
-    it('should return correct class for warning', () => {
-      expect(getInboxWarningIconClass('Channel::FacebookPage', true)).toEqual(
-        'warning'
-      );
     });
   });
 

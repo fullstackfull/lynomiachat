@@ -25,18 +25,32 @@ class Operations::AccountHealth
 
   private
 
-  # Six grouped queries, each restricted to the ids on this page.
+  # Eight grouped queries, each restricted to the ids on this page.
   def aggregate(ids)
     {
       signals: Operations::Signal.open_signals.where(account_id: ids).group(:account_id).count,
       critical_signals: Operations::Signal.open_signals.where(account_id: ids, severity: :critical)
                                           .group(:account_id).count,
-      inboxes: Inbox.where(account_id: ids).group(:account_id).count,
+      # Grouped by channel type as well as account, because whether an account's channels can be called healthy
+      # depends on WHICH channels they are: five of the twelve report nothing about their own connection
+      # (Channels::Capability), and an account made only of those cannot be green.
+      inboxes: Inbox.where(account_id: ids).group(:account_id, :channel_type).count,
+      # Distinct inboxes, not signal rows: two problems with one inbox is one broken channel.
+      broken_channels: inbox_signal_counts(ids, severity: :critical),
+      flagged_channels: inbox_signal_counts(ids),
       active_cases: Support::Ticket.active.where(account_id: ids).group(:account_id).count,
       overdue_cases: Support::Ticket.overdue.where(account_id: ids).group(:account_id).count,
       broken_stores: Commerce::Store.where(account_id: ids, status: [:needs_reauth, :disconnected])
                                     .group(:account_id).count
     }
+  end
+
+  # Scoped on `subject_type` rather than on a list of sources, so a channel problem recorded by a writer that
+  # does not exist yet is still counted here.
+  def inbox_signal_counts(ids, severity: nil)
+    scope = Operations::Signal.open_signals.where(account_id: ids, subject_type: 'Inbox')
+    scope = scope.where(severity: severity) if severity
+    scope.group(:account_id).distinct.count(:subject_id)
   end
 
   def row_for(account, data)
@@ -76,11 +90,61 @@ class Operations::AccountHealth
 
   # An account with no inbox cannot receive anything. That is almost always a half-finished setup rather than a
   # fault, so it is `unknown` with the reason rather than a failure badge.
+  #
+  # Before P10 this said HEALTHY the moment an account had one inbox, whatever state that inbox was in -- the
+  # broken channel was visible only in the generic `recorded_issues` column. Now the column means what it says.
+  # It reads the durable `operations_signals` rows rather than calling Channels::ConnectionState per inbox,
+  # because this page renders 25 accounts at once and that would be a Redis read and a channel load per inbox.
+  # The cost of that choice, stated rather than hidden: a channel that was already broken before P9 shipped has
+  # a Redis latch but no signal row, so it is counted as unreported rather than as broken.
   def channels_component(account, data)
-    count = data[:inboxes][account.id].to_i
-    return Operations::Health.absent(:channels, 'No inbox is configured') if count.zero?
+    by_type = channel_types_for(account, data)
+    return Operations::Health.absent(:channels, 'No inbox is configured') if by_type.empty?
 
-    build(:channels, Operations::Health::HEALTHY, detail: { size: count })
+    broken = data[:broken_channels][account.id].to_i
+    flagged = data[:flagged_channels][account.id].to_i
+    detail = { size: by_type.values.sum, broken: broken, flagged: flagged }
+    channel_status(broken, flagged, by_type, detail)
+  end
+
+  def channel_status(broken, flagged, by_type, detail)
+    return channels(Operations::Health::CRITICAL, "#{broken} channels cannot connect", detail) if broken.positive?
+    return channels(Operations::Health::WARNING, "#{flagged} channels reported a problem", detail) if flagged.positive?
+
+    silent = silent_channel_count(by_type)
+    return channels(Operations::Health::HEALTHY, nil, detail) if silent.zero?
+
+    # P9's rule, applied to channels: silence is not green. A channel nothing reports on is `unknown`, and an
+    # account holding one cannot be summarised as healthy on the strength of the others.
+    Operations::Health::Component.build(
+      key: :channels, status: Operations::Health::UNKNOWN, source_class: 'absent',
+      reason: "#{silent} channels do not report whether they are connected",
+      detail: detail.merge(unreported: silent), observed_at: Time.current
+    )
+  end
+
+  # A channel with no provider -- a web widget, an API inbox -- is not silent, it has nothing to be silent
+  # about. A channel type this installation does not describe counts as silent.
+  def silent_channel_count(by_type)
+    by_type.sum { |channel_type, count| silent_channel_type?(channel_type) ? count : 0 }
+  end
+
+  def silent_channel_type?(channel_type)
+    entry = Channels::Capability.for_channel_type(channel_type)
+    # A channel type this installation does not describe is silent by definition.
+    return true if entry.nil?
+
+    entry.provider_backed? && !entry.health_reported?
+  end
+
+  def channel_types_for(account, data)
+    data[:inboxes].each_with_object({}) do |((account_id, channel_type), count), types|
+      types[channel_type] = count if account_id == account.id
+    end
+  end
+
+  def channels(status, reason, detail)
+    build(:channels, status, reason: reason, detail: detail, source_class: 'recorded')
   end
 
   def commerce_component(account, data)

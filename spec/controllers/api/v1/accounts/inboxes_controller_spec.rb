@@ -241,7 +241,15 @@ RSpec.describe 'Inboxes API', type: :request do
         expect(response.body).not_to include('business-token')
       end
 
-      it 'does not flag reauthorization_required for manual whatsapp channel even when reauth required' do
+      # Lynomia (docs/p10/06-channel-lifecycle-health.md): this example used to assert the opposite -- that a
+      # manually configured number reports `false` even when the latch is set, on the grounds that the manual
+      # flow uses API keys rather than OAuth. But `Channel::Whatsapp#setup_webhooks!` latches reauthorization
+      # for BOTH providers, so that number was broken and said nothing to anybody. It is also clearable
+      # without an OAuth round trip: `PATCH /inboxes/:id` calls `reauthorized!` after updating the channel
+      # (inboxes_controller.rb:134), so the warning is actionable rather than permanent. The reconnect FLOW
+      # stays scoped to embedded signup in Settings.vue, which is why the payload still carries
+      # `provider_config['source']`.
+      it 'flags reauthorization_required for a manual whatsapp channel whose latch is set' do
         whatsapp_channel = create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
                                                      validate_provider_config: false)
         whatsapp_channel.update!(provider_config: whatsapp_channel.provider_config.merge('source' => 'manual'))
@@ -253,7 +261,8 @@ RSpec.describe 'Inboxes API', type: :request do
             as: :json
 
         expect(response).to have_http_status(:success)
-        expect(response.parsed_body['reauthorization_required']).to be(false)
+        expect(response.parsed_body['reauthorization_required']).to be(true)
+        expect(response.parsed_body['provider_config']['source']).to eq('manual')
       end
 
       it 'returns the inbox if assigned inbox is assigned as agent' do

@@ -154,7 +154,8 @@ RSpec.describe Account do
         feature_delayed_automations: 1 << 5,
         feature_audit_log_ip_address: 1 << 6,
         feature_lynomia_commerce: 1 << 7,
-        feature_lynomia_flow_builder: 1 << 8
+        feature_lynomia_flow_builder: 1 << 8,
+        feature_lynomia_support_tickets: 1 << 9
       )
       expect(described_class.flag_mapping['feature_flags_ext_1'][:feature_whatsapp_manual_transfer]).to eq(1)
       expect(described_class.flag_mapping['feature_flags_ext_1'][:feature_data_import]).to eq(2)

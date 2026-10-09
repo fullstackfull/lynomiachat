@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_09_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1671,6 +1671,58 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.index ["account_id"], name: "index_sla_policies_on_account_id"
   end
 
+  create_table "support_ticket_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "support_ticket_id", null: false
+    t.bigint "user_id"
+    t.string "event_type", null: false
+    t.text "body"
+    t.jsonb "data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_support_ticket_events_on_account_and_created_at"
+    t.index ["support_ticket_id", "created_at"], name: "index_support_ticket_events_on_ticket_and_created_at"
+  end
+
+  create_table "support_tickets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "reference_number", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "category", default: "other", null: false
+    t.integer "status", default: 0, null: false
+    t.integer "priority", default: 1, null: false
+    t.bigint "conversation_id"
+    t.bigint "contact_id"
+    t.bigint "inbox_id"
+    t.bigint "assignee_id"
+    t.bigint "team_id"
+    t.bigint "created_by_id"
+    t.string "source_type"
+    t.bigint "source_id"
+    t.bigint "sla_policy_id"
+    t.datetime "first_response_due_at"
+    t.datetime "resolution_due_at"
+    t.datetime "first_responded_at"
+    t.datetime "first_response_breached_at"
+    t.datetime "resolution_breached_at"
+    t.datetime "sla_paused_at"
+    t.integer "sla_paused_seconds", default: 0, null: false
+    t.datetime "last_activity_at", null: false
+    t.datetime "resolved_at"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "assignee_id", "status"], name: "index_support_tickets_on_account_assignee_status"
+    t.index ["account_id", "first_response_due_at"], name: "index_support_tickets_on_awaiting_first_response", where: "((first_response_due_at IS NOT NULL) AND (first_responded_at IS NULL) AND (first_response_breached_at IS NULL) AND (status < 4))"
+    t.index ["account_id", "reference_number"], name: "index_support_tickets_on_account_and_reference", unique: true
+    t.index ["account_id", "resolution_due_at"], name: "index_support_tickets_on_open_resolution_due", where: "((resolution_due_at IS NOT NULL) AND (resolution_breached_at IS NULL) AND (status < 4))"
+    t.index ["account_id", "status", "last_activity_at"], name: "index_support_tickets_on_account_status_activity", order: { last_activity_at: :desc }
+    t.index ["account_id", "team_id", "status"], name: "index_support_tickets_on_account_team_status"
+    t.index ["contact_id"], name: "index_support_tickets_on_contact_id"
+    t.index ["conversation_id"], name: "index_support_tickets_on_conversation_id"
+  end
+
   create_table "taggings", id: :serial, force: :cascade do |t|
     t.integer "tag_id"
     t.string "taggable_type"
@@ -1865,6 +1917,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
   add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
+  add_foreign_key "support_ticket_events", "accounts", on_delete: :cascade
+  add_foreign_key "support_ticket_events", "support_tickets", on_delete: :cascade
+  add_foreign_key "support_ticket_events", "users", on_delete: :nullify
+  add_foreign_key "support_tickets", "accounts", on_delete: :cascade
+  add_foreign_key "support_tickets", "contacts", on_delete: :nullify
+  add_foreign_key "support_tickets", "conversations", on_delete: :nullify
+  add_foreign_key "support_tickets", "inboxes", on_delete: :nullify
+  add_foreign_key "support_tickets", "sla_policies", on_delete: :nullify
+  add_foreign_key "support_tickets", "teams", on_delete: :nullify
+  add_foreign_key "support_tickets", "users", column: "assignee_id", on_delete: :nullify
+  add_foreign_key "support_tickets", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "user_sessions", "users"
   add_foreign_key "whatsapp_message_templates", "accounts", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).

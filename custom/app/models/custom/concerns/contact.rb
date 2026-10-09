@@ -6,5 +6,8 @@ module Custom::Concerns::Contact
 
   included do
     has_many :campaign_recipients, dependent: :destroy_async
+    # Lynomia Support: a contact's cases survive the contact, with contact_id nullified by the foreign key, so
+    # the account keeps its support history. No `dependent:` for the same reason.
+    has_many :support_tickets, class_name: 'Support::Ticket', inverse_of: :contact, dependent: nil
   end
 end

@@ -25,6 +25,8 @@
 # - 'knowledge_base_manage': Can manage knowledge base portals.
 # - 'commerce_order_manage': Lynomia Commerce: can change store order statuses and resend store emails (refunds and
 #   cancellations stay administrator-only).
+# - 'support_ticket_manage': Lynomia Support: can see and work every support case in the account. Without it an
+#   agent sees only the cases assigned to them or to one of their teams (custom/app/policies/support/ticket_policy.rb).
 
 # Lynomia-owned: `commerce_order_manage` below is what lets a non-administrator act on a store order
 # (custom/app/policies/commerce/action_policy.rb), so the role storage is Lynomia's, on the
@@ -45,6 +47,7 @@ class CustomRole < ApplicationRecord
     report_manage
     knowledge_base_manage
     commerce_order_manage
+    support_ticket_manage
   ].freeze
 
   validates :name, presence: true

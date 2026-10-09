@@ -288,3 +288,7 @@
   display_name: Lynomia Flow Builder
   enabled: false
   column: feature_flags_ext_1
+- name: lynomia_support_tickets
+  display_name: Lynomia Support Tickets
+  enabled: false
+  column: feature_flags_ext_1

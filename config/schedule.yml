@@ -89,3 +89,11 @@ lynomia_queue_health_job:
   cron: '*/5 * * * *'
   class: 'Lynomia::QueueHealthJob'
   queue: housekeeping
+
+# executed every 5 minutes
+# decides the SLA outcome of the support cases whose targets have just passed, over two partial indexes, and
+# records each outcome once (docs/p9/03-sla-workflow.md)
+support_sla_sweep_job:
+  cron: '*/5 * * * *'
+  class: 'Support::SlaSweepJob'
+  queue: housekeeping

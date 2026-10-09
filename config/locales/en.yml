@@ -233,6 +233,15 @@ en:
       invalid_cursor: "That page cursor is not valid. Start from the first page."
       unsupported_category: "'%{category}' is not a timeline category. Allowed: %{allowed}."
       invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
+    tickets:
+      feature_disabled: "Support tickets are not enabled for this account."
+      invalid_status_transition: "A ticket cannot go from '%{from}' to '%{to}'. Allowed: %{allowed}."
+      unsupported_category: "'%{category}' is not a ticket category. Allowed: %{allowed}."
+      unsupported_status: "'%{status}' is not a ticket status. Allowed: %{allowed}."
+      unsupported_priority: "'%{priority}' is not a ticket priority. Allowed: %{allowed}."
+      unsupported_sort: "'%{sort}' is not a ticket sort order. Allowed: %{allowed}."
+      unknown_filter_value: "No %{filter} with id '%{value}' in this account."
+      invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.

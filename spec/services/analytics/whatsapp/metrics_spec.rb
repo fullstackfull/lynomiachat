@@ -30,9 +30,9 @@ RSpec.describe Analytics::Whatsapp::Metrics do
   end
 
   def send_message(status: :sent, at: Time.utc(2026, 10, 2, 10, 0), on: nil, template_params: nil,
-                   content_attributes: {})
+                   content_attributes: {}, private_note: false)
     create(:message, account: account, inbox: (on || conversation).inbox, conversation: on || conversation,
-                     message_type: :outgoing, status: status, created_at: at,
+                     message_type: :outgoing, status: status, created_at: at, private: private_note,
                      content_attributes: content_attributes,
                      additional_attributes: template_params ? { 'template_params' => template_params } : {})
   end
@@ -51,6 +51,18 @@ RSpec.describe Analytics::Whatsapp::Metrics do
     it 'ignores inboxes that are not WhatsApp' do
       send_message(on: web_conversation)
       expect(metrics.messages_sent).to eq(0)
+    end
+
+    # Found by running the UAT runbook against a seeded instance: a private note was being counted as a send,
+    # which inflated messages_sent and deflated every rate on this screen.
+    it 'ignores a private note, which is never handed to Meta and has no delivery state of its own' do
+      send_message(status: :read, private_note: true)
+      send_message(status: :read)
+
+      expect(metrics.messages_sent).to eq(1)
+      expect(metrics.delivered).to eq(1)
+      expect(metrics.read).to eq(1)
+      expect(metrics.delivery_rate).to eq(100.0)
     end
 
     it 'ignores incoming messages' do

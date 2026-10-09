@@ -114,9 +114,15 @@ class Analytics::Whatsapp::Metrics
 
   # Account first, then WhatsApp only, then the shared filters. Every filter value was proved to belong to this
   # account by Analytics::FilterSet before it reached here.
+  #
+  # `private: false` matters as much as the channel filter: a private note is an internal message that is never
+  # handed to Meta, so its `status` is whatever was written locally and never a delivery receipt. Counting notes
+  # would inflate `messages_sent` and deflate every rate on this screen. This is the same exclusion
+  # `Message.chat` makes for the same reason (app/models/message.rb:119); it is spelled out here rather than
+  # reusing that scope because this family also needs to exclude the echoes, which `chat` knows nothing about.
   def sends
     scope = @account.messages
-                    .where(created_at: @date_range.utc_range, message_type: :outgoing)
+                    .where(created_at: @date_range.utc_range, message_type: :outgoing, private: false)
                     .where(inbox_id: whatsapp_inbox_ids)
                     .where(ECHO_EXCLUSION)
     scope = scope.where(inbox_id: @filters[:inbox_id]) if @filters[:inbox_id]
@@ -126,7 +132,7 @@ class Analytics::Whatsapp::Metrics
 
   def echo_scope
     scope = @account.messages
-                    .where(created_at: @date_range.utc_range, message_type: :outgoing)
+                    .where(created_at: @date_range.utc_range, message_type: :outgoing, private: false)
                     .where(inbox_id: whatsapp_inbox_ids)
                     .where(ECHO_ONLY)
     scope = scope.where(inbox_id: @filters[:inbox_id]) if @filters[:inbox_id]

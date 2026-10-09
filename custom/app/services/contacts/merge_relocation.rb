@@ -48,6 +48,15 @@ class Contacts::MergeRelocation
     commerce_customer_links: ['Commerce::CustomerLink', :commerce_store_id]
   }.freeze
 
+  # Rows that point at a SCOPED row rather than at the contact. Discarding a duplicate would leave these
+  # pointing at nothing -- `commerce_carts.commerce_customer_link_id` is ON DELETE SET NULL -- so they are moved
+  # to the surviving row first. The discard then loses the duplicate and nothing else.
+  #
+  # Only commerce has any: nothing in the schema references `campaign_recipients.id`.
+  DEPENDENTS = {
+    commerce_customer_links: [['Commerce::Cart', :commerce_customer_link_id]]
+  }.freeze
+
   def initialize(base:, mergee:)
     @base = base
     @mergee = mergee
@@ -75,14 +84,41 @@ class Contacts::MergeRelocation
     @moved[relation] = scope_for(relation).update_all(contact_id: @base.id) # rubocop:disable Rails/SkipsModelValidations
   end
 
-  # Move what the base does not already have, discard the rest. Both steps are bounded by the mergee's own rows.
+  # Move what the base does not already have, carry across what pointed at the rest, then discard the rest. Every
+  # step is bounded by the mergee's own rows.
   def move_scoped(relation, scope_column)
     taken = scope_for(relation, @base).pluck(scope_column)
     movable = scope_for(relation)
     movable = movable.where.not(scope_column => taken) if taken.any?
 
     @moved[relation] = movable.update_all(contact_id: @base.id) # rubocop:disable Rails/SkipsModelValidations
+    repoint_dependents(relation, scope_column)
     @discarded[relation] = scope_for(relation).delete_all
+  end
+
+  # Runs after the move, so whatever is still on the mergee is exactly what is about to be discarded.
+  def repoint_dependents(relation, scope_column)
+    dependents = DEPENDENTS[relation]
+    return if dependents.blank?
+
+    survivors = scope_for(relation, @base).pluck(scope_column, :id).to_h
+    scope_for(relation).pluck(:id, scope_column).each do |doomed_id, scope_value|
+      survivor_id = survivors[scope_value]
+      repoint(dependents, doomed_id, survivor_id) if survivor_id
+    end
+  end
+
+  # Counted under the dependent's own table name, so the audit says `commerce_carts_relinked` rather than
+  # something a reader has to decode.
+  def repoint(dependents, doomed_id, survivor_id)
+    dependents.each do |model_name, column|
+      model = model_name.constantize
+      # rubocop:disable Rails/SkipsModelValidations
+      count = model.where(column => doomed_id).update_all(column => survivor_id)
+      # rubocop:enable Rails/SkipsModelValidations
+      key = :"#{model.table_name}_relinked"
+      @moved[key] = @moved[key].to_i + count
+    end
   end
 
   # Through the gem's own API rather than the taggings table, so the tag counters stay right. `add_labels` is a

@@ -143,4 +143,41 @@ RSpec.describe Contacts::MergeRelocation do
       expect(base.contact_identities.reload.pluck(:value)).to contain_exactly('+96511111111', '+96522222222')
     end
   end
+
+  # Discarding a duplicate is not allowed to take anything else with it. `commerce_carts` points at the LINK as
+  # well as at the contact, and that foreign key is ON DELETE SET NULL, so a cart on the discarded link would
+  # have silently lost its store attribution (docs/p10/04-contact-merge-linking.md).
+  describe 'rows that pointed at a discarded duplicate' do
+    it 'moves a cart onto the surviving store link rather than letting the key nullify' do
+      store = create(:commerce_store, account: account)
+      kept = create(:commerce_customer_link, account: account, store: store, contact: base)
+      doomed = create(:commerce_customer_link, account: account, store: store, contact: mergee)
+      cart = Commerce::Cart.create!(account: account, commerce_store: store, commerce_customer_link: doomed,
+                                    provider: 'zid', provider_cart_id: 'cart-doomed', contact: mergee,
+                                    state: :abandoned, first_seen_at: 1.day.ago,
+                                    last_provider_event_at: 1.day.ago, abandoned_at: 1.hour.ago, currency: 'KWD')
+
+      result = relocate
+
+      expect(result[:discarded][:commerce_customer_links]).to eq(1)
+      expect(result[:moved][:commerce_carts_relinked]).to eq(1)
+      expect(cart.reload.commerce_customer_link_id).to eq(kept.id)
+      expect(cart.contact_id).to eq(base.id)
+    end
+
+    it 'leaves a cart alone when there is no surviving link for its store' do
+      store = create(:commerce_store, account: account)
+      link = create(:commerce_customer_link, account: account, store: store, contact: mergee)
+      cart = Commerce::Cart.create!(account: account, commerce_store: store, commerce_customer_link: link,
+                                    provider: 'zid', provider_cart_id: 'cart-kept', contact: mergee,
+                                    state: :abandoned, first_seen_at: 1.day.ago,
+                                    last_provider_event_at: 1.day.ago, abandoned_at: 1.hour.ago, currency: 'KWD')
+
+      result = relocate
+
+      expect(result[:discarded][:commerce_customer_links]).to be_nil
+      expect(cart.reload.commerce_customer_link_id).to eq(link.id)
+      expect(link.reload.contact_id).to eq(base.id)
+    end
+  end
 end

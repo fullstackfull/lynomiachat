@@ -1,6 +1,7 @@
 # P8 security and performance
 
-Updated at each phase. This revision covers P8.1 (the analytics foundation).
+Updated at each phase. §1–§3 are the P8.1 baseline; §4–§6 are the P8.8 hardening pass over every
+shape P8.2–P8.7 ship.
 
 ---
 
@@ -110,3 +111,174 @@ report builder averaging over `ReportingEvent` picked up the seeded rows. Deleti
 Recorded because it is a trap for anyone benchmarking against the test database: a planner fixture is not
 transactional and will leak into every example in the run. Benchmark fixtures belong in a scratch database, or must
 be removed before any suite is run.
+
+---
+
+## 4. P8.8 — EXPLAIN over every shipped shape
+
+### Method, and why it leaves nothing behind
+
+The §3 trap is the reason this pass runs inside **one transaction that is rolled back**, with `ANALYZE` on the
+seeded tables *inside* that transaction so the planner has real statistics while the plans are taken. After the
+rollback the harness re-counts `messages` and `conversations` and prints zero, which is the proof that the
+benchmark fixture did not leak into the test database.
+
+Two passes were needed, because the first one's answer turned out to be about the fixture rather than the code.
+
+**Pass 1** — one dominant tenant: 71,000 messages, 7,200 conversations, 24,800 reporting events, 801 contacts,
+with the target account holding ~86% of the rows, plus one HEAVY contact (200 conversations, 6,000 messages).
+
+**Pass 2** — the realistic multi-tenant shape: 126,000 messages and 20,200 conversations, with the target
+account a **small minority** (202 conversations), plus a HEAVY contact (200 conversations) and a QUIET contact
+(2 conversations) inside it.
+
+### Pass 1 results
+
+| # | Shape | Time | Note |
+| --- | --- | --- | --- |
+| A1 | conversations created over a range | 1.1 ms | Seq Scan on conversations |
+| A2 | the same, bucketed `date_trunc(... AT TIME ZONE)` | 3.3 ms | Seq Scan; the timezone expression did not prevent anything |
+| A3 | unresolved backlog (current state) | 1.0 ms | Seq Scan |
+| A4 | inbound messages over a range | 8.9 ms | Seq Scan on messages |
+| A5 | reopen detection, `reporting_events` ⋈ `conversations` | 1.2 ms | index on reporting_events |
+| A6 | breakdown by inbox | 1.5 ms | Seq Scan |
+| A7 | breakdown by channel (⋈ inboxes) | 2.2 ms | Seq Scan + hash join |
+| B1 | WhatsApp sends with the echo exclusion | **23.3 ms** | see §5 |
+| B2 | template breakdown on `additional_attributes` | 8.5 ms | jsonb read, no index |
+| C1 | timeline fan-out, HEAVY contact | 3.6 ms | see §6 |
+| C2 | the same with a cursor | 1.3 ms | — |
+| C3 | timeline fan-out, ordinary contact | 0.2 ms | — |
+| C4 | timeline reporting events, HEAVY contact | 17.7 ms | see §6 |
+| C5 | the contact's conversations | 0.9 ms | — |
+| C6 | timeline fan-out for an inbox-restricted agent | 3.5 ms | — |
+
+**The eight Seq Scans are a property of the fixture, not of the code.** When one account holds 86% of a table,
+a sequential scan *is* the cheaper plan and the planner is right to choose it. Pass 2 was run to settle it.
+
+### Pass 2 results — the account index is used when the account predicate is selective
+
+| # | Shape | Plan | Time |
+| --- | --- | --- | --- |
+| Q2a | conversations over a range, minority tenant | `index_conversations_on_account_id` | 0.064 ms |
+| Q2b | backlog, minority tenant | `index_conversations_on_account_id` | 0.084 ms |
+| Q2c | inbound messages over a range, minority tenant | `index_messages_on_account_id` | 1.219 ms |
+
+No Seq Scan appears in any of them. The pass-1 plans were correct for pass-1 data, and the account indexes do
+their job at the shape production actually has. **No new index is needed for the analytics shapes.**
+
+---
+
+## 5. The one measured cost worth naming: the coexistence-echo exclusion (B1, 23.3 ms)
+
+The predicate is a functional expression over a double-encoded column
+(`docs/p8/02b-whatsapp-campaign-analytics.md` §1), so it cannot use an index and is evaluated per candidate row.
+The plan shows exactly that:
+
+```
+->  Index Scan using index_messages_on_inbox_id on messages (rows=26000)
+      Filter: (created_at >= ... AND created_at < ... AND account_id = ... AND message_type = 1
+               AND COALESCE(((content_attributes #>> '{}')::jsonb ->> 'external_echo'), 'false') <> 'true')
+      Rows Removed by Filter: 40000
+```
+
+What bounds it: the predicate only ever runs on rows an index has already narrowed to one account's WhatsApp
+inboxes, one message type and one date range. 23 ms for 66,000 candidate rows is ~0.35 µs per row, so the cost
+scales with the **WhatsApp outgoing volume inside the requested window**, not with the table.
+
+It is recorded rather than optimised because the lever is a migration — a generated column or a functional index
+on the decoded expression — and nothing in production has yet shown it is needed. The trigger to revisit: a
+single account sending more than roughly a million outgoing WhatsApp messages inside one requested range, which
+would put this query near a second.
+
+---
+
+## 6. The contact-timeline fan-out: measured, and the conclusion is "no change"
+
+This was flagged in discovery as *"the one place a new index may be justified, and it must be decided from a
+real EXPLAIN, not assumed"* (`docs/p8/00-discovery.md` §7). `messages` carries no `contact_id`, so the read has
+to go through `conversations.contact_id`.
+
+### What the plans show
+
+| # | Contact | Query form | Plan | Time |
+| --- | --- | --- | --- | --- |
+| Q1a | HEAVY (200 conversations) | subquery — what P8.6 ships | `index_messages_on_account_id` + bitmap on `index_conversations_on_contact_id` | 2.58 ms |
+| Q1b | HEAVY | literal id list | `index_messages_on_account_id` | 1.91 ms |
+| Q1c | QUIET (2 conversations) | subquery — what P8.6 ships | **`index_messages_on_conversation_account_type_created`**, per conversation | **0.062 ms** |
+| Q1d | QUIET | literal id list | the same index | 0.135 ms |
+
+Three conclusions, all of them negative decisions:
+
+1. **No new index.** `index_messages_on_conversation_account_type_created` already leads on `conversation_id`
+   and the planner uses it exactly where it matters — a contact with few conversations in a large database,
+   which is the common case and which comes back in 62 µs.
+
+2. **No materialising the conversation ids.** Replacing the subquery with a literal `IN` list changes nothing
+   worth having: 1.91 ms against 2.58 ms for the heavy contact, and *slower* (0.135 ms against 0.062 ms) for the
+   quiet one, because the planner loses the row estimate the subquery gives it. The subquery P8.6 ships is the
+   better form, so no change was made.
+
+3. **The residual risk, stated precisely.** For a contact with *many* conversations the planner switches to
+   walking the account's messages newest-first and probing `conversations` per row — 4,006 rows scanned to
+   return 31 in Q1a. That is bounded by `account messages ÷ this contact's share of them`. It is fast here and
+   would degrade for a contact holding a small fraction of a very large account's messages. The lever if it ever
+   bites is not an index (the index exists) but asking per conversation and merging, which costs one query per
+   conversation and is worse in every case measured. Revisit only with a production plan that shows it.
+
+C4 (timeline reporting events, 17.7 ms) has the same shape and the same conclusion: it walks
+`index_reporting_events_on_created_at` backwards and memoizes the conversation probe (12,022 cache hits against
+6,012 misses), which is the planner handling the fan-out well.
+
+---
+
+## 7. P8.8 — tenant isolation, proved against a mirrored fixture
+
+`spec/requests/analytics/p8_tenant_isolation_spec.rb` builds **two accounts with the same shape of activity** —
+one conversation, one message, one reporting event, one campaign recipient, one automation execution, one flow
+session, one cart each — and then asserts that every P8 read surface returns **one** of each, not two.
+
+That mirroring is the point. A spec that creates data in only one account cannot catch a missing account
+predicate, because the absent rows would not exist to leak. Here a missing predicate shows up as a doubled
+count, and the spec also asserts the count is not zero, so a query that returns nothing cannot pass by
+accident.
+
+| Surface | Scoped | Foreign administrator | Foreign record |
+| --- | --- | --- | --- |
+| `/analytics/overview` | ✅ | 401 | — |
+| `/analytics/whatsapp` | ✅ | 401 | — |
+| `/analytics/campaigns` | ✅ | 401 | — |
+| `/analytics/automations` | ✅ | 401 | — |
+| `/analytics/flows` | ✅ | 401 | — |
+| `/analytics/commerce` | ✅ | 401 | — |
+| `/contacts/:id/activity` | ✅ | 401 | 404 for a contact from the other account |
+
+Per-filter isolation is asserted separately in each family's own spec: a `template_id`, `campaign_id`,
+`automation_rule_id` or `inbox_id` from another account answers **422 with the reason**, not an empty result, so
+a probe cannot distinguish "not yours" from "nothing there" by the row count.
+
+### The two tables with no account column of their own
+
+`audits` has no `account_id` at all (it scopes through `associated_type`/`associated_id`) and `contact_inboxes`
+has none either, so any join through them would need an explicit account predicate on the *other* side — easy
+to write once and easy to forget on the next change.
+
+**P8 reads neither.** The spec enforces it by scanning every P8 source file, with comment lines stripped first
+so that the documents explaining *why* the tables are avoided do not read as using them. If a later change
+introduces a read of either table, that spec fails and the author has to add the predicate deliberately.
+
+### Inbox-level narrowing
+
+The contact timeline narrows twice, and both are asserted:
+
+- conversation-derived adapters go through `Conversations::PermissionFilterService`, so a message in an inbox
+  the agent is not a member of is absent for that agent and present for an administrator;
+- campaign recipients, which carry an inbox but no conversation, are narrowed by the caller's own visible inbox
+  set computed from their role rather than from the contact's conversations.
+
+### What is deliberately not restricted
+
+Private notes are included in the timeline, because the conversation view includes them for anyone who can open
+the conversation and the timeline is gated on the same conversation visibility. Commerce rows are gated on the
+contact alone, because carts and customer links carry neither an inbox nor a conversation and there is nothing
+narrower to gate on without inventing a rule. Both are recorded in
+`docs/p8/03-contact-activity-timeline.md` §4.

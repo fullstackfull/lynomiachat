@@ -292,3 +292,7 @@
   display_name: Lynomia Support Tickets
   enabled: false
   column: feature_flags_ext_1
+- name: lynomia_unified_identity
+  display_name: Lynomia Unified Customer Identity
+  enabled: false
+  column: feature_flags_ext_1

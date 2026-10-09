@@ -12,9 +12,10 @@
 #   commerce_action_runs     ON DELETE SET NULL  action attribution lost
 #   csat_survey_responses    dependent: :destroy_async on Contact, and never moved
 #   taggings                 destroyed by acts_as_taggable_on's own association
+#   contact_identities       ON DELETE CASCADE   the linked numbers and addresses are deleted
 #
 # P8's campaign analytics read `campaign_recipients`, so losing those rows rewrites history that has already
-# been reported. This service moves all seven instead, inside the merge's existing transaction.
+# been reported. This service moves all eight instead, inside the merge's existing transaction.
 #
 # TWO OF THEM CANNOT SIMPLY BE MOVED. `campaign_recipients` is unique on (campaign_id, contact_id) and
 # `commerce_customer_links` on (commerce_store_id, contact_id), so when both contacts already have a row for the
@@ -32,7 +33,12 @@ class Contacts::MergeRelocation
     support_tickets: 'Support::Ticket',
     commerce_carts: 'Commerce::Cart',
     commerce_action_runs: 'Commerce::ActionRun',
-    csat_survey_responses: 'CsatSurveyResponse'
+    csat_survey_responses: 'CsatSurveyResponse',
+    # Unique on (account_id, identity_type, value), and both contacts are in one account, so no two rows being
+    # moved can collide -- the index already guarantees the mergee and the base cannot hold the same value.
+    # What a move CAN produce is a row that duplicates the base's own primary field once the base has taken the
+    # mergee's attributes; Custom::ContactMergeAction clears those afterwards.
+    contact_identities: 'ContactIdentity'
   }.freeze
 
   # Relations with a uniqueness that pairs the contact with something else. The second element is the column

@@ -142,6 +142,12 @@ en:
         invalid: Invalid email
       phone_number:
         invalid: should be in e164 format
+      identities:
+        feature_disabled: Linked identities are not enabled for this account
+        linked_elsewhere: is already linked to another contact in this account
+        unknown_type: 'must be one of: %{types}'
+        unusable: is not a phone number or an email address we can use. A local phone number needs its country.
+        conflict: 'This already belongs to another contact in this account (contact %{contact_id}).'
       labels:
         not_found: 'do not exist in this account: %{labels}'
     companies:

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_09_100100) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_09_120000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -927,6 +927,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_100100) do
     t.index ["account_id", "domain"], name: "index_companies_on_account_and_domain", unique: true, where: "(domain IS NOT NULL)"
     t.index ["account_id"], name: "index_companies_on_account_id"
     t.index ["name", "account_id"], name: "index_companies_on_name_and_account_id"
+  end
+
+  create_table "contact_identities", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.integer "identity_type", null: false
+    t.string "value", null: false
+    t.integer "source", default: 0, null: false
+    t.bigint "linked_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "identity_type", "value"], name: "index_contact_identities_on_account_type_value", unique: true
+    t.index ["contact_id"], name: "index_contact_identities_on_contact_id"
   end
 
   create_table "contact_inboxes", force: :cascade do |t|
@@ -1929,6 +1942,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_100100) do
   add_foreign_key "commerce_customer_links", "users", column: "confirmed_by_id", on_delete: :nullify
   add_foreign_key "commerce_stores", "accounts", on_delete: :cascade
   add_foreign_key "commerce_stores", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "contact_identities", "accounts", on_delete: :cascade
+  add_foreign_key "contact_identities", "contacts", on_delete: :cascade
+  add_foreign_key "contact_identities", "users", column: "linked_by_id", on_delete: :nullify
   add_foreign_key "flow_sessions", "accounts", on_delete: :cascade
   add_foreign_key "flow_sessions", "agent_bots", on_delete: :cascade
   add_foreign_key "flow_sessions", "conversations", on_delete: :cascade

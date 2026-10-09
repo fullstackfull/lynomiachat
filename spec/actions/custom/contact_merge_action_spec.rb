@@ -103,6 +103,82 @@ RSpec.describe Custom::ContactMergeAction do
     end
   end
 
+  # The merge is the moment the second number and the second address would otherwise be destroyed, and the
+  # measured consequence is that the next inbound message carrying one of them recreates the duplicate
+  # (docs/p10/03-unified-customer-identity.md §2).
+  describe 'the identities it absorbs' do
+    before { account.enable_features('lynomia_unified_identity') && account.save! }
+
+    it 'records the number and the address the survivor could not keep' do
+      base.update!(phone_number: '+96550000001')
+      mergee.update!(email: 'alt@example.com')
+
+      merge
+
+      expect(base.contact_identities.pluck(:identity_type, :value, :source)).to contain_exactly(
+        ['phone', '+96512345678', 'merged'], ['email', 'alt@example.com', 'merged']
+      )
+    end
+
+    it 'delivers the next message from that number to the survivor' do
+      base.update!(phone_number: '+96550000001')
+
+      merge
+
+      contact_inbox = ContactInboxWithContactBuilder.new(
+        inbox: create(:inbox, account: account), source_id: SecureRandom.uuid,
+        contact_attributes: { name: 'Dana', phone_number: '+96512345678' }
+      ).perform
+
+      expect(contact_inbox.contact_id).to eq(base.id)
+      expect(account.contacts.count).to eq(1)
+    end
+
+    it 'records nothing for a value the survivor kept as its own primary field' do
+      merge
+
+      expect(base.reload.phone_number).to eq('+96512345678')
+      expect(base.contact_identities.where(identity_type: :phone)).to be_empty
+    end
+
+    it 'moves the identities the mergee had already linked' do
+      linked = create(:contact_identity, account: account, contact: mergee, identity_type: :phone, value: '+96599999999')
+
+      merge
+
+      expect(linked.reload.contact_id).to eq(base.id)
+    end
+
+    it 'clears a row that now duplicates the survivor own primary field' do
+      create(:contact_identity, account: account, contact: base, identity_type: :phone, value: '+96512345678')
+
+      merge
+
+      expect(base.reload.phone_number).to eq('+96512345678')
+      expect(base.contact_identities.where(value: '+96512345678')).to be_empty
+    end
+
+    it 'counts them in the audit without naming them' do
+      base.update!(phone_number: '+96550000001')
+
+      merge
+
+      audit = Custom::AuditLog.find_by(comment: described_class::AUDIT_EVENT)
+      expect(audit.audited_changes['identities_absorbed']).to eq(1)
+      expect(audit.audited_changes.to_json).not_to include('96512345678')
+    end
+
+    it 'records nothing at all when the account does not have the feature' do
+      account.disable_features('lynomia_unified_identity')
+      account.save!
+      base.update!(phone_number: '+96550000001')
+
+      merge
+
+      expect(base.contact_identities).to be_empty
+    end
+  end
+
   describe 'the transaction' do
     let(:campaign) { create(:campaign, account: account, inbox: inbox) }
     let!(:recipient) do

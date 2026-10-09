@@ -177,6 +177,9 @@ Rails.application.routes.draw do
               get :attachments, to: 'attachments#index'
               # Lynomia: the contact's unified activity timeline (docs/p8/03-contact-activity-timeline.md).
               get :activity, to: 'activity#index'
+              # Lynomia: the additional numbers and addresses this contact owns
+              # (docs/p10/03-unified-customer-identity.md).
+              resources :identities, only: [:index, :create, :destroy]
             end
           end
           resources :data_imports, only: [:index, :show, :create] do

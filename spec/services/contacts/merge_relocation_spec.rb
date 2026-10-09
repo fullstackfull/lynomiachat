@@ -122,4 +122,25 @@ RSpec.describe Contacts::MergeRelocation do
   it 'reports nothing moved when there is nothing to move' do
     expect(relocate).to eq({ moved: {}, discarded: {} })
   end
+
+  describe 'linked identities' do
+    it 'moves them to the surviving contact' do
+      identity = create(:contact_identity, account: account, contact: mergee, identity_type: :phone,
+                                           value: '+96599999999')
+
+      expect(relocate[:moved][:contact_identities]).to eq(1)
+      expect(identity.reload.contact_id).to eq(base.id)
+    end
+
+    # Unique on (account_id, identity_type, value), and both contacts are in one account, so the index already
+    # rules out the collision the campaign and commerce relations have to handle by discarding.
+    it 'cannot collide, because the account-scoped index already forbids the duplicate' do
+      create(:contact_identity, account: account, contact: base, identity_type: :phone, value: '+96511111111')
+      create(:contact_identity, account: account, contact: mergee, identity_type: :phone, value: '+96522222222')
+
+      relocate
+
+      expect(base.contact_identities.reload.pluck(:value)).to contain_exactly('+96511111111', '+96522222222')
+    end
+  end
 end

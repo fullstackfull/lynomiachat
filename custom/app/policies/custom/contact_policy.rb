@@ -17,4 +17,12 @@ module Custom::ContactPolicy
   def merge?
     @account_user&.administrator? || @account_user&.permissions&.include?(MANAGE_PERMISSION) || false
   end
+
+  # Linking a phone number or an email address to a contact decides where the next message carrying it is
+  # delivered, and it is how two customer records become one without destroying either. Same boundary as the
+  # merge; reading the list follows `show?`, like the contact's other panels
+  # (docs/p10/03-unified-customer-identity.md §6).
+  def manage_identities?
+    merge?
+  end
 end

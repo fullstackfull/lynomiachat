@@ -229,6 +229,10 @@ en:
       unknown_filter_value: "The value given for '%{filter}' does not exist in this account."
       unsupported_breakdown: "'%{breakdown}' is not a breakdown this report supports. Allowed: %{allowed}."
       unknown_metric_family: "'%{family}' is not a known metric family. Allowed: %{allowed}."
+    timeline:
+      invalid_cursor: "That page cursor is not valid. Start from the first page."
+      unsupported_category: "'%{category}' is not a timeline category. Allowed: %{allowed}."
+      invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.

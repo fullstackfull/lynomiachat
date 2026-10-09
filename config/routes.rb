@@ -175,6 +175,8 @@ Rails.application.routes.draw do
               resources :labels, only: [:create, :index]
               resources :notes
               get :attachments, to: 'attachments#index'
+              # Lynomia: the contact's unified activity timeline (docs/p8/03-contact-activity-timeline.md).
+              get :activity, to: 'activity#index'
             end
           end
           resources :data_imports, only: [:index, :show, :create] do

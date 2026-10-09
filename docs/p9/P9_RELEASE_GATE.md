@@ -308,6 +308,10 @@ allow-list anywhere**, so P9 could not copy a pattern and had to establish one. 
 are also not in the controller's permitted params at all. The spec proves `'User'` is refused and
 `Operations::Signal` accepted.
 
+P9 introduces **two** polymorphic columns and allow-lists both: `operations_signals.subject_type` is likewise
+validated against `%w[Inbox Commerce::Store Webhook]`, and that table's `source` and `signal` are allow-listed
+too, so a typo in a writer is a validation failure rather than a row nobody will ever find again.
+
 **40. Can non-Super Admin access Operations?**
 No. See 26.
 
@@ -398,7 +402,8 @@ computed block is cached for 5 minutes.
 ## P8 regression
 
 **49. Do all P8 tests remain green?**
-Yes. See §T of the completion report for the exact full-suite numbers from the release build. P9 changed three
+Yes — **9307 examples, 0 failures, 70 pending** on the release build, against P8's clean baseline of 9058 / 0 /
+70; and **490 JS files, 5287 tests, 0 failures**. P9 changed three
 P8 specs, each because a P9 registration extended a list the spec asserts exactly: the account feature-flag map
 (`spec/models/account_spec.rb`), the timeline category list
 (`spec/services/contacts/activity_timeline_query_spec.rb`) and the analytics family list
@@ -454,9 +459,19 @@ existing Lynomia architecture. **The final provenance audit is P-FINAL's work an
 ## Release
 
 **56. What automated tests passed?**
-See §T of the completion report for the exact figures from the release build: the full Ruby suite, the full JS
-suite, RuboCop, ESLint and the production build, each run on a clean, untouched tree. P9 added 22 Ruby spec
-files and 10 JS spec files and modified 6 existing specs (3 Ruby, 3 JS).
+All five gates, run sequentially on a clean untouched tree (`git status --porcelain` empty before and after):
+
+| Gate | Result |
+| --- | --- |
+| RuboCop | 2842 files inspected, **no offenses** |
+| ESLint (`eslint app/**/*.{js,vue}`) | **0 errors**, 478 warnings (baseline at `4e8e3d0b` measured first-hand: 0 errors, 464 — so **+14, all `no-dynamic-keys`**) |
+| Production build (`vite build`) | **✓ built in 1m 20s** |
+| Full JS suite | **490 files, 5287 tests, 0 failures** |
+| Full Ruby suite | **9307 examples, 0 failures, 70 pending** (37 min 07 s) |
+
+P8's own clean baseline was 9058 examples / 0 failures / 70 pending, so P9 adds **249 Ruby examples** and the
+pending count is unchanged. P9 added 22 Ruby spec files and 10 JS spec files and modified 6 existing specs
+(3 Ruby, 3 JS), every one of them an exact-list assertion that a P9 registration lengthened.
 
 **57. What simulated UAT passed?**
 `docs/p9/07-uat-runbook.md` §9, 41 items with every one classified. Simulated-only items: the workspace's

@@ -68,7 +68,7 @@ not see answers **404, not 403**: a 403 confirms the record exists.
 
 ## 3. The API
 
-`/api/v1/accounts/:account_id/support/…`, nine endpoints. Every one of them is behind the account feature
+`/api/v1/accounts/:account_id/support/…`, eleven endpoints. Every one of them is behind the account feature
 `lynomia_support_tickets`; an account without it gets **404**, because the module does not exist for it — not
 403, which would tell a caller what it could have if it paid.
 

@@ -49,3 +49,16 @@ export const CAMPAIGN_BREAKDOWN_DIMENSIONS = [
   'failure',
   'skip_reason',
 ];
+
+export const AUTOMATION_BREAKDOWN_DIMENSIONS = [
+  'rule',
+  'skip_reason',
+  'status',
+];
+
+export const FLOW_BREAKDOWN_DIMENSIONS = [
+  'bot',
+  'status',
+  'failure',
+  'end_reason',
+];

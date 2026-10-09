@@ -55,18 +55,22 @@ module Analytics::MetricFamily
     ),
     automations: Family.new(
       key: :automations,
-      metrics: %i[executed skipped stuck skip_reasons],
+      metrics: Analytics::Automations::Metrics::ALL_METRICS,
       filters: %i[automation_rule_id],
       rollup_metrics: [],
       notes: 'Delayed rules only, and only within automation_rule_pending_executions 30-day retention. ' \
-             'Immediate rules record nothing, so they are absent rather than reported as zero.'
+             'Immediate rules run inline and record nothing, so they are absent rather than reported as zero; ' \
+             'the response warns when the account has any. Outcomes are bucketed on updated_at, which is when ' \
+             'the episode reached its outcome; episodes_armed is bucketed on created_at.'
     ),
     flows: Family.new(
       key: :flows,
-      metrics: %i[sessions_started sessions_completed sessions_failed sessions_cancelled handed_off active waiting average_duration],
+      metrics: Analytics::Flows::Metrics::ALL_METRICS,
       filters: %i[inbox_id],
       rollup_metrics: [],
-      notes: 'flow_sessions lifecycle only. No node-level metrics: no per-node history is stored.'
+      notes: 'flow_sessions lifecycle only. No node-level metrics, because no per-node history is stored, and ' \
+             'no abandoned state, because the product has none: a session with no further replies stays ' \
+             'waiting until something ends it. Duration is wall-clock finished_at - created_at.'
     ),
     commerce: Family.new(
       key: :commerce,

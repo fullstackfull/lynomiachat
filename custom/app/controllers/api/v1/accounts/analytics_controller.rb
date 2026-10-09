@@ -41,6 +41,26 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
     ).call.as_json
   end
 
+  # Delayed automation executions only: an immediate rule leaves no record, and the response says so.
+  def automations
+    render json: Analytics::Automations::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:automations),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
+  # Flow session lifecycle. No node-level metrics exist to report.
+  def flows
+    render json: Analytics::Flows::Overview.new(
+      account: Current.account,
+      date_range: date_range,
+      filters: filter_set(:flows),
+      breakdown_by: params[:breakdown_by]
+    ).call.as_json
+  end
+
   def meta
     render json: {
       timezone: {
@@ -73,7 +93,9 @@ class Api::V1::Accounts::AnalyticsController < Api::V1::Accounts::BaseController
     {
       conversations: breakdown_entry(Analytics::Conversations::Overview),
       whatsapp: breakdown_entry(Analytics::Whatsapp::Overview),
-      campaigns: breakdown_entry(Analytics::Campaigns::Overview)
+      campaigns: breakdown_entry(Analytics::Campaigns::Overview),
+      automations: breakdown_entry(Analytics::Automations::Overview),
+      flows: breakdown_entry(Analytics::Flows::Overview)
     }
   end
 

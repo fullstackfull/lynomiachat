@@ -630,6 +630,16 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.ANALYTICS_CAMPAIGNS'),
           to: accountScopedRoute('analytics_campaigns'),
         },
+        {
+          name: 'Analytics Automations',
+          label: t('SIDEBAR.ANALYTICS_AUTOMATIONS'),
+          to: accountScopedRoute('analytics_automations'),
+        },
+        {
+          name: 'Analytics Flows',
+          label: t('SIDEBAR.ANALYTICS_FLOWS'),
+          to: accountScopedRoute('analytics_flows'),
+        },
       ],
     },
     {

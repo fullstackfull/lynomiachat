@@ -327,6 +327,8 @@
     "ANALYTICS_OVERVIEW": "Overview",
     "ANALYTICS_WHATSAPP": "WhatsApp delivery",
     "ANALYTICS_CAMPAIGNS": "Campaigns",
+    "ANALYTICS_AUTOMATIONS": "Automations",
+    "ANALYTICS_FLOWS": "Flows",
     "REPORTS": "Reports",
     "SETTINGS": "Settings",
     "CONTACTS": "Contacts",

@@ -188,6 +188,91 @@
         "FAILURE": "Refusal code",
         "SKIP_REASON": "Skip reason"
       }
+    },
+    "AUTOMATIONS": {
+      "HEADER": "Automation execution",
+      "DESCRIPTION": "What your delayed rules did when their moment came: how many acted, how many declined, and why.",
+      "EMPTY": "No delayed automation reached an outcome in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "EPISODES_ARMED": {
+          "LABEL": "Episodes armed",
+          "HINT": "Times a delayed rule started its clock in this period."
+        },
+        "EXECUTED": {
+          "LABEL": "Acted",
+          "HINT": "Episodes whose actions ran."
+        },
+        "SKIPPED": {
+          "LABEL": "Declined",
+          "HINT": "Episodes the rule re-checked at firing time and chose not to act on."
+        },
+        "EXECUTION_RATE": {
+          "LABEL": "Action rate",
+          "HINT": "Acted as a share of the episodes that reached an outcome."
+        },
+        "AWAITING_NOW": {
+          "LABEL": "Waiting to fire",
+          "HINT": "Episodes whose clock is still running."
+        },
+        "STRANDED_NOW": {
+          "LABEL": "Stranded",
+          "HINT": "Episodes whose worker stopped while the actions were running. Nothing retries these on purpose, because repeating a send is worse than dropping it. A number above zero is worth investigating."
+        }
+      },
+      "BREAKDOWN": {
+        "RULE": "Rule",
+        "SKIP_REASON": "Reason declined",
+        "STATUS": "Outcome"
+      }
+    },
+    "FLOWS": {
+      "HEADER": "Flow sessions",
+      "DESCRIPTION": "How your flow runs ended: how many reached the end, how many went to a person, and how many stopped on an error.",
+      "EMPTY": "No flow run started or ended in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "SESSIONS_STARTED": {
+          "LABEL": "Runs started",
+          "HINT": "Flow runs that began in this period."
+        },
+        "SESSIONS_COMPLETED": {
+          "LABEL": "Reached the end",
+          "HINT": "Runs that ended at an End node in this period."
+        },
+        "SESSIONS_FAILED": {
+          "LABEL": "Stopped on an error",
+          "HINT": "Runs that hit an error or a safety limit and were handed to a person."
+        },
+        "SESSIONS_CANCELLED": {
+          "LABEL": "Ended from outside",
+          "HINT": "Runs ended by something other than the flow itself, such as the conversation being resolved."
+        },
+        "HANDED_OFF": {
+          "LABEL": "Handed to a person",
+          "HINT": "Runs that reached a handoff node and gave the conversation to your team."
+        },
+        "COMPLETION_RATE": {
+          "LABEL": "Completion rate",
+          "HINT": "Reached the end as a share of the runs that ended in this period."
+        },
+        "AVERAGE_DURATION": {
+          "LABEL": "Average run length",
+          "HINT": "Start to end, including every stretch the flow spent waiting for the customer."
+        },
+        "AVERAGE_STEPS": {
+          "LABEL": "Average steps",
+          "HINT": "Nodes a run passed through before it ended."
+        },
+        "LIVE_NOW": {
+          "LABEL": "Running now",
+          "HINT": "Runs a customer could still answer."
+        }
+      },
+      "BREAKDOWN": {
+        "BOT": "Flow",
+        "STATUS": "Outcome",
+        "FAILURE": "Error",
+        "END_REASON": "End reason"
+      }
     }
   }
 }

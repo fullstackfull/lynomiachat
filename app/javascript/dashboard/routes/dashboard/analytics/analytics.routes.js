@@ -8,6 +8,8 @@ import ReportsWrapper from 'dashboard/routes/dashboard/settings/reports/componen
 import AnalyticsOverview from './AnalyticsOverview.vue';
 import AnalyticsWhatsapp from './AnalyticsWhatsapp.vue';
 import AnalyticsCampaigns from './AnalyticsCampaigns.vue';
+import AnalyticsAutomations from './AnalyticsAutomations.vue';
+import AnalyticsFlows from './AnalyticsFlows.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -37,6 +39,18 @@ export default {
           name: 'analytics_campaigns',
           meta,
           component: AnalyticsCampaigns,
+        },
+        {
+          path: 'automations',
+          name: 'analytics_automations',
+          meta,
+          component: AnalyticsAutomations,
+        },
+        {
+          path: 'flows',
+          name: 'analytics_flows',
+          meta,
+          component: AnalyticsFlows,
         },
       ],
     },

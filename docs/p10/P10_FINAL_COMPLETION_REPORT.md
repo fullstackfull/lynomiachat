@@ -23,9 +23,9 @@ It also found that a broken channel could look fine in three different ways, tha
 a brand-new contact every time, and that three credentials the code encrypts at rest were being sent to the
 browser in plaintext.
 
-Seven commits, 67 files, +5,698/−60 (this report is the eighth). One new table, two migrations, four new
-services, fifteen new spec files. The table was justified against every alternative before it was written; the
-one new index was measured, found unused, and corrected.
+Nine commits, 69 files, +6,253/−63. One new table, two migrations, four new services, fifteen new spec files.
+The table was justified against every alternative before it was written; the one new index was measured, found
+unused, and corrected.
 
 ## B. Verdict
 
@@ -52,6 +52,8 @@ state change (§R).
 | `47b706e8` | feat(contacts): show everything a customer can be reached at |
 | `5d836ef0` | fix(contacts): a discarded duplicate must not take anything else with it |
 | `5b06f61d` | fix(channels): stop sending three encrypted credentials to the browser |
+| `acc2ab03` | docs(p10): final completion report |
+| `e0d24af1` | test: update two assertions P10 deliberately changed (§AB) |
 
 Every commit is pushed. P8 and P9 branches were not touched after branching.
 
@@ -403,9 +405,11 @@ Removed: `getInboxWarningIconClass`, which hard-coded Facebook and Email and had
 
 ## AA. Tests added
 
-Fifteen new spec files and four modified. Two existing assertions were **deliberately reversed**, each with the
+Fifteen new spec files and six modified. Four existing assertions were **deliberately changed**, each with the
 reasoning written into the example: the upstream expectation that a manually configured WhatsApp number reports
-no reauthorization latch, and the frontend expectation that the IMAP form round-trips the password.
+no reauthorization latch; the frontend expectation that the IMAP form round-trips the password; the expectation
+that the inbox payload returns Twilio's `auth_token`; and the exhaustive feature-flag map. The last two were
+found by the full gate rather than during development (§AB).
 
 | file | what it holds |
 | --- | --- |
@@ -437,7 +441,24 @@ nothing loads.
 | `pnpm eslint` | **478 problems: 0 errors, 478 warnings** — see the delta below |
 | `npx vite build` | **built in 1m 30s, exit 0** |
 | `pnpm test` | **491 test files, 5,294 examples, all passed, exit 0** (222.71s) |
-| `bundle exec rspec` | _still running when this commit was made; the exact figures land in the follow-up commit to this file_ |
+| `bundle exec rspec` | **9,464 examples, 0 failures, 70 pending, exit 0** (33m 13s) |
+
+**RSpec took two runs, and the first one is part of the record.** The first full run reported **9,464
+examples, 2 failures** — both of them stale assertions encoding contracts P10 changed on purpose, neither
+caught by the per-file runs during development:
+
+- `spec/controllers/api/v1/accounts/inboxes_controller_spec.rb:352` asserted that the inbox payload returns
+  Twilio's `auth_token` in full. P10 stopped sending it (§W). Updated to assert the new contract — no
+  `auth_token` key, `auth_token_configured` true, `account_sid` still present — and the agent example now also
+  asserts the boolean is not disclosed to a non-administrator. The positive coverage already existed in
+  `spec/requests/channels/p10_credential_exposure_spec.rb`; this file held the inverse.
+- `spec/models/account_spec.rb:146` asserts the whole `feature_flags_ext_1` map, which gained
+  `feature_lynomia_unified_identity` at `1 << 10`. Extended, following the convention P9's flag set at
+  `1 << 9`.
+
+Fixed in `e0d24af1`, after which the suite was re-run **in full on a clean tree** to produce the figure in the
+table. The 70 pending examples are all pre-existing (MFA, Devise sessions, the encrypted-credential shared
+examples, `data_import`, `user_spec`); P10 added none and skipped none.
 
 **The ESLint delta is zero.** The baseline at P9 head `15efa6a7` was measured in a throwaway `git worktree`
 with the same `node_modules`: **478 problems (0 errors, 478 warnings)** — the same figure as this head. So P10's
@@ -502,6 +523,9 @@ Recorded because a report that hides its own corrections is worth less than one 
    customer survives. The consequence is real but smaller, and was restated accordingly.
 3. **The TikTok index was wrong twice** (§Y), found by measuring.
 4. **An advisory lock was planned and then dropped**, with the reasoning recorded rather than silently omitted.
+5. **The per-file spec runs were not sufficient.** Two stale assertions survived development and were caught
+   only by the full suite (§AB). Running the affected file after each change would have found both; running
+   only the files I had written would not. Recorded because the gate earned its place.
 
 ## AG. Known P8 and P9 production items, carried forward
 

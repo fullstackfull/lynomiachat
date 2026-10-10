@@ -365,5 +365,16 @@ Yes: `docs/p10/08-uat-runbook.md`, thirteen sections in order, each saying what 
 PENDING REAL UAT because nothing in it has been run.
 
 **69. Did the five quality gates run on a clean untouched tree, with exact results?**
-Recorded in `docs/p10/P10_FINAL_COMPLETION_REPORT.md`. See that report for the exact figures; if any gate is
-not green, the verdict reflects it rather than explaining it away.
+Yes, all five, recorded in `docs/p10/P10_FINAL_COMPLETION_REPORT.md` §AB:
+
+| gate | result |
+| --- | --- |
+| `bundle exec rubocop` | 2,870 files inspected, no offenses detected |
+| `pnpm eslint` | 478 problems (0 errors, 478 warnings) — identical to the P9 baseline, so the delta is zero |
+| `npx vite build` | built in 1m 30s, exit 0 |
+| `pnpm test` | 491 files, 5,294 examples, 0 failures, exit 0 |
+| `bundle exec rspec` | 9,464 examples, 0 failures, 70 pending (all pre-existing), exit 0 |
+
+The RSpec gate took two runs: the first found two stale assertions encoding contracts P10 changed on purpose,
+both fixed in `e0d24af1`, after which the suite was re-run in full. Both runs are recorded in §AB rather than
+only the green one.

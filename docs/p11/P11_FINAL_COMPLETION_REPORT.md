@@ -346,9 +346,10 @@ found rather than merely refused.
 
 ## S. Account Billing and Usage UI
 
-The off-product redirect to `lynomia.com/admin/subscriptions/:id`, linked from thirteen surfaces, is gone; the
-route now renders the real in-product subscription page behind the existing account-loaded guard, and the
-sidebar has one Billing entry instead of two.
+The off-product redirect to `lynomia.com/admin/subscriptions/:id` is gone. The `billing_settings_index` route
+it sat behind is referenced 18 times across 14 dashboard files, every one of which now lands on the real
+in-product subscription page (behind the existing account-loaded guard, kept because the billing API is
+account-scoped), and the sidebar has one Billing entry instead of two.
 
 The usage card reads `used / limit` where the limit is the **enforced** one — an operator's override included,
 because a number on a screen that differs from what the server will do is the dishonesty P11.28 is about.
@@ -565,15 +566,17 @@ rule that only `en.json` is edited for source strings.)
 |---|---|---|
 `docs/p11/00-p10-security-closure.md` | 394 | every P10 finding classified; the sweep; nine SAFE AS-IS; measurements |
 `docs/p11/01-discovery.md` | 332 | Q1–Q13; the proof that the 402 lock does not block inbound; eight hazards |
-`docs/p11/02-commercial-architecture.md` | 181 | the four layers, where each is enforced, what was not built and why |
-`docs/p11/03-plans-entitlements.md` | 251 | plan, subscription, override; precedence; the versioning decision |
-`docs/p11/04-subscriptions-billing.md` | 232 | Stripe flows; the webhook; what is never stored |
+`docs/p11/02-commercial-architecture.md` | 183 | the four layers, where each is enforced, what was not built and why |
+`docs/p11/03-plans-entitlements.md` | 255 | plan, subscription, override; precedence; the versioning decision |
+`docs/p11/04-subscriptions-billing.md` | 239 | Stripe flows; the webhook; what is never stored |
 `docs/p11/05-usage-limits.md` | 247 | the three limits, the lock, display honesty, why metering is not built |
 `docs/p11/06-rollout-compatibility.md` | 150 | why deploying changes nothing; the switch-on order and its one trap |
-`docs/p11/07-security-performance.md` | 360 | isolation, the two lock states, secrets, measurements, declined indexes |
-`docs/p11/08-uat-runbook.md` | 192 | ~70 steps a human runs against Stripe test mode; every row PENDING |
-`docs/p11/P11_RELEASE_GATE.md` | 488 | all 68 questions |
-`docs/p11/P11_FINAL_COMPLETION_REPORT.md` | this | sections A–AI |
+`docs/p11/07-security-performance.md` | 371 | isolation, the two lock states, secrets, measurements, declined indexes |
+`docs/p11/08-uat-runbook.md` | 194 | ~70 steps a human runs against Stripe test mode; every row PENDING |
+`docs/p11/P11_RELEASE_GATE.md` | 491 | all 68 questions |
+`docs/p11/P11_FINAL_COMPLETION_REPORT.md` | this document | sections A–AI |
+
+Totals: **eleven documents, 3,574 lines**, all written against the code rather than from the brief.
 
 ---
 

@@ -181,3 +181,4 @@ carrying a backfill. The minimum was derived from what the repository could not 
 | `07-security-performance.md` | isolation, secret handling, measurements |
 | `08-uat-runbook.md` | what a human must verify on a real installation |
 | `P11_RELEASE_GATE.md` | the 68 release questions, answered |
+| `P11_FINAL_COMPLETION_REPORT.md` | the phase's own report, sections A–AI, and the verdict |

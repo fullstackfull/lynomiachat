@@ -41,7 +41,7 @@ describe Integrations::Slack::IncomingMessageBuilder do
   let!(:conversation) { create(:conversation, identifier: message_params[:event][:thread_ts]) }
 
   before do
-    stub_request(:get, 'https://chatwoot-assets.local/sample.png').to_return(
+    stub_request(:get, 'https://files.slack.com/files-pri/T0A0/sample.png').to_return(
       status: 200,
       body: File.read('spec/assets/sample.png'),
       headers: {}

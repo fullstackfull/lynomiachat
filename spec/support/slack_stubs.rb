@@ -68,11 +68,14 @@ module SlackStubs
     [
       {
         mimetype: 'image/png',
-        url_private: 'https://chatwoot-assets.local/sample.png',
+        # Slack serves private files from files.slack.com. The fixture used to name an unrelated host, which
+        # the credential guard in Integrations::Slack::AttachmentImporter now skips -- the account's OAuth
+        # token must only travel to Slack (docs/p11/00-p10-security-closure.md, SEC-9).
+        url_private: 'https://files.slack.com/files-pri/T0A0/sample.png',
         name: 'name_of_the_file',
         title: 'title_of_the_file',
         filetype: 'png',
-        url_private_download: 'https://chatwoot-assets.local/sample.png'
+        url_private_download: 'https://files.slack.com/files-pri/T0A0/sample.png'
       }
     ]
   end

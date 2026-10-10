@@ -2,6 +2,7 @@
 
 class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::BaseController
   before_action :set_plan, only: [:show, :update, :destroy, :sync, :subscribers]
+  before_action :ensure_subscribers_permissible, only: [:update, :destroy, :sync]
 
   # GET /platform/api/v1/billing/plans?active=true
   def index
@@ -62,6 +63,23 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
 
   def set_plan
     @plan = BillingPlan.find(params[:id])
+  end
+
+  # Upstream's own rule, applied to a resource every tenant shares. A Platform App may CREATE without a
+  # permissible check -- PlatformController exempts `create` (app/controllers/platform_controller.rb:7) and
+  # Platform::Api::V1::AccountsController#create makes accounts installation-wide -- but it may only MODIFY
+  # what it was granted, which is why show/update/destroy go through `validate_platform_app_permissible`.
+  #
+  # A plan write modifies what every subscriber of that plan has, immediately and mid-period: dropping
+  # `limits.agents` from 25 to 1 blocks agent creation for every tenant on it, and a price change migrates
+  # them all from their next period. So the write is in scope only when every affected account is one this app
+  # was granted. Creating a plan has no subscribers, so provisioning one stays open -- which is the case a
+  # legitimate integration actually needs.
+  def ensure_subscribers_permissible
+    return unless @plan.subscriptions.where.not(account_id: permissible_account_ids).exists?
+
+    render_error('non_permissible_subscribers',
+                 'This plan has subscribers this app was not granted', :unauthorized)
   end
 
   def plan_params

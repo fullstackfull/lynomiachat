@@ -53,13 +53,24 @@ Asserted: `spec/requests/billing/account_authorization_spec.rb` (7 examples).
 A Platform App reaches an **account** only when that account is among its `platform_app_permissibles`: its
 subscription, its plan grants, its trial, its cancellation and its portal link are all behind that check.
 
-The plan catalogue and the installation-wide stats are deliberately **not** account-scoped, and that is
-consistent with what a Platform App token already is upstream rather than a decision P11 made: `PlatformController`
-exempts `create` from the permissible check (`app/controllers/platform_controller.rb:7`) and
+**The shared plan catalogue is readable installation-wide and writable only within what the app was granted.**
+A Platform App token is an installation-admin credential by upstream design — `PlatformController` exempts
+`create` from the permissible check (`app/controllers/platform_controller.rb:7`) and
 `Platform::Api::V1::AccountsController#create` creates accounts installation-wide and then makes itself
-permissible on them. **A Platform App token is an installation-admin credential.** The operator rule that
-follows: do not issue one to a party you would not give Super Admin to. A catalogue edit through it is audited
-with the `PlatformApp` as the actor (`03-plans-entitlements.md` §5).
+permissible on them — but upstream's rule is *create freely, modify only what you were granted*, which is why
+`show`/`update`/`destroy` go through `validate_platform_app_permissible`. A plan is the one resource every
+tenant shares, and a write to it modifies accounts the app may never have been granted: dropping
+`limits.agents` from 25 to 1 blocks agent creation for every tenant on that plan, mid-period, and a price
+change migrates them all. So `ensure_subscribers_permissible` refuses a plan `update`, `destroy` or `sync`
+while any subscriber is outside the app's permissibles, with `non_permissible_subscribers`. Creating a plan
+affects nobody and stays open, which is the case a legitimate integration needs. An edit that is in scope is
+audited with the `PlatformApp` as the actor (`03-plans-entitlements.md` §5).
+
+This was the one finding of the adversarial audit that survived verification as SECURITY, and it was initially
+declined on the argument that an installation-admin token may already create accounts at will. That argument
+does not hold: creating an account is additive and harms nobody, while mutating a shared plan is destructive
+across tenants the token was never granted. The operator rule still stands alongside the gate — do not issue a
+Platform App token to a party you would not give Super Admin to.
 
 **The one thing it may not touch is the installation's Stripe credentials.** That is a different kind of power
 from administering accounts: a replacement `stripe_secret_key` points this installation's customers at another

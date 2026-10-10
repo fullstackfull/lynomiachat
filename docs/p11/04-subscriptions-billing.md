@@ -210,13 +210,19 @@ Billing restriction and administrative suspension are also two different states,
 | Scope | Resources |
 |---|---|
 | Account-scoped, restricted to the app's `platform_app_permissibles` | subscriptions, subscribers, portal links, plan grants, trials, cancellation |
-| Installation-wide | the plan catalogue, the non-secret billing settings, stats |
+| Installation-wide, readable | the plan catalogue, the non-secret billing settings, stats |
+| Installation-wide, writable only when every affected account was granted | a plan edit, delete or Stripe re-sync |
 | **Never** | the Stripe secret key and the webhook signing secret — not readable, not even as a masked hint, and not writable |
 
-A Platform App token is an installation-admin credential by upstream design, so the installation-wide scope is
-consistent rather than a widening: `PlatformController` exempts `create` from its permissible check and
-`Platform::Api::V1::AccountsController#create` creates accounts installation-wide. The two Stripe credentials
-are excluded anyway, because replacing them is not administration — see `07-security-performance.md` §1.
+A Platform App token is an installation-admin credential by upstream design — `PlatformController` exempts
+`create` from its permissible check and `Platform::Api::V1::AccountsController#create` creates accounts
+installation-wide — but upstream's rule is that an app may **create** freely and may only **modify** what it
+was granted, which is why `show`/`update`/`destroy` go through the permissible check. P11 applies that same
+rule to the one resource every tenant shares: a plan write is accepted only when **every account subscribed to
+that plan** is one this app was granted, because dropping `limits.agents` from 25 to 1 blocks agent creation
+for every tenant on it, mid-period. Creating a plan has no subscribers and stays open, which is the case a
+legitimate integration needs. The two Stripe credentials are excluded outright, because replacing them is not
+administration — see `07-security-performance.md` §1.
 
 A plan edit through this API is audited exactly as a console edit is, with the `PlatformApp` as the actor
 (`Billing::PlanAudit`). That needed a fix of its own: `Custom::AuditLog`'s `after_save` read `user.email`

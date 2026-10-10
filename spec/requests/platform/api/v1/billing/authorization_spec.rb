@@ -73,6 +73,44 @@ RSpec.describe 'Billing Platform API authorization', type: :request do
     end
   end
 
+  # A plan is shared by every tenant on it, so a write to one modifies accounts this app may never have been
+  # granted: dropping `limits.agents` from 25 to 1 blocks agent creation for all of them, mid-period. Upstream's
+  # own rule is that an app may create freely but may only modify what it was granted, and this applies it.
+  describe 'the shared plan catalogue' do
+    it 'is readable' do
+      get_with_token("/platform/api/v1/billing/plans/#{plan.id}")
+      expect(response).to have_http_status(:success)
+    end
+
+    it 'cannot be re-limited while an account the app was not granted is subscribed' do
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { limits: { agents: 1 } } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.parsed_body['error']).to eq('non_permissible_subscribers')
+      expect(plan.reload.limits).to eq({})
+    end
+
+    it 'can be edited once every subscriber is an account the app was granted' do
+      other.billing_subscription.destroy!
+
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { limits: { agents: 7 } } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(plan.reload.limits).to eq('agents' => 7)
+    end
+
+    # Provisioning a new plan affects nobody, which is the case a legitimate integration needs.
+    it 'can still be created' do
+      post '/platform/api/v1/billing/plans',
+           params: { plan: { name: 'Provisioned', price: 5 } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(BillingPlan.find_by(name: 'Provisioned')).to be_present
+    end
+  end
+
   # P11.56. A Platform App token is an installation-level credential by upstream design -- PlatformController
   # exempts `create` from its permissible check, and Platform::Api::V1::AccountsController#create makes new
   # accounts installation-wide. But a credential that can REPLACE the installation's Stripe keys is a different

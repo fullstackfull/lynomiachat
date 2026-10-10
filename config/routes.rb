@@ -541,8 +541,13 @@ Rails.application.routes.draw do
   # ----------------------------------------------------------------------
   # Routes for channel integrations
   mount Facebook::Messenger::Server, at: 'bot'
-  get 'webhooks/twitter', to: 'api/v1/webhooks#twitter_crc'
-  post 'webhooks/twitter', to: 'api/v1/webhooks#twitter_events'
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC6): the two X/Twitter webhook routes are removed.
+  # GET passed a nil HMAC key to OpenSSL when TWITTER_CONSUMER_SECRET was unset, so an anonymous request got a
+  # 500; POST had no signature verification of any kind and resolved its inbox from a body field through a
+  # lookup unscoped by account, whose unique index is per-account rather than global -- so unlike the other
+  # channels, an index would not have collapsed a misroute into a drop. It was unreachable only because no
+  # Channel::TwitterProfile can be created in this fork, which is a reason to remove the route rather than to
+  # leave it as the one path that would come alive again first.
   post 'webhooks/line/:line_channel_id', to: 'webhooks/line#process_payload'
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'

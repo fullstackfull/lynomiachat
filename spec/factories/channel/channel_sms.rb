@@ -6,7 +6,17 @@ FactoryBot.define do
       { 'account_id' => '1',
         'application_id' => '1',
         'api_key' => '1',
-        'api_secret' => '1' }
+        'api_secret' => '1',
+        'callback_username' => 'bw-user',
+        'callback_password' => 'bw-secret' }
+    end
+
+    # A channel configured before callback authentication existed, used to prove the endpoint fails closed
+    # rather than staying open for it (docs/p11/00-p10-security-closure.md).
+    trait :without_callback_credentials do
+      provider_config do
+        { 'account_id' => '1', 'application_id' => '1', 'api_key' => '1', 'api_secret' => '1' }
+      end
     end
 
     after(:create) do |channel_sms|

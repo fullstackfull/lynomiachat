@@ -68,6 +68,10 @@ export default {
     isATelegramChannel() {
       return this.channelType === INBOX_TYPES.TELEGRAM;
     },
+    // Bandwidth SMS, as opposed to Twilio's SMS medium. The two share a settings surface but not a provider.
+    isABandwidthSmsChannel() {
+      return this.channelType === INBOX_TYPES.SMS;
+    },
     isATwilioSMSChannel() {
       const { medium: medium = '' } = this.inbox;
       return this.isATwilioChannel && medium === 'sms';

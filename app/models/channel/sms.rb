@@ -97,3 +97,5 @@ class Channel::Sms < ApplicationRecord
     errors.add(:provider_config, 'error setting up') unless response.success?
   end
 end
+
+Channel::Sms.prepend_mod_with('Channel::Sms')

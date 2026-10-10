@@ -240,7 +240,18 @@
           "API_CALLBACK": {
             "TITLE": "Callback URL",
             "SUBTITLE": "You have to configure the message callback URL in Bandwidth with the URL mentioned here."
-          }
+          },
+          "CALLBACK_USERNAME": {
+            "LABEL": "Callback username",
+            "PLACEHOLDER": "The callback username set on your Bandwidth application",
+            "ERROR": "Please enter the callback username"
+          },
+          "CALLBACK_PASSWORD": {
+            "LABEL": "Callback password",
+            "PLACEHOLDER": "The callback password set on your Bandwidth application",
+            "ERROR": "Please enter the callback password"
+          },
+          "CALLBACK_HELP": "Bandwidth signs callbacks with HTTP Basic credentials. Enable \"Use a username/password for callbacks\" on your Bandwidth Messaging application and enter the same values here. Without them, incoming messages are rejected."
         }
       },
       "WHATSAPP": {

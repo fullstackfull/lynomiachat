@@ -4,6 +4,8 @@ class Sms::IncomingMessageService
   pattr_initialize [:inbox!, :params!]
 
   def perform
+    return if already_recorded?
+
     set_contact
     set_conversation
     @message = @conversation.messages.create!(
@@ -19,6 +21,14 @@ class Sms::IncomingMessageService
   end
 
   private
+
+  # A redelivered callback must not create a second message. Bandwidth retries a callback it did not get a 2xx
+  # for, and the endpoint now accepts a whole batch rather than only its first event, so a redelivery is an
+  # ordinary occurrence rather than a hypothetical. Same guard as the WhatsApp inbound path
+  # (Whatsapp::IncomingMessageServiceHelpers#find_message_by_source_id); messages.source_id is indexed.
+  def already_recorded?
+    params[:id].present? && @inbox.messages.exists?(source_id: params[:id])
+  end
 
   def account
     @account ||= @inbox.account

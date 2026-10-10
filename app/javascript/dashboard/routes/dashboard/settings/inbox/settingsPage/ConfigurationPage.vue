@@ -245,6 +245,19 @@ export default {
     </SettingsFieldSection>
   </div>
 
+  <!-- The Bandwidth callback URL has always been computed server-side (Inbox#callback_webhook_url) and sent on
+       the inbox payload, but no surface rendered it, so the strings for it sat unused. It matters now that the
+       callback is authenticated: an operator configuring Basic auth in Bandwidth needs the exact URL to
+       attach it to (docs/p11/00-p10-security-closure.md). -->
+  <div v-else-if="isABandwidthSmsChannel">
+    <SettingsFieldSection
+      :label="$t('INBOX_MGMT.ADD.SMS.BANDWIDTH.API_CALLBACK.TITLE')"
+      :help-text="$t('INBOX_MGMT.ADD.SMS.BANDWIDTH.API_CALLBACK.SUBTITLE')"
+    >
+      <woot-code :script="inbox.callback_webhook_url" lang="html" />
+    </SettingsFieldSection>
+  </div>
+
   <div v-else-if="isALineChannel">
     <SettingsFieldSection
       :label="$t('INBOX_MGMT.ADD.LINE_CHANNEL.API_CALLBACK.TITLE')"

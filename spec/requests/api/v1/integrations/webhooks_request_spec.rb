@@ -10,17 +10,20 @@ RSpec.describe 'Api::V1::Integrations::Webhooks' do
       { 'X-Slack-Request-Timestamp' => timestamp.to_s, 'X-Slack-Signature' => signature, 'CONTENT_TYPE' => 'application/json' }
     end
 
+    # This context asserted the opposite until docs/p11/00-p10-security-closure.md SEC-8: with no secret
+    # configured the endpoint skipped verification and processed the body, which is an unsigned path to an
+    # outgoing customer-visible message in whichever account the body's reference_id resolves to. It fails
+    # closed now, so an unconfigured installation is refused rather than trusted.
     context 'when no signing secret is configured' do
       before { allow(GlobalConfigService).to receive(:load).with('SLACK_SIGNING_SECRET', nil).and_return(nil) }
 
-      it 'skips verification and processes the webhook' do
+      it 'rejects the webhook instead of skipping verification' do
         with_modified_env SLACK_SIGNING_SECRET: nil do
-          builder = instance_double(Integrations::Slack::IncomingMessageBuilder, perform: true)
-          allow(Integrations::Slack::IncomingMessageBuilder).to receive(:new).and_return(builder)
+          expect(Integrations::Slack::IncomingMessageBuilder).not_to receive(:new)
 
           post '/api/v1/integrations/webhooks', params: {}
 
-          expect(response).to have_http_status(:success)
+          expect(response).to have_http_status(:unauthorized)
         end
       end
     end

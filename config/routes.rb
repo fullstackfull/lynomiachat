@@ -18,11 +18,9 @@ Rails.application.routes.draw do
 
     get '/app', to: 'dashboard#index'
     get '/app/*params', to: 'dashboard#index'
-    get '/app/accounts/:account_id/settings/inboxes/new/twitter', to: 'dashboard#index', as: 'app_new_twitter_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/microsoft', to: 'dashboard#index', as: 'app_new_microsoft_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/instagram', to: 'dashboard#index', as: 'app_new_instagram_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/tiktok', to: 'dashboard#index', as: 'app_new_tiktok_inbox'
-    get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_twitter_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_email_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_instagram_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_tiktok_inbox_agents'
@@ -258,10 +256,6 @@ Rails.application.routes.draw do
 
           resources :inboxes, only: [] do
             resource :assignment_policy, only: [:show, :create, :destroy], module: :inboxes
-          end
-
-          namespace :twitter do
-            resource :authorization, only: [:create]
           end
 
           namespace :microsoft do
@@ -548,6 +542,12 @@ Rails.application.routes.draw do
   # channels, an index would not have collapsed a misroute into a drop. It was unreachable only because no
   # Channel::TwitterProfile can be created in this fork, which is a reason to remove the route rather than to
   # leave it as the one path that would come alive again first.
+  #
+  # The X OAuth connect flow went with them (`POST .../twitter/authorization` and `GET /twitter/callback`).
+  # Its last step registered this installation's inbound webhook URL with X, which no longer exists, so the
+  # flow could only end in a rollback and a misleading Sentry report. Nothing about an existing X inbox is
+  # touched: the channel model, its outbound send service, the inbound parsers, the factories and the
+  # Channels::Capability `:twitter` row all stay, so Operations keeps answering `unknown` for one.
   post 'webhooks/line/:line_channel_id', to: 'webhooks/line#process_payload'
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
@@ -563,10 +563,6 @@ Rails.application.routes.draw do
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
-
-  namespace :twitter do
-    resource :callback, only: [:show]
-  end
 
   namespace :linear do
     resource :callback, only: [:show]

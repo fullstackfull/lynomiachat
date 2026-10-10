@@ -273,8 +273,35 @@ The connect page entry and both webhook routes are removed, with the controller 
 last point is why removing the route was chosen over documenting it: it is the path that would come alive first
 if the channel were ever revived, and it would come alive unauthenticated.
 
-Nothing was revived and **no data was touched**: no table, no row, no migration, no model, no factory, no spec.
-The `Channels::Capability` `:twitter` row stays deliberately, so `Channels::ConnectionState` keeps answering
+### 6.1 The follow-up this missed, found by the full suite
+
+Commit `2fb2985b` removed the inbound half of X and left the **OAuth connect half** standing:
+`POST /api/v1/accounts/:id/twitter/authorization` (reachable by an authenticated administrator, by API call,
+with no feature flag) and `GET /twitter/callback`. Its last step is `Twitter::WebhookSubscribeService`, whose
+only job is to tell X where to deliver — `webhooks_twitter_url`, a route helper that no longer exists. So the
+flow could only end in `NoMethodError`, caught by the callback's `rescue StandardError`, rolled back, reported
+to Sentry as an X problem and redirected to a page that now renders nothing.
+
+Nothing caught this at the time because the callback's own spec stubs the subscribe service whole, so no
+example ever called the missing helper. The **first complete `bundle exec rspec` run** did:
+`spec/services/twitter/webhook_subscribe_service_spec.rb` failed five times with
+`undefined method 'webhooks_twitter_url'` (§Z of `P11_FINAL_COMPLETION_REPORT.md` records both runs).
+
+The connect flow is therefore removed too, which is the same judgement as the route: it cannot be fixed without
+reviving an inbound endpoint, and the brief forbids reviving X. Removed: `Twitter::CallbacksController`,
+`Twitter::BaseController`, `Api::V1::Accounts::Twitter::AuthorizationsController`, `TwitterConcern` (used by
+exactly those three), `Twitter::WebhookSubscribeService`, their two routes, the two dead named dashboard
+aliases that existed only for them (`app_new_twitter_inbox`, and `app_twitter_inbox_agents`, which was the
+first of four identical aliases for one path), and the three specs that covered them.
+
+Still deliberately present, so an existing X inbox is unaffected: `Channel::TwitterProfile`,
+`Twitter::SendOnTwitterService`, both inbound parsers, `Twitter::WebhooksBaseService`, `lib/webhooks/twitter.rb`
+with its spec, the factories, and the `Channels::Capability` `:twitter` row. The unreachable frontend
+(`channels/Twitter.vue`, `twitterClient.js`) stays as well: `ChannelFactory.vue` has no `twitter` key, so it
+renders nothing, and deleting unreachable code is P-FINAL's audit rather than a security closure's.
+
+Nothing was revived and **no data was touched**: no table, no row, no migration, no model, no factory. The
+`Channels::Capability` `:twitter` row stays deliberately, so `Channels::ConnectionState` keeps answering
 `unknown` for an existing X inbox rather than nothing. Whether X is supported, hidden or removed remains a
 product and licence decision, with the vendored `twitty` gem attached to it — P-FINAL's audit, not this one's.
 
@@ -307,6 +334,13 @@ Two incidental things worth recording. The Slack guard pushed its helper module 
 attachment path became its own object rather than an exclusion. And a Slack fixture pointed `url_private` at a
 host Slack does not serve from, which the new guard correctly skipped — the fixture is realistic now, so the
 spec exercises the real path instead of one that could never appear.
+
+One thing this missed, and the full suite caught. The **upstream** spec for the Slack endpoint,
+`spec/requests/api/v1/integrations/webhooks_request_spec.rb:16`, asserted the behaviour that was removed, by
+name: *"skips verification and processes the webhook"*. Three new contexts were added to that file for the
+fail-closed path without updating the one that contradicted them, so the suite held both claims at once. The
+example now asserts the refusal — 401, and `IncomingMessageBuilder` never constructed — which is the change
+the contract actually made. §Z of `P11_FINAL_COMPLETION_REPORT.md` records the run that found it.
 
 **Evidence.** `spec/requests/billing/webhook_security_spec.rb` (12 examples) and
 `spec/requests/webhooks/public_endpoint_authentication_spec.rb` (12 examples).

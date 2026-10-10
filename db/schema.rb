@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_09_130000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_10_100100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -320,6 +320,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_130000) do
     t.index ["account_id"], name: "index_automation_rules_on_account_id"
   end
 
+  create_table "billing_entitlement_overrides", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "kind", null: false
+    t.string "name", null: false
+    t.boolean "enabled"
+    t.integer "limit_value"
+    t.string "reason", null: false
+    t.bigint "granted_by_id"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "kind", "name"], name: "uniq_billing_override_per_account_capability", unique: true
+    t.index ["expires_at"], name: "index_billing_overrides_on_expiry", where: "(expires_at IS NOT NULL)"
+    t.index ["granted_by_id"], name: "index_billing_entitlement_overrides_on_granted_by_id"
+  end
+
   create_table "billing_plans", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -335,6 +351,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_130000) do
     t.string "stripe_price_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "channel_entitlements", default: [], null: false
     t.index ["active"], name: "index_billing_plans_on_active"
     t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id", unique: true
   end
@@ -1919,6 +1936,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_09_130000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "billing_entitlement_overrides", "accounts"
+  add_foreign_key "billing_entitlement_overrides", "users", column: "granted_by_id"
   add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
   add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"

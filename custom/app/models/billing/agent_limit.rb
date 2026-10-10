@@ -2,6 +2,10 @@
 
 # Validation added to AccountUser by config/initializers/billing.rb
 # (every agent / administrator of an account is an AccountUser)
+#
+# AccountUser creation is the single shared choke point for adding a person to an account -- an invitation, a
+# bulk invite, the Platform API and a reactivation all pass through it -- which is why the rule lives here and
+# not in each of those paths. The counting and the locking are Billing::ResourceLimit's.
 module Billing::AgentLimit
   extend ActiveSupport::Concern
 
@@ -13,8 +17,10 @@ module Billing::AgentLimit
 
   def billing_agent_limit
     return if account.nil?
-    return unless Billing::PlanLimits.reached?(account, :agents, account.account_users.count)
 
-    errors.add(:base, Billing::PlanLimits.message(account, :agents))
+    limit = Billing::ResourceLimit.exceeded(account, :agents) { account.account_users.count }
+    return if limit.nil?
+
+    errors.add(:base, Billing::ResourceLimit.message(:agents, limit))
   end
 end

@@ -5,6 +5,8 @@
 module Custom::Account
   def self.prepended(base)
     base.has_one :billing_subscription, dependent: :destroy, inverse_of: :account
+    # Commercial exceptions an operator granted this account (docs/p11/03-plans-entitlements.md).
+    base.has_many :billing_entitlement_overrides, dependent: :destroy, inverse_of: :account
     base.has_many :commerce_stores, class_name: 'Commerce::Store', dependent: :destroy, inverse_of: :account
     # Lynomia Support (docs/p9/01-architecture.md). No `dependent:`: support_tickets.account_id carries an
     # ON DELETE CASCADE foreign key, so the database removes them and a second mechanism would only be a

@@ -14,7 +14,10 @@ class Operations::Signal < ApplicationRecord
 
   # Where the observation came from. One entry per writer, so a reader can tell a channel problem from a queue
   # problem without parsing `signal`.
-  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue].freeze
+  # `billing` added by P11 (docs/p11/07-security-performance.md): a billing failure is an operations
+  # problem an operator must see, and the Operations Center is where they already look. The feed is
+  # source-agnostic, so this is one entry rather than a second dashboard.
+  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue billing].freeze
 
   # What was observed. Allow-listed so a typo becomes a validation failure rather than a row nobody will ever
   # find again.

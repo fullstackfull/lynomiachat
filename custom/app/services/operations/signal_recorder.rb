@@ -25,6 +25,7 @@ class Operations::SignalRecorder
     queue size latency_seconds depth_threshold latency_threshold
     previous current added processes enqueued scheduled retrying dead
     inbox_id store_id endpoint_host attempts strikes
+    event_type plan_id subscription_status capability resource limit_value
   ].freeze
 
   MAX_REASON = 500

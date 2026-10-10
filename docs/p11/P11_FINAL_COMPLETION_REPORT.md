@@ -1,6 +1,7 @@
 # P11 FINAL COMPLETION REPORT
 
-**Branch:** `claude/p11-saas-commercialization` · **Base:** P10 tip `d304d013` · **Head:** `cd829d1b`
+**Branch:** `claude/p11-saas-commercialization` · **Base:** P10 tip `d304d013` · **Head:** `94fc5421`, plus this
+document — the last code commit is `94fc5421` and every gate was run on it or proven unaffected (§Z)
 **Production is unchanged:** `lynomia-custom b03ea43df6abf18cb9c4e5d6a9271ba040b689f4`
 
 ---
@@ -43,7 +44,13 @@ argument does not hold on inspection — creating an account is additive and har
 shared plan is destructive across tenants the token was never granted. It is fixed, by applying upstream's own
 rule (create freely, modify only what you were granted) to the one resource every tenant shares.
 
-Fifteen commits, 123 files, +6,278/−356. **No unclosed cross-tenant risk remains in anything this phase
+**Then the full test suite found two more, which no targeted run could have.** Its first complete execution
+failed six examples: a security fix had left an upstream spec asserting the behaviour it removed, and the X
+webhook-route removal had left the channel's OAuth connect flow calling a route helper that no longer existed —
+a path whose own spec stubbed the broken object whole. Both are fixed, and the suite is green on the re-run
+(§Z). Running it to the end, rather than inferring it from the targeted runs, is what produced them.
+
+Nineteen commits, 134 files, +7,610/−730. **No unclosed cross-tenant risk remains in anything this phase
 touched**, and commercial enforcement is inert until an operator configures it.
 
 **Verdict: PASS WITH KNOWN LIMITATIONS** (§AH).
@@ -61,7 +68,7 @@ touched**, and commercial enforcement is inert until an operator configures it.
 | SC3 WhatsApp routing | **PROVEN SAFE, then improved.** Could not misroute (global uniqueness → drop). Now authoritative on `phone_number_id` with a bounded fallback; the adjacent `nil == nil` and signature-exemption holes are closed. |
 | SC4 TikTok | **FIXED** (state TTL + `required_claims`, authority before scopes, generic errors, 5 s webhook tolerance, secret-in-query-string method deleted). The P10 duplicate-contact fix is intact. No provider approval claimed. |
 | SC5 Dead voice endpoints | **MADE HONEST.** Three unusable channels removed from the two pickers, with reasons. No placeholder endpoint created, no Voice built. |
-| SC6 X / retired channel | **MADE HONEST.** Webhook routes and controller removed; **no historical data deleted**. |
+| SC6 X / retired channel | **MADE HONEST.** Webhook routes and controller removed, and — after gate 5 proved the remainder could only raise — the OAuth connect flow with them (§6.1 of the closure). The channel model, outbound service, parsers, factories and capability row stay: **no historical data deleted**. |
 | Sweep (beyond the brief) | **FIXED:** the Stripe webhook's blank-secret hole, Twilio inbound and delivery status (now `X-Twilio-Signature`), the Slack integration webhook's blank secret, and `facebook-messenger`'s `return unless app_secret_for(...)` — a nil secret skipped verification entirely, now backed by a memoized random secret so verification always fails closed. |
 
 Two findings were **deliberately not fixed**, with the reasoning recorded: the WABA `calls` subscription (the
@@ -485,13 +492,55 @@ mid-example. The narrower fix was taken instead.
 
 ### The five gates, run sequentially on a clean tree
 
-| # | Gate | Result |
+| # | Gate | Result | Tree |
+|---|---|---|---|
+| 1 | `bundle exec rubocop` | **2894 files inspected, 0 offences** | `94fc5421` |
+| 2 | `pnpm eslint` | **478 problems, 0 errors** (478 warnings, every one pre-existing) | `cd829d1b` |
+| 3 | `npx vite build` | **✓ built in 2m 15s** | `cd829d1b` |
+| 4 | `pnpm test` | **491 test files, 5294 tests, 0 failures**, 346.47 s | `cd829d1b` |
+| 5 | `bundle exec rspec` | **9609 examples, 0 failures, 70 pending**, 49m 42s, exit 0 | `94fc5421` |
+
+Four things about that table are worth stating plainly rather than leaving to be inferred.
+
+**Gates 2, 3 and 4 ran at `cd829d1b`, not at the final tree.** Every commit after it changes only `.rb` and
+`.md` files — verified rather than assumed: `git diff --name-only cd829d1b..HEAD` lists paths whose only
+extensions are `rb` and `md`. ESLint lints JavaScript and Vue, Vite builds JavaScript, CSS and assets, and
+Vitest runs JavaScript specs; none of the three reads a Ruby or Markdown file. So the three results stand for
+the final tree. A re-run of gate 4 was started at `f7fb32b2` and **interrupted by me** at 163 of 491 files
+(exit 143, SIGTERM). That run is **void** and is counted as nothing, in either direction.
+
+**Gate 1 ran twice**, and is reported at the final tree. The first run inspected 2902 files with no offences;
+the second inspected 2894 — exactly the eight `.rb` files the X connect removal deleted.
+
+**Gate 5 ran twice, and the first run failed.** Both runs are recorded below, because the first is what found
+the only two defects this phase's targeted runs had missed.
+
+**One commit follows gate 5**: this document, with §Z, §AC and three corrected lines. It touches no `.rb`,
+`.js`, `.vue` or configuration file, so no gate result above is stale.
+
+### Gate 5, run 1 — 9619 examples, **6 failures**, 70 pending, 48m 15s (tree `98902565`)
+
+This was the first complete `bundle exec rspec` of the phase, and it earned its 48 minutes. Both causes were
+this phase's own work, and both were invisible to every targeted run:
+
+| # | Example | Cause |
 |---|---|---|
-| 1 | `bundle exec rubocop` | **GATE1** |
-| 2 | `pnpm eslint` | **GATE2** |
-| 3 | `npx vite build` | **GATE3** |
-| 4 | `pnpm test` | **GATE4** |
-| 5 | `bundle exec rspec` | **GATE5** |
+| 1 | `requests/api/v1/integrations/webhooks_request_spec.rb:16` — *"skips verification and processes the webhook"* | The **upstream** spec still asserted, by name, the behaviour SEC-8 removed. Three fail-closed contexts were added to that file without updating the one that contradicted them, so the suite asserted both at once. |
+| 2–6 | `services/twitter/webhook_subscribe_service_spec.rb` ×5 — `undefined method 'webhooks_twitter_url'` | SC6 (`2fb2985b`) removed X's inbound webhook routes and left the OAuth connect half standing. Its last step exists only to tell X where to deliver, through a route helper that no longer exists. The callback's own spec stubs that service whole, so no example had ever called it. |
+
+Neither was a flake, and neither was a stale assertion about something decided deliberately — one was a
+contradiction left inside a security fix, the other a live code path left pointing at a deleted route. Both are
+fixed in `94fc5421`: finding 1 now asserts the refusal (401, and `IncomingMessageBuilder` never constructed);
+findings 2–6 removed the X connect flow, which cannot be fixed without reviving an unauthenticated inbound
+endpoint. §6.1 of `00-p10-security-closure.md` has the reasoning and the exact inventory of what went and what
+deliberately stayed.
+
+### Gate 5, run 2 — **9609 examples, 0 failures**, 70 pending, 49m 42s, exit 0 (tree `94fc5421`)
+
+The ten-example drop is accounted for exactly, which is the point of stating it: the three removed specs held
+5 (`webhook_subscribe_service`), 2 (`callbacks_controller`) and 3 (`authorizations_controller`) examples —
+9619 − 10 = 9609. No example was skipped, renamed or silenced to reach zero failures, and the Slack example was
+rewritten rather than deleted, so it still counts.
 
 ### New coverage in this phase
 
@@ -519,12 +568,15 @@ mid-example. The narrower fix was taken instead.
 
 ### Deliberately changed existing assertions
 
-Four, each encoding a contract this phase changed rather than a regression:
+Five specs, each encoding a contract this phase changed rather than a regression:
 
 1. `billing_controller_spec` — `usage` is now `{used:, limit:}` per resource, not a bare count.
 2. `commerce/stores_controller_spec` — `store_limit` now reports the enforced ceiling.
 3. The two Twilio controller specs — the request body now derives from the channel, which is what the examples
    mean and what removes the `RSpec/LetSetup` offences.
+4. `integrations/webhooks_request_spec` — the Slack endpoint fails closed when no signing secret is
+   configured, so the example that asserted the opposite now asserts the refusal. This one was a miss rather
+   than a decision: the contradiction shipped in `403d423f` and sat in the suite until gate 5 ran.
 
 ### Honest notes on testing
 
@@ -582,7 +634,7 @@ Totals: **eleven documents, 3,574 lines**, all written against the code rather t
 
 ## AC. Commits
 
-Fifteen, on `claude/p11-saas-commercialization`, first-to-last:
+Nineteen, on `claude/p11-saas-commercialization`, first-to-last:
 
 | | |
 |---|---|
@@ -601,9 +653,16 @@ Fifteen, on `claude/p11-saas-commercialization`, first-to-last:
 `102c21e8` | every Stripe API call in one layer
 `b33695dc` | close five defects an adversarial audit proved
 `cd829d1b` | make the Twilio channel dependency explicit; fix a stale spec pointer
+`f7fb32b2` | scope a shared plan write to the accounts the app was granted
+`98902565` | verifiable counts, and the final report in the reading order
+`94fc5421` | remove the X connect flow the webhook-route removal left broken
 
-123 files, +6,278/−356. By area: 49 `custom/`, 30 `spec/`, 28 `app/`, 9 `docs/`, 4 `config/`, 2 `lib/`,
-1 `db/`. The first nine commits are the P10 security closure, as the brief required.
+Plus one more: this document, carrying the gate-5 results and the lines they correct. Its own hash cannot
+appear inside itself, and `git log d304d013..HEAD` is the authority either way.
+
+Measured at `94fc5421`, so excluding that last documentation commit: **134 files, +7,610/−730**. By area: 49
+`custom/`, 34 `spec/`, 33 `app/`, 11 `docs/`, 4 `config/`, 2 `lib/`, 1 `db/`. The first nine commits are the
+P10 security closure, as the brief required.
 
 ---
 
@@ -703,7 +762,8 @@ escape) are commercial-correctness gaps that a human will eventually meet in pro
 
 ## AI. Recommended P-FINAL entry point
 
-Enter P-FINAL at `cd829d1b` on `claude/p11-saas-commercialization`, and take these in order:
+Enter P-FINAL at the branch tip of `claude/p11-saas-commercialization` — last code commit `94fc5421` — and take
+these in order:
 
 1. **Discharge the UAT debt first** (§AE), because it is the only thing standing between this branch and a
    deployable state, and because P-FINAL's audits are cheaper against a validated product. The Stripe
@@ -711,7 +771,9 @@ Enter P-FINAL at `cd829d1b` on `claude/p11-saas-commercialization`, and take the
 2. **The licence and provenance audits**, which P11 deliberately did not touch and which gate any release.
 3. **The final commercial security audit**, using `docs/p11/07-security-performance.md` §1–§5 as its starting
    inventory rather than rediscovering it; the two deliberate non-fixes in §B and the six limitations in §AD
-   are the list of things to re-decide with fresh eyes.
+   are the list of things to re-decide with fresh eyes. Add to it the unreachable X frontend
+   (`channels/Twitter.vue`, `twitterClient.js`) and the X inbound library, which §6.1 of the closure left for
+   the licence and provenance audits rather than delete alongside the connect flow.
 4. **The clean-code campaign**, last, because it touches the most files and benefits from everything above
    being settled.
 

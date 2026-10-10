@@ -61,8 +61,12 @@ provider approval or real UAT is made.
 **6. Are the dead and retired channels honestly represented?**
 Yes. `ChannelFactory.vue` no longer offers `twitter`, `whatsapp_call` or `voice`, and `ChannelList.vue` no
 longer pushes the `voice` and `whatsapp_call` entries — each removal carries a comment saying why. The X
-webhook routes are gone and the controller with them, replaced by a comment; **no historical data was deleted**
-and no placeholder endpoint was created. Voice was not built.
+webhook routes are gone and the controller with them, replaced by a comment, and so is the OAuth connect flow
+those routes were the other half of: gate 5 proved it could only end in `NoMethodError`, since its last step
+registers a delivery URL that no longer exists (§6.1 of the closure). **No historical data was deleted** — the
+channel model, its outbound service, both inbound parsers, the factories and the `Channels::Capability` row all
+stay, so Operations still answers `unknown` for an existing X inbox — and no placeholder endpoint was created.
+Voice was not built.
 
 ---
 
@@ -455,8 +459,12 @@ Enterprise code may set) and the exclusion of `premium` features from what a pla
 ## RELEASE (64–68)
 
 **64. What automated tests passed?**
-The five gates, run sequentially on a clean tree — the exact figures are in
-`P11_FINAL_COMPLETION_REPORT.md` §Z, including any run that had to be repeated and why.
+All five gates, run sequentially on a clean tree: `rubocop` 2894 files / 0 offences, `pnpm eslint` 0 errors
+(478 pre-existing warnings), `npx vite build` ✓ 2m 15s, `pnpm test` 491 files / 5294 tests / 0 failures, and
+`bundle exec rspec` **9609 examples, 0 failures, 70 pending** in 49m 42s. Gate 5's first run failed six
+examples and both causes were this phase's own — they are fixed, and `P11_FINAL_COMPLETION_REPORT.md` §Z
+records both runs, which gates ran on which tree, and why the three frontend gates are unaffected by the
+commits after them.
 
 **65. What simulated UAT passed?**
 Everything a repository test can establish: forged and unauthenticated webhooks on seven endpoints, a forged
@@ -478,7 +486,7 @@ contact identity pilot, TikTok real-provider check and channel health validation
 **67. Is P11 safe to enter P-FINAL?**
 Yes. No unclosed cross-tenant risk remains in anything this phase touched; commercial enforcement is inert
 until an operator configures it; every new table is additive and reversible with a byte-identical
-`db/schema.rb`; and the five known limitations are listed in the final report with what each needs. The
+`db/schema.rb`; and the six known limitations are listed in the final report with what each needs. The
 P-FINAL work P11 deliberately did not do — the licence audit, the provenance audit, the clean-code campaign
 and the final commercial security audit — is untouched.
 

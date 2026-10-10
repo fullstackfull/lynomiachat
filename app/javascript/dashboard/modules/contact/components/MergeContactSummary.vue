@@ -24,7 +24,8 @@ export default {
     </h5>
     <ul class="ms-0 list-none">
       <li>
-        <span class="inline-block me-1">❌</span>
+        <!-- Decorative: the sentence beside it carries the meaning, so a screen reader should not read "cross mark". -->
+        <span class="inline-block me-1" aria-hidden="true">❌</span>
         <span
           v-dompurify-html="
             $t('MERGE_CONTACTS.SUMMARY.DELETE_WARNING', {
@@ -34,7 +35,7 @@ export default {
         />
       </li>
       <li>
-        <span class="inline-block me-1">✅</span>
+        <span class="inline-block me-1" aria-hidden="true">✅</span>
         <span
           v-dompurify-html="
             $t('MERGE_CONTACTS.SUMMARY.ATTRIBUTE_WARNING', {

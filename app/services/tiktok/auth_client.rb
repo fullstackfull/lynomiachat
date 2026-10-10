@@ -81,19 +81,15 @@ class Tiktok::AuthClient
       }.with_indifferent_access
     end
 
-    def webhook_callback
-      endpoint = "#{api_base_url}/business/webhook/list/"
-      headers = { Accept: 'application/json' }
-      params = {
-        app_id: client_id,
-        secret: client_secret,
-        event_type: 'DIRECT_MESSAGE'
-      }
-      response = HTTParty.get(endpoint, query: params, headers: headers)
-
-      process_json_response(response, 'Failed to fetch TikTok webhook callback')
-    end
-
+    # Lynomia (docs/p11/00-p10-security-closure.md, SC4): `webhook_callback`, which listed the registered
+    # callback, was removed. It had no caller and it sent the app secret in a GET query string -- the exact
+    # exposure this repository already closed for Meta in P5c-4 -- so it was a landmine rather than a feature.
+    #
+    # `update_webhook_callback` below also has no caller, which is why inbound TikTok messaging is not
+    # wired in this fork: nothing ever subscribes the callback URL. It is kept rather than deleted because it
+    # is the only correct implementation of a step that is missing, and it sends the secret in a POST body
+    # rather than a URL. Note it is app-level, not per-inbox, so it belongs in a deployment step and not in
+    # the connect flow. Registering it needs a real TikTok app, so it is recorded as a gap, not guessed at.
     def update_webhook_callback
       endpoint = "#{api_base_url}/business/webhook/update/"
       headers = { Accept: 'application/json', 'Content-Type': 'application/json' }

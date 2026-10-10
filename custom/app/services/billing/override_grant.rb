@@ -31,7 +31,9 @@ class Billing::OverrideGrant
     override = @account.billing_entitlement_overrides.find_or_initialize_by(kind: kind, name: name.to_s)
     raise Error, "#{override.name} is not a capability a plan can sell" if override.kind_feature? && !sellable_feature?(override.name)
 
-    override.assign_attributes(answer_for(override, value).merge(reason: reason, expires_at: expires_at, granted_by: @actor))
+    override.assign_attributes(
+      answer_for(override, value).merge(reason: reason, expires_at: expires_at, granted_by: granting_user)
+    )
     save_and_apply(override)
 
     audit(AUDIT_GRANTED, override.previously_new_record? ? 'create' : 'update', audit_payload(override))
@@ -50,7 +52,45 @@ class Billing::OverrideGrant
     true
   end
 
+  # The Platform API's own feature writes, routed here (docs/p-final/06-clean-code-review.md §3).
+  #
+  # `Platform::Api::V1::AccountsController` used to call enable_features/disable_features straight onto the
+  # account for whatever `features` hash the caller sent. For a capability a plan sells that is a raw bitmask
+  # write: nothing records who asked for it or why, and the next Billing::FeatureSync reverts it -- silently
+  # before P11, explainably after it, but reverted either way. Commercial entitlement state now has one writer
+  # whichever surface asks, which is what P11 left for P-FINAL.
+  #
+  # `features` is {name => truthy} as the API permits it. A capability a plan cannot sell (system, internal,
+  # deprecated, Enterprise-licensed) is not a commercial question, so it keeps the direct write.
+  def write_features!(features, reason:)
+    raise Error, 'An account is required' if @account.nil?
+
+    features.to_h.each do |name, value|
+      enabled = ActiveModel::Type::Boolean.new.cast(value) || false
+      next apply_feature(name.to_s, enabled) unless sellable_feature?(name.to_s)
+
+      reconcile_feature(name.to_s, enabled, reason)
+    end
+  end
+
   private
+
+  # An override exists to say something the plan does not. When the caller asks for exactly what the plan
+  # already gives, the honest record is no override at all -- so an existing one is revoked rather than
+  # rewritten, and the account goes back to being described by its plan.
+  def reconcile_feature(name, enabled, reason)
+    return grant!(kind: :feature, name: name, value: enabled, reason: reason) unless enabled == plan_includes?(name)
+
+    existing = @account.billing_entitlement_overrides.find_by(kind: :feature, name: name)
+    existing ? revoke!(existing) : apply_feature(name, enabled)
+  end
+
+  # `granted_by` is a User reference, and the Platform API's actor is a PlatformApp. The audit row below takes
+  # it either way -- `Custom::AuditLog#user` is polymorphic, which P11 fixed for exactly this caller -- so the
+  # actor is never lost, it is just not written into a column that cannot hold it.
+  def granting_user
+    @actor.is_a?(User) ? @actor : nil
+  end
 
   # The kind decides which column carries the answer, per BillingEntitlementOverride#value_matches_kind.
   def answer_for(override, value)

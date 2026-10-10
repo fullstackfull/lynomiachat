@@ -103,12 +103,20 @@ RSpec.describe 'Super Admin entitlement overrides', type: :request do
 
     # P11.5: a downgrade must never delete a customer's data. Both inbox rules are `on: :create`, so what the
     # account already has survives and only the next create is refused.
-    it 'keeps inboxes the account already has when the plan stops allowing them' do
+    #
+    # The downgrade is a MOVE TO A SMALLER PLAN rather than an edit of this one, because P-FINAL refuses to
+    # narrow a plan people are billed on -- so moving the account is now the only way a downgrade happens, and
+    # it is the path this has to prove safe.
+    it 'keeps inboxes the account already has when a downgrade stops allowing them' do
       inbox = create(:inbox, account: account, channel: build(:channel_api, account: account))
-      plan.update!(limits: { 'inboxes' => 0 }, channel_entitlements: ['Channel::Whatsapp'])
+      smaller = create(:billing_plan, name: 'Starter', limits: { 'inboxes' => 0 },
+                                      channel_entitlements: ['Channel::Whatsapp'])
+
+      subscription.update!(plan: smaller)
 
       expect(inbox.reload).to be_present
       expect { inbox.update!(name: 'Renamed') }.not_to raise_error
+      expect(Billing::Entitlements.limit(account.reload, :inboxes)).to eq(0)
     end
 
     # Until P11 closed this, the console's "switch one capability on or off for this account regardless of its

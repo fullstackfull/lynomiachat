@@ -737,6 +737,12 @@ en:
         category_prompt: 'Select a category'
         reason: 'Suspension reason'
         reason_hint: 'Enter a reason of up to 256 characters.'
+        consequences_title: 'What suspending this account does'
+        consequences_dashboard: 'Every member is signed out of the account: the dashboard and the API answer 401.'
+        consequences_widget: 'The website widget stops accepting messages, so a customer writing from the site gets an error and the message is never delivered.'
+        consequences_email: 'Email inboxes stop being polled while the account is suspended.'
+        consequences_webhooks: 'Messages that arrive by provider webhook — WhatsApp, Facebook, Instagram, Telegram, LINE, SMS, TikTok — are still accepted and still create conversations.'
+        consequences_billing: 'For non-payment, prefer the billing lock: a past-due subscription closes the dashboard on its own and never stops inbound customer messages. Suspension is the tool for abuse and for administrative holds.'
       history:
         suspended_at: 'Suspended at'
         category: 'Category'

@@ -17,12 +17,33 @@ RSpec.describe 'Account billing API authorization', type: :request do
   end
 
   describe 'an agent of the account' do
-    # Reading your own plan is not a privileged act: the dashboard shows it, and it carries no secret.
-    it 'may read the plan, the catalogue and the entitlements' do
-      ['billing', 'billing/plans', 'billing/entitlements'].each do |path|
+    # P-FINAL changed this contract. P11 let any member read everything; what a company pays, which tier it
+    # bought and when the subscription ends are the customer's commercial facts, and an agent is not who they
+    # are for. What an agent may do with the account is a different question, and still answered.
+    it 'may not read the purchase surfaces' do
+      ['billing', 'billing/plans'].each do |path|
         as(agent, :get, "#{account.id}/#{path}")
-        expect(response).to have_http_status(:success), "expected #{path} to be readable by an agent"
+
+        expect(response).to have_http_status(:forbidden), "expected #{path} to be refused for an agent"
+        expect(response.parsed_body['error']).to eq('Only administrators can manage billing')
       end
+    end
+
+    it 'may read its own entitlements, without the subscription\'s commercial particulars' do
+      as(agent, :get, "#{account.id}/billing/entitlements")
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body).to include('active' => true, 'is_admin' => false)
+      expect(response.parsed_body.keys).to include('features', 'limits', 'status')
+      expect(response.parsed_body.keys).not_to include('plan', 'source', 'ends_at', 'cancel_at_period_end')
+    end
+
+    it 'gives an administrator the whole shape' do
+      as(administrator, :get, "#{account.id}/billing/entitlements")
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body).to include('is_admin' => true, 'cancel_at_period_end' => false)
+      expect(response.parsed_body['plan']).to include('id' => plan.id, 'name' => plan.name)
     end
 
     it 'may not spend money or change the plan' do

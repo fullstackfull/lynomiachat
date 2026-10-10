@@ -2,6 +2,11 @@
 
 class BillingSubscription < ApplicationRecord
   STATUSES = %w[inactive trialing active past_due canceled].freeze
+  # The statuses in which an account is on a plan commercially: being trialled, paying, or in the grace period
+  # after a failed payment. `inactive` has not started and `canceled` has ended, so neither is affected by a
+  # change to what a plan sells. Defined here, with the statuses, because two things ask the question --
+  # Billing::PlanAudit (how many accounts did this edit move?) and BillingPlan (may this edit narrow?).
+  BILLED_STATUSES = %w[trialing active past_due].freeze
   SOURCES = %w[stripe manual].freeze
 
   belongs_to :account

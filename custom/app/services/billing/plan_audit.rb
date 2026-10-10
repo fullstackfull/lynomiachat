@@ -14,7 +14,6 @@
 class Billing::PlanAudit
   AUDIT_EVENT = 'billing.plan_entitlements_changed'
   ENTITLEMENT_COLUMNS = %w[features limits channel_entitlements].freeze
-  BILLED_STATUSES = %w[trialing active past_due].freeze
 
   # Call right after a successful save, while `previous_changes` still holds the diff.
   # actor: the SuperAdmin who used the console, or the PlatformApp whose token made the call.
@@ -24,7 +23,9 @@ class Billing::PlanAudit
 
     Custom::AuditLog.create!(
       auditable: plan, user: actor, action: 'update', comment: AUDIT_EVENT,
-      audited_changes: changes.merge('subscribers_affected' => plan.subscriptions.where(status: BILLED_STATUSES).count)
+      audited_changes: changes.merge(
+        'subscribers_affected' => plan.subscriptions.where(status: BillingSubscription::BILLED_STATUSES).count
+      )
     )
   rescue StandardError => e
     # The plan is already saved; a failed record must not pretend otherwise.

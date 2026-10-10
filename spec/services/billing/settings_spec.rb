@@ -31,6 +31,18 @@ RSpec.describe Billing::Settings do
     expect(hint).not_to include('abcdefghijklmnop')
   end
 
+  # P-FINAL: the hint reveals 11 characters, so for a short value it revealed everything -- 'sk_test_x' came
+  # back as 'sk_test_...st_x'. A real Stripe key is far longer, but the value here is whatever an operator
+  # pasted, including a truncated one, and this hint is rendered into the settings page.
+  it 'says nothing about a value too short to mask, not even its length' do
+    described_class.update!(stripe_secret_key: 'sk_test_x')
+
+    hint = described_class.masked(:stripe_secret_key)
+    expect(hint).to eq(described_class::SHORT_VALUE_MASK)
+    expect(hint).not_to include('sk_test')
+    expect(hint.length).to eq(described_class::SHORT_VALUE_MASK.length)
+  end
+
   describe 'enforcement' do
     it 'is off with no Stripe keys and no trial plan' do
       expect(described_class.enforced?).to be(false)

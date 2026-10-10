@@ -91,14 +91,33 @@ RSpec.describe 'Billing Platform API authorization', type: :request do
       expect(plan.reload.limits).to eq({})
     end
 
+    # The edit is a widening, because P-FINAL refuses a narrowing on a plan with billed subscribers whoever
+    # asks (BillingPlan#refuse_narrowing_while_billed). Introducing a ceiling where there was none is a
+    # narrowing, which is why this sells a feature instead of setting `limits`.
     it 'can be edited once every subscriber is an account the app was granted' do
       other.billing_subscription.destroy!
 
       patch "/platform/api/v1/billing/plans/#{plan.id}",
-            params: { plan: { limits: { agents: 7 } } }, headers: { api_access_token: token }, as: :json
+            params: { plan: { features: ['lynomia_commerce'] } }, headers: { api_access_token: token }, as: :json
 
       expect(response).to have_http_status(:success)
-      expect(plan.reload.limits).to eq('agents' => 7)
+      expect(plan.reload.features).to eq(['lynomia_commerce'])
+    end
+
+    # The same refusal, through the Platform API rather than the console: a token the plan's subscribers all
+    # belong to still cannot take away what they are paying for.
+    it 'cannot be narrowed even by an app every subscriber belongs to' do
+      # The ceiling is set while nobody is billed on the plan, because introducing one is itself a narrowing.
+      other.billing_subscription.destroy!
+      granted.billing_subscription.destroy!
+      plan.update!(limits: { 'agents' => 10 })
+      BillingSubscription.create!(account: granted, plan: plan, status: 'active')
+
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { limits: { agents: 2 } } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(plan.reload.limit_for(:agents)).to eq(10)
     end
 
     # Provisioning a new plan affects nobody, which is the case a legitimate integration needs.

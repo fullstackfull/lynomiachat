@@ -35,12 +35,22 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   # empty values into nil values. It uses other APIs such as `resource_class`
   # and `dashboard`:
   #
+  # P-FINAL (docs/p-final/06-clean-code-review.md §3): the `enabled_features` line that used to be here is gone.
+  # It read `params[:enabled_features]` directly -- outside Administrate's permit list -- and wrote the account's
+  # whole feature bitmask through `selected_feature_flags=`. No form in this tree submits that parameter:
+  # AccountDashboard::FORM_ATTRIBUTES is [name, locale, status], `enabled_features` is not in
+  # `permitted_attributes`, and no view renders a control for it. So it was reachable only by crafting a request,
+  # and when it was reached it wrote commercial entitlement state with no reason, no actor, no audit row, and no
+  # protection from the next Billing::FeatureSync silently reverting it.
+  #
+  # Commercial entitlements for one account have exactly one writer now -- Billing::OverrideGrant, through the
+  # override surface on the account's billing subscription page, which records who decided, why, and until when.
+  # That is the "one intentional path" P11 asked P-FINAL for.
   def resource_params
     permitted_params = super
     permitted_params.extract!(:suspension_category, :suspension_reason)
     permitted_params[:limits] = permitted_params[:limits].to_h.compact if permitted_params.key?(:limits)
     permitted_params[:captain_models] = permitted_params[:captain_models].to_h.compact_blank.presence if permitted_params.key?(:captain_models)
-    permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
     permitted_params
   end
 
@@ -84,7 +94,7 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     validate_suspension_reason
     return if requested_resource.errors.empty?
 
-    requested_resource.assign_attributes(resource_params.except(:manually_managed_features))
+    requested_resource.assign_attributes(resource_params)
     render :edit,
            locals: { page: Administrate::Page::Form.new(dashboard, requested_resource) },
            status: :unprocessable_entity

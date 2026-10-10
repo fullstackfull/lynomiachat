@@ -2,6 +2,10 @@ require 'rails_helper'
 
 # P11.2. There is no plan_versions table, so editing a plan changes every subscriber immediately. The control
 # is that such a change is never silent or unattributable.
+#
+# P-FINAL added the other half: while a plan has billed subscribers it may be widened but not narrowed
+# (BillingPlan#refuse_narrowing_while_billed, spec/models/billing_plan_spec.rb). So the edit this records is a
+# widening -- which is the only kind that still reaches the audit on a plan people are paying for.
 RSpec.describe Billing::PlanAudit do
   let(:super_admin) { create(:super_admin) }
   let(:plan) { create(:billing_plan, limits: { 'inboxes' => 5 }) }
@@ -11,13 +15,13 @@ RSpec.describe Billing::PlanAudit do
     create(:billing_subscription, plan: plan, status: 'trialing')
     create(:billing_subscription, plan: plan, status: 'canceled')
 
-    plan.update!(limits: { 'inboxes' => 2 }, channel_entitlements: ['Channel::Api'])
+    plan.update!(limits: { 'inboxes' => 12 }, features: ['lynomia_commerce'])
     described_class.record(plan, actor: super_admin)
 
     audit = Custom::AuditLog.where(comment: described_class::AUDIT_EVENT).sole
     expect(audit).to have_attributes(auditable_id: plan.id, auditable_type: 'BillingPlan', user_id: super_admin.id)
-    expect(audit.audited_changes['limits']).to eq([{ 'inboxes' => 5 }, { 'inboxes' => 2 }])
-    expect(audit.audited_changes['channel_entitlements']).to eq([[], ['Channel::Api']])
+    expect(audit.audited_changes['limits']).to eq([{ 'inboxes' => 5 }, { 'inboxes' => 12 }])
+    expect(audit.audited_changes['features']).to eq([[], ['lynomia_commerce']])
     # A canceled subscription is not paying for anything, so it is not counted.
     expect(audit.audited_changes['subscribers_affected']).to eq(2)
   end

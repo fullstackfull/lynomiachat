@@ -17,7 +17,8 @@ RSpec.describe 'Super Admin billing plans', type: :request do
     expect(response).to have_http_status(:success)
     # One paying account, not two: a canceled subscription is not paying for anything.
     expect(response.body).to include('<strong>1</strong> account currently pay')
-    expect(response.body).to include('create a new plan and move customers to it')
+    expect(response.body).to include('Narrowing it is refused')
+    expect(response.body).to include('create a new plan and move those accounts to it')
   end
 
   it 'says nothing about a blast radius when nobody is on the plan' do
@@ -26,13 +27,15 @@ RSpec.describe 'Super Admin billing plans', type: :request do
     expect(response.body).not_to include('currently pay for this plan')
   end
 
+  # A widening, because P-FINAL refuses a narrowing on a plan people are billed on; the audit row is what this
+  # covers, and a widening is the edit that still reaches it.
   it 'records an entitlement change with the operator who made it' do
     create(:billing_subscription, plan: plan, status: 'active')
 
     patch "/super_admin/billing_plans/#{plan.id}",
-          params: { billing_plan: { name: plan.name, limits: { 'inboxes' => '2' } } }
+          params: { billing_plan: { name: plan.name, limits: { 'inboxes' => '12' } } }
 
-    expect(plan.reload.limits).to eq('inboxes' => 2)
+    expect(plan.reload.limits).to eq('inboxes' => 12)
     audit = Custom::AuditLog.where(comment: Billing::PlanAudit::AUDIT_EVENT).sole
     expect(audit.user_id).to eq(super_admin.id)
     expect(audit.audited_changes).to include('subscribers_affected' => 1)

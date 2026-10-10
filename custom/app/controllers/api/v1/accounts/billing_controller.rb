@@ -13,7 +13,24 @@
 #
 # These endpoints stay available when the account is locked (see Billing::AccessGuard).
 class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
-  before_action :ensure_administrator, only: [:checkout, :portal, :change_plan_preview, :change_plan]
+  # P-FINAL (docs/p-final/06-clean-code-review.md §4, answering P11's fifth known limitation).
+  #
+  # P11 left every read open to any account member, including a custom-role user the dashboard route denies.
+  # Nothing writable was reachable and nothing crossed an account boundary, so it was not a vulnerability -- but
+  # what a company pays, which tier it bought, when its subscription ends and whether it has cancelled are
+  # commercial facts about the customer, and an agent is not who they are for.
+  #
+  # The split follows what each endpoint is FOR rather than applying one blanket rule:
+  #
+  #   show, plans            the purchase surfaces -- prices, the catalogue, usage against ceilings. The
+  #                          dashboard only routes administrators to the subscription page, and only an
+  #                          administrator can act on them, so they are administrators-only.
+  #   entitlements           what this member may DO, which every member's client needs in order to render
+  #                          correctly, and which the mobile app reads on sign-in. It stays open, with the
+  #                          subscription's commercial particulars (plan, source, dates, cancellation) reduced
+  #                          out for a non-administrator. `active` still says whether the account is usable,
+  #                          because a member who cannot use the account has to be told so.
+  before_action :ensure_administrator, only: [:show, :plans, :checkout, :portal, :change_plan_preview, :change_plan]
 
   def show
     render json: {
@@ -42,20 +59,15 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
   def entitlements
     account = Current.account
     subscription = Billing::TrialStarter.subscription_for(account)
-    plan = subscription&.plan
 
     render json: {
       active: account_open?(subscription),
       status: subscription&.status || 'inactive',
-      source: subscription&.source,
-      plan: plan && { id: plan.id, name: plan.name },
-      ends_at: ends_at(subscription),
-      cancel_at_period_end: subscription&.cancel_at_period_end || false,
       is_admin: administrator?,
       mobile_checkout_enabled: Billing::Settings.mobile_checkout_enabled?,
       features: BillingPlan.assignable_features.to_h { |f| [f['name'], account.feature_enabled?(f['name'])] },
       limits: Billing::ApiSerializer.usage(account)
-    }
+    }.merge(administrator? ? commercial_details(subscription) : {})
   end
 
   def checkout
@@ -96,6 +108,17 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
 
   def requested_plan
     BillingPlan.active.find(params.require(:plan_id))
+  end
+
+  # What the company bought, as opposed to what this member may do. Administrators only.
+  def commercial_details(subscription)
+    plan = subscription&.plan
+    {
+      source: subscription&.source,
+      plan: plan && { id: plan.id, name: plan.name },
+      ends_at: ends_at(subscription),
+      cancel_at_period_end: subscription&.cancel_at_period_end || false
+    }
   end
 
   # Same rule as Billing::AccessGuard

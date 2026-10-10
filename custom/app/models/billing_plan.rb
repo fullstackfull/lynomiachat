@@ -27,6 +27,7 @@ class BillingPlan < ApplicationRecord
   validate :validate_limits
   validate :validate_features
   validate :validate_channel_entitlements
+  validate :refuse_narrowing_while_billed, on: :update
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :id) }
@@ -100,6 +101,81 @@ class BillingPlan < ApplicationRecord
   def validate_features
     unknown = features - self.class.assignable_features.pluck('name')
     errors.add(:features, "unknown: #{unknown.join(', ')}") if unknown.any?
+  end
+
+  # P-FINAL (docs/p-final/06-clean-code-review.md §2, answering P11's first known limitation).
+  #
+  # There are no plan versions, so editing a live plan changes every subscriber immediately and mid-period.
+  # P11 shipped that with a blast-radius warning on the form and a mandatory audit row, and recorded it as a
+  # limitation. For a commercial release a warning is not enough: the harm is not "a customer's plan changed",
+  # it is "a customer lost, mid-period, a capability or a ceiling they are paying for", which is a refund
+  # conversation and in some jurisdictions a contractual one.
+  #
+  # The rule here is therefore asymmetric, because the harm is asymmetric: while a plan has billed subscribers
+  # it may be WIDENED but never NARROWED. Adding a feature, raising or removing a ceiling, selling another
+  # channel or clearing the channel list all give customers more than they bought and need no ceremony.
+  # Taking any of those away requires a new plan and a deliberate move of each subscriber -- which is the
+  # product rule P11 wrote down, now enforced by the server instead of asked for in a hint.
+  #
+  # Why not plan versions or a subscription snapshot. Both were considered (docs/p11/03-plans-entitlements.md
+  # records the shape). Each needs a new table or column, a write on every plan edit, a resolution path through
+  # the snapshot in Billing::Entitlements, and a backfill decision for existing subscriptions -- and all of that
+  # to express a rule this validation expresses in one place with no schema at all. A narrowing is rare, and
+  # answering it with "create the corrected plan and move people to it" is both the honest commercial answer and
+  # the one an operator can already carry out with the console that exists.
+  #
+  # Nothing is locked for a plan nobody is billed on: an unsubscribed, inactive or fully-cancelled plan edits
+  # freely, which is what makes "create a new plan" a workable instruction.
+  def refuse_narrowing_while_billed
+    return unless changes.keys.intersect?(Billing::PlanAudit::ENTITLEMENT_COLUMNS)
+
+    billed = subscriptions.where(status: BillingSubscription::BILLED_STATUSES).count
+    return if billed.zero?
+
+    narrowings = narrowed_entitlements
+    return if narrowings.empty?
+
+    errors.add(:base, narrowing_error_message(narrowings, billed))
+  end
+
+  # Each entry is one thing a subscriber would lose. Computed against the stored row, not the form, so it is
+  # the same answer however the edit arrives -- console, Platform API or console-less script.
+  def narrowed_entitlements
+    withdrawn_features + tightened_limits + withdrawn_channels
+  end
+
+  def withdrawn_features
+    (Array(features_was) - features).map { |name| "the feature #{name}" }
+  end
+
+  # A missing key means unlimited, so introducing a ceiling where there was none is a narrowing, and removing
+  # one is not.
+  def tightened_limits
+    previous = (limits_was || {}).to_h
+    limits.filter_map do |key, value|
+      before = previous[key]
+      next "a ceiling of #{value} on #{key} where there was none" if before.nil?
+      next if value >= before.to_i
+
+      "the #{key} ceiling, from #{before} to #{value}"
+    end
+  end
+
+  # An empty list sells every channel (see #channel_included?), so going from empty to a list withdraws every
+  # channel the list leaves out.
+  def withdrawn_channels
+    previous = Array(channel_entitlements_was)
+    return [] if channel_entitlements.blank?
+    return ['every channel the new list leaves out, because this plan previously sold all of them'] if previous.blank?
+
+    (previous - channel_entitlements).map { |type| "the channel #{type}" }
+  end
+
+  def narrowing_error_message(narrowings, billed)
+    "cannot be narrowed while #{billed} #{'account'.pluralize(billed)} #{billed == 1 ? 'is' : 'are'} billed on " \
+      "this plan: it would withdraw #{narrowings.to_sentence} mid-period. Create a new plan with the intended " \
+      'entitlements and move those accounts to it, or grant a per-account override for an exception. Widening ' \
+      'this plan -- adding features, raising or removing a ceiling, selling more channels -- is allowed.'
   end
 
   def sync_subscribers_features

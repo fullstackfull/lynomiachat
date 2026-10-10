@@ -14,7 +14,8 @@ RSpec.describe 'Twilio::DeliveryStatusController', type: :request do
                                                       phone_number: '+0987654321', medium: :sms)
     end
     let(:params) do
-      { 'MessageSid' => 'SM123', 'MessageStatus' => 'delivered', 'AccountSid' => 'AC123', 'From' => '+0987654321' }
+      { 'MessageSid' => 'SM123', 'MessageStatus' => 'delivered',
+        'AccountSid' => channel.account_sid, 'From' => channel.phone_number }
     end
 
     def signed_post(body)

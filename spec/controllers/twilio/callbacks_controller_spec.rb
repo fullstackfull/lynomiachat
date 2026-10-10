@@ -4,7 +4,7 @@ require 'rails_helper'
 # and pick the receiving channel from body fields -- a Twilio number is a business's public phone number and
 # an Account SID is not a secret, so anyone holding both could inject inbound messages into that account. It
 # now requires Twilio's X-Twilio-Signature, verified against that channel's own auth token. The refusals are
-# exercised in spec/requests/webhooks/twilio_signature_spec.rb.
+# exercised in spec/requests/webhooks/public_endpoint_authentication_spec.rb.
 RSpec.describe 'Twilio::CallbacksController', type: :request do
   include Rails.application.routes.url_helpers
 
@@ -19,9 +19,9 @@ RSpec.describe 'Twilio::CallbacksController', type: :request do
     let(:params) do
       {
         'From' => '+1234567890',
-        'To' => '+0987654321',
+        'To' => channel.phone_number,
         'Body' => 'Test message',
-        'AccountSid' => 'AC123',
+        'AccountSid' => channel.account_sid,
         'SmsSid' => 'SM123',
         'ExternalUserId' => 'IN.2081978709342942',
         'ParentExternalUserId' => 'IN.ENT.9081726354',

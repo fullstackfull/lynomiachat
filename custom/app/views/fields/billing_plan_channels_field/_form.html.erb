@@ -1,0 +1,22 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'Channels sold by this plan' %>
+</div>
+<div class="field-unit__field">
+  <p style="margin: 0 0 8px; color: #666;">
+    Leave everything unchecked to sell every channel. Checking any restricts this plan to those channels:
+    an account on it cannot create an inbox of another type.
+  </p>
+  <%# empty value so that unchecking everything still submits the field %>
+  <input type="hidden" name="<%= f.object_name %>[<%= field.attribute %>][]" value="">
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px;">
+    <% field.options.each do |option| %>
+      <label style="display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox"
+               name="<%= f.object_name %>[<%= field.attribute %>][]"
+               value="<%= option['value'] %>"
+               <%= 'checked' if field.selected.include?(option['value']) %>>
+        <%= option['label'] %>
+      </label>
+    <% end %>
+  </div>
+</div>

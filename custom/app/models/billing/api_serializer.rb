@@ -62,12 +62,16 @@ module Billing::ApiSerializer
     }
   end
 
-  def usage(account, plan = account.billing_subscription&.plan)
-    {
-      agents: { used: account.account_users.count, limit: plan&.limit_for(:agents) },
-      inboxes: { used: account.inboxes.count, limit: plan&.limit_for(:inboxes) },
-      stores: { used: account.commerce_stores.connected.count, limit: plan&.limit_for(:stores) }
-    }
+  # The limit reported is the one that is ENFORCED, through Billing::ResourceLimit -- so an operator's
+  # override is the number the customer and the console both see, not the plan's. A number on a screen that
+  # differs from what the server will do is the dishonesty P11.28 is about. `limit: nil` means unlimited and
+  # is rendered as such; it is never -1.
+  def usage(account)
+    BillingPlan::LIMIT_KEYS.to_h do |key|
+      resource = key.to_sym
+      [resource, { used: ::Billing::ResourceLimit.current_count(account, resource),
+                   limit: ::Billing::Entitlements.limit(account, resource) }]
+    end
   end
 
   # Secrets are never returned, only whether they are set + a masked hint

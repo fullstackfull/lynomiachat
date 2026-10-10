@@ -21,7 +21,7 @@ module Billing::InboxLimit
   def billing_inbox_limit
     return if account.nil?
 
-    limit = Billing::ResourceLimit.exceeded(account, :inboxes) { account.inboxes.count }
+    limit = Billing::ResourceLimit.exceeded(account, :inboxes)
     return if limit.nil?
 
     errors.add(:base, Billing::ResourceLimit.message(:inboxes, limit))

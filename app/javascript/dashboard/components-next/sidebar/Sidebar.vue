@@ -764,17 +764,14 @@ const menuItems = computed(() => {
               icon: 'i-lucide-briefcase',
               to: accountScopedRoute('general_settings_index'),
             },
+            // One billing entry, not two. Both routes render the same page now
+            // (docs/p11/06-rollout-compatibility.md); showing them side by side invited an administrator to
+            // pick the one that redirected off the product.
             {
               name: 'Settings Billing',
               label: t('SIDEBAR.BILLING'),
               icon: 'i-lucide-credit-card',
               to: accountScopedRoute('billing_settings_index'),
-            },
-            {
-              name: 'Settings Subscription',
-              label: t('SIDEBAR.SUBSCRIPTION'),
-              icon: 'i-lucide-wallet',
-              to: accountScopedRoute('subscription_settings_index'),
             },
           ],
         },

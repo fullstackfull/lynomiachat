@@ -21,11 +21,8 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       is_admin: administrator?,
       subscription: subscription_json(Current.account.billing_subscription),
       plans: subscribable_plans.map { |plan| plan_json(plan) },
-      usage: {
-        agents: Current.account.users.count,
-        inboxes: Current.account.inboxes.count,
-        stores: Current.account.commerce_stores.connected.count
-      }
+      # Same shape as `entitlements`: { used:, limit: } per resource, counted and capped the one canonical way.
+      usage: Billing::ApiSerializer.usage(Current.account)
     }
   end
 
@@ -57,7 +54,7 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
       is_admin: administrator?,
       mobile_checkout_enabled: Billing::Settings.mobile_checkout_enabled?,
       features: BillingPlan.assignable_features.to_h { |f| [f['name'], account.feature_enabled?(f['name'])] },
-      limits: Billing::ApiSerializer.usage(account, plan)
+      limits: Billing::ApiSerializer.usage(account)
     }
   end
 

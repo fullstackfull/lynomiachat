@@ -1,0 +1,18 @@
+<%# locals: subscription, kind, title, hint, options %>
+<div style="margin-bottom: 16px;">
+  <h4 style="font-weight: 600; margin-bottom: 4px;"><%= title %></h4>
+  <p style="font-size: 12px; opacity: .75; margin-bottom: 6px;"><%= hint %></p>
+  <%= form_with url: grant_override_super_admin_billing_subscription_path(subscription), method: :post, local: true do |f| %>
+    <%= f.hidden_field :kind, value: kind %>
+    <%= f.select :name, options_for_select(options), {}, style: 'width: 220px; display: inline-block;' %>
+    <% if kind == 'limit' %>
+      <%= f.number_field :value, min: 0, placeholder: 'New ceiling', style: 'width: 130px; display: inline-block;' %>
+    <% else %>
+      <%= f.select :value, options_for_select([%w[Allow true], %w[Deny false]]), {}, style: 'width: 110px; display: inline-block;' %>
+    <% end %>
+    <%= f.text_field :reason, placeholder: 'Reason (required)', style: 'width: 240px; display: inline-block;' %>
+    <%= f.date_field :expires_at, style: 'width: 160px; display: inline-block;' %>
+    <span style="font-size: 12px; opacity: .7;">(expiry optional)</span>
+    <%= f.submit 'Save override', style: 'margin-left: 8px;' %>
+  <% end %>
+</div>

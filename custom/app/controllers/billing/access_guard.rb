@@ -34,13 +34,16 @@ module Billing::AccessGuard
     }, status: :payment_required
   end
 
+  # A pre-flight so the request is refused with a clear message before Chatwoot starts creating the user.
+  # The gate itself is the AccountUser validation (Billing::AgentLimit), which is the one that holds a lock;
+  # this check deliberately does not, because it runs outside any transaction.
   def ensure_agent_limit
     account = Current.account
-    return unless Billing::PlanLimits.reached?(account, :agents, account.account_users.count)
+    return unless Billing::ResourceLimit.reached?(account, :agents)
 
     render json: {
       error: 'plan_limit_reached',
-      message: Billing::PlanLimits.message(account, :agents)
+      message: Billing::ResourceLimit.message(:agents, Billing::Entitlements.limit(account, :agents))
     }, status: :unprocessable_entity
   end
 

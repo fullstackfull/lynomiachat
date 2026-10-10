@@ -69,6 +69,17 @@ log "1. Fetch the release"
 as_app 'git fetch --quiet'
 RELEASE_SHA="$(as_app 'git rev-parse @{u}')"
 
+# The release is whatever the tracked upstream branch points at, which is right for an ordinary deploy and not
+# enough for a controlled one: between the decision and the deploy, someone else can push. Set EXPECT_SHA to the
+# revision that was actually reviewed and the deploy refuses anything else. Optional, so default behaviour is
+# unchanged; docs/p-final/08-production-uat-runbook.md uses it for the combined release.
+if [[ -n ${EXPECT_SHA:-} ]]; then
+  if [[ $RELEASE_SHA != "$EXPECT_SHA"* ]]; then
+    fail "upstream is at $RELEASE_SHA but EXPECT_SHA says $EXPECT_SHA. Nothing was changed. Push the intended revision, or correct EXPECT_SHA."
+  fi
+  echo "release matches EXPECT_SHA ($EXPECT_SHA)"
+fi
+
 if [[ $RELEASE_SHA == "$PREVIOUS_SHA" ]]; then
   echo "already at $RELEASE_SHA; nothing to deploy"
   exit 0

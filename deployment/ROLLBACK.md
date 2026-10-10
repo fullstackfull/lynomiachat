@@ -11,6 +11,19 @@ previous `HEAD`, and `/var/backups/lynomia/` holds the dumps newest-first.
 
 ---
 
+## For the combined P8–P11 release, read this first
+
+That release crosses four phases in one deploy and adds six tables. Its decision tree, the full list of levers
+that can be switched off instead of rolling back, and what each new table would destroy if dropped are in
+**`docs/p-final/09-rollback-and-rollout.md`** and **`docs/p-final/03-migration-review.md` §6**.
+
+The short version: **a feature-shaped problem is a lever, not a rollback** — `lynomia_support_tickets`,
+`lynomia_unified_identity`, the `reports` flag, and the Stripe settings each switch their surface off in
+seconds with no data loss. A rollback is for "nothing serves". And in either case **the schema stays**: every
+migration in that release is additive, and old code cannot tell the difference.
+
+---
+
 ## First: decide whether to roll back at all
 
 | Symptom | Roll back? |

@@ -79,7 +79,7 @@ class Operations::AccountHealth
   # suspension is one -- the account is switched off, not broken, and the operator needs to see it to explain
   # why nothing is happening. Read off the association preloaded with the page, so no query per row.
   def billing_component(account)
-    return Operations::Health.absent(:billing, 'Billing is not configured') unless Billing::Settings.enforced?
+    return Operations::Health.absent(:billing, 'Billing is not configured') unless billing_enforced?
 
     subscription = account.billing_subscription
     return Operations::Health.absent(:billing, 'No subscription record') if subscription.nil?
@@ -88,6 +88,18 @@ class Operations::AccountHealth
     build(:billing, locked ? Operations::Health::WARNING : Operations::Health::HEALTHY,
           reason: locked ? "Subscription is #{subscription.status}" : nil,
           detail: { code: subscription.status })
+  end
+
+  # P-FINAL (docs/p-final/05-security-audit.md §performance): an installation-wide answer, read once per page
+  # rather than once per row. `Billing::Settings.enforced?` is three `installation_configs` reads -- the secret
+  # key, and then the trial settings -- and calling it inside `billing_component` made this page issue 3 × the
+  # page size of them: measured at 30 of the 40 queries for a page of 10 accounts, so 75 of 85 at PER_PAGE=25.
+  # The class's own header promises no query per row, and this is what keeps that true. Same idiom and same
+  # reason as BillingSubscription#billing_enforced?.
+  def billing_enforced?
+    return @billing_enforced if defined?(@billing_enforced)
+
+    @billing_enforced = Billing::Settings.enforced?
   end
 
   def signals_component(account, data)

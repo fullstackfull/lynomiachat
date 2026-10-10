@@ -19,6 +19,10 @@ class Billing::Settings
   }.freeze
 
   class << self
+    # A direct read, deliberately not through GlobalConfig's Redis cache. These are commercial settings whose
+    # staleness would mean charging or locking the wrong account, the read is a single indexed row, and the
+    # repeated cost `enforced?` used to carry on the authorization path is removed where it actually repeated
+    # -- BillingSubscription#billing_enforced? memoizes it per instance (docs/p11/07-security-performance.md §6).
     def get(key)
       definition = KEYS.fetch(key.to_sym)
       value = InstallationConfig.find_by(name: definition[:name])&.value

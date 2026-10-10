@@ -63,14 +63,25 @@ writing them into the account's own feature flags**, by `Billing::FeatureSync`
 `accounts.feature_flags`, so all 124 existing `feature_enabled?` call sites in the product keep working
 untouched and no call site had to learn about billing.
 
-What the entitlement service adds on top of that store is the two things flags cannot express:
+What the entitlement service adds on top of that store is the three things flags cannot express:
 
 * **An override that a plan sync must not revert.** The old write was unconditional in both directions
   (`disable_features(*(managed - included))`), so an operator switching a managed feature on for one account
   lost it at the next sync, and nothing recorded that the decision was deliberate. `FeatureSync` now subtracts
-  `overridden_capabilities` from the managed set (`feature_sync.rb:29, 42-44`).
+  `overridden_capabilities` from the managed set (`feature_sync.rb:31, 64-66`).
 * **Which layer produced the answer.** `Billing::Entitlements.source` returns `:system`, `:override`, `:plan`
   or `:default`. A flag alone cannot tell an operator's deliberate enablement from a plan's.
+* **A record when a sync takes a capability away.** `FeatureSync` writes one audit row naming what it switched
+  off for that account and which plan did it. A capability vanishing is then explainable, including when the
+  operator who had enabled it did so by writing the flag directly instead of granting an override — the one
+  decision the override layer cannot protect, because there is nothing to read.
+
+**A feature override writes the flag.** `Billing::OverrideGrant` applies the override to
+`accounts.feature_flags` in the same transaction as the row, and a revoke writes the plan's answer back. Until
+P11 closed this the console's promise — *switch one capability on or off for this account regardless of its
+plan* — was false: the row existed and exempted the capability from the next sync, but nothing turned it on.
+That is also what makes `Billing::Entitlements.allowed?` and `account.feature_enabled?` agree by construction,
+which is why existing call sites keep using the latter.
 
 Limits and channel entitlements are *not* mirrored into flags, because there is nowhere to mirror them to: an
 integer ceiling and a list of channel types have no flag representation. They are read from the plan (or the

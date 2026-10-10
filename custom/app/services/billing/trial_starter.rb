@@ -36,8 +36,12 @@ class Billing::TrialStarter
     return start_trial if trial_allowed?
 
     @account.create_billing_subscription!(status: 'inactive')
-  rescue ActiveRecord::RecordNotUnique
-    # A parallel request created it first
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+    # A parallel request created it first. Both classes, because `validates :account_id, uniqueness: true`
+    # fires before the index does: once the winner has committed, the loser is rejected by the validation and
+    # raises RecordInvalid, not RecordNotUnique. Rescuing only the latter turned the dashboard's first batch of
+    # parallel GETs into 422 "Account has already been taken" during rollout -- a read failing on a write it
+    # never asked for.
     @account.reload.billing_subscription
   end
 

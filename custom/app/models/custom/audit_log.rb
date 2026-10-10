@@ -41,10 +41,19 @@ class Custom::AuditLog < Audited::Audit
   def log_additional_information
     # rubocop:disable Rails/SkipsModelValidations
     if auditable_type == 'Account' && auditable_id.present?
-      update_columns(associated_type: auditable_type, associated_id: auditable_id, username: user&.email)
+      update_columns(associated_type: auditable_type, associated_id: auditable_id, username: actor_username)
     else
-      update_columns(username: user&.email)
+      update_columns(username: actor_username)
     end
     # rubocop:enable Rails/SkipsModelValidations
+  end
+
+  # `user` is polymorphic, so an actor is not always a User: a Platform App token edits a billing plan
+  # (Billing::PlanAudit), and PlatformApp has a name and no email. Reading `user.email` unconditionally raised
+  # NoMethodError from this after_save, which rolled the whole audit row back -- the actor with the least
+  # accountability was the one whose actions went unrecorded. `user_type`/`user_id` identify the actor either
+  # way; this column is what the Audit Logs page displays and searches.
+  def actor_username
+    user.try(:email).presence || user.try(:name).presence
   end
 end

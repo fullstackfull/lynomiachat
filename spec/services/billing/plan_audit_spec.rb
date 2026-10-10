@@ -29,6 +29,19 @@ RSpec.describe Billing::PlanAudit do
     expect(Custom::AuditLog.where(comment: described_class::AUDIT_EVENT)).to be_empty
   end
 
+  # The Platform API's actor is a PlatformApp, not a User. Custom::AuditLog#user is polymorphic, but its
+  # after_save read `user.email` unconditionally, which raised and rolled the row back -- so the actor with
+  # the least accountability was the one whose plan edits went unrecorded.
+  it 'records a Platform App as the actor' do
+    platform_app = create(:platform_app, name: 'Ops console')
+    plan.update!(features: ['lynomia_commerce'])
+
+    described_class.record(plan, actor: platform_app)
+
+    audit = Custom::AuditLog.where(comment: described_class::AUDIT_EVENT).sole
+    expect(audit).to have_attributes(user_type: 'PlatformApp', user_id: platform_app.id, username: 'Ops console')
+  end
+
   # The plan is already saved by the time this runs; a failed audit write must not look like a failed edit.
   it 'does not raise when the audit row cannot be written' do
     plan.update!(features: ['lynomia_commerce'])

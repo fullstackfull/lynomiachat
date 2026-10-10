@@ -113,4 +113,40 @@ RSpec.describe Operations::AccountHealth do
 
     expect(channels.status).to eq(Operations::Health::HEALTHY)
   end
+
+  # P11. A billing-locked account is the commonest reason a customer says "nothing works", and this page said
+  # HEALTHY for one: `account_component` reads accounts.status, which a billing lock never touches.
+  describe 'the billing column' do
+    subject(:billing) do
+      row = described_class.new(page: 1, per_page: 100).call[:rows].find { |r| r[:account].id == account.id }
+      row[:components].find { |component| component.key == :billing }
+    end
+
+    it 'is unknown while billing is not configured, like every other inapplicable area' do
+      expect([billing.status, billing.source_class]).to eq([Operations::Health::UNKNOWN, 'absent'])
+      expect(billing.reason).to eq('Billing is not configured')
+    end
+
+    context 'when billing is enforced' do
+      let(:plan) { create(:billing_plan) }
+
+      before { Billing::Settings.update!(stripe_secret_key: 'sk_test_fake', stripe_webhook_secret: 'whsec_fake') }
+
+      it 'is healthy for an account whose subscription is usable' do
+        create(:billing_subscription, account: account, plan: plan, status: 'active')
+
+        expect(billing.status).to eq(Operations::Health::HEALTHY)
+        expect(billing.detail).to include(code: 'active')
+      end
+
+      # A warning rather than a critical, for the same reason a suspension is one: the account is switched
+      # off, not broken, and the operator needs to see it to explain why nothing is happening.
+      it 'warns for an account the billing lock has closed' do
+        create(:billing_subscription, account: account, plan: plan, status: 'canceled')
+
+        expect(billing.status).to eq(Operations::Health::WARNING)
+        expect(billing.reason).to eq('Subscription is canceled')
+      end
+    end
+  end
 end

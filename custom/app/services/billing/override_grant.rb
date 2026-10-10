@@ -29,9 +29,10 @@ class Billing::OverrideGrant
     raise Error, 'An account is required' if @account.nil?
 
     override = @account.billing_entitlement_overrides.find_or_initialize_by(kind: kind, name: name.to_s)
-    answer = override.kind_limit? ? { limit_value: value, enabled: nil } : { enabled: value, limit_value: nil }
-    override.assign_attributes(answer.merge(reason: reason, expires_at: expires_at, granted_by: @actor))
-    raise Error, override.errors.full_messages.to_sentence unless override.save
+    raise Error, "#{override.name} is not a capability a plan can sell" if override.kind_feature? && !sellable_feature?(override.name)
+
+    override.assign_attributes(answer_for(override, value).merge(reason: reason, expires_at: expires_at, granted_by: @actor))
+    save_and_apply(override)
 
     audit(AUDIT_GRANTED, override.previously_new_record? ? 'create' : 'update', audit_payload(override))
     override
@@ -41,12 +42,51 @@ class Billing::OverrideGrant
     raise Error, 'That override belongs to another account' unless override.account_id == @account&.id
 
     snapshot = audit_payload(override)
-    override.destroy!
+    BillingEntitlementOverride.transaction do
+      override.destroy!
+      apply_feature(override.name, plan_includes?(override.name)) if override.kind_feature?
+    end
     audit(AUDIT_REVOKED, 'destroy', snapshot)
     true
   end
 
   private
+
+  # The kind decides which column carries the answer, per BillingEntitlementOverride#value_matches_kind.
+  def answer_for(override, value)
+    override.kind_limit? ? { limit_value: value, enabled: nil } : { enabled: value, limit_value: nil }
+  end
+
+  # The row and the flag it implies move together or not at all.
+  def save_and_apply(override)
+    BillingEntitlementOverride.transaction do
+      raise Error, override.errors.full_messages.to_sentence unless override.save
+
+      apply_feature(override.name, override.enabled) if override.kind_feature?
+    end
+  end
+
+  # A feature override has to CHANGE the capability, not merely record an intention. The account's own feature
+  # flags are the effective state the whole product reads (docs/p11/02-commercial-architecture.md §2), so the
+  # grant writes them; Billing::FeatureSync then refuses to move an overridden capability, which is what makes
+  # the write survive the next plan sync. Without this the console's "switch one capability on or off for this
+  # account regardless of its plan" was false: the row only exempted the capability from future syncs.
+  def apply_feature(name, enabled)
+    enabled ? @account.enable_features!(name) : @account.disable_features!(name)
+  end
+
+  # What the subscription would have said. Revoking an exception returns the account to its plan, which means
+  # writing the plan's answer back into the flags rather than leaving whatever the exception set.
+  def plan_includes?(name)
+    Billing::Entitlements.plan_for(@account)&.feature_included?(name) || false
+  end
+
+  # A plan cannot sell a system, internal, deprecated or Enterprise-licensed capability, so an override on one
+  # would be a flag write with no commercial meaning -- and `disable_features!` on a system flag would break
+  # the installation. BillingPlan.assignable_features is the same list the plan form offers.
+  def sellable_feature?(name)
+    BillingPlan.assignable_features.pluck('name').include?(name)
+  end
 
   def audit(event, action, payload)
     Custom::AuditLog.create!(

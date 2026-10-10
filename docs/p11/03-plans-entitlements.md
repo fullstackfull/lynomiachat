@@ -93,10 +93,17 @@ Rules the model enforces (`custom/app/models/billing_entitlement_override.rb`):
 reason `Operations::SignalRecorder` is the only writer of a signal: the audit row is not optional and a second
 caller that forgot it would leave an exception nobody can explain.
 
-* `grant!(kind:, name:, reason:, value:, expires_at: nil)` → upserts the row, then writes one
-  `Custom::AuditLog` row (`billing.override_granted`) against the account.
-* `revoke!(override)` → refuses an override belonging to another account, destroys it, writes
-  `billing.override_revoked` with a snapshot of what was removed.
+* `grant!(kind:, name:, reason:, value:, expires_at: nil)` → upserts the row **and**, for a feature override,
+  writes the capability into `accounts.feature_flags` in the same transaction, then writes one
+  `Custom::AuditLog` row (`billing.override_granted`) against the account. The flag write is what makes the
+  override real rather than a note: the flags are the effective state the whole product reads, and
+  `FeatureSync` then refuses to move an overridden capability, so the write survives the next plan sync.
+* `revoke!(override)` → refuses an override belonging to another account, destroys it, writes the **plan's**
+  answer back into the flags for a feature override, and writes `billing.override_revoked` with a snapshot of
+  what was removed.
+* A feature override is refused for anything outside `BillingPlan.assignable_features`. A plan cannot sell a
+  system, internal, deprecated or Enterprise-licensed capability, so an override on one would be a flag write
+  with no commercial meaning — and `disable_features!` on a system flag would break the installation.
 * A failed audit write logs and does **not** undo the grant: the customer's access is the thing that matters,
   and the same reasoning governs P10's contact-merge audit.
 * The audit payload is ids, names, numbers and the operator's typed reason. No secret can reach it.
@@ -211,6 +218,16 @@ Two P11 corrections are in those four lines:
    `ChatwootExceptionTracker` **and** `Billing::OperationsSignal.record_sync_failure`, so a plan change whose
    entitlement write failed is visible in the Operations Center where an operator looks, instead of leaving the
    account on its old entitlements with no signal anywhere.
+3. What it switches **off** for an account that had it on is recorded: one audit row,
+   `billing.capabilities_revoked_by_plan_sync`, naming the capabilities and the plan. Usually that is simply a
+   downgrade working — but it is also how an operator's deliberate decision disappears when the decision was
+   made by writing `accounts.feature_flags` directly (the account features form, the Platform API's account
+   update) instead of granting an override, which is the only thing `overridden_capabilities` can exempt.
+
+> **Operator rule: express a deliberate per-account capability decision as an override, not as a raw flag
+> write.** The Super Admin subscription page has the form; it asks for a reason, it survives plan syncs, and it
+> is audited. A raw flag write does none of those, and the next plan edit will quietly undo it — now at least
+> leaving a record that says so.
 
 The managed set is only `assignable_features`, so a system flag (`chatwoot_v4`, `assignment_v2`,
 `report_rollup`), an internal flag, a deprecated flag or an Enterprise `premium` flag is never written by a

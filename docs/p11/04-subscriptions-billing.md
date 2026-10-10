@@ -209,11 +209,19 @@ Billing restriction and administrative suspension are also two different states,
 
 | Scope | Resources |
 |---|---|
-| Account-scoped, restricted to the app's `platform_app_permissibles` | subscriptions, subscribers |
-| Installation-wide (the platform's own configuration, not a customer's records) | the plan catalogue, Stripe settings, stats |
+| Account-scoped, restricted to the app's `platform_app_permissibles` | subscriptions, subscribers, portal links, plan grants, trials, cancellation |
+| Installation-wide | the plan catalogue, the non-secret billing settings, stats |
+| **Never** | the Stripe secret key and the webhook signing secret — not readable, not even as a masked hint, and not writable |
+
+A Platform App token is an installation-admin credential by upstream design, so the installation-wide scope is
+consistent rather than a widening: `PlatformController` exempts `create` from its permissible check and
+`Platform::Api::V1::AccountsController#create` creates accounts installation-wide. The two Stripe credentials
+are excluded anyway, because replacing them is not administration — see `07-security-performance.md` §1.
 
 A plan edit through this API is audited exactly as a console edit is, with the `PlatformApp` as the actor
-(`Billing::PlanAudit`).
+(`Billing::PlanAudit`). That needed a fix of its own: `Custom::AuditLog`'s `after_save` read `user.email`
+unconditionally, and `PlatformApp` has a name and no email, so the lookup raised and rolled the audit row
+back — the actor with the least accountability was the one whose plan edits went unrecorded.
 
 ---
 

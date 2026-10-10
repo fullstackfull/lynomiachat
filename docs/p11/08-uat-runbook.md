@@ -63,6 +63,7 @@ Record for each step: date, who ran it, the result, and anything that differed f
 | 3.4 | Check Stripe test dashboard → Products | "Starter" and "Pro" exist with the right amounts |
 | 3.5 | **Now** check accounts A and B | ⚠️ `enforced?` is true. An account with no subscription is **locked** (402). This is the ordering trap in `06-rollout-compatibility.md` §3. |
 | 3.6 | Run `Billing::TrialStarter.backfill!` (or grant a plan to each account) | Both accounts usable again, on a trial or a granted plan |
+| 3.7 | With `trial_once_per_user` on, sign up a **new** account using the email address that already administers A | The new account is `inactive`, not `trialing`. (This rule reads the account's administrators at the moment the trial starts, which only the real signup flow links in time — it is not covered by a repository spec, deliberately, so it has to be checked here.) |
 
 ---
 
@@ -103,6 +104,7 @@ Use account **A**, signed in as its administrator.
 | 4.19 | While locked, send a customer message into A from a real channel | **Received and stored.** Inbound customer traffic is never refused over a billing state. |
 | 4.20 | Pay the outstanding invoice in the portal | A webhook returns the subscription to `active`; the dashboard is usable again |
 | 4.21 | Cancel in the Super Admin (Cancel subscription now) | Stripe shows cancelled; the row is `canceled`; the account is locked |
+| 4.22 | **Contrast with an administrative suspension.** Suspend account A in Super Admin → Accounts (any category), then send a widget message into it | Refused with `401 Account is suspended`, and the message is **not** stored — the opposite of 4.19. This is why non-payment belongs to the billing lock and not to the suspension switch (`07-security-performance.md` §2). Un-suspend A afterwards. |
 
 ---
 
@@ -167,6 +169,8 @@ Use account **B** on Starter (agents 2, inboxes 2).
 | 8.4 | Break the webhook deliberately (point Stripe at the endpoint with a wrong secret), send an event | Stripe reports the failure; the installation answered 401/400; nothing silently succeeded |
 | 8.5 | Cause a sync failure (e.g. revoke the Stripe key mid-flow, then change a plan) | The Operations Center shows a billing signal; Sentry has the exception |
 | 8.6 | A customer's card declines (`4000 0000 0000 9995`) | The subscription state reflects it. **No** operations signal — a declined card is a commercial event, not an incident. |
+| 8.7 | Open Operations → Accounts with a locked account on the page | Its **billing** column reads a warning naming the subscription status. Before P11 the row said healthy, because the only "cannot use the product" column read `accounts.status`. |
+| 8.8 | Edit a plan so a subscriber loses a capability, then read that account's audit log | `billing.capabilities_revoked_by_plan_sync` names the capabilities and the plan — so a capability disappearing is never unexplained. |
 
 ---
 
@@ -182,6 +186,8 @@ Use account **B** on Starter (agents 2, inboxes 2).
 | §6 Channels | PENDING | | | |
 | §7 Isolation and authorization | PENDING | | | |
 | §8 Observability | PENDING | | | |
+| §3.7 Trial once-per-user | PENDING | | | |
+| §4.22 Suspension vs billing lock | PENDING | | | |
 
 A row may be marked PASS only by a person who ran it against a real Stripe test-mode account. Seeded
 repository tests do not satisfy any row here, and none of these rows is marked passed anywhere in this phase's

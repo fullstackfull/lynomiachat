@@ -111,6 +111,51 @@ RSpec.describe 'Super Admin entitlement overrides', type: :request do
       expect { inbox.update!(name: 'Renamed') }.not_to raise_error
     end
 
+    # Until P11 closed this, the console's "switch one capability on or off for this account regardless of its
+    # plan" was false: the row existed and exempted the capability from the next sync, but nothing turned it on.
+    it 'actually switches a capability on, and the plan sync leaves it alone' do
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(false)
+
+      grant(kind: 'feature', name: 'lynomia_commerce', value: 'true', reason: 'paid pilot')
+
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(true)
+      Billing::FeatureSync.new(account, plan).perform
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(true)
+    end
+
+    it 'switches a capability off even though the plan includes it' do
+      plan.update!(features: ['lynomia_commerce'])
+      Billing::FeatureSync.new(account, plan).perform
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(true)
+
+      grant(kind: 'feature', name: 'lynomia_commerce', value: 'false', reason: 'abuse investigation')
+
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(false)
+    end
+
+    it 'returns the account to its plan when the override is revoked' do
+      plan.update!(features: ['lynomia_commerce'])
+      grant(kind: 'feature', name: 'lynomia_commerce', value: 'false', reason: 'abuse investigation')
+      override = account.billing_entitlement_overrides.sole
+
+      post "/super_admin/billing_subscriptions/#{subscription.id}/revoke_override", params: { override_id: override.id }
+
+      # The plan includes it, so revoking the exception gives it back rather than leaving the override's answer.
+      expect(account.reload.feature_enabled?('lynomia_commerce')).to be(true)
+    end
+
+    # A plan cannot sell a system, internal, deprecated or Enterprise-licensed capability, so an override on
+    # one would be a flag write with no commercial meaning -- and a system flag must never be switched off.
+    it 'refuses a feature a plan cannot sell, and changes nothing' do
+      before_state = account.reload.feature_enabled?('chatwoot_v4')
+
+      grant(kind: 'feature', name: 'chatwoot_v4', value: 'false', reason: 'testing')
+
+      expect(flash[:error]).to match(/not a capability a plan can sell/)
+      expect(BillingEntitlementOverride.count).to eq(0)
+      expect(account.reload.feature_enabled?('chatwoot_v4')).to eq(before_state)
+    end
+
     it 'withholds a channel the plan sells' do
       expect(Billing::Entitlements.channel_allowed?(account, 'Channel::Api')).to be(true)
 

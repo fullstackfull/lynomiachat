@@ -17,7 +17,7 @@ class Operations::AccountHealth
   end
 
   def call
-    accounts = Account.order(:id).page(@page).per(@per_page)
+    accounts = Account.includes(:billing_subscription).order(:id).page(@page).per(@per_page)
     ids = accounts.map(&:id)
     data = aggregate(ids)
     { accounts: accounts, rows: accounts.map { |account| row_for(account, data) } }
@@ -56,6 +56,7 @@ class Operations::AccountHealth
   def row_for(account, data)
     components = [
       account_component(account),
+      billing_component(account),
       signals_component(account, data),
       channels_component(account, data),
       commerce_component(account, data),
@@ -70,6 +71,23 @@ class Operations::AccountHealth
     suspended = account.status.to_s != 'active'
     build(:account_status, suspended ? Operations::Health::WARNING : Operations::Health::HEALTHY,
           reason: suspended ? "Account is #{account.status}" : nil, detail: { code: account.status.to_s })
+  end
+
+  # A billing-locked account is the commonest reason a customer says "nothing works", and this page said
+  # HEALTHY for one until P11: `account_component` reads `accounts.status`, which a billing lock never touches
+  # (docs/p11/07-security-performance.md §2). A warning rather than a critical, for the same reason a
+  # suspension is one -- the account is switched off, not broken, and the operator needs to see it to explain
+  # why nothing is happening. Read off the association preloaded with the page, so no query per row.
+  def billing_component(account)
+    return Operations::Health.absent(:billing, 'Billing is not configured') unless Billing::Settings.enforced?
+
+    subscription = account.billing_subscription
+    return Operations::Health.absent(:billing, 'No subscription record') if subscription.nil?
+
+    locked = !subscription.accessible?
+    build(:billing, locked ? Operations::Health::WARNING : Operations::Health::HEALTHY,
+          reason: locked ? "Subscription is #{subscription.status}" : nil,
+          detail: { code: subscription.status })
   end
 
   def signals_component(account, data)

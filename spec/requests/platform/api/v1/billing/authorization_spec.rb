@@ -73,6 +73,46 @@ RSpec.describe 'Billing Platform API authorization', type: :request do
     end
   end
 
+  # P11.56. A Platform App token is an installation-level credential by upstream design -- PlatformController
+  # exempts `create` from its permissible check, and Platform::Api::V1::AccountsController#create makes new
+  # accounts installation-wide. But a credential that can REPLACE the installation's Stripe keys is a different
+  # thing: a new secret key points this installation's customers at another Stripe account, and a new webhook
+  # secret both breaks every genuine delivery and re-opens the forged-event path SEC-7 closed.
+  describe 'the installation Stripe credentials' do
+    before { Billing::Settings.update!(stripe_secret_key: 'sk_test_original', stripe_webhook_secret: 'whsec_original') }
+
+    it 'are not readable, not even as a masked hint' do
+      get_with_token('/platform/api/v1/billing/settings')
+
+      expect(response).to have_http_status(:success)
+      body = response.parsed_body['data']
+      expect(body).not_to have_key('stripe_secret_key')
+      expect(body).not_to have_key('stripe_webhook_secret')
+      # What an integration legitimately needs: whether billing works at all.
+      expect(body).to include('stripe_configured' => true)
+      expect(response.body).not_to match(/sk_test_original|whsec_original|sk_test\.\.\./)
+    end
+
+    it 'cannot be overwritten' do
+      patch '/platform/api/v1/billing/settings',
+            params: { settings: { stripe_secret_key: 'sk_live_attacker', stripe_webhook_secret: 'whsec_attacker' } },
+            headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(Billing::Settings.stripe_secret_key).to eq('sk_test_original')
+      expect(Billing::Settings.stripe_webhook_secret).to eq('whsec_original')
+    end
+
+    it 'does not stop the settings it may legitimately change' do
+      patch '/platform/api/v1/billing/settings',
+            params: { settings: { trial_days: 21, grace_period_days: 5 } },
+            headers: { api_access_token: token }, as: :json
+
+      expect(Billing::Settings.trial_days).to eq(21)
+      expect(Billing::Settings.get(:grace_period_days)).to eq(5)
+    end
+  end
+
   describe 'without a Platform App token' do
     it 'refuses the request' do
       get "/platform/api/v1/billing/subscriptions/#{granted.id}", as: :json

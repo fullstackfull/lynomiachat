@@ -68,15 +68,9 @@ class Api::V1::Accounts::BillingController < Api::V1::Accounts::BaseController
   end
 
   def portal
-    customer_id = Current.account.billing_subscription&.stripe_customer_id
-    return render json: { error: 'No billing account yet' }, status: :unprocessable_entity if customer_id.blank?
-
-    session = Stripe::BillingPortal::Session.create(
-      { customer: customer_id, return_url: mobile_request? ? mobile_return_page('portal') : billing_page_url },
-      { api_key: Billing::Settings.stripe_secret_key }
-    )
-    render json: { url: session.url }
-  rescue Stripe::StripeError => e
+    return_url = mobile_request? ? mobile_return_page('portal') : billing_page_url
+    render json: { url: Billing::Portal.new(Current.account, return_url: return_url).url }
+  rescue Billing::Portal::Error, Stripe::StripeError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 

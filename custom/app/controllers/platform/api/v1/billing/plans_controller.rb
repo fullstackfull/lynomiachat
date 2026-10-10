@@ -48,7 +48,7 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
     product_id = @plan.stripe_product_id
     return render_error('plan_in_use', @plan.errors.full_messages.to_sentence, :unprocessable_entity) unless @plan.destroy
 
-    archive_stripe_product(product_id)
+    ::Billing::PlanSync.archive_product!(product_id)
     head :no_content
   end
 
@@ -69,13 +69,5 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
       :name, :description, :price, :currency, :interval, :pricing_type, :active, :position,
       limits: BillingPlan::LIMIT_KEYS, features: []
     )
-  end
-
-  def archive_stripe_product(product_id)
-    return if product_id.blank? || ::Billing::Settings.stripe_secret_key.blank?
-
-    Stripe::Product.update(product_id, { active: false }, { api_key: ::Billing::Settings.stripe_secret_key })
-  rescue Stripe::StripeError => e
-    Rails.logger.warn("[Billing] Could not archive Stripe product #{product_id}: #{e.message}")
   end
 end

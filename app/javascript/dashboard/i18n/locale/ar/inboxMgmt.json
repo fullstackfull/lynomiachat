@@ -1364,7 +1364,8 @@
       },
       "PASSWORD": {
         "LABEL": "كلمة المرور",
-        "PLACE_HOLDER": "كلمة المرور"
+        "PLACE_HOLDER": "كلمة المرور",
+        "PLACE_HOLDER_STORED": "اتركه فارغاً للإبقاء على كلمة المرور الحالية"
       },
       "ENABLE_SSL": "تمكين SSL",
       "AUTH_MECHANISM": "المصادقة"
@@ -1397,7 +1398,8 @@
       },
       "PASSWORD": {
         "LABEL": "كلمة المرور",
-        "PLACE_HOLDER": "كلمة المرور"
+        "PLACE_HOLDER": "كلمة المرور",
+        "PLACE_HOLDER_STORED": "اتركه فارغاً للإبقاء على كلمة المرور الحالية"
       },
       "DOMAIN": {
         "LABEL": "النطاق",

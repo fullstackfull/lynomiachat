@@ -1467,7 +1467,8 @@
       },
       "PASSWORD": {
         "LABEL": "Password",
-        "PLACE_HOLDER": "Password"
+        "PLACE_HOLDER": "Password",
+        "PLACE_HOLDER_STORED": "Leave blank to keep the current password"
       },
       "ENABLE_SSL": "Enable SSL",
       "AUTH_MECHANISM": "Authentication"
@@ -1500,7 +1501,8 @@
       },
       "PASSWORD": {
         "LABEL": "Password",
-        "PLACE_HOLDER": "Password"
+        "PLACE_HOLDER": "Password",
+        "PLACE_HOLDER_STORED": "Leave blank to keep the current password"
       },
       "DOMAIN": {
         "LABEL": "Domain",

@@ -80,7 +80,10 @@ json.medium resource.channel.try(:medium) if resource.twilio?
 if resource.twilio?
   json.content_templates resource.channel.try(:content_templates)
   if Current.account_user&.administrator?
-    json.auth_token resource.channel.try(:auth_token)
+    # Lynomia: `auth_token` is `encrypts`ed at rest and no dashboard code reads it back from this payload --
+    # the Twilio form only ever sends one. So it is reported as configured-or-not, like `has_api_key_secret`
+    # below. `account_sid` and `api_key_sid` stay: they are identifiers, not secrets.
+    json.auth_token_configured resource.channel.try(:auth_token).present?
     json.account_sid resource.channel.try(:account_sid)
     json.api_key_sid resource.channel.try(:api_key_sid)
   end
@@ -105,7 +108,10 @@ if resource.email?
   ## IMAP
   if Current.account_user&.administrator?
     json.imap_login resource.channel.try(:imap_login)
-    json.imap_password resource.channel.try(:imap_password)
+    # Lynomia (docs/p10/07-security-performance.md): the password itself is never sent. It is `encrypts`ed at
+    # rest, so sending it to the browser was the one place it existed in plaintext. The settings form shows an
+    # empty field and a blank save keeps the stored value (Custom::Channel::Email#with_stored_credentials).
+    json.imap_password_configured resource.channel.try(:imap_password).present?
     json.imap_address resource.channel.try(:imap_address)
     json.imap_port resource.channel.try(:imap_port)
     json.imap_enabled resource.channel.try(:imap_enabled)
@@ -122,7 +128,7 @@ if resource.email?
   ## SMTP
   if Current.account_user&.administrator?
     json.smtp_login resource.channel.try(:smtp_login)
-    json.smtp_password resource.channel.try(:smtp_password)
+    json.smtp_password_configured resource.channel.try(:smtp_password).present?
     json.smtp_address resource.channel.try(:smtp_address)
     json.smtp_port resource.channel.try(:smtp_port)
     json.smtp_enabled resource.channel.try(:smtp_enabled)

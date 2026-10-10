@@ -15,10 +15,11 @@
 # had (docs/p10/02-channel-capability-matrix.md §TikTok). That lookup is the third fallback below. It is an
 # exact match on a provider-issued id, so it is as deterministic as the `source_id` match itself.
 module Custom::ContactInboxWithContactBuilder
-  # Channel type => [the attribute key, the WHERE fragment that the partial expression index on `contacts` can
-  # answer]. The fragment names the key literally because an expression index is only used when the query
-  # contains the same literal expression, and it is a frozen constant here rather than interpolated at the call
-  # site so no caller can put anything of its own into the SQL.
+  # Channel type => [the attribute key, the WHERE fragment that the expression index on `contacts` can answer].
+  # The fragment names the key literally because an expression index is only used when the query contains the
+  # same literal expression, and it is a frozen constant here rather than interpolated at the call site so no
+  # caller can put anything of its own into the SQL. The index's shape was measured rather than guessed
+  # (docs/p10/07-security-performance.md §3.3): the expression has to lead, and the index cannot be partial.
   SOCIAL_IDENTITY_LOOKUPS = {
     'Channel::Tiktok' => ['social_tiktok_user_id',
                           "contacts.additional_attributes ->> 'social_tiktok_user_id' = ?"]

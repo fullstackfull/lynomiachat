@@ -79,3 +79,5 @@ class Channel::Email < ApplicationRecord
     self.forward_to_email ||= "#{SecureRandom.hex}@#{account.inbound_email_domain}"
   end
 end
+
+Channel::Email.prepend_mod_with('Channel::Email')

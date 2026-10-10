@@ -7,8 +7,11 @@ vi.mock('dashboard/composables', () => ({
   useAlert: vi.fn(),
 }));
 
+// The password is no longer part of this payload in either direction: the server does not send it, so the
+// field starts empty, and a blank value on save means "keep what is stored"
+// (docs/p10/07-security-performance.md). `imap_password_configured` is what the form is told instead.
 describe('ImapSettings', () => {
-  it('disables IMAP without changing the SMTP configuration', async () => {
+  it('disables IMAP without changing the SMTP configuration, and sends no password it was not given', async () => {
     const updateInboxIMAP = vi.fn();
     const wrapper = shallowMount(ImapSettings, {
       props: {
@@ -19,7 +22,7 @@ describe('ImapSettings', () => {
           imap_address: 'imap.example.com',
           imap_port: 993,
           imap_login: 'support@example.com',
-          imap_password: 'password',
+          imap_password_configured: true,
           imap_enable_ssl: true,
           imap_authentication: 'plain',
         },
@@ -58,7 +61,7 @@ describe('ImapSettings', () => {
         imap_address: 'imap.example.com',
         imap_port: 993,
         imap_login: 'support@example.com',
-        imap_password: 'password',
+        imap_password: '',
         imap_enable_ssl: true,
         imap_authentication: 'plain',
       },

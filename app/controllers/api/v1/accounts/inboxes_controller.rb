@@ -129,7 +129,9 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def reauthorize_and_update_channel(channel_attributes)
     channel_params = permitted_params(channel_attributes)[:channel].to_h
-    channel_params = @inbox.channel.with_stored_credentials(channel_params) if @inbox.whatsapp?
+    # Lynomia: every channel that keeps a secret the dashboard is not given answers this, so a save that leaves
+    # the field blank keeps what is stored. Was `if @inbox.whatsapp?`, which is now one of three.
+    channel_params = @inbox.channel.with_stored_credentials(channel_params) if @inbox.channel.respond_to?(:with_stored_credentials)
     @inbox.channel.update!(channel_params)
     @inbox.channel.reauthorized! if @inbox.channel.respond_to?(:reauthorized!)
   end

@@ -21,9 +21,12 @@ class Operations::Signal < ApplicationRecord
 
   # What was observed. Allow-listed so a typo becomes a validation failure rather than a row nobody will ever
   # find again.
+  # P11 adds the three billing signals. This is an allow-list by design, which is why they have to be listed:
+  # a signal nobody declared is a signal nobody checked, and the recorder's validation drops it.
   SIGNALS = %w[
     authentication_failed connection_failed reauthorization_required
     delivery_failed sync_failed backlog dead_set_grew no_workers
+    entitlement_sync_failed unknown_provider_customer billing_event_failed
   ].freeze
 
   # What a signal can be about. An allow-list lists what IS allowed, not what might be, so this is exactly the

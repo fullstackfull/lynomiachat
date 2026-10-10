@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_10_100100) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_10_110100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -373,6 +373,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_10_100100) do
     t.string "stripe_schedule_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_event_at"
     t.index ["account_id"], name: "index_billing_subscriptions_on_account_id", unique: true
     t.index ["plan_id"], name: "index_billing_subscriptions_on_plan_id"
     t.index ["scheduled_plan_id"], name: "index_billing_subscriptions_on_scheduled_plan_id"
@@ -388,6 +389,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_10_100100) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_billing_trial_usages_on_email", unique: true
+  end
+
+  create_table "billing_webhook_events", force: :cascade do |t|
+    t.string "provider", default: "stripe", null: false
+    t.string "provider_event_id", null: false
+    t.string "event_type", null: false
+    t.datetime "provider_created_at"
+    t.integer "account_id"
+    t.integer "status", default: 0, null: false
+    t.string "failure_reason"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_billing_webhook_events_on_account"
+    t.index ["provider", "provider_event_id"], name: "uniq_billing_webhook_event_per_provider", unique: true
+    t.index ["status", "created_at"], name: "index_billing_webhook_events_on_failures", where: "(status = 2)"
   end
 
   create_table "calls", force: :cascade do |t|

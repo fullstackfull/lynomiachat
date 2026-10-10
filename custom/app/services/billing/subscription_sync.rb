@@ -15,9 +15,10 @@ class Billing::SubscriptionSync
   }.freeze
   TERMINAL = %w[canceled incomplete_expired].freeze
 
-  def initialize(stripe_subscription, account_id: nil)
+  def initialize(stripe_subscription, account_id: nil, event_at: nil)
     @stripe_sub = stripe_subscription
     @account_id = account_id
+    @event_at = event_at
   end
 
   def perform
@@ -26,9 +27,10 @@ class Billing::SubscriptionSync
       Rails.logger.warn("[Billing] No account found for Stripe subscription #{@stripe_sub.id}")
       return
     end
-    return if stale_event?(subscription)
+    return if stale_event?(subscription) || out_of_order?(subscription)
 
     apply(subscription)
+    subscription.last_event_at = @event_at if @event_at
     subscription.save!
     subscription
   end
@@ -40,11 +42,39 @@ class Billing::SubscriptionSync
       (account_id && BillingSubscription.find_or_initialize_by(account_id: account_id))
   end
 
+  # Lynomia (docs/p11/04-subscriptions-billing.md): the server-owned mappings are tried first and the body's
+  # own metadata is the last resort. `find_subscription` above already prefers the stripe_subscription_id this
+  # installation stored; this adds the customer id, which was also written by our own checkout, before falling
+  # back to metadata. Metadata assists, it does not authorize -- and with the blank-secret hole in the webhook
+  # controller closed, reaching here at all requires a signature only Stripe can produce.
   def account_id
-    id = @account_id.presence || @stripe_sub.metadata['account_id']
+    id = @account_id.presence || account_id_from_customer || @stripe_sub.metadata['account_id']
     return nil if id.blank?
 
     Account.exists?(id: id) ? id.to_i : nil
+  end
+
+  def account_id_from_customer
+    customer = id_of(@stripe_sub.customer)
+    return nil if customer.blank?
+
+    BillingSubscription.find_by(stripe_customer_id: customer)&.account_id
+  end
+
+  # Stripe does not guarantee delivery order. An event older than the newest one already applied to this
+  # subscription must not overwrite it -- the delayed `past_due` arriving after `active` case. A subscription
+  # with no recorded timestamp has no ordering information yet, so it accepts this event and records it.
+  def out_of_order?(subscription)
+    return false if @event_at.nil? || subscription.last_event_at.nil?
+
+    stale = @event_at < subscription.last_event_at
+    if stale
+      Rails.logger.info(
+        "[Billing] Ignored an out-of-order Stripe event for account #{subscription.account_id}: " \
+        "event #{@event_at.iso8601} is older than #{subscription.last_event_at.iso8601}"
+      )
+    end
+    stale
   end
 
   # An ended Stripe subscription must not overwrite the account's current state:

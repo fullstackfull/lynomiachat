@@ -2,6 +2,15 @@
   <%= f.label field.attribute, 'Limits' %>
 </div>
 <div class="field-unit__field">
+  <%# The blast radius of an entitlement edit, shown where the edit happens (docs/p11/03-plans-entitlements.md). %>
+  <% billed = field.resource.persisted? ? field.resource.subscriptions.where(status: Billing::PlanAudit::BILLED_STATUSES).count : 0 %>
+  <% if billed.positive? %>
+    <p style="font-size: 13px; color: #b45309; margin: 0 0 12px;">
+      <strong><%= billed %></strong> account<%= 's' unless billed == 1 %> currently pay for this plan. Changing the limits,
+      features or channels below changes what every one of them has, immediately and mid-period. To sell something
+      different, create a new plan and move customers to it. Either way the change is recorded in the audit log.
+    </p>
+  <% end %>
   <% BillingPlan::LIMIT_KEYS.each do |key| %>
     <div style="margin-bottom: 8px;">
       <label for="billing_plan_limits_<%= key %>"><%= field.label(key) %></label>

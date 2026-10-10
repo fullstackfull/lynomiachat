@@ -37,6 +37,8 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
   # PATCH /platform/api/v1/billing/plans/:id
   def update
     @plan.update!(plan_params)
+    # Before the reload below, which clears `previous_changes`.
+    ::Billing::PlanAudit.record(@plan, actor: @platform_app)
     render_data(::Billing::ApiSerializer.plan(@plan.reload), meta: { stripe_sync: stripe_sync(@plan) })
   end
 

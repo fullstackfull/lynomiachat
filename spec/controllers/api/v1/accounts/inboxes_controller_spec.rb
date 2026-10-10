@@ -349,13 +349,18 @@ RSpec.describe 'Inboxes API', type: :request do
         let(:twilio_channel) { create(:channel_twilio_sms, account: account, account_sid: 'AC123', auth_token: 'secrettoken') }
         let(:twilio_inbox) { create(:inbox, channel: twilio_channel, account: account) }
 
-        it 'returns auth_token and account_sid for admin' do
+        # Lynomia (docs/p10/07-security-performance.md): the auth token is `encrypts`ed at rest and this payload
+        # was the one place it existed in plaintext. It is now reported as configured-or-not, like
+        # `has_api_key_secret`. `account_sid` stays: it is an identifier, not a secret, and the settings form
+        # displays it.
+        it 'reports the auth token as configured rather than returning it, and still returns account_sid for admin' do
           get "/api/v1/accounts/#{account.id}/inboxes/#{twilio_inbox.id}",
               headers: admin.create_new_auth_token,
               as: :json
           expect(response).to have_http_status(:success)
           data = JSON.parse(response.body, symbolize_names: true)
-          expect(data[:auth_token]).to eq('secrettoken')
+          expect(data).not_to have_key(:auth_token)
+          expect(data[:auth_token_configured]).to be(true)
           expect(data[:account_sid]).to eq('AC123')
         end
 
@@ -367,6 +372,7 @@ RSpec.describe 'Inboxes API', type: :request do
           expect(response).to have_http_status(:success)
           data = JSON.parse(response.body, symbolize_names: true)
           expect(data[:auth_token]).to be_nil
+          expect(data[:auth_token_configured]).to be_nil
           expect(data[:account_sid]).to be_nil
         end
       end

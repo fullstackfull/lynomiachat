@@ -219,18 +219,29 @@ accounts rather than a default.
 | vendored third-party assets not managed by a package manager | `vendor/db/sentiment-analysis.onnx`, 66 MB, an upstream Chatwoot model file; **and 38 `.woff2` font binaries** under `app/javascript/shared/assets/fonts/{Inter,InterDisplay}/`, which the first version of this table missed entirely |
 | JavaScript dependency scanning | **none.** `.dependabot/config.yml` is the discontinued Dependabot v1 schema at the old path, with upstream Chatwoot maintainers as its reviewers, and there is no `.github/dependabot.yml`; no workflow runs `pnpm audit`. So the 1,144 locked JS packages have no automated advisory watch at all |
 
-### 5.1 The fonts are redistributed without their licence
+### 5.1 The fonts are redistributed without their licence — CLOSED
 
-The 38 font binaries are served to every browser that loads the dashboard or the widget, which is
-redistribution, and the SIL Open Font License under which Inter is published requires its copyright notice and
-licence text to accompany every copy. **Neither is in this repository**: no `OFL.txt`, no attribution file, and
-no mention in any stylesheet — confirmed by searching the whole tree and `node_modules` for the licence's text.
+**This section described an open obligation. It has been closed; see `docs/pre-deploy/01-license-closure.md`
+§1 for the full record.** What this audit found and what was done:
 
-`app/javascript/shared/assets/fonts/NOTICE.md` now records the families, the designer and the licence, and
-states the one step that closes it: fetch the canonical `OFL.txt` from the Inter release these binaries came
-from and commit it beside them. That fetch needs network access this audit did not have, so **the obligation is
-open, not closed**, and it is listed as an open item in `07-release-gate.md`. The notice file deliberately does
-not reproduce the licence from memory: an approximate copy of a licence is worse than a pointer to the real one.
+The 38 font binaries are redistributed, and the SIL Open Font License under which Inter is published requires
+its copyright notice and licence text to accompany every copy. **Neither was in this repository**: no
+`OFL.txt`, no attribution file, and no mention in any stylesheet — confirmed by searching the whole tree and
+`node_modules` for the licence's text. The notice file deliberately did not reproduce the licence from memory:
+an approximate copy of a licence is worse than a pointer to the real one.
+
+The remaining step needed network access this audit did not have. With it:
+
+- The bundled version was read out of the binaries' own `name` table: **Inter `Version 4.000;git-a52131595`**,
+  identical across all 38 files, copyright `The Inter Project Authors`.
+- `app/javascript/shared/assets/fonts/OFL.txt` is upstream's `LICENSE.txt` from that exact commit, copied byte
+  for byte. SHA-256 `262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a`; the `v4.0` tag returns
+  the identical file.
+- Two corrections to `NOTICE.md`: the copyright **holder** is The Inter Project Authors, not the designer
+  (Rasmus Andersson, who is now named as the designer); and **18 of the 38** are referenced by a `@font-face`
+  rule, not all of them — the other 20 are committed but served to nobody.
+
+No legal clearance is claimed, here or there.
 
 ### 5.2 Ten advisory suppressions had expired
 
@@ -238,11 +249,18 @@ not reproduce the licence from memory: an approximate copy of a licence is worse
 rationale named its expiry — "Rails 7.1 has no patched release", "should be removed once we upgrade to Rails
 7.2.3.1+" — while `Gemfile.lock` pins `rails (7.2.3.1)`. The condition they named had been met, so they were
 suppressing advisories on a premise that no longer held, which is how a patched advisory becomes a shipped one.
-All ten were removed, with the reason recorded in the file. Four remain, each on a rationale that is still
-current: an Azure blob storage issue, two Devise issues (one patched locally, one on a code path this product
-does not enable), and a RubyLLM ReDoS reported against a Ruby version older than the one required here.
+All ten were removed, with the reason recorded in the file.
 
-**This is a correction of an expired rationale, not a clean scan.** See the note below.
+**That was a correction of an expired rationale, not a clean scan, and the note below named the gate. The gate
+has since been run** — see `docs/pre-deploy/00-security-audits.md` §1.1. **Nine of the ten did not reappear**
+against the live `ruby-advisory-db`, which vindicates the removal. The tenth, CVE-2026-66066, returned and was
+**fixed rather than re-suppressed**: Rails moved 7.2.3.1 → 7.2.3.2.
+
+A fourth entry was then also removed — CVE-2026-67991, a RubyLLM ReDoS — because two sibling advisories with
+identical `patched_versions` had never been suppressed, so the same risk was only half-visible. All three
+RubyLLM advisories now appear in scan output and are carried as OPEN SECURITY ADVISORY with measured
+reachability evidence. **Three** suppressions remain: an Azure blob storage issue and two Devise issues (one
+patched locally, one on a code path this product does not enable).
 
 Running `bundler-audit` and `pnpm audit` requires a network call to their advisory databases. This container's
 network policy does not allow that, so **no vulnerability scan was run as part of P-FINAL and none is claimed**.

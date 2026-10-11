@@ -5,25 +5,20 @@ ignore:
   # Devise 5 is currently blocked by devise-secure_password/devise_token_auth/devise-two-factor.
   # Chatwoot does not enable Timeoutable, so the timeout redirect path is not reachable.
   - GHSA-jp94-3292-c3xv
-  # Rails 7.1 has no patched release for the Active Storage proxy range
-  # advisories. Chatwoot limits proxy range requests locally.
-  - CVE-2026-33658
-  # Rails 7.1 has no patched release for this Active Storage direct-upload
-  # advisory. Chatwoot filters internal metadata keys locally.
-  - CVE-2026-33173
-  - CVE-2026-33174
-  # Rails 7.1 has no patched release for these Rails advisories. These are not
-  # reachable through Chatwoot's current usage patterns and should be removed
-  # once we upgrade to Rails 7.2.3.1+.
-  - CVE-2026-33168
-  - CVE-2026-33169
-  - CVE-2026-33170
-  - CVE-2026-33176
-  - CVE-2026-33195
-  - CVE-2026-33202
-  # No Rails 7.1 patch for this Active Storage advisory; mitigated locally.
-  # Remove once on Rails 7.2.3.1+.
-  - CVE-2026-66066
+  # TEN RAILS AND ACTIVE STORAGE ENTRIES WERE REMOVED FROM HERE.
+  #
+  # Each was suppressed on a rationale that named its own expiry -- "Rails 7.1 has no patched release",
+  # "should be removed once we upgrade to Rails 7.2.3.1+", "Remove once on Rails 7.2.3.1+" -- and
+  # `Gemfile.lock` now pins `rails (7.2.3.1)`. The condition they named has been met, so the entries were
+  # suppressing advisories on a premise that had expired, which is how a patched advisory becomes a shipped
+  # one. They were: CVE-2026-33658, CVE-2026-33173, CVE-2026-33174, CVE-2026-33168, CVE-2026-33169,
+  # CVE-2026-33170, CVE-2026-33176, CVE-2026-33195, CVE-2026-33202, CVE-2026-66066.
+  #
+  # This is a correction of an expired rationale, NOT a clean scan: `bundler-audit` fetches its advisory
+  # database over the network, which the container this change was made in does not have, so none of the ten
+  # was re-checked against the database here. The first `bundle exec bundler-audit check --update` with network
+  # access is the gate. If any of the ten is still open against 7.2.3.1, the tool will say so, and the entry
+  # belongs back here WITH A CURRENT REASON rather than an inherited one.
   # RubyLLM's name-normalization ReDoS is reported on Ruby 3.1; we require Ruby 3.4.4.
   # Built-in tool names are fixed; custom tools use bounded slugs and override normalization.
   # Patched 2.0 releases need an ai-agents migration (currently constrained to RubyLLM 1.x).

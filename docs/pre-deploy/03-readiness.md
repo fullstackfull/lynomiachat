@@ -224,19 +224,19 @@ production host's version is not known from here.
 
 | item | why not |
 |---|---|
-| The three `ruby_llm` ReDoS advisories | availability-only; measured linear on Ruby 3.4.4; no LLM credential is configured, so the code does not run. `00-security-audits.md` §1.4 |
+| The three `ruby_llm` ReDoS advisories | availability-only; all three measured **linear** on the Ruby this application requires (3.4.4), against advisories that scope their own claim to 3.1.x. Two are unreachable in this product at all; the third is reachable only once `captain_tasks` is enabled **and** a credential is present from either the installation or an account-level hook, which is a deployment-configuration question rather than a code one. `00-security-audits.md` §1.4 |
 | `rack-proxy` GHSA-42qh-8mx8-7wqm | not the vulnerable code; the advisory's own text dates the flaw to 1.0.0 |
 | 68 JavaScript advisories | every entry point is a build or development tool; none is in the deployed artifact |
 | `@vue/server-renderer` | no SSR; absent from the built bundle |
 | The transitive licence tally (`#52`) | a scoping decision, not a defect |
-| **The six product rules** | the product ships today with these semantics. Each is a decision about whether to change them, not a defect that must be fixed first — with the one qualification below |
+| **The six product rules** | **no longer open.** All six were approved on 2026-10-11 and implemented on this branch; `04-decisions-implemented.md` records the final semantics of each. What follows in §4.2 about RULE 1 is superseded by that |
 
 ### 4.2 Blocks, or must be answered first
 
 | # | item | nature |
 |---|---|---|
 | 1 | **libvips ≥ 8.13 on the production host** | **hard blocker.** Not checkable from here. The deploy aborts at stage 4b if it is missing — which is the designed behaviour, but it means the deploy does not complete until the host is upgraded |
-| 2 | **RULE 1** — `conversation_*` capabilities | **not a blocker for deployment; is a blocker for selling the restriction.** Today's behaviour is a privilege boundary the UI displays and the server does not enforce. It is not an escalation and not a regression, and it ships that way today. But if `custom_roles` is being sold on "restrict agents to their own conversations", that claim is not true of the API, and the honest options are to make it true (RULE 1 option A) or to stop making it |
+| 2 | ~~**RULE 1** — `conversation_*` capabilities~~ | **CLOSED.** The restriction is now enforced server-side on the list, the record, search and the counts, so the claim the UI makes is true of the API. What replaces it as a condition is not a defect but a verification: §6a of the UAT runbook, including the grandfather clause, because this is the behaviour change an existing customer is most likely to notice |
 | 3 | `07-release-gate.md` #55 | no automated advisory watch in CI. Both scans here were run by hand; the next regression will be found the same way |
 | 4 | `07-release-gate.md` #71 | nothing has been exercised against production. That is this release's whole remaining risk and the runbook is what retires it |
 
@@ -250,8 +250,8 @@ document exists.**
 
 | | |
 |---|---|
-| **PRE-DEPLOY CONDITIONS** | **CLOSED.** All four conditions are addressed: both audits run with network access and every finding classified; the Inter OFL committed byte-for-byte from the version-matched upstream commit; all six product rules documented with options and recommendations; the runbook re-verified against the code, with one `NO`, eight `PARTIAL`s, four factual errors and two deploy-script defects found and fixed |
+| **PRE-DEPLOY CONDITIONS** | **CLOSED.** All four conditions are addressed: both audits run with network access and every finding classified; the Inter OFL committed byte-for-byte from the version-matched upstream commit; all six product rules documented, then **decided by the owner and implemented** (`04-decisions-implemented.md`); the runbook re-verified against the code, with one `NO`, eight `PARTIAL`s, four factual errors and two deploy-script defects found and fixed |
 | **CONTROLLED DEPLOYMENT** | **READY, conditional on one host check.** Confirm libvips ≥ 8.13 on the production host, then work `08-production-uat-runbook.md` from §0. Not ready without that check |
-| **COMMERCIAL RELEASE** | **NOT YET.** Two things stand between here and selling it: the six product decisions, of which RULE 1 is the one with a security boundary in it and RULE 4 the one with a licence position in it; and a successful controlled deployment with UAT, which `07-release-gate.md` #71 is still open on |
+| **COMMERCIAL RELEASE** | **PENDING REAL UAT.** The six product decisions are taken and built, so what is left is no longer a decision: it is a successful controlled deployment with the real UAT this release has never had — `07-release-gate.md` #71 — including the new §6a conversation-capability pass and the genuinely-new-contact WhatsApp send in §13. One legal item stays outside engineering: the `LICENSE`/`NOTICE` position, which was deliberately not decided here |
 
 **No deployment was performed in this session.**

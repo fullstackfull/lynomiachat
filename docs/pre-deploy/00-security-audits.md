@@ -71,9 +71,11 @@ The libvips half is a **system package on the deployment host** and no change in
 Every Rails process aborts on an old libvips, web and worker alike, so an unchecked deploy would turn the
 restart into an outage with no rollback of its own. Two things were added for it:
 
-- `deployment/deploy.sh` stage **4b**, after the bundle install and before the migrations, which boots Ruby with
-  `vips` and fails the deploy with the remedy if it cannot. A failure there costs one unused dump and leaves the
-  schema untouched.
+- `deployment/deploy.sh` stage **4b**, after the bundle install and before the migrations, which boots **Rails**
+  and prints the measured libvips and `ruby-vips` versions, failing the deploy with the remedy if it cannot.
+  Booting Rails is what makes the probe faithful rather than indicative: `active_storage/engine.rb:16` requires
+  the guarded file during boot, so an old libvips aborts any Rails process at all — which is exactly the failure
+  the restart would otherwise hit. A failure there costs one unused dump and leaves the schema untouched.
 - `docs/p-final/08-production-uat-runbook.md` §0.1, which tells the operator to check it **before** the window
   opens.
 

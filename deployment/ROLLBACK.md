@@ -112,7 +112,7 @@ systemctl start chatwoot.target
 This is the only case where the schema and the code disagree, and the only case where rolling the code back
 first can make things worse rather than better: the old code meets a schema that is half of the new one.
 
-This release's migrations are additive with one exception, and the paths matter because three of the four live
+This release's migrations are additive with one exception, and the paths matter because five of the six live
 under `custom/`:
 
 | migration | what it does | additive? |
@@ -121,11 +121,30 @@ under `custom/`:
 | `custom/db/migrate/20261011150000_add_audit_trail_read_indexes` | two `CONCURRENTLY` indexes on `audits` | yes |
 | `custom/db/migrate/20261011150100_add_campaign_recipient_read_indexes` | two `CONCURRENTLY` indexes on `campaign_recipients` | yes |
 | `db/migrate/20261011160000_default_captain_tasks_off_for_new_accounts` | edits **one** installation config row (`ACCOUNT_LEVEL_FEATURE_DEFAULTS`) | yes, in effect — it changes a default for accounts created later and no existing account |
+| `custom/db/migrate/20261011170000_add_blocked_reason_to_campaigns` | adds a nullable `blocked_reason` string to `campaigns` (DECISION 6) | yes |
+| `custom/db/migrate/20261011180000_add_conversation_scope_enforced_to_custom_roles` | adds `conversation_scope_enforced` (boolean, default true, not null) to `custom_roles`, then **one `UPDATE`** setting it false for the pre-existing sets that name none of the three `conversation_*` capabilities (DECISION 1) | yes as a column; the backfill writes data, and `down` drops the column and with it the grandfather flags. Re-running `up` recomputes them from each set's current `permissions`, so a set whose capabilities have since been edited would be enforced on the second pass — which is the intended semantics, not a loss |
 
 plus the P8–P11 set listed in `docs/p-final/03-migration-review.md`. Additive is what makes this recoverable
 without the dump: **the old code does not read any of it**, so a schema that is partly ahead of the code is not
 a schema the old code trips over. The foreign-key migration is the one to think about on a rollback, and what
 it affects is the behaviour of a user delete, not any stored row.
+
+**A table the permission path now depends on.** DECISION 2 made `Custom::AccountUser#permissions` consult
+`Billing::Entitlements.allowed?`, which reads `billing_entitlement_overrides`. Before this release nothing on
+the permission path touched that table, so rolling back the migration that created it now breaks
+`/api/v1/profile` and every policy that reads a capability list, not only the billing screens. **Do not roll
+that migration back while this release's code is serving.** The order in "Code rollback" above is the correct
+one: put the previous revision back first, and only then consider schema changes.
+
+**One stored value the old code does not have a name for.** DECISION 6 adds `blocked` (integer `3`) to the
+`campaigns.campaign_status` enum. A campaign that blocked under the new code and then meets rolled-back code
+does **not** raise: `ActiveRecord::Enum::EnumType#cast` returns the raw value for an unmapped one, so the old
+code reads `3`, `active?`/`processing?`/`completed?` are all false, the scheduler's
+`where(campaign_status: :active)` never selects it, and the dashboard shows an unrecognised status. So the
+campaign is inert rather than broken. If you need it to run again under the old code, set its status back to
+`active` explicitly (`UPDATE campaigns SET campaign_status = 0, blocked_reason = NULL WHERE id = …`) — after
+confirming the WhatsApp capability is actually back, since the old code will send without checking the way the
+new code does.
 
 1. **Find out what actually ran.** `rails db:migrate:status` as the app user. A migration is either `up` or
    `down`; there is no partial row. What can be partial is a single migration's own work, and only a

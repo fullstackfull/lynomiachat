@@ -6,9 +6,11 @@
 # trips over, and nothing has to be backfilled -- a campaign that was never blocked has nothing to say here.
 #
 # The `blocked` state itself needs no migration: `campaign_status` is an integer and the new value is 3, which
-# no existing row holds. Rolling the code back leaves any blocked campaign holding a 3 that the old enum cannot
-# name, which is why `Campaign#unblock!` exists and why the rollback note in deployment/ROLLBACK.md says to
-# move blocked campaigns back to active BEFORE rolling the code back.
+# no existing row holds. Rolling the code back leaves any blocked campaign holding a 3 the old enum cannot name,
+# and that is INERT rather than broken: `ActiveRecord::Enum::EnumType#cast` returns the raw value for an
+# unmapped one, so the old code reads 3, every `active?`/`processing?`/`completed?` is false, and the
+# scheduler's `where(campaign_status: :active)` never selects it. `deployment/ROLLBACK.md` records this and the
+# `UPDATE` that returns such a campaign to `active` if it has to run under the old code.
 class AddBlockedReasonToCampaigns < ActiveRecord::Migration[7.2]
   def change
     add_column :campaigns, :blocked_reason, :string

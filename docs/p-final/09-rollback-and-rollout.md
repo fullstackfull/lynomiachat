@@ -39,24 +39,35 @@ nothing in it covers the part of this release that was rewritten. Every default 
 
 **Two things these flags do not gate, and an operator must know which:**
 
-- **Audit capture runs whether or not `audit_logs` is on.** The flag gates reading, not writing: every
-  `audited` declaration and every Lynomia writer records regardless. That is deliberate — a trail with holes
-  in it for the period the flag was off would be worse than no trail — but it means turning the flag off is
-  not a way to stop recording, and the `audits` table grows either way.
-- **A permission set keeps granting its capabilities after `custom_roles` is turned off.** The flag gates
-  administering sets, not the capability list a membership already holds: `Custom::AccountUser#permissions`
-  has no feature check, and neither do the three policies that read it. So revoking the entitlement from a
-  downgraded account stops it defining or attaching sets and leaves the ones already attached working. This
-  is a defensible product rule — a downgrade should not silently strip an agent's access mid-shift — but it is
-  a rule, not an accident, and it is the one an operator will be asked about. Enforcing it the other way is a
-  product decision, not a bug fix, because it would revoke access from live agents the moment a plan lapsed.
+- **Audit capture runs whether or not `audit_logs` is on, and that was confirmed as deliberate.** The flag
+  gates reading, not writing: every `audited` declaration and every Lynomia writer records regardless. An
+  audited account cannot stop its own trail by toggling a setting. What changed with DECISION 5 is the
+  unbounded growth this used to imply: `AuditTrail::RetentionJob` sweeps rows older than
+  `AUDIT_LOG_RETENTION_DAYS` (default **365**) nightly. The flag still does not affect capture, and the
+  retention window is an installation setting rather than a plan feature or a browser setting.
+- **A permission set stops granting its capabilities when `custom_roles` is turned off.** This reverses what
+  P-FINAL recorded here, under DECISION 2: entitlement is a hard upper bound, applied once in
+  `Custom::AccountUser#permissions`. Turning the flag off on a downgraded account no longer leaves attached
+  sets granting paid capability. **Nothing is deleted** — no set row, no attachment — so turning it back on
+  restores every capability with no restore step. The fallback is the member's built-in `agent` list, which is
+  strictly narrower than any set and cannot reach administrator, because `administrator?` reads the `role`
+  column and never this list. `commerce_order_manage` and `support_ticket_manage` keep their own separate
+  product gates on top of this.
 
-**The `whatsapp_campaign` caveat.** With the flag off, `Campaign#trigger!` returns early without sending and
-**without marking the campaign anything** (`app/models/campaign.rb:62-67`), so a campaign scheduled while the
-flag was on sits in its existing state and the operator sees neither a send nor a refusal. Turning the flag
-off is therefore a pause, not a cancellation, and an active campaign should be cancelled explicitly rather
-than left to a flag. Recorded here rather than changed: making the trigger refuse loudly would change upstream
-behaviour on a path shared with SMS campaigns.
+**The `whatsapp_campaign` caveat, closed by DECISION 6.** With the flag off, `Campaign#trigger!` used to
+return early without sending and without marking the campaign anything, so a campaign scheduled while the flag
+was on sat in its existing state, was re-selected every minute for three days, and was then silently abandoned
+once its `scheduled_at` fell out of the selection window — the operator saw neither a send nor a refusal.
+
+It now **blocks explicitly**: `campaign_status: :blocked` with `blocked_reason = 'FEATURE_DISABLED'`, visible on
+the campaign card, and exactly one deduplicated Operations signal (`campaign` / `feature_disabled`) rather than
+one per poll. Nothing is sent, no recipient data is touched, and the campaign stays blocked until the feature
+returns and `Campaign#unblock!` resumes it — which also moves `scheduled_at` forward if the original time has
+aged out of `TriggerScheduledItemsJob::SELECTION_WINDOW` — or an operator cancels it. SMS campaigns, which
+share `trigger!`, behave exactly as before.
+
+Turning the flag off is therefore still a pause rather than a cancellation, but it is now a pause the operator
+can see and act on.
 
 ### 1.1 What is NOT behind a flag, and therefore starts the moment the deploy restarts
 

@@ -91,6 +91,12 @@ class Campaign < ApplicationRecord
     attributes[:scheduled_at] = Time.current if scheduled_at.nil? || scheduled_at < TriggerScheduledItemsJob::SELECTION_WINDOW.ago
 
     update!(attributes)
+    # The signal is an OPEN observation, so leaving it open after the campaign has resumed would leave the
+    # Operations feed asserting something that is no longer true -- and the feed is the surface this decision
+    # relies on for operator visibility. `resolve` is subject-scoped (signal_recorder.rb:90-95), so this closes
+    # this campaign's row and nobody else's, and it is a no-op when there is none.
+    Operations::SignalRecorder.new(source: :campaign, account: account, subject: self).resolve(:feature_disabled)
+    true
   end
 
   # The contacts the campaign's audience selects, resolved when it is sent: any of its labels, each contact once.

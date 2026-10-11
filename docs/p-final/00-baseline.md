@@ -47,7 +47,7 @@ re-import.
 | Node (installed) | `v22.22.0` | `node -v` |
 | Node (declared) | `24.x` | `package.json` `engines.node` |
 | pnpm | `10.2.0` | `pnpm -v`, matches `packageManager pnpm@10.2.0+sha512.…` |
-| Package identity | `@chatwoot/chatwoot` `4.18.0` | `package.json` |
+| Package identity | `@chatwoot/chatwoot` `4.18.0` — **the P-FINAL baseline value. Changed to `lynomia-chat` with `"private": true` by DECISION 4; see `docs/pre-deploy/04-decisions-implemented.md`** | `package.json` |
 | `VERSION` file | **does not exist** | `ls VERSION` → no such file |
 | Bundler path | `vendor/bundle`, `without: [:development]` | `.bundle/config` |
 

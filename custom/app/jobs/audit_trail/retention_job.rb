@@ -7,9 +7,12 @@
 # bound at all, so the table grew without limit on behalf of accounts that hold no entitlement to read it.
 #
 # THE WINDOW IS A SYSTEM SETTING, NOT A PLAN FEATURE AND NOT A BROWSER SETTING. `AUDIT_LOG_RETENTION_DAYS`
-# (config/installation_config.yml) defaults to 365 and is changed by an operator in Super Admin → Settings, or
-# by seeding the installation config. It is read on every run, so a change takes effect on the next sweep with
-# no deploy. No account, administrator or agent can reach it.
+# (config/installation_config.yml) defaults to 365 and is changed by an operator on the Super Admin general
+# settings form (`/super_admin/app_config?config=general`), which is why the key is listed in
+# `SuperAdmin::AppConfigsController::GENERAL_CONFIGS` -- that list is an allow-list and `create` silently drops
+# any key absent from it, so without the entry there was no way to change this at all. Seeding the installation
+# config works too. It is read on every run, so a change takes effect on the next sweep with no deploy. No
+# account, administrator or agent can reach it.
 #
 # IDEMPOTENT AND SAFE TO OVERLAP. The deletable set is defined entirely by a cutoff computed from the clock, so
 # a second run finds whatever the first left and nothing else; two concurrent runs race only on rows that are

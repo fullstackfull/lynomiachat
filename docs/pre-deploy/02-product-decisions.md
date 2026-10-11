@@ -1,7 +1,13 @@
 # Pre-deploy condition 3 — the six outstanding product rules
 
 Six decisions were recorded by P-FINAL rather than taken. They are reproduced here with the evidence needed to
-take them. **Nothing in this document has been implemented.** No product semantics changed in this branch.
+take them.
+
+**This document is the dossier, not the record of what was built.** When it was written nothing in it had been
+implemented. All six were then approved by the owner on 2026-10-11 and implemented on this branch; the options
+and recommendations below are kept as the evidence each decision was taken from, and one recommendation
+(RULE 3) was explicitly overridden. **For what the code now does, read
+`docs/pre-deploy/04-decisions-implemented.md`.**
 
 ---
 
@@ -399,7 +405,7 @@ What needs fixing is not the behaviour but where the reasoning lives.
 
 Two declarations that do not describe the same thing. The root `LICENSE` is upstream Chatwoot's, including a
 carve-out clause for an `enterprise/` directory **that does not exist in this distribution**, and a
-notice-retention clause at `LICENSE:17-18`. `package.json:2-4` says `"name": "@chatwoot/chatwoot"`,
+notice-retention clause at `LICENSE:17-18`. At the time this dossier was written `package.json:2-4` said `"name": "@chatwoot/chatwoot"`,
 `"version": "4.18.0"`, `"license": "MIT"`, with no `"private": true`.
 
 ### Who and what is affected
@@ -455,7 +461,7 @@ out of git only by `.git/info/exclude`, which is not committed and therefore pro
 The split is justified by what each file carries. `package.json:2-4` contains no third-party obligation at all
 — it is this repository's own identity metadata and it is simply inaccurate. Correcting an inaccurate
 self-description needs no lawyer, and it closes the only concrete hazard in the pair: a package named
-`@chatwoot/chatwoot` with no `"private": true` has nothing structural stopping it being published. `LICENSE` is
+`@chatwoot/chatwoot` with no `"private": true` had nothing structural stopping it being published (both have since been changed). `LICENSE` is
 the opposite case: it carries a live obligation on a third party's copyright, and getting it wrong converts a
 tidy-up into a liability.
 

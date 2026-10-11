@@ -3,8 +3,9 @@
 # `handle_error` used to write `response.body` -- the whole provider response, unparsed and unbounded. The
 # product's own rule for operational records is the opposite of that, and it is already written down and
 # enforced for the Operations table: `reason` is one sanitized line and `detail` carries allow-listed keys
-# holding ids, codes and counts only (custom/app/services/operations/signal_recorder.rb:17-19). This applies the
-# same rule to the one place that still logged a raw body.
+# holding ids, codes and counts only (custom/app/services/operations/signal_recorder.rb:21-29 for the key
+# allow-list, :145-155 for the one-line sanitizer). This applies the same rule to the one place that still
+# logged a raw body.
 #
 # ALLOW-LIST, NOT DENY-LIST. Five values are taken by name. Everything else in the payload is dropped without
 # being looked at, including `error_data` and `error_user_msg`/`error_user_title`: those are nested, free-form,

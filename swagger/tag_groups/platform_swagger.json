@@ -6604,8 +6604,21 @@
             "enum": [
               "active",
               "processing",
-              "completed"
-            ]
+              "completed",
+              "blocked"
+            ],
+            "description": "blocked means the campaign reached its send time while the channel capability it needs was unavailable. Nothing was sent and nothing will be until it is re-activated; blocked_reason says why."
+          },
+          "blocked_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "FEATURE_DISABLED",
+              null
+            ],
+            "description": "Machine-readable reason a one-off campaign is blocked. Present only for one-off campaigns, null unless campaign_status is blocked."
           },
           "campaign_type": {
             "type": "string",

@@ -222,8 +222,12 @@ their own trail from a settings page. What was missing was any bound at all.
 | Batch size | 1 000 rows per statement |
 | Per-run ceiling | 200 000 rows, then it stops and says so |
 
-**How an operator changes the period.** Super Admin → Settings → `AUDIT_LOG_RETENTION_DAYS`, or by seeding the
-installation config. The value is read on every run, so a change takes effect on the next sweep with no deploy.
+**How an operator changes the period.** Super Admin → general settings
+(`/super_admin/app_config?config=general`) → `AUDIT_LOG_RETENTION_DAYS`, or by seeding the installation config.
+The key had to be added to `SuperAdmin::AppConfigsController::GENERAL_CONFIGS` for that to be true: that list
+is an allow-list and `create` silently drops any key absent from it, so before this the window was readable by
+the job and changeable by nobody. (Super Admin → *Settings* in the sidebar is the instance-status page, which
+is a different screen and does not carry this.) The value is read on every run, so a change takes effect on the next sweep with no deploy.
 It is a system setting: not a browser setting, not a plan feature, and unreachable by any account,
 administrator or agent. A value below the 30-day minimum, or a non-integer, is **refused rather than obeyed** —
 the run logs `AUDIT_RETENTION_MISCONFIGURED` with the reason and deletes nothing, because deleting the whole

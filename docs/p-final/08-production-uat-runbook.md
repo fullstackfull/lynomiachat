@@ -259,6 +259,38 @@ account.
 
 ---
 
+## 5a. The audit trail — retention (DECISION 5)
+
+Capture is still ungated and must stay that way: an audited account cannot stop its own trail from a settings
+page. What this release adds is a bound on growth. **Read-only checks, as the app user:**
+
+```bash
+# the setting and its default
+RAILS_ENV=production bundle exec rails runner \
+  'puts GlobalConfigService.load("AUDIT_LOG_RETENTION_DAYS", 365)'
+
+# the sweep is scheduled (sidekiq-cron), and the oldest row still present
+RAILS_ENV=production bundle exec rails runner \
+  'require "sidekiq/cron"; puts Sidekiq::Cron::Job.find("audit_trail_retention_job")&.to_hash&.slice("name","cron","klass","queue").inspect'
+RAILS_ENV=production bundle exec rails runner 'puts Audited::Audit.minimum(:created_at)'
+```
+
+| step | expected |
+|---|---|
+| the setting reads back | `365` unless an operator has changed it |
+| the cron entry exists | name `audit_trail_retention_job`, cron `15 3 * * *`, queue `housekeeping` |
+| turn `audit_logs` **off** for a pilot account, then act as its administrator | the action **still appears** in `audits` (query as the app user; the UI is what the flag hides) |
+| after the first nightly run, read the operator log | one `AUDIT_RETENTION_SWEEP` line with `retention_days`, `cutoff`, `deleted`, `capped`, and **no audited content in it** |
+
+**GO/NO-GO 4a.** If turning `audit_logs` off stops rows being written, stop: the capture gate has been
+reintroduced and the trail is defeatable by the party it audits.
+
+Changing the window is Super Admin → Settings → `AUDIT_LOG_RETENTION_DAYS`. It takes effect on the next sweep,
+needs no deploy, and a value below 30 is refused rather than obeyed (the run logs
+`AUDIT_RETENTION_MISCONFIGURED` and deletes nothing).
+
+---
+
 ## 6. Named permission sets (package C)
 
 As the administrator, **Settings → Agents / Roles**:
@@ -277,6 +309,66 @@ As the administrator, **Settings → Agents / Roles**:
 Then the capability that reaches Commerce: attach a set holding `commerce_order_manage` to an agent and confirm
 they can act on an order; remove it and confirm they cannot. Repeat for `support_ticket_manage` against a
 support case, and `contact_manage` against contact administration.
+
+---
+
+## 6a. The conversation capabilities, now enforced (DECISIONS 1 and 2)
+
+**This is the behaviour change in this release that an existing customer is most likely to notice, so it gets
+its own pass.** Until now the three `conversation_*` capabilities were enforced only by the browser. They are
+now enforced by the server, on the list, on one conversation, in global search and in the unread counts.
+
+Do this with **three** agents in a pilot account, each holding a set with exactly one of the three
+capabilities, and with at least one conversation of each shape present (assigned to that agent, unassigned,
+assigned to somebody else).
+
+| step | expected |
+|---|---|
+| sign in as the holder of `conversation_manage` | sees all three conversations |
+| holder of `conversation_unassigned_manage` | sees their own and the unassigned one; **not** the one assigned to somebody else |
+| holder of `conversation_participating_manage` | sees only their own |
+| each of them: open the conversation list and compare the sidebar counts with the rows | the count equals the number of rows, for every one of the three |
+| each of them: paste the URL of a conversation the list did **not** return | refused, not shown — and its messages, attachments and transcript are refused with it |
+| each of them: search for a word that appears in a hidden conversation's messages | no result; no message body from a hidden conversation appears |
+| the holder of `conversation_unassigned_manage`: take the unassigned conversation | allowed — reaching and taking unassigned work is what that capability is for |
+
+**GO/NO-GO 5a.** If a holder can open, search or count a conversation the list refuses them, stop. The list and
+the record must agree.
+
+### The existing sets on the real installation
+
+Before the window, list what is actually attached, because the grandfather clause only matters if such a set
+exists:
+
+```bash
+RAILS_ENV=production bundle exec rails runner '
+  CustomRole.find_each { |r| puts [r.account_id, r.id, r.name, r.permissions.inspect,
+                                   r.conversation_scope_enforced].join(" | ") }'
+```
+
+| step | expected |
+|---|---|
+| a pre-existing set naming none of the three | `conversation_scope_enforced` is **false**, and its holders see exactly what they saw before the deploy |
+| edit that set's conversation capabilities in Settings, then re-read it | the flag is now **true** and the new scope applies |
+| edit only its non-conversation capabilities | the flag stays **false** |
+| create a new set with no conversation capability, attach it to a test agent | that agent sees **no** conversations — absence means none for anything configured from now on |
+
+**GO/NO-GO 5b.** If a pre-existing set's holders lose conversation access on the deploy, stop and roll back the
+code: the grandfather clause has not worked, and that is an access regression for live agents.
+
+### The entitlement bound (DECISION 2)
+
+On a pilot account only, and with its administrator warned:
+
+| step | expected |
+|---|---|
+| turn the account's `custom_roles` feature **off** | the set's holders become **plain agents**: they see what an agent sees, they are **not** locked out, and they are **not** administrators |
+| check the set and the attachment | both still exist — nothing was deleted |
+| turn `custom_roles` back **on** | every capability is granted again immediately, with no restore step |
+| as a holder during the lapse, try an administrator-only action (delete a conversation, open Settings → Roles) | refused |
+
+**GO/NO-GO 5c.** If a lapse grants anything it did not grant before — above all administrator — stop. A lapse
+must only ever narrow.
 
 ---
 
@@ -420,6 +512,25 @@ after failure:   status=read failed_at=nil
 That is the whole rule: a read recipient stays read, a late delivery backfills its timestamp without demoting
 it, and a failure reported after a delivery is dropped rather than recorded. If the third line shows
 `status=failed`, the campaign failure count is wrong and this is a stop.
+
+---
+
+### 11c. A scheduled WhatsApp campaign when the capability is unavailable (DECISION 6)
+
+On a pilot account, with a **test contact you own**:
+
+| step | expected |
+|---|---|
+| schedule a one-off WhatsApp campaign a few minutes out, then turn the account's `whatsapp_campaign` feature off before it fires | **nothing is sent** |
+| look at the campaign | status **blocked**, with the explicit "not sent — WhatsApp unavailable" label; its recipients and content are intact |
+| read the campaign over the API | `blocked_reason` is `FEATURE_DISABLED` |
+| Operations Center | **exactly one** unresolved `feature_disabled` signal for that campaign, however many minutes have passed |
+| wait several more scheduler ticks and look again | still one signal, still blocked, still nothing sent — and it is not silently abandoned after three days |
+| turn `whatsapp_campaign` back on and resume the campaign | it sends, and if its original time has aged out the schedule moves forward so that resuming means something |
+| schedule an **SMS** campaign with SMS available | it behaves exactly as it did before this release |
+
+**GO/NO-GO 11c.** If a message reaches a real recipient while the capability is off, or if the campaign sits
+`active` with no reason recorded, stop.
 
 ---
 

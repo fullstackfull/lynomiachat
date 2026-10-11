@@ -1,6 +1,11 @@
 class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
+  # AUDIT_LOG_RETENTION_DAYS is Lynomia's (DECISION 5). Without it here the key is in config/installation_config.yml
+  # and read on every sweep, but `create` drops any key not in this list, so an operator had no way to change the
+  # retention window from this form at all -- which is the surface the decision's documentation points at. Added
+  # alongside the Lynomia COMMERCE_CONFIGS below rather than through an overlay, following this file's own
+  # precedent for Lynomia keys.
   GENERAL_CONFIGS = %w[ENABLE_ACCOUNT_SIGNUP FIREBASE_PROJECT_ID FIREBASE_CREDENTIALS WEBHOOK_TIMEOUT MAXIMUM_FILE_UPLOAD_SIZE
-                       WIDGET_TOKEN_EXPIRY].freeze
+                       WIDGET_TOKEN_EXPIRY AUDIT_LOG_RETENTION_DAYS].freeze
   META_INCIDENT_CONFIGS = %w[DISABLE_META_INBOX_CREATION DISABLE_META_MESSAGE_SENDING].freeze
   SHOPIFY_CONFIGS = %w[
     ENABLE_SHOPIFY_INTEGRATION

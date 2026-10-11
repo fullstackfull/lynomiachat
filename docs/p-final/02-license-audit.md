@@ -289,7 +289,7 @@ document:
   absent declarations are therefore named nowhere here.
 - **Ten development and test gems were not measured at all** (§2.1), because the group they are in is excluded
   from this container's bundle.
-- **`package.json` makes its own licence declaration about this repository** — `"name": "@chatwoot/chatwoot"`,
+- **`package.json` makes its own licence declaration about this repository** — at the time of this audit `"name": "@chatwoot/chatwoot"` (DECISION 4 has since made it `"lynomia-chat"` with `"private": true`; the licence half of this finding is unchanged and still for legal review),
   `"version": "4.18.0"`, `"license": "MIT"`, with no `"private": true` — which §1 does not record because it
   read the root `LICENSE` only. A second, differently worded licence statement carrying the upstream package
   identity is exactly the kind of thing a licence review asks about, and the fork's intended position on both

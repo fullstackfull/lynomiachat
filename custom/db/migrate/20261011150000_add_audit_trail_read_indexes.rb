@@ -39,7 +39,8 @@ class AddAuditTrailReadIndexes < ActiveRecord::Migration[7.1]
   def up
     unlimit_statement_timeout
 
-    add_index :audits, :username, name: ACTOR_NAME_INDEX, using: :gin, opclass: :gin_trgm_ops,
+    add_index :audits, :username,
+              name: ACTOR_NAME_INDEX, using: :gin, opclass: :gin_trgm_ops,
               algorithm: :concurrently, if_not_exists: true
     add_index :audits, [:associated_type, :associated_id, :auditable_type, :created_at],
               name: TYPE_FILTER_INDEX, algorithm: :concurrently, if_not_exists: true

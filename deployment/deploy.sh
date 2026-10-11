@@ -235,6 +235,25 @@ as_app 'BUNDLE_FROZEN=true bundle install --quiet'
 as_app 'pnpm install --frozen-lockfile'
 
 # ---------------------------------------------------------------------------
+log "4b. libvips precondition"
+
+# NEW IN THIS RELEASE, and a boot failure rather than a degradation. Rails moved 7.2.3.1 -> 7.2.3.2 to carry the
+# fix for CVE-2026-66066, and that fix makes Active Storage REFUSE TO LOAD when it cannot disable libvips's
+# unfuzzed operations -- it raises on `require` unless libvips is 8.13 or later AND ruby-vips is 2.2.1 or later
+# (activestorage-7.2.3.2/lib/active_storage/vips.rb:34). The previous revision ran on ruby-vips 2.1.4, so the
+# lockfile moves it to 2.3.0; the libvips half is a system package this script cannot install.
+#
+# Every Rails process aborts, web and worker alike, so an old libvips on this host turns the restart at stage 7
+# into an outage with no rollback of its own. Checked here because stage 5 boots Rails too: left unchecked the
+# deploy dies in the middle of the migrations with an Active Storage backtrace and no statement of the cause.
+# This is after the backup and before any schema change, so a failure here costs one unused dump and nothing
+# else.
+as_app 'RAILS_ENV=production bundle exec rails runner "
+  require %q(vips)
+  puts %Q(libvips #{[Vips.version(0), Vips.version(1), Vips.version(2)].join(%q(.))}, ruby-vips #{Vips::VERSION})"' \
+  || fail "libvips precondition not met. Active Storage in Rails 7.2.3.2 needs libvips >= 8.13 and ruby-vips >= 2.2.1. Nothing has been migrated. Upgrade libvips on this host (Debian/Ubuntu: apt-get install --only-upgrade libvips42) and re-run."
+
+# ---------------------------------------------------------------------------
 log "5. Migrations"
 
 # POSTGRES_STATEMENT_TIMEOUT=0 only for this step: production's timeout is there to protect request-path queries,
@@ -281,13 +300,34 @@ if systemctl is-active --quiet chatwoot-worker.1.service; then
     || echo "note: could not quiet chatwoot-worker.1.service; continuing"
 fi
 
+# The probe's own failure is not a drain. The first version of this loop sent stderr to /dev/null and fell back
+# to `echo 0`, so a Redis refusal or a `rails runner` exception produced "0" and the loop announced
+# "in-flight set drained" -- the one reading this stage exists to rule out. A probe that cannot answer is
+# reported as unknown and the loop keeps asking.
+drained=0
 for attempt in $(seq 1 30); do
-  busy="$(as_app 'RAILS_ENV=production bundle exec rails runner "
-    require %q(sidekiq/api); print Sidekiq::Stats.new.workers_size"' 2>/dev/null || echo 0)"
-  [[ "$busy" == "0" ]] && { echo "sidekiq: in-flight set drained"; break; }
-  [[ $attempt -eq 30 ]] && echo "note: sidekiq still reports $busy busy worker(s) after 60s; restarting anyway"
+  if busy="$(as_app 'RAILS_ENV=production bundle exec rails runner "
+    require %q(sidekiq/api); print Sidekiq::Stats.new.workers_size"')" && [[ $busy =~ ^[0-9]+$ ]]; then
+    [[ "$busy" == "0" ]] && { echo "sidekiq: in-flight set drained"; drained=1; break; }
+    echo "sidekiq: $busy busy worker(s)"
+  else
+    echo "note: could not read sidekiq's in-flight set (attempt $attempt/30)"
+  fi
   sleep 2
 done
+
+# Not a `fail`: the operator decides. Stopping here leaves the release checked out and migrated with the old
+# code still serving, which is a coherent state to hold; restarting anyway risks the double send stage 6b
+# exists to prevent. REQUIRE_DRAIN=1 turns the judgement call into a refusal for a deploy that must not take
+# that risk unattended. docs/p-final/08-production-uat-runbook.md states what to do when this line appears.
+if [[ $drained -eq 0 ]]; then
+  if [[ -n ${REQUIRE_DRAIN:-} ]]; then
+    fail "sidekiq did not confirm an empty in-flight set within 60s and REQUIRE_DRAIN is set. The release is checked out and migrated; the OLD code is still serving. See docs/p-final/08-production-uat-runbook.md section 16."
+  fi
+  echo "WARNING: sidekiq did not confirm an empty in-flight set within 60s. Restarting anyway."
+  echo "         A job that had already called a provider will be retried from the top after the restart."
+  echo "         See docs/p-final/08-production-uat-runbook.md section 16."
+fi
 
 # ---------------------------------------------------------------------------
 log "7. Restart"

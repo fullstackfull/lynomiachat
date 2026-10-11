@@ -29,6 +29,30 @@ is a lever or a rollback, and `deployment/ROLLBACK.md` holds the procedure.
 | how long | allow 90 minutes for §1–§3 and a further 2 hours for §4–§12. §13 (the real WhatsApp send) needs a cooperating recipient |
 | access | root on the application server; the Super Admin console; a browser signed in as an administrator of a real test account; a browser signed in as an agent of that same account |
 
+### 0.1 The host precondition this release adds
+
+**Check this first, before the window opens.** This release moves Rails from 7.2.3.1 to 7.2.3.2 to carry the
+fix for CVE-2026-66066 (Active Storage). That fix makes Active Storage **refuse to load** unless libvips is
+8.13 or later and `ruby-vips` is 2.2.1 or later: it raises on `require`, so every Rails process aborts — web
+and worker alike. The lockfile moves `ruby-vips` 2.1.4 → 2.3.0, which settles the gem half. The libvips half is
+a system package on this host and nothing in the release can install it.
+
+```bash
+# the gem's view of the system library -- this is the number Active Storage checks
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && bundle exec ruby -rvips -e \
+  'puts [Vips.version(0), Vips.version(1), Vips.version(2)].join(%q(.))'"
+
+# and, if the bundle is not installed yet, the package
+dpkg-query -W -f='${Version}\n' libvips42 libvips42t64 2>/dev/null
+```
+
+If libvips is older than 8.13, upgrade it **before** the deploy window
+(`apt-get install --only-upgrade libvips42`). `deploy.sh` stage 4b checks this after the bundle install and
+before the migrations, so an old library aborts the deploy at a safe point rather than taking the restart down
+— but finding out at 3am is worse than finding out now.
+
+### 0.2 Revisions and baselines
+
 Have these open and ready **before** the deploy:
 
 ```bash
@@ -37,16 +61,100 @@ git -C /home/chatwoot/chatwoot rev-parse @{u}
 
 # the revision currently serving, written down -- this is what a rollback goes back to
 git -C /home/chatwoot/chatwoot rev-parse HEAD
-
-# the queues, before
-sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && bundle exec rails runner \
-  \"require 'sidekiq/api'; puts Sidekiq::Stats.new.queues.inspect\""
 ```
 
 Write both revisions into `deployment/INCIDENT.md` now, not later.
 
+**Then take the baselines.** `09-rollback-and-rollout.md` §4 names ten signals and reads every one of them as a
+change from before the deploy; §16 of this document and `deploy.sh` stage 8 both compare the dead set against
+"the pre-deploy number". Without this capture none of those comparisons can be made, and a post-restart sample
+is not a baseline. Paste the output into `deployment/INCIDENT.md`.
+
+```bash
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production bundle exec rails runner \
+  \"require 'sidekiq/api'
+    s = Sidekiq::Stats.new
+    puts 'queues:      ' + s.queues.inspect
+    puts 'enqueued:    ' + s.enqueued.to_s
+    puts 'scheduled:   ' + s.scheduled_size.to_s
+    puts 'retry:       ' + s.retry_size.to_s
+    puts 'dead:        ' + s.dead_size.to_s
+    puts 'processed:   ' + s.processed.to_s
+    puts 'failed:      ' + s.failed.to_s
+    puts 'signals(24h):' + (defined?(Custom::OperationsSignal) ? Custom::OperationsSignal.where('created_at > ?', 24.hours.ago).count.to_s : 'n/a')
+    puts 'billing_wh:  ' + (defined?(Custom::BillingWebhookEvent) ? Custom::BillingWebhookEvent.where('created_at > ?', 24.hours.ago).count.to_s : 'n/a')
+    puts 'inbound(24h):' + Message.where(message_type: :incoming).where('created_at > ?', 24.hours.ago).group(:inbox_id).count.inspect
+    puts 'audits(24h): ' + (ActiveRecord::Base.connection.table_exists?('audits') ? Audited::Audit.where('created_at > ?', 24.hours.ago).count.to_s : 'n/a')\""
+
+# the request-error rate, from whatever this installation already uses -- note the 5xx rate for the last hour
+```
+
 **Create a test account for this runbook, or nominate one.** Several steps below write data. Do them on an
 account whose conversations nobody is paid to answer. Note its id.
+
+### 0.3 How this document maps onto the rollout
+
+`09-rollback-and-rollout.md` §6 says to "work `08-production-uat-runbook.md` from PHASE 2 onwards" and to
+"enable nothing until PHASE 6". This document has no phases — it has numbered sections — so read that
+instruction through this table:
+
+| 09 calls it | here it is | levers |
+|---|---|---|
+| PHASE 1 — deploy with every lever off | §0, §1 | none; `config/features.yml` defaults stand |
+| PHASE 2 — prove the deploy | §2, §3 | none |
+| PHASE 3 — prove what is on by default | §5, §10, §11, §12 | none |
+| PHASE 4 — the first pilot lever | §4, §6 (`audit_logs`, `custom_roles`) | one account |
+| PHASE 5 — the remaining pilot levers | §7, §8, §9, §9a (`lynomia_support_tickets`, `lynomia_unified_identity`, billing) | one account each |
+| PHASE 6 — the real send | §13 | the WhatsApp send, gated separately |
+
+**Sections §4, §6, §7, §8 and §9a do not pass on a freshly created test account.** Each needs a capability the
+account does not carry by default, and until it does the surface does not merely look empty — it refuses. Note
+what `config/features.yml` actually controls: its `enabled:` value seeds the `ACCOUNT_LEVEL_FEATURE_DEFAULTS`
+row applied to **new** accounts (`app/models/concerns/featurable.rb:13,53,115-121`); the real gate is the
+account's own `feature_flags` bitfield read by `feature_enabled?` (`:95-97`). So check the account rather than
+assume from the file — an older nominated account may already carry some of these. §0.4 is how to grant one,
+for one account, and how to put it back.
+
+### 0.4 Enabling one lever for one account, and undoing it
+
+Every flag below ships off. Enable it for the test account only, never globally, and turn it off again at the
+end of the section that used it.
+
+| section | flag | `config/features.yml` | what it refuses while off |
+|---|---|---|---|
+| §4 | `audit_logs` | :112–115 | `AuditTrail::Query` returns `Custom::AuditLog.none`, so the page loads with zero rows whatever the table holds (`custom/app/services/audit_trail/query.rb:52`) |
+| §6 | `custom_roles` | :148–151 | all five permission-set endpoints raise `Pundit::NotAuthorizedError` |
+| §7 | `lynomia_support_tickets` | :304–307 | every support endpoint 404s (`custom/app/controllers/api/v1/accounts/support/base_controller.rb:17–21`) |
+| §8 | `lynomia_unified_identity` | :308–311 | both identity writers refuse (`custom/app/services/contacts/identity_linker.rb:34`) |
+
+```bash
+# what the account carries NOW -- write this down before changing anything
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production bundle exec rails runner \
+  \"puts Account.find(<test account id>).enabled_features.keys.sort.inspect\""
+
+# on, for ONE account
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production bundle exec rails runner \
+  \"a = Account.find(<test account id>); a.enable_features!('audit_logs'); puts a.enabled_features.keys.sort.inspect\""
+
+# off again
+sudo -u chatwoot -H bash -lc "cd /home/chatwoot/chatwoot && RAILS_ENV=production bundle exec rails runner \
+  \"a = Account.find(<test account id>); a.disable_features!('audit_logs'); puts a.enabled_features.keys.sort.inspect\""
+```
+
+For the two non-premium ones — `lynomia_support_tickets` and `lynomia_unified_identity` — the Super Admin
+override surface §9 already exercises does the same thing through the UI, and leaves an audited
+`billing.override_granted` row. Either route is fine; the override route is the one a customer would get.
+
+**GO/NO-GO 0.** Capture also means capture *back*: write the account's `enabled_features` keys down before you
+change them, so the end state is checkable rather than remembered.
+
+---
+
+## 0.5 Before the restart: quiet the workers
+
+This used to sit at the end of the document, after §15, which meant the one instruction that has to be read
+*before* the restart was read after it. It is now part of §1; see **§16** for what to do when the drain does not
+confirm.
 
 ---
 
@@ -217,9 +325,38 @@ Do this **without** configuring production Stripe. The manual-subscription path 
 | as an administrator of a limited account, open the billing page | the plan, the usage and the limits shown honestly |
 | as an **agent** of that account, open the same page | the commercial detail is not shown |
 
-**Stripe stays unconfigured for this runbook.** When it is configured later, that is its own change with its own
-go decision: live keys, the webhook endpoint and its signing secret, and a first real checkout against a test
-card. Do not fold it into this deploy.
+**Production Stripe stays unconfigured for this runbook.** Live keys, a live webhook endpoint and a real
+checkout are their own change with their own go decision. Do not fold them into this deploy.
+
+But "unconfigured" leaves the enforcement path unexercised, and that path only wakes when Stripe keys exist
+(`09-rollback-and-rollout.md` §1). §9a exercises it in **test mode**, where a mistake costs nothing.
+
+---
+
+## 9a. P11 — the Stripe path, in TEST MODE only
+
+Stripe test mode is not production Stripe. Test keys (`sk_test_…`, `pk_test_…`) cannot move money, cannot
+charge a real card, and are a different object space from live keys: nothing created here exists in the live
+account. This section is what makes the difference between "the billing tables look right" and "the webhook,
+the signature check and the enforcement path all work".
+
+**Preconditions.** A Stripe account in test mode; its test secret key, test publishable key, and a webhook
+endpoint pointing at this installation with its **test** signing secret. Do not reuse a live secret for any of
+the three. Note every value you set, because step 7 puts them all back.
+
+| step | expected |
+|---|---|
+| 1. set the three test values in Super Admin → Settings (or the installation config they live in) | saved; the page shows them set |
+| 2. confirm you are in test mode | every key begins `sk_test_`/`pk_test_`/`whsec_` from the test endpoint. **If any begins `sk_live_`, stop.** |
+| 3. Stripe dashboard → send a test `customer.subscription.updated` to the endpoint | `billing_webhook_events` gains one row; the response is 2xx |
+| 4. replay the same event | the second delivery is recognised as a duplicate and changes nothing — idempotency, not a second subscription change |
+| 5. send one event with a **deliberately wrong** signature (edit a byte of the header) | **rejected**, no `billing_webhook_events` row, and the log says signature verification failed. A 2xx here is a stop. |
+| 6. drive the test account past a plan limit it is subscribed to | the limit is enforced server-side, and the message names the limit rather than failing opaquely |
+| 7. remove the three test values and confirm the billing surfaces fall back to the manual-subscription behaviour of §9 | §9's table still passes |
+
+**GO/NO-GO 5a.** Step 5 is the one that matters. An endpoint that accepts an unsigned or wrongly signed webhook
+lets anyone who knows the URL change a subscription. If step 5 returns 2xx, stop the rollout and raise it: this
+is a security defect, not a billing inconvenience.
 
 ---
 
@@ -312,6 +449,31 @@ Preconditions: an approved template on the test account's WhatsApp number, a coo
 messaged that number inside the last 24 hours or accepts a template, and the `whatsapp_campaign` capability on
 the test account.
 
+### 13a. First: a genuinely new inbound contact
+
+Every other WhatsApp step in this runbook, and §11b's simulation, runs through a contact that **already
+exists**. That leaves the one path this release changed most — inbound arriving from a number the installation
+has never seen — untested, and `09-rollback-and-rollout.md` §5 makes inbound mis-routing a code rollback with
+no lever of its own. P10 put `contact_identities` in front of contact resolution, so "which contact does this
+number belong to" is new code on the first message from a new number, not on the second.
+
+Ask the cooperating recipient to message the test account's WhatsApp number **from a number that is not already
+a contact on this installation**. Confirm first, in the dashboard search, that the number returns nothing.
+
+| expected | why it is the interesting case |
+|---|---|
+| a new conversation appears on the test account, in the WhatsApp inbox | the inbound route resolves to the right account and inbox |
+| a **new** contact is created, with that number | `Contacts::IdentityLinker` found no match and created rather than merged |
+| exactly one contact, not two | a duplicate means the identity matcher and the legacy phone lookup disagreed |
+| the contact's identities panel lists the number once | `contact_identities` was written alongside `contacts.phone_number`, not instead of it |
+| an agent reply reaches the recipient | the outbound leg uses the conversation the inbound leg created |
+| the contact's activity timeline shows the inbound message | P8's timeline adapter sees a contact created by this path |
+
+**GO/NO-GO 7a.** Two contacts for one number, or a conversation on the wrong account, is a code rollback —
+not a lever. Stop and read `deployment/ROLLBACK.md`.
+
+### 13b. Then the template send
+
 1. Create a one-off campaign on the test account, audience = one label containing only the cooperating contact.
 2. Run it.
 3. Immediately open the campaign's analytics page. Expect the recipient as **sent**, with the rendered text.
@@ -360,9 +522,11 @@ A growing retry set after the deploy is a signal: read what is retrying before c
 
 ---
 
-## Before the restart: quiet the workers
+## 16. The worker drain, and what to do when it does not confirm
 
-`deployment/deploy.sh` stage 6b now quiets `chatwoot-worker.1.service` and waits for the in-flight set to
+**Read this before §1, not after §15.** §0.5 points here.
+
+`deployment/deploy.sh` stage 6b quiets `chatwoot-worker.1.service` and waits for the in-flight set to
 drain before the restart, up to 60 seconds. Watch it, and do not skip it.
 
 Two reasons. A restart under load interrupts jobs mid-flight; Sidekiq pushes an interrupted job back for retry,
@@ -383,6 +547,30 @@ sudo -u <app> RAILS_ENV=production bundle exec rails runner \
    puts({ busy: s.workers_size, enqueued: s.enqueued, scheduled: s.scheduled_size,
           retry: s.retry_size, dead: s.dead_size }.inspect)"
 ```
+
+**If the drain does not confirm.** Stage 6b prints one of two lines when it gives up, and neither is a
+success:
+
+- `note: could not read sidekiq's in-flight set (attempt n/30)` — the probe itself failed, so the in-flight set
+  is unknown rather than empty. Check Redis before anything else: if Redis is unreachable the restart is not
+  the problem you have.
+- `WARNING: sidekiq did not confirm an empty in-flight set within 60s. Restarting anyway.` — a job is still
+  running. The script does not stop, because stopping is a judgement the operator owns.
+
+In either case you are at a coherent hold point: the release is checked out and migrated, and the **old code is
+still serving**. The migrations in this release are additive, so the old code runs against the new schema
+(`docs/p-final/03-migration-review.md`). You therefore have three options, in order of preference:
+
+1. **Wait and re-check.** Run the command above. Campaign sends are the long jobs; if `busy` is falling, let it
+   finish and then `systemctl restart <target>` by hand.
+2. **Find out what is running** — `Sidekiq::Workers.new.map { |_, _, w| w['payload']['class'] }` — and decide
+   from the class. Anything that is not a provider send can be interrupted safely; a campaign send is the case
+   stage 6b exists for.
+3. **Restart anyway**, accepting that a job which had already called Meta will be retried from the top. Note in
+   `deployment/INCIDENT.md` that you did, so a duplicate message later has an explanation.
+
+Set `REQUIRE_DRAIN=1` on the deploy to turn this into a refusal instead of a warning. Use it for an unattended
+deploy; leave it unset when you are watching.
 
 **If the dead set grew after the deploy**, list it and check what the entries are. Entries naming
 `Campaigns::UpdateRecipientStatusJob` are expected and can be deleted: the class is gone on purpose, and

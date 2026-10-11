@@ -112,15 +112,46 @@ systemctl start chatwoot.target
 This is the only case where the schema and the code disagree, and the only case where rolling the code back
 first can make things worse rather than better: the old code meets a schema that is half of the new one.
 
-This release's migrations are all additive -- new tables, new columns with defaults, new indexes, and two that
-edit an installation config row (`db/migrate/20261011140000`, `20261011150000`, `20261011150100`,
-`20261011160000`, and the P8-P11 set listed in `docs/p-final/03-migration-review.md`). Additive is what makes
-this recoverable without the dump: **the old code does not read any of it**, so a schema that is partly ahead
-of the code is not a schema the old code trips over.
+This release's migrations are additive with one exception, and the paths matter because three of the four live
+under `custom/`:
+
+| migration | what it does | additive? |
+|---|---|---|
+| `custom/db/migrate/20261011140000_set_on_delete_on_billing_override_foreign_keys` | drops and re-adds two foreign keys on `billing_entitlement_overrides` to change their `on_delete` | **no** — it replaces existing constraints. Reversible in both directions (`up`/`down` both re-add), and it changes no data |
+| `custom/db/migrate/20261011150000_add_audit_trail_read_indexes` | two `CONCURRENTLY` indexes on `audits` | yes |
+| `custom/db/migrate/20261011150100_add_campaign_recipient_read_indexes` | two `CONCURRENTLY` indexes on `campaign_recipients` | yes |
+| `db/migrate/20261011160000_default_captain_tasks_off_for_new_accounts` | edits **one** installation config row (`ACCOUNT_LEVEL_FEATURE_DEFAULTS`) | yes, in effect — it changes a default for accounts created later and no existing account |
+
+plus the P8–P11 set listed in `docs/p-final/03-migration-review.md`. Additive is what makes this recoverable
+without the dump: **the old code does not read any of it**, so a schema that is partly ahead of the code is not
+a schema the old code trips over. The foreign-key migration is the one to think about on a rollback, and what
+it affects is the behaviour of a user delete, not any stored row.
 
 1. **Find out what actually ran.** `rails db:migrate:status` as the app user. A migration is either `up` or
-   `down`; there is no partial row. What can be partial is a single migration's own work, and in this release
-   only the three `CONCURRENTLY` index builds can be, because they run outside a transaction.
+   `down`; there is no partial row. What can be partial is a single migration's own work, and only a
+   `CONCURRENTLY` index build can be, because those run outside a transaction.
+
+   **Do not clear INVALID indexes by a count from this document.** An earlier version of this line said
+   "three", which was wrong; so is any fixed number, because how many can be partial depends on which
+   migrations were still pending on *this host*, and that is not knowable from the repository. Derive it:
+
+   ```bash
+   # the pending set, as the app user
+   RAILS_ENV=production bundle exec rails db:migrate:status | grep '^   down'
+   ```
+
+   Then count the concurrent builds inside only those files:
+
+   ```bash
+   # from the repository root, for each migration the line above listed as down
+   grep -c 'algorithm: :concurrently' db/migrate/<version>_*.rb custom/db/migrate/<version>_*.rb
+   ```
+
+   For the P-FINAL.CR package specifically there are **four**, two per file:
+   `custom/db/migrate/20261011150000` (`audits`) and `custom/db/migrate/20261011150100`
+   (`campaign_recipients`). The P8–P11 migrations carry more, one per file, and
+   `custom/db/migrate/20261004110000` (the contact phone uniqueness pair) carries two. The authoritative
+   answer is always step 2's query against `pg_index`, not a count from any document.
 
 2. **Check for an invalid index**, which is what a killed `CREATE INDEX CONCURRENTLY` leaves behind. Postgres
    keeps answering queries against that table by sequential scan, so nothing fails -- it just gets slow:
@@ -153,9 +184,13 @@ of the code is not a schema the old code trips over.
    deliberate roll-forward, not an accident of being on a branch.
 3. Do not re-run `deployment/deploy.sh` until the cause is understood. **And note the actual reason, which is
    not the one this line used to give.** It said the script "would fast-forward straight back onto the revision
-   you just rolled back from"; in fact after step 1 the checkout is detached, so `git merge --ff-only @{u}` has
-   no upstream to resolve and the script **cannot run at all** — it aborts at stage 3. Either way the answer is
-   the same, but the operator should know they will see a git error rather than an unwanted roll-forward.
+   you just rolled back from"; in fact after step 1 the checkout is detached, so the script **cannot run at
+   all**. It aborts in **stage 1**, at `RELEASE_SHA="$(as_app 'git rev-parse @{u}')"` (`deployment/deploy.sh`:90):
+   a detached HEAD has no upstream to resolve, and `set -Eeuo pipefail` turns that into an abort. This is
+   before the backup and before the checkout, so nothing is touched. An earlier version of this paragraph said
+   stage 3, which is the `git merge --ff-only @{u}` line; the script never reaches it. Either way the answer is
+   the same, but the operator should know they will see a git error at the very first step rather than an
+   unwanted roll-forward.
 
    To roll forward deliberately once the cause is understood, put the checkout back on the release branch
    first: `git checkout <branch>` as the app user, confirm `git status` is clean, then run the script. The

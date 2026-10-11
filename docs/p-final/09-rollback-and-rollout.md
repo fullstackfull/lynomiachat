@@ -31,7 +31,7 @@ nothing in it covers the part of this release that was rewritten. Every default 
 
 | Lever | Kind | Default after deploy | What it gates (server-side) | Rollback lever | Data effect of switching off |
 |---|---|---|---|---|---|
-| `audit_logs` | account feature flag, premium | **off** | the whole audit trail READ surface: `AuditTrail::Query` returns `Custom::AuditLog.none`, so the page gets an empty list and a 200 rather than a refusal (`query.rb:41`). **Capture is NOT gated** — see below | turn the flag off for the account | **none.** Entries keep being written and reappear when it is on again |
+| `audit_logs` | account feature flag, premium | **off** | the whole audit trail READ surface: `AuditTrail::Query` returns `Custom::AuditLog.none`, so the page gets an empty list and a 200 rather than a refusal (`custom/app/services/audit_trail/query.rb:52`). **Capture is NOT gated** — see below | turn the flag off for the account | **none.** Entries keep being written and reappear when it is on again |
 | `audit_log_ip_address` | account feature flag, premium | **off** | whether the trail shows a full originating address or a coarse network (`AuditTrail::Disclosure`) | turn the flag off | none; it is a rendering decision over already-stored data |
 | `custom_roles` | account feature flag, premium | **off** | all five role endpoints answer with the standard authorization refusal (`custom_roles_controller.rb:52`). **Attachment and the capability list are NOT gated** — see below | turn the flag off | **none.** Sets and their attachments stay, and keep granting what they grant |
 | `whatsapp_campaign` | account feature flag | **off** | whether a WhatsApp campaign may be created, and `Campaign#trigger!` returns without sending (`campaign.rb:62-67,78`) | turn the flag off | **none** on stored rows, but see the caveat below: an active campaign stalls rather than refusing |
@@ -146,13 +146,29 @@ assumed.
 
 ## 4. Observation window (P-FINAL.41)
 
-No fixed number of hours is invented here, because nothing in the product requires one. What matters is that
-each signal below has a known-good baseline taken **before** the deploy, so "elevated" means something.
+What matters most is that each signal below has a known-good baseline taken **before** the deploy, so
+"elevated" means something. `08-production-uat-runbook.md` §0.2 is the capture; nine of these ten signals had
+no capture step until it was added, which made the comparisons here unreadable as written.
+
+**The hold points.** These are defaults, not findings — the product does not derive a number, and the owner may
+shorten or lengthen them. What they are for is to stop "watch for a while" becoming "watch until someone feels
+ready", which is how a deploy gets declared done at the first green page.
+
+| after | hold for | before |
+|---|---|---|
+| the restart (§6 step 2) | **30 minutes** with every lever still off | starting the UAT sections that write data |
+| the UAT sections that need no lever | **60 minutes** | enabling the first lever |
+| each lever, one account | **60 minutes** on that account's signals | enabling the next lever |
+| the last lever | **24 hours**, spanning one full business day for this installation's customers | the real WhatsApp send in runbook §13 |
+
+A hold ends when the signals look like the baseline, not merely when the clock runs out: a signal still moving
+at the end of a hold extends it. Write the start and end of each hold into `deployment/INCIDENT.md`, because a
+hold nobody recorded is a hold nobody took.
 
 | Watch | Where | What a problem looks like |
 |---|---|---|
 | 5xx rate | nginx access log, Sentry | any sustained rise over the pre-deploy baseline |
-| Sidekiq retry and dead sets | `Sidekiq::Stats` (the deploy script already prints them) | `retry` or `dead` growing rather than draining |
+| Sidekiq retry and dead sets | `Sidekiq::Stats` — the **pre-deploy** capture in runbook §0.2; the deploy script's own print is one post-restart sample and is not a baseline | `retry` or `dead` growing rather than draining |
 | `operations_signals` | Super Admin → Operations → Issues | new CRITICAL rows, especially `authentication_failed` on an email channel or `no_workers` |
 | Account health | Super Admin → Operations → Accounts | any account that was HEALTHY before the deploy and is not after |
 | Provider webhook failures | `operations_signals`, provider dashboards | a channel going quiet is the shape to look for, not an error rate |
@@ -195,5 +211,7 @@ A NO-GO is not a judgement call. If any of these is observed, stop and use the l
 2. Run `deployment/deploy.sh`. It refuses a dirty tree, backs the database up and verifies the backup, runs the
    migrations with no statement timeout, checks for invalid indexes and pending migrations, builds both
    bundles, restarts, and verifies readiness, the units and a registered Sidekiq process.
-3. Work `08-production-uat-runbook.md` from PHASE 2 onwards, one command at a time.
-4. Enable nothing until PHASE 6, and then one lever, one account.
+3. Work `08-production-uat-runbook.md` one command at a time. That document is numbered by section, not by
+   phase; its §0.3 maps the phases named here onto its section numbers. Start at its §2.
+4. Enable nothing until that map's PHASE 4 (runbook §4 and §6), and then one lever, one account. Runbook §0.4
+   is how to enable one for a single account and how to put it back.

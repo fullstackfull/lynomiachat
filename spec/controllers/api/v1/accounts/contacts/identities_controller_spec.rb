@@ -67,6 +67,8 @@ RSpec.describe 'Contact Identities API', type: :request do
     end
 
     it 'allows an agent whose custom role grants contact management' do
+      # See DECISION 2: a set grants only while the account is entitled to hold one.
+      account.enable_features!('custom_roles')
       custom_role = create(:custom_role, account: account, permissions: ['contact_manage'])
       agent.account_users.find_by(account: account).update!(custom_role: custom_role)
 

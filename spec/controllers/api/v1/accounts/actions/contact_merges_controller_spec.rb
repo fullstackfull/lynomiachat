@@ -63,6 +63,10 @@ RSpec.describe 'Contact Merge Action API', type: :request do
       let(:merge_action) { double }
 
       before do
+        # The set only grants while the account is entitled to hold one (DECISION 2), and the custom-roles
+        # endpoint refuses to create or attach a set without it -- so an unentitled account holding one is not a
+        # state production can reach.
+        account.enable_features!('custom_roles')
         agent.account_users.find_by(account: account).update!(custom_role: custom_role)
         allow(ContactMergeAction).to receive(:new).and_return(merge_action)
         allow(merge_action).to receive(:perform)

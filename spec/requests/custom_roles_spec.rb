@@ -496,9 +496,12 @@ RSpec.describe 'Custom roles API', type: :request do
       expect(account.custom_roles.reload).to contain_exactly(existing)
     end
 
-    # §6: turning the capability off must not break an account that already uses it. Everything that reads a
-    # membership keeps working, and turning the capability back on must have lost nothing.
-    it 'leaves an existing attachment working everywhere else' do
+    # DECISION 2 replaced what this used to assert. It read: "turning the capability off must not break an
+    # account that already uses it", and took that to mean the attachment keeps GRANTING. The approved rule is
+    # the opposite -- entitlement is a hard upper bound, and a set must never resurrect a capability the account
+    # is not entitled to -- so what "must not break" means is now the three things below: the data survives,
+    # the surfaces still answer, and re-enabling loses nothing.
+    it 'stops granting the paid capability, without deleting anything' do
       order_desk = create(:custom_role, account: account, name: 'Order desk', permissions: %w[commerce_order_manage])
       holder_membership.update!(custom_role: order_desk)
 
@@ -506,11 +509,30 @@ RSpec.describe 'Custom roles API', type: :request do
       payload = response.parsed_body['accounts'].find { |entry| entry['id'] == account.id }
 
       expect(response).to have_http_status(:success)
-      expect(payload['permissions']).to contain_exactly('commerce_order_manage', 'custom_role')
-      expect(payload['custom_role']).to include('name' => 'Order desk')
+      # The built-in role's own list, which for a membership holding a set is always `agent`. Narrower than any
+      # set, and it cannot reach administrator, which is the `role` column rather than this list.
+      expect(payload['permissions']).to contain_exactly('agent')
+
+      # Nothing was deleted and nothing was detached: the set is still there and still attached, which is what
+      # makes re-enabling a no-op rather than a restore.
+      expect(account.custom_roles.reload).to contain_exactly(order_desk)
+      expect(holder_membership.reload.custom_role_id).to eq(order_desk.id)
 
       as(admin, :get, 'agents')
       expect(response).to have_http_status(:success)
+    end
+
+    it 'grants again the moment the entitlement returns, with no restore step' do
+      order_desk = create(:custom_role, account: account, name: 'Order desk', permissions: %w[commerce_order_manage])
+      holder_membership.update!(custom_role: order_desk)
+
+      account.enable_features!('custom_roles')
+
+      get '/api/v1/profile', headers: role_holder.create_new_auth_token, as: :json
+      payload = response.parsed_body['accounts'].find { |entry| entry['id'] == account.id }
+
+      expect(payload['permissions']).to contain_exactly('commerce_order_manage', 'custom_role')
+      expect(payload['custom_role']).to include('name' => 'Order desk')
     end
   end
 end

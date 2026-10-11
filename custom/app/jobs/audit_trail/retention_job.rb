@@ -21,7 +21,7 @@
 # shorter. A row whose `created_at` is NULL (the column is nullable on the shared upstream table) matches no
 # comparison and is therefore never deleted.
 class AuditTrail::RetentionJob < ApplicationJob
-  queue_as :scheduled_jobs
+  queue_as :housekeeping
 
   CONFIG_KEY = 'AUDIT_LOG_RETENTION_DAYS'.freeze
   DEFAULT_DAYS = 365

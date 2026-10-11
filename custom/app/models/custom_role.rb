@@ -47,6 +47,10 @@ class CustomRole < ApplicationRecord
   # correctly. One statement per holder keeps the two paths honest, and it puts the capability change on the
   # audit trail, which is where a reader looks for why somebody's access changed.
   has_many :account_users, dependent: nil
+  # DECISION 1. An operator who edits a set's conversation capabilities has chosen them under the new
+  # semantics, so the set stops being grandfathered from that moment. Before the save, because the comparison
+  # needs both sides of the change.
+  before_update :enforce_conversation_scope_on_explicit_edit, if: :conversation_capabilities_changed?
   before_destroy :detach_memberships
 
   # The same reason, one step earlier: three of this vocabulary's capabilities decide how much of the inbox a
@@ -85,6 +89,25 @@ class CustomRole < ApplicationRecord
   def invalidate_holders_visibility
     ::Conversations::UnreadCounts::FilteredCountInvalidator.new(account)
                                                            .users_visibility_changed!(user_ids: account_users.pluck(:user_id))
+  end
+
+  # DECISION 1's "explicitly edits" test, and it is deliberately about the CONVERSATION subset rather than about
+  # `permissions` as a whole: an administrator who adds `contact_manage` to a commerce-only set has said nothing
+  # about conversations and must not lose their holders' conversation access as a side effect. Comparing the
+  # subsets, as sets, also means reordering the array is not an edit.
+  def conversation_capabilities_changed?
+    before, after = permissions_change_to_be_saved
+    conversation_subset(before) != conversation_subset(after)
+  end
+
+  def conversation_subset(values)
+    Array(values).map(&:to_s).select { |value| ::Conversations::CapabilityScope::CAPABILITIES.include?(value) }.to_set
+  end
+
+  # Only ever towards enforcement. Nothing returns a set to grandfathered: that state exists for sets nobody
+  # has touched since the semantics changed, and once touched it cannot be untouched.
+  def enforce_conversation_scope_on_explicit_edit
+    self.conversation_scope_enforced = true
   end
 
   # Reported as one error naming every unknown value, so a client sending two typos learns about both.

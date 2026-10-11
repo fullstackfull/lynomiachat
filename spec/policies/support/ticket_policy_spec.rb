@@ -23,6 +23,8 @@ RSpec.describe Support::TicketPolicy do
   end
 
   before do
+    # See DECISION 2: a set grants only while the account is entitled to hold one.
+    account.enable_features!('custom_roles')
     AccountUser.find_by(account: account, user: lead).update!(custom_role: lead_role)
     create(:team_member, team: team, user: agent)
   end

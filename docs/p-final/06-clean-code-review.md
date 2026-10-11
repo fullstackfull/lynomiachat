@@ -99,23 +99,30 @@ Measured on the integrated tree against a real Postgres, counting the SQL each p
 iterations. The harness is in the P-FINAL working material; it subscribes to `sql.active_record` and filters
 only transaction and schema statements.
 
-| path | queries | wall clock |
-|---|---|---|
-| **A** audit trail: one page of entries plus its meta | 3 | 2.0 ms |
-| **A** audit trail: the same page fully rendered through jbuilder | **3** | 10.2 ms |
-| **B** capture cost on one audited inbox update | 3 | 6.3 ms |
-| **C** the capability list, 200 consecutive reads on one membership | **2** | 2.1 ms |
-| **D** campaign metrics endpoint service | 4 | 2.2 ms |
-| **D** recipient page of 25 with contacts | **2** | 2.3 ms |
-| **D** `record_outcome!` applied 50 times, a row lock each | 50 | 57.6 ms |
-| **E** delivery report whose identifier matches a recipient | 2 | 2.1 ms |
-| **E** delivery report whose identifier matches nothing | **1** | 0.3 ms |
+| path | queries | wall clock | note |
+|---|---|---|---|
+| **A** audit trail: one page of entries plus its meta | 3 | 2.0 ms | |
+| **A** audit trail: the same page fully rendered through jbuilder | 3 → **5 on a 12-type page** | 10.2 ms | **re-measured.** The 3 was a page whose entries shared few auditable types. `includes(:auditable)` costs one query per DISTINCT type, and the trail's vocabulary is 14, so a mixed page cost up to 14 — loading whole Account and Inbox rows to read one integer. The preload is gone; a mixed page of 12 types now measures 5, selecting two columns per type (`perf` commit) |
+| **B** capture cost on one audited inbox update | 3 | 6.3 ms | |
+| **C** the capability list, 200 consecutive reads on one membership | **2** | 2.1 ms | |
+| **D** campaign metrics endpoint service | 4 → **1** | 2.2 ms | **re-measured after the fix.** The 4 was right and was the defect: four passes over the campaign's recipients, three on predicates no index serves, on an endpoint the page polls every five seconds. One aggregate with `FILTER` clauses now, verified to agree with an independently computed value on all six counters |
+| **D** recipient page of 25 with contacts | **2** | 2.3 ms | the query count was right; the ORDER BY had no index behind it and top-N sorted the whole campaign. Two indexes added, both chosen by the planner with no sort step |
+| **D** `record_outcome!` applied 50 times, a row lock each | 50 → **100 when a report advances** | 57.6 ms | **corrected.** 50 is the idempotent case, where `progress_changes` returns `{}` and nothing is written. `with_lock` is `transaction { lock!; yield }`, so an advancing report is a `SELECT … FOR UPDATE` plus an `UPDATE`: 2 per report, not 1. The harness filters BEGIN/COMMIT, which is why the write was invisible |
+| **E** delivery report whose identifier matches a recipient | 2 → **3 when it advances** | 2.1 ms | **corrected**, same reason: the `find_by` plus the two above |
+| **E** delivery report whose identifier matches nothing | **1** | 0.3 ms | |
 
 What those numbers establish:
 
-- **No N+1 anywhere in the new code.** The audit page costs the same 3 queries rendered as unrendered, so
-  neither the actor nor the auditable is fetched per row. The recipient page costs 2 for 25 rows. The capability
-  list costs 2 for 200 reads.
+- **No N+1 anywhere in the new code**, in the sense that no cost grows with the number of ROWS on a page: the
+  recipient page costs 2 queries for 25 rows and the capability list 2 for 200 reads. The audit page's cost
+  did grow with the number of distinct auditable TYPES on the page, which is bounded by the vocabulary rather
+  than the page size and so is not an N+1 in rows — but it was a real cost for no benefit, and the table above
+  records what replaced it.
+
+- **Three of the figures in the first version of this table were measured correctly and read wrongly.** The
+  two `record_outcome!` rows counted the idempotent case and were presented as the general one, and the
+  metrics row counted four passes and did not ask whether four was right. A query count is only evidence if
+  the case it was taken in is stated, which is why every row above now says which case it is.
 - **The webhook path is cheapest in its commonest case.** A delivery report for an ordinary conversation
   message — which is most of them — costs one query to establish that no recipient owns the identifier.
 - **`record_outcome!` is O(1) per report**, about 1.2 ms including the row lock. A burst of provider webhooks

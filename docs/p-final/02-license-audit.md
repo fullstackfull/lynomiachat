@@ -177,10 +177,27 @@ The practical consequence for the gem decision below is the opposite of what the
 the four gems **cannot** be removed as unused, because `lib/llm/` and `lib/captain/` use them. Removing AI from
 the product means removing that code, which is a product decision and not a dependency cleanup.
 
-**One change was made here**, and only one: `captain_tasks` in `config/features.yml` was `enabled: true` and is
-now `enabled: false`, so no newly created account carries an AI capability by default. That flag seeds
-`ACCOUNT_LEVEL_FEATURE_DEFAULTS`, which `Featurable#enable_default_features` reads on create only — existing
-accounts keep whatever they were created with, and this change does not alter their state.
+**Two changes were made here, and the second is what makes the first work.** `captain_tasks` in
+`config/features.yml` was `enabled: true` and is now `enabled: false`, so no newly created account carries an
+AI capability by default.
+
+That was first recorded here as the whole of the change, on the reasoning that the yml "seeds
+ACCOUNT_LEVEL_FEATURE_DEFAULTS". **On an installation that already exists, the yml edit alone does nothing**,
+and the post-integration deployment audit found it. `Featurable#enable_default_features` reads the
+`ACCOUNT_LEVEL_FEATURE_DEFAULTS` installation config row; `rake db:migrate` does re-run `ConfigLoader`
+(`lib/tasks/db_enhancements.rake:1-7`), but with the default `reconcile_only_new: true` it computes
+`(config.value + account_features).uniq { |h| h['name'] }` (`lib/config_loader.rb:82-90`), so the **existing
+row's entry wins** and the yml's new value is discarded. The yml decides the default only for an installation
+whose row does not exist yet — which production is not.
+
+`db/migrate/20261011160000_default_captain_tasks_off_for_new_accounts.rb` edits the row, which is what two
+earlier migrations in this repository already do for the same reason and say so in their own comments. Verified
+after migrating: the row's entry reads `"enabled" => false`, and an account created afterwards reports
+`feature_enabled?('captain_tasks') == false`.
+
+It still does not touch any existing account, and deliberately: `enable_default_features` is a `before_create`
+hook, so what an existing tenant already holds is its own state, and changing that is a decision about live
+accounts rather than a default.
 
 **Two things were deliberately NOT changed**, and are recorded as known limitations instead:
 

@@ -241,8 +241,16 @@
 # Lynomia does not sell or operate an AI assistant, so no account is created holding one. The endpoints behind
 # this flag are upstream Chatwoot's and are inert without an installation-level OpenAI key, which this
 # installation does not set -- but a default-on AI capability is the wrong default for this product
-# (docs/p-final/05-security-audit.md section 7). Existing accounts keep whatever they were created with: this is
-# the seed for ACCOUNT_LEVEL_FEATURE_DEFAULTS, read by Featurable#enable_default_features on create only.
+# (docs/p-final/05-security-audit.md section 7). Existing accounts keep whatever they were created with:
+# Featurable#enable_default_features is a before_create hook.
+#
+# **This line alone does nothing on an installation that already exists.** The hook reads the
+# ACCOUNT_LEVEL_FEATURE_DEFAULTS installation config row, and `rake db:migrate` re-runs ConfigLoader with
+# `reconcile_only_new: true`, under which the existing row's entry wins and this value is discarded
+# (lib/config_loader.rb:82-90). What makes the default real is
+# db/migrate/20261011160000_default_captain_tasks_off_for_new_accounts.rb, which edits the row -- the same thing
+# two earlier migrations in this repository do, for the same reason. If this value is ever changed again, it
+# needs a migration with it.
 - name: captain_tasks
   display_name: Captain Tasks
   enabled: false

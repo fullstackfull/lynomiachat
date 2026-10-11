@@ -22,6 +22,42 @@ Every lever below was read out of the code, not inferred from a changelog, and e
 | Plan `channel_entitlements` | per-plan jsonb, default `[]` | **`[]` on every plan**, which sells every channel | channel gating (`BillingPlan#channel_included?`) | clear the list | none |
 | Per-account overrides | `billing_entitlement_overrides` rows | none exist | one capability, ceiling or channel for one account | revoke the override (audited) | the capability returns to the plan's answer |
 
+### 1.0 The five replaced packages' levers
+
+**This section was missing, and the post-integration deployment audit was right to say so.** The matrix above
+was written for P8–P11 and lists none of the flags the five clean-room packages depend on — which is to say,
+nothing in it covers the part of this release that was rewritten. Every default below is read from
+`config/features.yml` at this revision, and none of these is on for an account that does not already have it.
+
+| Lever | Kind | Default after deploy | What it gates (server-side) | Rollback lever | Data effect of switching off |
+|---|---|---|---|---|---|
+| `audit_logs` | account feature flag, premium | **off** | the whole audit trail READ surface: `AuditTrail::Query` returns `Custom::AuditLog.none`, so the page gets an empty list and a 200 rather than a refusal (`query.rb:41`). **Capture is NOT gated** — see below | turn the flag off for the account | **none.** Entries keep being written and reappear when it is on again |
+| `audit_log_ip_address` | account feature flag, premium | **off** | whether the trail shows a full originating address or a coarse network (`AuditTrail::Disclosure`) | turn the flag off | none; it is a rendering decision over already-stored data |
+| `custom_roles` | account feature flag, premium | **off** | all five role endpoints answer with the standard authorization refusal (`custom_roles_controller.rb:52`). **Attachment and the capability list are NOT gated** — see below | turn the flag off | **none.** Sets and their attachments stay, and keep granting what they grant |
+| `whatsapp_campaign` | account feature flag | **off** | whether a WhatsApp campaign may be created, and `Campaign#trigger!` returns without sending (`campaign.rb:62-67,78`) | turn the flag off | **none** on stored rows, but see the caveat below: an active campaign stalls rather than refusing |
+| `unread_count_for_filters` | account feature flag | **off** | the filtered unread counts entirely: `FilteredCountInvalidator#enabled?` and the counter both return early, so no Redis key is written or read | turn the flag off | **none.** Redis keys expire on their own TTL |
+
+**Two things these flags do not gate, and an operator must know which:**
+
+- **Audit capture runs whether or not `audit_logs` is on.** The flag gates reading, not writing: every
+  `audited` declaration and every Lynomia writer records regardless. That is deliberate — a trail with holes
+  in it for the period the flag was off would be worse than no trail — but it means turning the flag off is
+  not a way to stop recording, and the `audits` table grows either way.
+- **A permission set keeps granting its capabilities after `custom_roles` is turned off.** The flag gates
+  administering sets, not the capability list a membership already holds: `Custom::AccountUser#permissions`
+  has no feature check, and neither do the three policies that read it. So revoking the entitlement from a
+  downgraded account stops it defining or attaching sets and leaves the ones already attached working. This
+  is a defensible product rule — a downgrade should not silently strip an agent's access mid-shift — but it is
+  a rule, not an accident, and it is the one an operator will be asked about. Enforcing it the other way is a
+  product decision, not a bug fix, because it would revoke access from live agents the moment a plan lapsed.
+
+**The `whatsapp_campaign` caveat.** With the flag off, `Campaign#trigger!` returns early without sending and
+**without marking the campaign anything** (`app/models/campaign.rb:62-67`), so a campaign scheduled while the
+flag was on sits in its existing state and the operator sees neither a send nor a refusal. Turning the flag
+off is therefore a pause, not a cancellation, and an active campaign should be cancelled explicitly rather
+than left to a flag. Recorded here rather than changed: making the trigger refuse loudly would change upstream
+behaviour on a path shared with SMS campaigns.
+
 ### 1.1 What is NOT behind a flag, and therefore starts the moment the deploy restarts
 
 Two things begin writing on their own. Both are bounded and neither is customer-facing:

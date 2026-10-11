@@ -282,7 +282,7 @@ RAILS_ENV=production bundle exec rails runner 'puts Audited::Audit.minimum(:crea
 | turn `audit_logs` **off** for a pilot account, then act as its administrator | the action **still appears** in `audits` (query as the app user; the UI is what the flag hides) |
 | after the first nightly run, read the operator log | one `AUDIT_RETENTION_SWEEP` line with `retention_days`, `cutoff`, `deleted`, `capped`, and **no audited content in it** |
 
-**GO/NO-GO 4a.** If turning `audit_logs` off stops rows being written, stop: the capture gate has been
+**GO/NO-GO 5a.** If turning `audit_logs` off stops rows being written, stop: the capture gate has been
 reintroduced and the trail is defeatable by the party it audits.
 
 Changing the window is Super Admin → Settings → `AUDIT_LOG_RETENTION_DAYS`. It takes effect on the next sweep,
@@ -332,7 +332,7 @@ assigned to somebody else).
 | each of them: search for a word that appears in a hidden conversation's messages | no result; no message body from a hidden conversation appears |
 | the holder of `conversation_unassigned_manage`: take the unassigned conversation | allowed — reaching and taking unassigned work is what that capability is for |
 
-**GO/NO-GO 5a.** If a holder can open, search or count a conversation the list refuses them, stop. The list and
+**GO/NO-GO 6a.** If a holder can open, search or count a conversation the list refuses them, stop. The list and
 the record must agree.
 
 ### The existing sets on the real installation
@@ -353,7 +353,7 @@ RAILS_ENV=production bundle exec rails runner '
 | edit only its non-conversation capabilities | the flag stays **false** |
 | create a new set with no conversation capability, attach it to a test agent | that agent sees **no** conversations — absence means none for anything configured from now on |
 
-**GO/NO-GO 5b.** If a pre-existing set's holders lose conversation access on the deploy, stop and roll back the
+**GO/NO-GO 6b.** If a pre-existing set's holders lose conversation access on the deploy, stop and roll back the
 code: the grandfather clause has not worked, and that is an access regression for live agents.
 
 ### The entitlement bound (DECISION 2)
@@ -367,7 +367,7 @@ On a pilot account only, and with its administrator warned:
 | turn `custom_roles` back **on** | every capability is granted again immediately, with no restore step |
 | as a holder during the lapse, try an administrator-only action (delete a conversation, open Settings → Roles) | refused |
 
-**GO/NO-GO 5c.** If a lapse grants anything it did not grant before — above all administrator — stop. A lapse
+**GO/NO-GO 6c.** If a lapse grants anything it did not grant before — above all administrator — stop. A lapse
 must only ever narrow.
 
 ---
@@ -446,7 +446,7 @@ the three. Note every value you set, because step 7 puts them all back.
 | 6. drive the test account past a plan limit it is subscribed to | the limit is enforced server-side, and the message names the limit rather than failing opaquely |
 | 7. remove the three test values and confirm the billing surfaces fall back to the manual-subscription behaviour of §9 | §9's table still passes |
 
-**GO/NO-GO 5a.** Step 5 is the one that matters. An endpoint that accepts an unsigned or wrongly signed webhook
+**GO/NO-GO 9a.** Step 5 is the one that matters. An endpoint that accepts an unsigned or wrongly signed webhook
 lets anyone who knows the URL change a subscription. If step 5 returns 2xx, stop the rollout and raise it: this
 is a security defect, not a billing inconvenience.
 

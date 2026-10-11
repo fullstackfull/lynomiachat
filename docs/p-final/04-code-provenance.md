@@ -341,3 +341,178 @@ git log --all -M --find-renames=40% --diff-filter=R --format=%h --name-status \
 # end/private/brace-only lines, normalises Enterprise:: to Custom::, and reports
 # shared substantive lines as a fraction of the enterprise side.
 ```
+
+---
+
+## 8. Final state after the clean-room replacement (P-FINAL.CR)
+
+**This section is technical provenance evidence. It states no legal conclusion, and nothing in it should be
+read as legal clearance; that would require qualified legal review, which is outside a repository audit.**
+
+The blocker this audit raised in §6 is resolved by replacement, not by argument. An independent implementer,
+working from behavioural specifications in a sanitized workspace with no access to this repository, its
+history, the Enterprise overlay, this audit or the removed specs, authored a replacement. It was published
+separately and integrated here as a source delta only.
+
+### 8.1 The independent source
+
+| | |
+|---|---|
+| repository | `fullstackfull/lynomia-cleanroom` |
+| branch | `lynomia-cleanroom-rewrite` |
+| root commit | `82c3529dfb70e388716118ea2c39b05386131c51` — **parentless**, verified with `git rev-list --parents -n 1` returning the commit's own id and no parent |
+| head commit | `ac09224a9d7d4a1f19e2e9179af7c1727e5dd929` |
+| commits | exactly 6, linear, no merge |
+| `enterprise/`, `spec/enterprise/` | absent at every commit |
+| baseline fidelity | the root tree is a **strict subset** of this repository at `cbf2a0da`: 9,142 files, **0 paths that this repository does not have**, and content identical on every shared path but three — two symlinks this repository stores as symlinks and the export dereferenced, and one comment redaction described in §8.5 |
+| relationship to this branch | **none.** Not merged, not rebased, not grafted, not cherry-picked. `ac09224a` is not an ancestor of `claude/p-final-commercial-release-hardening`, and `82c3529d` is not in its history. Every file was read out of that tree and written into this one, then verified byte for byte |
+
+The implementer's own record of what was written from what is imported verbatim at
+`docs/p-final/clean-room/05-clean-implementation-record.md`.
+
+### 8.2 What the replacement contains
+
+| | count |
+|---|---|
+| new production files | 50 |
+| new spec files | 11 (178 examples) |
+| clean files outside the five packages changed, each a declared decision | 3 production + 1 spec |
+| migrations added | **0** |
+
+### 8.3 Every previously blocked file, and its final state
+
+Each of the 39 production files this audit classified as Enterprise-derived now ends in exactly one of two
+states. The overlap column re-measures the **current** file against its historical counterpart with the same
+method §2 used, so the figures are comparable with §3's.
+
+| old affected path | final state | new implementation path | overlap vs historical now |
+|---|---|---|---|
+| `custom/app/controllers/api/v1/accounts/audit_logs_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/api/v1/accounts/audit_logs_controller.rb` (rewritten) | 43% shared=3 cur=7 ent=51 |
+| `custom/app/views/api/v1/accounts/audit_logs/show.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/views/api/v1/accounts/audit_logs/show.json.jbuilder` (rewritten) | 25% shared=2 cur=8 ent=29 |
+| `custom/app/models/custom/audit_log.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit_log.rb` (rewritten) | 10% shared=2 cur=21 ent=46 |
+| `custom/app/models/custom/audit/account.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/account.rb` (rewritten) | 43% shared=3 cur=8 ent=7 |
+| `custom/app/models/custom/audit/account_user.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/account_user.rb` (rewritten) | 43% shared=3 cur=7 ent=12 |
+| `custom/app/models/custom/audit/agent_bot.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/agent_bot.rb` (rewritten) | 50% shared=3 cur=11 ent=6 |
+| `custom/app/models/custom/audit/automation_rule.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/automation_rule.rb` (rewritten) | 50% shared=3 cur=8 ent=6 |
+| `custom/app/models/custom/audit/conversation.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/conversation.rb` (rewritten) | 50% shared=3 cur=7 ent=6 |
+| `custom/app/models/custom/audit/inbox.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/inbox.rb` (rewritten) | 50% shared=3 cur=7 ent=6 |
+| `custom/app/models/custom/audit/inbox_member.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/inbox_member.rb` (rewritten) | 30% shared=3 cur=10 ent=25 |
+| `custom/app/models/custom/audit/macro.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/macro.rb` (rewritten) | 50% shared=3 cur=8 ent=6 |
+| `custom/app/models/custom/audit/team.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/team.rb` (rewritten) | 50% shared=3 cur=7 ent=6 |
+| `custom/app/models/custom/audit/team_member.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/team_member.rb` (rewritten) | 30% shared=3 cur=10 ent=25 |
+| `custom/app/models/custom/audit/webhook.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/audit/webhook.rb` (rewritten) | 50% shared=3 cur=8 ent=6 |
+| `custom/app/models/custom/campaign.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/campaign.rb` (rewritten) | 50% shared=3 cur=6 ent=6 |
+| `custom/app/models/custom_role.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom_role.rb` (rewritten) | 50% shared=14 cur=28 ent=39 |
+| `custom/app/policies/custom_role_policy.rb` | ENTERPRISE-DERIVED SOURCE REMOVED, NOT REQUIRED | no replacement file. Authorization moved to the boundary the codebase already uses: `check_admin_authorization?` on `Api::V1::Accounts::BaseController`, plus an account-capability gate. A Pundit policy class for a resource only administrators may touch added a layer with no decision in it. | n/a — nothing at this path |
+| `custom/app/controllers/api/v1/accounts/custom_roles_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/api/v1/accounts/custom_roles_controller.rb` (rewritten) | 43% shared=12 cur=31 ent=28 |
+| `custom/app/controllers/custom/api/v1/accounts/agents_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/custom/api/v1/accounts/agents_controller.rb` (rewritten) | 31% shared=5 cur=34 ent=16 |
+| `custom/app/views/api/v1/accounts/custom_roles/index.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/views/api/v1/accounts/custom_roles/index.json.jbuilder` (rewritten) | 67% shared=2 cur=3 ent=3 |
+| `custom/app/views/api/v1/accounts/custom_roles/create.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED, NOT REQUIRED | `custom/app/views/api/v1/accounts/custom_roles/show.json.jbuilder` — the controller renders `:show` with `status: :created`, so a separate template for the same body is not needed. | n/a — nothing at this path |
+| `custom/app/views/api/v1/accounts/custom_roles/show.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/views/api/v1/accounts/custom_roles/show.json.jbuilder` (rewritten) | 0% shared=0 cur=1 ent=1 |
+| `custom/app/views/api/v1/accounts/custom_roles/update.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED, NOT REQUIRED | `custom/app/views/api/v1/accounts/custom_roles/show.json.jbuilder` — as above, for update. | n/a — nothing at this path |
+| `custom/app/views/api/v1/models/_custom_role.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED, NOT REQUIRED | `custom/app/views/api/v1/accounts/custom_roles/_custom_role.json.jbuilder` — the partial lives beside the views that render it instead of in a shared models directory. Nothing else rendered it. | n/a — nothing at this path |
+| `custom/app/views/api/v1/models/_account_user.json.jbuilder` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/views/api/v1/models/_account_user.json.jbuilder` (rewritten) | 0% shared=0 cur=7 ent=2 |
+| `custom/app/models/campaign_recipient.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/campaign_recipient.rb` (rewritten) | 17% shared=8 cur=48 ent=72 |
+| `custom/app/jobs/campaigns/update_recipient_status_job.rb` | ENTERPRISE-DERIVED SOURCE REMOVED, NOT REQUIRED | no replacement file. `custom/app/services/whatsapp/delivery_report.rb` applies a reported outcome where the webhook is already being processed. The deferral the job existed for is not needed: the write is one guarded update under a row lock. | n/a — nothing at this path |
+| `custom/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb` (rewritten) | 21% shared=7 cur=33 ent=68 |
+| `custom/app/services/custom/whatsapp/oneoff_campaign_service.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/services/custom/whatsapp/oneoff_campaign_service.rb` (rewritten) | 7% shared=5 cur=71 ent=87 |
+| `custom/app/services/custom/whatsapp/incoming_message_base_service.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/services/custom/whatsapp/incoming_message_base_service.rb` (rewritten) | 31% shared=4 cur=13 ent=13 |
+| `custom/app/services/custom/whatsapp/providers/base_service.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/services/custom/whatsapp/providers/base_service.rb` (rewritten) | 43% shared=3 cur=7 ent=21 |
+| `custom/app/controllers/custom/api/v1/accounts/conversations/messages_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/custom/api/v1/accounts/conversations/messages_controller.rb` (rewritten) | 25% shared=6 cur=24 ent=32 |
+| `custom/app/controllers/custom/devise_overrides/sessions_controller.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/controllers/custom/devise_overrides/sessions_controller.rb` (rewritten) | 15% shared=4 cur=26 ent=59 |
+| `custom/app/jobs/custom/delete_object_job.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/jobs/custom/delete_object_job.rb` (rewritten) | 12% shared=1 cur=8 ent=22 |
+| `custom/app/models/custom/channelable.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/channelable.rb` (rewritten) | 10% shared=3 cur=48 ent=30 |
+| `custom/app/models/custom/account_user.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/account_user.rb` (rewritten) | 40% shared=2 cur=7 ent=5 |
+| `custom/app/models/custom/concerns/account_user.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/concerns/account_user.rb` (rewritten) | 67% shared=4 cur=6 ent=7 |
+| `custom/app/models/custom/concerns/account.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/concerns/account.rb` (rewritten) | 67% shared=4 cur=6 ent=22 |
+| `custom/app/models/custom/channel/whatsapp.rb` | ENTERPRISE-DERIVED SOURCE REMOVED + INDEPENDENT CLEAN-ROOM REPLACEMENT INTEGRATED | `custom/app/models/custom/channel/whatsapp.rb` (rewritten) | 20% shared=2 cur=13 ent=10 |
+
+16 further clean paths have no predecessor at all: `custom/app/models/custom/audit/{capture,user}.rb`,
+`custom/app/services/audit_trail/{capture,disclosure,event,filters,query,secrets}.rb`,
+`custom/app/services/campaigns/{recipient_metrics,recipient_snapshot,rendered_template_text}.rb`,
+`custom/app/services/whatsapp/{delivery_report,send_failure}.rb`,
+`custom/app/views/api/v1/accounts/audit_logs/_audit_log.json.jbuilder`,
+`custom/app/views/api/v1/accounts/campaigns/analytics/contacts.json.jbuilder` and
+`custom/app/views/api/v1/accounts/custom_roles/_custom_role.json.jbuilder`.
+
+### 8.4 Specs
+
+| | |
+|---|---|
+| 12 Enterprise-derived specs | removed, **not restored** |
+| 7 specs withheld for coupling to the removed implementation | removed, **not restored** |
+| replacement | 11 independently authored spec files, 178 examples, written from the acceptance plan |
+| one retained clean spec adapted | `spec/services/analytics/campaigns/metrics_spec.rb` — two call sites renamed to the method the independent implementation has. Its assertions are unchanged |
+
+### 8.5 Two comment redactions, made here rather than by the implementer
+
+Neither is implementation; both quoted or pointed at the removed overlay from a file that is otherwise clean,
+and both are comment-only changes with no executable line touched.
+
+| file | what was removed |
+|---|---|
+| `app/models/portal.rb` | a Lynomia comment that quoted a four-element expression attributed to a removed overlay service. It now states the behaviour without the expression |
+| `custom/app/models/whatsapp/message_template.rb` | a Lynomia comment that named one historical overlay path and characterised its content. It now states the library fact it was making |
+
+### 8.6 Re-sweep evidence
+
+The sweep of §2 was re-run against the integrated tree: every tracked file against all 848 files under
+`enterprise/` and `spec/enterprise/` at the three pre-removal revisions, matched by basename and by normalised
+path.
+
+| | before (§3) | after |
+|---|---|---|
+| pairs at ≥40% overlap and ≥8 shared substantive lines | 31 | **4** |
+| of those, previously rejected false positives | 2 | 2 |
+| of those, on files this audit classified as Enterprise-derived | 29 | **0** |
+| of the 34 replaced files, how many still share ≥8 substantive lines with their historical counterpart | — | **3** |
+
+The two remaining pairs that touch replacement files, examined line by line:
+
+**`custom/app/models/custom_role.rb`** — 14 shared of 28 current lines (the historical file had 39, of which 25
+are gone). The shared lines are: `class CustomRole < ApplicationRecord` (the class name is fixed by
+`04-integration-contract.md` §2.2 and by the upstream MIT factory `spec/factories/custom_roles.rb`, which
+references `CustomRole::PERMISSIONS`), `belongs_to :account` (fixed by `custom_roles.account_id NOT NULL`),
+`validates :name, presence: true` (required by acceptance scenario C-4), `PERMISSIONS = %w[` / `].freeze` (the
+constant name is fixed by the integration contract; the form is this repository's style, used in 96 clean
+files), the seven capability strings (**published verbatim** in `specs/C` §2 and declared unchangeable in
+`04-integration-contract.md` §2.2, because three clean policies compare against them), and `end` / `private`.
+The twelve lines that are not shared carry the behaviour: a published-vocabulary validation, a retired-permission
+concept, and a `before_destroy` that detaches each membership **through the model** so the cached-visibility
+callback still runs — where the historical file used a bare association option.
+
+**`custom/app/controllers/api/v1/accounts/custom_roles_controller.rb`** — 12 shared of 31. Five of the twelve are
+the Rails action names `index` / `create` / `show` / `update` / `destroy`, fixed by
+`config/routes.rb:100`. The rest are idioms this codebase attests many times over, counted across clean code
+only: `before_action :fetch_<resource>` in 43 files (7 of them with exactly `only: [:show, :update, :destroy]`),
+`def fetch_<resource>` in 46, `head :ok` in 59, `params.require(:x).permit(...)` in 29, and
+`raise Pundit::NotAuthorizedError unless Current.account.feature_enabled?(...)` in **18**, four of them clean
+Lynomia Commerce controllers. The capability name `custom_roles` is fixed by `config/features.yml:148`.
+
+**`custom/app/models/campaign_recipient.rb`** — 8 shared of 48 (the historical file had 72, of which 50 are gone):
+the class declaration, the four `belongs_to` associations dictated by the four `NOT NULL` foreign keys in
+`campaign_recipients`, `end`, `private`, and `with_lock do` — which `specs/D` §4.2 rule 4 required explicitly.
+
+At the deliberately noisy sub-threshold (≥50% and ≥3 shared lines) the replacement files appear only where the
+shared content is `extend ActiveSupport::Concern` / `included do` / `end`, a single schema-dictated
+association line, or a `json.<attr> record.<attr>` line for an attribute the shipped frontend reads by name.
+Two examples of how different the substance is at those sites: the historical webhook audit declaration was a
+**denylist** (`except: [:secret]`) with no event filter, where the replacement is an **allowlist**
+(`only: %i[name url inbox_id webhook_type subscriptions]`) restricted to three events; and the historical
+membership concern also declared an association for a capacity-policy feature this product does not have.
+
+**No cosmetic rewriting was done to produce these figures.** Not one replacement file was edited during
+integration. The brief forbade normalising matching code away, and the evidence above is the unedited
+measurement.
+
+### 8.7 What this section does and does not establish
+
+It establishes, as process and measurement evidence: that the Enterprise-derived source identified by this
+audit is no longer in the tree; that what replaced it was authored by someone with no access to it; that the
+replacement's residual textual overlap with the historical files is confined to language syntax,
+schema-dictated declarations, framework-mandated names, identifiers this project deliberately fixed so clean
+callers keep working, and idioms attested many times in clean code; and that the independent artefact remains
+available for inspection at a separate parentless repository.
+
+It does not establish any legal conclusion, and none is claimed. Whether this process meets a given legal
+standard is a question for qualified legal review, which this repository audit is not.

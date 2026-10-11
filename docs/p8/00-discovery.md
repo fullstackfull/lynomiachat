@@ -280,6 +280,17 @@ the **current** assignee, so neither is a history source. The activity messages 
 | campaign recipient failed, with reason | `status`, `failed_at`, `error_code`, `error_title`, `error_message` | **Meta's**, extracted by `whatsapp_error` (`:77-85`) with precedence `error_user_msg` → `error_data.details` → `message` |
 | outbound message delivered / read / failed | `messages.status` (`sent:0, delivered:1, read:2, failed:3`, `message.rb:104`) | **Meta's**, through `Whatsapp::IncomingMessageBaseService#process_statuses` (`:62-78`) → `Messages::StatusUpdateService` |
 
+
+> **P-FINAL.CR note (2026-10-11).** The campaign-recipient writer named below was removed and replaced by an
+> independently authored implementation (`docs/p-final/04-code-provenance.md` §8). The method names and line
+> numbers in this section refer to the pre-replacement writer and no longer resolve: the one write is now
+> `CampaignRecipient#record_outcome!(state, reported_at:, error_code:, error_title:, error_message:)`, and the
+> skip is written by `Campaigns::RecipientSnapshot`. Everything this section states about the DATA — who owns
+> each timestamp, that the ladder is monotonic under a row lock, that `delivered` must be read from the
+> timestamps and never from `status`, and that `skipped` has no timestamp — is unchanged and still holds. The
+> replacement is stricter in one respect: a failure reported over a delivered or read recipient is dropped
+> entirely rather than stamped, so `failed_at` remains readable as the failure count.
+
 Two correctness rules follow, and both are easy to get wrong:
 
 - **Both ladders are monotonic and store only the furthest state reached.** `CampaignRecipient#status_downgrade?`

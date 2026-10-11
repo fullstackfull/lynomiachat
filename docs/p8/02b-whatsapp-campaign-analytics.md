@@ -146,6 +146,17 @@ created when the campaign runs. Recipients are bucketed on `created_at`, which i
 
 ### Why `delivered_at IS NOT NULL` alone would be wrong
 
+
+> **P-FINAL.CR note (2026-10-11).** The campaign-recipient writer named below was removed and replaced by an
+> independently authored implementation (`docs/p-final/04-code-provenance.md` §8). The method names and line
+> numbers in this section refer to the pre-replacement writer and no longer resolve: the one write is now
+> `CampaignRecipient#record_outcome!(state, reported_at:, error_code:, error_title:, error_message:)`, and the
+> skip is written by `Campaigns::RecipientSnapshot`. Everything this section states about the DATA — who owns
+> each timestamp, that the ladder is monotonic under a row lock, that `delivered` must be read from the
+> timestamps and never from `status`, and that `skipped` has no timestamp — is unchanged and still holds. The
+> replacement is stricter in one respect: a failure reported over a delivered or read recipient is dropped
+> entirely rather than stamped, so `failed_at` remains readable as the failure count.
+
 When Meta reports `read` before it reports `delivered`, the writer sets `status: read` and `read_at` and leaves
 `delivered_at` **null** until a later `delivered` event backfills it
 (`custom/app/models/campaign_recipient.rb:53-57`). A recipient that was read reached delivered whether or not

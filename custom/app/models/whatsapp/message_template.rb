@@ -40,9 +40,9 @@ class Whatsapp::MessageTemplate < ApplicationRecord
 
   belongs_to :account
 
-  # The gem resolves its audit class lazily from the string in config/initializers/audited.rb, so no EE constant is
-  # needed at load time -- the same unguarded declaration as enterprise/app/models/enterprise/audit/macro.rb. This is
-  # the whole audit story for a template: create, update and destroy, with the acting user from the sweeper.
+  # The gem resolves its audit class lazily from the string in config/initializers/audited.rb, so the declaration
+  # needs no constant at load time and is left unguarded. This is the whole audit story for a template: create,
+  # update and destroy, with the acting user from the sweeper.
   audited associated_with: :account
 
   normalizes :language, with: ->(value) { value.to_s.strip }

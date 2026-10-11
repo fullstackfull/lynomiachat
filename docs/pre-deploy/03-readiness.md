@@ -53,19 +53,27 @@ string. No product behaviour.**
 `docs/p-final/09-rollback-and-rollout.md` #74 records a full green suite at `095a8472`. **That result does not
 cover this tree**, because Rails core moved. Everything below was re-run here.
 
-| gate | result |
-|---|---|
-| `bundle exec rspec` (full) | see §2.1 |
-| `bundle exec rubocop` | see §2.1 |
-| `pnpm eslint` | **0 errors**, 478 warnings — the same pre-existing warning count |
-| `npx vite build` | **built**, exit 0 |
-| `pnpm test` | see §2.2 |
-| `bundle exec bundle-audit check --update` | 4 records, all classified — `00-security-audits.md` §1 |
-| `pnpm audit` | 68 records, all classified — `00-security-audits.md` §2 |
+| gate | result | exit |
+|---|---|---|
+| `bundle exec rspec` (full) | **9715 examples, 0 failures, 70 pending**, in 40m28s | 0 |
+| `bundle exec rubocop` | **2899 files inspected, no offenses detected** | 0 |
+| `pnpm eslint` | **0 errors**, 478 warnings — the same pre-existing warning count | 0 |
+| `npx vite build` | **built in 1m35s** | 0 |
+| `pnpm test` | **490 test files, 5293 tests, all passed** — after the fix in §2.2 | 0 |
+| `bundle exec bundle-audit check --update` | 4 records, all classified — `00-security-audits.md` §1 | 1, by design |
+| `pnpm audit` | 68 records over 77 paths, all classified — `00-security-audits.md` §2 | 1, by design |
 
 ### 2.1 Ruby
 
-Recorded in the completion report that accompanies this branch. The suite was run on this tree, not inherited.
+The suite was run on **this** tree, with Rails at 7.2.3.2 and `ruby-vips` at 2.3.0 — not inherited from
+`095a8472`. The 70 pending examples are the pre-existing pending set; no example was skipped, quarantined or
+disabled for this branch.
+
+Two notes on getting there, because both are part of the result. `rails db:test:prepare` **aborted** on the
+first attempt, with Active Storage's libvips refusal — that is how §3.3 was found, and it is the reason the
+previous full-suite result could not be carried over. And the audit commands exit non-zero whenever any
+advisory is reported, so exit 1 there is the expected outcome of a tree with documented open advisories, not a
+gate failure.
 
 ### 2.2 JavaScript — and the regression this branch caused and fixed
 

@@ -141,7 +141,11 @@ RSpec.describe Commerce::StoreConnection do
     end
 
     it 'connects nothing on a plan that allows no stores' do
-      plan.update!(limits: { 'stores' => 0 })
+      # P11 refuses to narrow a plan an account is billed on mid-period (custom/app/models/billing_plan.rb), so
+      # the account moves to a plan that allows none -- which is exactly what that refusal tells an operator to
+      # do. Narrowing `plan` in place would assert a transition the product deliberately does not offer.
+      no_stores = BillingPlan.create!(name: 'Commerce without stores', features: ['lynomia_commerce'], limits: { 'stores' => 0 })
+      account.billing_subscription.update!(plan: no_stores)
 
       expect { connect }.to raise_error(Commerce::Error) { |error| expect(error.code).to eq('STORE_LIMIT_REACHED') }
     end

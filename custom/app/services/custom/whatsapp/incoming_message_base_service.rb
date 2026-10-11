@@ -22,6 +22,26 @@ module Custom::Whatsapp::IncomingMessageBaseService
 
   private
 
+  # ORIGINAL LYNOMIA, restored. Lynomia Flow Builder
+  # (docs/flow-builder/06-whatsapp-channel-capabilities.md): an answer to an interactive message keeps the id of
+  # the button or list row it chose, next to the visible title Chatwoot already stores as the message text, so a
+  # flow branches on the option it sent, never on a label. Same Cloud API payload for WhatsApp API and
+  # coexistence numbers.
+  #
+  # This rode in the same file as the campaign status hook and so was removed with it in PF.CR1, although it was
+  # never Enterprise-derived: neither method below appears anywhere under `enterprise/` at any of the three
+  # pre-removal revisions. It is restored verbatim from this project's own history at `487276f2^`, and it is
+  # outside package E, which excludes inbound message handling
+  # (docs/p-final/clean-room/specs/E-whatsapp-delivery-status-propagation.md §9).
+  def message_content_attributes(message)
+    attributes = super
+    reply = message.dig(:interactive, :button_reply) || message.dig(:interactive, :list_reply)
+    return attributes if reply.blank? || outgoing_echo
+
+    attributes.merge(interactive_reply: { type: message.dig(:interactive, :type).to_s.first(32), id: reply[:id].to_s.first(256),
+                                          title: reply[:title].to_s.first(256) })
+  end
+
   def apply_delivery_report(entry)
     ::Whatsapp::DeliveryReport.new(inbox: inbox, entry: entry).apply
   rescue StandardError => e

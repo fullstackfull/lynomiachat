@@ -131,7 +131,9 @@ it affects is the behaviour of a user delete, not any stored row.
 
 **A table the permission path now depends on.** DECISION 2 made `Custom::AccountUser#permissions` consult
 `Billing::Entitlements.allowed?`, which reads `billing_entitlement_overrides`. Before this release nothing on
-the permission path touched that table, so rolling back the migration that created it now breaks
+the permission path touched that table, so rolling back the migration that created it
+(`custom/db/migrate/20261010100000_create_billing_entitlement_overrides`, a P11 migration this release does
+not add but now depends on) breaks
 `/api/v1/profile` and every policy that reads a capability list, not only the billing screens. **Do not roll
 that migration back while this release's code is serving.** The order in "Code rollback" above is the correct
 one: put the previous revision back first, and only then consider schema changes.

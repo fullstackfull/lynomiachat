@@ -71,7 +71,36 @@ can see and act on.
 
 ### 1.1 What is NOT behind a flag, and therefore starts the moment the deploy restarts
 
-Two things begin writing on their own. Both are bounded and neither is customer-facing:
+**THE ONE THAT IS NOT A WRITE, AND MATTERS MOST: the three `conversation_*` capabilities begin ENFORCING at
+the restart.** DECISION 1 has no flag, by design — a privilege boundary behind a feature flag is not a
+boundary. From the moment the new code serves, a member holding a permission set that names
+`conversation_participating_manage` sees only their own conversations on the list, in search, in the counts and
+on the record, where before they saw everything their inbox membership allowed. Three things bound the blast
+radius, and an operator should know all three before the window:
+
+* A set that predates this release and names **none** of the three is **grandfathered** and changes nothing for
+  its holders (`custom_roles.conversation_scope_enforced`, set by `custom/db/migrate/20261011180000`). Run the
+  inventory in `08-production-uat-runbook.md` §6a **before** the deploy to see which sets exist.
+* A set that names one of the three was always going to narrow at that scope; the browser has been narrowing
+  exactly this way all along (`applyRoleFilter`), so its holders have already been seeing the narrowed list.
+  What changes is that the API now agrees with the screen.
+* It only ever NARROWS. No member gains access, and an administrator is unaffected, because an administrator's
+  reach is the `role` column and never a capability list.
+
+There is no lever short of a code rollback. If a narrowing turns out to be wrong for a real team, the operator's
+in-product remedy is to edit that set to name a wider capability — which is a one-field change in Settings and
+takes effect immediately.
+
+**And one new ungated writer that DELETES.** `AuditTrail::RetentionJob` (`config/schedule.yml`, `15 3 * * *`,
+queue `housekeeping`) removes `audits` rows older than `AUDIT_LOG_RETENTION_DAYS`, default **365**, from the
+first night after the deploy. It is ungated for the same reason capture is: a trail an audited party can switch
+off is not a trail. Bounds: a strict `<` against a UTC day boundary so it errs longer rather than shorter,
+1 000 rows per statement, 200 000 per run, and a refusal rather than a deletion if the configured value is
+below 30 days or not an integer. **If a longer window is wanted, set it BEFORE the first 03:15 after the
+deploy** — on Super Admin → general settings (`/super_admin/app_config?config=general`). Deletion is not
+recoverable from anything but the pre-deploy dump.
+
+Two further things begin writing on their own. Both are bounded and neither is customer-facing:
 
 | What | Why it is not gated | Bound |
 |---|---|---|

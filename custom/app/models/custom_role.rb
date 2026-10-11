@@ -65,7 +65,18 @@ class CustomRole < ApplicationRecord
 
   private
 
+  # The account-destroy path reaches here with no account left. `dependent: :destroy_async` runs the job only
+  # once the owner row is gone -- Rails' own DestroyAssociationAsyncJob raises unless it is -- and a membership
+  # whose `account` no longer resolves cannot be saved, because `belongs_to :account` is required
+  # (app/models/account_user.rb:30 under `load_defaults 7.0`). So the detach below would raise, the job would
+  # fail, and the set's row would survive the account that owned it: there is no foreign key on
+  # `custom_roles.account_id` to clean it up.
+  #
+  # Nothing is lost by returning early. The memberships are being destroyed with the account, and there is no
+  # cached visibility left to invalidate for an account that no longer exists.
   def detach_memberships
+    return if account.nil?
+
     account_users.each { |membership| membership.update!(custom_role_id: nil) }
   end
 

@@ -357,3 +357,35 @@ A growing retry set after the deploy is a signal: read what is retrying before c
 - **Provider reconnection or callback changes at Meta.** A phone-level `override_callback_uri` takes precedence
   over the app-level callback and is invisible in the Meta dashboard; changing one is a deliberate, separate act.
 - **Anything that mutates another customer's data.** Every write above is on the nominated test account.
+
+---
+
+## Before the restart: quiet the workers
+
+`deployment/deploy.sh` stage 6b now quiets `chatwoot-worker.1.service` and waits for the in-flight set to
+drain before the restart, up to 60 seconds. Watch it, and do not skip it.
+
+Two reasons. A restart under load interrupts jobs mid-flight; Sidekiq pushes an interrupted job back for retry,
+so nothing is lost, but a job that had already made a provider call is retried from the top — which for a
+campaign send means a second WhatsApp message to a real person. And this release deletes
+`Campaigns::UpdateRecipientStatusJob`, which the previous revision enqueued with a two-second delay and up to
+five retries, so instances are sitting in the scheduled and retry sets at the moment of the restart. Draining
+first lets the old code consume its own jobs; not draining leaves them raising `NameError` until they reach the
+dead set.
+
+**What to check**
+
+```
+# before the restart, expect: drained
+# after the restart, expect dead to be unchanged from the pre-deploy number
+sudo -u <app> RAILS_ENV=production bundle exec rails runner \
+  "require 'sidekiq/api'; s = Sidekiq::Stats.new;
+   puts({ busy: s.workers_size, enqueued: s.enqueued, scheduled: s.scheduled_size,
+          retry: s.retry_size, dead: s.dead_size }.inspect)"
+```
+
+**If the dead set grew after the deploy**, list it and check what the entries are. Entries naming
+`Campaigns::UpdateRecipientStatusJob` are expected and can be deleted: the class is gone on purpose, and
+`Whatsapp::DeliveryReport` now resolves a report against the recipient row directly, so the case that job
+covered no longer arises (`docs/p-final/03-migration-review.md` §8.1). Entries naming anything else are not
+expected and are a reason to stop and read them before going further.

@@ -12,9 +12,16 @@
 # timestamps are the log of what was actually reported -- which is why Analytics::Campaigns::Metrics counts
 # delivery from `delivered_at IS NOT NULL OR read_at IS NOT NULL` rather than from the status.
 class CampaignRecipient < ApplicationRecord
-  # The numeric values are production data and are read by name from
-  # custom/app/services/analytics/campaigns/metrics.rb. Neither may change.
-  enum :status, { queued: 0, sent: 1, delivered: 2, read: 3, failed: 4, skipped: 5 }
+  # The numeric values are production data: these are the integers the rows already in the database carry, so
+  # they are a fact about the store rather than a choice this file gets to make. The names are read by
+  # custom/app/services/analytics/campaigns/metrics.rb and returned verbatim to the browser. Neither may change,
+  # and `spec/requests/p_final/integration_corrections_spec.rb` pins the mapping so it cannot drift again.
+  #
+  # It did drift once: the clean-room specification's own table gave the funnel order (`sent: 1 ... skipped: 5`)
+  # rather than the stored order, and this file was written to it. Every existing row would have been read as
+  # the next state along -- a skipped recipient as sent, a sent one as delivered. The declaration order below
+  # is therefore the store's, not the funnel's; LADDER immediately after it is the funnel.
+  enum :status, { queued: 0, skipped: 1, sent: 2, delivered: 3, read: 4, failed: 5 }
 
   # How far along the ladder each state is. `skipped` is not on the ladder at all: Lynomia decided not to send,
   # so no provider report can move it, and no provider report should.

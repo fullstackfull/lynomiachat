@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_10_110100) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_11_140000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1953,8 +1953,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_10_110100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "billing_entitlement_overrides", "accounts"
-  add_foreign_key "billing_entitlement_overrides", "users", column: "granted_by_id"
+  add_foreign_key "billing_entitlement_overrides", "accounts", on_delete: :cascade
+  add_foreign_key "billing_entitlement_overrides", "users", column: "granted_by_id", on_delete: :nullify
   add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
   add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"

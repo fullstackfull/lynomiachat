@@ -119,13 +119,21 @@ class Operations::SignalRecorder
   # Severity only ever rises while a signal is open: a problem that was critical once does not become a warning
   # because the latest observation was milder, and an operator who saw `critical` must not find it quietly
   # downgraded.
+  #
+  # Under a lock, because both values are computed here from the row as it was read. The partial unique index
+  # makes the *insert* race-safe, which is what makes two recordings of the same problem meet on one row -- and
+  # that is exactly the case where two workers then read the same `occurrences` and the same `severity` and
+  # write the same answer back. Unlocked, the count undercounts and a `critical` raised by one worker is
+  # overwritten by the other's `warning`: the one thing the paragraph above says must not happen.
   def increment(signal, severity, reason, detail, at)
-    signal.update!(
-      last_seen_at: at, occurrences: signal.occurrences + 1,
-      severity: highest_severity(signal.severity, severity),
-      reason: sanitized_reason(reason) || signal.reason,
-      detail: signal.detail.merge(sanitized_detail(detail))
-    )
+    signal.with_lock do
+      signal.update!(
+        last_seen_at: at, occurrences: signal.occurrences + 1,
+        severity: highest_severity(signal.severity, severity),
+        reason: sanitized_reason(reason) || signal.reason,
+        detail: signal.detail.merge(sanitized_detail(detail))
+      )
+    end
     signal
   end
 

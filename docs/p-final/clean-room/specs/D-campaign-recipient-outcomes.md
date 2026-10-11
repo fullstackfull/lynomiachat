@@ -158,14 +158,23 @@ carry them, and `metrics.rb` queries `status: :skipped` and `status: :queued` by
 | value | name |
 |---|---|
 | 0 | `queued` |
-| 1 | `sent` |
-| 2 | `delivered` |
-| 3 | `read` |
-| 4 | `failed` |
-| 5 | `skipped` |
+| 1 | `skipped` |
+| 2 | `sent` |
+| 3 | `delivered` |
+| 4 | `read` |
+| 5 | `failed` |
 
-(The default is `0`, so a row written without a state is `queued`. Confirm the remaining mappings against the
-production database before the first deploy; `docs/p-final/03-migration-review.md` describes how.)
+(The default is `0`, so a row written without a state is `queued`.)
+
+> **This table was wrong when the package was specified, and the correction is the one true blocker this
+> release found after integration.** It gave the funnel order — `sent: 1`, `delivered: 2`, `read: 3`,
+> `failed: 4`, `skipped: 5` — and hedged with "confirm the remaining mappings against the production database
+> before the first deploy". The implementation was written to the table, faithfully, so every row already in
+> `campaign_recipients` would have been read as the next state along: a skipped recipient as sent, a sent one
+> as delivered, a read one as failed. The authoritative mapping above is the one the code that wrote those rows
+> used, and it is now pinned by an example in `spec/models/campaign_recipient_spec.rb` rather than by a comment.
+> Nothing else in the package depends on the declaration order: `LADDER` is keyed by name, `metrics.rb` queries
+> by name, and `RecipientMetrics::STATES` takes the names rather than the values.
 
 `message_content` holds the text sent to that one contact — the rendered template, which can differ per
 recipient because template variables are resolved per contact. It is a message body, which matters for the

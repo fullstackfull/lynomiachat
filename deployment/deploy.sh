@@ -204,6 +204,35 @@ as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm build:sdk'
 as_app 'test -s public/packs/js/sdk.js' || fail "sdk build produced no public/packs/js/sdk.js"
 
 # ---------------------------------------------------------------------------
+log "6b. Quiet the workers and let the in-flight set drain"
+
+# Sidekiq is told to stop taking new work, then given up to 60s to finish what it is holding, BEFORE the
+# restart. Two reasons, one general and one specific to this release:
+#
+#   * A restart under load kills jobs mid-flight. Sidekiq pushes an interrupted job back for retry, so the work
+#     is not lost, but a job that had already made a provider call is retried from the top -- which for a
+#     campaign send means a second WhatsApp message to a real person.
+#   * This release DELETES Campaigns::UpdateRecipientStatusJob, which the previous revision enqueued with a
+#     two-second delay and up to five retries. Instances therefore sit in the scheduled and retry sets at the
+#     moment of the restart, and after it each one raises NameError until it reaches the dead set. Draining
+#     first means the old code consumes its own jobs (docs/p-final/03-migration-review.md section 8.1).
+#
+# `sidekiqctl quiet` is addressed through systemctl because the units own the processes: TSTP is Sidekiq's
+# documented quiet signal and SIGTERM its graceful stop, so this is the signal pair the gem expects.
+if systemctl is-active --quiet chatwoot-worker.1.service; then
+  systemctl kill --signal=SIGTSTP chatwoot-worker.1.service \
+    || echo "note: could not quiet chatwoot-worker.1.service; continuing"
+fi
+
+for attempt in $(seq 1 30); do
+  busy="$(as_app 'RAILS_ENV=production bundle exec rails runner "
+    require %q(sidekiq/api); print Sidekiq::Stats.new.workers_size"' 2>/dev/null || echo 0)"
+  [[ "$busy" == "0" ]] && { echo "sidekiq: in-flight set drained"; break; }
+  [[ $attempt -eq 30 ]] && echo "note: sidekiq still reports $busy busy worker(s) after 60s; restarting anyway"
+  sleep 2
+done
+
+# ---------------------------------------------------------------------------
 log "7. Restart"
 
 systemctl restart "$TARGET"

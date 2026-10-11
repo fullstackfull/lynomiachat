@@ -132,6 +132,7 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
       expect(response).to have_http_status(:success)
     end
   end
+
   # Specification A §2 lists `q` nowhere, and neither did the integration contract, so the rewrite had nothing
   # to implement it from — while the settings page has shipped a search box that sends it since the audit trail
   # existed, and counts it among its active filters. An ignored `q` therefore presented an unfiltered trail as a
@@ -280,6 +281,55 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
       expect do
         AuditTrail::Capture.suppressed { create(:custom_filter, account: account, user: admin, filter_type: :contact) }
       end.not_to change(Custom::AuditLog, :count)
+    end
+  end
+
+  # The one true blocker this release found after integration. The clean-room specification's own table gave
+  # the funnel order rather than the stored order, and the implementation was written to it, so every row
+  # already in `campaign_recipients` would have been read as the next state along. These are the integers the
+  # code that wrote those rows used, asserted as values rather than described in a comment.
+  describe 'the stored campaign recipient states' do
+    it 'keeps the integers production rows already carry' do
+      expect(CampaignRecipient.statuses).to eq(
+        'queued' => 0, 'skipped' => 1, 'sent' => 2, 'delivered' => 3, 'read' => 4, 'failed' => 5
+      )
+    end
+
+    # The funnel is a separate thing from the storage order, and only the funnel decides what a provider report
+    # may do to a row.
+    it 'orders the ladder by progress rather than by stored value' do
+      expect(CampaignRecipient::LADDER).to eq('queued' => 0, 'sent' => 1, 'delivered' => 2, 'read' => 3)
+    end
+
+    it 'reports every state the page reads, by name' do
+      expect(Campaigns::RecipientMetrics::STATES).to match_array(%w[queued skipped sent delivered read failed])
+    end
+  end
+
+  # `dependent: :destroy_async` runs its job only once the owner row is gone, so the detach ran against a
+  # membership whose required `account` no longer resolved: the job failed and the set's row survived the
+  # account that owned it, with no foreign key on `custom_roles.account_id` to clean it up.
+  describe 'destroying a set whose account is already gone' do
+    it 'succeeds, so the asynchronous dependent destroy leaves nothing behind' do
+      doomed = create(:account)
+      role = CustomRole.create!(account: doomed, name: 'Order desk', permissions: %w[commerce_order_manage])
+      # The state `dependent: :destroy_async` guarantees when its job runs: Rails' own
+      # DestroyAssociationAsyncJob refuses to proceed until the owner row has been deleted.
+      Account.where(id: doomed.id).delete_all
+
+      expect { role.reload.destroy! }.to change(CustomRole, :count).by(-1)
+    end
+  end
+
+  # Two recordings of the same problem meet on one row by design -- the partial unique index makes the insert
+  # race-safe -- and that is exactly when both read the same severity and write the same answer back.
+  describe 'recording the same operations signal twice' do
+    it 'does not let a milder second observation lower a severity already raised' do
+      recorder = Operations::SignalRecorder.new(source: :whatsapp_channel, account: account)
+      first = recorder.record(:authentication_failed, severity: :critical, reason: 'Token rejected')
+      recorder.record(:authentication_failed, severity: :warning, reason: 'Token rejected')
+
+      expect(first.reload).to have_attributes(severity: 'critical', occurrences: 2)
     end
   end
 end

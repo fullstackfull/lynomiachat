@@ -19,4 +19,7 @@ json.remote_address disclosure.address(entry.remote_address)
 # the auditable's own user id (app/javascript/dashboard/helper/auditlogHelper.js:103,218). Nothing else about
 # the audited record is disclosed, and a record that has since been deleted is null -- which is the signal the
 # browser already reads to render the "deleted user" label.
-json.auditable(entry.auditable.respond_to?(:user_id) ? { user_id: entry.auditable.user_id } : nil)
+#
+# Read from the query's own lookup rather than from `entry.auditable`, which would load the whole audited
+# record -- and one query per type on the page -- to reach one integer.
+json.auditable(member_user_id.nil? ? nil : { user_id: member_user_id })

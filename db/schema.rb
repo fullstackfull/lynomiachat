@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_11_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_11_150100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -279,12 +279,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_140000) do
     t.string "city"
     t.string "country"
     t.string "country_code"
+    t.index ["associated_type", "associated_id", "auditable_type", "created_at"], name: "index_audits_on_associated_and_auditable_type_and_created_at"
     t.index ["associated_type", "associated_id", "created_at"], name: "index_audits_on_associated_and_created_at"
     t.index ["associated_type", "associated_id"], name: "associated_index"
     t.index ["auditable_type", "auditable_id", "version"], name: "auditable_index"
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+    t.index ["username"], name: "index_audits_on_username_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "automation_rule_pending_executions", force: :cascade do |t|
@@ -452,6 +454,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_140000) do
     t.index ["account_id", "campaign_id"], name: "index_campaign_recipients_on_account_id_and_campaign_id"
     t.index ["account_id"], name: "index_campaign_recipients_on_account_id"
     t.index ["campaign_id", "contact_id"], name: "index_campaign_recipients_on_campaign_id_and_contact_id", unique: true
+    t.index ["campaign_id", "created_at", "id"], name: "index_campaign_recipients_on_campaign_and_created_at"
+    t.index ["campaign_id", "status", "created_at", "id"], name: "index_campaign_recipients_on_campaign_status_created_at"
     t.index ["campaign_id", "status"], name: "index_campaign_recipients_on_campaign_id_and_status"
     t.index ["campaign_id"], name: "index_campaign_recipients_on_campaign_id"
     t.index ["contact_id"], name: "index_campaign_recipients_on_contact_id"

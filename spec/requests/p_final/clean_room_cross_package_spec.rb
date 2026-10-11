@@ -282,8 +282,17 @@ RSpec.describe 'Clean-room cross-package behaviour', type: :request do
 
     it 'keeps the recipient state names on their production numbers' do
       # `metrics.rb` queries `status: :skipped` and `status: :queued` by name, and the integers are in the rows.
+      #
+      # CORRECTED AFTER INTEGRATION, and the only edit made to an imported clean-room spec. This example
+      # originally asserted `sent: 1, delivered: 2, read: 3, failed: 4, skipped: 5`, which is the funnel order
+      # the specification's data contract gave and not the order the production rows carry. Because the
+      # implementation and this assertion were written from the same wrong table, the suite agreed with itself
+      # and the error was invisible to it. The numbers below are the ones used by the code that wrote those
+      # rows, identical at the production baseline and at the last commit before the removal; see
+      # docs/p-final/03-migration-review.md section 4 and
+      # docs/p-final/clean-room/specs/D-campaign-recipient-outcomes.md section 3.
       expect(CampaignRecipient.statuses).to eq(
-        'queued' => 0, 'sent' => 1, 'delivered' => 2, 'read' => 3, 'failed' => 4, 'skipped' => 5
+        'queued' => 0, 'skipped' => 1, 'sent' => 2, 'delivered' => 3, 'read' => 4, 'failed' => 5
       )
     end
 

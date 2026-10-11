@@ -267,7 +267,8 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
   # declared `audited` without prepending it.
   describe 'audience audit capture' do
     it 'does not fail the product action when the audit row cannot be written' do
-      allow_any_instance_of(Custom::AuditLog).to receive(:create_or_update).and_raise(ActiveRecord::StatementInvalid, 'nope')
+      # On the class, not on an instance: the row the gem is about to write does not exist yet to stub.
+      allow(Custom::AuditLog).to receive(:create!).and_raise(ActiveRecord::StatementInvalid, 'nope')
 
       audience = nil
       expect do

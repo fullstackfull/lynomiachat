@@ -80,21 +80,27 @@ class Campaigns::RecipientSnapshot
   #
   # Batched because a marketing audience is not a page: one statement per thousand contacts rather than one
   # statement of any size.
+  #
+  # `in_batches` and `pluck(:id)` rather than iterating the relation: a row needs nothing but the contact's id,
+  # and the audience is not a cheap relation -- it resolves labels and shared audiences into a union of
+  # contact queries (`Custom::CampaignAudience#audience_contacts`), which upstream's send loop then resolves
+  # and iterates again on its own. Loading every Contact object here to read one integer off each would double
+  # the memory a large campaign needs for nothing.
   def seed(contacts)
-    contacts.each_slice(SEED_BATCH) do |batch|
-      CampaignRecipient.insert_all( # rubocop:disable Rails/SkipsModelValidations
-        batch.map { |contact| queued_row(contact) },
-        unique_by: %i[campaign_id contact_id]
-      )
+    contacts.in_batches(of: SEED_BATCH) do |batch|
+      rows = batch.pluck(:id).map { |contact_id| queued_row(contact_id) }
+      next if rows.empty?
+
+      CampaignRecipient.insert_all(rows, unique_by: %i[campaign_id contact_id]) # rubocop:disable Rails/SkipsModelValidations
     end
   end
 
   private
 
-  def queued_row(contact)
+  def queued_row(contact_id)
     {
       account_id: @campaign.account_id, campaign_id: @campaign.id,
-      contact_id: contact.id, inbox_id: @campaign.inbox_id,
+      contact_id: contact_id, inbox_id: @campaign.inbox_id,
       status: CampaignRecipient.statuses[:queued]
     }
   end

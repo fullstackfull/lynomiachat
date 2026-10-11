@@ -84,6 +84,8 @@ This package owns **no table**. It reads and writes rows owned by other packages
 | `campaign_recipients` | `status`, `sent_at`, `delivered_at`, `read_at`, `failed_at`, `error_code`, `error_title`, `error_message` | package D (`D-campaign-recipient-outcomes.md` §3, §4.2) |
 | `messages` | nothing directly — the upstream path owns it | upstream Chatwoot |
 
+(`external_error`, which the upstream failure path writes, is a `store` accessor on `messages.content_attributes` rather than a column of its own — `app/models/message.rb:112-114`.)
+
 The join between a Meta report and a Lynomia record is the **provider message identifier**:
 
 | record | column | uniqueness |

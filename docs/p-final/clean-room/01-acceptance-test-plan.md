@@ -310,10 +310,24 @@ request to the trail returns it. Nothing here should be checked by inspecting in
 - EXPECTED: the holder succeeds; the non-holder is refused with the product's standard refusal, not an error
   page and not a silent success.
 
-**C-11. Administrators are not narrowed by a set**
-- PRECONDITIONS: an administrator with a set attached that grants one narrow permission.
-- ACTION: perform an administrator action unrelated to that permission.
-- EXPECTED: it succeeds. Attaching a set never *removes* ability.
+**C-11. A member holding a set is an agent** *(corrected after integration — see the note below)*
+- PRECONDITIONS: an administrator of the account, and a set that grants one narrow permission.
+- ACTION: attach the set to that administrator's membership from the agent edit page.
+- EXPECTED: the membership becomes an agent holding the set. Administrator endpoints — including the roles
+  endpoints that define the set — are refused for them afterwards.
+- AND: a request that names `administrator` and a non-null `custom_role_id` in the same breath is refused with
+  422 and changes nothing. Detaching while naming a built-in role still works and is how a member is restored.
+
+> **Why this scenario changed.** As first written, C-11 asserted the opposite: "an administrator with a set
+> attached ... it succeeds. Attaching a set never *removes* ability." The implementation followed that faithfully
+> and the shipped client made it a defect. The edit page offers the two built-in roles and the account's sets in
+> a single selector (`settings/agents/EditAgent.vue:131-136`) and sends only `custom_role_id` when a set is
+> chosen, so an administrator "moved" to a narrow set kept `role = administrator` and with it every
+> administrator endpoint, while the page showed them as holding the set. The only server reader of a set's
+> capabilities already required the membership to be an agent as well
+> (`app/services/conversations/unread_counts/counter.rb:170-172`), so the state the old scenario described was
+> one nothing else in the product expected. The scenario was wrong, not the code written to it; both are now
+> corrected, and `spec/requests/p_final/integration_corrections_spec.rb` holds the examples.
 
 **C-12. Deleting a set does not delete people**
 - PRECONDITIONS: a set attached to two members.

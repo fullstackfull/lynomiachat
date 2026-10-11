@@ -220,3 +220,55 @@ so that nullable column is never a tenant boundary a customer can cross. The per
 3. If the release has to be withdrawn: **revert the application, keep the schema.** No data is lost and the
    old code cannot tell the difference.
 4. Never replay migrations from empty to rebuild this database; `db:schema:load` is the only path that works.
+
+---
+
+## 7. Final state after the clean-room exchange (P-FINAL.CR)
+
+**The replacement added no migration and no schema change.** Verified, not asserted:
+`git diff --name-only cbf2a0da..HEAD` matches nothing under `db/migrate`, `custom/db/migrate` or `db/schema.rb`.
+
+Every table, column, enum value and index the replacement uses was then checked against a live database:
+
+| table | result |
+|---|---|
+| `campaign_recipients` | all 16 columns present |
+| `custom_roles` | all 6 columns present |
+| `account_users.custom_role_id` | present |
+| `audits` | all 17 columns present, including `city`, `country` and `country_code`, which stay unwritten and unread |
+| `messages.source_id`, `.status` | present. `external_error` is **not** a column — it is a `store` accessor on `messages.content_attributes` (`app/models/message.rb:112-114`). The integration contract has been corrected to say so |
+
+The three behaviour-carrying indexes on `campaign_recipients` are present with the right properties:
+
+```
+index_campaign_recipients_on_campaign_id_and_contact_id   unique=true
+index_campaign_recipients_on_source_id                    unique=true  where=(source_id IS NOT NULL)
+index_campaign_recipients_on_campaign_id_and_status        unique=false
+```
+
+The `campaign_recipients.status` enum maps `queued 0, sent 1, delivered 2, read 3, failed 4, skipped 5` at
+runtime, which is what `custom/app/services/analytics/campaigns/metrics.rb` reads by name. Unchanged from
+before the exchange.
+
+| | |
+|---|---|
+| pending migrations | none |
+| schema version | `20261010110100` |
+| migration files | 24 under `custom/db/migrate`, 180 under `db/migrate` |
+
+### 7.1 Rollback tolerance of the exchange specifically
+
+Rolling the **code** back across the exchange is safe in both directions, because the exchange is code-only:
+
+- no column was added, so old code reads the same schema;
+- the replacement writes the same columns the removed implementation wrote, with the same meanings — the
+  `status` ladder, the four timestamps, the three error fields, `source_id`, `message_content`;
+- one difference is worth naming because it is deliberate: the replacement **never** stamps `failed_at` on a
+  recipient that already reached `delivered` or `read`, where the previous writer could leave a row carrying
+  both a delivery and a failure timestamp. A row written by the replacement is therefore a *subset* of the
+  shapes old code could produce, so old code reads it correctly. A row written by the OLD code that carries
+  both timestamps is still read correctly by the new analytics, which count delivery and failure independently
+  — it would be counted in both, as it always was.
+
+Nothing else in the exchange touches persisted state. `custom_roles`, `audits` and the membership attachment
+are written exactly as before.

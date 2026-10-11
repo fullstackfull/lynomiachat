@@ -37,8 +37,10 @@ class Api::V1::Accounts::Campaigns::AnalyticsController < Api::V1::Accounts::Bas
     params[:status].present? ? scope.where(status: params[:status]) : scope
   end
 
+  # `to_s` first: a query string can carry any shape, and `?page[]=2` arrives as an array, on which `to_i` is not
+  # defined. An unreadable page number is the first page, which is what the pager asks for when it has no state.
   def page
-    [params[:page].to_i, 1].max
+    [params[:page].to_s.to_i, 1].max
   end
 
   # Refused at the boundary rather than passed to the database as an unknown state, which is the repo's

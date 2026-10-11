@@ -2,8 +2,12 @@
 # (docs/p-final/clean-room/specs/A-audit-trail-read.md §2).
 #
 # Every value here comes from a query string, so every value is parsed leniently: an administrator who lands on
-# the page with a stale or hand-edited URL gets a page, not a 500. A value that cannot be understood is simply
-# not applied -- that is the documented behaviour, and it keeps this off the exception tracker.
+# the page with a stale or hand-edited URL gets a page, not a 500 (specification §2: "Unparseable or
+# out-of-range values must not raise"). A value that cannot be understood is simply not applied -- that is the
+# documented behaviour, and it keeps this off the exception tracker.
+#
+# `to_s` before `to_i` for the same reason, and it is load-bearing: a query string can carry any shape, and
+# `?page[]=2` arrives as an array, on which `to_i` is not defined.
 #
 # Two spellings of the type filter are accepted because the shipped page sends `types[]`
 # (app/javascript/dashboard/helper/auditlogHelper.js:276 builds `filters.types = [query.type]`) while the
@@ -22,7 +26,7 @@ class AuditTrail::Filters
   end
 
   def page
-    [@params[:page].to_i, 1].max
+    [@params[:page].to_s.to_i, 1].max
   end
 
   def per_page
@@ -41,7 +45,7 @@ class AuditTrail::Filters
   end
 
   def actor_id
-    id = @params[:user_id].to_i
+    id = @params[:user_id].to_s.to_i
     id.positive? ? id : nil
   end
 

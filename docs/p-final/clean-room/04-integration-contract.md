@@ -161,7 +161,7 @@ Production data exists. See `specs/A` §3, `specs/C` §3 and `specs/D` §3 for t
 | `custom_roles` (`account_id`, `name`, `description`, `permissions` text array) | existing rows; the OSS factory |
 | `account_users.custom_role_id` | existing attachments; OSS code reads it |
 | `campaign_recipients` (every column; status enum values `queued 0 … skipped 5`; the unique `(campaign_id, contact_id)`, the unique partial `source_id`, and `(campaign_id, status)`) | existing rows and P8's SQL |
-| `messages.source_id`, `.status`, `.external_error` | OSS; package E's join |
+| `messages.source_id`, `.status` | OSS; package E's join. `external_error` is **not a column**: it is a `store` accessor on `messages.content_attributes` (`app/models/message.rb:112-114`) |
 | `sla_policies`, `campaigns`, `accounts`, `account_users` | upstream tables |
 
 **No migration is expected.** If you conclude one is needed, it must be additive, and

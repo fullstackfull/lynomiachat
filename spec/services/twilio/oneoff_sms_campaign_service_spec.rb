@@ -113,7 +113,7 @@ describe Twilio::OneoffSmsCampaignService do
       ).once
 
       expect(Rails.logger).to receive(:error).with(
-        "[Twilio Campaign #{campaign.id}] Failed to send to #{contact_error.phone_number}: #{error.message}"
+        "[Twilio Campaign #{campaign.id}] Failed to send to contact_id=#{contact_error.id}: #{error.message}"
       )
 
       sms_campaign_service.perform

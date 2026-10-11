@@ -226,6 +226,7 @@ en:
     custom_roles:
       unknown_permissions: "These are not permissions this product defines: %{permissions}."
       not_found: Custom role not found
+      administrator_conflict: A member cannot be an administrator and hold a permission set at the same time. Choose one.
     campaigns:
       audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
       unknown_recipient_status: "'%{status}' is not a recipient status. Allowed: %{allowed}."

@@ -31,8 +31,9 @@ class Api::V1::Accounts::CustomRolesController < Api::V1::Accounts::BaseControll
     render :show
   end
 
-  # The memberships holding this set keep everything except the set: `has_many :account_users,
-  # dependent: :nullify` on the model detaches them, and each reverts to its built-in role's capabilities.
+  # The memberships holding this set keep everything except the set: `before_destroy :detach_memberships` on the
+  # model clears each attachment one row at a time -- so the callbacks that invalidate a member's cached
+  # visibility actually run -- and each member reverts to its built-in role's capabilities.
   def destroy
     @custom_role.destroy!
     head :ok

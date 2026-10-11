@@ -49,6 +49,14 @@ class CustomRole < ApplicationRecord
   has_many :account_users, dependent: nil
   before_destroy :detach_memberships
 
+  # The same reason, one step earlier: three of this vocabulary's capabilities decide how much of the inbox a
+  # member's filtered unread counts cover (app/services/conversations/unread_counts/counter.rb:157-168), and
+  # those counts are cached in Redis under a version per member. Chatwoot bumps that version when a membership's
+  # attachment moves; editing the set's capabilities changes exactly the same thing for everyone holding it, and
+  # nothing on the membership row changes, so without this the holders keep counting under the capabilities the
+  # set used to grant until the version expires.
+  after_update_commit :invalidate_holders_visibility, if: :saved_change_to_permissions?
+
   validates :name, presence: true
   # The client requires at least one capability before it will submit (CustomRoleModal.vue:48), and a set that
   # grants nothing is a set somebody will later wonder about, so the server says the same thing.
@@ -59,6 +67,13 @@ class CustomRole < ApplicationRecord
 
   def detach_memberships
     account_users.each { |membership| membership.update!(custom_role_id: nil) }
+  end
+
+  # One pipelined round trip for every holder, rather than a statement each: the set is edited rarely and may
+  # have many holders.
+  def invalidate_holders_visibility
+    ::Conversations::UnreadCounts::FilteredCountInvalidator.new(account)
+                                                           .users_visibility_changed!(user_ids: account_users.pluck(:user_id))
   end
 
   # Reported as one error naming every unknown value, so a client sending two typos learns about both.

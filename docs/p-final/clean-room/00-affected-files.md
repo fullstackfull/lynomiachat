@@ -113,12 +113,46 @@ these may be shown to the clean-room implementer**, and none may be used as the 
 | `spec/controllers/custom/api/v1/accounts/agents_controller_spec.rb` | `spec/enterprise/controllers/enterprise/api/v1/accounts/agents_controller_spec.rb` | same | 78% |
 | `spec/controllers/api/v1/accounts/custom_roles_controller_spec.rb` | `spec/enterprise/controllers/api/v1/accounts/custom_roles_controller_spec.rb` | same | 47% |
 | `spec/policies/commerce/action_policy_custom_role_spec.rb` | `spec/enterprise/policies/commerce/action_policy_spec.rb` | same | git rename R62 |
-| `spec/services/twilio/media_download_service_spec.rb` | `spec/enterprise/services/twilio/media_download_service_spec.rb` | **REMOVE; re-author** — the code under test is clean OSS, only the spec moved | 71% |
-| `spec/controllers/api/v1/profiles_controller_spec.rb` | `spec/enterprise/controllers/api/v1/profiles_controller_spec.rb` | **REMOVE the Enterprise-derived portion; re-author** — lower confidence (9/18 lines), may be shared boilerplate | 50% |
-| `spec/controllers/api/v1/accounts/contacts_controller_spec.rb` | `spec/enterprise/controllers/api/v1/accounts/contacts_controller_spec.rb` | same | 50% |
+| `spec/services/twilio/media_download_service_spec.rb` | `spec/enterprise/services/twilio/media_download_service_spec.rb` | ~~REMOVE; re-author~~ → **KEEP. This row was wrong** | 71% |
+| `spec/controllers/api/v1/profiles_controller_spec.rb` | `spec/enterprise/controllers/api/v1/profiles_controller_spec.rb` | ~~REMOVE the Enterprise-derived portion~~ → **KEEP. This row was wrong** | 50% |
+| `spec/controllers/api/v1/accounts/contacts_controller_spec.rb` | `spec/enterprise/controllers/api/v1/accounts/contacts_controller_spec.rb` | same → **KEEP. This row was wrong** | 50% |
 
-The last three test **clean** code. Only the test text is affected, so the behaviour they cover is already
-specified by the product; they are re-authored rather than replaced by new features.
+### The last three rows were a false positive, and the method that produced it
+
+These three were removed with the rest on the strength of their similarity to a `spec/enterprise/` file, and
+never re-authored — 1,825 lines of coverage for still-live production code, gone. The post-integration dead-code
+audit found the gap, and checking it produced something more important than the gap itself.
+
+**The arrow was pointing the wrong way.** All three sit at upstream OSS paths, and their history says they are
+upstream Chatwoot files rather than Lynomia files that copied Enterprise ones:
+
+| file | last commit before the removal | what that means |
+|---|---|---|
+| `spec/services/twilio/media_download_service_spec.rb` | Muhsin Keloth, upstream | never touched by this fork at all |
+| `spec/controllers/api/v1/profiles_controller_spec.rb` | Shivam Mishra, upstream | never touched by this fork at all |
+| `spec/controllers/api/v1/accounts/contacts_controller_spec.rb` | this fork, on upstream OSS content | upstream file this fork later extended |
+
+An upstream OSS file cannot be Enterprise-derived. Where an OSS spec and an Enterprise spec for the same
+controller resemble each other, the derivation runs the other way, or both inherit the same upstream
+boilerplate — which is exactly what the 50% figure and the register's own hedge ("may be shared boilerplate")
+were saying. The sweep compared text and reported similarity; it had no notion of which side was the original.
+
+All three are restored at `487276f2^`, unchanged, and **pass unchanged**: 137 examples, 0 failures, together
+with the retained commerce policy spec. That they needed no edit is the second proof that they were never
+coupled to the removed packages.
+
+**The method correction, for anyone repeating this.** Textual similarity to an Enterprise file is not
+provenance. Before classifying a file as Enterprise-derived, read its history: a file whose commits are
+upstream authors' at an upstream path is upstream OSS, whatever it resembles. Applied to the 58 files this
+removal deleted, that test flags exactly these three; the other 55 are Lynomia files under `custom/` and
+`spec/**/custom/`, or specs of classes the removal deliberately retired, and none of them is at an upstream
+OSS path. **The production removal is unaffected** — all 39 production files were under `custom/`.
+
+`spec/policies/commerce/action_policy_custom_role_spec.rb` is a separate case and was correctly removed: it was
+this fork's own spec, and the capability-gating cases it covered are now in
+`spec/requests/custom_roles_spec.rb` under "C-10 each capability gates its own feature", which asserts the
+holder, the non-holder, a holder of another capability, and that the capability never reaches a refund or a
+cancellation. The retained policy spec's comment pointed at the deleted file and now points there instead.
 
 ---
 

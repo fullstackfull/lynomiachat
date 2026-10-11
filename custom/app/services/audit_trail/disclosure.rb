@@ -6,7 +6,8 @@
 #
 # **The originating address is coarse unless the account may see it.** A full address identifies a machine and,
 # for a small team, a person; most accounts have no business with that, so the default is a network. The
-# `audit_log_ip_address` capability is the account's opt-in (config/features.yml:277).
+# `audit_log_ip_address` capability is the account's opt-in (the entry of that name in config/features.yml --
+# by name rather than by line, because a comment inserted above it moves the line and not the entry).
 #
 # **No credential is rendered.** Nothing written by this release stores one (Custom::AuditLog drops them), but
 # rows written before it are still in the table and the browser is where a leaked credential does harm. Applying

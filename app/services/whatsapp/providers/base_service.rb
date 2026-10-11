@@ -42,7 +42,10 @@ class Whatsapp::Providers::BaseService
   end
 
   def handle_error(response, message)
-    Rails.logger.error response.body
+    # Never the raw body. Whatsapp::ProviderErrorLog takes five named values and one sanitized sentence and
+    # drops the rest of the payload unread, so a recipient's number, a customer's message or a credential
+    # cannot reach the log through a provider's prose or through a key nobody has seen yet.
+    Rails.logger.error Whatsapp::ProviderErrorLog.from_response(response)
     return if message.blank?
 
     # https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes/#sample-response

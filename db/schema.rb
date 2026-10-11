@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_11_160000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_11_170000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -483,6 +483,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_160000) do
     t.jsonb "template_params"
     t.datetime "started_at"
     t.datetime "completed_at"
+    t.string "blocked_reason"
     t.index ["account_id"], name: "index_campaigns_on_account_id"
     t.index ["campaign_status"], name: "index_campaigns_on_campaign_status"
     t.index ["campaign_type"], name: "index_campaigns_on_campaign_type"

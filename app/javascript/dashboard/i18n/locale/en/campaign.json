@@ -90,7 +90,8 @@
         "STATUS": {
           "PROCESSING": "Processing",
           "COMPLETED": "Completed",
-          "SCHEDULED": "Scheduled"
+          "SCHEDULED": "Scheduled",
+          "BLOCKED": "Not sent — WhatsApp unavailable"
         },
         "CAMPAIGN_DETAILS": {
           "SENT_FROM": "Sent from",
@@ -145,7 +146,8 @@
         "STATUS": {
           "PROCESSING": "Processing",
           "COMPLETED": "Completed",
-          "SCHEDULED": "Scheduled"
+          "SCHEDULED": "Scheduled",
+          "BLOCKED": "Not sent — WhatsApp unavailable"
         },
         "CAMPAIGN_DETAILS": {
           "SENT_FROM": "Sent from",

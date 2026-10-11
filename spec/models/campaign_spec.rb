@@ -183,12 +183,17 @@ RSpec.describe Campaign do
       end
       let(:campaign) { create(:campaign, account: account, inbox: whatsapp_channel.inbox) }
 
-      it 'does not mark the campaign as processing' do
+      # DECISION 6 changed what happens next. Not sending is still the requirement, and still asserted here;
+      # what is no longer true is that the campaign is left reading `active` to be retried silently for three
+      # days and then abandoned. It moves to `blocked` with a reason. spec/models/campaign_blocked_spec.rb
+      # covers the state, the signal, the resume and the SMS regression.
+      it 'does not mark the campaign as processing, and blocks it rather than leaving it active' do
         expect(Whatsapp::OneoffCampaignService).not_to receive(:new)
 
         campaign.trigger!
 
-        expect(campaign.reload.active?).to be true
+        expect(campaign.reload).to have_attributes(processing?: false, blocked?: true,
+                                                   blocked_reason: described_class::BLOCKED_FEATURE_DISABLED)
       end
     end
 

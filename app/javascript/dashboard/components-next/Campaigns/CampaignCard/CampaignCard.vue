@@ -55,6 +55,9 @@ const { t } = useI18n();
 
 const STATUS_COMPLETED = 'completed';
 const STATUS_PROCESSING = 'processing';
+// DECISION 6: a scheduled WhatsApp campaign that reached its send time while the capability was unavailable.
+// Without its own branch it fell through to "Scheduled" below, which is the silence the decision removes.
+const STATUS_BLOCKED = 'blocked';
 
 const { formatMessage } = useMessageFormatter();
 
@@ -63,6 +66,9 @@ const { formatMessage } = useMessageFormatter();
 const ONE_OFF_TONES = {
   [STATUS_COMPLETED]: 'success',
   [STATUS_PROCESSING]: 'info',
+  // `danger`, not the `warning` that scheduled falls through to: this campaign did not send and will not until
+  // somebody acts, so it must not look like one that is merely waiting for its time.
+  [STATUS_BLOCKED]: 'danger',
 };
 
 const statusTone = computed(() => {
@@ -83,6 +89,10 @@ const campaignStatus = computed(() => {
 
   if (props.status === STATUS_PROCESSING) {
     return t('CAMPAIGN.SMS.CARD.STATUS.PROCESSING');
+  }
+
+  if (props.status === STATUS_BLOCKED) {
+    return t('CAMPAIGN.SMS.CARD.STATUS.BLOCKED');
   }
 
   return t('CAMPAIGN.SMS.CARD.STATUS.SCHEDULED');

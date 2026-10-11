@@ -90,7 +90,8 @@
         "STATUS": {
           "PROCESSING": "Processing",
           "COMPLETED": "مكتمل",
-          "SCHEDULED": "Scheduled"
+          "SCHEDULED": "Scheduled",
+          "BLOCKED": "لم تُرسل — واتساب غير متاح"
         },
         "CAMPAIGN_DETAILS": {
           "SENT_FROM": "Sent from",
@@ -145,7 +146,8 @@
         "STATUS": {
           "PROCESSING": "Processing",
           "COMPLETED": "مكتمل",
-          "SCHEDULED": "Scheduled"
+          "SCHEDULED": "Scheduled",
+          "BLOCKED": "لم تُرسل — واتساب غير متاح"
         },
         "CAMPAIGN_DETAILS": {
           "SENT_FROM": "Sent from",

@@ -17,22 +17,28 @@ class Operations::Signal < ApplicationRecord
   # `billing` added by P11 (docs/p11/07-security-performance.md): a billing failure is an operations
   # problem an operator must see, and the Operations Center is where they already look. The feed is
   # source-agnostic, so this is one entry rather than a second dashboard.
-  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue billing].freeze
+  # `campaign` added by DECISION 6: a scheduled campaign that could not send is an operations problem with a
+  # different subject from a channel's, and a reader must be able to tell them apart without parsing `signal`.
+  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue billing campaign].freeze
 
   # What was observed. Allow-listed so a typo becomes a validation failure rather than a row nobody will ever
   # find again.
   # P11 adds the three billing signals. This is an allow-list by design, which is why they have to be listed:
   # a signal nobody declared is a signal nobody checked, and the recorder's validation drops it.
+  # `feature_disabled` added by DECISION 6: the machine-readable reason a scheduled campaign was not sent.
   SIGNALS = %w[
     authentication_failed connection_failed reauthorization_required
     delivery_failed sync_failed backlog dead_set_grew no_workers
     entitlement_sync_failed unknown_provider_customer billing_event_failed
+    feature_disabled
   ].freeze
 
   # What a signal can be about. An allow-list lists what IS allowed, not what might be, so this is exactly the
   # three subjects the writers use. Channel problems are recorded against the INBOX rather than the channel row,
   # because an inbox is what an operator and a support case both refer to.
-  SUBJECT_TYPES = %w[Inbox Commerce::Store Webhook].freeze
+  # `Campaign` added by DECISION 6. A blocked campaign is what the operator acts on -- re-activating or
+  # cancelling it -- so the campaign is the subject, not its inbox.
+  SUBJECT_TYPES = %w[Inbox Commerce::Store Webhook Campaign].freeze
 
   belongs_to :account, optional: true
   belongs_to :subject, polymorphic: true, optional: true

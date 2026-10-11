@@ -9,18 +9,6 @@
     "SEARCH_PLACEHOLDER": "Search custom roles...",
     "NO_RESULTS": "No custom roles found matching your search",
     "SEARCH_404": "There are no items matching this query.",
-    "PAYWALL": {
-      "TITLE": "Upgrade to create custom roles",
-      "AVAILABLE_ON": "The custom role feature is only available in the Business and Enterprise plans.",
-      "UPGRADE_PROMPT": "Upgrade your plan to get access to advanced features like team management, automations, custom attributes, and more.",
-      "UPGRADE_NOW": "Upgrade now",
-      "CANCEL_ANYTIME": "You can change or cancel your plan anytime"
-    },
-    "ENTERPRISE_PAYWALL": {
-      "AVAILABLE_ON": "The custom role feature is only available in the paid plans.",
-      "UPGRADE_PROMPT": "Upgrade to a paid plan to access advanced features like audit logs, agent capacity, and more.",
-      "ASK_ADMIN": "Please reach out to your administrator for the upgrade."
-    },
     "PLAN_NOTICE": {
       "TEXT": "Custom roles are not included in your current plan.",
       "VIEW_PLANS": "View plans"

@@ -2,7 +2,7 @@
 # (docs/p8/02b-whatsapp-campaign-analytics.md).
 #
 # `campaign_recipients` is both the audience snapshot and the funnel: one row per contact a campaign addressed,
-# written when the campaign runs and advanced only forwards by #update_from_whatsapp_status! under a row lock
+# written when the campaign runs and advanced only forwards by #record_outcome! under a row lock
 # (custom/app/models/campaign_recipient.rb). There is no separate execution engine and no second store, so every
 # number here comes off that one table.
 #
@@ -10,14 +10,14 @@
 # keeps only the furthest state reached. The literal single-column form -- `delivered_at IS NOT NULL` alone --
 # would be wrong: when Meta sends `read` before `delivered`, the writer sets status `read` and `read_at` and
 # leaves `delivered_at` null until a later `delivered` event backfills it
-# (custom/app/models/campaign_recipient.rb:53-57). A recipient that was read therefore reached delivered whether
+# (CampaignRecipient#progress_changes). A recipient that was read therefore reached delivered whether
 # or not `delivered_at` arrived, so delivered is `delivered_at IS NOT NULL OR read_at IS NOT NULL`.
 #
 # `failed` is safe to read from `failed_at`: the writer refuses to mark a delivered or read recipient failed
-# (custom/app/models/campaign_recipient.rb:70-72), so the timestamp is terminal once set.
+# (CampaignRecipient#failure_changes), so the timestamp is terminal once set.
 #
 # `skipped` has no timestamp column. Lynomia decided the contact was unsendable before any send was attempted
-# (`mark_skipped!`), so status is the only record of it, and that is what is read.
+# (Campaigns::RecipientSnapshot#skipped), so status is the only record of it, and that is what is read.
 class Analytics::Campaigns::Metrics
   DELIVERED_SQL = 'campaign_recipients.delivered_at IS NOT NULL OR campaign_recipients.read_at IS NOT NULL'.freeze
 

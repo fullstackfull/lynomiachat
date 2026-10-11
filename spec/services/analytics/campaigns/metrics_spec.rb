@@ -94,8 +94,8 @@ RSpec.describe Analytics::Campaigns::Metrics do
 
     it 'agrees with the status ladder on a recipient the real writer advanced' do
       row = recipient(status: :sent, source_id: 'wamid.4', sent_at: Time.utc(2026, 10, 2, 10, 1))
-      row.update_from_whatsapp_status!(status: 'read', timestamp: Time.utc(2026, 10, 2, 11, 0).to_i)
-      row.update_from_whatsapp_status!(status: 'delivered', timestamp: Time.utc(2026, 10, 2, 10, 30).to_i)
+      row.record_outcome!('read', reported_at: Time.utc(2026, 10, 2, 11, 0))
+      row.record_outcome!('delivered', reported_at: Time.utc(2026, 10, 2, 10, 30))
 
       expect(row.reload.status).to eq('read')
       expect(row.delivered_at).to be_present

@@ -125,8 +125,15 @@ What those numbers establish:
   the case it was taken in is stated, which is why every row above now says which case it is.
 - **The webhook path is cheapest in its commonest case.** A delivery report for an ordinary conversation
   message — which is most of them — costs one query to establish that no recipient owns the identifier.
-- **`record_outcome!` is O(1) per report**, about 1.2 ms including the row lock. A burst of provider webhooks
-  for one campaign contends per recipient row, not per campaign, because the lock is on the recipient.
+- **`record_outcome!` is O(1) per report**, about 1.2 ms including the row lock — **and that figure, like the
+  two rows above, is the no-write case.** An advancing application pays a second statement for the `UPDATE`.
+  The O(1) claim and the contention claim both hold either way: a burst of provider webhooks for one campaign
+  contends per recipient row, not per campaign, because the lock is on the recipient.
+
+  On how much of the traffic actually writes: roughly **two reports in three** advance a row, not all three.
+  `Campaigns::RecipientSnapshot` already stamps `status: :sent` and `sent_at` at send time, so Meta's own
+  `sent` report lands on an already-stamped row and `progress_changes` returns nothing. Only `delivered` and
+  `read` normally advance.
 
 Also re-verified: `custom/app/services/operations/account_health.rb` still memoizes `billing_enforced?`, so the
 Super Admin account-health page reads the installation's billing settings once per page rather than once per

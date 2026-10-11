@@ -20,6 +20,15 @@
 # skip breakdown on that column directly, so a reason containing a phone number would both explode the
 # breakdown's cardinality and put recipient data into an analytics response.
 module Custom::Whatsapp::OneoffCampaignService
+  # Before upstream's loop, so the snapshot is whole from the first poll of the analytics page rather than
+  # filling in as the run proceeds (package D §2, `audience` and `status_counts.queued`). A seed that fails
+  # must not stop a campaign from being sent: the per-contact writers below still record every outcome, and the
+  # only thing lost is the pending count while the run is in progress.
+  def process_audience
+    seed_audience
+    super
+  end
+
   def process_contact(contact)
     @contact = contact
     @outcome = nil
@@ -122,6 +131,13 @@ module Custom::Whatsapp::OneoffCampaignService
     yield
   rescue StandardError => e
     Rails.logger.error("[Lynomia::Campaigns] campaign #{campaign.id} could not record contact #{@contact&.id}: #{e.class}")
+    ChatwootExceptionTracker.new(e, account: campaign.account).capture_exception
+  end
+
+  def seed_audience
+    snapshot.seed(campaign.audience_contacts)
+  rescue StandardError => e
+    Rails.logger.error("[Lynomia::Campaigns] campaign #{campaign.id} could not seed its audience snapshot: #{e.class}")
     ChatwootExceptionTracker.new(e, account: campaign.account).capture_exception
   end
 

@@ -49,6 +49,14 @@ class AuditTrail::Filters
     id.positive? ? id : nil
   end
 
+  # The settings page's search box. It sends `q`
+  # (app/javascript/dashboard/routes/dashboard/settings/auditlogs/Index.vue:118-125 through
+  # helper/auditlogHelper.js:275), and the page counts it among its active filters, so a value that reached
+  # nothing would present an unfiltered trail as a filtered one.
+  def actor_name
+    @params[:q].to_s.strip.presence
+  end
+
   # Both bounds or neither: a window with one end is a filter the page has no way to express and whose meaning
   # would have to be invented here.
   def window
@@ -61,15 +69,18 @@ class AuditTrail::Filters
 
   private
 
+  # The end of 9999, which is past any date this trail can hold and still inside what a PostgreSQL `timestamp`
+  # accepts. `Time.zone.at` happily answers year 31690708 for 10**15, so without an upper bound the value
+  # becomes a real Time, reaches the database as a literal it rejects, and the request 500s -- which is the one
+  # thing the specification says a bad parameter must not do.
+  LAST_REPRESENTABLE_SECOND = 253_402_300_799
+
   # `to_i` would turn "yesterday" into 1970 and silently return an empty page for a window nobody asked for, so
   # the value has to be numeric before it is believed.
   def unix_time(value)
     seconds = Integer(value.to_s, exception: false)
-    return nil if seconds.nil? || seconds.negative?
+    return nil if seconds.nil? || seconds.negative? || seconds > LAST_REPRESENTABLE_SECOND
 
     Time.zone.at(seconds)
-  rescue RangeError
-    # A number far outside the Time range is a filter, not a crash.
-    nil
   end
 end

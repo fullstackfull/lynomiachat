@@ -46,6 +46,7 @@ class AuditTrail::Query
   def filtered(scope)
     scope = scope.of_type(@filters.types) if @filters.types
     scope = scope.by_actor(@filters.actor_id) if @filters.actor_id
+    scope = scope.by_actor_name(@filters.actor_name) if @filters.actor_name
     scope = scope.occurred_between(@filters.window.first, @filters.window.last) if @filters.window
     @filters.sort == 'asc' ? scope.oldest_first : scope.newest_first
   end

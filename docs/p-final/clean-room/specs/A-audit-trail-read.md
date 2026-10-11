@@ -34,6 +34,7 @@ Authenticated account API (the same session or access-token authentication every
 | `until` | integer (unix seconds) | upper bound on entry time |
 | `range` | string | an opaque label the client round-trips for its own date-picker state; the server may ignore it |
 | `user_id` | integer | restrict to one actor |
+| `q` | string | restrict to entries whose recorded actor name contains this fragment, case-insensitively. *(Added after integration: the shipped settings page has always sent this and this table omitted it, so the rewrite had nothing to implement it from — the search box ran against an unfiltered trail that the page still labelled as filtered. `routes/dashboard/settings/auditlogs/Index.vue:118-125` through `helper/auditlogHelper.js:275`.)* |
 
 Unparseable or out-of-range values must not raise. They are either ignored or answered with an empty page; they
 must never produce a 500.

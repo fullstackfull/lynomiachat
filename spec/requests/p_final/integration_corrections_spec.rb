@@ -132,4 +132,154 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
       expect(response).to have_http_status(:success)
     end
   end
+  # Specification A §2 lists `q` nowhere, and neither did the integration contract, so the rewrite had nothing
+  # to implement it from — while the settings page has shipped a search box that sends it since the audit trail
+  # existed, and counts it among its active filters. An ignored `q` therefore presented an unfiltered trail as a
+  # filtered one.
+  describe 'the audit trail search box' do
+    let(:other_admin) { create(:user, account: account, role: :administrator, name: 'Noura Al-Rashed') }
+
+    before do
+      account.enable_features!('audit_logs')
+      admin.update!(name: 'Faisal Al-Sabah')
+      other_admin
+      Custom::AuditLog.delete_all
+      Custom::AuditLog.create!(associated_type: 'Account', associated_id: account.id, action: 'update',
+                               auditable_type: 'Account', auditable_id: account.id,
+                               user_id: admin.id, user_type: 'User', username: admin.name)
+      Custom::AuditLog.create!(associated_type: 'Account', associated_id: account.id, action: 'update',
+                               auditable_type: 'Inbox', auditable_id: 1,
+                               user_id: other_admin.id, user_type: 'User', username: other_admin.name)
+    end
+
+    def search(term)
+      get "/api/v1/accounts/#{account.id}/audit_logs",
+          params: { q: term }, headers: admin.create_new_auth_token, as: :json
+      response.parsed_body
+    end
+
+    it 'restricts the trail to entries whose recorded actor matches, case-insensitively and on a fragment' do
+      body = search('al-rashed')
+
+      expect(body['total_entries']).to eq(1)
+      expect(body['audit_logs'].map { |entry| entry['username'] }).to eq(['Noura Al-Rashed'])
+    end
+
+    it 'returns an empty page rather than everything when nothing matches' do
+      expect(search('nobody-by-that-name')['total_entries']).to eq(0)
+    end
+
+    # The actor name is captured on the row at write time precisely so an entry stays attributable after the
+    # person's record is gone. Searching the live `users` table would lose exactly those entries.
+    it 'still finds an entry whose actor no longer exists' do
+      other_admin.account_users.destroy_all
+      other_admin.destroy!
+
+      expect(search('al-rashed')['total_entries']).to eq(1)
+    end
+
+    it 'treats a blank search as no search at all' do
+      expect(search('   ')['total_entries']).to eq(2)
+    end
+
+    # `%` and `_` are LIKE wildcards; a term containing them must match them literally rather than everything.
+    it 'does not let a wildcard in the term widen the search' do
+      expect(search('%')['total_entries']).to eq(0)
+    end
+  end
+
+  # `Time.zone.at` answers year 31690708 for 10**15 without raising, so the value became a real Time, reached
+  # PostgreSQL — whose `timestamp` maximum is 294276 AD — as a literal it rejects, and the request 500d.
+  describe 'an out-of-range date bound on the audit trail' do
+    before do
+      account.enable_features!('audit_logs')
+      admin
+    end
+
+    it 'ignores the window instead of reaching the database' do
+      get "/api/v1/accounts/#{account.id}/audit_logs",
+          params: { since: 0, until: 10**15 }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['total_entries']).to eq(Custom::AuditLog.for_account(account).count)
+    end
+  end
+
+  # Specification D §2: `audience` is "the denominator of every rate the UI computes" and `status_counts` must
+  # carry `queued`, which the page uses to word its "still processing" banner. Rows written only as each
+  # contact's turn came made the denominator grow with the run and `queued` unreachable.
+  describe 'the campaign audience snapshot' do
+    let(:channel) do
+      create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
+                                validate_provider_config: false)
+    end
+    let(:label) { create(:label, account: account, title: 'autumn') }
+    let(:campaign) do
+      create(:campaign, account: account, inbox: channel.inbox, audience: [{ type: 'Label', id: label.id }])
+    end
+    let!(:contacts) do
+      Array.new(3) do |index|
+        create(:contact, account: account, phone_number: "+9655000000#{index}").tap do |contact|
+          contact.update_labels([label.title])
+        end
+      end
+    end
+
+    it 'records every addressed contact at queued before the first send' do
+      Campaigns::RecipientSnapshot.new(campaign).seed(campaign.audience_contacts)
+
+      recipients = CampaignRecipient.where(campaign: campaign)
+      expect(recipients.count).to eq(3)
+      expect(recipients.pluck(:status).uniq).to eq(['queued'])
+      expect(recipients.pluck(:contact_id)).to match_array(contacts.map(&:id))
+    end
+
+    # A campaign can be seeded again — a retry, or a second run — and an outcome already recorded must not be
+    # reset to queued by it.
+    it 'leaves an outcome already recorded alone when seeded again' do
+      snapshot = Campaigns::RecipientSnapshot.new(campaign)
+      snapshot.seed(campaign.audience_contacts)
+      snapshot.sent(contacts.first, source_id: 'wamid.first')
+
+      snapshot.seed(campaign.audience_contacts)
+
+      expect(CampaignRecipient.find_by(campaign: campaign, contact: contacts.first)).to have_attributes(
+        status: 'sent', source_id: 'wamid.first'
+      )
+      expect(CampaignRecipient.where(campaign: campaign).count).to eq(3)
+    end
+
+    it 'reports the whole audience as the denominator with the remainder still queued' do
+      snapshot = Campaigns::RecipientSnapshot.new(campaign)
+      snapshot.seed(campaign.audience_contacts)
+      snapshot.sent(contacts.first, source_id: 'wamid.first')
+
+      metrics = Campaigns::RecipientMetrics.new(campaign).as_json
+
+      expect(metrics['audience']).to eq(3)
+      expect(metrics['status_counts']).to include('queued' => 2, 'sent' => 1)
+    end
+  end
+
+  # Custom::Audit::Capture is what keeps a rejected audit row from aborting the product action that caused it,
+  # and what honours AuditTrail::Capture.suppressed?. The audience concern was the one capture point that
+  # declared `audited` without prepending it.
+  describe 'audience audit capture' do
+    it 'does not fail the product action when the audit row cannot be written' do
+      allow_any_instance_of(Custom::AuditLog).to receive(:create_or_update).and_raise(ActiveRecord::StatementInvalid, 'nope')
+
+      audience = nil
+      expect do
+        audience = create(:custom_filter, account: account, user: admin, filter_type: :contact)
+      end.not_to raise_error
+
+      expect(audience.reload).to be_persisted
+    end
+
+    it 'honours a suppressed capture' do
+      expect do
+        AuditTrail::Capture.suppressed { create(:custom_filter, account: account, user: admin, filter_type: :contact) }
+      end.not_to change(Custom::AuditLog, :count)
+    end
+  end
 end

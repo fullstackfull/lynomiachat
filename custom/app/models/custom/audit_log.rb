@@ -26,6 +26,14 @@ class Custom::AuditLog < Audited::Audit
   scope :for_account, ->(account) { where(associated_type: 'Account', associated_id: account.id) }
   scope :of_type, ->(types) { where(auditable_type: types) }
   scope :by_actor, ->(user_id) { where(user_id: user_id) }
+
+  # The trail's own record of who acted, not the `users` table. An entry stays attributable after the person's
+  # record is deleted and names a machine credential that was never a User at all (the rule at the top of this
+  # file), so searching the live table would answer a different question from the one the page asks -- and would
+  # lose exactly the entries the trail exists to keep.
+  scope :by_actor_name, lambda { |name|
+    where('audits.username ILIKE ?', "%#{sanitize_sql_like(name)}%")
+  }
   scope :occurred_between, ->(from, to) { where(created_at: from..to) }
   scope :newest_first, -> { order(created_at: :desc, id: :desc) }
   scope :oldest_first, -> { order(created_at: :asc, id: :asc) }

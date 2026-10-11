@@ -40,6 +40,9 @@ class Campaigns::RecipientSnapshot
     sent_at delivered_at read_at failed_at
   ].freeze
 
+  # One statement per thousand contacts when the audience snapshot is seeded.
+  SEED_BATCH = 1_000
+
   def initialize(campaign)
     @campaign = campaign
   end
@@ -64,7 +67,37 @@ class Campaigns::RecipientSnapshot
     )
   end
 
+  # The audience as it stood when the run began, written before the first provider call.
+  #
+  # Every rate the analytics page computes is over `audience`, which is the size of this snapshot, and the page
+  # polls while a run is in progress (specification D §2). Writing a row only as each contact's turn came made
+  # that denominator grow with the loop, so each poll divided by a different number -- and `queued`, which is
+  # how the page words its "still processing" banner, could never be positive at all, because the only row ever
+  # written already carried its outcome.
+  #
+  # `on_duplicate: :skip`, which `unique_by` selects: re-running a campaign that already has rows must not reset
+  # an outcome already recorded. The per-contact writers above advance these rows from `queued`.
+  #
+  # Batched because a marketing audience is not a page: one statement per thousand contacts rather than one
+  # statement of any size.
+  def seed(contacts)
+    contacts.each_slice(SEED_BATCH) do |batch|
+      CampaignRecipient.insert_all( # rubocop:disable Rails/SkipsModelValidations
+        batch.map { |contact| queued_row(contact) },
+        unique_by: %i[campaign_id contact_id]
+      )
+    end
+  end
+
   private
+
+  def queued_row(contact)
+    {
+      account_id: @campaign.account_id, campaign_id: @campaign.id,
+      contact_id: contact.id, inbox_id: @campaign.inbox_id,
+      status: CampaignRecipient.statuses[:queued]
+    }
+  end
 
   # The timestamps are left to `record_timestamps`, which stamps both on an insert and only `updated_at` on a
   # conflict -- which is exactly the rule this needs, and naming `updated_at` here as well would assign the

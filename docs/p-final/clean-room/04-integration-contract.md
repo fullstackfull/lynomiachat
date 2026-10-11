@@ -122,6 +122,7 @@ The frontend is clean, shipped and **not part of the rewrite**. These keys are r
 | `dashboard/helper/auditlogHelper.js` | per entry: `auditable_type`, `action`, `auditable_id`, `user_id`, `audited_changes`; and the `<type>:<action>` label vocabulary this file enumerates |
 | `routes/dashboard/settings/auditlogs/Index.vue` | `created_at`, `remote_address`, `username` |
 | `routes/dashboard/settings/auditlogs/components/AuditLogFilters.vue` | the request parameters `type`, `sort`, `since`, `until`, `range`, `user_id`, `page` |
+| `routes/dashboard/settings/auditlogs/Index.vue` (search box) | the request parameter `q`. **This row was missing and is the reason the rewrite dropped the search**; corrected after integration, see `specs/A-audit-trail-read.md` §2 |
 
 ### 3.2 Roles and memberships
 

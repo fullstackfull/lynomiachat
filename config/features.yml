@@ -238,9 +238,14 @@
   display_name: CSAT Review Notes
   enabled: false
   premium: true
+# Lynomia does not sell or operate an AI assistant, so no account is created holding one. The endpoints behind
+# this flag are upstream Chatwoot's and are inert without an installation-level OpenAI key, which this
+# installation does not set -- but a default-on AI capability is the wrong default for this product
+# (docs/p-final/05-security-audit.md section 7). Existing accounts keep whatever they were created with: this is
+# the seed for ACCOUNT_LEVEL_FEATURE_DEFAULTS, read by Featurable#enable_default_features on create only.
 - name: captain_tasks
   display_name: Captain Tasks
-  enabled: true
+  enabled: false
 - name: conversation_required_attributes
   display_name: Required Conversation Attributes
   enabled: false

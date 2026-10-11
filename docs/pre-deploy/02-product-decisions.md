@@ -144,8 +144,8 @@ attachments follow.
 exactly what the same person would reach with no set attached — their inbox memberships. The ceiling is still
 `user.inboxes` and still account-scoped. No tenant boundary is crossed. What is wrong is the
 **misrepresentation**: the only defence is the browser. This release applied the opposite principle elsewhere
-in terms — `custom_roles_controller.rb:10-12` says "client gating is not authorization" — and did not apply it
-here.
+in terms — `custom/app/controllers/api/v1/accounts/custom_roles_controller.rb:10-12` says "client gating is not
+authorization" — and did not apply it here.
 
 Secondary and smaller: a set with none of the three zeroes every unread count, so a holder can stop being
 notified of work they still have access to. Availability of information, not confidentiality.
@@ -164,8 +164,12 @@ Option A **narrows** access for existing holders. That is the whole compatibilit
 against real rows before it ships. But the narrowing is bounded in the way that matters: **it narrows them to
 what the client already shows them.** Nobody loses a conversation they can currently see in the product; they
 lose conversations reachable only by bypassing the UI. Cached unread counts need no special handling —
-`permission_mode` does not change — and the invalidation plumbing already exists on both sides
-(`custom_role.rb:58,85-88`; `app/models/account_user.rb:85-95`).
+`permission_mode` does not change. Invalidation plumbing does exist on both sides — `custom_role.rb:58` fires
+`invalidate_holders_visibility` on a permissions change, and `account_user.rb:85-95` does the same for a role
+or set change — but note what it invalidates: both call `Conversations::UnreadCounts::FilteredCountInvalidator`,
+i.e. the **filtered** counter, which is a different class from the `Counter` these capabilities feed and is
+itself behind `unread_count_for_filters`. So the hooks are there to reuse, not already pointed at the right
+cache.
 
 The one real trap in option A is the `:none` set. Today a commerce-only set means "empty inbox on screen, full
 access by API". Under option A it would mean a genuinely empty conversation list, which for an agent who works

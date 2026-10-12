@@ -85,6 +85,12 @@ export const DOC_ARTICLES = Object.freeze({
   webhooks: 'webhooks',
   auditLogs: 'audit-logs',
   troubleshooting: 'troubleshooting',
+  // Platform Support Desk. One article, in the troubleshooting section, because that is where a stuck reader
+  // already is (docs/platform-support/12-refresh-against-product-refinement.md §7). The three tenant surfaces
+  // ask different questions of it -- how the desk works, what to put in a ticket, what a status means -- and
+  // all three are answered by the same article, so one key serves them rather than three slugs that would
+  // have to be written and kept in sync.
+  contactLynomiaSupport: 'contact-lynomia-support',
 });
 
 /**

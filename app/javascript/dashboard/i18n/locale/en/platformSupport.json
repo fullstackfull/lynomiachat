@@ -1,0 +1,127 @@
+{
+  "PLATFORM_SUPPORT": {
+    "SIDEBAR": {
+      "MY_TICKETS": "My tickets",
+      "NEW_TICKET": "New ticket"
+    },
+    "LIST": {
+      "HEADER": "My tickets",
+      "DESCRIPTION": "Questions about Lynomia itself — billing, WhatsApp setup, or something that is not working.",
+      "NEW_TICKET": "New ticket",
+      "OPEN_GROUP": "Open",
+      "CLOSED_GROUP": "Closed",
+      "LAST_ACTIVITY": "Last activity {time}",
+      "UNREAD": "Lynomia has replied since you last looked",
+      "MESSAGES": "{n} message | {n} messages",
+      "EMPTY": {
+        "TITLE": "No tickets yet",
+        "DESCRIPTION": "This is where you talk to Lynomia — billing, WhatsApp setup, something not working.",
+        "NOT_FOR": "For conversations with your own customers, use Inbox."
+      }
+    },
+    "FORM": {
+      "HEADER": "New ticket",
+      "DESCRIPTION": "Tell us what is happening. A Lynomia engineer will reply on the ticket.",
+      "BACK_TO_LIST": "My tickets",
+      "CATEGORY": "What is this about?",
+      "CATEGORY_HINT": "Pick the closest one. We will re-file it if it belongs somewhere else.",
+      "SUBJECT": "Subject",
+      "SUBJECT_PLACEHOLDER": "One line: what is not working",
+      "SUBJECT_REQUIRED": "Add a subject so we know what this is about.",
+      "DESCRIPTION_LABEL": "Description",
+      "DESCRIPTION_PLACEHOLDER": "What you expected, what happened instead, and when it started.",
+      "DESCRIPTION_HINT": "What you expected, what happened instead, and when it started — that is usually enough for us to start.",
+      "DESCRIPTION_REQUIRED": "Add a description so we can start without asking first.",
+      "PRIORITY": "How urgent is this?",
+      "PRIORITY_HINT": "Urgent means the service is down for you. Everything else is High or below.",
+      "ATTACHMENTS": "Attachments",
+      "ATTACHMENTS_LIMITS": "Up to {count} files, {size} each.",
+      "ATTACHMENTS_TYPES": "Accepted: PNG, JPEG, GIF, WebP, PDF, plain text and CSV.",
+      "ATTACHMENTS_ADD": "Add files",
+      "ATTACHMENTS_FULL": "That is the maximum of {count} files.",
+      "ATTACHMENT_REMOVE": "Remove file",
+      "ATTACHMENT_TYPE_REFUSED": "{name} is not an accepted file type.",
+      "ATTACHMENT_TOO_LARGE": "{name} is larger than {size}.",
+      "ATTACHMENT_COUNT_REFUSED": "You can attach up to {count} files.",
+      "ATTACHMENT_UPLOAD_FAILED": "That file could not be uploaded. Try again, or send the ticket without it.",
+      "CANCEL": "Cancel",
+      "SUBMIT": "Send to Lynomia"
+    },
+    "DETAIL": {
+      "BACK_TO_LIST": "My tickets",
+      "OPENED_ON": "Opened {date}",
+      "NEW_REPLY": "New reply",
+      "CLOSED_HINT": "This ticket is closed. Open a new one and we will pick it up from there.",
+      "OPEN_NEW_TICKET": "Open a new ticket"
+    },
+    "THREAD": {
+      "TITLE": "Conversation",
+      "LYNOMIA_SUPPORT": "Lynomia Support",
+      "DOWNLOAD": "Download"
+    },
+    "REPLY": {
+      "TITLE": "Reply",
+      "PLACEHOLDER": "Add anything that helps — what changed, what you tried.",
+      "REOPENS_HINT": "This ticket is resolved. Replying reopens it.",
+      "SEND": "Send reply"
+    },
+    "STATUS_SENTENCE": {
+      "OPEN": "Received. A Lynomia engineer will pick this up.",
+      "IN_PROGRESS": "A Lynomia engineer is working on this.",
+      "WAITING_ON_CUSTOMER": "We need something from you — see the latest reply.",
+      "WAITING_ON_LYNOMIA": "With Lynomia. Nothing needed from you.",
+      "RESOLVED": "Resolved. Reply here if it is not fixed.",
+      "CLOSED": "Closed."
+    },
+    "ENUMS": {
+      "STATUS": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In progress",
+        "WAITING_ON_CUSTOMER": "Waiting on you",
+        "WAITING_ON_LYNOMIA": "With Lynomia",
+        "RESOLVED": "Resolved",
+        "CLOSED": "Closed"
+      },
+      "PRIORITY": {
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High",
+        "URGENT": "Urgent — service is down for us"
+      },
+      "CATEGORY": {
+        "BILLING": "Billing and invoices",
+        "ACCOUNT_ACCESS": "Account access",
+        "CHANNEL_CONNECTION": "Connecting a channel",
+        "WHATSAPP": "WhatsApp",
+        "COMMERCE": "Store and orders",
+        "CAMPAIGNS": "Campaigns",
+        "AUTOMATION": "Automation and flows",
+        "PERFORMANCE": "Something is slow",
+        "DATA_EXPORT": "Getting my data out",
+        "BUG": "Something looks broken",
+        "OTHER": "Something else"
+      }
+    },
+    "EVENTS": {
+      "CREATED": "Ticket opened",
+      "STATUS_CHANGED": "Status changed",
+      "CUSTOMER_REPLIED": "You replied",
+      "OPERATOR_REPLIED": "Lynomia Support replied",
+      "RESOLVED": "Marked resolved",
+      "REOPENED": "Reopened",
+      "CLOSED": "Closed"
+    },
+    "DOCS": {
+      "ABOUT_THE_DESK": "How Lynomia support works",
+      "WHAT_TO_INCLUDE": "What to include in a ticket",
+      "WHAT_STATUSES_MEAN": "What each status means"
+    },
+    "ERROR": {
+      "LIST_FAILED": "Your tickets could not be loaded. Try again in a moment.",
+      "DETAIL_FAILED": "This ticket could not be loaded. Try again in a moment.",
+      "NOT_FOUND": "This ticket does not exist, or it is not one you can see.",
+      "CREATE_FAILED": "This ticket could not be sent. Try again in a moment.",
+      "REPLY_FAILED": "Your reply could not be sent. Try again in a moment."
+    }
+  }
+}

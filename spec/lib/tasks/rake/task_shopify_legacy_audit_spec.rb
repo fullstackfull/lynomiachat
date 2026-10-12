@@ -20,8 +20,17 @@ RSpec.describe Rake::Task do
 
     before { task.reenable }
 
-    it 'says so plainly when there is nothing to migrate' do
-      expect { task.invoke }.to output(/No legacy Shopify installations/).to_stdout
+    # The expected production result. The product owner confirmed no Shopify store is connected in production,
+    # so this is the case that classifies the retirement as safe.
+    it 'reports zero installations as SAFE_TO_RETIRE' do
+      expect { task.invoke }.to output(/legacy Shopify installations = 0.*SAFE_TO_RETIRE/m).to_stdout
+    end
+
+    it 'does not claim SAFE_TO_RETIRE when a record unexpectedly exists' do
+      create(:integrations_hook, account: account, app_id: 'shopify', reference_id: shop, access_token: token)
+
+      expect { task.invoke }.to output(/legacy Shopify installations = 1.*LEGACY_RECORDS_FOUND/m).to_stdout
+      expect { task.invoke }.not_to output(/SAFE_TO_RETIRE/).to_stdout
     end
 
     it 'reports a legacy installation that has not moved to Commerce' do

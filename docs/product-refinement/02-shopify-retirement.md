@@ -163,7 +163,28 @@ as `Commerce::Shopify::ShopDomain`, with the three canonical call sites updated,
 reaches into a legacy namespace. The legacy directory then deletes cleanly. Deleting it outright would break
 the canonical connect flow — a deletion that a path-based sweep would have made.
 
-## 5. Production data: retirement and destruction are two different steps
+## 5. Production data — confirmed empty, so the plan is simpler than it was
+
+> **Production fact, confirmed by the product owner: there are NO Shopify stores connected in production.**
+>
+> Classification: **`SAFE_TO_RETIRE`**, subject to the audit below confirming it on the real server.
+>
+> This removes work rather than adding it. There is deliberately **no migration UI, no re-authorization
+> workflow and no merchant transition process** anywhere in this retirement — building one for zero merchants
+> would be inventing a product nobody needs. The read-only audit stays, as the verification that the premise
+> holds.
+>
+> What the audit prints:
+>
+> | Result | Output | Meaning |
+> |---|---|---|
+> | 0 rows (expected) | `legacy Shopify installations = 0` then `SAFE_TO_RETIRE` | Retirement is complete; nothing further to do |
+> | any rows (unexpected) | `legacy Shopify installations = N` then `LEGACY_RECORDS_FOUND` | The premise did not hold. Nothing is deleted on the strength of the report; a human confirms first |
+>
+> The per-row recommendations in this section exist **only** for that second case. Everything below describes
+> the mechanism that makes a surprise safe, not a process anybody is expected to run.
+
+### The original framing, kept because the safety property still holds
 
 ### What may exist in production
 

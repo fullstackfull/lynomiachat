@@ -3,10 +3,17 @@
 # The legacy Shopify integration was retired as a PRODUCT SURFACE (docs/product-refinement/02-shopify-retirement.md).
 # Its DATA was deliberately not touched: an `Integrations::Hook` with `app_id = 'shopify'` holds a real
 # merchant's authorization, and destroying one silently would take away a connection the merchant granted.
-# Retirement and destruction are two separate decisions, and this task exists to inform the second one.
 #
-# It only reads. There is no counterpart task that deletes: a row is removed by a person who has seen this
-# report, through Super Admin or the console, one account at a time.
+# PRODUCTION IS EXPECTED TO HAVE NONE. The product owner confirmed no Shopify store is connected in
+# production, so this task's job is to VERIFY that rather than to drive a migration. A zero result is the
+# expected one and prints SAFE_TO_RETIRE.
+#
+# This is why there is deliberately no migration UI, no re-authorization workflow and no merchant transition
+# process anywhere in the retirement: building one for zero merchants would be inventing a product nobody
+# needs. The per-row recommendations below exist only for the case the audit UNEXPECTEDLY finds rows -- then a
+# human reads them and decides, one account at a time.
+#
+# It only reads. There is no counterpart task that deletes.
 #
 # NEVER PRINTS A SECRET. `Integrations::Hook#access_token` is the Shopify Admin API token and is an encrypted
 # column (app/models/integrations/hook.rb:26). This task does not select it, does not decrypt it and does not
@@ -60,7 +67,12 @@ namespace :lynomia do
       hooks = Integrations::Hook.where(app_id: 'shopify').select(*ShopifyLegacyAudit::COLUMNS).to_a
 
       if hooks.empty?
-        puts 'No legacy Shopify installations. Nothing to migrate; the retirement is complete for this installation.'
+        puts 'legacy Shopify installations = 0'
+        puts ''
+        puts 'SAFE_TO_RETIRE'
+        puts ''
+        puts 'Nothing to migrate. The canonical Commerce Shopify architecture is the only Shopify path on this'
+        puts 'installation, and no merchant transition is required.'
         next
       end
 
@@ -88,7 +100,14 @@ namespace :lynomia do
         next
       end
 
-      puts "#{rows.count} legacy Shopify installation(s) across #{rows.map { |r| r[:account_id] }.uniq.count} account(s)."
+      puts "legacy Shopify installations = #{rows.count}"
+      puts ''
+      puts 'LEGACY_RECORDS_FOUND'
+      puts ''
+      puts 'This was NOT expected: production was recorded as having no Shopify stores connected. Do not delete'
+      puts 'anything on the strength of this report alone -- confirm with the product owner first.'
+      puts ''
+      puts "across #{rows.map { |r| r[:account_id] }.uniq.count} account(s):"
       puts ''
       rows.each do |row|
         puts format('  hook %<hook>-7s account %<account>-6s %<name>-28s shop=%<shop>-40s commerce_store=%<store>-4s -> %<rec>s',

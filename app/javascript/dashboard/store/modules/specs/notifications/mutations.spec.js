@@ -183,4 +183,41 @@ describe('#mutations', () => {
       expect(state.records).toEqual({});
     });
   });
+
+  // `primary_actor_id` IS NOT UNIQUE: it is an id within a type, and the index whose name says otherwise is
+  // not a unique index. Keying the dedup on the id alone made a Platform Support ticket row evict the
+  // conversation row that happens to share its id.
+  describe('#SET_NOTIFICATIONS across actor types', () => {
+    it('keeps two rows whose primary_actor_id matches but whose type does not', () => {
+      const state = {
+        records: {
+          1: { id: 1, primary_actor_type: 'Conversation', primary_actor_id: 7 },
+        },
+      };
+
+      mutations[types.SET_NOTIFICATIONS](state, [
+        {
+          id: 2,
+          primary_actor_type: 'PlatformSupport::Ticket',
+          primary_actor_id: 7,
+        },
+      ]);
+
+      expect(Object.keys(state.records)).toEqual(['1', '2']);
+    });
+
+    it('still replaces an earlier row about the same actor', () => {
+      const state = {
+        records: {
+          1: { id: 1, primary_actor_type: 'Conversation', primary_actor_id: 7 },
+        },
+      };
+
+      mutations[types.SET_NOTIFICATIONS](state, [
+        { id: 2, primary_actor_type: 'Conversation', primary_actor_id: 7 },
+      ]);
+
+      expect(Object.keys(state.records)).toEqual(['2']);
+    });
+  });
 });

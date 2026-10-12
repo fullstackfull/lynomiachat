@@ -43,8 +43,32 @@ class Notification < ApplicationRecord
     participating_conversation_new_message: 5,
     sla_missed_first_response: 6,
     sla_missed_next_response: 7,
-    sla_missed_resolution: 8
+    sla_missed_resolution: 8,
+    # An operator's PUBLIC reply on a Platform Support ticket, and the only Platform Support row type there is
+    # (docs/platform-support/12-refresh-against-product-refinement.md §5). Never written for a ticket's
+    # creation, an assignment, a triage change, any SLA event, or -- above all -- an internal note.
+    #
+    # This constant is edited rather than extended because `NotificationSetting` derives its whole
+    # `email_*?` / `push_*?` predicate vocabulary from it (notification_setting.rb:30-31), and this class
+    # carries no `prepend_mod_with` -- a prepended module cannot replace a constant the class defines and two
+    # other files reference by name.
+    platform_support_reply: 9
   }.freeze
+
+  # Types that live in the bell and in no delivery channel.
+  #
+  # NOT A SPECULATIVE GUARD; THE FLAG IS REACHABLE. Both delivery paths are conversation-shaped. The email
+  # path calls `AgentNotifications::ConversationNotificationsMailer.public_send(notification_type, ...)`
+  # (app/services/notification/email_notification_service.rb:21-23), which has no `platform_support_reply`
+  # method and must never grow one; the push path builds
+  # `app_account_conversation_url(... conversation.display_id)`
+  # (app/services/notification/push_notification_service.rb:42), which a ticket cannot answer. The toggles are
+  # absent from the preferences UI, which renders a hard-coded list
+  # (dashboard/routes/dashboard/settings/profile/constants.js:1-37), but
+  # `Api::V1::Accounts::NotificationSettingsController` permits an arbitrary `selected_email_flags` array
+  # (:23), so a crafted request can switch one on -- and then every operator reply would raise in a background
+  # job. Platform Support email goes through `PlatformSupport::TicketMailer`.
+  IN_APP_ONLY_TYPES = %w[platform_support_reply].freeze
 
   enum notification_type: NOTIFICATION_TYPES
 
@@ -53,7 +77,11 @@ class Notification < ApplicationRecord
   after_destroy_commit :dispatch_destroy_event
   after_update_commit :dispatch_update_event
 
-  PRIMARY_ACTORS = ['Conversation'].freeze
+  # Kept in step, and in the same order, with
+  # `Notifications::ConversationVisibility::VISIBLE_ACTOR_TYPES`: that object is the one definition of which
+  # notifications a member may be shown, and a spec fails if the two lists drift apart. A type added here with
+  # no rule there is invisible, which is the fail-safe direction.
+  PRIMARY_ACTORS = ['Conversation', 'PlatformSupport::Ticket'].freeze
 
   def push_event_data
     # Secondary actor could be nil for cases like system assigning conversation
@@ -165,6 +193,8 @@ class Notification < ApplicationRecord
   end
 
   def user_subscribed_to_notification?(delivery_type)
+    return false if IN_APP_ONLY_TYPES.include?(notification_type)
+
     notification_setting = user.notification_settings.find_by(account_id: account.id)
     return false if notification_setting.blank?
 

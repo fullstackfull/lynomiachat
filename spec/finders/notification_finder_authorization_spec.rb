@@ -99,15 +99,32 @@ RSpec.describe NotificationFinder do
       expect(queries.first).to include('LIMIT')
     end
 
-    it 'spends the same number of statements as an unrestricted member' do
-      f_restricted = (attach('conversation_participating_manage') && finder)
-      restricted = queries_for { f_restricted.notifications.to_a }
-
+    # Measured across CONSTRUCTION as well as the page load, because the authorization lookups happen when the
+    # relation is built (NotificationFinder#initialize -> set_up -> find_all_notifications), not when it is
+    # loaded. Measuring only `.to_a` would have hidden them entirely.
+    #
+    # The page itself costs the same either way -- one statement. What narrowing adds is the fixed cost of
+    # ASKING: reading the membership, its set, and the entitlement override. Fixed per request, not per row,
+    # which is the property that matters.
+    it 'adds a fixed per-request cost and no per-row cost' do
       attach('conversation_manage')
-      f_open = finder
-      unrestricted = queries_for { f_open.notifications.to_a }
+      unrestricted = queries_for { finder.notifications.to_a }
 
-      expect(restricted.length).to eq(unrestricted.length)
+      attach('conversation_participating_manage')
+      restricted = queries_for { finder.notifications.to_a }
+
+      # Exactly one statement reads the notifications page. `LIMIT` alone is not a discriminator -- every
+      # `find_by` in the authorization lookups emits one too.
+      page_statements = restricted.count { |sql| sql.include?('FROM "notifications"') && sql.include?('LIMIT') }
+      expect(page_statements).to eq(1)
+
+      # And the conversations table is reached ONLY as a subselect inside that statement, never as a statement
+      # of its own -- which is what "no per-row authorization query" means here.
+      standalone_conversation_queries = restricted.count { |sql| sql.start_with?('SELECT "conversations"') }
+      expect(standalone_conversation_queries).to eq(0)
+
+      # The fixed cost of asking: the membership, its set, and the entitlement override.
+      expect(restricted.length - unrestricted.length).to be <= 4
     end
 
     it 'never loads the authorized conversation ids into Ruby' do

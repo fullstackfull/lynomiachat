@@ -29,7 +29,30 @@
 # custom-roles endpoint chose for the same reason (custom/app/controllers/api/v1/accounts/custom_roles_controller.rb:7-8):
 # a 403 would confirm that the id exists and belongs to this user. The response is byte-identical whether the
 # id is wrong, somebody else's, or real-but-unauthorized -- asserted.
+# `read_all` IS THE ORDINARY "MARK THIS ONE READ" PATH, not a bulk route, which is why it is narrowed too.
+# `NotificationsAPI#read(primaryActorType, primaryActorId)`
+# (app/javascript/dashboard/api/notifications.js:29-34) POSTs to `read_all` with one conversation's actor, and
+# the store's `read` action calls it on every notification click
+# (app/javascript/dashboard/store/modules/notifications/actions.js:38-51). So the route that looks like a bulk
+# mutation is the hot path for a single notification.
+#
+# It discloses nothing -- `head :ok` either way, and `update_all` skips callbacks so no socket fires -- but
+# unnarrowed it would set `read_at` on rows the member cannot see, and a notification hidden at the time of
+# "mark all read" would come back ALREADY READ if access were restored. Narrowing it keeps the documented
+# restore behaviour honest. An unrestricted membership returns to `super` before any extra SQL is built, so the
+# common case is untouched.
 module Custom::Api::V1::Accounts::NotificationsController
+  def read_all
+    return super if conversation_visibility.unrestricted?
+
+    scope = conversation_visibility.narrow(
+      Current.user.notifications.where(account_id: Current.account.id, read_at: nil)
+    )
+    scope = scope.where(primary_actor: @primary_actor) if @primary_actor
+    scope.update_all(read_at: DateTime.now.utc) # rubocop:disable Rails/SkipsModelValidations
+    head :ok
+  end
+
   private
 
   # Private, as it is on the class this is prepended to (notifications_controller.rb:62 and :71). A prepended

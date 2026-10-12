@@ -346,6 +346,48 @@ RSpec.describe 'Notification feed conversation authorization', type: :request do
     end
   end
 
+  # read_all is how the dashboard marks ONE notification read (api/notifications.js:29-34 ->
+  # store/modules/notifications/actions.js:38-51), so it is both the hot path and a write that must not reach
+  # rows the member cannot see.
+  describe 'mark-read, which is the dashboard per-notification path' do
+    before { attach('conversation_participating_manage') }
+
+    it 'marks the holder own notification read as usual' do
+      post "/api/v1/accounts/#{account.id}/notifications/read_all",
+           params: { primary_actor_type: 'Conversation', primary_actor_id: mine.id },
+           headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(mine_notification.reload.read_at).to be_present
+    end
+
+    it 'does not mark a hidden notification read, even when its conversation id is supplied' do
+      post "/api/v1/accounts/#{account.id}/notifications/read_all",
+           params: { primary_actor_type: 'Conversation', primary_actor_id: theirs.id },
+           headers: agent.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(theirs_notification.reload.read_at).to be_nil
+    end
+
+    it 'leaves hidden rows unread when everything is marked read' do
+      post "/api/v1/accounts/#{account.id}/notifications/read_all", headers: agent.create_new_auth_token, as: :json
+
+      expect(mine_notification.reload.read_at).to be_present
+      expect(theirs_notification.reload.read_at).to be_nil
+      expect(unassigned_notification.reload.read_at).to be_nil
+    end
+
+    it 'still marks everything read for a member who can see everything' do
+      attach('conversation_manage')
+
+      post "/api/v1/accounts/#{account.id}/notifications/read_all", headers: agent.create_new_auth_token, as: :json
+
+      expect([mine_notification, unassigned_notification, theirs_notification].map { |n| n.reload.read_at })
+        .to all(be_present)
+    end
+  end
+
   # The payload the browser receives without asking. Gated for the same reason the feed is: it carries
   # push_event_data, and one of its writers is a cron with no user context.
   describe 'the ActionCable payload' do

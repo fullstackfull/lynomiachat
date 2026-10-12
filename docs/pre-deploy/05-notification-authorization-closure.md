@@ -132,7 +132,17 @@ widened, will see the previously hidden notifications reappear.
 | `POST …/notifications/destroy_all` | `destroy_all` | destroys only the authorized set |
 | ActionCable `notification.created` / `.updated` | listener | payload suppressed when unauthorized |
 | ActionCable `notification.deleted` | listener | unchanged by design (id only; counts already narrowed) |
-| `POST …/notifications/read_all` | `read_all` | **unchanged** — see §6 |
+| `POST …/notifications/read_all` | `read_all` | narrowed — see below |
+
+**`read_all` deserves its own note, because it is not what its name suggests.** It is the dashboard's
+*per-notification* "mark read": `NotificationsAPI#read(primaryActorType, primaryActorId)`
+(`app/javascript/dashboard/api/notifications.js:29-34`) POSTs to `read_all` with one conversation's actor, and
+the store calls it on every notification click
+(`app/javascript/dashboard/store/modules/notifications/actions.js:38-51`). So the route that looks like a bulk
+mutation is the hot path for a single row. It discloses nothing — `head :ok` either way, and `update_all` skips
+callbacks so no socket fires — but unnarrowed it would set `read_at` on rows the member cannot see, and a
+notification hidden at the time of "mark all read" would return **already read** if access were restored. It is
+narrowed for that reason, and an unrestricted membership returns to `super` before any extra SQL is built.
 
 ---
 
@@ -155,6 +165,18 @@ The narrowing is a single uncorrelated subselect. For an unrestricted membership
   `Nested Loop`.
 * **`:base`** adds nothing — `unrestricted?` returns before any subquery is built.
 * **`:none`** renders `1=0`, so no conversation notification is returned and no conversation rows are scanned.
+
+**The schema fact that makes the shape safe.** `notifications.primary_actor_type` is `null: false`
+(`db/schema.rb:1578`). The `NOT IN` leg relies on three-valued logic, and on a nullable column
+`NULL NOT IN (...)` evaluates to NULL rather than true — which would have silently dropped every row with no
+actor type. It is non-null, so there is no hazard.
+
+**Measured cost of the record-path gate**, which the socket listener pays per broadcast: **1 query** for an
+unrestricted membership (the `account_users` lookup) and **4** for a narrowed one (membership, the user reload,
+the permission set, and the entitlement override — the last because `Custom::AccountUser#permissions` is not
+memoized, which this task was told not to change). One indexed lookup on a path that already performs an
+`INSERT`, two `COUNT`s and up to three job enqueues is why both socket events are gated rather than only the
+unsafe one.
 
 **Why the narrowing had to go INSIDE the relation, not after the fetch.** The dashboard treats a short page as
 the end of the feed: `app/javascript/dashboard/store/modules/notifications/actions.js:21` commits
@@ -186,26 +208,46 @@ The jbuilder calls `primary_actor.push_event_data`, `secondary_actor&.push_event
 
 ## 6. Known limitations, stated rather than hidden
 
-1. **`read_all` is not narrowed.** It uses `update_all` (`notifications_controller.rb:18,21`), which skips
-   callbacks, so it fires no socket broadcast and discloses nothing. But it does set `read_at` on rows the
-   member cannot see, so a notification hidden at the time of "mark all read" will come back *already read* if
-   access is restored. Left alone because it is a bulk mutation with no per-record response, and the decision
-   scoped this closure to read endpoints.
-2. **`set_primary_actor` resolves a conversation id without account scoping**
+1. **A browser that already fetched a notification keeps rendering it.** This is a read-time design, so
+   nothing on the server can evict a row from a store the client already holds. `CLEAR_NOTIFICATIONS`
+   (`app/javascript/dashboard/store/modules/notifications/mutations.js:10-13`) is the only thing that empties
+   `$state.records`, and a reconnect refetches page 1 and *merges* rather than replaces. So after a permission
+   is revoked mid-session the stale row — including its `pushMessageBody` — stays on screen until the user
+   changes a filter or reloads. Gating the socket does not help, because the row is already local. This is the
+   residual consequence of read-time-only enforcement and the one case where the operator should expect a
+   reload to be needed.
+2. **A suppressed socket event also suppresses its count refresh.** The listener returns before `super`, and
+   `super` is what carries `unread_count`/`count`. Benign today — a hidden row does not change the narrowed
+   counts — but it is a coupling worth knowing, because the socket is the only thing that writes `meta`
+   between fetches.
+3. **Per-row fan-out on two existing paths costs more than it did.** `destroy_all` destroys row by row and each
+   `after_destroy_commit` builds a `NotificationFinder` for the counts, so N destroyed rows means roughly 2N
+   now-narrowed counts; and `ReopenSnoozedNotificationsJob` calls `update!` per row, so each unsnoozed
+   notification now also pays the 1–4 query gate above. Both fan-outs pre-date this change — the counts and the
+   broadcasts were already per row — but each unit is now slightly more expensive. Neither is on a request
+   path: `destroy_all` and the cron both run on Sidekiq.
+4. **`set_primary_actor` resolves a conversation id without account scoping**
    (`notifications_controller.rb:64-69`). The resolved record is only used as a filter on the caller's own
    rows, so it is an oracle at worst rather than a data leak. Pre-existing; not touched.
-3. **The inbox/team ceiling is not applied to the feed.** This closure narrows by the *capability*, which is
+5. **The inbox/team ceiling is not applied to the feed.** This closure narrows by the *capability*, which is
    what the decision named. A member removed from an inbox still sees notifications for that inbox's
    conversations. That is a distinct, pre-existing gap that predates DECISION 1, and closing it would require
    expressing `ConversationPolicy#show?`'s inbox-**or**-team ceiling as a relation — a second interpretation of
    a rule this work was told not to reinterpret. Recorded for a separate decision.
-4. **The notification index's pre-existing N+1** (§5). Fixing it means adding preloads to an OSS finder and
+6. **The notification index's pre-existing N+1** (§5). Fixing it means adding preloads to an OSS finder and
    would change query counts other specs may assert; it is unrelated to authorization.
-5. **Deliveries are not read surfaces and were not gated.** Push/FCM and e-mail fire from
+7. **Deliveries are not read surfaces and were not gated.** Push/FCM and e-mail fire from
    `after_create_commit` (`app/models/notification.rb:52`), at which point `NotificationBuilder` has already
    established authorization. A member narrowed *after* creation will not receive a new delivery, because no
    new notification is created for them.
-6. **A correction to `04-decisions-implemented.md`.** That document's architecture notes asserted that no OSS
+8. **A notification about something that is neither a Conversation nor a Message passes through, and the index
+   cannot render it.** `Notification#push_message_title` calls `display_id` on the primary actor
+   unconditionally, so such a row raises `NoMethodError` in `index.json.jbuilder` — before and after this
+   change alike, since the unnarrowed finder returned it too. The pass-through is what the decision asks for
+   ("notifications not associated with a Conversation must remain unaffected") and nothing creates such a row
+   today; the renderer fragility is pre-existing and separate.
+
+9. **A correction to `04-decisions-implemented.md`.** That document's architecture notes asserted that no OSS
    `app/` file references a constant defined only under `custom/`. That is **wrong**, and the real invariant is
    narrower: no `app/` file names a `Custom::`-prefixed constant. Four unprefixed `custom/` constants are
    already referenced from `app/` — `Audience::Usage` (`app/views/api/v1/models/_custom_filter.json.jbuilder`),

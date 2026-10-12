@@ -133,6 +133,23 @@ RSpec.describe Commerce::StoreConnection do
       expect(connection.rotate_credentials(store, new_credentials).reload.credentials).to eq(new_credentials)
     end
 
+    # A rotation is the other write that is handed live keys. Commerce::AuditTrail records the status change and
+    # writes a tagged log line, and neither may carry what it was given.
+    it 'records the rotation without the keys, in the audit row or the log line' do
+      store = connect
+      rotated = { 'consumer_key' => "ck_#{'e' * 40}", 'consumer_secret' => "cs_#{'f' * 40}" }
+      logged = []
+      allow(Rails.logger).to receive(:info) { |line| logged << line.to_s }
+
+      connection.rotate_credentials(store, rotated)
+
+      audit = Custom::AuditLog.where(auditable: store, comment: 'commerce.credentials_rotated').sole
+      expect(audit).to have_attributes(user: admin, action: 'update')
+      expect(audit.audited_changes.to_json).not_to include('ck_', 'cs_', 'eeee', 'ffff')
+      expect(logged.join("\n")).not_to include('ck_', 'cs_', 'eeee', 'ffff')
+      expect(store.reload.credentials).to eq(rotated)
+    end
+
     it 'connects any number of stores when the plan sets no store limit' do
       plan.update!(limits: { 'stores' => '' })
       create_list(:commerce_store, 2, account: account)

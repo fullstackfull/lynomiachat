@@ -55,6 +55,9 @@ RSpec.describe NotificationFinder do
       attach('contact_manage')
 
       expect(finder.notifications).to be_empty
+      # Hidden, not deleted. The allow-list is a read-time decision, so the row it refuses is still there --
+      # which is what makes it reversible when somebody authorizes that actor type.
+      expect(foreign_actor_notification.reload).to be_present
     end
 
     it 'is refused in the counts too, so the badge cannot advertise what the feed will not show' do

@@ -113,9 +113,9 @@
               Visually distinct by border AND icon, not by colour alone: the single most likely operator error
               on a desk like this is a note sent as a reply, and colour is the weakest signal against it.
             %>
-            <li class="border border-amber-200 bg-amber-25 rounded-lg p-3 border-s-4 border-s-amber-400 ps-3">
+            <li class="border border-yellow-300 bg-yellow-50 rounded-lg p-3 border-s-4 ps-3">
               <div class="flex items-baseline justify-between gap-3 mb-1">
-                <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-800">
+                <span class="inline-flex items-center gap-1 text-xs font-medium text-yellow-900">
                   <svg width="12" height="12"><use xlink:href="#icon-lock-line" /></svg>
                   Internal note &mdash; <%= record.author_name %>
                 </span>
@@ -143,7 +143,7 @@
       <%#
         Two compose forms, deliberately NOT one form with a visibility checkbox. The public/internal choice is
         made by which box you type in, and the two are styled so they are not confusable: the reply is the
-        primary action, the note is the amber, lock-marked one with a different submit label.
+        primary action, the note is the yellow, lock-marked one with a different submit label.
       %>
       <div class="grid grid-cols-1 gap-4">
         <div class="border border-slate-200 rounded-lg p-4">
@@ -163,20 +163,20 @@
           <% end %>
         </div>
 
-        <div class="border border-amber-300 bg-amber-25 rounded-lg p-4">
-          <h3 class="inline-flex items-center gap-1 text-sm font-medium text-amber-900 mb-1">
+        <div class="border border-yellow-300 bg-yellow-50 rounded-lg p-4">
+          <h3 class="inline-flex items-center gap-1 text-sm font-medium text-yellow-900 mb-1">
             <svg width="14" height="14"><use xlink:href="#icon-lock-line" /></svg>
             Internal note
           </h3>
-          <p class="text-xs text-amber-900 mb-3">
+          <p class="text-xs text-yellow-900 mb-3">
             Lynomia only. The customer never sees this, is not notified, and cannot tell it happened.
           </p>
           <%= form_with url: note_super_admin_platform_support_path(id: @ticket.id), method: :post do |form| %>
             <%= form.text_area :body, rows: 3, required: true,
                                placeholder: 'Triage, findings, what you tried.',
-                               class: 'w-full border border-amber-300 rounded-md px-2 py-1 text-sm' %>
+                               class: 'w-full border border-yellow-300 rounded-md px-2 py-1 text-sm' %>
             <%= form.submit 'Save internal note',
-                            class: 'mt-2 border border-amber-400 text-amber-900 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+                            class: 'mt-2 border border-yellow-400 text-yellow-900 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
           <% end %>
         </div>
       </div>

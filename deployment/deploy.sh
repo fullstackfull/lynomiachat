@@ -291,8 +291,9 @@ as_app 'test -s public/packs/js/sdk.js' || fail "sdk build produced no public/pa
 # ---------------------------------------------------------------------------
 log "6b. Quiet the workers and let the in-flight set drain"
 
-# Sidekiq is told to stop taking new work, then given up to 60s to finish what it is holding, BEFORE the
-# restart. Two reasons, one general and one specific to this release:
+# Sidekiq is told to stop taking new work, then given 30 probes -- at least 60s of sleeping, plus however long
+# each `rails runner` boot takes -- to finish what it is holding, BEFORE the restart. Two reasons, one general
+# and one specific to this release:
 #
 #   * A restart under load kills jobs mid-flight. Sidekiq pushes an interrupted job back for retry, so the work
 #     is not lost, but a job that had already made a provider call is retried from the top -- which for a
@@ -315,10 +316,17 @@ fi
 # reported as unknown and the loop keeps asking.
 #
 # WHY A SENTINEL RATHER THAN THE WHOLE OF STDOUT. The second version required the entire captured output to
-# match `^[0-9]+$`. On the real host it never did: `as_app` runs a LOGIN shell, so Dotenv, RubyLLM and Sidekiq
-# each printed an informational line to stdout alongside the number. A genuine empty in-flight set was
-# therefore read as unreadable, and with REQUIRE_DRAIN set that stopped a deploy whose workers had in fact
-# drained -- the opposite of the failure the version before it had.
+# match `^[0-9]+$`. On the real host it never did: Dotenv, RubyLLM and Sidekiq each printed an informational
+# line to stdout alongside the number. A genuine empty in-flight set was therefore read as unreadable, and
+# with REQUIRE_DRAIN set that stopped a deploy whose workers had in fact drained -- the opposite of the
+# failure the version before it had.
+#
+# The noise is RAILS BOOT LOGGING, not the login shell. `RAILS_LOG_TO_STDOUT` defaults to true
+# (config/environments/production.rb) and dotenv's Rails log subscriber announces itself through
+# `Rails.logger`, so it is the APPLICATION writing to the captured stream. It cannot be the `-l` in
+# `as_app`: if the login shell itself wrote to stdout, stage 0's `as_app 'git status --porcelain' | grep -q .`
+# would call every deploy dirty and abort long before this one. That distinction matters here -- app logging
+# is unbounded, which is why the diagnostic below must not assume the output is small.
 #
 # So `rails runner` now prints ONE machine-readable line and the shell reads only that line. The contract:
 #
@@ -342,11 +350,14 @@ for attempt in $(seq 1 30); do
   probe_out="$(as_app 'RAILS_ENV=production bundle exec rails runner "
     require %q(sidekiq/api); puts %(__LYNOMIA_BUSY__=#{Sidekiq::Stats.new.workers_size})"')" || probe_status=$?
 
-  busy=''
+  # Parsed whichever way the probe exited, so the note below can say what was actually on stdout; the STATUS
+  # still decides whether the reading is trusted. A sentinel printed by a run that then failed is not an answer.
   sentinel_values=()
-  if [[ $probe_status -eq 0 ]]; then
-    mapfile -t sentinel_values < <(printf '%s\n' "$probe_out" | sed -n 's/^__LYNOMIA_BUSY__=\([0-9][0-9]*\)$/\1/p')
-    [[ ${#sentinel_values[@]} -eq 1 ]] && busy="${sentinel_values[0]}"
+  mapfile -t sentinel_values < <(printf '%s\n' "$probe_out" | sed -n 's/^__LYNOMIA_BUSY__=\([0-9][0-9]*\)$/\1/p')
+
+  busy=''
+  if [[ $probe_status -eq 0 && ${#sentinel_values[@]} -eq 1 ]]; then
+    busy="${sentinel_values[0]}"
   fi
 
   if [[ -n $busy ]]; then
@@ -365,7 +376,13 @@ ${#sentinel_values[@]} sentinel line(s))"
     # above, and printing it turns the next occurrence into a one-deploy diagnosis.
     if [[ $attempt -eq 30 ]]; then
       echo "      the probe's last stdout was:"
-      printf '%s\n' "$probe_out" | head -n 20 | sed 's/^/      | /'
+      # No pipeline. `printf ... | head -n 20` looks harmless and is not: once the probe's output exceeds the
+      # 64 KiB pipe buffer, head closes its stdin, printf takes SIGPIPE, and under `pipefail` the whole
+      # pipeline fails -- which the ERR trap turns into an aborted deploy, from the one branch whose entire
+      # purpose is to NOT abort. `mapfile -n 20` reads at most twenty lines with no second process at all.
+      probe_tail=()
+      mapfile -n 20 -t probe_tail <<< "$probe_out"
+      for probe_line in "${probe_tail[@]}"; do printf '      | %s\n' "$probe_line"; done
     fi
   fi
   sleep 2
@@ -377,9 +394,9 @@ done
 # that risk unattended. docs/p-final/08-production-uat-runbook.md states what to do when this line appears.
 if [[ $drained -eq 0 ]]; then
   if [[ -n ${REQUIRE_DRAIN:-} ]]; then
-    fail "sidekiq did not confirm an empty in-flight set within 60s and REQUIRE_DRAIN is set. The release is checked out and migrated; the OLD code is still serving. See docs/p-final/08-production-uat-runbook.md section 16."
+    fail "sidekiq did not confirm an empty in-flight set in 30 probes and REQUIRE_DRAIN is set. The release is checked out and migrated; the OLD code is still serving. See docs/p-final/08-production-uat-runbook.md section 16."
   fi
-  echo "WARNING: sidekiq did not confirm an empty in-flight set within 60s. Restarting anyway."
+  echo "WARNING: sidekiq did not confirm an empty in-flight set in 30 probes. Restarting anyway."
   echo "         A job that had already called a provider will be retried from the top after the restart."
   echo "         See docs/p-final/08-production-uat-runbook.md section 16."
 fi

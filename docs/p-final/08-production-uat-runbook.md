@@ -638,15 +638,24 @@ A growing retry set after the deploy is a signal: read what is retrying before c
 **Read this before §1, not after §15.** §0.5 points here.
 
 `deployment/deploy.sh` stage 6b quiets `chatwoot-worker.1.service` and waits for the in-flight set to
-drain before the restart, up to 60 seconds. Watch it, and do not skip it.
+drain before the restart: 30 probes, two seconds apart, plus however long each `rails runner` boot takes.
+Watch it, and do not skip it.
 
 Two reasons. A restart under load interrupts jobs mid-flight; Sidekiq pushes an interrupted job back for retry,
 so nothing is lost, but a job that had already made a provider call is retried from the top — which for a
 campaign send means a second WhatsApp message to a real person. And this release deletes
 `Campaigns::UpdateRecipientStatusJob`, which the previous revision enqueued with a two-second delay and up to
-five retries, so instances are sitting in the scheduled and retry sets at the moment of the restart. Draining
-first lets the old code consume its own jobs; not draining leaves them raising `NameError` until they reach the
-dead set.
+five retries, so instances are sitting in the scheduled and retry sets at the moment of the restart. Not
+draining leaves them raising `NameError` until they reach the dead set.
+
+**What stage 6b's automatic check does and does not cover.** It reads `Sidekiq::Stats#workers_size`, which sums
+`busy` across every registered process (`sidekiq/api.rb`) -- that is jobs **currently executing**, and nothing
+else. It is the right measure for the first reason above, and it does not measure the second at all: a job in
+the scheduled or retry set is not busy. Quieting makes that gap wider rather than narrower, because
+`Launcher#quiet` terminates the poller (`sidekiq/launcher.rb`), so once stage 6b has sent SIGTSTP the process
+stops pulling from those sets entirely. "Drained" therefore means "nothing is mid-flight", which is what
+protects you from a repeated provider call -- it does not mean the scheduled and retry sets are empty. Use the
+command below to see all five numbers, and judge the scheduled and retry sets yourself.
 
 **What to check**
 
@@ -662,10 +671,12 @@ sudo -u <app> RAILS_ENV=production bundle exec rails runner \
 **If the drain does not confirm.** Stage 6b prints one of two lines when it gives up, and neither is a
 success:
 
-- `note: could not read sidekiq's in-flight set (attempt n/30)` — the probe itself failed, so the in-flight set
-  is unknown rather than empty. Check Redis before anything else: if Redis is unreachable the restart is not
+- `note: could not read sidekiq's in-flight set (attempt n/30, probe exit X, M sentinel line(s))` — the probe
+  itself failed, so the in-flight set is unknown rather than empty. `probe exit` is `rails runner`'s own status
+  and `sentinel line(s)` is how many parseable answers its output held; on the last attempt the script also
+  prints up to twenty lines of what the probe actually said. Check Redis before anything else: if Redis is unreachable the restart is not
   the problem you have.
-- `WARNING: sidekiq did not confirm an empty in-flight set within 60s. Restarting anyway.` — a job is still
+- `WARNING: sidekiq did not confirm an empty in-flight set in 30 probes. Restarting anyway.` — a job is still
   running. The script does not stop, because stopping is a judgement the operator owns.
 
 In either case you are at a coherent hold point: the release is checked out and migrated, and the **old code is

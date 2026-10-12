@@ -146,7 +146,16 @@ Both, measured on the final tree.
 
 *JavaScript:* the **whole** suite, not a subset — `pnpm vitest run`, 494 files, 5,339 tests, 0 failures.
 
-**O. Does the production build pass?**
+**O. Is there visual evidence that the operator pages work?**
+Yes, in `12-visual-evidence.md` and `screenshots/`: eight full-page captures from Chromium against a running
+server, signed in through the real Devise form. They confirm the three dead controls in a browser — the page
+title now renders (`Operations — Queue - Chatwoot`), pagination renders (`1 2 3 Next › Last »`, with one
+container and two `page=2` links in the DOM), and the Sidekiq `Investigate` link reads `/monitoring/sidekiq`
+and returns HTTP 200 when followed. The signal detail page was reached by clicking the queue's own link, not
+a constructed URL. One subresource 404s on every Super Admin page — the support-widget snippet with an empty
+token, which is test-environment configuration and was checked to be the only failing request.
+
+**O2. Does the production build pass?**
 Yes. `vite build --mode production` completes; build artifacts were discarded rather than committed.
 
 **P. Is `rubocop` clean on every Ruby file this project touched?**

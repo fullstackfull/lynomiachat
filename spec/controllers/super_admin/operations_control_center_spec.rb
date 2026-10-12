@@ -295,5 +295,35 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
         expect(response.body).to include('[redacted]')
       end
     end
+
+    # Two defects the existing examples could not see, because asserting a 200 and the absence of secrets
+    # passes just as well on a page that silently renders neither its title nor its pagination.
+    describe 'what the operator can actually see on the page' do
+      it 'renders the page title the layout asks for' do
+        get '/super_admin/operations/queue'
+
+        # `content_for(:page_title)` was a key nothing reads: layouts/super_admin/application.html.erb
+        # renders `content_for(:title)`, so every V2 page was titled " - Lynomia Chat".
+        expect(response.body).to include('<title>')
+        expect(response.body).to match(/<title>\s*Operations — Queue/)
+      end
+
+      it 'renders working pagination controls when there is more than one page' do
+        # Both must exist BEFORE the request: `signal` is a lazy let, and a queue holding one row has one
+        # page, which renders no pagination however the helper is called.
+        second = Operations::SignalRecorder.new(source: :whatsapp_channel, account: account, subject: inbox)
+                                           .record(:reauthorization_required, severity: :warning,
+                                                                              reason: 'Token expired')
+        expect([signal.id, second.id].uniq.length).to eq(2)
+
+        get '/super_admin/operations/queue', params: { per_page: 1 }
+
+        # `paginate …, theme: 'administrate' rescue nil` named a theme with no app/views/kaminari
+        # directory behind it, so the call raised and the rescue beside it swallowed the raise --
+        # pagination was absent from every Operations page and nothing failed.
+        expect(response.body).to include('pagination')
+        expect(response.body).to include('page=2')
+      end
+    end
   end
 end

@@ -6,7 +6,7 @@
   `reason` and `detail` were bounded and redacted by Operations::SignalRecorder on the way in, and there is no
   raw provider payload anywhere in the model to render.
 %>
-<% content_for(:page_title) { "Operations — #{@signal.signal.humanize}" } %>
+<% content_for(:title) { "Operations — #{@signal.signal.humanize}" } %>
 
 <section class="p-6 max-w-5xl">
   <%= link_to '← Back to queue', queue_super_admin_operations_path, class: 'text-sm text-woot-500' %>

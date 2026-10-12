@@ -5,7 +5,7 @@
   say what it is, who it affects and how long it has been waiting; each row links to the one place an operator
   can act. There is no decorative chart.
 %>
-<% content_for(:page_title) { 'Operations — Queue' } %>
+<% content_for(:title) { 'Operations — Queue' } %>
 
 <section class="p-6">
   <header class="mb-4">
@@ -125,6 +125,7 @@
       </table>
     </div>
 
-    <div class="mt-4"><%= paginate @queue.signals, theme: 'administrate' rescue nil %></div>
+    <%# Default kaminari theme -- see accounts.html.erb. %>
+    <div class="mt-4"><%= paginate @queue.signals %></div>
   <% end %>
 </section>

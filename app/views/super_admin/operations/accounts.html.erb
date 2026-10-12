@@ -41,6 +41,11 @@
   <div class="mt-4 text-xs text-slate-500">
     Page <%= @health[:accounts].current_page %> of <%= @health[:accounts].total_pages %> &middot;
     <%= pluralize(@health[:accounts].total_count, 'account') %>
-    <%= paginate @health[:accounts], theme: 'administrate' rescue nil %>
+    <%#
+      No `theme: 'administrate'`, and no `rescue nil`. There is no app/views/kaminari/administrate
+      directory, so naming that theme raised and the rescue beside it swallowed the error -- pagination
+      never rendered on ANY Operations page. The default theme is the one this installation has.
+    %>
+    <%= paginate @health[:accounts] %>
   </div>
 </section>

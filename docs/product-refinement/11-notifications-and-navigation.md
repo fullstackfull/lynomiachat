@@ -225,3 +225,88 @@ The remaining unreached registry keys — the getting-started set, the three con
 the documentation corpus expansion. Wiring a link to an article that does not exist yet produces exactly the
 dangling link `DocsLink` is built to prevent, so those are recorded here and belong with the corpus work
 rather than ahead of it.
+
+## 4. The unread badge was lying, in two independent places
+
+Found while re-reading this workstream's own code rather than from a report. Both defects are the same
+mistake, which is why they are fixed together and at one place rather than twice.
+
+### 4.1 What was wrong
+
+The notifications Vuex module asked its CALLERS to hand its own counters back in, and then did arithmetic on
+what arrived. Two callers named the wrong thing:
+
+| caller | what it sent | what the action read | result |
+|---|---|---|---|
+| `InboxList.vue`, `InboxItemHeader.vue` (delete) | `unread_count` | `unreadCount` | `undefined - 1` → **NaN** |
+| `InboxView.vue` (open a notification) | `primary_actor.meta.unreadCount` | `unreadCount` | the key does not exist → **NaN** |
+
+`primary_actor` is a conversation's `push_event_data`, and
+`Conversations::EventDataPresenter#push_meta` carries `sender`, `assignee`, `assignee_type`, `team` and
+`hmac_verified` — never an unread count. The conversation's own `unread_count` sits one level up and counts
+unread *messages in that conversation*, which is a different quantity from unread *notifications* anyway.
+
+The clamp did not catch it. `SET_NOTIFICATIONS_UNREAD_COUNT` tests `count < 0 ? 0 : count`, and `NaN < 0` is
+`false`, so NaN was stored. Then `DELETE_NOTIFICATION` destructures `unread_count` from a payload that only
+carried `unreadCount`, so it wrote `undefined` over the top.
+
+The user-visible symptom was not a visible `NaN`: `SidebarUnreadBadge.vue` normalizes with
+`Number.isFinite`, so the badge **silently disappeared** while unread notifications remained, and
+`getHasUnreadNotifications` answered `false`. On the `InboxList` path a follow-up
+`notifications/unReadCount` dispatch refetched the truth and hid the bug; `InboxView.vue` has no such
+dispatch, so there the count stayed poisoned until something else refetched.
+
+Proved before fixing, by driving the real mutations with the real payloads: the old `delete` payload left
+`meta.unreadCount` `undefined`, the `InboxView` path left it `NaN`, and `getHasUnreadNotifications` returned
+`false` in both cases.
+
+### 4.2 The fix is to stop asking
+
+`unreadCount` is no longer a parameter. `read` and `delete` read `state.meta` themselves, so a caller cannot
+name the key wrongly because there is no key to name. Four call sites lost an argument; two components lost a
+`getMeta` mapping they no longer need.
+
+Two correctness points came with it:
+
+* **Only an unread notification lowers the unread count.** Re-reading an already-read one used to decrement
+  anyway. Whether it was unread is read from the record in `records`, not from the caller's copy, because the
+  Inbox list renders camelCased notifications (`readAt`) while the websocket path stores raw ones (`read_at`)
+  — only the stored record is in one known shape.
+* **`delete` lowers the total too**, which it never did, and floors both at zero: the counts are the
+  server's and the list is paginated, so deleting a row the server has already stopped counting must not push
+  the badge negative.
+
+`DELETE_NOTIFICATION` keeps reading `unread_count`/`count`, because that is the shape
+`ActionCableListener` broadcasts and the websocket path feeds the same mutation. The action now speaks that
+shape rather than a second one.
+
+### 4.3 What was deliberately not added
+
+A non-finite guard in `SET_NOTIFICATIONS_UNREAD_COUNT`. With the arithmetic moved into the module, every
+remaining caller passes a number from state or from the API, so there is no reachable path that produces
+NaN — and a guard there would hide the next version of this bug instead of failing on it.
+
+## 5. Three Operations console defects, and why no spec saw them
+
+Also found by re-reading, after `docs/product-refinement/10-operations-ui.md` was written and the pages were
+certified. All three were invisible to a passing suite.
+
+| defect | what the operator got | fix |
+|---|---|---|
+| `investigate: '/super_admin/monitoring/sidekiq'` | a 404, on the one link offered when **no Sidekiq process is registered** | `Rails.application.routes.url_helpers.sidekiq_web_path` → `/monitoring/sidekiq` |
+| `paginate …, theme: 'administrate' rescue nil` | no pagination on any Operations page | the default theme, and no `rescue` |
+| `content_for(:page_title)` | every V2 page titled " - Lynomia Chat" | `content_for(:title)`, which is what the layout renders |
+
+The Sidekiq path was wrong because `namespace :super_admin` **closes** in `config/routes.rb` before
+`authenticated :super_admin do`, and the `devise_scope` wrapper adds no prefix — so the mount is at
+`/monitoring/sidekiq`, not under `/super_admin`. Verified with `rails runner` rather than by reading.
+
+The pagination defect is the instructive one: there is no `app/views/kaminari/administrate` directory in this
+installation, so naming that theme **raised**, and the `rescue nil` sitting beside it swallowed the raise.
+The page rendered, returned 200, leaked no secret, and simply had no pagination — which is precisely what
+the existing 42 examples asserted. A `rescue` that exists to make a page "not crash" is how a feature stays
+missing for as long as nobody looks.
+
+Two examples now cover what those could not: that the queue page emits the title the layout asks for, and
+that it emits real pagination controls (`per_page=1` with two signals, so there genuinely is a second page).
+Both were confirmed red against the old code before being kept.

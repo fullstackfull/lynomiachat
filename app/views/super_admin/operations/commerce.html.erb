@@ -149,7 +149,8 @@
     </div>
 
     <div class="mt-4 text-xs text-slate-500">
-      <%= paginate @commerce[:rows][:page], theme: 'administrate' rescue nil %>
+      <%# Default kaminari theme -- see accounts.html.erb. %>
+      <%= paginate @commerce[:rows][:page] %>
     </div>
   <% end %>
 

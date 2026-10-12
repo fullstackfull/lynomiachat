@@ -9,7 +9,7 @@
   stored -- an operator diagnosing an outage must not be made to wait on the thing that is down.
 %>
 <% account = @snapshot[:account] %>
-<% content_for(:page_title) { "Operations — #{account[:name]}" } %>
+<% content_for(:title) { "Operations — #{account[:name]}" } %>
 
 <section class="p-6 max-w-6xl">
   <%= link_to '← Back to accounts', accounts_super_admin_operations_path, class: 'text-sm text-woot-500' %>

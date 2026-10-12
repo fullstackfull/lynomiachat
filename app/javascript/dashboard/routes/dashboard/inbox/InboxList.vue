@@ -32,7 +32,6 @@ const infiniteLoaderOptions = computed(() => ({
   rootMargin: '100px 0px 100px 0px',
 }));
 
-const meta = useMapGetter('notifications/getMeta');
 const uiFlags = useMapGetter('notifications/getUIFlags');
 const records = useMapGetter('notifications/getFilteredNotificationsV4');
 const inboxById = useMapGetter('inboxes/getInboxById');
@@ -100,7 +99,6 @@ const markNotificationAsRead = async notificationItem => {
       id,
       primaryActorId,
       primaryActorType,
-      unreadCount: meta.value.unreadCount,
     });
 
     useAlert(t('INBOX.ALERTS.MARK_AS_READ'));
@@ -132,8 +130,6 @@ const deleteNotification = async notificationItem => {
   try {
     await store.dispatch('notifications/delete', {
       notification: notificationItem,
-      unread_count: meta.value.unreadCount,
-      count: meta.value.count,
     });
 
     useAlert(t('INBOX.ALERTS.DELETE'));
@@ -185,7 +181,6 @@ const openConversation = async notificationItem => {
       id,
       primaryActorId,
       primaryActorType,
-      unreadCount: meta.value.unreadCount,
     });
 
     // to update the unread count in the store realtime

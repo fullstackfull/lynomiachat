@@ -253,6 +253,17 @@ en:
       unsupported_sort: "'%{sort}' is not a ticket sort order. Allowed: %{allowed}."
       unknown_filter_value: "No %{filter} with id '%{value}' in this account."
       invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
+    platform_support:
+      invalid_status_transition: "You cannot move this ticket from '%{from}' to '%{to}'. Allowed: %{allowed}."
+      unsupported_category: "'%{category}' is not a support category. Allowed: %{allowed}."
+      unsupported_status: "'%{status}' is not a support ticket status. Allowed: %{allowed}."
+      unsupported_priority: "'%{priority}' is not a support ticket priority. Allowed: %{allowed}."
+      unknown_filter_value: "The value given for '%{filter}' is not one this list accepts: '%{value}'."
+      invalid_limit: "per_page must be a whole number between 1 and %{maximum}, got '%{limit}'."
+      ticket_closed: "This ticket is closed. Open a new one."
+      attachment_type_rejected: "'%{content_type}' files cannot be attached. Accepted types: %{allowed}."
+      attachment_too_large: "'%{filename}' is larger than the %{maximum} limit for one file."
+      too_many_attachments: "A message may carry at most %{maximum} files."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.

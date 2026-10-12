@@ -3,9 +3,9 @@ title: Integrations
 description: You will know which integrations exist in Lynomia Chat, what each one actually does, and why your list is probably shorter than this one.
 position: 10
 tags: [integrations]
-seo_description: "The real integration list in Lynomia Chat: webhooks, dashboard apps, Slack, Dialogflow, Google Translate, OpenAI, Linear, Notion, Shopify, LeadSquared."
+seo_description: "The real integration list in Lynomia Chat: webhooks, dashboard apps, Slack, Dialogflow, Google Translate, OpenAI, Linear, Notion, LeadSquared."
 ---
-**Settings → Integrations** is a catalogue of apps you can connect your account to. Eleven exist in the product.
+**Settings → Integrations** is a catalogue of apps you can connect your account to. Ten exist in the product.
 Your page will usually show fewer, because several are switched on by whoever runs your installation rather than
 by you.
 
@@ -26,7 +26,6 @@ Two things that feel like integrations are not on this page. Connecting a store 
 | **Cloudflare RealtimeKit** | starts a video or voice call from inside a conversation | account, one |
 | **Linear** | creates a Linear issue from a conversation, or links an existing one | account, one |
 | **Notion** | gives the AI assistant read access to your Notion content | account, one |
-| **Shopify** | shows a Shopify customer's orders beside the conversation | account, one |
 | **LeadSquared** | creates leads and logs conversation activity in LeadSquared | account, one |
 
 ## Which of them you will see
@@ -38,13 +37,12 @@ The list is filtered before it reaches you, so a missing app is not a fault.
 | Webhooks, Dashboard Apps, Dialogflow, Google Translate, OpenAI, Cloudflare RealtimeKit | always |
 | Slack | your installation has Slack credentials configured |
 | Linear, Notion | your installation has credentials **and** the feature is on for your account |
-| Shopify | the same, plus the installation-wide Shopify switch |
 | LeadSquared | the CRM feature is on for your account |
 
 Nothing in your account turns these on. If an app you need is absent, that is a conversation with whoever runs
 your installation.
 
-## The four worth a sentence each
+## The three worth a sentence each
 
 **Slack has two modes.** *Two-way* posts conversations into the channel and sends replies typed in the Slack
 thread back to the customer. *Alert* posts them and sends nothing back — the thread is a notification, not a
@@ -58,10 +56,6 @@ definitions, the signed-in agent and the current theme. What it does with them i
 and stores that on the conversation. Separately, it gives every message a **Translate** action, which translates
 that one message into a language you pick. It does not translate the conversation as you read it, and it does not
 translate what you send.
-
-**There are two Shopifys.** This page's Shopify is the older orders panel. Commerce has its own Shopify, with its
-own setup — see [Connect Shopify](connect-shopify). One shop can be connected through one of them, not both: each
-path refuses a shop the other already holds. Choose Commerce unless you are already on the older one.
 
 ## What you need first
 
@@ -91,7 +85,7 @@ delegated — see [roles and permissions](roles-and-permissions).
   conversation already has a language recorded.
 - **Dialogflow is per inbox.** A bot connected to one inbox does nothing in another, an inbox already connected
   is not offered again, and email inboxes cannot be connected at all.
-- WooCommerce, Salla and Zid are not on this page at all. They are Commerce platforms — see
+- WooCommerce, Salla, Zid and Shopify are not on this page at all. They are Commerce platforms — see
   [what each platform supports](commerce-provider-support).
 
 ## Related
@@ -108,6 +102,3 @@ needs.
 
 **Integrations is not in Settings at all.** You are signed in as an agent, or with a custom role. The page is
 administrator-only.
-
-**Shopify refuses my shop, saying it is already connected through Commerce.** It is. Disconnect it in
-Settings → Commerce first, or keep using it there.

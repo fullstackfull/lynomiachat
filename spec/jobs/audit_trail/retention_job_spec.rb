@@ -36,15 +36,31 @@ RSpec.describe AuditTrail::RetentionJob do
       expect(ids_remaining).to include(recent.id)
     end
 
-    # The cutoff is a UTC day boundary, so the effective window is the configured days plus up to one. That
-    # errs LONGER. An entry a few hours past the nominal 365 days is therefore still inside the window, and
-    # this asserts the direction of the error rather than the exact second.
+    # The cutoff is `365.days.ago.utc.beginning_of_day`, which is at or before `365.days.ago`, so the sweep
+    # keeps a SUPERSET of what a strict 365x24h window would keep. It errs LONGER, never shorter.
+    #
+    # Time is frozen, because this property is about a day boundary and is therefore sensitive to the clock's
+    # time of day. An earlier version of this example planted a row at `(365.days + 2.hours).ago` and asserted
+    # it survived. That passed when the suite ran in the evening and failed when it ran at 01:27 UTC -- and the
+    # failure was right: a row 365 days and 2 hours old is outside the window under BOTH rules whenever the
+    # current time of day is before 02:00. The property was being asserted with the wrong witness.
+    #
+    # The witness that actually proves "errs longer" is a row between the cutoff and the strict 365-day mark:
+    # older than 365 days, and still kept.
     it 'errs on keeping rather than deleting at the boundary' do
-      just_past = plant(account, (365.days + 2.hours).ago)
+      travel_to(Time.utc(2026, 6, 15, 12, 0, 0)) do
+        cutoff = 365.days.ago.utc.beginning_of_day
 
-      described_class.perform_now
+        older_than_365_days_but_inside_the_day = plant(account, cutoff + 6.hours)
+        before_the_cutoff = plant(account, cutoff - 1.minute)
 
-      expect(ids_remaining).to include(just_past.id)
+        expect(older_than_365_days_but_inside_the_day.created_at).to be < 365.days.ago
+
+        described_class.perform_now
+
+        expect(ids_remaining).to include(older_than_365_days_but_inside_the_day.id)
+        expect(ids_remaining).not_to include(before_the_cutoff.id)
+      end
     end
 
     it 'never deletes an entry whose created_at is null, because the shared column is nullable' do

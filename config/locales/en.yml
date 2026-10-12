@@ -734,6 +734,7 @@ en:
       signal_updated: "Recorded."
       signal_unchanged: "Already in that state, so nothing changed."
       signal_not_found: "That operational issue no longer exists."
+      account_not_found: "That account no longer exists."
     account_suspension:
       categories:
         spam: 'Spam'

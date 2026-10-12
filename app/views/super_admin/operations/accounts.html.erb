@@ -22,7 +22,12 @@
                         class: 'text-sm text-woot-500 hover:underline' %>
             <span class="text-xs text-slate-500 ms-2">ID <%= row[:account].id %></span>
           </div>
-          <%= render 'status_badge', status: row[:status] %>
+          <div class="flex items-center gap-3">
+            <%# The one operational view of this account, rather than the Administrate record page. %>
+            <%= link_to '360', account_super_admin_operations_path(id: row[:account].id),
+                        class: 'text-xs text-woot-500 hover:underline' %>
+            <%= render 'status_badge', status: row[:status] %>
+          </div>
         </div>
         <div class="px-4">
           <% row[:components].sort_by(&:rank).each do |component| %>

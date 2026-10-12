@@ -19,7 +19,8 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
   let(:reads) do
     [
       ['/super_admin/operations/queue', :get],
-      ["/super_admin/operations/signal?id=#{signal.id}", :get]
+      ["/super_admin/operations/signal?id=#{signal.id}", :get],
+      ["/super_admin/operations/account?id=#{account.id}", :get]
     ]
   end
   let(:mutations) do
@@ -121,6 +122,29 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
 
         expect(response).to redirect_to('/super_admin/operations/queue')
         expect(flash[:alert]).to eq('That operational issue no longer exists.')
+      end
+    end
+
+    describe 'account 360' do
+      it 'shows the account in one place, with usage against its plan' do
+        get "/super_admin/operations/account?id=#{account.id}"
+
+        expect(response.body).to include('Commercial', 'Usage against the plan', 'Channels', 'Commerce stores',
+                                         'Recent operator activity', 'Hisham Test')
+      end
+
+      # The console's standing rule: never pretend stored data is live.
+      it 'says when it was read and that no provider was contacted' do
+        get "/super_admin/operations/account?id=#{account.id}"
+
+        expect(response.body).to include('No provider was contacted')
+      end
+
+      it 'redirects with a message for an account that does not exist' do
+        get '/super_admin/operations/account?id=999999'
+
+        expect(response).to redirect_to('/super_admin/operations/accounts')
+        expect(flash[:alert]).to eq('That account no longer exists.')
       end
     end
 

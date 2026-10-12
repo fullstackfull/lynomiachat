@@ -1,0 +1,208 @@
+<%#
+  Account 360 for operators (docs/product-refinement/07-operations-control-center-v2.md §5).
+
+  Product decision #11: an operator must understand an affected account without hunting through many
+  disconnected pages. So every area is here, and each links out to the page that OWNS it rather than
+  reimplementing it.
+
+  Nothing on this page is a live provider call. The channel and store states are the ones the product already
+  stored -- an operator diagnosing an outage must not be made to wait on the thing that is down.
+%>
+<% account = @snapshot[:account] %>
+<% content_for(:page_title) { "Operations — #{account[:name]}" } %>
+
+<section class="p-6 max-w-6xl">
+  <%= link_to '← Back to accounts', accounts_super_admin_operations_path, class: 'text-sm text-woot-500' %>
+
+  <header class="mt-3 mb-5">
+    <h1 class="text-xl font-medium text-slate-900"><%= account[:name] %></h1>
+    <p class="text-sm text-slate-600 mt-1">
+      Account #<%= account[:id] %> &middot; <%= account[:status].humanize %> &middot;
+      <%= pluralize(account[:agents], 'agent') %> &middot; created <%= account[:created_at].to_fs(:long) %>
+    </p>
+    <% if account[:suspension].present? %>
+      <div class="mt-3 border border-yellow-300 bg-yellow-50 rounded-md px-3 py-2 text-sm text-yellow-900">
+        Suspended &mdash; <strong><%= account[:suspension]['category'] %></strong>:
+        <%= account[:suspension]['reason'] %>
+      </div>
+    <% end %>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h2 class="text-sm font-medium text-slate-900 mb-3">Commercial</h2>
+      <% commercial = @snapshot[:commercial] %>
+      <% if commercial[:subscription].nil? %>
+        <p class="text-sm text-slate-600">
+          No subscription record. That is not the same as unpaid &mdash; an account can predate billing.
+        </p>
+      <% else %>
+        <dl class="text-sm space-y-2">
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Subscription</dt>
+            <dd class="text-slate-900"><%= commercial[:subscription][:status].humanize %></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Source</dt>
+            <dd class="text-slate-900"><%= commercial[:subscription][:source] %></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Plan</dt>
+            <dd class="text-slate-900"><%= commercial[:plan]&.dig(:name) || '—' %></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Product usable</dt>
+            <dd class="<%= commercial[:accessible] ? 'text-green-700' : 'text-red-700' %>">
+              <%= commercial[:accessible] ? 'Yes' : 'No — locked' %>
+            </dd>
+          </div>
+        </dl>
+        <% if commercial[:overrides].any? %>
+          <p class="text-xs text-slate-600 mt-3">
+            <%= pluralize(commercial[:overrides].count, 'manual override') %> in force.
+          </p>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h2 class="text-sm font-medium text-slate-900 mb-3">Usage against the plan</h2>
+      <dl class="text-sm space-y-2">
+        <% @snapshot[:usage].each do |resource, figures| %>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600"><%= resource.humanize %></dt>
+            <dd class="text-slate-900">
+              <%= figures[:used] %>
+              <span class="text-slate-500">
+                <%# nil is unlimited, and it says so rather than rendering a blank or a zero. %>
+                / <%= figures[:limit].nil? ? 'unlimited' : figures[:limit] %>
+              </span>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h2 class="text-sm font-medium text-slate-900 mb-3">Open issues</h2>
+      <% signals = @snapshot[:signals] %>
+      <dl class="text-sm space-y-2">
+        <div class="flex justify-between gap-3">
+          <dt class="text-slate-600">Open</dt>
+          <dd class="text-slate-900"><%= signals[:open] %></dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-slate-600">Still needs a human</dt>
+          <dd class="<%= signals[:needing_action].positive? ? 'text-red-700' : 'text-slate-900' %>">
+            <%= signals[:needing_action] %>
+          </dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-slate-600">Active support cases</dt>
+          <dd class="text-slate-900"><%= @snapshot[:support][:active] %></dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-slate-600">Overdue cases</dt>
+          <dd class="text-slate-900"><%= @snapshot[:support][:overdue] %></dd>
+        </div>
+      </dl>
+      <div class="mt-3 flex flex-wrap gap-3 text-sm">
+        <%= link_to 'Open account', super_admin_account_path(account[:id]), class: 'text-woot-500' %>
+        <%= link_to 'Queue for this account', queue_super_admin_operations_path(view: 'all_open', account_id: account[:id]),
+                    class: 'text-woot-500' %>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h2 class="text-sm font-medium text-slate-900 mb-1">Channels</h2>
+      <p class="text-xs text-slate-600 mb-3">
+        <%# The honesty rule: a channel that cannot report is unknown, not healthy. %>
+        A channel marked <em>no self-report</em> tells us nothing about its own connection, so silence from it
+        is not evidence that it works.
+      </p>
+      <% if @snapshot[:channels].empty? %>
+        <p class="text-sm text-slate-600">No inboxes. This account cannot receive anything yet.</p>
+      <% else %>
+        <table class="w-full text-sm">
+          <tbody>
+            <% @snapshot[:channels].each do |channel| %>
+              <tr class="border-t border-slate-100">
+                <td class="py-2">
+                  <div class="text-slate-900"><%= channel[:name] %></div>
+                  <div class="text-xs text-slate-500"><%= channel[:channel_type].demodulize %></div>
+                </td>
+                <td class="py-2 text-end">
+                  <% if channel[:worst_open_signal] %>
+                    <%= render 'severity_badge', severity: channel[:worst_open_signal] %>
+                  <% elsif channel[:health_reported] %>
+                    <span class="text-xs text-slate-500">No open issue</span>
+                  <% else %>
+                    <span class="text-xs text-yellow-800">No self-report</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+
+    <div class="border border-slate-200 rounded-lg p-4">
+      <h2 class="text-sm font-medium text-slate-900 mb-3">Commerce stores</h2>
+      <% if @snapshot[:stores].empty? %>
+        <p class="text-sm text-slate-600">No stores connected.</p>
+      <% else %>
+        <table class="w-full text-sm">
+          <tbody>
+            <% @snapshot[:stores].each do |store| %>
+              <tr class="border-t border-slate-100">
+                <td class="py-2">
+                  <div class="text-slate-900"><%= store[:name] %></div>
+                  <div class="text-xs text-slate-500"><%= store[:provider] %></div>
+                </td>
+                <td class="py-2 text-end">
+                  <% if store[:needs_reauth] %>
+                    <span class="text-xs text-red-700">Merchant must reconnect</span>
+                  <% else %>
+                    <span class="text-xs text-slate-600"><%= store[:status].humanize %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="border border-slate-200 rounded-lg p-4 mt-4">
+    <h2 class="text-sm font-medium text-slate-900 mb-1">Recent operator activity</h2>
+    <p class="text-xs text-slate-600 mb-3">
+      What Lynomia's own operators have done about this account. For who changed the account's product data,
+      see its audit trail.
+    </p>
+    <% if @snapshot[:recent_operator_activity].empty? %>
+      <p class="text-sm text-slate-600">Nothing recorded. No operator has acted on an issue for this account.</p>
+    <% else %>
+      <ol class="space-y-2">
+        <% @snapshot[:recent_operator_activity].each do |event| %>
+          <li class="flex gap-3 text-sm">
+            <span class="text-xs text-slate-500 w-40 shrink-0"><%= event.created_at.to_fs(:long) %></span>
+            <span class="text-slate-900">
+              <span class="font-medium"><%= event.event_type.humanize %></span>
+              <% if event.actor_name.present? %><span class="text-slate-600">by <%= event.actor_name %></span><% end %>
+              <% if event.reason.present? %><span class="text-slate-600">&mdash; <%= event.reason %></span><% end %>
+            </span>
+          </li>
+        <% end %>
+      </ol>
+    <% end %>
+  </div>
+
+  <p class="text-xs text-slate-500 mt-4">
+    <%# The console's standing rule: never pretend cached data is live. %>
+    Read at <%= @snapshot[:generated_at].to_fs(:long) %>. No provider was contacted.
+  </p>
+</section>

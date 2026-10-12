@@ -43,6 +43,15 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
     @events = @signal.events.to_a
   end
 
+  # One affected account, in full. Product decision: an operator must understand an account without hunting
+  # through many disconnected pages (docs/product-refinement/07-operations-control-center-v2.md §5).
+  def account
+    account = Account.find_by(id: params[:id])
+    return redirect_to(accounts_super_admin_operations_path, alert: t('super_admin.operations.account_not_found')) if account.nil?
+
+    @snapshot = Operations::AccountSnapshot.new(account).call
+  end
+
   def acknowledge_signal
     with_signal { |lifecycle| lifecycle.acknowledge(reason: params[:reason]) }
   end

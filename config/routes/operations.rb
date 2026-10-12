@@ -19,6 +19,7 @@ namespace :super_admin do
       # them is a GET, so none can be triggered by a link somebody pastes into a chat.
       get :queue, action: :queue
       get :signal, action: :signal
+      get :account, action: :account
       post :acknowledge_signal, action: :acknowledge_signal
       post :suppress_signal, action: :suppress_signal
       post :resume_signal, action: :resume_signal

@@ -20,7 +20,9 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
     [
       ['/super_admin/operations/queue', :get],
       ["/super_admin/operations/signal?id=#{signal.id}", :get],
-      ["/super_admin/operations/account?id=#{account.id}", :get]
+      ["/super_admin/operations/account?id=#{account.id}", :get],
+      ['/super_admin/operations/channels', :get],
+      ['/super_admin/operations/commerce', :get]
     ]
   end
   let(:mutations) do
@@ -146,6 +148,24 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
         expect(response).to redirect_to('/super_admin/operations/accounts')
         expect(flash[:alert]).to eq('That account no longer exists.')
       end
+
+      # The two honesty rules on one page: an API inbox has no provider to be connected to, and a store nobody
+      # has called has no observation either way. Neither may render as healthy.
+      describe 'with an inbox and a store' do
+        include_context 'with commerce encryption'
+
+        it 'reports both as unknown rather than green' do
+          create(:channel_api, account: account)
+          create(:commerce_store, account: account, name: 'Hisham Store')
+
+          get "/super_admin/operations/account?id=#{account.id}"
+
+          expect(response.body).to include('This channel has no external provider to stay connected to')
+          expect(response.body).to include('Hisham Store')
+          expect(response.body).to include('No provider request recorded')
+          expect(response.body).to include('No webhook received yet')
+        end
+      end
     end
 
     describe 'acknowledge' do
@@ -206,6 +226,51 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
 
         expect(signal.reload).not_to be_acknowledged
         expect(Operations::Signal.attention_queue).to include(signal)
+      end
+    end
+
+    # The channel matrix (docs/product-refinement/10-operations-ui.md §channels).
+    describe 'GET /super_admin/operations/channels' do
+      it 'names the channel types this installation reports nothing about' do
+        create(:channel_telegram, account: account)
+
+        get '/super_admin/operations/channels'
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('No recent error is not')
+        expect(response.body).to include('Nothing in this installation reports whether this connection still works')
+      end
+    end
+
+    # Commerce operations (docs/product-refinement/09-commerce-operations.md).
+    describe 'GET /super_admin/operations/commerce' do
+      include_context 'with commerce encryption'
+
+      let!(:store) { create(:commerce_store, account: account, name: 'Hisham Store') }
+
+      it 'separates what the status says from what the provider last did' do
+        get '/super_admin/operations/commerce?view=all'
+
+        expect(response).to have_http_status(:success)
+        expect(response.body).to include('Hisham Store')
+        expect(response.body).to include('No provider request has been recorded')
+      end
+
+      it 'shows a failing store with its classified error code and nothing else' do
+        Commerce::StoreHealthRecorder.api_failure(store, Commerce::Error.new('AUTH_INVALID', reason: 'tokens_rejected'))
+
+        get '/super_admin/operations/commerce?view=failing'
+
+        expect(response.body).to include('AUTH_INVALID', 'tokens_rejected', '1 failure in a row')
+      end
+
+      it 'never renders a store credential' do
+        store.update!(credentials: { 'consumer_key' => 'ck_visible_secret', 'consumer_secret' => 'cs_visible_secret' })
+
+        get '/super_admin/operations/commerce?view=all'
+
+        expect(response.body).not_to include('ck_visible_secret')
+        expect(response.body).not_to include('cs_visible_secret')
       end
     end
 

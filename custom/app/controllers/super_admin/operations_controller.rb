@@ -40,7 +40,22 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
     @signal = Operations::Signal.includes(:account, :support_ticket).find_by(id: params[:id])
     return redirect_to(queue_super_admin_operations_path, alert: t('super_admin.operations.signal_not_found')) if @signal.nil?
 
-    @events = @signal.events.to_a
+    # The whole lifecycle, machine observations and operator acts together
+    # (docs/product-refinement/10-operations-ui.md §timeline), not just the stored operator rows.
+    @timeline = Operations::IncidentTimeline.new(@signal).call
+  end
+
+  # What this installation can say about each KIND of channel, and what it cannot. Its own page because the
+  # answer is per channel type, not per account, and because "we report nothing about this channel" is the most
+  # important row on it.
+  def channels
+    @matrix = Operations::ChannelMatrix.new.call
+  end
+
+  # Every connected store and whether its provider is actually answering
+  # (docs/product-refinement/09-commerce-operations.md).
+  def commerce
+    @commerce = Operations::CommerceOperations.new(params: commerce_params).call
   end
 
   # One affected account, in full. Product decision: an operator must understand an account without hunting
@@ -72,6 +87,9 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
     return redirect_to(issues_super_admin_operations_path, alert: t('super_admin.operations.signal_not_found')) if signal.nil?
 
     ticket, outcome = Operations::CaseBridge.new(signal).open_case!(actor_email: current_super_admin&.email)
+    # On the timeline too, with the operator who clicked: a case appearing out of nowhere in an incident's
+    # history is exactly the gap this layer exists to close.
+    Operations::SignalLifecycle.new(signal: signal, actor: current_super_admin).record_case(ticket) if outcome == :created
     redirect_to issues_super_admin_operations_path, **flash_for(outcome, ticket)
   end
 
@@ -104,6 +122,10 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
   # against the model's own allow-lists and ignores anything else.
   def queue_params
     params.permit(:view, :severity, :source, :signal, :account_id, :since_days, :q, :page, :per_page)
+  end
+
+  def commerce_params
+    params.permit(:view, :page)
   end
 
   def filtered_signals

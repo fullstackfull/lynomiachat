@@ -56,12 +56,15 @@ RSpec.describe Operations::AccountSnapshot do
   end
 
   describe 'channels' do
-    it 'reports whether each channel can report on its own health at all' do
+    # An API inbox has no external provider at all, so the honest answer is `unknown` with source `absent` --
+    # never healthy. That is the one rule this whole console is built on.
+    it 'returns the live connection state, and never calls a channel with no provider healthy' do
       create(:inbox, account: account, channel: create(:channel_api, account: account))
 
       channel = snapshot[:channels].first
-      expect(channel).to include(:id, :name, :channel_type, :health_reported, :worst_open_signal)
-      expect(channel[:health_reported]).to be_in([true, false])
+      expect(channel).to include(:id, :name, :channel_type, :connection, :worst_open_signal)
+      expect(channel[:connection].status).to eq(Operations::Health::UNKNOWN)
+      expect(channel[:connection].source_class).to eq('absent')
     end
 
     it 'carries the worst open signal against an inbox' do

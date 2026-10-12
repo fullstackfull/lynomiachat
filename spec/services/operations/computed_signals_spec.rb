@@ -149,8 +149,20 @@ RSpec.describe Operations::ComputedSignals do
 
   it 'sorts the worst area first, so the thing to look at is at the top' do
     Commerce::Store.create!(account: account, provider: 'zid', external_store_id: '9', name: 'S',
-                            base_url: 'https://s.test', status: :disconnected)
+                            base_url: 'https://s.test', status: :needs_reauth)
 
     expect(described_class.new.call.first.key).to eq(:commerce)
+    expect(component(:commerce).status).to eq(Operations::Health::CRITICAL)
+  end
+
+  # This used to read critical, which was wrong: a merchant who disconnected their store did exactly what the
+  # product offers them, and reporting it as a platform incident meant one tidy departure left the console red
+  # forever.
+  it 'does not treat a deliberately disconnected store as an incident' do
+    Commerce::Store.create!(account: account, provider: 'zid', external_store_id: '9', name: 'S',
+                            base_url: 'https://s.test', status: :disconnected)
+
+    expect(component(:commerce).status).to eq(Operations::Health::UNKNOWN)
+    expect(component(:commerce).reason).to eq('No commerce store is connected')
   end
 end

@@ -127,7 +127,7 @@ class Commerce::Providers::Salla < Commerce::Providers::Base
   end
 
   def http
-    @http ||= Commerce::HttpClient.new(base_uri: API_BASE, authorization: "Bearer #{token}", log_tag: 'salla')
+    @http ||= Commerce::HttpClient.new(base_uri: API_BASE, authorization: "Bearer #{token}", log_tag: 'salla', store: @store)
   end
 
   def carts

@@ -80,6 +80,14 @@ class Operations::SignalLifecycle
     true
   end
 
+  # An operator opened a support case for this signal. Recorded through this class rather than from
+  # Operations::CaseBridge so the timeline and the audit keep ONE writer with ONE explicit actor: the bridge
+  # knows how to create a case, not who clicked.
+  def record_case(ticket)
+    record(Operations::SignalEvent::CASE_CREATED, detail: { 'support_ticket_reference' => ticket.reference.to_s })
+    true
+  end
+
   # A safe corrective action ran. This records WHAT happened; running it is the action service's business.
   def record_action(action, outcome:, reason: nil)
     raise InvalidAction, "Unknown action #{action}" unless ACTIONS.include?(action.to_s)

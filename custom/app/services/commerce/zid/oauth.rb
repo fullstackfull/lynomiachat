@@ -22,8 +22,8 @@ module Commerce::Zid::Oauth
   # The store the tokens belong to, from the manager profile: { external_store_id:, name:, base_url:, time_zone: }.
   # `user.store.id` is Zid's stable store id; the manager can be any of the store's staff, so the manager never identifies
   # the store. The store's time zone is how its order times are read (Zid sends them without a zone).
-  def self.profile(credentials)
-    store = api(credentials).get_json('/managers/account/profile').dig('user', 'store')
+  def self.profile(credentials, store: nil)
+    store = api(credentials, store: store).get_json('/managers/account/profile').dig('user', 'store')
     id, name, url = store.values_at('id', 'title', 'url')
     raise TypeError, 'unexpected store' unless id.is_a?(Integer) && id.positive? && [name, url].all?(String)
 
@@ -33,8 +33,11 @@ module Commerce::Zid::Oauth
   end
 
   # A Merchant API client for one store: `Authorization: Bearer <authorization>` and `X-Manager-Token: <access_token>`.
-  def self.api(credentials)
+  #
+  # `store` is the connected store, once there is one, so what Zid answers is recorded on its operational
+  # snapshot (Commerce::HttpClient). The authorization callback has no store yet and passes none.
+  def self.api(credentials, store: nil)
     Commerce::HttpClient.new(base_uri: API_URI, log_tag: 'zid', authorization: "Bearer #{credentials.fetch('authorization')}",
-                             headers: { 'X-Manager-Token' => credentials.fetch('access_token') })
+                             headers: { 'X-Manager-Token' => credentials.fetch('access_token') }, store: store)
   end
 end

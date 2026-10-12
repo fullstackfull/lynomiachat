@@ -119,8 +119,9 @@
       <h2 class="text-sm font-medium text-slate-900 mb-1">Channels</h2>
       <p class="text-xs text-slate-600 mb-3">
         <%# The honesty rule: a channel that cannot report is unknown, not healthy. %>
-        A channel marked <em>no self-report</em> tells us nothing about its own connection, so silence from it
-        is not evidence that it works.
+        The live connection state of each inbox, read from this installation's own records &mdash; no provider is
+        called while this page renders. An <strong>unknown</strong> row with source <em>absent</em> means nothing
+        here reports whether that connection works, so silence from it is not evidence that it does.
       </p>
       <% if @snapshot[:channels].empty? %>
         <p class="text-sm text-slate-600">No inboxes. This account cannot receive anything yet.</p>
@@ -128,18 +129,24 @@
         <table class="w-full text-sm">
           <tbody>
             <% @snapshot[:channels].each do |channel| %>
-              <tr class="border-t border-slate-100">
+              <% connection = channel[:connection] %>
+              <tr class="border-t border-slate-100 align-top">
                 <td class="py-2">
                   <div class="text-slate-900"><%= channel[:name] %></div>
                   <div class="text-xs text-slate-500"><%= channel[:channel_type].demodulize %></div>
+                  <% if connection.reason.present? %>
+                    <div class="text-xs text-slate-600 mt-0.5"><%= connection.reason %></div>
+                  <% end %>
                 </td>
                 <td class="py-2 text-end">
+                  <div class="flex items-center justify-end gap-2">
+                    <span class="text-xs text-slate-400"><%= connection.source_class %></span>
+                    <%= render 'status_badge', status: connection.status %>
+                  </div>
                   <% if channel[:worst_open_signal] %>
-                    <%= render 'severity_badge', severity: channel[:worst_open_signal] %>
-                  <% elsif channel[:health_reported] %>
-                    <span class="text-xs text-slate-500">No open issue</span>
-                  <% else %>
-                    <span class="text-xs text-yellow-800">No self-report</span>
+                    <div class="mt-1 text-xs text-slate-500">
+                      Recorded: <%= channel[:worst_open_signal].humanize %>
+                    </div>
                   <% end %>
                 </td>
               </tr>
@@ -157,10 +164,34 @@
         <table class="w-full text-sm">
           <tbody>
             <% @snapshot[:stores].each do |store| %>
-              <tr class="border-t border-slate-100">
+              <tr class="border-t border-slate-100 align-top">
                 <td class="py-2">
                   <div class="text-slate-900"><%= store[:name] %></div>
                   <div class="text-xs text-slate-500"><%= store[:provider] %></div>
+                  <%# Status is not health: this line is what the PROVIDER last did. %>
+                  <div class="text-xs text-slate-600 mt-0.5">
+                    <% case store[:api_state] %>
+                    <% when 'unknown' %>
+                      No provider request recorded
+                    <% when 'failing' %>
+                      Provider failing<%= " (#{store[:last_error_code]})" if store[:last_error_code].present? %>
+                      <%= "#{time_ago_in_words(store[:last_error_at])} ago" if store[:last_error_at] %>
+                    <% when 'stale' %>
+                      Last answered <%= time_ago_in_words(store[:last_api_success_at]) %> ago
+                    <% else %>
+                      Answered <%= time_ago_in_words(store[:last_api_success_at]) %> ago
+                    <% end %>
+                  </div>
+                  <div class="text-xs text-slate-400">
+                    <% case store[:webhook_state] %>
+                    <% when 'unsupported' %>
+                      No webhooks for this provider
+                    <% when 'none' %>
+                      No webhook received yet
+                    <% else %>
+                      Webhook <%= time_ago_in_words(store[:last_webhook_received_at]) %> ago
+                    <% end %>
+                  </div>
                 </td>
                 <td class="py-2 text-end">
                   <% if store[:needs_reauth] %>

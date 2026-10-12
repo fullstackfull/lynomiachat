@@ -162,32 +162,44 @@
     <% end %>
   </div>
 
-  <%# The incident lifecycle. Distinct from the audit log on purpose: this is one signal's story, machine
-      events and human ones together, which is what an operator reads when diagnosing a recurrence. %>
+  <%#
+    The incident lifecycle (docs/product-refinement/10-operations-ui.md §timeline).
+
+    Distinct from the tenant's Audit Logs on purpose, and it does not duplicate them: those answer "who changed
+    this account's product data" and are served to that account's own administrators. This is ONE incident's
+    story, and the distinction it exists to draw is marked on every row &mdash; what the product OBSERVED
+    (detected, recurred, recovered) against what a PERSON decided (acknowledged, suppressed, resumed, action
+    taken, case opened). The observations are derived from the signal's own columns rather than stored again, so
+    a problem seen a thousand times is one "recurred" row carrying the count (Operations::IncidentTimeline).
+  %>
   <div class="border border-slate-200 rounded-lg p-4">
-    <h2 class="text-sm font-medium text-slate-900 mb-3">Timeline</h2>
-    <% if @events.empty? %>
-      <p class="text-sm text-slate-600">
-        Nothing has been recorded against this signal yet. Detection itself is on the signal above
-        &mdash; first seen <%= time_ago_in_words(@signal.first_seen_at) %> ago.
-      </p>
-    <% else %>
-      <ol class="space-y-3">
-        <% @events.each do |event| %>
-          <li class="flex gap-3 text-sm">
-            <span class="text-xs text-slate-500 w-40 shrink-0"><%= event.created_at.to_fs(:long) %></span>
-            <span class="text-slate-900">
-              <span class="font-medium"><%= event.event_type.humanize %></span>
-              <% if event.actor_name.present? %>
-                <span class="text-slate-600">by <%= event.actor_name %></span>
-              <% end %>
-              <% if event.reason.present? %>
-                <span class="text-slate-600">&mdash; <%= event.reason %></span>
-              <% end %>
-            </span>
-          </li>
-        <% end %>
-      </ol>
-    <% end %>
+    <h2 class="text-sm font-medium text-slate-900 mb-1">Timeline</h2>
+    <p class="text-xs text-slate-600 mb-4">
+      <span class="inline-block w-2 h-2 rounded-full bg-slate-400 align-middle"></span> observed by the product
+      &middot;
+      <span class="inline-block w-2 h-2 rounded-full bg-woot-500 align-middle"></span> decided by an operator
+    </p>
+    <ol class="space-y-3">
+      <% @timeline.each do |entry| %>
+        <li class="flex gap-3 text-sm">
+          <span class="text-xs text-slate-500 w-40 shrink-0"><%= entry.at.to_fs(:long) %></span>
+          <span class="shrink-0 mt-1.5 w-2 h-2 rounded-full <%= entry.machine? ? 'bg-slate-400' : 'bg-woot-500' %>"></span>
+          <span class="text-slate-900 min-w-0">
+            <span class="font-medium"><%= entry.event_type.humanize %></span>
+            <% if entry.actor_name.present? %>
+              <span class="text-slate-600">by <%= entry.actor_name %></span>
+            <% end %>
+            <% if entry.reason.present? %>
+              <span class="text-slate-600">&mdash; <%= entry.reason %></span>
+            <% end %>
+            <% if entry.detail.present? %>
+              <span class="block text-xs text-slate-400 font-mono break-all">
+                <%= entry.detail.map { |key, value| "#{key}=#{value}" }.join(' ') %>
+              </span>
+            <% end %>
+          </span>
+        </li>
+      <% end %>
+    </ol>
   </div>
 </section>

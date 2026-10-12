@@ -190,7 +190,7 @@ class Commerce::Providers::Woocommerce < Commerce::Providers::Base
   def http
     @http ||= begin
       basic = Base64.strict_encode64("#{@credentials.fetch('consumer_key')}:#{@credentials.fetch('consumer_secret')}")
-      Commerce::HttpClient.new(base_uri: base_uri, authorization: "Basic #{basic}", log_tag: 'woocommerce')
+      Commerce::HttpClient.new(base_uri: base_uri, authorization: "Basic #{basic}", log_tag: 'woocommerce', store: @store)
     end
   end
 

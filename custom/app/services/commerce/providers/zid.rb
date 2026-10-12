@@ -25,7 +25,9 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
   end
 
   def store_identity
-    @store_identity ||= tokens.with_credentials { |credentials| Commerce::Zid::Oauth.profile(credentials) }.slice(:external_store_id, :name)
+    @store_identity ||= tokens.with_credentials do |credentials|
+      Commerce::Zid::Oauth.profile(credentials, store: @store)
+    end.slice(:external_store_id, :name)
   end
 
   def find_customers(email: nil, phone: nil)
@@ -110,7 +112,7 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
 
     path, body = actions.request(snapshot, params)
     Commerce::Backoff.check!(backoff_key)
-    status, answer = tokens.with_credentials { |credentials| Commerce::Zid::Oauth.api(credentials).write_json(:post, path, body) }
+    status, answer = tokens.with_credentials { |credentials| Commerce::Zid::Oauth.api(credentials, store: @store).write_json(:post, path, body) }
     actions.answer(status, answer, body[:order_status])
   end
 
@@ -149,7 +151,7 @@ class Commerce::Providers::Zid < Commerce::Providers::Base
   end
 
   def request(credentials, path, params)
-    client = Commerce::Zid::Oauth.api(credentials)
+    client = Commerce::Zid::Oauth.api(credentials, store: @store)
     body = client.get_json(path, params)
     raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless body.is_a?(Hash)
 

@@ -147,7 +147,9 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
   # One mutation, sent once: [HTTP status, parsed body] (Commerce::Shopify::Graphql#mutate).
   def mutate(document, variables)
     Commerce::Backoff.check!(backoff_key)
-    tokens.with_credentials { |credentials| Commerce::Shopify::Graphql.new(shop, credentials['access_token']).mutate(document, variables) }
+    tokens.with_credentials do |credentials|
+      Commerce::Shopify::Graphql.new(shop, credentials['access_token'], store: @store).mutate(document, variables)
+    end
   end
 
   # One query for the action and cart readers (Commerce::Providers::Shopify::Actions, ::Carts).
@@ -212,7 +214,7 @@ class Commerce::Providers::Shopify < Commerce::Providers::Base
   def query(document, variables)
     Commerce::Backoff.check!(backoff_key)
     tokens.with_credentials do |credentials|
-      graphql = Commerce::Shopify::Graphql.new(shop, credentials['access_token'])
+      graphql = Commerce::Shopify::Graphql.new(shop, credentials['access_token'], store: @store)
       graphql.query(document, variables)
     ensure
       Commerce::Backoff.record(backoff_key, graphql&.rate_limit)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_12_091000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_12_101000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -934,6 +934,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_12_091000) do
     t.index ["contact_id"], name: "index_commerce_customer_links_on_contact_id"
   end
 
+  create_table "commerce_store_health", force: :cascade do |t|
+    t.bigint "commerce_store_id", null: false
+    t.datetime "last_api_success_at"
+    t.datetime "last_api_failure_at"
+    t.string "last_error_code", limit: 40
+    t.string "last_error_reason", limit: 60
+    t.datetime "last_error_at"
+    t.integer "consecutive_failures", default: 0, null: false
+    t.datetime "last_webhook_received_at"
+    t.datetime "last_webhook_processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commerce_store_id"], name: "index_commerce_store_health_on_commerce_store_id", unique: true
+  end
+
   create_table "commerce_stores", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "provider", null: false
@@ -1629,6 +1644,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_12_091000) do
     t.index ["account_id", "last_seen_at"], name: "index_operations_signals_on_account_open", order: { last_seen_at: :desc }, where: "(resolved_at IS NULL)"
     t.index ["acknowledged_at", "last_seen_at"], name: "index_operations_signals_on_unacknowledged", order: { last_seen_at: :desc }, where: "((resolved_at IS NULL) AND (acknowledged_at IS NULL))"
     t.index ["last_seen_at"], name: "index_operations_signals_on_open_feed", order: :desc, where: "(resolved_at IS NULL)"
+    t.index ["resolved_at"], name: "index_operations_signals_on_recovered", order: :desc, where: "(resolved_at IS NOT NULL)"
     t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
     t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
   end
@@ -2001,6 +2017,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_12_091000) do
   add_foreign_key "commerce_customer_links", "commerce_stores", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "contacts", on_delete: :cascade
   add_foreign_key "commerce_customer_links", "users", column: "confirmed_by_id", on_delete: :nullify
+  add_foreign_key "commerce_store_health", "commerce_stores", on_delete: :cascade
   add_foreign_key "commerce_stores", "accounts", on_delete: :cascade
   add_foreign_key "commerce_stores", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "contact_identities", "accounts", on_delete: :cascade

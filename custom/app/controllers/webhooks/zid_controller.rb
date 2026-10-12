@@ -17,6 +17,9 @@ class Webhooks::ZidController < ActionController::API
       return head :unauthorized
     end
 
+    # Past the credential check, so this is the store's own delivery and nothing an unauthenticated caller
+    # sends can move it (docs/product-refinement/09-commerce-operations.md §webhooks).
+    Commerce::StoreHealthRecorder.webhook_received(store)
     Commerce::Zid::Webhook.enqueue(store, request.raw_post)
     head :ok
   end

@@ -29,15 +29,26 @@ class Commerce::Salla::WebhookJob < ApplicationJob
 
   def store_event(payload)
     store = event_store(payload)
-    Commerce::Realtime.order_event(store, payload) if store
+    return if store.nil?
+
+    Commerce::Realtime.order_event(store, payload)
+    Commerce::StoreHealthRecorder.webhook_processed(store)
   end
 
   def cart_event(payload)
     store = event_store(payload)
-    Commerce::Realtime.cart_event(store, payload) if store
+    return if store.nil?
+
+    Commerce::Realtime.cart_event(store, payload)
+    Commerce::StoreHealthRecorder.webhook_processed(store)
   end
 
+  # Salla's signature was checked at the request (Webhooks::SallaController) but the delivery names its merchant
+  # in the signed BODY, so this is the first point that knows which store is healthy
+  # (docs/product-refinement/09-commerce-operations.md §webhooks).
   def event_store(payload)
-    Commerce::Store.where.not(status: :disconnected).find_by(provider: 'salla', external_store_id: payload['merchant'].to_s)
+    store = Commerce::Store.where.not(status: :disconnected).find_by(provider: 'salla', external_store_id: payload['merchant'].to_s)
+    Commerce::StoreHealthRecorder.webhook_received(store) if store
+    store
   end
 end

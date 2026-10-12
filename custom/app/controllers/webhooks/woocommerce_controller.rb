@@ -13,9 +13,17 @@ class Webhooks::WoocommerceController < ActionController::API
       return head :unauthorized
     end
 
-    if Commerce::Providers::Woocommerce::WEBHOOK_TOPICS.include?(request.headers['X-WC-Webhook-Topic'])
-      Commerce::Woocommerce::Webhook.enqueue(store, request.headers['X-WC-Webhook-Delivery-ID'], body)
-    end
+    # The signature just proved this delivery came from this store, which is a fact about the store's health
+    # whatever the topic is -- recorded here rather than at #enqueue so a topic Lynomia does not subscribe to
+    # still counts as the provider talking (docs/product-refinement/09-commerce-operations.md §webhooks).
+    Commerce::StoreHealthRecorder.webhook_received(store)
+    enqueue(store, body) if Commerce::Providers::Woocommerce::WEBHOOK_TOPICS.include?(request.headers['X-WC-Webhook-Topic'])
     head :ok
+  end
+
+  private
+
+  def enqueue(store, body)
+    Commerce::Woocommerce::Webhook.enqueue(store, request.headers['X-WC-Webhook-Delivery-ID'], body)
   end
 end

@@ -10,8 +10,11 @@ class Commerce::Shopify::Graphql
   PATH = "/admin/api/#{Commerce::Shopify::Config::API_VERSION}/graphql.json".freeze
   NOT_APPROVED = /not approved to (?:use|access)/i
 
-  def initialize(shop, access_token)
-    @http = Commerce::HttpClient.new(base_uri: URI("https://#{shop}"), log_tag: 'shopify', headers: { 'X-Shopify-Access-Token' => access_token })
+  # `store` is the connected store, once there is one, so what Shopify answers is recorded on its operational
+  # snapshot (Commerce::HttpClient). The authorization callback has no store yet and passes none.
+  def initialize(shop, access_token, store: nil)
+    @http = Commerce::HttpClient.new(base_uri: URI("https://#{shop}"), log_tag: 'shopify', store: store,
+                                     headers: { 'X-Shopify-Access-Token' => access_token })
   end
 
   def query(document, variables = {})

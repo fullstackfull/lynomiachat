@@ -20,6 +20,8 @@ namespace :super_admin do
       get :queue, action: :queue
       get :signal, action: :signal
       get :account, action: :account
+      get :channels, action: :channels
+      get :commerce, action: :commerce
       post :acknowledge_signal, action: :acknowledge_signal
       post :suppress_signal, action: :suppress_signal
       post :resume_signal, action: :resume_signal

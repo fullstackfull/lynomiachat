@@ -156,6 +156,14 @@ The narrowing is a single uncorrelated subselect. For an unrestricted membership
 * **`:base`** adds nothing — `unrestricted?` returns before any subquery is built.
 * **`:none`** renders `1=0`, so no conversation notification is returned and no conversation rows are scanned.
 
+**Why the narrowing had to go INSIDE the relation, not after the fetch.** The dashboard treats a short page as
+the end of the feed: `app/javascript/dashboard/store/modules/notifications/actions.js:21` commits
+`SET_ALL_NOTIFICATIONS_LOADED` whenever `payload.length < 15`, and that flag is never cleared for the session.
+A post-fetch reject — load 15, drop the unauthorized ones, return 9 — would therefore have silently truncated
+the feed for the rest of the session, and the member would never see page 2. Narrowing before `.page`/`.per`
+keeps pages full and keeps `count` describing the same set, which is asserted (19 authorized notifications
+yield a full page of 15 and a count of 19).
+
 Indexes that serve it, from `db/schema.rb` — **no new index is required**:
 
 | Side | Index | Note |

@@ -141,6 +141,37 @@ RSpec.describe PlatformSupport::Ticket do
     end
   end
 
+  # The tenant notification feed calls this on a notification's primary actor unconditionally, so it is a
+  # published surface: the key set is the contract, and a key added here reaches every account that can read
+  # the notification.
+  describe '#push_event_data' do
+    it 'carries exactly the six tenant-safe keys and nothing else' do
+      expect(ticket.push_event_data.keys).to eq(%i[id reference subject status priority account_id])
+    end
+
+    it 'carries the values the feed needs' do
+      expect(ticket.push_event_data).to eq(
+        id: ticket.id, reference: ticket.reference, subject: 'WhatsApp template stuck in review',
+        status: 'open', priority: 'medium', account_id: account.id
+      )
+    end
+
+    it 'exposes no assignee, no SLA field, no breach stamp and no plan snapshot' do
+      agent = described_class.create!(
+        account: account, account_name_at_creation: account.name, reporter_name: 'Reporter',
+        subject: 'With everything set', assignee: PlatformSupport::Agent.create!(user: create(:super_admin)),
+        plan_name_at_creation: 'Growth', resolution_due_at: 1.day.from_now,
+        resolution_breached_at: Time.current, subscription_status_at_creation: 'past_due'
+      )
+
+      expect(agent.push_event_data.keys).not_to include(
+        :assignee_id, :assignee_name, :sla, :sla_policy_id, :resolution_due_at, :first_response_due_at,
+        :resolution_breached_at, :first_response_breached_at, :plan_id_at_creation, :plan_name_at_creation,
+        :subscription_status_at_creation, :reporter_id, :description
+      )
+    end
+  end
+
   it 'does not declare the audited macro, because the gem would attribute operator actions wrongly' do
     expect(described_class.respond_to?(:audited_options)).to be(false)
   end

@@ -233,6 +233,45 @@ RSpec.describe 'Platform Support tenant tickets API', type: :request do
     end
   end
 
+  # The serializer's `message_count` and `attachment_count` are the N+1 hazard on this endpoint: a per-row
+  # COUNT would make the page cost grow with the page. PlatformSupport::ThreadTotals does two grouped counts
+  # for the whole page instead, so the query count is flat as tickets grow.
+  describe 'the list query budget' do
+    def queries_for_index
+      count = 0
+      counter = ->(*, payload) { count += 1 unless payload[:name].to_s.in?(%w[SCHEMA TRANSACTION]) }
+      ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
+        get "#{base}/tickets", headers: administrator.create_new_auth_token
+      end
+      count
+    end
+
+    def open_tickets(number)
+      number.times do |index|
+        created = PlatformSupport::TicketCreation.new(
+          account: account, reporter: administrator,
+          attributes: { category: 'bug', subject: "Ticket #{index}", description: 'Details' }
+        ).perform
+        created.messages.create!(
+          PlatformSupport::Message.author_attributes_for(administrator).merge(body: 'Another message')
+        )
+      end
+    end
+
+    it 'costs the same for twelve tickets as for two' do
+      open_tickets(2)
+      administrator.create_new_auth_token
+      small = queries_for_index
+
+      open_tickets(10)
+      large = queries_for_index
+
+      expect(response.parsed_body['payload'].length).to eq(12)
+      expect(large).to eq(small)
+      Rails.logger.info("platform_support tenant list query budget: 2 tickets #{small}, 12 tickets #{large}")
+    end
+  end
+
   it 'offers no destroy route anywhere: a ticket is closed, never deleted' do
     delete "#{base}/tickets/#{ticket.id}", headers: administrator.create_new_auth_token
 

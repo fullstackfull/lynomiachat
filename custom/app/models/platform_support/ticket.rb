@@ -101,6 +101,27 @@ class PlatformSupport::Ticket < ApplicationRecord
       (customer_last_viewed_at.nil? || last_operator_message_at > customer_last_viewed_at)
   end
 
+  # What the notification feed renders for a Platform Support row.
+  #
+  # NOT OPTIONAL, and not a convenience. `api/v1/accounts/notifications/index.json.jbuilder` calls
+  # `push_event_data` on a notification's primary actor UNCONDITIONALLY, so once
+  # `'PlatformSupport::Ticket'` is on `Notification::PRIMARY_ACTORS` the whole tenant feed raises for every
+  # account on every read without this method.
+  #
+  # TENANT-SAFE KEYS ONLY, and the same list the ticket serializer is allowed: no assignee, no SLA field, no
+  # due or breach stamp, no plan snapshot, no reporter identity beyond what the row already carries. The feed
+  # is read by whoever can see the notification, so this is a published surface and is reviewed as one.
+  def push_event_data
+    {
+      id: id,
+      reference: reference,
+      subject: subject,
+      status: status,
+      priority: priority,
+      account_id: account_id
+    }
+  end
+
   def sla_paused? = sla_paused_at.present?
   def sla_applied? = sla_policy_id.present?
   def breached? = first_response_breached_at.present? || resolution_breached_at.present?

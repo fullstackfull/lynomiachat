@@ -195,7 +195,16 @@ end
 
 # Left unset rather than set to an empty string: an empty PGPASSWORD is a password attempt, which fails against
 # a server expecting peer or ident authentication, where no variable at all succeeds.
-ENV['PGPASSWORD'] = values['POSTGRES_PASSWORD'] if values['POSTGRES_PASSWORD'].present?
+#
+# Plain Ruby, not `.present?`. This heredoc is a STANDALONE script -- `bundle exec ruby -` with one `require
+# 'dotenv'` -- so Rails never loads and ActiveSupport is not available. `.present?` raised NoMethodError here on
+# the real host, and because the backup runs under the ERR trap that aborted the whole deploy before anything had
+# been changed. Loading ActiveSupport for one predicate would be the wrong fix: this block is deliberately the
+# smallest thing that can read .env and exec pg_dump.
+#
+# `to_s.strip != ''` is the same answer `.present?` gave for the two values that can reach here -- nil, or a
+# string -- and it is the same test the OPTIONAL loop above already uses, so the block now agrees with itself.
+ENV['PGPASSWORD'] = values['POSTGRES_PASSWORD'] if values['POSTGRES_PASSWORD'].to_s.strip != ''
 exec('pg_dump', '-Fc',
      '-h', values['POSTGRES_HOST'], '-p', values['POSTGRES_PORT'],
      '-U', values['POSTGRES_USERNAME'], values['POSTGRES_DATABASE'],
@@ -304,14 +313,60 @@ fi
 # to `echo 0`, so a Redis refusal or a `rails runner` exception produced "0" and the loop announced
 # "in-flight set drained" -- the one reading this stage exists to rule out. A probe that cannot answer is
 # reported as unknown and the loop keeps asking.
+#
+# WHY A SENTINEL RATHER THAN THE WHOLE OF STDOUT. The second version required the entire captured output to
+# match `^[0-9]+$`. On the real host it never did: `as_app` runs a LOGIN shell, so Dotenv, RubyLLM and Sidekiq
+# each printed an informational line to stdout alongside the number. A genuine empty in-flight set was
+# therefore read as unreadable, and with REQUIRE_DRAIN set that stopped a deploy whose workers had in fact
+# drained -- the opposite of the failure the version before it had.
+#
+# So `rails runner` now prints ONE machine-readable line and the shell reads only that line. The contract:
+#
+#   * The Ruby below prints `__LYNOMIA_BUSY__=<n>` on a line of its own. The literal is repeated in the sed
+#     expression two lines down; the two must stay in step.
+#   * `sed -n 's/^__LYNOMIA_BUSY__=\([0-9][0-9]*\)$/\1/p'` yields the integer from every line matching the
+#     grammar EXACTLY, and nothing from any other line. Anything printed before or after it is ignored.
+#   * EXACTLY ONE such line is required. None means the probe did not answer; two or more means it answered
+#     twice and this stage will not pick a winner. Either way the result is unknown.
+#   * A non-zero `rails runner` status is unknown, whatever it printed.
+#   * Unknown is never zero. `busy` stays empty, `drained` stays 0, and the REQUIRE_DRAIN decision below is
+#     reached exactly as it was before.
+#
+# stderr is deliberately NOT captured: it stays on the operator's terminal where a Redis refusal is visible,
+# and it cannot reach the parser.
 drained=0
 for attempt in $(seq 1 30); do
-  if busy="$(as_app 'RAILS_ENV=production bundle exec rails runner "
-    require %q(sidekiq/api); print Sidekiq::Stats.new.workers_size"')" && [[ $busy =~ ^[0-9]+$ ]]; then
-    [[ "$busy" == "0" ]] && { echo "sidekiq: in-flight set drained"; drained=1; break; }
-    echo "sidekiq: $busy busy worker(s)"
+  # The status is kept rather than swallowed: `|| probe_status=$?` is what keeps `set -e` from aborting the
+  # deploy on a probe that simply could not run, which is a condition this loop is built to tolerate.
+  probe_status=0
+  probe_out="$(as_app 'RAILS_ENV=production bundle exec rails runner "
+    require %q(sidekiq/api); puts %(__LYNOMIA_BUSY__=#{Sidekiq::Stats.new.workers_size})"')" || probe_status=$?
+
+  busy=''
+  sentinel_values=()
+  if [[ $probe_status -eq 0 ]]; then
+    mapfile -t sentinel_values < <(printf '%s\n' "$probe_out" | sed -n 's/^__LYNOMIA_BUSY__=\([0-9][0-9]*\)$/\1/p')
+    [[ ${#sentinel_values[@]} -eq 1 ]] && busy="${sentinel_values[0]}"
+  fi
+
+  if [[ -n $busy ]]; then
+    # Base 10 explicitly: `workers_size` prints no leading zeros, but `[[ 08 -eq 0 ]]` is an arithmetic error
+    # rather than a comparison, and this line must not be the one that aborts a deploy.
+    if (( 10#$busy == 0 )); then
+      echo "sidekiq: in-flight set drained"
+      drained=1
+      break
+    fi
+    echo "sidekiq: $((10#$busy)) busy worker(s)"
   else
-    echo "note: could not read sidekiq's in-flight set (attempt $attempt/30)"
+    echo "note: could not read sidekiq's in-flight set (attempt $attempt/30, probe exit $probe_status, \
+${#sentinel_values[@]} sentinel line(s))"
+    # Once, on the last attempt: what the probe actually said. This is the evidence that diagnosed the bug
+    # above, and printing it turns the next occurrence into a one-deploy diagnosis.
+    if [[ $attempt -eq 30 ]]; then
+      echo "      the probe's last stdout was:"
+      printf '%s\n' "$probe_out" | head -n 20 | sed 's/^/      | /'
+    fi
   fi
   sleep 2
 done

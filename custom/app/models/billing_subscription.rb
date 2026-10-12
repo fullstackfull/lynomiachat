@@ -49,8 +49,14 @@ class BillingSubscription < ApplicationRecord
 
   # Is the dashboard open for the account? Same as usable?, except that an account
   # that never subscribed is not locked while billing is not set up (it can't pay yet).
-  def accessible?
-    usable? || (status == 'inactive' && !billing_enforced?)
+  #
+  # Whether billing is enforced is an INSTALLATION-WIDE fact, while everything else here is derived from this
+  # row. A caller judging many subscriptions at once reads that fact once and hands it in, rather than having
+  # every instance read the same installation configs again: the per-instance memo below is per instance, so the
+  # Operations front page, which judges up to Operations::BillingState::LOCKED_CANDIDATES of them, paid the read
+  # once per row. Passing nothing keeps the original behaviour for every other caller.
+  def accessible?(billing_enforced: billing_enforced?)
+    usable? || (status == 'inactive' && !billing_enforced)
   end
 
   private

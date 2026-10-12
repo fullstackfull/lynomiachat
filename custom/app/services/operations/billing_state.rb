@@ -55,7 +55,10 @@ class Operations::BillingState
   def locked_accounts
     candidates = BillingSubscription.where(status: %w[inactive past_due canceled])
                                     .order(updated_at: :desc).limit(LOCKED_CANDIDATES).includes(:account)
-    { recent: candidates.reject(&:accessible?).map { |row| { account: row.account, status: row.status } },
-      candidates_read: candidates.length }
+    # The installation-wide setting, read once for the whole list rather than once per candidate. This block is
+    # outside the Overview's derived cache (overview.rb), so the page paid that repetition on every refresh.
+    enforced = Billing::Settings.enforced?
+    locked = candidates.reject { |row| row.accessible?(billing_enforced: enforced) }
+    { recent: locked.map { |row| { account: row.account, status: row.status } }, candidates_read: candidates.length }
   end
 end

@@ -514,3 +514,53 @@ MAJOR; and the robots.txt sitemap finding, downgraded to MINOR.
 
 None of the three is a merge blocker: the merge moves no secret and serves no page, and the owner has held the
 deploy separately.
+
+---
+
+# Addendum 2: the three pre-deploy findings, closed
+
+Done on `claude/predeploy-cleanup`, branched from `lynomia-custom` at `11ba3a30` after the merge. Nothing in
+Product Refinement's scope was reopened; no migration, no config, no JS or Vue change.
+
+**V1, the credential one.** `InstallationConfig::RETIRED_SECRET_NAMES` now carries the three keys whose
+`type: secret` declaration the retirement removed (`SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET`,
+`SHOPIFY_PARTNER_ACCESS_TOKEN` — three, not the two first reported), and `InstallationConfig.secret_names`
+unions them in. That is the one boundary every reader already goes through: the Installation Configs listing
+uses it to exclude rows from `index`, and Administrate resolves `show`, `edit` and `update` through the same
+scope, so an excluded row cannot be reached by guessing its id either. A tombstone declaration back in
+`installation_config.yml` was rejected on inspection of the loader: `ConfigLoader#reconcile_general_config`
+creates a row for every declaration it reads and, with `reconcile_only_new: false`, overwrites an existing
+value with the declaration's default — it would have resurrected the key as configuration or destroyed the
+value it was meant to protect. Rows are neither deleted nor rotated by this change.
+
+A sweep of every version of `config/installation_config.yml` in the repository's history (18 commits) found
+exactly these three names ever declared `type: secret` and no longer declared: **no other retired key lost its
+classification**, and 31 declared secrets are unaffected.
+
+**V2, the documentation contradiction.** `custom/db/documentation/{en,ar}/integrations/integrations.md` now
+describes one Shopify product. Eight mirrored changes per locale: the count (`Eleven`/`أحد عشر` → `Ten`/`عشرة`,
+matching the 10 apps `config/integration/apps.yml` declares), the catalogue row, the "shown when" row naming a
+Super Admin switch that no longer exists, the section heading that counted four items, the whole "There are two
+Shopifys" paragraph, the troubleshooting entry for a symptom the page can no longer produce, the
+`seo_description`, and the Limits bullet, which now lists Shopify beside WooCommerce, Salla and Zid as a
+Commerce platform. `rake lynomia:docs:seo_audit` over the reseeded 124-article corpus: **exit 0**, 0 errors,
+INDEXABLE.
+
+**V3, the Operations front page.** `BillingSubscription#accessible?` takes the installation-wide judgement as a
+keyword with the old per-instance read as its default, and `Operations::BillingState#locked_accounts` reads it
+once for the page — the same shape `Operations::AccountHealth#billing_component` already used for the Accounts
+page. Measured on one database, 200 inactive subscriptions, same harness before and after:
+
+| surface | before | after |
+|---|---|---|
+| `BillingState#call` | 608 queries (600 `installation_configs`) | **11** (3) |
+| `Overview#call`, warm derived cache | 629 (600) | **32** (3) |
+
+Growth across 0 → 20 → 60 → 200 lockable subscriptions, after: BillingState 10 → 11, Overview 31 → 32,
+AccountHealth 9 → 13, AttentionQueue 2 → 2, ChannelMatrix 3 → 3, CommerceOperations 2 → 2. Semantics are
+unchanged: the judgement still lives in the model, UNKNOWN is still UNKNOWN, no provider call is made while
+rendering, and nothing is cached that could serve another account's answer.
+
+Both fixes are guarded by specs proven to fail without them: `spec/controllers/super_admin/retired_shopify_secrets_spec.rb`
+(4 of 7 examples fail on the pre-fix model, including the listing body containing the stored secret) and
+`spec/services/operations/overview_query_budget_spec.rb` (both examples fail on the pre-fix services).

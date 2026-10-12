@@ -131,8 +131,15 @@ const statusToShow = computed(() => {
   if (isRead.value) return MESSAGE_STATUS.READ;
   if (isDelivered.value) return MESSAGE_STATUS.DELIVERED;
   if (isSent.value) return MESSAGE_STATUS.SENT;
+  // The SERVER saying the send is still in flight is the only thing that may render as "Sending". The
+  // optimistic message the dashboard creates on send carries exactly this status (helper/commons.js), so the
+  // clock still appears the moment an agent hits send.
+  if (status.value === MESSAGE_STATUS.PROGRESS) return MESSAGE_STATUS.PROGRESS;
 
-  return MESSAGE_STATUS.PROGRESS;
+  // Nothing established a state. This used to fall through to PROGRESS, which is a claim: a spinning clock
+  // says the product is still trying. A WhatsApp row whose status is `sent` but which has no source_id -- Meta
+  // accepted it and the id was not stored -- sat there saying "Sending" forever. Unknown is what we know.
+  return MESSAGE_STATUS.UNKNOWN;
 });
 </script>
 

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import DocsLink from 'dashboard/components-next/docs-link/DocsLink.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
@@ -207,5 +208,10 @@ watch(
         {{ errorMessage }}
       </p>
     </div>
+    <!-- The set-up guide for this platform, at the step where the merchant is doing the set-up. -->
+    <DocsLink
+      article-key="commerceWoocommerce"
+      :label="t('COMMERCE.SETTINGS.FORM.DOCS')"
+    />
   </Dialog>
 </template>

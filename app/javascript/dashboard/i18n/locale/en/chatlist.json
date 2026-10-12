@@ -182,6 +182,7 @@
         "TITLE": "WhatsApp could not bill this message",
         "BODY": "The WhatsApp Business account's payment method or currency is not usable, so WhatsApp refused the message. An administrator fixes this in Meta's Business Manager, and the message can be sent again once it is corrected."
       }
-    }
+    },
+    "DELIVERY_UNKNOWN": "This channel did not report a delivery state for this message"
   }
 }

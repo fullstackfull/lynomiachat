@@ -1,0 +1,19 @@
+<%#
+  What an OPERATOR has decided about an open signal, which is a different axis from how severe it is
+  (docs/product-refinement/07-operations-control-center-v2.md §2). A critical problem somebody is already on
+  reads differently from a critical problem nobody has touched, and the queue has to show both at once.
+
+  `needs_action` is the loud one on purpose: it is the only state that means "nobody has looked at this".
+%>
+<%
+  labels = {
+    'needs_action' => ['Needs action', 'bg-red-50 text-red-800 border-red-300'],
+    'acknowledged' => ['Acknowledged', 'bg-blue-50 text-blue-800 border-blue-200'],
+    'suppressed' => ['Suppressed', 'bg-slate-100 text-slate-600 border-slate-300 border-dashed'],
+    'resolved' => ['Recovered', 'bg-green-50 text-green-800 border-green-200']
+  }
+  label, classes = labels.fetch(state, labels['needs_action'])
+%>
+<span class="inline-flex items-center border rounded-md px-2 py-0.5 text-xs font-medium <%= classes %>">
+  <%= label %>
+</span>

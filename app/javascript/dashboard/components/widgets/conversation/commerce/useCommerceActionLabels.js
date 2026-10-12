@@ -27,6 +27,11 @@ export function useCommerceActionLabels() {
       order_state: t('COMMERCE.ACTIONS.UNAVAILABLE.ORDER_STATE'),
       no_email: t('COMMERCE.ACTIONS.UNAVAILABLE.NO_EMAIL'),
       unsupported: t('COMMERCE.ACTIONS.UNAVAILABLE.UNSUPPORTED'),
+      // Shopify emits this when an order was paid across several transactions, so there is no single
+      // payment to refund against (custom/app/services/commerce/providers/shopify/actions.rb:112). It
+      // used to fall through to OTHER — "Not available right now" — which told the agent nothing about
+      // why, or that the refund is still perfectly possible in the store's own admin.
+      multiple_payments: t('COMMERCE.ACTIONS.UNAVAILABLE.MULTIPLE_PAYMENTS'),
     })[reason] || t('COMMERCE.ACTIONS.UNAVAILABLE.OTHER');
 
   const refundReasons = [

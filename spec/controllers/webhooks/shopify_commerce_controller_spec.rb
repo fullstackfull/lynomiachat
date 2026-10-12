@@ -77,15 +77,22 @@ RSpec.describe 'Shopify Commerce webhooks', type: :request do
     expect(queued.map { |job| job[:args].first }).to eq(%w[customers/data_request customers/redact shop/redact app/uninstalled])
   end
 
-  it 'stays apart from the legacy Shopify integration: neither endpoint accepts the other app signature' do
+  # There is no second Shopify webhook endpoint to be confused with any more: /webhooks/shopify was retired
+  # with the legacy integration (docs/product-refinement/02-shopify-retirement.md §2.2). What still has to
+  # hold is that this endpoint accepts ONLY the Commerce app's signature -- a stale legacy secret left in the
+  # database must not authenticate a delivery here.
+  it 'accepts only the Commerce app signature, not a leftover legacy app secret' do
     InstallationConfig.where(name: 'SHOPIFY_CLIENT_SECRET').first_or_initialize.update!(value: 'legacy-shopify-app-secret', locked: false)
     GlobalConfig.clear_cache
 
-    post '/webhooks/shopify', params: body, headers: headers.merge('X-Shopify-Topic' => 'shop/redact')
-    expect(response).to have_http_status(:unauthorized)
-
     post '/webhooks/shopify_commerce', params: body, headers: headers.merge('X-Shopify-Hmac-Sha256' => sign.call(body, 'legacy-shopify-app-secret'))
+
     expect(response).to have_http_status(:unauthorized)
     expect(queued).to be_empty
+  end
+
+  it 'no longer routes the retired legacy webhook endpoint' do
+    expect { Rails.application.routes.recognize_path('/webhooks/shopify', method: :post) }
+      .to raise_error(ActionController::RoutingError)
   end
 end

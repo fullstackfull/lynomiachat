@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import DocsLink from 'dashboard/components-next/docs-link/DocsLink.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 import CommerceAPI from 'dashboard/api/commerce';
@@ -110,5 +111,10 @@ watch(
         @click="connect"
       />
     </div>
+    <!-- The set-up guide for this platform, at the step where the merchant is doing the set-up. -->
+    <DocsLink
+      article-key="commerceShopify"
+      :label="t('COMMERCE.SETTINGS.SHOPIFY.DOCS')"
+    />
   </Dialog>
 </template>

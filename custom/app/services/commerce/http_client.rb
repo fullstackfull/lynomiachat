@@ -33,16 +33,22 @@ class Commerce::HttpClient
 
   # `authorization` is the whole Authorization header value ("Basic …", "Bearer …"), or nil for none. `headers` are further
   # fixed request headers (Zid's X-Manager-Token).
-  def initialize(base_uri:, log_tag:, authorization: nil, headers: {})
+  #
+  # `store` is the connected store this client speaks for, when there is one: the outcome of each request is
+  # recorded on that store's operational snapshot (docs/product-refinement/09-commerce-operations.md). It is nil
+  # for the OAuth exchanges that run before any store exists, and then nothing is recorded -- an unattributable
+  # request is left unrecorded rather than attributed to a guess.
+  def initialize(base_uri:, log_tag:, authorization: nil, headers: {}, store: nil)
     @base_uri = base_uri
     @authorization = authorization
     @extra_headers = headers
     @log_tag = log_tag
+    @store = store
   end
 
   def get_json(path, params = {})
     uri = build_uri(path, params)
-    with_retry { parse(transport_errors { perform(:get, uri) }) }
+    observed { with_retry { parse(transport_errors { perform(:get, uri) }) } }
   end
 
   # One form POST, never retried: OAuth token requests, where sending twice could spend a single-use refresh token twice.
@@ -66,26 +72,57 @@ class Commerce::HttpClient
 
   # One JSON POST, never retried (a webhook subscription could be created twice). Returns the parsed body of a 2xx answer.
   def post_json(path, body)
-    parse(transport_errors { perform(:post, build_uri(path), body.to_json, 'application/json') })
+    observed { parse(transport_errors { perform(:post, build_uri(path), body.to_json, 'application/json') }) }
   end
 
   # One DELETE, never retried. Returns the HTTP status of a 2xx answer.
   def delete(path, params = {})
-    status = transport_errors { perform(:delete, build_uri(path, params)) }.code.to_i
-    raise error_for(status) unless status.between?(200, 299)
+    observed do
+      status = transport_errors { perform(:delete, build_uri(path, params)) }.code.to_i
+      raise error_for(status) unless status.between?(200, 299)
 
-    status
+      status
+    end
   end
 
   private
 
+  # The outcome of one provider interaction, on the store's operational snapshot.
+  #
+  # HERE rather than in each provider adapter because this is the single place every provider request passes
+  # through -- a panel read, an order action, a webhook subscription and a token refresh are all one of this
+  # class's six public calls -- so no adapter has to remember to report, and a seventh caller is covered by
+  # construction. What gets written on a failure is the Commerce::Error this class ALREADY classified: its code
+  # is one of Commerce::Error::CODES and its reason is one of ours. The exception's text, the response that
+  # produced it and the URI are not passed on and have nowhere to go.
+  def observed
+    yield.tap { record_success }
+  rescue Commerce::Error => e
+    raise record_failure(e)
+  end
+
+  def record_success
+    Commerce::StoreHealthRecorder.api_success(@store)
+  end
+
+  # Returns the error so a caller can `raise` it, which keeps the recording and the raising on one line.
+  def record_failure(error)
+    Commerce::StoreHealthRecorder.api_failure(@store, error)
+    error
+  end
+
+  # Not wrapped in #observed: these three answer with [status, body] for ANY status, because an OAuth refusal is
+  # a 400 whose body says why and only the caller can read that. So the HTTP status is classified here, with the
+  # same `error_for` the rest of this class uses, rather than being reported as a success because it arrived.
   def send_once(verb, path, body, content_type, read_timeout: nil)
     response = perform(verb, build_uri(path), body, content_type, read_timeout: read_timeout)
-    [response.code.to_i, parse_json(strict: false)]
+    status = response.code.to_i
+    status.between?(200, 299) ? record_success : record_failure(error_for(status))
+    [status, parse_json(strict: false)]
   rescue *NOT_SENT_ERRORS
-    raise Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent')
+    raise record_failure(Commerce::Error.new('STORE_UNAVAILABLE', reason: 'not_sent'))
   rescue Commerce::Error, Net::ReadTimeout, Net::WriteTimeout, *CONNECTION_ERRORS
-    raise Commerce::Error.new('TIMEOUT', reason: 'unknown_outcome')
+    raise record_failure(Commerce::Error.new('TIMEOUT', reason: 'unknown_outcome'))
   end
 
   def build_uri(path, params = {})

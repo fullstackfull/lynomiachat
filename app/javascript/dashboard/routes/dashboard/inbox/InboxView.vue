@@ -83,10 +83,7 @@ const openNotification = async notificationItem => {
     id,
     primary_actor_id: primaryActorId,
     primary_actor_type: primaryActorType,
-    primary_actor: {
-      meta: { unreadCount } = {},
-      id: conversationIdFromNotification,
-    },
+    primary_actor: { id: conversationIdFromNotification },
     notification_type: notificationType,
   } = notificationItem;
 
@@ -99,7 +96,6 @@ const openNotification = async notificationItem => {
       id,
       primaryActorId,
       primaryActorType,
-      unreadCount,
     });
 
     router.push({

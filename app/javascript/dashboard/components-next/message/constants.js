@@ -36,6 +36,12 @@ export const MESSAGE_STATUS = {
   READ: 'read',
   FAILED: 'failed',
   PROGRESS: 'progress',
+  // NOT a server status. The five above are what `messages.status` can hold; this is what the UI shows when
+  // the stored status and the channel's own rules do not establish any of them -- a WhatsApp row with no
+  // source_id, for instance. It exists because the alternative was falling through to PROGRESS, which told the
+  // agent the product was still trying to send a message it had already stopped trying to send
+  // (docs/product-refinement/04-inbox-modernization.md).
+  UNKNOWN: 'unknown',
 };
 
 export const ATTACHMENT_TYPES = {

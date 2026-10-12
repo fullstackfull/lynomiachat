@@ -49,6 +49,9 @@ const statusIcon = computed(() => {
     [MESSAGE_STATUS.SENT]: 'i-lucide-check',
     [MESSAGE_STATUS.DELIVERED]: 'i-lucide-check-check',
     [MESSAGE_STATUS.READ]: 'i-lucide-check-check',
+    // Deliberately not a check of any kind, and deliberately not the clock: a check claims the provider
+    // confirmed something and a clock claims we are still trying. Neither is true when nothing reported.
+    [MESSAGE_STATUS.UNKNOWN]: 'i-lucide-circle-help',
   };
 
   return statusIconMap[status];
@@ -59,6 +62,7 @@ const statusColor = computed(() => {
     [MESSAGE_STATUS.SENT]: 'text-n-slate-10',
     [MESSAGE_STATUS.DELIVERED]: 'text-n-slate-10',
     [MESSAGE_STATUS.READ]: 'text-[#7EB6FF]',
+    [MESSAGE_STATUS.UNKNOWN]: 'text-n-slate-10',
   };
 
   return statusIconMap[status];
@@ -70,6 +74,7 @@ const tooltipText = computed(() => {
     [MESSAGE_STATUS.DELIVERED]: t('CHAT_LIST.DELIVERED'),
     [MESSAGE_STATUS.READ]: t('CHAT_LIST.MESSAGE_READ'),
     [MESSAGE_STATUS.PROGRESS]: t('CHAT_LIST.SENDING'),
+    [MESSAGE_STATUS.UNKNOWN]: t('CHAT_LIST.DELIVERY_UNKNOWN'),
   };
 
   return statusTextMap[status];

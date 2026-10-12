@@ -11,6 +11,20 @@ namespace :super_admin do
       get :accounts, action: :accounts
       get :issues, action: :issues
       post :open_case, action: :open_case
+
+      # Control Center V2 (docs/product-refinement/07-operations-control-center-v2.md).
+      #
+      # The queue and the signal detail are reads. The three operator decisions are POSTs, each going through
+      # Operations::SignalLifecycle -- which is the only writer, takes an explicit actor, and audits. None of
+      # them is a GET, so none can be triggered by a link somebody pastes into a chat.
+      get :queue, action: :queue
+      get :signal, action: :signal
+      get :account, action: :account
+      get :channels, action: :channels
+      get :commerce, action: :commerce
+      post :acknowledge_signal, action: :acknowledge_signal
+      post :suppress_signal, action: :suppress_signal
+      post :resume_signal, action: :resume_signal
     end
   end
 end

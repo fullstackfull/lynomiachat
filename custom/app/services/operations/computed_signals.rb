@@ -115,15 +115,39 @@ class Operations::ComputedSignals
                         warning_at: FLOW_FAILURES_WARNING })
   end
 
-  # A store whose authorization is gone has stopped working entirely, which is the definition of critical here.
+  # Commerce, from the two facts that mean something: an authorization that is gone (critical -- the store has
+  # stopped working entirely and only the merchant can fix it) and a provider that is refusing requests
+  # (warning -- Commerce::StoreHealth saw the last call fail).
+  #
+  # A DISCONNECTED STORE IS NOT COUNTED. It used to be, as critical, which was wrong: a merchant who
+  # disconnected their store did exactly what the product offers them, and reporting it as a platform incident
+  # meant every console on an installation with one tidy departure read red forever. `connected` is the scope
+  # the rest of the product already uses for this distinction.
+  #
+  # `unobserved` is in the detail rather than in the status, because having no observation of a store is not a
+  # problem with the store -- it is the limit of what we know, and the Commerce tab is where it is acted on.
   def commerce
-    return Operations::Health.absent(:commerce, 'No commerce store is connected') unless Commerce::Store.exists?
+    connected = Commerce::Store.connected
+    return Operations::Health.absent(:commerce, 'No commerce store is connected') unless connected.exists?
 
-    broken = Commerce::Store.where(status: [:needs_reauth, :disconnected])
-    count = broken.count
-    component(:commerce, count.zero? ? Operations::Health::HEALTHY : Operations::Health::CRITICAL,
-              reason: count.zero? ? nil : "#{count} commerce stores need to be reconnected",
-              detail: { size: count, accounts: count.zero? ? 0 : broken.distinct.count(:account_id) })
+    summary = Operations::CommerceOperations.new.summary
+    detail = { size: summary[:stores].to_i, needs_reauth: summary[:needs_reauth].to_i,
+               failing: summary[:failing].to_i, unobserved: summary[:unobserved].to_i }
+    component(:commerce, commerce_status(summary), reason: commerce_reason(summary), detail: detail)
+  end
+
+  def commerce_status(summary)
+    return Operations::Health::CRITICAL if summary[:needs_reauth].to_i.positive?
+    return Operations::Health::WARNING if summary[:failing].to_i.positive?
+
+    Operations::Health::HEALTHY
+  end
+
+  def commerce_reason(summary)
+    parts = []
+    parts << "#{summary[:needs_reauth]} stores need to be reconnected" if summary[:needs_reauth].to_i.positive?
+    parts << "#{summary[:failing]} stores are failing provider requests" if summary[:failing].to_i.positive?
+    parts.presence&.join(', ')
   end
 
   def threshold_status(count, warning_at, critical_at)

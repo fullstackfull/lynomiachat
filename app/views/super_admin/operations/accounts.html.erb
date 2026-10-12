@@ -22,7 +22,12 @@
                         class: 'text-sm text-woot-500 hover:underline' %>
             <span class="text-xs text-slate-500 ms-2">ID <%= row[:account].id %></span>
           </div>
-          <%= render 'status_badge', status: row[:status] %>
+          <div class="flex items-center gap-3">
+            <%# The one operational view of this account, rather than the Administrate record page. %>
+            <%= link_to '360', account_super_admin_operations_path(id: row[:account].id),
+                        class: 'text-xs text-woot-500 hover:underline' %>
+            <%= render 'status_badge', status: row[:status] %>
+          </div>
         </div>
         <div class="px-4">
           <% row[:components].sort_by(&:rank).each do |component| %>
@@ -36,6 +41,11 @@
   <div class="mt-4 text-xs text-slate-500">
     Page <%= @health[:accounts].current_page %> of <%= @health[:accounts].total_pages %> &middot;
     <%= pluralize(@health[:accounts].total_count, 'account') %>
-    <%= paginate @health[:accounts], theme: 'administrate' rescue nil %>
+    <%#
+      No `theme: 'administrate'`, and no `rescue nil`. There is no app/views/kaminari/administrate
+      directory, so naming that theme raised and the rescue beside it swallowed the error -- pagination
+      never rendered on ANY Operations page. The default theme is the one this installation has.
+    %>
+    <%= paginate @health[:accounts] %>
   </div>
 </section>

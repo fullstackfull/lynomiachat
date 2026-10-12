@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <% @portal.articles.where(status: :published).each do |article| %>
+<%#
+  The portal's sitemap (docs/product-refinement/03-documentation-seo.md).
+
+  Each locale's article has its own slug and its own canonical, so each is its own <url>. The xhtml:link
+  alternates inside each entry are what tell a crawler the entries are the same page in another language --
+  the same set the page's own <link rel="alternate"> tags carry, from the same helper, so the sitemap and the
+  page cannot disagree.
+
+  Published only, and alternates are published only too: announcing a draft translation earns a soft-404.
+  `lastmod` is the article's own updated_at, which is the only modification date this product actually records.
+%>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <% @portal.articles.where(status: :published).includes(:root_article).each do |article| %>
     <url>
-      <loc><%= @help_center_url %><%= generate_article_link(@portal.slug, article.slug, false, false) %></loc>
+      <loc><%= portal_canonical_url(@portal, article) %></loc>
       <lastmod><%= article.updated_at.to_date.iso8601 %></lastmod>
+      <% portal_locale_alternates(@portal, article).each do |locale, url| %>
+        <xhtml:link rel="alternate" hreflang="<%= html_lang_attribute(locale) %>" href="<%= url %>"/>
+      <% end %>
+      <% if (default_url = portal_default_alternate_url(@portal, article)) %>
+        <xhtml:link rel="alternate" hreflang="x-default" href="<%= default_url %>"/>
+      <% end %>
     </url>
   <% end %>
 </urlset>

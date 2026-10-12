@@ -152,22 +152,11 @@ RSpec.describe 'Integration Apps API', type: :request do
         expect(app['name']).to eql('Slack')
       end
 
-      it 'returns not found for Shopify when the client ID is missing' do
-        account.enable_features('shopify_integration')
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(true)
-        allow(GlobalConfigService).to receive(:load)
-          .with('SHOPIFY_CLIENT_ID', nil)
-          .and_return(nil)
-
-        get api_v1_account_integrations_app_url(account_id: account.id, id: 'shopify'),
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:not_found)
-      end
-
+      # ---- Hook settings are an ALLOW-LIST, not a redaction list. These five examples are the regression
+      # guard on that: an integration whose settings hold a key, a token or a credential hash must answer with
+      # the visible properties alone, and an agent must not be told even those. They were deleted as collateral
+      # when the legacy Shopify examples beside them went (docs/product-refinement/02-shopify-retirement.md)
+      # and are restored unchanged -- the invariant they assert has nothing to do with Shopify.
       it 'will not return sensitive information for openai app for agents' do
         openai = create(:integrations_hook, :openai, account: account)
         get api_v1_account_integrations_app_url(account_id: account.id, id: openai.app.id),
@@ -239,17 +228,17 @@ RSpec.describe 'Integration Apps API', type: :request do
         )
       end
 
-      it 'returns not found for Shopify when either feature gate is disabled' do
-        account.enable_features('shopify_integration')
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(false)
+      # The legacy Shopify integration is retired, so `shopify` names no registered app
+      # (docs/product-refinement/02-shopify-retirement.md). An id that names no app is NOT FOUND -- it used to
+      # fall through with @app nil and the view raised, so the answer was 500.
+      it 'returns not found for an id that names no registered app' do
+        %w[shopify not-an-integration].each do |id|
+          get api_v1_account_integrations_app_url(account_id: account.id, id: id),
+              headers: agent.create_new_auth_token,
+              as: :json
 
-        get api_v1_account_integrations_app_url(account_id: account.id, id: 'shopify'),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:not_found)
+          expect(response).to have_http_status(:not_found), "#{id} did not answer 404"
+        end
       end
     end
   end

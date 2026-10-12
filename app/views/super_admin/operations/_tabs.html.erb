@@ -1,8 +1,15 @@
-<nav class="flex gap-1 mb-6 border-b border-slate-100" role="navigation">
+<nav class="flex flex-wrap gap-1 mb-6 border-b border-slate-100" role="navigation">
+  <%#
+    Ordered the way an operator works: what is wrong, what I am doing about it, then the three places the
+    answer lives (accounts, channels, stores), then the raw feed.
+  %>
   <%
     tabs = [
       ['Overview', super_admin_operations_path],
+      ['Queue', queue_super_admin_operations_path],
       ['Accounts', accounts_super_admin_operations_path],
+      ['Channels', channels_super_admin_operations_path],
+      ['Commerce', commerce_super_admin_operations_path],
       ['Issues', issues_super_admin_operations_path]
     ]
   %>

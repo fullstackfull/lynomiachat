@@ -17,6 +17,9 @@ class Commerce::Zid::WebhookJob < ApplicationJob
     return unless store && payload.is_a?(Hash) && [nil, store.external_store_id].include?(payload['store_id']&.to_s)
 
     Commerce::Providers::Zid::CartEvents.cart_delivery?(payload) ? cart_event(store, payload) : Commerce::Realtime.order_event(store, payload)
+    # Applied, not merely received: the controller stamped receipt, and this stamp staying behind it is how a
+    # stuck queue becomes visible per store (docs/product-refinement/09-commerce-operations.md §webhooks).
+    Commerce::StoreHealthRecorder.webhook_processed(store)
   end
 
   private

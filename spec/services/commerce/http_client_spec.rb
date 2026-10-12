@@ -283,6 +283,66 @@ RSpec.describe Commerce::HttpClient do
     end
   end
 
+  # The store's operational snapshot (docs/product-refinement/09-commerce-operations.md). Recorded HERE because
+  # this is the single place every provider request passes through -- a panel read, an order action, a webhook
+  # subscription and a token refresh are all one of this class's six public calls.
+  describe 'recording the outcome on the store' do
+    include_context 'with commerce encryption'
+
+    let(:store) { create(:commerce_store, base_url: 'https://shop.example.com', external_store_id: 'shop.example.com') }
+    let(:observed) do
+      described_class.new(base_uri: base_uri, authorization: 'Basic x', log_tag: 'woocommerce', store: store)
+    end
+
+    def health = Commerce::StoreHealth.find_by(commerce_store_id: store.id)
+
+    it 'records an answer as a success' do
+      stub_request(:get, url).to_return(status: 200, body: '[]')
+
+      observed.get_json('/wp-json/wc/v3/orders', per_page: 1)
+
+      expect(health.api_state).to eq('healthy')
+    end
+
+    it 'records the classified code of a provider refusal, never its body' do
+      stub_request(:get, url).to_return(status: 401, body: 'Bearer sk_live_abcdef is not authorized')
+
+      expect { observed.get_json('/wp-json/wc/v3/orders', per_page: 1) }.to raise_error(Commerce::Error)
+
+      expect(health.last_error_code).to eq('AUTH_INVALID')
+      expect(health.consecutive_failures).to eq(1)
+      expect(Commerce::StoreHealth.where(commerce_store_id: store.id).pluck(:last_error_reason)).to eq([nil])
+    end
+
+    # #post_form and friends answer with [status, body] for ANY status so the caller can classify an OAuth
+    # refusal itself. A 400 arriving is not the store working, and must not be recorded as a success.
+    it 'does not count a non-2xx single-shot answer as a success' do
+      stub_request(:post, 'https://shop.example.com/oauth/token').to_return(status: 400, body: '{"error":"invalid_grant"}')
+
+      status, = observed.post_form('/oauth/token', grant_type: 'refresh_token')
+
+      expect(status).to eq(400)
+      expect(health.api_state).to eq('failing')
+      expect(health.last_error_code).to eq('INVALID_RESPONSE')
+    end
+
+    it 'records a transport failure that provably never reached the store' do
+      stub_request(:get, url).to_timeout
+
+      expect { observed.get_json('/wp-json/wc/v3/orders', per_page: 1) }.to raise_error(Commerce::Error)
+
+      expect(health.last_error_code).to eq('TIMEOUT')
+    end
+
+    # The OAuth exchanges that run before a store exists pass no store. Nothing is recorded then, rather than
+    # being attributed to a guess.
+    it 'records nothing when the client speaks for no store' do
+      stub_request(:get, url).to_return(status: 200, body: '[]')
+
+      expect { client.get_json('/wp-json/wc/v3/orders', per_page: 1) }.not_to change(Commerce::StoreHealth, :count)
+    end
+  end
+
   it 'logs the path and status only: no credentials, no query (it can carry an email or phone)' do
     stub_request(:get, 'https://shop.example.com/wp-json/wc/v3/orders?search=omar@example.com').to_return(status: 200, body: '[]')
     logged = []

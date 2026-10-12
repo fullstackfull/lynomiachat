@@ -62,8 +62,12 @@ describe('#actions', () => {
     it('sends correct actions if API is success', async () => {
       axios.post.mockResolvedValue({});
       await actions.read(
-        { commit },
-        { id: 1, unreadCount: 2, primaryActorId: 1 }
+        {
+          commit,
+          state: { meta: { count: 3, currentPage: 1, unreadCount: 2 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { id: 1, primaryActorId: 1 }
       );
       expect(commit.mock.calls).toEqual([
         [types.SET_NOTIFICATIONS_UI_FLAG, { isUpdating: true }],
@@ -72,12 +76,57 @@ describe('#actions', () => {
         [types.SET_NOTIFICATIONS_UI_FLAG, { isUpdating: false }],
       ]);
     });
+
+    // Re-reading an already-read notification used to decrement regardless, under-counting the badge
+    // until something refetched -- and the Inbox conversation view never refetches.
+    it('leaves the unread count alone when the notification was already read', async () => {
+      axios.post.mockResolvedValue({});
+      await actions.read(
+        {
+          commit,
+          state: { meta: { count: 3, currentPage: 1, unreadCount: 2 } },
+          getters: {
+            getNotification: () => ({ id: 1, read_at: '2026-10-12T00:00:00Z' }),
+          },
+        },
+        { id: 1, primaryActorId: 1 }
+      );
+      expect(commit.mock.calls).toEqual([
+        [types.SET_NOTIFICATIONS_UI_FLAG, { isUpdating: true }],
+        [types.READ_NOTIFICATION, { id: 1, read_at: expect.any(Date) }],
+        [types.SET_NOTIFICATIONS_UI_FLAG, { isUpdating: false }],
+      ]);
+    });
+
+    // The count comes from state, so a caller that knows nothing about it cannot corrupt it. The Inbox
+    // conversation view used to read `primary_actor.meta.unreadCount`, a key the conversation payload
+    // has never carried, and committed `undefined - 1` -- NaN, which the `count < 0` clamp let through.
+    it('ignores an unread count handed in by the caller', async () => {
+      axios.post.mockResolvedValue({});
+      await actions.read(
+        {
+          commit,
+          state: { meta: { count: 3, currentPage: 1, unreadCount: 7 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { id: 1, primaryActorId: 1, unreadCount: undefined }
+      );
+      expect(commit).toHaveBeenCalledWith(
+        types.SET_NOTIFICATIONS_UNREAD_COUNT,
+        6
+      );
+    });
+
     it('sends correct actions if API is error', async () => {
       axios.post.mockRejectedValue({ message: 'Incorrect header' });
       await expect(actions.read({ commit })).rejects.toThrow(Error);
       await actions.read(
-        { commit },
-        { id: 1, unreadCount: 2, primaryActorId: 1 }
+        {
+          commit,
+          state: { meta: { count: 3, currentPage: 1, unreadCount: 2 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { id: 1, primaryActorId: 1 }
       );
       expect(commit.mock.calls).toEqual([
         [types.SET_NOTIFICATIONS_UI_FLAG, { isUpdating: true }],
@@ -108,37 +157,102 @@ describe('#actions', () => {
   });
 
   describe('#delete', () => {
+    // The payload keys here ARE the regression: DELETE_NOTIFICATION reads `unread_count`, and the action
+    // used to hand it `unreadCount`, so the mutation wrote `undefined` straight into meta and the badge
+    // disappeared while unread notifications remained.
     it('sends correct actions if API is success', async () => {
       axios.delete.mockResolvedValue({});
       await actions.delete(
-        { commit },
         {
-          notification: { id: 1 },
-          count: 2,
-          unreadCount: 1,
-        }
+          commit,
+          state: { meta: { count: 2, currentPage: 1, unreadCount: 1 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { notification: { id: 1 } }
       );
 
       expect(commit.mock.calls).toEqual([
         [types.SET_NOTIFICATIONS_UI_FLAG, { isDeleting: true }],
-        [types.SET_NOTIFICATIONS_UNREAD_COUNT, 0],
         [
           types.DELETE_NOTIFICATION,
-          { notification: { id: 1 }, count: 2, unreadCount: 1 },
+          { notification: { id: 1 }, unread_count: 0, count: 1 },
         ],
         [types.SET_NOTIFICATIONS_UI_FLAG, { isDeleting: false }],
       ]);
     });
+
+    it('lowers the total but not the unread count when the notification was read', async () => {
+      axios.delete.mockResolvedValue({});
+      await actions.delete(
+        {
+          commit,
+          state: { meta: { count: 4, currentPage: 1, unreadCount: 2 } },
+          getters: {
+            getNotification: () => ({ id: 1, read_at: '2026-10-12T00:00:00Z' }),
+          },
+        },
+        { notification: { id: 1 } }
+      );
+
+      expect(commit).toHaveBeenCalledWith(types.DELETE_NOTIFICATION, {
+        notification: { id: 1 },
+        unread_count: 2,
+        count: 3,
+      });
+    });
+
+    // The list is paginated and the counts are the server's, so deleting a row the server has already
+    // stopped counting must not push either number negative.
+    it('floors both counts at zero', async () => {
+      axios.delete.mockResolvedValue({});
+      await actions.delete(
+        {
+          commit,
+          state: { meta: { count: 0, currentPage: 1, unreadCount: 0 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { notification: { id: 1 } }
+      );
+
+      expect(commit).toHaveBeenCalledWith(types.DELETE_NOTIFICATION, {
+        notification: { id: 1 },
+        unread_count: 0,
+        count: 0,
+      });
+    });
+
+    // The deleted record's own copy is not consulted: the Inbox list renders camelCased notifications
+    // (`readAt`), so reading `read_at` off the caller's object would call every deleted row unread.
+    it('reads the read state from the store, not from the caller object', async () => {
+      axios.delete.mockResolvedValue({});
+      await actions.delete(
+        {
+          commit,
+          state: { meta: { count: 2, currentPage: 1, unreadCount: 1 } },
+          getters: {
+            getNotification: () => ({ id: 1, read_at: '2026-10-12T00:00:00Z' }),
+          },
+        },
+        { notification: { id: 1, readAt: '2026-10-12T00:00:00Z' } }
+      );
+
+      expect(commit).toHaveBeenCalledWith(types.DELETE_NOTIFICATION, {
+        notification: { id: 1, readAt: '2026-10-12T00:00:00Z' },
+        unread_count: 1,
+        count: 1,
+      });
+    });
+
     it('sends correct actions if API is error', async () => {
       axios.delete.mockRejectedValue({ message: 'Incorrect header' });
       await expect(actions.delete({ commit })).rejects.toThrow(Error);
       await actions.delete(
-        { commit },
         {
-          notification: { id: 1 },
-          count: 2,
-          unreadCount: 1,
-        }
+          commit,
+          state: { meta: { count: 2, currentPage: 1, unreadCount: 1 } },
+          getters: { getNotification: () => ({ id: 1, read_at: null }) },
+        },
+        { notification: { id: 1 } }
       );
       expect(commit.mock.calls).toEqual([
         [types.SET_NOTIFICATIONS_UI_FLAG, { isDeleting: true }],

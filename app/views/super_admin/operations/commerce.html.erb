@@ -1,0 +1,163 @@
+<%#
+  Commerce operations (docs/product-refinement/09-commerce-operations.md).
+
+  The point of this page is the difference between two things that used to look identical: a store whose status
+  says `active` and whose provider answered a minute ago, and a store whose status says `active` and which has
+  not been reached since Tuesday. Nothing here calls a provider.
+%>
+<% content_for(:title) do %>Operations commerce<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Operations</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-4">
+    Every connected store, and whether its provider is actually answering. <strong>Status is not health</strong>:
+    the status column says what an administrator or a rejected token last decided, and the provider column says
+    what the store last did. A store nobody has called since recording began reads
+    <strong>unknown</strong> &mdash; not healthy.
+  </p>
+
+  <%
+    summary = @commerce[:summary]
+    cards = [
+      ['Connected stores', summary[:stores], nil],
+      ['Need reconnecting', summary[:needs_reauth], 'needs_action'],
+      ['Provider failing', summary[:failing], 'failing'],
+      ['No signal yet', summary[:unobserved], 'unobserved'],
+      ['Last success is stale', summary[:stale], nil]
+    ]
+  %>
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+    <% cards.each do |label, value, view| %>
+      <div class="border border-slate-100 rounded-md p-3">
+        <p class="text-xs text-slate-500"><%= label %></p>
+        <p class="text-xl text-slate-800"><%= number_with_delimiter(value.to_i) %></p>
+        <% if view.present? && value.to_i.positive? %>
+          <%= link_to 'Show', commerce_super_admin_operations_path(view: view),
+                      class: 'text-xs text-woot-500 hover:underline' %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <nav class="flex flex-wrap gap-2 mb-4" role="navigation">
+    <% @commerce[:views].each do |key, label| %>
+      <% active = @commerce[:view] == key %>
+      <%= link_to label, commerce_super_admin_operations_path(view: key),
+                  class: "px-3 py-1.5 text-sm rounded-md border #{active ? 'border-woot-500 text-woot-500 bg-woot-25' : 'border-slate-200 text-slate-600 hover:text-woot-500'}" %>
+    <% end %>
+  </nav>
+
+  <% if @commerce[:rows][:entries].empty? %>
+    <p class="text-sm text-slate-500 border border-slate-100 rounded-md p-4">
+      No store matches this view.
+      <% if @commerce[:view] == 'needs_action' %>
+        Nothing needs a human: no authorization is gone and no provider is refusing requests. That is not the
+        same as every store being healthy &mdash; see <strong>No signal yet</strong> above.
+      <% end %>
+    </p>
+  <% else %>
+    <div class="overflow-x-auto border border-slate-100 rounded-md">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-25 text-xs text-slate-600">
+          <tr>
+            <th class="text-start px-3 py-2 font-medium">Store</th>
+            <th class="text-start px-3 py-2 font-medium">Account</th>
+            <th class="text-start px-3 py-2 font-medium">Status</th>
+            <th class="text-start px-3 py-2 font-medium">Provider API</th>
+            <th class="text-start px-3 py-2 font-medium">Webhooks</th>
+            <th class="text-start px-3 py-2 font-medium">Last verified</th>
+            <th class="text-start px-3 py-2 font-medium">Incident</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @commerce[:rows][:entries].each do |row| %>
+            <% health = row[:health] %>
+            <tr class="border-t border-slate-100 align-top">
+              <td class="px-3 py-2">
+                <p class="text-slate-800"><%= row[:store].name %></p>
+                <p class="text-xs text-slate-400"><%= row[:store].provider.humanize %> &middot; #<%= row[:store].id %></p>
+              </td>
+              <td class="px-3 py-2 text-xs">
+                <%= link_to "#{row[:account].name} (#{row[:account].id})",
+                            account_super_admin_operations_path(id: row[:account].id),
+                            class: 'text-woot-500 hover:underline' %>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-700">
+                <%= row[:store].status.humanize %>
+                <% if row[:store].needs_reauth? %>
+                  <p class="text-red-700">The merchant must reconnect this store</p>
+                <% end %>
+              </td>
+              <td class="px-3 py-2">
+                <%= render 'status_badge', status: row[:status] %>
+                <p class="text-xs text-slate-600 mt-1">
+                  <% case row[:api_state] %>
+                  <% when 'unknown' %>
+                    No provider request has been recorded
+                  <% when 'failing' %>
+                    <%= pluralize(health.consecutive_failures, 'failure') %> in a row,
+                    last <%= time_ago_in_words(health.last_error_at || health.last_api_failure_at) %> ago
+                  <% when 'stale' %>
+                    Last answered <%= time_ago_in_words(health.last_api_success_at) %> ago &mdash; nothing has
+                    asked it since
+                  <% else %>
+                    Answered <%= time_ago_in_words(health.last_api_success_at) %> ago
+                  <% end %>
+                </p>
+                <% if health&.last_error_code.present? %>
+                  <p class="text-xs text-slate-400 mt-0.5 font-mono break-all">
+                    <%= health.last_error_code %><%= "/#{health.last_error_reason}" if health.last_error_reason.present? %>
+                  </p>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                <% case row[:webhook_state] %>
+                <% when 'unsupported' %>
+                  <span class="text-slate-500">Not supported by this provider</span>
+                <% when 'none' %>
+                  <span class="text-slate-500">No webhook received yet</span>
+                <% else %>
+                  Received <%= time_ago_in_words(health.last_webhook_received_at) %> ago
+                  <% if health.last_webhook_processed_at.present? %>
+                    <p class="text-slate-400">
+                      Applied <%= time_ago_in_words(health.last_webhook_processed_at) %> ago
+                    </p>
+                  <% else %>
+                    <p class="text-yellow-800">Received but not yet applied</p>
+                  <% end %>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                <%= row[:verified_at] ? "#{time_ago_in_words(row[:verified_at])} ago" : '—' %>
+              </td>
+              <td class="px-3 py-2 text-xs">
+                <% if row[:open_signal] %>
+                  <%= render 'status_badge', status: row[:open_signal] %>
+                <% else %>
+                  <span class="text-slate-400">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500">
+      <%# Default kaminari theme -- see accounts.html.erb. %>
+      <%= paginate @commerce[:rows][:page] %>
+    </div>
+  <% end %>
+
+  <p class="text-xs text-slate-500 mt-6">
+    Provider answers are recorded on a throttle, so a busy store writes one row per interval rather than one per
+    request; failures and recoveries are recorded immediately. Webhooks count only after the provider's
+    signature or credentials were accepted. Recording began when this feature was deployed and reconstructs
+    nothing from before then.
+  </p>
+</section>

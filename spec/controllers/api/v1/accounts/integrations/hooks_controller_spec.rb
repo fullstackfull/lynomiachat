@@ -103,19 +103,20 @@ RSpec.describe 'Integration Hooks API', type: :request do
         expect(data['app_id']).to eq 'slack'
       end
 
-      it 'does not update Shopify hooks when the account feature is disabled' do
+      # The retirement refuses CREATING a legacy hook and nothing else: an account that still holds one must
+      # be able to read it and delete it, because that is how a merchant moves to Commerce and the retirement
+      # destroys no merchant data (docs/product-refinement/02-shopify-retirement.md §5). This example used to
+      # assert the opposite, which would have stranded exactly the rows a migration needs to clear.
+      it 'still updates a legacy Shopify hook, so the account is not stranded with it' do
         shopify_hook = create(:integrations_hook, :shopify, account: account)
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(true)
 
         patch api_v1_account_integrations_hook_url(account_id: account.id, id: shopify_hook.id),
               params: { hook: { status: 'disabled' } },
               headers: admin.create_new_auth_token,
               as: :json
 
-        expect(response).to have_http_status(:not_found)
-        expect(shopify_hook.reload).to be_enabled
+        expect(response).to have_http_status(:success)
+        expect(shopify_hook.reload).to be_disabled
       end
     end
   end
@@ -176,18 +177,16 @@ RSpec.describe 'Integration Hooks API', type: :request do
         expect(Integrations::Hook.exists?(hook.id)).to be false
       end
 
-      it 'does not delete Shopify hooks when the account feature is disabled' do
+      # Deleting is the whole point: it is how a merchant clears a legacy row after moving to Commerce.
+      it 'still deletes a legacy Shopify hook' do
         shopify_hook = create(:integrations_hook, :shopify, account: account)
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(true)
 
         delete api_v1_account_integrations_hook_url(account_id: account.id, id: shopify_hook.id),
                headers: admin.create_new_auth_token,
                as: :json
 
-        expect(response).to have_http_status(:not_found)
-        expect(Integrations::Hook.exists?(shopify_hook.id)).to be true
+        expect(response).to have_http_status(:success)
+        expect(Integrations::Hook.exists?(shopify_hook.id)).to be(false)
       end
     end
   end

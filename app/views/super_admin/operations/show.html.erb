@@ -1,3 +1,10 @@
+<%#
+  The Operations Center front page (docs/product-refinement/10-operations-ui.md §overview).
+
+  Six answers in the order an operator needs them, and nothing else. There are no scale counts on this page:
+  "11,402 conversations" is not something anybody decides from, the Super Admin dashboard already shows it, and
+  it used to push the only actionable block below the fold.
+%>
 <% content_for(:title) do %>Operations<% end %>
 
 <header class="main-content__header" role="banner">
@@ -7,37 +14,234 @@
 <section class="main-content__body">
   <%= render 'tabs' %>
 
+  <%#
+    The standing caveat, said once and always: it is true whether or not anything is currently wrong, and the
+    empty states below would otherwise be the only place an operator ever read it.
+  %>
   <p class="text-sm text-slate-600 mb-6">
-    What in Lynomia Chat needs operator attention. Every row says how it was established, and an area with no
-    source at all reads <strong>unknown</strong> rather than green &mdash; "nothing was reported" and "we
-    checked and it is fine" are different statements.
+    Six answers, in the order they are needed. <strong>Recording started when this console was deployed</strong>
+    and reconstructs nothing from before it, so a quiet area means nothing has been reported &mdash; not that
+    everything has been checked. What this installation cannot observe at all is listed explicitly at the bottom.
   </p>
 
-  <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-8">
-    <% @overview[:totals].each do |label, value| %>
-      <div class="border border-slate-100 rounded-md p-3">
-        <p class="text-xs text-slate-500"><%= label.to_s.humanize %></p>
-        <p class="text-xl text-slate-800"><%= number_with_delimiter(value) %></p>
-      </div>
+  <%# ---- 1. What is critical right now %>
+  <% critical = @overview[:critical] %>
+  <div class="border rounded-md p-4 mb-6 <%= critical[:signal_count].positive? || critical[:components].any? ? 'border-red-300 bg-red-25' : 'border-slate-100' %>">
+    <h2 class="text-base font-semibold mb-1">Critical now</h2>
+    <% if critical[:signal_count].zero? && critical[:components].empty? %>
+      <p class="text-sm text-slate-600">
+        Nothing is critical: no open issue is at critical severity and no area reads critical.
+      </p>
+    <% else %>
+      <p class="text-sm text-slate-700 mb-3">
+        <%= pluralize(critical[:signal_count], 'critical issue') %> open,
+        <%= pluralize(critical[:components].length, 'area') %> reading critical. Suppressed issues are not here.
+      </p>
+      <% critical[:components].each do |component| %>
+        <%= render 'component', component: component %>
+      <% end %>
+      <% if critical[:signals].any? %>
+        <div class="mt-3">
+          <%= render 'signals', signals: critical[:signals], show_actions: false %>
+        </div>
+      <% end %>
     <% end %>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <div>
+      <%# ---- 2. What needs a human %>
+      <h2 class="text-base font-semibold mb-1">Needs a human</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        The queue's own definition, so this number and that page cannot disagree.
+      </p>
+      <% attention = @overview[:attention] %>
+      <div class="border border-slate-100 rounded-md p-4">
+        <p class="text-3xl text-slate-800"><%= number_with_delimiter(attention[:needs_action]) %></p>
+        <p class="text-sm text-slate-600 mb-3">
+          open, unacknowledged and not suppressed.
+          <%= link_to 'Work the queue', queue_super_admin_operations_path, class: 'text-woot-500 hover:underline' %>
+        </p>
+        <dl class="text-xs text-slate-600 space-y-1">
+          <div class="flex justify-between gap-4">
+            <dt>Someone is on it</dt>
+            <dd><%= attention[:acknowledged] %></dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt>Deliberately suppressed</dt>
+            <dd><%= attention[:suppressed] %></dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt>With no support case</dt>
+            <dd><%= attention[:unlinked] %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <div>
+      <%# ---- 3. Which accounts are affected %>
+      <h2 class="text-base font-semibold mb-1">Accounts affected</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        Worst first, then most occurrences &mdash; triage order.
+        <% if @overview[:accounts][:installation_wide].positive? %>
+          <%= pluralize(@overview[:accounts][:installation_wide], 'issue') %> affect the platform and no single
+          account.
+        <% end %>
+      </p>
+      <div class="border border-slate-100 rounded-md px-4">
+        <% if @overview[:accounts][:accounts].empty? %>
+          <p class="text-sm text-slate-600 py-3">No account has an issue waiting for a human.</p>
+        <% else %>
+          <% @overview[:accounts][:accounts].each do |row| %>
+            <div class="flex items-center justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
+              <div class="min-w-0">
+                <%= link_to row[:name].presence || "Account #{row[:id]}",
+                            account_super_admin_operations_path(id: row[:id]),
+                            class: 'text-sm text-woot-500 hover:underline' %>
+                <p class="text-xs text-slate-500"><%= pluralize(row[:signals], 'issue') %> waiting</p>
+              </div>
+              <%= render 'status_badge', status: row[:severity] %>
+            </div>
+          <% end %>
+          <% if @overview[:accounts][:affected_total] > @overview[:accounts][:accounts].length %>
+            <p class="text-xs text-slate-500 py-2">
+              <%= @overview[:accounts][:affected_total] %> accounts affected in total.
+              <%= link_to 'See all', accounts_super_admin_operations_path, class: 'text-woot-500 hover:underline' %>
+            </p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ---- 4. Which providers or channels are degraded %>
+  <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div>
+      <h2 class="text-base font-semibold mb-1">Degraded channels</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        Channel types something is recorded against.
+        <%= link_to 'Full matrix', channels_super_admin_operations_path, class: 'text-woot-500 hover:underline' %>
+      </p>
+      <div class="border border-slate-100 rounded-md px-4">
+        <% if @overview[:degraded].empty? %>
+          <p class="text-sm text-slate-600 py-3">
+            No channel type has a recorded problem. Five of the twelve report nothing at all &mdash; see what is
+            unknown, below.
+          </p>
+        <% else %>
+          <% @overview[:degraded].each do |row| %>
+            <%= render 'component', component: row[:component] %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-base font-semibold mb-1">Commerce providers</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        Store status paired with whether the provider is answering.
+        <%= link_to 'All stores', commerce_super_admin_operations_path, class: 'text-woot-500 hover:underline' %>
+      </p>
+      <% commerce = @overview[:commerce] %>
+      <div class="border border-slate-100 rounded-md p-4 text-sm text-slate-700">
+        <% if commerce[:stores].to_i.zero? %>
+          <p class="text-slate-600">No commerce store is connected.</p>
+        <% else %>
+          <dl class="space-y-1">
+            <div class="flex justify-between gap-4">
+              <dt>Need reconnecting</dt>
+              <dd class="<%= 'text-red-700' if commerce[:needs_reauth].to_i.positive? %>"><%= commerce[:needs_reauth] %></dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt>Failing provider requests</dt>
+              <dd class="<%= 'text-yellow-800' if commerce[:failing].to_i.positive? %>"><%= commerce[:failing] %></dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt>No signal yet</dt>
+              <dd><%= commerce[:unobserved] %></dd>
+            </div>
+            <div class="flex justify-between gap-4 text-slate-500">
+              <dt>Connected stores</dt>
+              <dd><%= commerce[:stores] %></dd>
+            </div>
+          </dl>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ---- 5. What recovered recently %>
+  <div class="mt-8">
+    <h2 class="text-base font-semibold mb-1">Recovered recently</h2>
+    <p class="text-xs text-slate-500 mb-2">
+      Resolved, not quiet: a signal leaves the open set only when something observed the thing working again.
+      Last <%= @overview[:recovered][:window].inspect %>.
+    </p>
+    <% if @overview[:recovered][:signals].empty? %>
+      <p class="text-sm text-slate-500 border border-slate-100 rounded-md p-4">Nothing recovered in this window.</p>
+    <% else %>
+      <%= render 'signals', signals: @overview[:recovered][:signals], show_actions: false %>
+    <% end %>
+  </div>
+
+  <%# ---- 6. What is unknown because nothing reports it %>
+  <div class="mt-8">
+    <h2 class="text-base font-semibold mb-1">Unknown, because nothing reports it</h2>
+    <p class="text-xs text-slate-500 mb-2">
+      The block that makes the rest of this page worth trusting. Everything here is a gap in what this
+      installation can observe &mdash; never a quiet success.
+    </p>
+    <div class="border border-slate-100 rounded-md px-4">
+      <% @overview[:unknown][:components].each do |component| %>
+        <%= render 'component', component: component %>
+      <% end %>
+      <% if @overview[:unknown][:unobserved_stores].positive? %>
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
+          <div>
+            <p class="text-sm text-slate-800">Commerce stores with no observation</p>
+            <p class="text-xs text-slate-600 mt-0.5">
+              <%= pluralize(@overview[:unknown][:unobserved_stores], 'store') %> have not been called since
+              recording began.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="text-xs text-slate-400">absent</span>
+            <%= render 'status_badge', status: 'unknown' %>
+            <%= link_to 'Investigate', commerce_super_admin_operations_path(view: 'unobserved'),
+                        class: 'text-xs text-woot-500 hover:underline' %>
+          </div>
+        </div>
+      <% end %>
+      <% if @overview[:unknown][:unreported_channels].any? %>
+        <div class="py-2">
+          <p class="text-xs text-slate-600">
+            Channel types with no health source at all:
+            <span class="font-mono"><%= @overview[:unknown][:unreported_channels].join(', ') %></span>.
+            Nothing in this installation reports whether those connections still work.
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ---- The live and computed detail, below the six answers %>
+  <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div>
       <h2 class="text-base font-semibold mb-1">Platform</h2>
       <p class="text-xs text-slate-500 mb-2">Read live, this request.</p>
       <div class="border border-slate-100 rounded-md px-4">
-        <% @overview[:probes].sort_by(&:rank).each do |component| %>
+        <% @overview[:platform].sort_by(&:rank).each do |component| %>
           <%= render 'component', component: component %>
         <% end %>
       </div>
       <p class="text-xs text-slate-500 mt-2 font-mono break-all">
         <%= @overview[:release].map { |key, value| "#{key}=#{Array(value).join(',')}" }.join(' ') %>
       </p>
-      <p class="mt-2">
-        <%= link_to 'Sidekiq dashboard', sidekiq_web_url, class: 'text-xs text-woot-500 hover:underline' %>
+      <p class="mt-2 text-xs">
+        <%= link_to 'Instance health', super_admin_instance_status_url, class: 'text-woot-500 hover:underline' %>
         &middot;
-        <%= link_to 'Instance health', super_admin_instance_status_url, class: 'text-xs text-woot-500 hover:underline' %>
+        <%= link_to 'Installation dashboard', super_admin_root_url, class: 'text-woot-500 hover:underline' %>
       </p>
     </div>
 
@@ -45,7 +249,7 @@
       <h2 class="text-base font-semibold mb-1">Product areas</h2>
       <p class="text-xs text-slate-500 mb-2">
         Computed from the product's own records, calculated
-        <%= @overview[:computed_at] ? time_ago_in_words(@overview[:computed_at]) + ' ago' : 'just now' %>.
+        <%= @overview[:derived_at] ? "#{time_ago_in_words(@overview[:derived_at])} ago" : 'just now' %>.
       </p>
       <div class="border border-slate-100 rounded-md px-4">
         <% @overview[:computed].each do |component| %>
@@ -55,21 +259,107 @@
     </div>
   </div>
 
-  <div class="mt-8">
-    <h2 class="text-base font-semibold mb-1">Recent recorded issues</h2>
-    <p class="text-xs text-slate-500 mb-2">
-      <%= pluralize(@overview[:signals][:open], 'open issue') %>,
-      <%= @overview[:signals][:critical] %> critical,
-      <%= @overview[:signals][:unlinked] %> with no support case.
-      <%= link_to 'See all', issues_super_admin_operations_path, class: 'text-woot-500 hover:underline' %>
-    </p>
-    <% if @overview[:signals][:recent].empty? %>
-      <p class="text-sm text-slate-500 border border-slate-100 rounded-md p-4">
-        Nothing has been recorded. This is not the same as healthy: recording started when this feature was
-        deployed, and it reconstructs nothing from before then.
+  <%# ---- Background jobs and billing %>
+  <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div>
+      <h2 class="text-base font-semibold mb-1">Background work</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        Sidekiq owns the job level and this does not reproduce it. What is here is which product capability a
+        backed-up queue is holding up.
       </p>
-    <% else %>
-      <%= render 'signals', signals: @overview[:signals][:recent], show_actions: false %>
-    <% end %>
+      <% jobs = @overview[:jobs] %>
+      <div class="border border-slate-100 rounded-md p-4">
+        <% if jobs[:queues].nil? %>
+          <p class="text-sm text-slate-600">
+            The queues could not be read (<%= jobs[:error] %>). That is not the same as them being empty.
+          </p>
+        <% elsif jobs[:queues].empty? %>
+          <p class="text-sm text-slate-600">Every queue is empty.</p>
+        <% else %>
+          <% jobs[:queues].each do |queue| %>
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 py-2 last:border-b-0">
+              <div class="min-w-0">
+                <p class="text-sm text-slate-800 font-mono"><%= queue[:name] %></p>
+                <p class="text-xs text-slate-600"><%= queue[:meaning] || 'No stated product meaning' %></p>
+              </div>
+              <div class="text-xs text-end flex-shrink-0 <%= queue[:behind] ? 'text-yellow-800' : 'text-slate-600' %>">
+                <p><%= number_with_delimiter(queue[:size]) %> waiting</p>
+                <p><%= distance_of_time_in_words(queue[:latency]) %> behind</p>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+        <% if jobs[:totals] %>
+          <p class="text-xs text-slate-400 mt-3 font-mono break-all">
+            <%= jobs[:totals].map { |key, value| "#{key}=#{value}" }.join(' ') %>
+          </p>
+        <% end %>
+        <p class="mt-2 text-xs">
+          <%= link_to 'Sidekiq', jobs[:links][:sidekiq], class: 'text-woot-500 hover:underline' %>
+          &middot;
+          <%= link_to 'Retries', jobs[:links][:retries], class: 'text-woot-500 hover:underline' %>
+          &middot;
+          <%= link_to 'Dead jobs', jobs[:links][:dead], class: 'text-woot-500 hover:underline' %>
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-base font-semibold mb-1">Billing</h2>
+      <p class="text-xs text-slate-500 mb-2">
+        Two different things, kept apart. A customer's declined card is a <strong>commercial</strong> fact Stripe
+        already told them about &mdash; nobody should be woken for it. The installation failing at its own
+        billing job is an incident.
+      </p>
+      <% billing = @overview[:billing] %>
+      <div class="border border-slate-100 rounded-md p-4">
+        <p class="text-xs font-medium text-slate-600 mb-1">Commercial</p>
+        <dl class="text-sm text-slate-700 space-y-1 mb-3">
+          <% billing[:commercial][:by_status].each do |status, count| %>
+            <div class="flex justify-between gap-4">
+              <dt><%= status.humanize %></dt>
+              <dd><%= count %></dd>
+            </div>
+          <% end %>
+          <div class="flex justify-between gap-4 text-slate-500">
+            <dt>Trials ending within 7 days</dt>
+            <dd><%= billing[:commercial][:trials_ending] %></dd>
+          </div>
+        </dl>
+
+        <p class="text-xs font-medium text-slate-600 mb-1">Platform incidents</p>
+        <% if billing[:incidents][:open].zero? %>
+          <p class="text-sm text-slate-600 mb-3">No billing incident is open.</p>
+        <% else %>
+          <p class="text-sm text-red-700 mb-1"><%= pluralize(billing[:incidents][:open], 'open billing incident') %></p>
+          <p class="text-xs text-slate-500 font-mono break-all mb-3">
+            <%= billing[:incidents][:by_signal].map { |signal, count| "#{signal}=#{count}" }.join(' ') %>
+          </p>
+        <% end %>
+
+        <p class="text-xs font-medium text-slate-600 mb-1">Locked out</p>
+        <% if billing[:locked][:recent].empty? %>
+          <p class="text-sm text-slate-600">
+            No account among the <%= billing[:locked][:candidates_read] %> most recently changed subscriptions
+            is locked out.
+          </p>
+        <% else %>
+          <ul class="text-sm text-slate-700 space-y-1">
+            <% billing[:locked][:recent].each do |row| %>
+              <li>
+                <%= link_to row[:account]&.name.presence || 'Account removed',
+                            account_super_admin_operations_path(id: row[:account]&.id),
+                            class: 'text-woot-500 hover:underline' %>
+                <span class="text-xs text-slate-500">&middot; <%= row[:status].humanize %></span>
+              </li>
+            <% end %>
+          </ul>
+          <p class="text-xs text-slate-500 mt-1">
+            Most recent, not a total: whether an account is locked is a time-and-config judgement the
+            subscription model makes, not a column this page can count.
+          </p>
+        <% end %>
+      </div>
+    </div>
   </div>
 </section>

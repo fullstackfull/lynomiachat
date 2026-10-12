@@ -1,7 +1,7 @@
 class Api::V1::Accounts::Integrations::HooksController < Api::V1::Accounts::Integrations::BaseController
   before_action :fetch_hook, except: [:create]
   before_action :check_authorization
-  before_action :ensure_shopify_enabled, if: :shopify_hook?
+  before_action :refuse_retired_shopify_hook, only: [:create], if: :shopify_hook?
 
   def create
     @hook = Current.account.hooks.create!(permitted_params)
@@ -40,11 +40,23 @@ class Api::V1::Accounts::Integrations::HooksController < Api::V1::Accounts::Inte
     params.require(:hook).permit(:app_id, :inbox_id, :status, settings: {})
   end
 
+  # Only asked on `create`, which is the only action the refusal below applies to. The branch that read
+  # `@hook&.app_id` was left over from when every action was refused, and was unreachable.
   def shopify_hook?
-    action_name == 'create' ? permitted_params[:app_id] == 'shopify' : @hook.app_id == 'shopify'
+    permitted_params[:app_id] == 'shopify'
   end
 
-  def ensure_shopify_enabled
-    head :not_found unless Shopify::FeatureGate.enabled?(account: Current.account)
+  # The legacy Shopify integration is retired: Lynomia has one Shopify product and it is Lynomia Commerce
+  # (docs/product-refinement/02-shopify-retirement.md). No new legacy hook may be created.
+  #
+  # Only `create` is refused. An account that still holds a legacy hook must be able to READ it and DELETE it,
+  # because that is how a merchant moves to Commerce -- and because the retirement deliberately destroys no
+  # merchant data (§5 of the same document). Refusing `destroy` would strand exactly the rows the migration
+  # needs to clear.
+  #
+  # 404 rather than 422: the product no longer has this integration, so the resource does not exist for this
+  # account. It is the same answer every other absent account feature gives.
+  def refuse_retired_shopify_hook
+    head :not_found
   end
 end

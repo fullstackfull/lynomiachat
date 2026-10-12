@@ -23,7 +23,14 @@ class Commerce::Shopify::WebhookJob < ApplicationJob
     payload = Commerce::WebhookQueue.unseal('shopify', sealed_body)
     @store = Commerce::Store.find_by(provider: 'shopify', base_url: "https://#{shop_domain}")
     @triggered_at = triggered_at
-    send(HANDLERS.fetch(topic), payload) if @store && payload.is_a?(Hash)
+    return unless @store && payload.is_a?(Hash)
+
+    # Shopify's HMAC was checked at the request (Webhooks::ShopifyCommerceController) but the delivery names its
+    # shop in the signed BODY, so this is the first point that knows which store is healthy
+    # (docs/product-refinement/09-commerce-operations.md §webhooks).
+    Commerce::StoreHealthRecorder.webhook_received(@store)
+    send(HANDLERS.fetch(topic), payload)
+    Commerce::StoreHealthRecorder.webhook_processed(@store)
   end
 
   private

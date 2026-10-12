@@ -71,10 +71,20 @@ class Operations::Probes
 
     Operations::Health::Component.build(
       key: :workers, status: Operations::Health::CRITICAL, source_class: 'probed', observed_at: Time.current,
-      reason: 'No Sidekiq process is registered', detail: detail, investigate: '/super_admin/monitoring/sidekiq'
+      reason: 'No Sidekiq process is registered', detail: detail, investigate: sidekiq_path
     )
   rescue StandardError => e
     unreachable(:workers, e)
+  end
+
+  # The mount point's own route helper, not a guess at the path.
+  #
+  # This used to read '/super_admin/monitoring/sidekiq', which 404s: `namespace :super_admin` CLOSES before
+  # `authenticated :super_admin do`, and the `devise_scope` wrapper adds no prefix, so the real path is
+  # /monitoring/sidekiq (config/routes.rb). An operator following the one link on a critical probe landed on a
+  # 404 -- the worst possible moment for a dead link.
+  def sidekiq_path
+    Rails.application.routes.url_helpers.sidekiq_web_path
   end
 
   def healthy(key, detail: {})

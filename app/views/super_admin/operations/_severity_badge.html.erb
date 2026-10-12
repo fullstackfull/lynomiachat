@@ -1,0 +1,14 @@
+<%#
+  One signal's severity. Deliberately the same palette as _status_badge so an operator reads one colour
+  language across the console: critical is red, warning is amber, info is quiet.
+%>
+<%
+  classes = {
+    'critical' => 'bg-red-50 text-red-800 border-red-300',
+    'warning' => 'bg-yellow-50 text-yellow-900 border-yellow-300',
+    'info' => 'bg-slate-50 text-slate-700 border-slate-200'
+  }
+%>
+<span class="inline-flex items-center border rounded-md px-2 py-0.5 text-xs font-medium <%= classes.fetch(severity, classes['info']) %>">
+  <%= severity.humanize %>
+</span>

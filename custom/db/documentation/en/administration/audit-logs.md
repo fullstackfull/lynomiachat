@@ -3,7 +3,7 @@ title: Audit logs
 description: You will know exactly which actions are recorded, which are not, who can read the record, and how long it is kept.
 position: 10
 tags: [administration, audit]
-seo_description: "What the Lynomia Chat audit log records and does not record, who can read it, how IP addresses are shown, and that there is no retention limit."
+seo_description: "What the Lynomia Chat audit log records and does not record, who can read it, how IP addresses are shown, and how long entries are kept."
 ---
 The audit log is a read-only record of **configuration changes and sign-ins**, under
 **Settings → Audit Logs**. Each entry says who did what, and when.
@@ -60,8 +60,17 @@ accumulated in the meantime.
 
 ## How long it is kept
 
-Indefinitely. There is no retention setting, no age limit, and no scheduled job that deletes entries. Nobody —
-including an administrator — can edit or delete one from the product.
+**One year by default.** Entries older than the retention window are removed by a scheduled sweep. The window
+is an installation-wide setting that only the people who run your Lynomia Chat server can change, and the
+minimum it accepts is 30 days. It is not a plan feature and no administrator, agent or account setting affects
+it — so if you need a different window, ask whoever operates your installation.
+
+Within the window, nobody — including an administrator — can edit or delete an entry from the product. The
+sweep is the only thing that removes one, it only ever removes entries past the window, and it always errs on
+the side of keeping an entry slightly longer rather than slightly less.
+
+**If you need a record for longer than the window, keep it outside the product.** There is no export (see
+Limits below), so that means recording what you need at the time you read it.
 
 ## A worked example
 

@@ -47,10 +47,6 @@ class Integrations::App
       "#{params[:action]}&client_id=#{client_id}&redirect_uri=#{self.class.slack_integration_url}"
     when 'linear'
       build_linear_action
-    when 'shopify'
-      return unless Shopify::FeatureGate.enabled?(account: Current.account)
-
-      GlobalConfigService.load('SHOPIFY_APP_STORE_URL', nil)
     else
       params[:action]
     end
@@ -62,8 +58,6 @@ class Integrations::App
       GlobalConfigService.load('SLACK_CLIENT_SECRET', nil).present?
     when 'linear'
       account.feature_enabled?('linear_integration') && GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
-    when 'shopify'
-      shopify_enabled?(account)
     when 'leadsquared'
       account.feature_enabled?('crm_integration')
     when 'notion'
@@ -92,8 +86,6 @@ class Integrations::App
       account.webhooks.exists?
     when 'dashboard_apps'
       account.dashboard_apps.exists?
-    when 'shopify'
-      account.hooks.exists?(app_id: id, status: :enabled)
     else
       account.hooks.exists?(app_id: id)
     end
@@ -128,11 +120,6 @@ class Integrations::App
   end
 
   private
-
-  def shopify_enabled?(account)
-    Shopify::FeatureGate.enabled?(account: account) &&
-      GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?
-  end
 
   def notion_enabled?(account)
     account.feature_enabled?('notion_integration') && GlobalConfigService.load('NOTION_CLIENT_ID', nil).present?

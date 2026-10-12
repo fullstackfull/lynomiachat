@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useBranding } from 'shared/composables/useBranding';
 import { useAlert } from 'dashboard/composables';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import DocsLink from 'dashboard/components-next/docs-link/DocsLink.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import CommerceAPI from 'dashboard/api/commerce';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
@@ -215,5 +216,10 @@ onBeforeUnmount(stopPolling);
         @click="createCode"
       />
     </div>
+    <!-- The set-up guide for this platform, at the step where the merchant is doing the set-up. -->
+    <DocsLink
+      article-key="commerceSalla"
+      :label="t('COMMERCE.SETTINGS.SALLA.DOCS')"
+    />
   </Dialog>
 </template>

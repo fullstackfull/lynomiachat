@@ -20,7 +20,7 @@ class Commerce::Zid::Webhooks
   def register
     Commerce::StoreLock.with('zid_webhooks', @store.external_store_id) do
       tokens.with_credentials do |credentials|
-        client = Commerce::Zid::Oauth.api(credentials)
+        client = Commerce::Zid::Oauth.api(credentials, store: @store)
         remove(client)
         auth = { 'webhook_username' => SecureRandom.hex(16), 'webhook_password' => SecureRandom.urlsafe_base64(48) }
         @store.update!(credentials: @store.reload.credentials.merge(auth))
@@ -32,7 +32,7 @@ class Commerce::Zid::Webhooks
 
   # Before a disconnect: Zid stops sending this store's events to Lynomia.
   def unregister
-    tokens.with_credentials { |credentials| remove(Commerce::Zid::Oauth.api(credentials)) }
+    tokens.with_credentials { |credentials| remove(Commerce::Zid::Oauth.api(credentials, store: @store)) }
   end
 
   private

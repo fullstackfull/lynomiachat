@@ -14,9 +14,9 @@ class Webhooks::ShopifyCommerceController < ActionController::API
 
     shop = request.headers['X-Shopify-Shop-Domain']
     webhook_id = request.headers['X-Shopify-Webhook-Id']
-    return head :bad_request unless webhook_id.present? && ::Shopify::ShopDomain.valid?(shop)
+    return head :bad_request unless webhook_id.present? && ::Commerce::Shopify::ShopDomain.valid?(shop)
 
-    enqueue(request.headers['X-Shopify-Topic'], ::Shopify::ShopDomain.normalize(shop), webhook_id, body)
+    enqueue(request.headers['X-Shopify-Topic'], ::Commerce::Shopify::ShopDomain.normalize(shop), webhook_id, body)
     head :ok
   end
 

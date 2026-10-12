@@ -1,18 +1,65 @@
+<%#
+  One documentation article's head (docs/product-refinement/03-documentation-seo.md).
+
+  Every address comes from DocumentationHelper, which builds them all the same way, so the canonical, the
+  hreflang set, the Open Graph URL and the structured data cannot disagree with each other or with the sitemap.
+%>
+<% canonical_url = portal_canonical_url(portal, article) %>
+<% meta_title = article.meta["title"].presence || article.title %>
+<% meta_description = article.meta["description"].presence || article.description.presence %>
 <title><%= article.title %> | <%= portal.display_title(article.locale) %></title>
-<link rel="canonical" href="<%= portal_canonical_url(portal, article) %>">
-<% if article.meta["title"].present? %>
-  <meta name="title" content="<%= article.meta["title"] %>">
-  <meta property="og:title" content="<%= article.meta["title"] %>">
+<link rel="canonical" href="<%= canonical_url %>">
+
+<%#
+  hreflang. Each locale's article is its own canonical, so this is how a crawler learns they are the same page
+  in another language. Only PUBLISHED siblings are listed, and `x-default` names the portal's default locale
+  for a reader whose language this portal does not have. Both are empty when there is only one language --
+  there is nothing to alternate between.
+%>
+<% portal_locale_alternates(portal, article).each do |locale, url| %>
+  <link rel="alternate" hreflang="<%= html_lang_attribute(locale) %>" href="<%= url %>">
 <% end %>
-<% if article.meta["description"].present? %>
-  <meta name="description" content="<%= article.meta["description"] %>">
-  <meta property="og:description" content="<%= article.meta["description"] %>">
+<% if (default_url = portal_default_alternate_url(portal, article)) %>
+  <link rel="alternate" hreflang="x-default" href="<%= default_url %>">
+<% end %>
+
+<meta name="title" content="<%= meta_title %>">
+<% if meta_description.present? %>
+  <meta name="description" content="<%= meta_description %>">
 <% end %>
 <% if article.meta["tags"].present? %>
   <meta name="tags" content="<%= article.meta["tags"].join(',') %>">
 <% end %>
-<% if og_image_url.present? %>
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="og:image" content="<%= og_image_url.html_safe %>">
-  <meta property="og:image" content="<%= og_image_url.html_safe %>">
+
+<%# Open Graph. `og:type` is `article`, which is what a documentation page is to a social crawler. %>
+<meta property="og:type" content="article">
+<meta property="og:url" content="<%= canonical_url %>">
+<meta property="og:site_name" content="<%= portal.display_title(article.locale) %>">
+<meta property="og:title" content="<%= meta_title %>">
+<% if meta_description.present? %>
+  <meta property="og:description" content="<%= meta_description %>">
 <% end %>
+<meta property="article:published_time" content="<%= article.created_at&.iso8601 %>">
+<meta property="article:modified_time" content="<%= article.updated_at&.iso8601 %>">
+
+<%#
+  Twitter. The card needs its own title and description: a crawler that reads `twitter:*` does not fall back to
+  `og:*` for every field, and a card with an image but no text was the state before this.
+%>
+<meta name="twitter:card" content="<%= og_image_url.present? ? 'summary_large_image' : 'summary' %>">
+<meta name="twitter:title" content="<%= meta_title %>">
+<% if meta_description.present? %>
+  <meta name="twitter:description" content="<%= meta_description %>">
+<% end %>
+<%#
+  og:image is a `property`, not a `name`. There used to be both, which is how a page ends up with a tag no
+  crawler reads sitting next to the one that works.
+%>
+<% if og_image_url.present? %>
+  <meta property="og:image" content="<%= og_image_url.html_safe %>">
+  <meta name="twitter:image" content="<%= og_image_url.html_safe %>">
+<% end %>
+
+<%# Structured data: the trail, and what kind of page this is. %>
+<%= documentation_structured_data(documentation_breadcrumb_schema(portal, article)) %>
+<%= documentation_structured_data(documentation_article_schema(portal, article)) %>

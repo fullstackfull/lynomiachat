@@ -53,7 +53,9 @@ post 'webhooks/woocommerce/:store_id', to: 'webhooks/woocommerce#create', constr
 get 'commerce/zid/callback', to: 'commerce/zid/callbacks#show'
 post 'webhooks/zid/:store_id', to: 'webhooks/zid#create', constraints: { store_id: /\d+/ }
 
-# The OAuth redirect URL and the webhook URI of the Lynomia Commerce Shopify app (not the legacy integration's
-# /shopify/callback and /webhooks/shopify)
+# The OAuth redirect URL and the webhook URI of the Lynomia Commerce Shopify app -- Lynomia's one Shopify
+# integration. The legacy integration's /shopify/callback and /webhooks/shopify were retired in
+# docs/product-refinement/02-shopify-retirement.md; these paths keep their distinct names so an existing
+# Shopify app registration does not have to be re-pointed.
 get 'commerce/shopify/callback', to: 'commerce/shopify/callbacks#show'
 post 'webhooks/shopify_commerce', to: 'webhooks/shopify_commerce#create'

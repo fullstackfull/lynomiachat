@@ -28,7 +28,8 @@
     <div class="mt-4 text-xs text-slate-500">
       Page <%= @signals.current_page %> of <%= @signals.total_pages %> &middot;
       <%= pluralize(@signals.total_count, 'issue') %>
-      <%= paginate @signals, theme: 'administrate' rescue nil %>
+      <%# Default kaminari theme -- see accounts.html.erb. %>
+      <%= paginate @signals %>
     </div>
   <% end %>
 </section>

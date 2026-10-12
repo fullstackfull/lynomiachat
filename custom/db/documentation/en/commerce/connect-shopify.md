@@ -8,9 +8,7 @@ seo_description: "Connect a Shopify store to Lynomia Chat: the myshopify domain,
 Shopify connects by authorizing the **Lynomia Chat Commerce** app on your store. You enter the store's
 myshopify.com domain, approve the app in Shopify, and come back. No token is typed anywhere.
 
-This is a different app from the Shopify integration listed under Integrations. The two never share
-credentials, and a store already connected through that integration is refused here, so the same orders never
-appear twice.
+This is Lynomia Chat's only Shopify integration. If you connected a store here before, nothing changes.
 
 ## What you need first
 
@@ -22,7 +20,6 @@ appear twice.
 - **Shopify's Protected Customer Data approval** for the Lynomia Chat Commerce app. Shopify treats a customer's
   email and phone number as protected, and those two fields are what matching needs. Until Shopify approves it,
   the store connects but the section reports that customers cannot be matched.
-- The store not already connected through this account's Shopify integration.
 
 ## Steps
 
@@ -84,8 +81,9 @@ Any agent who can see a conversation sees the Shopify orders in it.
 **"Enter the store's myshopify.com domain."** You entered a custom domain, or added `https://` and a path. Use
 the plain `your-store.myshopify.com` form from Shopify admin → Settings → Domains.
 
-**"This Shopify store is already connected through this account's Shopify integration."** Disconnect it under
-Integrations first, then connect it here.
+**"This store is already connected."** The store is already connected under **Settings → Commerce**, either in
+this account or in another one. Check your store list first; if another account holds it, that account has to
+disconnect it before you can connect it here.
 
 **The section says Shopify has not approved reading customer data.** That is Protected Customer Data. The
 store's orders cannot be matched to contacts until Shopify approves the app. Nothing in your account changes

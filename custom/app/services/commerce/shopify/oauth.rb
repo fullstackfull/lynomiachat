@@ -1,6 +1,6 @@
 # Shopify's OAuth authorization code grant for the Lynomia Commerce app, server-side only
 # (docs/commerce/18-shopify-oauth-and-tokens.md). Every request goes to the shop's own myshopify.com host, always a
-# Shopify::ShopDomain-validated value: the domain the administrator entered, carried in the signed state. The client
+# Commerce::Shopify::ShopDomain-validated value: the domain the administrator entered, carried in the signed state. The client
 # secret only travels in the token requests below and is the key of the callback signature.
 module Commerce::Shopify::Oauth
   # Shopify's official libraries accept a callback signed at most this many seconds before or after now.

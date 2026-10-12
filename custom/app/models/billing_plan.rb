@@ -46,6 +46,22 @@ class BillingPlan < ApplicationRecord
                                  .freeze
   end
 
+  # Features that still EXIST but must not be offered to anybody.
+  #
+  # A retired feature's line stays in config/features.yml because bit positions are persisted per column and
+  # removing a line silently changes which features every existing account has. `deprecated: true` is how a
+  # line says "declared, never offered" -- so it is excluded from the plan form above AND from the account
+  # payload the dashboard reads (app/views/api/v1/models/_account.json.jbuilder), because a flag that unlocks
+  # a page which no longer exists is a menu entry that 404s.
+  #
+  # Read from the same file and memoized the same way, so there is one place that knows what deprecated means.
+  def self.deprecated_features
+    @deprecated_features ||= YAML.safe_load(FEATURES_FILE.read)
+                                 .select { |feature| feature['deprecated'] }
+                                 .pluck('name')
+                                 .freeze
+  end
+
   # Price in normal units (e.g. 19.99) - used by the super admin form
   def price
     price_cents.to_i / 100.0

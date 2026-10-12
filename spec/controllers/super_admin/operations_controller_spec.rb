@@ -62,10 +62,20 @@ RSpec.describe 'Super Admin Operations Center', type: :request do
         expect(response.body).to include('No WhatsApp inbox exists')
       end
 
-      it 'says so when nothing has been recorded, instead of implying health' do
+      # Said once and always, not only in an empty state: it is equally true when the page is full of problems.
+      it 'states that recording started at deployment, instead of implying health' do
         get '/super_admin/operations'
 
-        expect(response.body).to include('Nothing has been recorded')
+        expect(response.body).to include('Recording started when this console was deployed')
+        expect(response.body).to include('not that')
+      end
+
+      # The block that makes the rest of the page worth trusting (docs/product-refinement/10-operations-ui.md).
+      it 'names what is unknown because nothing reports it' do
+        get '/super_admin/operations'
+
+        expect(response.body).to include('Unknown, because nothing reports it')
+        expect(response.body).to include('Channel types with no health source at all')
       end
 
       it 'shows a recorded issue in the feed' do

@@ -68,6 +68,14 @@ export const DOC_ARTICLES = Object.freeze({
   commerceZid: 'connect-zid',
   commerceShopify: 'connect-shopify',
   customer360: 'customer-360',
+  // Commerce troubleshooting. One article per CLASS of refusal rather than one per code: the thirty entries in
+  // Commerce::Error::CODES collapse into five distinct remedies, and five articles somebody will read beat
+  // thirty nobody will.
+  commerceStoreReconnect: 'commerce-store-needs-reconnecting',
+  commerceStoreUnreachable: 'commerce-store-unreachable',
+  commerceStoreAddress: 'commerce-store-address-refused',
+  commerceStorePermissions: 'commerce-keys-cannot-do-that',
+  commerceOrderAction: 'commerce-order-action-did-not-apply',
   // workspace and team
   inboxes: 'set-up-an-inbox',
   teams: 'teams-and-agents',
@@ -90,6 +98,51 @@ export function documentationArticleUrl(base, key) {
   if (!base || !slug) return '';
 
   return `${base.replace(/\/+$/, '')}/${slug}`;
+}
+
+const COMMERCE_ERROR_ARTICLES = Object.freeze({
+  AUTH_INVALID: 'commerceStoreReconnect',
+
+  STORE_UNAVAILABLE: 'commerceStoreUnreachable',
+  TIMEOUT: 'commerceStoreUnreachable',
+  RATE_LIMITED: 'commerceStoreUnreachable',
+  INVALID_RESPONSE: 'commerceStoreUnreachable',
+
+  INVALID_STORE_URL: 'commerceStoreAddress',
+
+  PERMISSION_DENIED: 'commerceStorePermissions',
+  WRITE_ACCESS_DENIED: 'commerceStorePermissions',
+  PROTECTED_DATA_NOT_APPROVED: 'commerceStorePermissions',
+
+  ACTIONS_DISABLED: 'commerceOrderAction',
+  ACTION_UNAVAILABLE: 'commerceOrderAction',
+  ACTION_IN_PROGRESS: 'commerceOrderAction',
+  ORDER_CHANGED: 'commerceOrderAction',
+  INVALID_AMOUNT: 'commerceOrderAction',
+  IDEMPOTENCY_CONFLICT: 'commerceOrderAction',
+  NOT_APPLIED: 'commerceOrderAction',
+  PROVIDER_REJECTED: 'commerceOrderAction',
+  REFUND_DECLINED: 'commerceOrderAction',
+  NOT_SENT: 'commerceOrderAction',
+});
+
+/**
+ * The registry key for one Commerce error code (Commerce::Error::CODES), for a surface that has the code and
+ * wants the article that explains what to do about it.
+ *
+ * GROUPED BY REMEDY, not one article per code. Thirty codes have five distinct answers -- reconnect the store,
+ * the store did not answer, the address is refused, the keys cannot do that, the order action did not apply --
+ * and a reader with a failed refund wants the fourth of those, not an article about `REFUND_DECLINED`
+ * specifically.
+ *
+ * A code that is NOT mapped resolves to `undefined`, and the caller falls back to the general commerce
+ * article. That is the same rule `whatsappErrorArticle` follows: a code with no answer gets no explanation
+ * invented for it, and nothing links somewhere that does not answer the question.
+ * @param {string} code - a Commerce::Error code
+ * @returns {keyof typeof DOC_ARTICLES | undefined} the registry key, or undefined when there is no article
+ */
+export function commerceErrorArticle(code) {
+  return COMMERCE_ERROR_ARTICLES[code];
 }
 
 /**

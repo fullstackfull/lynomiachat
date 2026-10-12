@@ -1,5 +1,19 @@
 # Lynomia Commerce: Shopify Commerce next to the legacy Shopify integration (Phase 5)
 
+> **SUPERSEDED — the coexistence decision recorded here was reversed.**
+>
+> Lynomia now has ONE Shopify integration, Lynomia Commerce → Shopify, and the legacy integration's product
+> surface has been retired. See `docs/product-refinement/02-shopify-retirement.md`.
+>
+> This document is kept, not deleted, because it is the record of *why* the code looked the way it did: the
+> coexistence guard, the separate webhook endpoint, the duplicated settings page and the "legacy is protected"
+> rule all follow from the decision below. A reader puzzled by a retirement commit should be able to find the
+> decision it reversed.
+>
+> What carried over unchanged: §5's finding that legacy tokens cannot be reused by the Commerce app, which is
+> why the retirement reports installations for **re-authorization** rather than migrating them silently, and
+> why no merchant data was destroyed.
+
 Chatwoot 4.18 ships a Shopify integration, referred to here as **legacy**. It is **protected**: Phase 5 changes nothing in it, moves no installation and migrates nothing. Shopify Commerce is a separate path inside Commerce Core. This document records how the two coexist, the evidence that the legacy integration is unchanged, and a feasibility assessment of a later migration (§5). No migration was started.
 
 ## 1. The legacy integration, as audited

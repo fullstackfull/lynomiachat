@@ -202,6 +202,18 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
         expect(signal.reload.suppressed_until).to be_nil
       end
 
+      # The exact value the merge gate found answering 500: a thirteenth month from the datetime-local field.
+      it 'answers a date-shaped deadline that is not a real date with the controlled refusal' do
+        post '/super_admin/operations/suppress_signal',
+             params: { id: signal.id, suppressed_until: '2026-13-45T99:99:99', reason: 'Known Meta incident' }
+
+        expect(response).to redirect_to("/super_admin/operations/signal?id=#{signal.id}")
+        expect(flash[:alert]).to match(/real date and time/)
+        expect(signal.reload).to have_attributes(suppressed_until: nil, suppression_reason: nil)
+        expect(signal.events).to be_empty
+        expect(Custom::AuditLog.where(comment: 'operations.signal.suppressed')).to be_empty
+      end
+
       it 'refuses an effectively permanent suppression' do
         post '/super_admin/operations/suppress_signal',
              params: { id: signal.id, suppressed_until: 1.year.from_now.iso8601, reason: 'Forever please' }

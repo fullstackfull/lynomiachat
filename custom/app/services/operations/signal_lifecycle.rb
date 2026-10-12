@@ -146,12 +146,25 @@ class Operations::SignalLifecycle
   end
 
   def parse_deadline(value)
-    deadline = value.is_a?(Time) || value.is_a?(DateTime) ? value.to_time : Time.zone.parse(value.to_s)
+    deadline = parse_time(value)
     raise InvalidAction, 'A suppression end time is required' if deadline.nil?
     raise InvalidAction, 'A suppression must end in the future' if deadline <= Time.current
     raise InvalidAction, "A suppression may not exceed #{MAX_SUPPRESSION.inspect}" if deadline > Time.current + MAX_SUPPRESSION
 
     deadline
+  end
+
+  # `Time.zone.parse` answers nil for text that is not a time at all, and RAISES ArgumentError for text that is
+  # time-SHAPED with a value out of range -- "2026-13-45T99:99:99" has a thirteenth month. Both are the same
+  # mistake from the operator's side, so both get the one controlled answer this surface already gives invalid
+  # input. Unhandled, the second one left the controller with an exception, so an operator who mistyped a date
+  # got a 500 and Sentry got a report about a typo.
+  def parse_time(value)
+    return value.to_time if value.is_a?(Time) || value.is_a?(DateTime)
+
+    Time.zone.parse(value.to_s)
+  rescue ArgumentError
+    raise InvalidAction, 'A suppression end time must be a real date and time'
   end
 
   def require_reason(value)

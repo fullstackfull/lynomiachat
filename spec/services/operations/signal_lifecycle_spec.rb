@@ -71,6 +71,17 @@ RSpec.describe Operations::SignalLifecycle do
         .to raise_error(described_class::InvalidAction, /end in the future/)
     end
 
+    # A date-SHAPED value with an out-of-range part reaches Time.zone.parse as readily as any other string and
+    # it RAISES rather than answering nil, which used to leave the controller with an unhandled ArgumentError.
+    it 'refuses a date-shaped deadline that is not a real date, and writes nothing' do
+      expect { lifecycle.suppress(until_time: '2026-13-45T99:99:99', reason: 'Known Meta incident') }
+        .to raise_error(described_class::InvalidAction, /real date and time/)
+
+      expect(signal.reload).to have_attributes(suppressed_until: nil, suppression_reason: nil, suppressed_by_id: nil)
+      expect(signal.events).to be_empty
+      expect(Custom::AuditLog.where(comment: 'operations.signal.suppressed')).to be_empty
+    end
+
     it 'refuses an effectively permanent suppression' do
       expect { lifecycle.suppress(until_time: 90.days.from_now, reason: 'Meta incident') }
         .to raise_error(described_class::InvalidAction, /may not exceed/)

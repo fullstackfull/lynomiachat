@@ -145,10 +145,16 @@
   display_name: Captain
   enabled: false
   premium: true
+# Lynomia-owned, not Enterprise-licensed, so it is a capability a Lynomia plan may sell. The implementation
+# is custom/app/models/custom_role.rb plus its own controller and views, written clean-room from
+# docs/p-final/clean-room/specs/C-account-role-permissions.md after the Enterprise-derived one was removed.
+# `premium: true` here is read in exactly one place -- BillingPlan.assignable_features, where it means
+# "Enterprise-licensed, not ours to sell" -- and while it was set no plan could include this capability,
+# Billing::FeatureSync never managed it and Billing::OverrideGrant refused it as "not a capability a plan can
+# sell". Removing the key changes no feature's name or column, so every account's flag bit is unmoved.
 - name: custom_roles
   display_name: Custom Roles
   enabled: false
-  premium: true
 - name: chatwoot_v4
   display_name: Chatwoot V4
   enabled: true

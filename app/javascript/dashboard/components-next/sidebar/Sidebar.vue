@@ -803,6 +803,20 @@ const menuItems = computed(() => {
               ],
               to: accountScopedRoute('settings_teams_list'),
             },
+            {
+              // Named permission sets (custom/app/models/custom_role.rb). Lynomia's own capability, sold
+              // through a plan, so it belongs beside Agents and Teams rather than behind a URL -- which is
+              // where it was: `custom_roles_list` had no entry point anywhere in the dashboard.
+              //
+              // No explicit guard here. `isAllowed` resolves the target route's own meta -- the
+              // `custom_roles` feature flag and `permissions: ['administrator']`
+              // (routes/dashboard/settings/customRoles/customRole.routes.js) -- so an account without the
+              // capability, and any member who is not an administrator, never sees this entry.
+              name: 'Settings Custom Roles',
+              label: t('SIDEBAR.CUSTOM_ROLES'),
+              icon: 'i-lucide-shield-check',
+              to: accountScopedRoute('custom_roles_list'),
+            },
             ...(hasAdvancedAssignment.value
               ? [
                   {

@@ -33,7 +33,11 @@ class BillingPlan < ApplicationRecord
   scope :ordered, -> { order(:position, :id) }
 
   # Features the super admin can attach to a plan.
-  # Excludes internal, deprecated, premium (enterprise-licensed) and system features.
+  #
+  # Excludes internal, deprecated, premium and system features. `premium` means Enterprise-licensed -- a
+  # capability this codebase does not own and therefore cannot sell. It is NOT "expensive" or "advanced": a
+  # Lynomia-owned capability belongs on this list however it is priced, which is why `custom_roles` is on it
+  # (config/features.yml, and custom/app/models/custom_role.rb for the clean-room implementation).
   def self.assignable_features
     @assignable_features ||= YAML.safe_load(FEATURES_FILE.read)
                                  .reject { |f| f['chatwoot_internal'] || f['deprecated'] || f['premium'] }

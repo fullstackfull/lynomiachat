@@ -227,11 +227,13 @@ RSpec.describe Conversations::CapabilityScope do
     end
 
     # THE OPERATOR'S LEVER, asserted through the writer an operator actually goes through rather than through
-    # the raw bitmask. `custom_roles` is `premium: true` in config/features.yml, so it is not in
-    # BillingPlan.assignable_features: no plan sells it and Billing::FeatureSync never writes it. For such a
-    # capability Billing::OverrideGrant#write_features! applies the flag directly (override_grant.rb:70) --
-    # there is deliberately no override row, because an override exists to contradict a plan and no plan has an
-    # opinion here. So the account's own flag IS the entitlement answer, and this is the path that sets it.
+    # the raw bitmask. `custom_roles` is a capability a Lynomia plan sells (it is in
+    # BillingPlan.assignable_features), so `write_features!` routes it through `reconcile_feature`: the account
+    # here has no subscription, so asking for anything other than the plan's answer -- and no plan means no --
+    # records a real, audited override rather than a bare flag write. Either way the effective entitlement is
+    # what this scope reads, which is the property that matters.
+    #
+    # The commercial wiring itself is asserted in spec/models/billing_plan_custom_roles_spec.rb.
     it 'follows the operator writer that actually controls this capability' do
       grant = Billing::OverrideGrant.new(account, actor: create(:super_admin))
 

@@ -1,50 +1,58 @@
-# Lynomia's audit class. The `audited` gem is an OSS dependency (Gemfile:184) and the `audits` table ships in
-# the OSS schema (db/schema.rb:264), so this is a subclass on the existing table, not a second audit store:
-# rows written while Chatwoot's Enterprise overlay owned the class are the same rows.
+# Lynomia's audit record (docs/p-final/clean-room/specs/A-audit-trail-read.md,
+# docs/p-final/clean-room/specs/B-audit-event-capture.md).
 #
-# Carried over from Enterprise::AuditLog: `log_additional_information`, which is what fills `username` on every
-# row and points an Account audit at itself, so the Lynomia writers (Flows::Audit, Commerce::AuditTrail) and the
-# Template Manager's own `audited` declaration keep recording who acted.
+# This is the `audited` gem's own audit class -- config/initializers/audited.rb names it, so every `audited`
+# declaration in the product writes one of these -- extended with the reads the account trail needs and with the
+# two rules that hold for every entry however it was written:
 #
-# Also carried over, for Lynomia's own audit log page (Settings -> Audit Logs): the four read scopes and
-# `masked_remote_address`. Deliberately not carried over: the IP geolocation hook and `location`. That path needs
-# the `ip_lookup` feature (config/features.yml:32, enabled: false) plus an Enterprise job, so `city`, `country`
-# and `country_code` stay null and the page shows the address itself instead of a city.
+#   * the actor's display name is captured at write time, so a row stays attributable after the person's own
+#     record is deleted, and a machine credential, which is not a User at all, is still named;
+#   * no credential reaches `audited_changes`. Package B's capture points exclude them by construction, and this
+#     is the second line of defence for the six clean Lynomia writers and for the `audited` macro, which records
+#     whatever columns a model declares -- including jsonb columns whose nested keys hold provider secrets
+#     (Channel::Whatsapp::SECRET_PROVIDER_CONFIG_KEYS). AuditTrail::Secrets is the rule.
+#
+# `city`, `country` and `country_code` exist because the table is shared with upstream. Lynomia resolves no
+# locations, so they stay unwritten and unread.
 class Custom::AuditLog < Audited::Audit
-  after_save :log_additional_information
+  before_save :drop_secret_changes
+  before_create :capture_actor_name
 
-  scope :with_auditable_types, ->(types) { where(auditable_type: types) }
-  scope :created_after, ->(time) { where(created_at: time..) }
-  scope :created_before, ->(time) { where(created_at: ..time) }
-  scope :search_by_user, lambda { |query|
-    term = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
-    joins("LEFT JOIN users ON users.id = audits.user_id AND audits.user_type = 'User'")
-      .where('audits.username ILIKE :term OR users.name ILIKE :term OR users.email ILIKE :term', term: term)
+  # The account trail. Scoped from the authenticated account, never from a request parameter, and served by
+  # index_audits_on_associated_and_created_at.
+  #
+  # An entry with no `associated` is installation-wide rather than one account's -- a plan's entitlements, for
+  # instance (custom/app/services/billing/plan_audit.rb) -- so it is correctly invisible here.
+  scope :for_account, ->(account) { where(associated_type: 'Account', associated_id: account.id) }
+  scope :of_type, ->(types) { where(auditable_type: types) }
+  scope :by_actor, ->(user_id) { where(user_id: user_id) }
+
+  # The trail's own record of who acted, not the `users` table. An entry stays attributable after the person's
+  # record is deleted and names a machine credential that was never a User at all (the rule at the top of this
+  # file), so searching the live table would answer a different question from the one the page asks -- and would
+  # lose exactly the entries the trail exists to keep.
+  scope :by_actor_name, lambda { |name|
+    where('audits.username ILIKE ?', "%#{sanitize_sql_like(name)}%")
   }
-
-  # Shown to administrators by default; the full address needs the `audit_log_ip_address` account feature.
-  def masked_remote_address
-    return if remote_address.blank?
-
-    ip = IPAddr.new(remote_address)
-    if ip.ipv4?
-      "#{ip.to_s.split('.')[0..2].join('.')}.x"
-    else
-      "#{ip.to_string.split(':')[0..3].join(':')}::"
-    end
-  rescue IPAddr::Error
-    nil
-  end
+  scope :occurred_between, ->(from, to) { where(created_at: from..to) }
+  scope :newest_first, -> { order(created_at: :desc, id: :desc) }
+  scope :oldest_first, -> { order(created_at: :asc, id: :asc) }
 
   private
 
-  def log_additional_information
-    # rubocop:disable Rails/SkipsModelValidations
-    if auditable_type == 'Account' && auditable_id.present?
-      update_columns(associated_type: auditable_type, associated_id: auditable_id, username: user&.email)
-    else
-      update_columns(username: user&.email)
-    end
-    # rubocop:enable Rails/SkipsModelValidations
+  # `try` throughout: an actor is a User, a SuperAdmin on the same table, or a machine credential, and none of
+  # them may be the one whose actions go unrecorded because its class answers a different method.
+  def capture_actor_name
+    self.username = actor_display_name if username.blank?
+  end
+
+  def actor_display_name
+    user.try(:available_name).presence || user.try(:name).presence || user&.class&.name
+  end
+
+  def drop_secret_changes
+    return unless audited_changes.is_a?(Hash)
+
+    self.audited_changes = AuditTrail::Secrets.scrub(audited_changes)
   end
 end

@@ -118,3 +118,5 @@ class ContactInboxWithContactBuilder
     nil
   end
 end
+
+ContactInboxWithContactBuilder.prepend_mod_with('ContactInboxWithContactBuilder')

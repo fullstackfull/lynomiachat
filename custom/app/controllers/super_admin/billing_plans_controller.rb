@@ -25,6 +25,7 @@ class SuperAdmin::BillingPlansController < SuperAdmin::ApplicationController
   end
 
   def after_resource_updated_path(resource)
+    Billing::PlanAudit.record(resource, actor: current_super_admin)
     sync_with_stripe(resource)
     super
   end

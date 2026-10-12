@@ -11,6 +11,19 @@ previous `HEAD`, and `/var/backups/lynomia/` holds the dumps newest-first.
 
 ---
 
+## For the combined P8–P11 release, read this first
+
+That release crosses four phases in one deploy and adds six tables. Its decision tree, the full list of levers
+that can be switched off instead of rolling back, and what each new table would destroy if dropped are in
+**`docs/p-final/09-rollback-and-rollout.md`** and **`docs/p-final/03-migration-review.md` §6**.
+
+The short version: **a feature-shaped problem is a lever, not a rollback** — `lynomia_support_tickets`,
+`lynomia_unified_identity`, the `reports` flag, and the Stripe settings each switch their surface off in
+seconds with no data loss. A rollback is for "nothing serves". And in either case **the schema stays**: every
+migration in that release is additive, and old code cannot tell the difference.
+
+---
+
 ## First: decide whether to roll back at all
 
 | Symptom | Roll back? |
@@ -18,7 +31,7 @@ previous `HEAD`, and `/var/backups/lynomia/` holds the dumps newest-first.
 | Readiness endpoint not returning 200; units not active | **Yes, now** |
 | Errors on every request, or on sign-in | **Yes, now** |
 | One feature broken, rest of the product serving | Usually no — fix forward. A rollback re-runs nothing on the database and may be the larger risk. |
-| Migration failed partway | **Do not roll back the code first.** Read *What a rollback cannot undo* below. |
+| Migration failed partway | **Do not roll back the code first.** Follow *Migration failed partway* below — it is the one case with its own procedure, because it is the one case where the code and the schema have come apart. |
 | Slow but correct | No. Investigate; an invalid index from a killed `CREATE INDEX CONCURRENTLY` is the usual cause (deploy.sh step 5 now checks for this). |
 
 Rolling back costs a second restart and loses whatever the new revision was fixing. It is the right call for
@@ -37,8 +50,10 @@ APP_DIR=/home/chatwoot/chatwoot
 # 1. Go back to the previous revision. --detach, because the branch should keep pointing at the release.
 sudo -u chatwoot -H bash -lc "cd $APP_DIR && git checkout --detach $PREVIOUS_SHA && git log --oneline -1"
 
-# 2. The previous revision's dependencies, both languages.
-sudo -u chatwoot -H bash -lc "cd $APP_DIR && bundle install --quiet && pnpm install --frozen-lockfile"
+# 2. The previous revision's dependencies, both languages. BUNDLE_FROZEN for the same reason deploy.sh uses it:
+#    without it, an install that resolves differently from the committed lock rewrites Gemfile.lock, leaves the
+#    tree dirty, and the NEXT deploy aborts at its stage 0 for a reason that looks unrelated to this rollback.
+sudo -u chatwoot -H bash -lc "cd $APP_DIR && BUNDLE_FROZEN=true bundle install --quiet && pnpm install --frozen-lockfile"
 
 # 3. Rebuild BOTH bundles. public/vite and public/packs are gitignored build output: checking out old code does not
 #    restore old assets, and a new-asset/old-code mix fails in the browser, not on the server.
@@ -92,10 +107,114 @@ systemctl start chatwoot.target
 
 ---
 
+## Migration failed partway
+
+This is the only case where the schema and the code disagree, and the only case where rolling the code back
+first can make things worse rather than better: the old code meets a schema that is half of the new one.
+
+This release's migrations are additive with one exception, and the paths matter because five of the six live
+under `custom/`:
+
+| migration | what it does | additive? |
+|---|---|---|
+| `custom/db/migrate/20261011140000_set_on_delete_on_billing_override_foreign_keys` | drops and re-adds two foreign keys on `billing_entitlement_overrides` to change their `on_delete` | **no** — it replaces existing constraints. Reversible in both directions (`up`/`down` both re-add), and it changes no data |
+| `custom/db/migrate/20261011150000_add_audit_trail_read_indexes` | two `CONCURRENTLY` indexes on `audits` | yes |
+| `custom/db/migrate/20261011150100_add_campaign_recipient_read_indexes` | two `CONCURRENTLY` indexes on `campaign_recipients` | yes |
+| `db/migrate/20261011160000_default_captain_tasks_off_for_new_accounts` | edits **one** installation config row (`ACCOUNT_LEVEL_FEATURE_DEFAULTS`) | yes, in effect — it changes a default for accounts created later and no existing account |
+| `custom/db/migrate/20261011170000_add_blocked_reason_to_campaigns` | adds a nullable `blocked_reason` string to `campaigns` (DECISION 6) | yes |
+| `custom/db/migrate/20261011180000_add_conversation_scope_enforced_to_custom_roles` | adds `conversation_scope_enforced` (boolean, default true, not null) to `custom_roles`, then **one `UPDATE`** setting it false for the pre-existing sets that name none of the three `conversation_*` capabilities (DECISION 1) | yes as a column; the backfill writes data, and `down` drops the column and with it the grandfather flags. Re-running `up` recomputes them from each set's current `permissions`, so a set whose capabilities have since been edited would be enforced on the second pass — which is the intended semantics, not a loss |
+
+plus the P8–P11 set listed in `docs/p-final/03-migration-review.md`. Additive is what makes this recoverable
+without the dump: **the old code does not read any of it**, so a schema that is partly ahead of the code is not
+a schema the old code trips over. The foreign-key migration is the one to think about on a rollback, and what
+it affects is the behaviour of a user delete, not any stored row.
+
+**A table the permission path now depends on.** DECISION 2 made `Custom::AccountUser#permissions` consult
+`Billing::Entitlements.allowed?`, which reads `billing_entitlement_overrides`. Before this release nothing on
+the permission path touched that table, so rolling back the migration that created it
+(`custom/db/migrate/20261010100000_create_billing_entitlement_overrides`, a P11 migration this release does
+not add but now depends on) breaks
+`/api/v1/profile` and every policy that reads a capability list, not only the billing screens. **Do not roll
+that migration back while this release's code is serving.** The order in "Code rollback" above is the correct
+one: put the previous revision back first, and only then consider schema changes.
+
+**One stored value the old code does not have a name for.** DECISION 6 adds `blocked` (integer `3`) to the
+`campaigns.campaign_status` enum. A campaign that blocked under the new code and then meets rolled-back code
+does **not** raise: `ActiveRecord::Enum::EnumType#cast` returns the raw value for an unmapped one, so the old
+code reads `3`, `active?`/`processing?`/`completed?` are all false, the scheduler's
+`where(campaign_status: :active)` never selects it, and the dashboard shows an unrecognised status. So the
+campaign is inert rather than broken. If you need it to run again under the old code, set its status back to
+`active` explicitly (`UPDATE campaigns SET campaign_status = 0, blocked_reason = NULL WHERE id = …`) — after
+confirming the WhatsApp capability is actually back, since the old code will send without checking the way the
+new code does.
+
+1. **Find out what actually ran.** `rails db:migrate:status` as the app user. A migration is either `up` or
+   `down`; there is no partial row. What can be partial is a single migration's own work, and only a
+   `CONCURRENTLY` index build can be, because those run outside a transaction.
+
+   **Do not clear INVALID indexes by a count from this document.** An earlier version of this line said
+   "three", which was wrong; so is any fixed number, because how many can be partial depends on which
+   migrations were still pending on *this host*, and that is not knowable from the repository. Derive it:
+
+   ```bash
+   # the pending set, as the app user
+   RAILS_ENV=production bundle exec rails db:migrate:status | grep '^   down'
+   ```
+
+   Then count the concurrent builds inside only those files:
+
+   ```bash
+   # from the repository root, for each migration the line above listed as down
+   grep -c 'algorithm: :concurrently' db/migrate/<version>_*.rb custom/db/migrate/<version>_*.rb
+   ```
+
+   For the P-FINAL.CR package specifically there are **four**, two per file:
+   `custom/db/migrate/20261011150000` (`audits`) and `custom/db/migrate/20261011150100`
+   (`campaign_recipients`). The P8–P11 migrations carry more, one per file, and
+   `custom/db/migrate/20261004110000` (the contact phone uniqueness pair) carries two. The authoritative
+   answer is always step 2's query against `pg_index`, not a count from any document.
+
+2. **Check for an invalid index**, which is what a killed `CREATE INDEX CONCURRENTLY` leaves behind. Postgres
+   keeps answering queries against that table by sequential scan, so nothing fails -- it just gets slow:
+
+   ```sql
+   SELECT indexrelid::regclass FROM pg_index WHERE NOT indisvalid;
+   ```
+
+   Drop each one it names (`DROP INDEX CONCURRENTLY <name>`) and let the migration re-create it. Deploy.sh's
+   stage 5 checks for this and refuses to continue past it, which is how you should have found out.
+
+3. **Decide, and the decision is usually "forward".** A migration that failed on a timeout, a lock wait or a
+   full disk is a migration to re-run once that is fixed: `rails db:migrate` again. Every migration in this
+   release is written to be re-runnable, and the index ones carry `if_not_exists`.
+
+4. **Only if a migration failed on the data itself** -- a constraint it could not satisfy, a backfill that
+   found a row it could not convert -- stop and read *What a rollback cannot undo*. That is the case where the
+   dump is the answer, and restoring it is destructive: it discards every write since the dump was taken.
+
+5. **Do not roll the code back as step one.** If you have already restarted onto the new code and it is
+   serving, a half-applied additive schema is not what is breaking it. Roll the code back only after the
+   schema question above is settled, and then follow *Code rollback*.
+
+---
+
 ## After any rollback
 
 1. Say so in the incident record (`deployment/INCIDENT.md`), with the revision you went back to and why.
 2. Leave the branch pointing at the release. The detached checkout is deliberate: the next deploy must be a
    deliberate roll-forward, not an accident of being on a branch.
-3. Do not re-run `deployment/deploy.sh` until the cause is understood — it would fast-forward straight back onto the
-   revision you just rolled back from.
+3. Do not re-run `deployment/deploy.sh` until the cause is understood. **And note the actual reason, which is
+   not the one this line used to give.** It said the script "would fast-forward straight back onto the revision
+   you just rolled back from"; in fact after step 1 the checkout is detached, so the script **cannot run at
+   all**. It aborts in **stage 1**, at `RELEASE_SHA="$(as_app 'git rev-parse @{u}')"` (`deployment/deploy.sh`:90):
+   a detached HEAD has no upstream to resolve, and `set -Eeuo pipefail` turns that into an abort. This is
+   before the backup and before the checkout, so nothing is touched. An earlier version of this paragraph said
+   stage 3, which is the `git merge --ff-only @{u}` line; the script never reaches it. Either way the answer is
+   the same, but the operator should know they will see a git error at the very first step rather than an
+   unwanted roll-forward.
+
+   To roll forward deliberately once the cause is understood, put the checkout back on the release branch
+   first: `git checkout <branch>` as the app user, confirm `git status` is clean, then run the script. The
+   completion marker at `/var/backups/lynomia/.last-deployed-sha` still names the revision whose deploy last
+   completed, which is the revision you rolled back FROM, so the script will treat the roll-forward as a real
+   deploy rather than a no-op.

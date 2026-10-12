@@ -19,7 +19,7 @@ class Webhooks::WhatsappController < ActionController::API
   private
 
   def tracking_events_only?
-    return false unless params[:object] == 'whatsapp_business_account'
+    return false unless whatsapp_business_payload?
 
     changes = params.fetch(:entry, []).flat_map { |entry| entry.fetch(:changes, []) }
     changes.present? && changes.all? { |change| change[:field] == 'tracking_events' }
@@ -54,12 +54,25 @@ class Webhooks::WhatsappController < ActionController::API
   # Lynomia: Meta signs every WhatsApp Cloud webhook with the secret of the Meta app that owns the subscription,
   # so manual numbers are verified too: against WHATSAPP_APP_SECRET, or against provider_config['app_secret'] for a
   # number connected through its own Meta app. 360dialog (provider 'default') does not send Meta's signature.
+  #
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC3): the requirement is decided by the ENVELOPE, not by a
+  # channel resolved from the same body. `object == 'whatsapp_business_account'` is Meta's own envelope and
+  # nothing else posts it -- 360dialog posts a different shape to the per-number route, which is why the
+  # exemption below is still reachable for it. Deciding from the resolved channel let a caller waive its own
+  # authentication: resolve to a non-cloud channel and the signature was never checked. Combined with the
+  # nil-matches-nil hole the finder used to have, omitting `phone_number_id` was enough to do exactly that.
   def meta_signature_verification_required?
+    return true if whatsapp_business_payload?
+
     whatsapp_channel.blank? || whatsapp_channel.provider == 'whatsapp_cloud'
   end
 
+  def whatsapp_business_payload?
+    params[:object] == 'whatsapp_business_account'
+  end
+
   def whatsapp_business_payload_channel
-    return unless params[:object] == 'whatsapp_business_account'
+    return unless whatsapp_business_payload?
 
     metadata = params.dig(:entry, 0, :changes, 0, :value, :metadata)
     return if metadata.blank?
@@ -70,8 +83,12 @@ class Webhooks::WhatsappController < ActionController::API
     ).perform
   end
 
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC3): the kill switch used to read only the URL segment, so
+  # it did nothing on the app-level route, which has none -- a number an operator had deliberately disabled
+  # still ingested whenever Meta delivered it to the app's default callback. It now falls back to the number
+  # of the channel the payload resolves to.
   def inactive_whatsapp_number?
-    phone_number = params[:phone_number]
+    phone_number = params[:phone_number].presence || whatsapp_channel&.phone_number
     return false if phone_number.blank?
 
     inactive_numbers = GlobalConfig.get_value('INACTIVE_WHATSAPP_NUMBERS').to_s

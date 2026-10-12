@@ -89,3 +89,19 @@ lynomia_queue_health_job:
   cron: '*/5 * * * *'
   class: 'Lynomia::QueueHealthJob'
   queue: housekeeping
+
+# executed every 5 minutes
+# decides the SLA outcome of the support cases whose targets have just passed, over two partial indexes, and
+# records each outcome once (docs/p9/03-sla-workflow.md)
+support_sla_sweep_job:
+  cron: '*/5 * * * *'
+  class: 'Support::SlaSweepJob'
+  queue: housekeeping
+
+# executed daily at 0315 UTC
+# bounds the audit trail by time rather than by a flag (DECISION 5): capture is never gated, so the table needs
+# a retention window instead. The window is AUDIT_LOG_RETENTION_DAYS (default 365) and is read on every run.
+audit_trail_retention_job:
+  cron: '15 3 * * *'
+  class: 'AuditTrail::RetentionJob'
+  queue: housekeeping

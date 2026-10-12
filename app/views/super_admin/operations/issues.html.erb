@@ -1,0 +1,34 @@
+<% content_for(:title) do %>Operations issues<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Operations</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-4">
+    Recorded operational issues. Each row is one distinct problem while it is open, with the number of times it
+    has been observed &mdash; not one row per occurrence. An issue clears when something sees the thing working
+    again; nothing expires on a timer, because a problem that stopped being reported is not a problem that was
+    fixed.
+  </p>
+
+  <nav class="flex gap-2 mb-4" role="navigation">
+    <% [%w[open Open], %w[resolved Resolved], %w[all All]].each do |value, label| %>
+      <%= link_to label, issues_super_admin_operations_path(status: value),
+                  class: "px-3 py-1 text-sm border rounded-md #{@status == value ? 'border-woot-500 text-woot-500' : 'border-slate-200 text-slate-600'}" %>
+    <% end %>
+  </nav>
+
+  <% if @signals.empty? %>
+    <p class="text-sm text-slate-500 border border-slate-100 rounded-md p-4">No issues match this filter.</p>
+  <% else %>
+    <%= render 'signals', signals: @signals, show_actions: true %>
+    <div class="mt-4 text-xs text-slate-500">
+      Page <%= @signals.current_page %> of <%= @signals.total_pages %> &middot;
+      <%= pluralize(@signals.total_count, 'issue') %>
+      <%= paginate @signals, theme: 'administrate' rescue nil %>
+    </div>
+  <% end %>
+</section>

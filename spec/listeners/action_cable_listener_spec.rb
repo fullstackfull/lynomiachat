@@ -176,7 +176,9 @@ describe ActionCableListener do
 
   describe '#notification_deleted' do
     let(:event_name) { :'notification.deleted' }
-    let!(:notification) { create(:notification, account: account, user: agent) }
+    # In `inbox`, which `agent` is a member of: the notification feed and the socket apply the Inbox/Team
+    # ceiling at read time, so a notification about an unreachable conversation is correctly suppressed.
+    let!(:notification) { create(:notification, account: account, user: agent, primary_actor: conversation) }
     let(:notification_data) do
       {
         id: notification.id,
@@ -206,7 +208,9 @@ describe ActionCableListener do
 
   describe '#notification_updated' do
     let(:event_name) { :'notification.updated' }
-    let!(:notification) { create(:notification, account: account, user: agent) }
+    # In `inbox`, which `agent` is a member of: the notification feed and the socket apply the Inbox/Team
+    # ceiling at read time, so a notification about an unreachable conversation is correctly suppressed.
+    let!(:notification) { create(:notification, account: account, user: agent, primary_actor: conversation) }
     let!(:event) { Events::Base.new(event_name, Time.zone.now, notification: notification) }
 
     it 'sends notification to account admins, inbox agents' do

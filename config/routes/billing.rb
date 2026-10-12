@@ -14,6 +14,8 @@ namespace :super_admin do
       post :extend_trial
       post :grant_plan
       post :cancel_subscription
+      post :grant_override
+      post :revoke_override
     end
   end
 end

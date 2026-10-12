@@ -39,7 +39,17 @@ log()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[1;31m!!! %s\033[0m\n' "$*" >&2; exit 1; }
 as_app() { sudo -u "$APP_USER" -H bash -lc "cd '$APP_DIR' && $1"; }
 
-trap 'fail "deploy aborted at line $LINENO. Nothing was restarted; the previous version is still serving."' ERR
+# Two messages, because the right advice differs completely either side of the restart. RESTARTED is set to 1
+# immediately after `systemctl restart`, and every failure after that point -- a readiness endpoint that never
+# answers, a unit that did not come up, a Sidekiq process that did not register -- is a failure of the NEW code
+# while the new code is serving. Telling the operator "nothing was restarted" there would send them looking in
+# the wrong place at the worst moment.
+RESTARTED=0
+trap 'if [[ $RESTARTED -eq 1 ]]; then
+        fail "deploy aborted at line $LINENO, AFTER the restart. The new revision $RELEASE_SHA is what is serving now and it is not healthy. ROLL BACK: see deployment/ROLLBACK.md, previous revision $PREVIOUS_SHA."
+      else
+        fail "deploy aborted at line $LINENO. Nothing was restarted; the previous version is still serving."
+      fi' ERR
 
 [[ $EUID -eq 0 ]] || fail "run as root: it restarts systemd units"
 [[ -d $APP_DIR ]] || fail "$APP_DIR does not exist"
@@ -57,6 +67,16 @@ echo "currently serving: $PREVIOUS_SHA ($PREVIOUS_BRANCH)"
 
 systemctl is-active --quiet "$TARGET" || echo "note: $TARGET is not active before this deploy"
 
+# Both filesystems, because they are usually different ones: the build writes under APP_DIR and the dump is
+# written to BACKUP_DIR, which on this server's layout is /var/backups on the root filesystem. Measuring only
+# APP_DIR passed a host with a full /var and then failed at the backup instead of before it. BACKUP_DIR may not
+# exist yet on a first run, so its nearest existing parent is measured.
+backup_fs_target="$BACKUP_DIR"
+while [[ ! -d $backup_fs_target && $backup_fs_target != "/" ]]; do
+  backup_fs_target="$(dirname "$backup_fs_target")"
+done
+df -Pk "$backup_fs_target" | awk -v d="$backup_fs_target" 'NR==2 && $4 < 2097152 { print "less than 2GB free on the backup filesystem (" d ")"; exit 1 }' \
+  || fail "not enough free disk for the pre-deploy backup"
 df -Pk "$APP_DIR" | awk 'NR==2 && $4 < 2097152 { print "less than 2GB free on the app filesystem"; exit 1 }' \
   || fail "not enough free disk for a build and a backup"
 
@@ -69,9 +89,36 @@ log "1. Fetch the release"
 as_app 'git fetch --quiet'
 RELEASE_SHA="$(as_app 'git rev-parse @{u}')"
 
+# The release is whatever the tracked upstream branch points at, which is right for an ordinary deploy and not
+# enough for a controlled one: between the decision and the deploy, someone else can push. Set EXPECT_SHA to the
+# revision that was actually reviewed and the deploy refuses anything else. Optional, so default behaviour is
+# unchanged; docs/p-final/08-production-uat-runbook.md uses it for the combined release.
+if [[ -n ${EXPECT_SHA:-} ]]; then
+  if [[ $RELEASE_SHA != "$EXPECT_SHA"* ]]; then
+    fail "upstream is at $RELEASE_SHA but EXPECT_SHA says $EXPECT_SHA. Nothing was changed. Push the intended revision, or correct EXPECT_SHA."
+  fi
+  echo "release matches EXPECT_SHA ($EXPECT_SHA)"
+fi
+
+# The working tree already being at the release is NOT the same as the release having been deployed. A deploy
+# that failed anywhere after stage 3 -- a dependency install, a migration, the Vite build -- leaves the tree
+# fast-forwarded and nothing else done, and the obvious operator response is to fix the cause and run the
+# script again. Short-circuiting on the SHA alone answered that with "nothing to deploy" and exit 0, so the
+# recovery path was to know to pass a flag that did not exist.
+#
+# The marker is what distinguishes the two. It is written only after stage 8 has verified the new revision is
+# serving, so its absence means "this revision was checked out but never finished".
+# In BACKUP_DIR, not under APP_DIR: stage 0 aborts on a dirty working tree, and an untracked marker file
+# inside the repository is exactly that -- it would make the first deploy poison the second.
+DEPLOYED_MARKER="$BACKUP_DIR/.last-deployed-sha"
+
 if [[ $RELEASE_SHA == "$PREVIOUS_SHA" ]]; then
-  echo "already at $RELEASE_SHA; nothing to deploy"
-  exit 0
+  if [[ -f $DEPLOYED_MARKER && "$(cat "$DEPLOYED_MARKER")" == "$RELEASE_SHA" ]]; then
+    echo "already at $RELEASE_SHA and the last deploy of it completed; nothing to deploy"
+    exit 0
+  fi
+  echo "tree is at $RELEASE_SHA but no completed deploy of it is recorded."
+  echo "re-running the remaining stages: dependencies, migrations, build, restart, verify."
 fi
 echo "deploying: $RELEASE_SHA"
 
@@ -100,8 +147,14 @@ DUMP="$BACKUP_DIR/$STAMP-pre-deploy-$PREVIOUS_SHA.dump"
 as_app "bundle exec ruby - '$DUMP'" <<'PG_DUMP_WITH_DOTENV_CREDENTIALS'
 require 'dotenv'
 
-REQUIRED = %w[POSTGRES_DATABASE POSTGRES_USERNAME POSTGRES_PASSWORD].freeze
-OPTIONAL = { 'POSTGRES_HOST' => 'localhost', 'POSTGRES_PORT' => '5432' }.freeze
+# Only the database name is genuinely required: `config/database.yml` reads POSTGRES_USERNAME and
+# POSTGRES_PASSWORD with defaults, so an installation using peer authentication or a .pgpass file runs happily
+# without either, and demanding them here aborted the backup -- and through the ERR trap the whole deploy -- on
+# a host the application itself is fine with. The two credential keys fall back the way the application's own
+# configuration falls back, and `pg_dump` then authenticates however the server is set up to let it.
+REQUIRED = %w[POSTGRES_DATABASE].freeze
+OPTIONAL = { 'POSTGRES_HOST' => 'localhost', 'POSTGRES_PORT' => '5432',
+             'POSTGRES_USERNAME' => 'postgres', 'POSTGRES_PASSWORD' => nil }.freeze
 
 abort 'no .env in the application directory, so the backup cannot read its credentials' unless File.exist?('.env')
 
@@ -136,9 +189,13 @@ REQUIRED.each do |key|
   abort "#{key} is missing from .env, so the backup cannot run." if values[key].nil?
   abort "#{key} is blank in .env, so the backup cannot run." if values[key].strip.empty?
 end
-OPTIONAL.each { |key, default| values[key] = default if values[key].nil? || values[key].strip.empty? }
+OPTIONAL.each do |key, default|
+  values[key] = default if values[key].nil? || values[key].to_s.strip.empty?
+end
 
-ENV['PGPASSWORD'] = values['POSTGRES_PASSWORD']
+# Left unset rather than set to an empty string: an empty PGPASSWORD is a password attempt, which fails against
+# a server expecting peer or ident authentication, where no variable at all succeeds.
+ENV['PGPASSWORD'] = values['POSTGRES_PASSWORD'] if values['POSTGRES_PASSWORD'].present?
 exec('pg_dump', '-Fc',
      '-h', values['POSTGRES_HOST'], '-p', values['POSTGRES_PORT'],
      '-U', values['POSTGRES_USERNAME'], values['POSTGRES_DATABASE'],
@@ -146,8 +203,19 @@ exec('pg_dump', '-Fc',
 PG_DUMP_WITH_DOTENV_CREDENTIALS
 
 [[ -s $DUMP ]] || fail "backup is empty: $DUMP"
+
+# Not just a size check. A truncated or corrupt custom-format dump is still a non-empty file, and the sha256
+# below is a checksum OF WHATEVER WAS PRODUCED -- it proves the file has not changed since, never that it is
+# restorable. `pg_restore -l` reads the archive's own table of contents, which is the cheapest thing that fails
+# on a dump that cannot be restored, and it is the only verification standing between a bad deploy and an
+# unrecoverable one. It reads the archive; it does not touch any database.
+as_app "pg_restore -l '$DUMP' > /dev/null" \
+  || fail "the backup at $DUMP is not a readable archive. Nothing was changed. Fix the backup before deploying."
+TOC_ENTRIES="$(as_app "pg_restore -l '$DUMP' | grep -c '^[0-9]'" || echo 0)"
+[[ ${TOC_ENTRIES:-0} -gt 0 ]] || fail "the backup at $DUMP lists no objects. Nothing was changed."
+
 sha256sum "$DUMP" | tee "$DUMP.sha256"
-echo "backup: $DUMP ($(du -h "$DUMP" | cut -f1))"
+echo "backup: $DUMP ($(du -h "$DUMP" | cut -f1), $TOC_ENTRIES objects in its table of contents)"
 
 # ---------------------------------------------------------------------------
 log "3. Check out the release"
@@ -165,6 +233,25 @@ log "4. Dependencies"
 as_app 'BUNDLE_FROZEN=true bundle install --quiet'
 # Missing from the old script. Must run before any Vite build.
 as_app 'pnpm install --frozen-lockfile'
+
+# ---------------------------------------------------------------------------
+log "4b. libvips precondition"
+
+# NEW IN THIS RELEASE, and a boot failure rather than a degradation. Rails moved 7.2.3.1 -> 7.2.3.2 to carry the
+# fix for CVE-2026-66066, and that fix makes Active Storage REFUSE TO LOAD when it cannot disable libvips's
+# unfuzzed operations -- it raises on `require` unless libvips is 8.13 or later AND ruby-vips is 2.2.1 or later
+# (activestorage-7.2.3.2/lib/active_storage/vips.rb:34). The previous revision ran on ruby-vips 2.1.4, so the
+# lockfile moves it to 2.3.0; the libvips half is a system package this script cannot install.
+#
+# Every Rails process aborts, web and worker alike, so an old libvips on this host turns the restart at stage 7
+# into an outage with no rollback of its own. Checked here because stage 5 boots Rails too: left unchecked the
+# deploy dies in the middle of the migrations with an Active Storage backtrace and no statement of the cause.
+# This is after the backup and before any schema change, so a failure here costs one unused dump and nothing
+# else.
+as_app 'RAILS_ENV=production bundle exec rails runner "
+  require %q(vips)
+  puts %Q(libvips #{[Vips.version(0), Vips.version(1), Vips.version(2)].join(%q(.))}, ruby-vips #{Vips::VERSION})"' \
+  || fail "libvips precondition not met. Active Storage in Rails 7.2.3.2 needs libvips >= 8.13 and ruby-vips >= 2.2.1. Nothing has been migrated. Upgrade libvips on this host (Debian/Ubuntu: apt-get install --only-upgrade libvips42) and re-run."
 
 # ---------------------------------------------------------------------------
 log "5. Migrations"
@@ -193,9 +280,61 @@ as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm build:sdk'
 as_app 'test -s public/packs/js/sdk.js' || fail "sdk build produced no public/packs/js/sdk.js"
 
 # ---------------------------------------------------------------------------
+log "6b. Quiet the workers and let the in-flight set drain"
+
+# Sidekiq is told to stop taking new work, then given up to 60s to finish what it is holding, BEFORE the
+# restart. Two reasons, one general and one specific to this release:
+#
+#   * A restart under load kills jobs mid-flight. Sidekiq pushes an interrupted job back for retry, so the work
+#     is not lost, but a job that had already made a provider call is retried from the top -- which for a
+#     campaign send means a second WhatsApp message to a real person.
+#   * This release DELETES Campaigns::UpdateRecipientStatusJob, which the previous revision enqueued with a
+#     two-second delay and up to five retries. Instances therefore sit in the scheduled and retry sets at the
+#     moment of the restart, and after it each one raises NameError until it reaches the dead set. Draining
+#     first means the old code consumes its own jobs (docs/p-final/03-migration-review.md section 8.1).
+#
+# `sidekiqctl quiet` is addressed through systemctl because the units own the processes: TSTP is Sidekiq's
+# documented quiet signal and SIGTERM its graceful stop, so this is the signal pair the gem expects.
+if systemctl is-active --quiet chatwoot-worker.1.service; then
+  systemctl kill --signal=SIGTSTP chatwoot-worker.1.service \
+    || echo "note: could not quiet chatwoot-worker.1.service; continuing"
+fi
+
+# The probe's own failure is not a drain. The first version of this loop sent stderr to /dev/null and fell back
+# to `echo 0`, so a Redis refusal or a `rails runner` exception produced "0" and the loop announced
+# "in-flight set drained" -- the one reading this stage exists to rule out. A probe that cannot answer is
+# reported as unknown and the loop keeps asking.
+drained=0
+for attempt in $(seq 1 30); do
+  if busy="$(as_app 'RAILS_ENV=production bundle exec rails runner "
+    require %q(sidekiq/api); print Sidekiq::Stats.new.workers_size"')" && [[ $busy =~ ^[0-9]+$ ]]; then
+    [[ "$busy" == "0" ]] && { echo "sidekiq: in-flight set drained"; drained=1; break; }
+    echo "sidekiq: $busy busy worker(s)"
+  else
+    echo "note: could not read sidekiq's in-flight set (attempt $attempt/30)"
+  fi
+  sleep 2
+done
+
+# Not a `fail`: the operator decides. Stopping here leaves the release checked out and migrated with the old
+# code still serving, which is a coherent state to hold; restarting anyway risks the double send stage 6b
+# exists to prevent. REQUIRE_DRAIN=1 turns the judgement call into a refusal for a deploy that must not take
+# that risk unattended. docs/p-final/08-production-uat-runbook.md states what to do when this line appears.
+if [[ $drained -eq 0 ]]; then
+  if [[ -n ${REQUIRE_DRAIN:-} ]]; then
+    fail "sidekiq did not confirm an empty in-flight set within 60s and REQUIRE_DRAIN is set. The release is checked out and migrated; the OLD code is still serving. See docs/p-final/08-production-uat-runbook.md section 16."
+  fi
+  echo "WARNING: sidekiq did not confirm an empty in-flight set within 60s. Restarting anyway."
+  echo "         A job that had already called a provider will be retried from the top after the restart."
+  echo "         See docs/p-final/08-production-uat-runbook.md section 16."
+fi
+
+# ---------------------------------------------------------------------------
 log "7. Restart"
 
 systemctl restart "$TARGET"
+# From here on a failure means the new code is serving and is not healthy, which the ERR trap says instead.
+RESTARTED=1
 
 # ---------------------------------------------------------------------------
 log "8. Verify"
@@ -226,6 +365,11 @@ as_app 'RAILS_ENV=production bundle exec rails runner "
 
 # ---------------------------------------------------------------------------
 log "9. Done"
+
+# Written here and nowhere else: stage 8 has just confirmed the new revision is serving and healthy, so this
+# file is the record that distinguishes "this revision is deployed" from "this revision is merely checked out".
+# Stage 1 reads it to decide whether a re-run is a no-op or a resumption.
+printf '%s\n' "$RELEASE_SHA" > "$DEPLOYED_MARKER"
 
 printf 'deployed  %s -> %s\nbackup    %s\nrollback  previous revision %s (deployment/ROLLBACK.md)\n' \
   "$PREVIOUS_SHA" "$RELEASE_SHA" "$DUMP" "$PREVIOUS_SHA"

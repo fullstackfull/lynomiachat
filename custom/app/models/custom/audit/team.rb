@@ -1,9 +1,9 @@
-# Lynomia keeps Chatwoot's audit coverage of a team after the Enterprise overlay goes: the same declaration,
-# included at the same site (app/models/team.rb:89), writing to the same `audits` table through Custom::AuditLog.
+# B5 -- a team is created, changed or removed (docs/p-final/clean-room/specs/B-audit-event-capture.md).
 module Custom::Audit::Team
   extend ActiveSupport::Concern
 
   included do
-    audited associated_with: :account
+    prepend Custom::Audit::Capture
+    audited associated_with: :account, on: [:create, :update, :destroy]
   end
 end

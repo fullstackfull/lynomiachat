@@ -13,6 +13,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     pricing_type: Field::Select.with_options(collection: BillingPlan::PRICING_TYPES),
     limits: BillingPlanLimitsField,
     features: BillingPlanFeaturesField,
+    channel_entitlements: BillingPlanChannelsField,
     active: Field::Boolean,
     position: Field::Number,
     subscriptions: CountField,
@@ -43,6 +44,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     pricing_type
     limits
     features
+    channel_entitlements
     active
     position
     subscriptions
@@ -61,6 +63,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     pricing_type
     limits
     features
+    channel_entitlements
     active
     position
   ].freeze

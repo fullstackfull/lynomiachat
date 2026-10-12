@@ -60,10 +60,17 @@ RSpec.describe 'TikTok Authorization API', type: :request do
             include Tiktok::IntegrationHelper
           end.new
 
-          expected_state = helper.generate_tiktok_token(account.id)
+          # The state is now bound to the administrator who started the flow and carries an expiry
+          # (docs/p11/00-p10-security-closure.md, SC4), so the expected token names that user.
+          expected_state = helper.generate_tiktok_token(account.id, administrator.id)
           expected_url = Tiktok::AuthClient.authorize_url(state: expected_state)
 
           expect(response.parsed_body['url']).to eq(expected_url)
+
+          claims = JWT.decode(response.parsed_body['url'][/state=([^&]+)/, 1], 'tiktok-app-secret', true,
+                              { algorithm: 'HS256' }).first
+          expect(claims).to include('sub' => account.id, 'uid' => administrator.id)
+          expect(claims['exp']).to eq(claims['iat'] + Tiktok::IntegrationHelper::STATE_TTL.to_i)
         end
       end
     end

@@ -6,6 +6,10 @@ Rails.application.config.filter_parameters += [
   :otp_secret, :otp_code, :backup_code, :mfa_token, :otp_backup_codes,
   # Lynomia Commerce: the one-time code that connects a Salla store (app.settings.updated, connection API responses)
   :connection_code,
+  # Lynomia WhatsApp: the Meta phone-registration PIN. It is the one entry in
+  # Channel::Whatsapp::SECRET_PROVIDER_CONFIG_KEYS that none of the patterns above match, and provider_config
+  # accepts arbitrary nested keys, so it is named here as the response and audit layers already name it.
+  :verification_pin,
   # Lynomia Commerce: the authorization code and state of an OAuth callback (/commerce/zid/callback,
   # /commerce/shopify/callback), matched exactly
   /\A(code|state)\z/

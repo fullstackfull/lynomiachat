@@ -6,8 +6,20 @@ class ChatwootFbProvider < Facebook::Messenger::Configuration::Providers::Base
     GlobalConfigService.load('FB_VERIFY_TOKEN', '')
   end
 
+  # Lynomia (docs/p11/00-p10-security-closure.md, SEC-5). This must never answer falsy. The gem's verifier
+  # begins `return unless app_secret_for(...)` (facebook-messenger-2.0.1/lib/facebook/messenger/server.rb:78),
+  # so a nil here skips signature verification for the whole request -- and GlobalConfigService.load returns
+  # nil rather than its default when the stored value is blank, which is the ordinary state of an installation
+  # that has not configured FB_APP_SECRET. Channel::FacebookPage has no per-channel secret column to fall back
+  # on, so there was nothing to verify against and any unsigned body was accepted.
+  #
+  # With no secret configured the endpoint must reject rather than trust, so this returns a value no caller can
+  # know. Verification then fails deterministically and the gem answers 400, which is the honest result for a
+  # misconfigured installation.
   def app_secret_for(page_id)
-    channel_app_secret_for(page_id).presence || GlobalConfigService.load('FB_APP_SECRET', '')
+    channel_app_secret_for(page_id).presence ||
+      GlobalConfigService.load('FB_APP_SECRET', nil).presence ||
+      unconfigured_secret
   end
 
   def access_token_for(page_id)
@@ -15,6 +27,11 @@ class ChatwootFbProvider < Facebook::Messenger::Configuration::Providers::Base
   end
 
   private
+
+  # Stable for the process so two requests are treated alike, and unguessable so nothing can sign with it.
+  def unconfigured_secret
+    @unconfigured_secret ||= SecureRandom.hex(32)
+  end
 
   def channel_app_secret_for(page_id)
     channel = Channel::FacebookPage.where(page_id: page_id).last

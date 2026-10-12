@@ -16,10 +16,31 @@
 module Custom::Webhooks::Trigger
   def handle_failure(error)
     report_failure(error)
+    record_operations_signal(error)
     handle_error(error)
   end
 
   private
+
+  # The log line above is for an operator grepping journald after an incident; this row is for the Operations
+  # Center, which needs the same fact sortable and joinable to an account. Neither the URL nor the payload goes
+  # into it: `endpoint_host` is the host alone and the recorder drops anything that is not an allow-listed
+  # scalar key (custom/app/services/operations/signal_recorder.rb).
+  def record_operations_signal(error)
+    account = Account.find_by(id: webhook_account_id)
+    Operations::SignalRecorder.new(source: :webhook, account: account, subject: webhook_record(account)).record(
+      :delivery_failed, severity: :warning, reason: error.message,
+                        detail: { endpoint_host: endpoint_host, status_code: http_status(error), code: error.class.name }
+    )
+  end
+
+  # The subject when it can be identified, so two broken endpoints in one account stay two rows.
+  # `index_webhooks_on_account_id_and_url` is unique, so this is a single indexed lookup.
+  def webhook_record(account)
+    return nil if account.nil?
+
+    ::Webhook.find_by(account_id: account.id, url: @url)
+  end
 
   def report_failure(error)
     Lynomia::OperatorLog.error(

@@ -1,103 +1,95 @@
-# Lynomia keeps Chatwoot's audit row for a channel configuration change after the Enterprise overlay goes. The OSS
-# concern still declares `after_update :create_audit_log_entry` (app/models/concerns/channelable.rb:7) and still
-# leaves the body empty (:10), with `Channelable.prepend_mod_with('Channelable')` live at :13 -- so this is the
-# missing half of an extension point that was already wired, not a new mechanism.
+# B15 -- a channel's configuration changes (docs/p-final/clean-room/specs/B-audit-event-capture.md).
 #
-# ONE DELIBERATE DIFFERENCE from the implementation this replaces, and it is a security fix rather than a port.
-# Enterprise audited `saved_changes.except('updated_at', 'secret')`, which excluded exactly one credential column --
-# `secret`, which only `channel_api` has. Every other channel credential went into `audits.audited_changes` in
-# plaintext, BOTH the old value and the new one, and the reader renders that payload verbatim to any administrator
-# of the account (custom/app/views/api/v1/accounts/audit_logs/show.json.jbuilder). Across the twelve models that
-# include Channelable that is `imap_password`, `smtp_password`, `user_access_token`, `page_access_token`,
-# `access_token`, `refresh_token`, `line_channel_secret`, `line_channel_token`, `bot_token`, `auth_token`,
-# `api_key_sid`, `api_key_secret`, `twitter_access_token`, `twitter_access_token_secret`, `website_token`,
-# `hmac_token`, `business_management_token`, and the `provider_config` blob that carries the WhatsApp `api_key`.
+# Upstream declares the hook and leaves it empty (app/models/concerns/channelable.rb:7,10). This fills it, and
+# the three decisions in it are the whole of the package point:
 #
-# So the value is replaced and the key is kept: where a row is written at all, the audit records THAT a credential
-# changed, and by whom, without becoming a place to read it from.
+# 1. **No credential, ever, by construction.** A channel's `provider_config` holds the access tokens, app
+#    secrets and verify tokens the integration runs on (Channel::Whatsapp::SECRET_PROVIDER_CONFIG_KEYS). Only
+#    the NAMES of the keys that changed are recorded, never a value -- not a masked one, not a prefix, not a
+#    hash. So a credential rotation is recorded as the event it is, which is what package B §5 asks for, and the
+#    value is absent from the store rather than withheld on the way out.
 #
-# Everything else is the original behaviour, including which changes write a row at all -- and that has one
-# consequence worth naming rather than discovering later. `secret` is `except`-ed, not filtered, so a change to it
-# ALONE leaves the hash blank and writes nothing. `POST .../inboxes/:id/reset_secret`
-# (app/controllers/api/v1/accounts/concerns/inbox_secret_management.rb:4) does exactly that: rotating a Channel::Api
-# webhook signing secret is unaudited. That was true before the overlay was removed and is preserved here on
-# purpose, because which changes trigger a row is behaviour this relocation was asked not to alter. Auditing it is a
-# product change, not a port.
+# 2. **Bookkeeping is not an event.** A channel row is written by the product about itself far more often than
+#    by an operator: the template snapshot is replaced on every sync, the number's health is re-checked on a
+#    schedule, and a reauthorization latch flips on a failed call. None of that is a change anybody asked for,
+#    and a trail full of it is a trail nobody reads.
+#
+# 3. **The entry is an inbox update.** The trail's vocabulary is the browser's
+#    (app/javascript/dashboard/helper/auditlogHelper.js), and it has a label for an inbox being edited and none
+#    for any channel class. Recording the change against the inbox is both the labelled event and the true one:
+#    what the operator edited was the inbox's channel configuration.
 module Custom::Channelable
-  extend ActiveSupport::Concern
+  AUDIT_EVENT = 'channel.configuration_changed'.freeze
+  CREDENTIALS_EVENT = 'channel.credentials_changed'.freeze
 
-  # Rails' own parameter filtering uses this marker, so it reads as redaction rather than as a stored value.
-  FILTERED = '[FILTERED]'.freeze
+  # Written by the product about itself. Named per concern rather than per channel class, because every one of
+  # these columns means the same thing wherever it appears. Reauthorization state is deliberately absent: it is
+  # not a column at all, it lives in Redis (app/models/concerns/reauthorizable.rb).
+  BOOKKEEPING_COLUMNS = %w[
+    updated_at created_at
+    message_templates message_templates_last_updated
+    content_templates content_templates_last_updated
+    phone_number_health phone_number_health_checked_at phone_number_health_error
+  ].freeze
 
-  # An attribute whose name carries one of these never has its value recorded. Checked against every column of all
-  # twelve Channelable models rather than guessed. `hmac_mandatory` and `smtp_authentication` deliberately do not
-  # match, because they are a policy boolean and an auth *method* name, both worth auditing. It over-matches once,
-  # on `channel_tiktok.refresh_token_expires_at`: a timestamp, filtered because it carries `token`. Left as is --
-  # over-filtering a refresh deadline costs nothing, and narrowing the regex to spare it would be the kind of
-  # special case that later lets a real credential through.
-  CREDENTIAL_NAME = /token|secret|password|key|credential|signature/i
+  # Keys the product maintains inside provider_config without being asked. `webhook_verify_token` is a
+  # credential and is excluded by the credential rule as well; it is named here so that a channel whose only
+  # change was its own generated token produces no entry at all.
+  BOOKKEEPING_CONFIG_KEYS = %w[webhook_verify_token message_templates].freeze
 
-  # The one credential-bearing jsonb column on these models, named because its name matches nothing above: it is
-  # where the WhatsApp `api_key` lives, and it exists on the email, sms, twilio_sms and whatsapp channels.
-  #
-  # Deliberately NOT a blanket rule over every structured value. Five of the nine jsonb columns on these twelve
-  # tables hold no credential and are exactly what an administrator changes and would later want to read back:
-  # `channel_api.additional_attributes` (`agent_reply_time_window`, in that model's EDITABLE_ATTRS),
-  # `channel_web_widgets.pre_chat_form_options` (the pre-chat form's fields, likewise editable),
-  # `channel_whatsapp.message_templates`, `channel_twilio_sms.content_templates` and
-  # `channel_whatsapp.phone_number_health`. Redacting those would say an inbox changed without saying what
-  # changed, which is the audit row's whole purpose, and would lose it with no security gained.
-  CREDENTIAL_BLOBS = %w[provider_config].freeze
+  def create_audit_log_entry
+    return if audited_inbox.blank?
 
-  # ActiveSupport::Concern's `included` reorders the method lookup chain, so the instance methods are prepended
-  # explicitly to sit ahead of the OSS no-op. Same manual prepend as the implementation this replaces.
-  # https://stackoverflow.com/q/40061982/3824876
-  included do
-    prepend InstanceMethods
+    changed = operator_visible_changes
+    rotated = rotated_credential_names
+    return if changed.empty? && rotated.empty?
+
+    AuditTrail::Event.record(
+      action: 'update', auditable: audited_inbox, account: account,
+      comment: rotated.any? ? CREDENTIALS_EVENT : AUDIT_EVENT,
+      changes: changed.merge('rotated_fields' => rotated).compact_blank
+    )
   end
 
-  module InstanceMethods
-    def create_audit_log_entry
-      return if inbox.nil?
+  private
 
-      # `.except('updated_at', 'secret')` decides both whether a row is written and what it says, exactly as before:
-      # a change to `secret` alone still leaves the hash blank and writes nothing.
-      audited_changes = saved_changes.except('updated_at', 'secret')
+  # `has_one :inbox` is declared with `touch: true`, so saving a brand-new channel evaluates the association in
+  # order to touch it -- and caches nil, because the inbox is created afterwards. A later update of that same
+  # instance would then see no inbox and record nothing. One reload when the cache reads empty is enough, and
+  # costs a query only in the case that would otherwise be silently wrong.
+  def audited_inbox
+    inbox || reload_inbox
+  end
 
-      return if audited_changes.blank?
-      return if messaging_template_updates?(audited_changes)
+  # `saved_changes` rather than the record's current attributes: the trail's value is the before and the after,
+  # and this runs in an `after_update` where both are still available.
+  def operator_visible_changes
+    saved_changes.except(*BOOKKEEPING_COLUMNS)
+                 .reject { |column, _pair| AuditTrail::Secrets.secret_key?(column) }
+                 .to_h { |column, pair| [column, column == 'provider_config' ? config_change_summary(pair) : pair] }
+                 .compact_blank
+  end
 
-      Custom::AuditLog.create(
-        auditable_id: inbox.id,
-        auditable_type: 'Inbox',
-        action: 'update',
-        associated_id: account.id,
-        associated_type: 'Account',
-        audited_changes: filter_credentials(audited_changes)
-      )
-    end
+  # A provider configuration is a document, and most of what moves in it is either a credential or the
+  # product's own bookkeeping. What a reader needs is which settings changed and to what -- so the credential
+  # keys are dropped here and reported separately by name, and everything else keeps its before and after.
+  def config_change_summary(pair)
+    before, after = Array(pair).map { |value| value.is_a?(Hash) ? value : {} }
+    settings = (before.keys | after.keys) - BOOKKEEPING_CONFIG_KEYS
+    settings.reject { |key| AuditTrail::Secrets.secret_key?(key) }
+            .reject { |key| before[key] == after[key] }
+            .index_with { |key| [before[key], after[key]] }
+            .presence
+  end
 
-    def messaging_template_updates?(changes)
-      # if there is more than one key, return false
-      return false unless changes.keys.length == 1
+  # The names alone. A rotation is worth recording; the old and the new value never are.
+  def rotated_credential_names
+    return [] unless saved_change_to_attribute?(:provider_config)
 
-      # if the only key is message_templates_last_updated, return true
-      changes.key?('message_templates_last_updated')
-    end
-
-    private
-
-    # Keeps the key and the `[before, after]` shape, so the reader and its `audited_changes` rendering are unchanged.
-    # `provider_config` is filtered whole rather than key by key: it is a credential blob, and filtering inside it
-    # would mean tracking which of a provider's keys are secret, in a hash this installation does not define.
-    def filter_credentials(changes)
-      changes.to_h do |attribute, values|
-        [attribute, filter_attribute?(attribute) ? values.map { FILTERED } : values]
-      end
-    end
-
-    def filter_attribute?(attribute)
-      CREDENTIAL_NAME.match?(attribute) || CREDENTIAL_BLOBS.include?(attribute)
-    end
+    before, after = saved_change_to_attribute(:provider_config).map { |value| value.is_a?(Hash) ? value : {} }
+    ((before.keys | after.keys) - BOOKKEEPING_CONFIG_KEYS)
+      .select { |key| AuditTrail::Secrets.secret_key?(key) }
+      .reject { |key| before[key] == after[key] }
+      .sort
   end
 end

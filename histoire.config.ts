@@ -13,7 +13,7 @@ export default defineConfig({
   viteIgnorePlugins: ['vite-plugin-ruby'],
   theme: {
     darkClass: 'dark',
-    title: '@chatwoot/design',
+    title: 'Lynomia Chat design',
     logo: {
       square: './design-system/images/logo-thumbnail.svg',
       light: './design-system/images/logo.png',

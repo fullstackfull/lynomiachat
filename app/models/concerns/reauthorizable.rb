@@ -108,3 +108,5 @@ module Reauthorizable
     format(::Redis::Alfred::REAUTHORIZATION_REQUIRED, obj_type: self.class.table_name.singularize, obj_id: id)
   end
 end
+
+Reauthorizable.prepend_mod_with('Reauthorizable')

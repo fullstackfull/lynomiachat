@@ -40,11 +40,25 @@ RSpec.describe 'TikTok Callbacks', type: :request do
     }.to_json
   end
 
-  let(:state) do
-    JWT.encode({ sub: account.id, iat: Time.current.to_i }, client_secret, 'HS256')
+  # The state now has to carry `exp` and the `uid` of an administrator of the account, and the callback checks
+  # both (docs/p11/00-p10-security-closure.md, SC4). The refusals are exercised in
+  # spec/requests/tiktok/oauth_state_security_spec.rb.
+  let(:administrator) { create(:user, account: account, role: :administrator) }
+
+  let(:state) { encoded_state }
+
+  def encoded_state(account_id: account.id, user_id: administrator.id, expires_in: 10.minutes)
+    issued_at = Time.current.to_i
+    payload = { sub: account_id, uid: user_id, iat: issued_at, exp: issued_at + expires_in.to_i }
+    JWT.encode(payload, client_secret, 'HS256')
   end
 
   before do
+    # The callback re-checks the entitlement on the account it resolves, which the authorization endpoint
+    # also requires before minting a state. In production the flag arrives via
+    # ACCOUNT_LEVEL_FEATURE_DEFAULTS; a bare test account has no features at all, so set it here.
+    account.enable_features!('channel_tiktok')
+
     InstallationConfig.where(name: %w[TIKTOK_APP_ID TIKTOK_APP_SECRET]).delete_all
     GlobalConfig.clear_cache
 

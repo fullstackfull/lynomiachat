@@ -14,10 +14,13 @@ module Audience::Usage
     end
   end
 
-  # The campaigns still to send (scheduled or sending): a completed campaign resolved its recipients when it was sent, and
-  # deleting a campaign is how a scheduled one is cancelled.
+  # The campaigns still to send (scheduled, sending, or blocked waiting for a capability): a completed campaign
+  # resolved its recipients when it was sent, and deleting a campaign is how a scheduled one is cancelled.
+  #
+  # `blocked` is included for the reason the others are (DECISION 6): a blocked campaign has not sent and will
+  # send when it is re-activated, so its audience is still in use and must not be deletable out from under it.
   def self.campaigns(custom_filter)
-    custom_filter.account.campaigns.one_off.where(campaign_status: %i[active processing])
+    custom_filter.account.campaigns.one_off.where(campaign_status: %i[active processing blocked])
                  .where('audience @> ?', [{ type: Custom::CampaignAudience::AUDIENCE_TYPE, id: custom_filter.id }].to_json)
   end
 end

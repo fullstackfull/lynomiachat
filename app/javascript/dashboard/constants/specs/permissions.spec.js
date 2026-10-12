@@ -21,6 +21,7 @@ describe('custom role permissions', () => {
       'contact_manage',
       'report_manage',
       'commerce_order_manage',
+      'support_ticket_manage',
     ]);
   });
 

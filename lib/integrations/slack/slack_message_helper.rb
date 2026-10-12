@@ -45,41 +45,24 @@ module Integrations::Slack::SlackMessageHelper
     @message.save!
   end
 
+  def slack_hosted?(url)
+    uri = URI.parse(url.to_s)
+    return false unless uri.scheme == 'https' && uri.userinfo.nil?
+
+    host = uri.host.to_s.downcase
+    host == 'slack.com' || host.end_with?(SLACK_FILE_HOST_SUFFIX)
+  rescue URI::InvalidURIError
+    false
+  end
+
   def attachments_present?
     params[:event][:files].present?
   end
 
   def process_attachments(attachments)
-    attachments.each do |attachment|
-      tempfile = Down::NetHttp.download(attachment[:url_private], headers: { 'Authorization' => "Bearer #{integration_hook.access_token}" })
-
-      attachment_params = {
-        file_type: file_type(attachment),
-        account_id: @message.account_id,
-        external_url: attachment[:url_private],
-        file: {
-          io: tempfile,
-          filename: tempfile.original_filename,
-          content_type: tempfile.content_type
-        }
-      }
-
-      attachment_obj = @message.attachments.new(attachment_params)
-      attachment_obj.file.content_type = attachment[:mimetype]
-    end
-  end
-
-  def file_type(attachment)
-    return if attachment[:mimetype] == 'text/plain'
-
-    case attachment[:filetype]
-    when 'png', 'jpeg', 'gif', 'bmp', 'tiff', 'jpg'
-      :image
-    when 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'
-      :video
-    else
-      :file
-    end
+    Integrations::Slack::AttachmentImporter
+      .new(message: @message, access_token: integration_hook.access_token)
+      .import(attachments)
   end
 
   def conversation

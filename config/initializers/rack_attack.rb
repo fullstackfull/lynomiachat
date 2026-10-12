@@ -359,6 +359,37 @@ class Rack::Attack
     match_data = COMMERCE_WEBHOOK_APP_PATHS.match(req.path_without_extensions)
     "#{match_data[:provider]}:#{req.ip}" if match_data.present?
   end
+
+  # Analytics and support-case reads. Both answer a request with several aggregates or counts over the account's
+  # own rows rather than one indexed lookup, so a client in a refresh loop costs more here than on an ordinary
+  # list. Keyed per USER within the account, the same way the reports API already is
+  # (`/api/v2/accounts/:account_id/reports/user` above): keying per account alone would let one agent's loop
+  # throttle their colleagues.
+  #
+  # The limits are set where a human cannot reach them and a loop can: the support workspace refetches once per
+  # navigation and debounces its search at 500 ms, and an Analytics screen fires one request per metric family.
+  def self.account_user_key(req, pattern)
+    match_data = pattern.match(req.path_without_extensions)
+    return if match_data.blank?
+
+    identifier = req.get_header('HTTP_UID').presence ||
+                 req.get_header('HTTP_API_ACCESS_TOKEN').presence ||
+                 req.get_header('api_access_token').presence
+    "#{identifier}:#{match_data[:account_id]}" if identifier.present?
+  end
+
+  SUPPORT_TICKETS_PATHS = %r{\A/api/v1/accounts/(?<account_id>\d+)/support/}
+  ANALYTICS_PATHS = %r{\A/api/v1/accounts/(?<account_id>\d+)/analytics/}
+
+  throttle('/api/v1/accounts/:account_id/support/* per user',
+           limit: ENV.fetch('RATE_LIMIT_SUPPORT_TICKETS', '300').to_i, period: 1.minute) do |req|
+    account_user_key(req, SUPPORT_TICKETS_PATHS) if req.get?
+  end
+
+  throttle('/api/v1/accounts/:account_id/analytics/* per user',
+           limit: ENV.fetch('RATE_LIMIT_ANALYTICS', '120').to_i, period: 1.minute) do |req|
+    account_user_key(req, ANALYTICS_PATHS) if req.get?
+  end
 end
 
 # Log blocked events

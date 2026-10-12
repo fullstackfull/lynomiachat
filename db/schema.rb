@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_11_180000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -279,12 +279,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.string "city"
     t.string "country"
     t.string "country_code"
+    t.index ["associated_type", "associated_id", "auditable_type", "created_at"], name: "index_audits_on_associated_and_auditable_type_and_created_at"
     t.index ["associated_type", "associated_id", "created_at"], name: "index_audits_on_associated_and_created_at"
     t.index ["associated_type", "associated_id"], name: "associated_index"
     t.index ["auditable_type", "auditable_id", "version"], name: "auditable_index"
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+    t.index ["username"], name: "index_audits_on_username_trgm", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "automation_rule_pending_executions", force: :cascade do |t|
@@ -320,6 +322,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.index ["account_id"], name: "index_automation_rules_on_account_id"
   end
 
+  create_table "billing_entitlement_overrides", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "kind", null: false
+    t.string "name", null: false
+    t.boolean "enabled"
+    t.integer "limit_value"
+    t.string "reason", null: false
+    t.bigint "granted_by_id"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "kind", "name"], name: "uniq_billing_override_per_account_capability", unique: true
+    t.index ["expires_at"], name: "index_billing_overrides_on_expiry", where: "(expires_at IS NOT NULL)"
+    t.index ["granted_by_id"], name: "index_billing_entitlement_overrides_on_granted_by_id"
+  end
+
   create_table "billing_plans", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -335,6 +353,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.string "stripe_price_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "channel_entitlements", default: [], null: false
     t.index ["active"], name: "index_billing_plans_on_active"
     t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id", unique: true
   end
@@ -356,6 +375,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.string "stripe_schedule_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_event_at"
     t.index ["account_id"], name: "index_billing_subscriptions_on_account_id", unique: true
     t.index ["plan_id"], name: "index_billing_subscriptions_on_plan_id"
     t.index ["scheduled_plan_id"], name: "index_billing_subscriptions_on_scheduled_plan_id"
@@ -371,6 +391,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_billing_trial_usages_on_email", unique: true
+  end
+
+  create_table "billing_webhook_events", force: :cascade do |t|
+    t.string "provider", default: "stripe", null: false
+    t.string "provider_event_id", null: false
+    t.string "event_type", null: false
+    t.datetime "provider_created_at"
+    t.integer "account_id"
+    t.integer "status", default: 0, null: false
+    t.string "failure_reason"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_billing_webhook_events_on_account"
+    t.index ["provider", "provider_event_id"], name: "uniq_billing_webhook_event_per_provider", unique: true
+    t.index ["status", "created_at"], name: "index_billing_webhook_events_on_failures", where: "(status = 2)"
   end
 
   create_table "calls", force: :cascade do |t|
@@ -418,6 +454,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.index ["account_id", "campaign_id"], name: "index_campaign_recipients_on_account_id_and_campaign_id"
     t.index ["account_id"], name: "index_campaign_recipients_on_account_id"
     t.index ["campaign_id", "contact_id"], name: "index_campaign_recipients_on_campaign_id_and_contact_id", unique: true
+    t.index ["campaign_id", "created_at", "id"], name: "index_campaign_recipients_on_campaign_and_created_at"
+    t.index ["campaign_id", "status", "created_at", "id"], name: "index_campaign_recipients_on_campaign_status_created_at"
     t.index ["campaign_id", "status"], name: "index_campaign_recipients_on_campaign_id_and_status"
     t.index ["campaign_id"], name: "index_campaign_recipients_on_campaign_id"
     t.index ["contact_id"], name: "index_campaign_recipients_on_contact_id"
@@ -445,6 +483,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.jsonb "template_params"
     t.datetime "started_at"
     t.datetime "completed_at"
+    t.string "blocked_reason"
     t.index ["account_id"], name: "index_campaigns_on_account_id"
     t.index ["campaign_status"], name: "index_campaigns_on_campaign_status"
     t.index ["campaign_type"], name: "index_campaigns_on_campaign_type"
@@ -929,6 +968,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.index ["name", "account_id"], name: "index_companies_on_name_and_account_id"
   end
 
+  create_table "contact_identities", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.integer "identity_type", null: false
+    t.string "value", null: false
+    t.integer "source", default: 0, null: false
+    t.bigint "linked_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "identity_type", "value"], name: "index_contact_identities_on_account_type_value", unique: true
+    t.index ["contact_id"], name: "index_contact_identities_on_contact_id"
+  end
+
   create_table "contact_inboxes", force: :cascade do |t|
     t.bigint "contact_id"
     t.bigint "inbox_id"
@@ -962,6 +1014,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.string "country_code", default: ""
     t.boolean "blocked", default: false, null: false
     t.bigint "company_id"
+    t.index "((additional_attributes ->> 'social_tiktok_user_id'::text)), account_id", name: "index_contacts_on_social_tiktok_user_id"
     t.index "lower((email)::text), account_id", name: "index_contacts_on_lower_email_account_id"
     t.index ["account_id", "contact_type"], name: "index_contacts_on_account_id_and_contact_type"
     t.index ["account_id", "email", "phone_number", "identifier"], name: "index_contacts_on_nonempty_fields", where: "(((email)::text <> ''::text) OR ((phone_number)::text <> ''::text) OR ((identifier)::text <> ''::text))"
@@ -1150,6 +1203,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.text "permissions", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "conversation_scope_enforced", default: true, null: false
     t.index ["account_id"], name: "index_custom_roles_on_account_id"
   end
 
@@ -1539,6 +1593,28 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "operations_signals", force: :cascade do |t|
+    t.bigint "account_id"
+    t.string "source", null: false
+    t.string "signal", null: false
+    t.integer "severity", default: 1, null: false
+    t.string "subject_type"
+    t.bigint "subject_id"
+    t.string "reason"
+    t.jsonb "detail", default: {}, null: false
+    t.datetime "first_seen_at", null: false
+    t.datetime "last_seen_at", null: false
+    t.integer "occurrences", default: 1, null: false
+    t.datetime "resolved_at"
+    t.bigint "support_ticket_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "COALESCE(account_id, (0)::bigint), source, COALESCE(subject_type, ''::character varying), COALESCE(subject_id, (0)::bigint), signal", name: "index_operations_signals_on_open_identity", unique: true, where: "(resolved_at IS NULL)"
+    t.index ["account_id", "last_seen_at"], name: "index_operations_signals_on_account_open", order: { last_seen_at: :desc }, where: "(resolved_at IS NULL)"
+    t.index ["last_seen_at"], name: "index_operations_signals_on_open_feed", order: :desc, where: "(resolved_at IS NULL)"
+    t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
+  end
+
   create_table "platform_app_permissibles", force: :cascade do |t|
     t.bigint "platform_app_id", null: false
     t.string "permissible_type", null: false
@@ -1669,6 +1745,58 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
     t.string "description"
     t.float "resolution_time_threshold"
     t.index ["account_id"], name: "index_sla_policies_on_account_id"
+  end
+
+  create_table "support_ticket_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "support_ticket_id", null: false
+    t.bigint "user_id"
+    t.string "event_type", null: false
+    t.text "body"
+    t.jsonb "data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_support_ticket_events_on_account_and_created_at"
+    t.index ["support_ticket_id", "created_at"], name: "index_support_ticket_events_on_ticket_and_created_at"
+  end
+
+  create_table "support_tickets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "reference_number", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.string "category", default: "other", null: false
+    t.integer "status", default: 0, null: false
+    t.integer "priority", default: 1, null: false
+    t.bigint "conversation_id"
+    t.bigint "contact_id"
+    t.bigint "inbox_id"
+    t.bigint "assignee_id"
+    t.bigint "team_id"
+    t.bigint "created_by_id"
+    t.string "source_type"
+    t.bigint "source_id"
+    t.bigint "sla_policy_id"
+    t.datetime "first_response_due_at"
+    t.datetime "resolution_due_at"
+    t.datetime "first_responded_at"
+    t.datetime "first_response_breached_at"
+    t.datetime "resolution_breached_at"
+    t.datetime "sla_paused_at"
+    t.integer "sla_paused_seconds", default: 0, null: false
+    t.datetime "last_activity_at", null: false
+    t.datetime "resolved_at"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "assignee_id", "status"], name: "index_support_tickets_on_account_assignee_status"
+    t.index ["account_id", "first_response_due_at"], name: "index_support_tickets_on_awaiting_first_response", where: "((first_response_due_at IS NOT NULL) AND (first_responded_at IS NULL) AND (first_response_breached_at IS NULL) AND (status < 4))"
+    t.index ["account_id", "last_activity_at"], name: "index_support_tickets_on_account_and_activity", order: { last_activity_at: :desc }
+    t.index ["account_id", "reference_number"], name: "index_support_tickets_on_account_and_reference", unique: true
+    t.index ["account_id", "resolution_due_at"], name: "index_support_tickets_on_open_resolution_due", where: "((resolution_due_at IS NOT NULL) AND (resolution_breached_at IS NULL) AND (status < 4))"
+    t.index ["account_id", "team_id", "status"], name: "index_support_tickets_on_account_team_status"
+    t.index ["contact_id"], name: "index_support_tickets_on_contact_id"
+    t.index ["conversation_id"], name: "index_support_tickets_on_conversation_id"
   end
 
   create_table "taggings", id: :serial, force: :cascade do |t|
@@ -1831,6 +1959,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "billing_entitlement_overrides", "accounts", on_delete: :cascade
+  add_foreign_key "billing_entitlement_overrides", "users", column: "granted_by_id", on_delete: :nullify
   add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
   add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"
@@ -1855,6 +1985,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
   add_foreign_key "commerce_customer_links", "users", column: "confirmed_by_id", on_delete: :nullify
   add_foreign_key "commerce_stores", "accounts", on_delete: :cascade
   add_foreign_key "commerce_stores", "users", column: "created_by_id", on_delete: :nullify
+  add_foreign_key "contact_identities", "accounts", on_delete: :cascade
+  add_foreign_key "contact_identities", "contacts", on_delete: :cascade
+  add_foreign_key "contact_identities", "users", column: "linked_by_id", on_delete: :nullify
   add_foreign_key "flow_sessions", "accounts", on_delete: :cascade
   add_foreign_key "flow_sessions", "agent_bots", on_delete: :cascade
   add_foreign_key "flow_sessions", "conversations", on_delete: :cascade
@@ -1865,6 +1998,19 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_100000) do
   add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
+  add_foreign_key "operations_signals", "accounts", on_delete: :cascade
+  add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
+  add_foreign_key "support_ticket_events", "accounts", on_delete: :cascade
+  add_foreign_key "support_ticket_events", "support_tickets", on_delete: :cascade
+  add_foreign_key "support_ticket_events", "users", on_delete: :nullify
+  add_foreign_key "support_tickets", "accounts", on_delete: :cascade
+  add_foreign_key "support_tickets", "contacts", on_delete: :nullify
+  add_foreign_key "support_tickets", "conversations", on_delete: :nullify
+  add_foreign_key "support_tickets", "inboxes", on_delete: :nullify
+  add_foreign_key "support_tickets", "sla_policies", on_delete: :nullify
+  add_foreign_key "support_tickets", "teams", on_delete: :nullify
+  add_foreign_key "support_tickets", "users", column: "assignee_id", on_delete: :nullify
+  add_foreign_key "support_tickets", "users", column: "created_by_id", on_delete: :nullify
   add_foreign_key "user_sessions", "users"
   add_foreign_key "whatsapp_message_templates", "accounts", on_delete: :cascade
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).

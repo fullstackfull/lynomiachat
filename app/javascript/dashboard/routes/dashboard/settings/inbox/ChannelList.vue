@@ -93,19 +93,9 @@ const channelList = computed(() => {
     });
   }
 
-  channels.push({
-    key: 'voice',
-    title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.VOICE.TITLE'),
-    description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.VOICE.DESCRIPTION'),
-    icon: 'i-woot-voice',
-  });
-
-  channels.push({
-    key: 'whatsapp_call',
-    title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.WHATSAPP_CALL.TITLE'),
-    description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.WHATSAPP_CALL.DESCRIPTION'),
-    icon: 'i-woot-whatsapp',
-  });
+  // The voice and whatsapp_call cards are gone with their pages: neither could create a working inbox
+  // (docs/p11/00-p10-security-closure.md, SC5). Voice is not built here, and offering it is not the same as
+  // having it.
 
   return channels;
 });

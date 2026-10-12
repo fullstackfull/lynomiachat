@@ -13,3 +13,5 @@ class Notification::DeleteNotificationJob < ApplicationJob
     end
   end
 end
+
+Notification::DeleteNotificationJob.prepend_mod_with('Notification::DeleteNotificationJob')

@@ -90,7 +90,8 @@
         "STATUS": {
           "PROCESSING": "Processing",
           "COMPLETED": "مكتمل",
-          "SCHEDULED": "Scheduled"
+          "SCHEDULED": "Scheduled",
+          "BLOCKED": "لم تُرسل — القناة غير متاحة"
         },
         "CAMPAIGN_DETAILS": {
           "SENT_FROM": "Sent from",

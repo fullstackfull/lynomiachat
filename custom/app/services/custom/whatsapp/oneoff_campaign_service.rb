@@ -1,117 +1,147 @@
-# Lynomia Campaigns (docs/campaigns/02-recipients.md): a one-off WhatsApp campaign keeps one
-# CampaignRecipient per contact, so the campaign can report who it reached. This replaces the OSS
-# fire-and-forget #perform outright -- every contact is recorded before it is sent, marked sent with
-# the provider's message id, or marked skipped or failed with the reason -- and the delivery and read
-# states arrive later through Custom::Whatsapp::IncomingMessageBaseService#process_statuses.
-# Recipients come from Campaign#audience_contacts, which Custom::CampaignAudience extends to resolve
-# the account's shared contact audiences beside its labels.
+# Recording what a one-off WhatsApp campaign did to each contact it addressed
+# (docs/p-final/clean-room/specs/D-campaign-recipient-outcomes.md §4.1).
+#
+# Upstream's send loop already makes every decision this has to record: it refuses a contact with no reachable
+# WhatsApp destination, refuses one whose template variables resolve to blank, hands the rest to Meta, and
+# continues past a per-contact failure. What it does not do is write any of that down, so the operator who sent
+# the campaign cannot see who it reached.
+#
+# The decisions are therefore recorded where upstream makes them, rather than by re-expressing its loop here:
+# each hook below records one outcome and delegates. Two consequences are deliberate:
+#
+# * **The campaign still completes when one contact fails.** Nothing here raises, and the recording of an
+#   outcome is contained so that a store problem cannot abort a run that has already handed messages to Meta.
+# * **A contact upstream refused at a point with no hook of its own still gets a row.** `#process_contact`
+#   checks for an outcome afterwards and records the remaining reason, so the snapshot has one row per
+#   addressed contact whatever happened to it -- which is what makes `audience` the denominator every rate in
+#   the interface is computed against.
+#
+# Skip reasons are the fixed strings on Campaigns::RecipientSnapshot and carry no contact data: P8 groups its
+# skip breakdown on that column directly, so a reason containing a phone number would both explode the
+# breakdown's cardinality and put recipient data into an analytics response.
 module Custom::Whatsapp::OneoffCampaignService
-  def perform
-    validate_campaign!
-    recipients = create_recipients
-    process_recipients(recipients)
-    campaign.completed!
+  # Before upstream's loop, so the snapshot is whole from the first poll of the analytics page rather than
+  # filling in as the run proceeds (package D §2, `audience` and `status_counts.queued`). A seed that fails
+  # must not stop a campaign from being sent: the per-contact writers below still record every outcome, and the
+  # only thing lost is the pending count while the run is in progress.
+  def process_audience
+    seed_audience
+    super
+  end
+
+  def process_contact(contact)
+    @contact = contact
+    @outcome = nil
+    super
+    record(:skipped, unhooked_reason) if @outcome.nil?
+  ensure
+    @contact = nil
   end
 
   private
 
-  def process_recipient(recipient)
-    contact = recipient.contact
-    Rails.logger.info "Processing contact: #{contact.name} (#{contact.phone_number})"
+  # [recipient, error]. A blank recipient is upstream's way of saying it found no WhatsApp destination it was
+  # willing to use, and the two cases are different problems for the operator: fix the contact's data, or
+  # decide which of its identities the campaign should address. Upstream has already told them apart, so its
+  # own classification is read rather than re-derived.
+  def campaign_destination(contact)
+    super.tap do |recipient, error|
+      next if recipient.present?
 
-    destination, destination_error = campaign_destination(contact)
-    if destination.blank?
-      recipient.mark_skipped!(destination_error)
-      return
-    end
-
-    if campaign.template_params.blank?
-      Rails.logger.error "Skipping contact #{contact.name} - no template_params found for WhatsApp campaign"
-      recipient.mark_skipped!('Template parameters are missing')
-      return
-    end
-
-    processed_template_params = process_liquid_template_params(contact)
-    if processed_template_params.nil?
-      recipient.mark_skipped!('Template parameters could not be resolved')
-      return
-    end
-
-    recipient.update!(message_content: rendered_message_content(contact))
-
-    send_whatsapp_template_message(recipient: recipient, to: destination, template_params: processed_template_params)
-  end
-
-  def create_recipients
-    contacts = campaign.audience_contacts
-    Rails.logger.info "Processing #{contacts.count} contacts for campaign #{campaign.id}"
-
-    contacts.find_each.map do |contact|
-      campaign.campaign_recipients.find_or_create_by!(contact: contact) do |recipient|
-        recipient.account = campaign.account
-        recipient.inbox = campaign.inbox
-      end
+      record(:skipped, destination_reason(error))
     end
   end
 
-  def process_recipients(recipients)
-    recipients.each { |recipient| process_recipient(recipient) }
-
-    Rails.logger.info "Campaign #{campaign.id} processing completed"
-  end
-
-  def rendered_message_content(contact)
-    Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)
-  end
-
-  def send_whatsapp_template_message(recipient:, to:, template_params:)
-    return if authentication_template_blocked?(recipient, to, template_params)
-
-    processor = Whatsapp::TemplateProcessorService.new(
-      channel: channel,
-      template_params: template_params
-    )
-
-    name, namespace, lang_code, processed_parameters = processor.call
-
-    if name.blank?
-      recipient.mark_skipped!('Template name could not be resolved')
-      return
+  # nil means Liquid resolved a variable to blank for this contact, or raised while trying. Either way nothing
+  # was sent, and the remedy is the contact's data or the template's defaults.
+  def process_liquid_template_params(contact)
+    super.tap do |params|
+      record(:skipped, Campaigns::RecipientSnapshot::BLANK_TEMPLATE_VARIABLES) if params.nil?
     end
-
-    source_id = channel.send_template(to, template_info(name, namespace, lang_code, processed_parameters), nil)
-
-    update_recipient_from_provider_response(recipient, source_id)
-  rescue StandardError => e
-    Rails.logger.error "Failed to send WhatsApp template message to #{to}: #{e.message}"
-    Rails.logger.error "Backtrace: #{e.backtrace.first(5).join('\n')}"
-    recipient.mark_failed!(message: e.message)
-    # continue processing remaining contacts
-    nil
   end
 
-  def template_info(name, namespace, lang_code, processed_parameters)
-    {
-      name: name,
-      namespace: namespace,
-      lang_code: lang_code,
-      parameters: processed_parameters
-    }
+  def authentication_template_blocked?(recipient, params)
+    super.tap do |blocked|
+      record(:skipped, Campaigns::RecipientSnapshot::AUTHENTICATION_TEMPLATE_BLOCKED) if blocked
+    end
   end
 
-  def authentication_template_blocked?(campaign_recipient, recipient, params)
-    error = Whatsapp::AuthenticationTemplateGuard.new(channel: channel, recipient: recipient, template_params: params).error
-    return false unless error
+  # The rendered text is computed before the send because it is what was sent, whether or not Meta accepted it:
+  # an operator diagnosing a refusal needs to see the message that was refused.
+  #
+  # Three outcomes, told apart by what the channel is left holding. An identifier means Meta accepted it. A
+  # refusal means Meta, or the network, said no -- and that refusal is only reachable at all because
+  # Custom::Channel::Whatsapp keeps the provider instance alive across the call. Neither means no provider call
+  # was made: upstream found no approved template of that name and language, so nothing was attempted.
+  def send_whatsapp_template_message(to:, template_params:)
+    text = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params).text
+    source_id = super
+    return source_id if @outcome.present?
 
-    campaign_recipient.mark_skipped!(error)
-    true
-  end
-
-  def update_recipient_from_provider_response(recipient, source_id)
     if source_id.present?
-      recipient.mark_sent!(source_id)
+      record_sent(source_id, text)
+    elsif (failure = channel.last_send_failure).present?
+      record_failure(failure, text)
     else
-      recipient.mark_failed!(channel.last_provider_error || { message: 'WhatsApp provider did not return a message id' })
+      record(:skipped, Campaigns::RecipientSnapshot::TEMPLATE_NOT_AVAILABLE, message_content: text)
     end
+
+    source_id
+  end
+
+  # Upstream's two refusals are "Phone number and BSUID are missing" and "Multiple WhatsApp identities found;
+  # refusing to choose a destination" (app/services/whatsapp/oneoff_campaign_service.rb:121,126). Only the
+  # second is about having too many, so that is what is matched on; anything else is the commoner case of
+  # having none.
+  AMBIGUITY_IN_REASON = /multiple/i
+
+  def destination_reason(error)
+    return Campaigns::RecipientSnapshot::AMBIGUOUS_DESTINATION if error.to_s.match?(AMBIGUITY_IN_REASON)
+
+    Campaigns::RecipientSnapshot::NO_DESTINATION
+  end
+
+  # The one reason upstream decides without passing through any method of its own: it checks
+  # `campaign.template_params.blank?` inline (app/services/whatsapp/oneoff_campaign_service.rb:51).
+  def unhooked_reason
+    Campaigns::RecipientSnapshot::NO_TEMPLATE_PARAMS
+  end
+
+  def record(outcome, reason, message_content: nil)
+    contained(outcome) { snapshot.skipped(@contact, reason, message_content: message_content) }
+  end
+
+  def record_sent(source_id, message_content)
+    contained(:sent) { snapshot.sent(@contact, source_id: source_id, message_content: message_content) }
+  end
+
+  def record_failure(failure, message_content)
+    contained(:failed) do
+      snapshot.failed(@contact, message_content: message_content, error_code: failure&.code,
+                                error_title: failure&.title, error_message: failure&.message)
+    end
+  end
+
+  # A send already handed to Meta cannot be unsent, so a failure to record must never make the run look
+  # incomplete when it was not (package D §6). It is loud in the log instead.
+  def contained(outcome)
+    return if @contact.blank?
+
+    @outcome = outcome
+    yield
+  rescue StandardError => e
+    Rails.logger.error("[Lynomia::Campaigns] campaign #{campaign.id} could not record contact #{@contact&.id}: #{e.class}")
+    ChatwootExceptionTracker.new(e, account: campaign.account).capture_exception
+  end
+
+  def seed_audience
+    snapshot.seed(campaign.audience_contacts)
+  rescue StandardError => e
+    Rails.logger.error("[Lynomia::Campaigns] campaign #{campaign.id} could not seed its audience snapshot: #{e.class}")
+    ChatwootExceptionTracker.new(e, account: campaign.account).capture_exception
+  end
+
+  def snapshot
+    @snapshot ||= Campaigns::RecipientSnapshot.new(campaign)
   end
 end

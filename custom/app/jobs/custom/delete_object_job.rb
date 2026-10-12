@@ -1,34 +1,24 @@
-# Lynomia keeps Chatwoot's audit row for a deleted inbox or conversation after the Enterprise overlay goes, through
-# the `prepend_mod_with` the OSS job already declares (app/jobs/delete_object_job.rb:43). The OSS job calls
-# `process_post_deletion_tasks(object, user, ip)` after `object.destroy!` and leaves the body empty (:16), and two
-# OSS call sites thread a user and an IP all the way through to it for no other purpose than this row:
-# app/controllers/api/v1/accounts/inboxes_controller.rb:81 and app/services/conversations/delete_service.rb:6.
+# B16 -- a record destroyed by the asynchronous deletion path (docs/p-final/clean-room/specs/B-audit-event-capture.md).
 #
-# It is also the only writer for `inbox:destroy` in the dashboard's activity map
-# (app/javascript/dashboard/helper/auditlogHelper.js), because Custom::Audit::Inbox is declared
-# `on: [:create, :update]` -- as Enterprise::Audit::Inbox was. Without this module that row type can never appear.
+# Upstream already threads the acting user and the request address into this job from both of its callers
+# (app/controllers/api/v1/accounts/inboxes_controller.rb, app/services/conversations/delete_service.rb). What
+# was missing is that the audit row written during `destroy!` had no way to see them, so it named nobody -- and
+# an entry attributing a deletion to the background worker answers nobody's question.
 #
-# Faithful port, with one necessary narrowing: the original listed `SlaPolicy` alongside Inbox and Conversation, and
-# that model left with the Enterprise overlay. Nothing else changes -- `object.attributes` is recorded in full
-# because neither `inboxes` nor `conversations` has a credential column, unlike the channel tables behind
-# Custom::Channelable.
+# Rather than write a second entry after the fact, the actor is put where the record's own capture point will
+# find it. One entry, from the same declaration that records every other change to that record, attributed to
+# the person who asked.
+#
+# The purge is a different matter. Upstream pre-deletes the heavy associations -- an account's or an inbox's
+# conversations, contacts and reporting events -- and auditing those would write a row per conversation for one
+# operator action: noise, and a recording cost that grows with the size of the record's associations, which is
+# the one thing package B §8 criterion 9 forbids. The operator's action is audited; its fan-out is not.
 module Custom::DeleteObjectJob
-  AUDITED_TYPES = %w[Inbox Conversation].freeze
-
-  def process_post_deletion_tasks(object, user, ip)
-    create_audit_entry(object, user, ip)
+  def perform(object, user = nil, ip = nil)
+    AuditTrail::Capture.as_actor(user, ip) { super }
   end
 
-  def create_audit_entry(object, user, ip)
-    return unless AUDITED_TYPES.include?(object.class.to_s) && user.present?
-
-    Custom::AuditLog.create(
-      auditable: object,
-      audited_changes: object.attributes,
-      action: 'destroy',
-      user: user,
-      associated: object.account,
-      remote_address: ip
-    )
+  def purge_heavy_associations(object)
+    AuditTrail::Capture.suppressed { super }
   end
 end

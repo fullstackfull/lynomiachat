@@ -287,7 +287,8 @@ describe Whatsapp::OneoffCampaignService do
                                                        })
 
         expect(whatsapp_channel).not_to receive(:send_template)
-        expect(Rails.logger).to receive(:info).with("Skipping contact #{contact.name} - liquid variables resolved to blank values")
+        expect(Rails.logger).to receive(:info)
+          .with("Skipping campaign recipient contact_id=#{contact.id} - liquid variables resolved to blank")
         allow(Rails.logger).to receive(:info)
 
         described_class.new(campaign: campaign_with_blank_liquid).perform
@@ -302,7 +303,7 @@ describe Whatsapp::OneoffCampaignService do
         contact.update_labels([label1.title])
 
         expect(Rails.logger).to receive(:error)
-          .with("Skipping contact #{contact.name} - no template_params found for WhatsApp campaign")
+          .with("Skipping campaign recipient contact_id=#{contact.id} - no template_params found for WhatsApp campaign")
         expect(whatsapp_channel).not_to receive(:send_template)
 
         described_class.new(campaign: campaign).perform
@@ -322,7 +323,7 @@ describe Whatsapp::OneoffCampaignService do
         expect(whatsapp_channel).to receive(:send_template).with(contact_success.phone_number, anything, nil).once
 
         expect(Rails.logger).to receive(:error)
-          .with("Failed to send WhatsApp template message to #{contact_error.phone_number}: #{error_message}")
+          .with("Failed to send WhatsApp template message: #{error_message}")
         expect(Rails.logger).to receive(:error).with(/Backtrace:/)
 
         described_class.new(campaign: campaign).perform

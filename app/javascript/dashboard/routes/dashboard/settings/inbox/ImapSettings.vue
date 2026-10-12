@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
 import { useVuelidate } from '@vuelidate/core';
-import { required, minLength } from '@vuelidate/validators';
+import { required, requiredIf, minLength } from '@vuelidate/validators';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SingleSelectDropdown from './components/SingleSelectDropdown.vue';
 
@@ -38,14 +38,29 @@ export default {
       ],
     };
   },
+  // The server no longer sends the password, so the field starts empty and a blank save keeps what is stored
+  // (docs/p10/07-security-performance.md). Requiring it would stop an administrator changing the address
+  // without retyping the password.
   validations: {
     address: { required },
     port: { required, minLength: minLength(2) },
     login: { required },
-    password: { required },
+    password: {
+      required: requiredIf(function needsPassword() {
+        return !this.hasStoredPassword;
+      }),
+    },
   },
   computed: {
     ...mapGetters({ uiFlags: 'inboxes/getUIFlags' }),
+    hasStoredPassword() {
+      return Boolean(this.inbox.imap_password_configured);
+    },
+    passwordPlaceholder() {
+      return this.hasStoredPassword
+        ? this.$t('INBOX_MGMT.IMAP.PASSWORD.PLACE_HOLDER_STORED')
+        : this.$t('INBOX_MGMT.IMAP.PASSWORD.PLACE_HOLDER');
+    },
   },
   watch: {
     inbox() {
@@ -62,7 +77,6 @@ export default {
         imap_address,
         imap_port,
         imap_login,
-        imap_password,
         imap_enable_ssl,
         imap_authentication,
       } = this.inbox;
@@ -70,7 +84,6 @@ export default {
       this.address = imap_address;
       this.port = imap_port;
       this.login = imap_login;
-      this.password = imap_password;
       this.isSSLEnabled = imap_enable_ssl;
       this.authMechanism = imap_authentication || 'plain';
     },
@@ -152,7 +165,7 @@ export default {
           :class="{ error: v$.password.$error }"
           class="w-full"
           :label="$t('INBOX_MGMT.IMAP.PASSWORD.LABEL')"
-          :placeholder="$t('INBOX_MGMT.IMAP.PASSWORD.PLACE_HOLDER')"
+          :placeholder="passwordPlaceholder"
           type="password"
           @blur="v$.password.$touch"
         />

@@ -1,5 +1,7 @@
 <% subscription = page.resource %>
 <% content_for(:title) { "Subscription ##{subscription.id}" } %>
+<%# channel_type -> human label, from the one list of channel types this fork has (Channels::Capability) %>
+<% channel_labels = BillingPlanChannelsField.channel_options.to_h { |label, value| [value, label] } %>
 
 <header class="main-content__header" role="banner">
   <h1 class="main-content__page-title">
@@ -22,7 +24,16 @@
     <dt class="attribute-label">Plan</dt>
     <dd class="attribute-data"><%= subscription.plan&.name || '—' %></dd>
 
-    <dt class="attribute-label">Usage / plan limit</dt>
+    <dt class="attribute-label">Channels sold by the plan</dt>
+    <dd class="attribute-data">
+      <% if subscription.plan&.sells_channels? %>
+        <%= subscription.plan.channel_entitlements.map { |type| channel_labels[type] || type }.join(', ') %>
+      <% else %>
+        All channels (no restriction)
+      <% end %>
+    </dd>
+
+    <dt class="attribute-label">Usage / enforced limit</dt>
     <dd class="attribute-data">
       <%= Billing::ApiSerializer.usage(subscription.account).map { |key, usage|
             "#{BillingPlanLimitsField::LABELS.fetch(key.to_s)}: #{usage[:used]} / #{usage[:limit] || '∞'}" }.join(' · ') %>
@@ -98,5 +109,83 @@
                     form: { onsubmit: "return confirm('Cancel this subscription now? The account will be locked.');" },
                     style: 'background: #dc2626; color: #fff;' %>
     </div>
+  <% end %>
+
+  <h2 style="font-weight: 600; margin: 32px 0 8px;">Entitlement overrides</h2>
+  <p style="font-size: 13px; opacity: .8; margin-bottom: 8px;">
+    An explicit exception for this account only. It wins over the plan and survives a plan sync, and every
+    grant and removal is written to the account's audit log.
+  </p>
+
+  <%# Every row, not Billing::Entitlements.overrides: that answers "what applies right now" and hides what has
+      lapsed, and an operator needs to see a lapsed exception to understand why a customer lost a capability. %>
+  <% overrides = subscription.account ? subscription.account.billing_entitlement_overrides.order(:kind, :name) : [] %>
+  <% if overrides.empty? %>
+    <p style="font-size: 13px; opacity: .7; margin-bottom: 16px;">
+      None. This account gets exactly what its plan entitles it to.
+    </p>
+  <% else %>
+    <table style="width: 100%; margin-bottom: 16px; font-size: 13px;">
+      <thead>
+        <tr>
+          <th style="text-align: start;">Kind</th>
+          <th style="text-align: start;">Capability</th>
+          <th style="text-align: start;">Effect</th>
+          <th style="text-align: start;">Reason</th>
+          <th style="text-align: start;">Granted by</th>
+          <th style="text-align: start;">Expires</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% overrides.each do |override| %>
+          <tr>
+            <td><%= override.kind %></td>
+            <td><%= override.kind_channel? ? (channel_labels[override.name] || override.name) : override.name %></td>
+            <td>
+              <% if override.kind_limit? %>
+                <%= override.limit_value %>
+              <% else %>
+                <%= override.enabled ? 'Allowed' : 'Denied' %>
+              <% end %>
+            </td>
+            <td><%= override.reason %></td>
+            <td><%= override.granted_by&.email || '—' %></td>
+            <td>
+              <% if override.expires_at.nil? %>
+                —
+              <% else %>
+                <%= override.expires_at.strftime('%d %b %Y') %><%= ' (lapsed)' if override.lapsed? %>
+              <% end %>
+            </td>
+            <td>
+              <%= button_to 'Revoke',
+                            revoke_override_super_admin_billing_subscription_path(subscription),
+                            method: :post,
+                            params: { override_id: override.id },
+                            form: { onsubmit: "return confirm('Remove this override? The account falls back to its plan.');" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <% if subscription.account %>
+    <%= render 'override_form', subscription: subscription, kind: 'feature',
+                                title: 'Feature override',
+                                hint: 'Switch one capability on or off for this account regardless of its plan.',
+                                options: BillingPlan.assignable_features
+                                                    .map { |f| [f['display_name'].presence || f['name'], f['name']] }.sort %>
+
+    <%= render 'override_form', subscription: subscription, kind: 'limit',
+                                title: 'Limit override',
+                                hint: 'A different ceiling for one counted resource, enforced by the same check as the plan limit.',
+                                options: BillingPlan::LIMIT_KEYS.map { |key| [BillingPlanLimitsField::LABELS.fetch(key), key] } %>
+
+    <%= render 'override_form', subscription: subscription, kind: 'channel',
+                                title: 'Channel override',
+                                hint: 'Sell or withhold one channel type for this account regardless of its plan.',
+                                options: BillingPlanChannelsField.channel_options %>
   <% end %>
 </section>

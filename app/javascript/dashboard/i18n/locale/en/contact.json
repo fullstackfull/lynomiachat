@@ -276,7 +276,9 @@
     "SUMMARY": {
       "TITLE": "Summary",
       "DELETE_WARNING": "Contact of <strong>{primaryContactName}</strong> will be deleted.",
-      "ATTRIBUTE_WARNING": "Contact details of <strong>{primaryContactName}</strong> will be copied to <strong>{parentContactName}</strong>."
+      "ATTRIBUTE_WARNING": "Contact details of <strong>{primaryContactName}</strong> will be copied to <strong>{parentContactName}</strong>.",
+      "IRREVERSIBLE": "This cannot be undone. The merge is recorded in the audit log.",
+      "CARRIED_OVER": "Conversations, messages, notes, labels, campaign history, support cases and commerce links move to the contact that is kept."
     },
     "SEARCH": {
       "ERROR_MESSAGE": "Something went wrong. Please try again later."
@@ -589,10 +591,13 @@
     "SIDEBAR": {
       "TABS": {
         "ATTRIBUTES": "Attributes",
+        "ACTIVITY": "Activity",
+        "CASES": "Cases",
         "HISTORY": "History",
         "NOTES": "Notes",
         "MEDIA": "Media",
-        "MERGE": "Merge"
+        "MERGE": "Merge",
+        "IDENTITIES": "Identities"
       },
       "HISTORY": {
         "EMPTY_STATE": "There are no previous conversations associated to this contact"
@@ -640,7 +645,9 @@
         "BUTTONS": {
           "CANCEL": "Cancel",
           "CONFIRM": "Merge contact"
-        }
+        },
+        "IRREVERSIBLE": "This cannot be undone. The merge is recorded in the audit log.",
+        "CARRIED_OVER": "Conversations, messages, notes, labels, campaign history, support cases and commerce links move to the contact that is kept."
       },
       "NOTES": {
         "PLACEHOLDER": "Add a note",
@@ -655,6 +662,106 @@
         "CONVERSATION_EMPTY_STATE": "There are no notes yet. Use the Add note button to create one.",
         "DELETE": "Delete note",
         "LOADING": "Loading notes"
+      },
+      "ACTIVITY": {
+        "EMPTY_STATE": "Nothing has been recorded for this contact yet.",
+        "ERROR": "This activity could not be loaded. Try again, and if it keeps failing contact support.",
+        "PARTIAL": "Some activity could not be loaded ({sources}). Everything else is shown.",
+        "LOAD_MORE": "Load more",
+        "LOADING": "Loading…",
+        "RATING": "Rated {value}/5",
+        "DURATION": "{value}s",
+        "FILTER": {
+          "ALL": "All",
+          "MESSAGES": "Messages",
+          "CONVERSATIONS": "Conversations",
+          "CAMPAIGNS": "Campaigns",
+          "AUTOMATIONS": "Automations",
+          "COMMERCE": "Commerce",
+          "TICKETS": "Cases"
+        },
+        "KIND": {
+          "MESSAGE_INCOMING": "Message received",
+          "MESSAGE_OUTGOING": "Message sent",
+          "MESSAGE_SYSTEM_TEMPLATE": "Automatic message",
+          "PRIVATE_NOTE": "Private note",
+          "CONVERSATION_CREATED": "Conversation started",
+          "CONVERSATION_STATUS_CHANGED": "Conversation status changed",
+          "CONVERSATION_ACTIVITY": "Conversation updated",
+          "CONVERSATION_REOPENED": "Conversation reopened",
+          "CONVERSATION_RESOLVED": "Conversation resolved",
+          "FIRST_RESPONSE": "First reply sent",
+          "BOT_HANDOFF": "Handed to the team",
+          "BOT_RESOLVED": "Resolved by the bot",
+          "CSAT_RESPONSE": "Rated the conversation",
+          "CAMPAIGN_QUEUED": "Added to a campaign",
+          "CAMPAIGN_SKIPPED": "Skipped by a campaign",
+          "CAMPAIGN_SENT": "Campaign message sent",
+          "CAMPAIGN_DELIVERED": "Campaign message delivered",
+          "CAMPAIGN_READ": "Campaign message read",
+          "CAMPAIGN_FAILED": "Campaign message refused",
+          "AUTOMATION_EXECUTED": "Automation acted",
+          "AUTOMATION_SKIPPED": "Automation declined to act",
+          "FLOW_COMPLETED": "Flow reached the end",
+          "FLOW_FAILED": "Flow stopped on an error",
+          "FLOW_CANCELLED": "Flow ended from outside",
+          "FLOW_HANDED_OFF": "Flow handed to the team",
+          "CART_ABANDONED": "Cart reported abandoned",
+          "CART_COMPLETED": "Cart checkout completed",
+          "COMMERCE_ACTION_PENDING": "Order action requested",
+          "COMMERCE_ACTION_RUNNING": "Order action in progress",
+          "COMMERCE_ACTION_SUCCEEDED": "Order action completed",
+          "COMMERCE_ACTION_FAILED": "Order action refused",
+          "COMMERCE_ACTION_UNKNOWN": "Order action answer lost",
+          "COMMERCE_CUSTOMER_LINKED": "Linked to a store customer",
+          "TICKET_CREATED": "Case opened",
+          "TICKET_NOTE": "Note added to a case",
+          "TICKET_STATUS_CHANGED": "Case status changed",
+          "TICKET_PRIORITY_CHANGED": "Case priority changed",
+          "TICKET_ASSIGNED": "Case assignee changed",
+          "TICKET_TEAM_CHANGED": "Case team changed",
+          "TICKET_CATEGORY_CHANGED": "Case category changed",
+          "TICKET_CONVERSATION_LINKED": "Conversation linked to a case",
+          "TICKET_CONVERSATION_UNLINKED": "Conversation unlinked from a case",
+          "TICKET_SLA_APPLIED": "SLA policy attached to a case",
+          "TICKET_SLA_FIRST_RESPONSE_MET": "Case first response on time",
+          "TICKET_SLA_FIRST_RESPONSE_BREACHED": "Case first response target missed",
+          "TICKET_SLA_RESOLUTION_BREACHED": "Case resolution target missed",
+          "TICKET_RESOLVED": "Case resolved",
+          "TICKET_REOPENED": "Case reopened",
+          "TICKET_CLOSED": "Case closed"
+        }
+      },
+      "CASES": {
+        "EMPTY_STATE": "No support case has been opened for this contact.",
+        "ERROR": "These cases could not be loaded. Try again, and if it keeps failing contact support.",
+        "VIEW_ALL": "View all cases for this contact"
+      },
+      "IDENTITIES": {
+        "DESCRIPTION": "Everything this customer can be reached at. A primary number or address is what an outgoing conversation uses; a linked one is matched when a message arrives.",
+        "PRIMARY_TITLE": "Primary",
+        "LINKED_TITLE": "Also reachable at",
+        "ADD_TITLE": "Link another number or address",
+        "LINK": "Link",
+        "UNLINK": "Unlink",
+        "LINKED": "Linked to this contact.",
+        "UNLINKED": "No longer linked to this contact.",
+        "EMPTY_STATE": "This contact has no phone number or email address yet.",
+        "LOAD_ERROR": "The linked numbers and addresses could not be loaded.",
+        "LINK_ERROR": "This could not be linked.",
+        "UNLINK_ERROR": "This could not be unlinked.",
+        "TYPE": {
+          "PHONE": "Phone",
+          "EMAIL": "Email"
+        },
+        "PLACEHOLDER": {
+          "PHONE": "+965 5000 0000",
+          "EMAIL": "name{'@'}example.com"
+        },
+        "SOURCE": {
+          "AGENT_LINKED": "Linked by an agent",
+          "MERGED": "From a merge"
+        }
       }
     },
     "EMPTY_STATE": {

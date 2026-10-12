@@ -73,6 +73,103 @@ RSpec.describe 'Billing Platform API authorization', type: :request do
     end
   end
 
+  # A plan is shared by every tenant on it, so a write to one modifies accounts this app may never have been
+  # granted: dropping `limits.agents` from 25 to 1 blocks agent creation for all of them, mid-period. Upstream's
+  # own rule is that an app may create freely but may only modify what it was granted, and this applies it.
+  describe 'the shared plan catalogue' do
+    it 'is readable' do
+      get_with_token("/platform/api/v1/billing/plans/#{plan.id}")
+      expect(response).to have_http_status(:success)
+    end
+
+    it 'cannot be re-limited while an account the app was not granted is subscribed' do
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { limits: { agents: 1 } } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.parsed_body['error']).to eq('non_permissible_subscribers')
+      expect(plan.reload.limits).to eq({})
+    end
+
+    # The edit is a widening, because P-FINAL refuses a narrowing on a plan with billed subscribers whoever
+    # asks (BillingPlan#refuse_narrowing_while_billed). Introducing a ceiling where there was none is a
+    # narrowing, which is why this sells a feature instead of setting `limits`.
+    it 'can be edited once every subscriber is an account the app was granted' do
+      other.billing_subscription.destroy!
+
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { features: ['lynomia_commerce'] } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(plan.reload.features).to eq(['lynomia_commerce'])
+    end
+
+    # The same refusal, through the Platform API rather than the console: a token the plan's subscribers all
+    # belong to still cannot take away what they are paying for.
+    it 'cannot be narrowed even by an app every subscriber belongs to' do
+      # The ceiling is set while nobody is billed on the plan, because introducing one is itself a narrowing.
+      other.billing_subscription.destroy!
+      granted.billing_subscription.destroy!
+      plan.update!(limits: { 'agents' => 10 })
+      BillingSubscription.create!(account: granted, plan: plan, status: 'active')
+
+      patch "/platform/api/v1/billing/plans/#{plan.id}",
+            params: { plan: { limits: { agents: 2 } } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(plan.reload.limit_for(:agents)).to eq(10)
+    end
+
+    # Provisioning a new plan affects nobody, which is the case a legitimate integration needs.
+    it 'can still be created' do
+      post '/platform/api/v1/billing/plans',
+           params: { plan: { name: 'Provisioned', price: 5 } }, headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:created)
+      expect(BillingPlan.find_by(name: 'Provisioned')).to be_present
+    end
+  end
+
+  # P11.56. A Platform App token is an installation-level credential by upstream design -- PlatformController
+  # exempts `create` from its permissible check, and Platform::Api::V1::AccountsController#create makes new
+  # accounts installation-wide. But a credential that can REPLACE the installation's Stripe keys is a different
+  # thing: a new secret key points this installation's customers at another Stripe account, and a new webhook
+  # secret both breaks every genuine delivery and re-opens the forged-event path SEC-7 closed.
+  describe 'the installation Stripe credentials' do
+    before { Billing::Settings.update!(stripe_secret_key: 'sk_test_original', stripe_webhook_secret: 'whsec_original') }
+
+    it 'are not readable, not even as a masked hint' do
+      get_with_token('/platform/api/v1/billing/settings')
+
+      expect(response).to have_http_status(:success)
+      body = response.parsed_body['data']
+      expect(body).not_to have_key('stripe_secret_key')
+      expect(body).not_to have_key('stripe_webhook_secret')
+      # What an integration legitimately needs: whether billing works at all.
+      expect(body).to include('stripe_configured' => true)
+      expect(response.body).not_to match(/sk_test_original|whsec_original|sk_test\.\.\./)
+    end
+
+    it 'cannot be overwritten' do
+      patch '/platform/api/v1/billing/settings',
+            params: { settings: { stripe_secret_key: 'sk_live_attacker', stripe_webhook_secret: 'whsec_attacker' } },
+            headers: { api_access_token: token }, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(Billing::Settings.stripe_secret_key).to eq('sk_test_original')
+      expect(Billing::Settings.stripe_webhook_secret).to eq('whsec_original')
+    end
+
+    it 'does not stop the settings it may legitimately change' do
+      patch '/platform/api/v1/billing/settings',
+            params: { settings: { trial_days: 21, grace_period_days: 5 } },
+            headers: { api_access_token: token }, as: :json
+
+      expect(Billing::Settings.trial_days).to eq(21)
+      expect(Billing::Settings.get(:grace_period_days)).to eq(5)
+    end
+  end
+
   describe 'without a Platform App token' do
     it 'refuses the request' do
       get "/platform/api/v1/billing/subscriptions/#{granted.id}", as: :json

@@ -2,6 +2,11 @@
 
 class BillingSubscription < ApplicationRecord
   STATUSES = %w[inactive trialing active past_due canceled].freeze
+  # The statuses in which an account is on a plan commercially: being trialled, paying, or in the grace period
+  # after a failed payment. `inactive` has not started and `canceled` has ended, so neither is affected by a
+  # change to what a plan sells. Defined here, with the statuses, because two things ask the question --
+  # Billing::PlanAudit (how many accounts did this edit move?) and BillingPlan (may this edit narrow?).
+  BILLED_STATUSES = %w[trialing active past_due].freeze
   SOURCES = %w[stripe manual].freeze
 
   belongs_to :account
@@ -45,10 +50,20 @@ class BillingSubscription < ApplicationRecord
   # Is the dashboard open for the account? Same as usable?, except that an account
   # that never subscribed is not locked while billing is not set up (it can't pay yet).
   def accessible?
-    usable? || (status == 'inactive' && !Billing::Settings.enforced?)
+    usable? || (status == 'inactive' && !billing_enforced?)
   end
 
   private
+
+  # Read once per instance. `accessible?` is asked again for every capability and every limit resolved in a
+  # request (Billing::Entitlements#plan_for), and each ask otherwise re-read up to five installation configs.
+  # Only the installation-wide setting is memoized -- `usable?` stays live, because that one is derived from
+  # this row and this row can be written during a request.
+  def billing_enforced?
+    return @billing_enforced if defined?(@billing_enforced)
+
+    @billing_enforced = Billing::Settings.enforced?
+  end
 
   # Stripe subscriptions are kept in sync by webhooks.
   # Manual grants may have an optional end date set by the super admin.

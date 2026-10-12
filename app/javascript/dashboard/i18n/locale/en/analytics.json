@@ -1,0 +1,400 @@
+{
+  "ANALYTICS": {
+    "NO_DATA": "Nothing was recorded in this period.",
+    "TIMEZONE_LABEL": "Grouped in {timezone}",
+    "TIMEZONE_NOTE": "Days, weeks and months are cut in the account's reporting timezone, so everyone viewing this account sees the same totals for the same dates.",
+    "GROUP_BY": {
+      "DAY": "Day",
+      "WEEK": "Week",
+      "MONTH": "Month"
+    },
+    "SERIES": {
+      "TOTAL": "{value} total"
+    },
+    "ERROR": {
+      "UNEXPECTED": "This report could not be loaded. Try again, and if it keeps failing contact support."
+    },
+    "KPI": {
+      "CURRENT_STATE_HINT": "A reading taken now, not a count over the selected dates."
+    },
+    "BREAKDOWN": {
+      "TITLE": "Where the volume sits",
+      "SHARE": "{value}%",
+      "REMAINING": "and {count} more",
+      "UNLABELLED": "Not recorded"
+    },
+    "META": {
+      "FOOTNOTE": "{since} to {until}, grouped by {grouping}, in {timezone}.",
+      "WARNING": "{scope}: {reason}.",
+      "WARNING_SCOPE": {
+        "IMMEDIATE_RULES": "Immediate automation rules",
+        "RETENTION_WINDOW": "Part of this date range",
+        "SLA": "SLA breach counts"
+      },
+      "WARNING_REASON": {
+        "ACTIVE_CASES_WITHOUT_A_POLICY": "some open cases have no SLA policy attached, so a zero breach count does not mean nothing was late",
+        "NO_EXECUTION_RECORD": "they run inline and record nothing, so they are absent here rather than counted as zero",
+        "TERMINAL_ROWS_PURGED_AFTER_30_DAYS": "finished episodes are kept for 30 days, so earlier days are incomplete"
+      },
+      "SOURCE": {
+        "RAW": "Computed from source records",
+        "ROLLUP": "Served from daily rollups"
+      },
+      "REASON": {
+        "COVERAGE_VERIFIED": "rollup totals matched the source records for every day in range",
+        "FEATURE_DISABLED": "rollups are turned off for this account",
+        "NO_ACCOUNT_REPORTING_TIMEZONE": "no reporting timezone is set, so no rollups were written",
+        "NO_ROLLUP_DIMENSION": "this grouping has no rollup",
+        "NO_ROLLUP_METRIC": "this metric has no rollup",
+        "INCOMPLETE_COVERAGE": "rollup totals did not match the source records, so the source records were used"
+      }
+    },
+    "CONVERSATIONS": {
+      "HEADER": "Analytics overview",
+      "DESCRIPTION": "How much work arrived, how much was closed, how fast your team responded, and what is still open.",
+      "EMPTY": "No conversations or messages were recorded in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CONVERSATIONS_CREATED": {
+          "LABEL": "Conversations started",
+          "HINT": "Conversations opened in this period, however they arrived."
+        },
+        "CONVERSATIONS_RESOLVED": {
+          "LABEL": "Conversations resolved",
+          "HINT": "Times a conversation was marked resolved in this period."
+        },
+        "CONVERSATIONS_REOPENED": {
+          "LABEL": "Conversations reopened",
+          "HINT": "Times a resolved conversation was opened again in this period."
+        },
+        "AVG_FIRST_RESPONSE_TIME": {
+          "LABEL": "Average first response",
+          "HINT": "How long a customer waited for the first human reply."
+        },
+        "AVG_RESOLUTION_TIME": {
+          "LABEL": "Average resolution time",
+          "HINT": "How long a conversation stayed open before it was resolved."
+        },
+        "INBOUND_MESSAGES": {
+          "LABEL": "Messages received",
+          "HINT": "Customer messages. Activity notes and private notes are not counted."
+        },
+        "OUTBOUND_MESSAGES": {
+          "LABEL": "Messages sent",
+          "HINT": "Replies sent to customers, including approved template sends. Activity notes and private notes are not counted."
+        },
+        "UNRESOLVED_BACKLOG": {
+          "LABEL": "Open right now",
+          "HINT": "Conversations currently open or pending. Snoozed conversations are not counted."
+        }
+      },
+      "BREAKDOWN": {
+        "INBOX": "Inbox",
+        "CHANNEL": "Channel",
+        "TEAM": "Team",
+        "AGENT": "Agent"
+      }
+    },
+    "WHATSAPP": {
+      "HEADER": "WhatsApp delivery",
+      "DESCRIPTION": "Whether your WhatsApp messages are reaching people, which templates carry the volume, and what Meta is refusing.",
+      "EMPTY": "No WhatsApp messages were sent in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "MESSAGES_SENT": {
+          "LABEL": "Messages sent",
+          "HINT": "Outgoing WhatsApp messages Lynomia handed to Meta in this period."
+        },
+        "TEMPLATE_MESSAGES_SENT": {
+          "LABEL": "Template sends",
+          "HINT": "Of those, the ones sent as an approved template."
+        },
+        "DELIVERED": {
+          "LABEL": "Delivered",
+          "HINT": "Messages Meta confirmed as delivered or read. A message delivered and later marked failed is counted only as failed."
+        },
+        "READ": {
+          "LABEL": "Read",
+          "HINT": "Messages Meta confirmed the recipient opened."
+        },
+        "FAILED": {
+          "LABEL": "Failed",
+          "HINT": "Messages Meta refused to deliver."
+        },
+        "DELIVERY_RATE": {
+          "LABEL": "Delivery rate",
+          "HINT": "Delivered as a share of what was sent."
+        },
+        "READ_RATE": {
+          "LABEL": "Read rate",
+          "HINT": "Read as a share of what was sent."
+        },
+        "FAILURE_RATE": {
+          "LABEL": "Failure rate",
+          "HINT": "Refused as a share of what was sent."
+        },
+        "COEXISTENCE_ECHOES": {
+          "LABEL": "Synced from the app",
+          "HINT": "Messages you sent from the WhatsApp Business app, synced into Lynomia. They are left out of every count and rate above, because their delivered status is recorded locally rather than confirmed by Meta."
+        }
+      },
+      "BREAKDOWN": {
+        "TEMPLATE": "Template",
+        "INBOX": "Inbox",
+        "FAILURE": "Refusal"
+      }
+    },
+    "CAMPAIGNS": {
+      "HEADER": "Campaign performance",
+      "DESCRIPTION": "How the period's campaigns reached their audiences: who was addressed, who received it, and why anyone missed out.",
+      "EMPTY": "No campaign addressed anyone in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CAMPAIGNS_RUN": {
+          "LABEL": "Campaigns run",
+          "HINT": "Campaigns that addressed at least one contact in this period."
+        },
+        "RECIPIENTS_TARGETED": {
+          "LABEL": "Recipients addressed",
+          "HINT": "Contacts the period's campaigns selected, each counted once per campaign."
+        },
+        "SENT": {
+          "LABEL": "Sent",
+          "HINT": "Recipients Meta accepted a message for."
+        },
+        "DELIVERED": {
+          "LABEL": "Delivered",
+          "HINT": "Recipients Meta confirmed as delivered or read."
+        },
+        "READ": {
+          "LABEL": "Read",
+          "HINT": "Recipients Meta confirmed opened the message."
+        },
+        "FAILED": {
+          "LABEL": "Failed",
+          "HINT": "Recipients Meta refused to deliver to."
+        },
+        "SKIPPED": {
+          "LABEL": "Skipped",
+          "HINT": "Recipients Lynomia did not attempt, for example a contact with no phone number."
+        },
+        "PENDING": {
+          "LABEL": "Still queued",
+          "HINT": "Recipients addressed but with no outcome yet."
+        },
+        "DELIVERY_RATE": {
+          "LABEL": "Delivery rate",
+          "HINT": "Delivered as a share of the recipients addressed."
+        },
+        "READ_RATE": {
+          "LABEL": "Read rate",
+          "HINT": "Read as a share of the recipients addressed."
+        },
+        "FAILURE_RATE": {
+          "LABEL": "Failure rate",
+          "HINT": "Refused as a share of the recipients addressed."
+        }
+      },
+      "BREAKDOWN": {
+        "CAMPAIGN": "Campaign",
+        "AUDIENCE": "Audience used",
+        "FAILURE": "Refusal code",
+        "SKIP_REASON": "Skip reason"
+      }
+    },
+    "AUTOMATIONS": {
+      "HEADER": "Automation execution",
+      "DESCRIPTION": "What your delayed rules did when their moment came: how many acted, how many declined, and why.",
+      "EMPTY": "No delayed automation reached an outcome in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "EPISODES_ARMED": {
+          "LABEL": "Episodes armed",
+          "HINT": "Times a delayed rule started its clock in this period."
+        },
+        "EXECUTED": {
+          "LABEL": "Acted",
+          "HINT": "Episodes whose actions ran."
+        },
+        "SKIPPED": {
+          "LABEL": "Declined",
+          "HINT": "Episodes the rule re-checked at firing time and chose not to act on."
+        },
+        "EXECUTION_RATE": {
+          "LABEL": "Action rate",
+          "HINT": "Acted as a share of the episodes that reached an outcome."
+        },
+        "AWAITING_NOW": {
+          "LABEL": "Waiting to fire",
+          "HINT": "Episodes whose clock is still running."
+        },
+        "STRANDED_NOW": {
+          "LABEL": "Stranded",
+          "HINT": "Episodes whose worker stopped while the actions were running. Nothing retries these on purpose, because repeating a send is worse than dropping it. A number above zero is worth investigating."
+        }
+      },
+      "BREAKDOWN": {
+        "RULE": "Rule",
+        "SKIP_REASON": "Reason declined",
+        "STATUS": "Outcome"
+      }
+    },
+    "FLOWS": {
+      "HEADER": "Flow sessions",
+      "DESCRIPTION": "How your flow runs ended: how many reached the end, how many went to a person, and how many stopped on an error.",
+      "EMPTY": "No flow run started or ended in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "SESSIONS_STARTED": {
+          "LABEL": "Runs started",
+          "HINT": "Flow runs that began in this period."
+        },
+        "SESSIONS_COMPLETED": {
+          "LABEL": "Reached the end",
+          "HINT": "Runs that ended at an End node in this period."
+        },
+        "SESSIONS_FAILED": {
+          "LABEL": "Stopped on an error",
+          "HINT": "Runs that hit an error or a safety limit and were handed to a person."
+        },
+        "SESSIONS_CANCELLED": {
+          "LABEL": "Ended from outside",
+          "HINT": "Runs ended by something other than the flow itself, such as the conversation being resolved."
+        },
+        "HANDED_OFF": {
+          "LABEL": "Handed to a person",
+          "HINT": "Runs that reached a handoff node and gave the conversation to your team."
+        },
+        "COMPLETION_RATE": {
+          "LABEL": "Completion rate",
+          "HINT": "Reached the end as a share of the runs that ended in this period."
+        },
+        "AVERAGE_DURATION": {
+          "LABEL": "Average run length",
+          "HINT": "Start to end, including every stretch the flow spent waiting for the customer."
+        },
+        "AVERAGE_STEPS": {
+          "LABEL": "Average steps",
+          "HINT": "Nodes a run passed through before it ended."
+        },
+        "LIVE_NOW": {
+          "LABEL": "Running now",
+          "HINT": "Runs a customer could still answer."
+        }
+      },
+      "BREAKDOWN": {
+        "BOT": "Flow",
+        "STATUS": "Outcome",
+        "FAILURE": "Error",
+        "END_REASON": "End reason"
+      }
+    },
+    "COMMERCE": {
+      "HEADER": "Commerce",
+      "DESCRIPTION": "What your stores reported about abandoned carts, what your team did about them, and how the order actions went.",
+      "EMPTY": "No store reported a cart and no order action ran in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "CARTS_SEEN": {
+          "LABEL": "Carts seen",
+          "HINT": "Carts your stores first told Lynomia about in this period."
+        },
+        "CARTS_ABANDONED": {
+          "LABEL": "Reported abandoned",
+          "HINT": "Carts a store said were abandoned. Lynomia runs no inactivity timer of its own, so silence from a store is never counted as abandonment."
+        },
+        "CARTS_TARGETED": {
+          "LABEL": "Messaged",
+          "HINT": "Carts where recovery outreach was accepted for sending."
+        },
+        "CARTS_COMPLETED": {
+          "LABEL": "Checkout completed",
+          "HINT": "Carts a store said were completed. That proves checkout completion and nothing more."
+        },
+        "POST_TARGET_COMPLETIONS": {
+          "LABEL": "Completed after messaging",
+          "HINT": "Completions that happened after outreach went out. This is the order of two recorded times, not proof the message caused it: the shopper may have returned on their own, or in response to the store's own reminder."
+        },
+        "UNTARGETED_COMPLETIONS": {
+          "LABEL": "Completed with no messaging",
+          "HINT": "Completions on carts Lynomia never messaged. Shown beside the figure above so the two can be compared."
+        },
+        "TARGETING_RATE": {
+          "LABEL": "Messaged rate",
+          "HINT": "Messaged as a share of the carts reported abandoned in this period."
+        },
+        "ORDER_ACTIONS_REQUESTED": {
+          "LABEL": "Order actions",
+          "HINT": "Refunds, cancellations, status changes and resends your team asked a store to make."
+        },
+        "ORDER_ACTIONS_FAILED": {
+          "LABEL": "Actions refused",
+          "HINT": "Order actions a store refused. Nothing changed in the store."
+        },
+        "RECOVERY_MESSAGES_PREPARED": {
+          "LABEL": "Recovery messages prepared",
+          "HINT": "Recovery messages drafted for an abandoned cart. Whether one reached the customer is a WhatsApp delivery question."
+        },
+        "OPEN_ABANDONED_NOW": {
+          "LABEL": "Open abandoned carts",
+          "HINT": "Carts a store called abandoned and has never called completed."
+        },
+        "ACTIONS_UNRESOLVED_NOW": {
+          "LABEL": "Actions unsettled",
+          "HINT": "Order actions with no final answer, including the ones where the request reached the store but the reply was lost. Those are never re-sent automatically and need checking in the store. Above zero is worth a look."
+        }
+      },
+      "BREAKDOWN": {
+        "PROVIDER": "Platform",
+        "STORE": "Store",
+        "CURRENCY": "Currency",
+        "ACTION_TYPE": "Action",
+        "ACTION_ERROR": "Refusal"
+      }
+    },
+    "TICKETS": {
+      "HEADER": "Support cases",
+      "DESCRIPTION": "How much support work arrived, how much closed, how much came back, and how often a target was missed.",
+      "EMPTY": "No case was opened, resolved or breached in this period. Pick a wider date range to see more.",
+      "KPI": {
+        "TICKETS_CREATED": {
+          "LABEL": "Cases opened",
+          "HINT": "Cases opened in this period, however they started: by an agent, from a conversation, or from an operational signal."
+        },
+        "TICKETS_RESOLVED": {
+          "LABEL": "Cases resolved",
+          "HINT": "Cases whose resolution was recorded in this period. A case resolved, reopened and resolved again counts each time it was resolved in range."
+        },
+        "TICKETS_REOPENED": {
+          "LABEL": "Cases reopened",
+          "HINT": "Reopenings recorded in this period, counted from the case history rather than inferred from the current status, so a case reopened and resolved again is still counted."
+        },
+        "FIRST_RESPONSE_BREACHES": {
+          "LABEL": "First-response targets missed",
+          "HINT": "First-response targets recorded as missed in this period. Only cases with an SLA policy attached can appear here."
+        },
+        "RESOLUTION_BREACHES": {
+          "LABEL": "Resolution targets missed",
+          "HINT": "Resolution targets recorded as missed in this period. Only cases with an SLA policy attached can appear here."
+        },
+        "AVERAGE_RESOLUTION_TIME": {
+          "LABEL": "Average time to resolve",
+          "HINT": "From opening to resolution, averaged over the cases resolved in this period. Absent when nothing was resolved, which is not the same as zero."
+        },
+        "OPEN_NOW": {
+          "LABEL": "Open right now",
+          "HINT": "Cases in one of the four active statuses at this moment."
+        },
+        "OVERDUE_NOW": {
+          "LABEL": "Overdue right now",
+          "HINT": "Active cases whose resolution time has already passed."
+        },
+        "UNASSIGNED_NOW": {
+          "LABEL": "Unassigned right now",
+          "HINT": "Active cases with nobody assigned."
+        }
+      },
+      "BREAKDOWN": {
+        "PRIORITY": "Priority",
+        "CATEGORY": "Category",
+        "STATUS": "Status",
+        "TEAM": "Team",
+        "ASSIGNEE": "Assignee"
+      }
+    }
+  }
+}

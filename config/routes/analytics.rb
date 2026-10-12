@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+# Lynomia Analytics routes - loaded from config/routes.rb via `draw :analytics`
+#
+# Written as explicit `to:` mappings rather than a namespace, matching the existing campaign analytics routes in
+# config/routes.rb. A `namespace :analytics` here would nest the module as well as the path and resolve to
+# api/v1/accounts/analytics/accounts, which is not the controller.
+namespace :api, defaults: { format: 'json' } do
+  namespace :v1 do
+    resources :accounts, only: [] do
+      scope module: :accounts do
+        # The canonical analytics contract for this account: timezone, resolved range, families and filters.
+        get 'analytics', to: 'analytics#meta'
+        get 'analytics/overview', to: 'analytics#overview'
+        get 'analytics/whatsapp', to: 'analytics#whatsapp'
+        get 'analytics/campaigns', to: 'analytics#campaigns'
+        get 'analytics/automations', to: 'analytics#automations'
+        get 'analytics/flows', to: 'analytics#flows'
+        get 'analytics/commerce', to: 'analytics#commerce'
+        get 'analytics/tickets', to: 'analytics#tickets'
+      end
+    end
+  end
+end

@@ -28,7 +28,7 @@ class Instagram::Messenger::SendOnInstagramService < Instagram::BaseSendService
       query: query
     )
 
-    process_response(response, message_content)
+    process_response(response)
   end
 
   def api_version

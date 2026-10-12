@@ -1,0 +1,15 @@
+<%#
+  One health state as a badge. `unknown` is deliberately NOT grey-and-quiet: not knowing is a thing to act on,
+  so it reads as an amber outline rather than as a disabled chip.
+%>
+<%
+  classes = {
+    'healthy'  => 'bg-green-50 text-green-800 border-green-200',
+    'warning'  => 'bg-yellow-50 text-yellow-900 border-yellow-300',
+    'critical' => 'bg-red-50 text-red-800 border-red-300',
+    'unknown'  => 'bg-white text-yellow-800 border-yellow-300 border-dashed'
+  }
+%>
+<span class="inline-flex items-center border rounded-md px-2 py-0.5 text-xs font-medium <%= classes.fetch(status, classes['unknown']) %>">
+  <%= status.humanize %>
+</span>

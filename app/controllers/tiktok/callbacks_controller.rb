@@ -1,8 +1,20 @@
 class Tiktok::CallbacksController < ApplicationController
   include Tiktok::IntegrationHelper
 
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC4). The state is now settled BEFORE the authorization
+  # code is exchanged. It used to be read only at the end, so an unauthenticated request carrying a bogus
+  # state still drove two outbound calls to TikTok -- and because the state never expired and named no user,
+  # anyone holding one could complete a connection into the account it named at any later time.
+  #
+  # Three things are checked here, in this order, and all three are refused the same way so the response
+  # says nothing about which accounts exist:
+  #   1. the state verifies (signature, expiry, and the required claims)
+  #   2. the user it was minted for is still an administrator of the account it names
+  #   3. that account still has the TikTok channel entitlement -- the authorization endpoint checks this when
+  #      minting the state, but nothing re-checked it on the request that actually creates the channel
   def show
     return handle_authorization_error if params[:error].present?
+    return handle_invalid_state unless authorized_state?
     return handle_ungranted_scopes_error unless all_scopes_granted?
 
     process_successful_authorization
@@ -13,6 +25,21 @@ class Tiktok::CallbacksController < ApplicationController
   end
 
   private
+
+  def authorized_state?
+    account.present? && state_user_is_administrator? && account.feature_enabled?('channel_tiktok')
+  end
+
+  def state_user_is_administrator?
+    user_id = tiktok_token_user_id(params[:state])
+    user_id.present? && account.account_users.find_by(user_id: user_id)&.administrator?.present?
+  end
+
+  def handle_invalid_state
+    Rails.logger.warn('TikTok callback refused: the state is missing, expired, or no longer authorized')
+    redirect_to_error_page(error_type: 'invalid_state', code: 401,
+                           error_message: 'This TikTok connection link is no longer valid. Start again from the inbox settings.')
+  end
 
   def all_scopes_granted?
     granted_scopes = short_term_access_token[:scope].to_s.split(',')
@@ -31,11 +58,15 @@ class Tiktok::CallbacksController < ApplicationController
     end
   end
 
+  # The provider's own response body used to be forwarded into a query parameter the dashboard renders. The
+  # full detail stays in the log and in Sentry, where an operator can read it; the customer gets a sentence.
+  # Same shape as the Instagram sibling, which already separates the two.
   def handle_error(error)
     Rails.logger.error("TikTok Channel creation Error: #{error.message}")
     ChatwootExceptionTracker.new(error).capture_exception
 
-    redirect_to_error_page(error_type: error.class.name, code: 500, error_message: error.message)
+    redirect_to_error_page(error_type: error.class.name, code: 500,
+                           error_message: 'TikTok could not complete the connection. Please try again.')
   end
 
   def handle_limit_error(error)
@@ -68,12 +99,17 @@ class Tiktok::CallbacksController < ApplicationController
   # This ensures consistent error handling across different error scenarios
   # Frontend will handle the error page based on the error_type
   def redirect_to_error_page(error_type:, code:, error_message:)
-    redirect_to app_new_tiktok_inbox_url(
-      account_id: account_id,
-      error_type: error_type,
-      code: code,
-      error_message: error_message
-    )
+    query = { error_type: error_type, code: code, error_message: error_message }
+    redirect_to error_page_base(query)
+  end
+
+  # A state that does not verify names no account, so there is no account-scoped page to send the browser to.
+  # Same fallback as the Shopify callback (app/controllers/shopify/callbacks_controller.rb#redirect_uri):
+  # the account's own page when it resolves, the installation's front door when it does not.
+  def error_page_base(query)
+    return app_new_tiktok_inbox_url(account_id: account.id, **query) if account
+
+    "#{ENV.fetch('FRONTEND_URL', '').chomp('/')}/app?#{query.compact.to_query}"
   end
 
   def find_or_create_inbox
@@ -143,8 +179,12 @@ class Tiktok::CallbacksController < ApplicationController
     tiktok_token_return_to(params[:state])
   end
 
+  # find_by, not find: an unverified state has no account and must take the refusal path above rather than
+  # raise and be reported as a provider failure.
   def account
-    @account ||= Account.find(account_id)
+    return @account if defined?(@account)
+
+    @account = account_id && Account.find_by(id: account_id)
   end
 
   def short_term_access_token

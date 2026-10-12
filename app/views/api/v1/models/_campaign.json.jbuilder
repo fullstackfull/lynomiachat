@@ -18,6 +18,8 @@ if resource.campaign_type == 'one_off'
   json.started_at resource.started_at&.to_i
   json.completed_at resource.completed_at&.to_i
   json.audience resource.audience
+  # Why a blocked campaign is blocked, so the card can say it rather than showing a state with no cause.
+  json.blocked_reason resource.blocked_reason
 end
 json.trigger_rules resource.trigger_rules
 json.trigger_only_during_business_hours resource.trigger_only_during_business_hours

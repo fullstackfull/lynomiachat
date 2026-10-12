@@ -83,6 +83,27 @@ class ContactAPI extends ApiClient {
     return axios.get(`${this.url}/${contactId}/contactable_inboxes`);
   }
 
+  /**
+   * The additional phone numbers and email addresses this contact owns
+   * (docs/p10/03-unified-customer-identity.md). Reading follows the contact; linking and unlinking need
+   * administrator or `contact_manage`, and the endpoint answers 404 for an account without the
+   * `lynomia_unified_identity` feature.
+   */
+  getIdentities(contactId) {
+    return axios.get(`${this.url}/${contactId}/identities`);
+  }
+
+  linkIdentity(contactId, { identityType, value }) {
+    return axios.post(`${this.url}/${contactId}/identities`, {
+      identity_type: identityType,
+      value,
+    });
+  }
+
+  unlinkIdentity(contactId, identityId) {
+    return axios.delete(`${this.url}/${contactId}/identities/${identityId}`);
+  }
+
   getContactLabels(contactId) {
     return axios.get(`${this.url}/${contactId}/labels`);
   }

@@ -25,3 +25,5 @@ class Api::V1::Accounts::Actions::ContactMergesController < Api::V1::Accounts::B
     @contacts ||= Current.account.contacts
   end
 end
+
+Api::V1::Accounts::Actions::ContactMergesController.prepend_mod_with('Api::V1::Accounts::Actions::ContactMergesController')

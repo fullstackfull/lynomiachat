@@ -18,11 +18,9 @@ Rails.application.routes.draw do
 
     get '/app', to: 'dashboard#index'
     get '/app/*params', to: 'dashboard#index'
-    get '/app/accounts/:account_id/settings/inboxes/new/twitter', to: 'dashboard#index', as: 'app_new_twitter_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/microsoft', to: 'dashboard#index', as: 'app_new_microsoft_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/instagram', to: 'dashboard#index', as: 'app_new_instagram_inbox'
     get '/app/accounts/:account_id/settings/inboxes/new/tiktok', to: 'dashboard#index', as: 'app_new_tiktok_inbox'
-    get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_twitter_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_email_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_instagram_inbox_agents'
     get '/app/accounts/:account_id/settings/inboxes/new/:inbox_id/agents', to: 'dashboard#index', as: 'app_tiktok_inbox_agents'
@@ -175,6 +173,11 @@ Rails.application.routes.draw do
               resources :labels, only: [:create, :index]
               resources :notes
               get :attachments, to: 'attachments#index'
+              # Lynomia: the contact's unified activity timeline (docs/p8/03-contact-activity-timeline.md).
+              get :activity, to: 'activity#index'
+              # Lynomia: the additional numbers and addresses this contact owns
+              # (docs/p10/03-unified-customer-identity.md).
+              resources :identities, only: [:index, :create, :destroy]
             end
           end
           resources :data_imports, only: [:index, :show, :create] do
@@ -253,10 +256,6 @@ Rails.application.routes.draw do
 
           resources :inboxes, only: [] do
             resource :assignment_policy, only: [:show, :create, :destroy], module: :inboxes
-          end
-
-          namespace :twitter do
-            resource :authorization, only: [:create]
           end
 
           namespace :microsoft do
@@ -536,8 +535,19 @@ Rails.application.routes.draw do
   # ----------------------------------------------------------------------
   # Routes for channel integrations
   mount Facebook::Messenger::Server, at: 'bot'
-  get 'webhooks/twitter', to: 'api/v1/webhooks#twitter_crc'
-  post 'webhooks/twitter', to: 'api/v1/webhooks#twitter_events'
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC6): the two X/Twitter webhook routes are removed.
+  # GET passed a nil HMAC key to OpenSSL when TWITTER_CONSUMER_SECRET was unset, so an anonymous request got a
+  # 500; POST had no signature verification of any kind and resolved its inbox from a body field through a
+  # lookup unscoped by account, whose unique index is per-account rather than global -- so unlike the other
+  # channels, an index would not have collapsed a misroute into a drop. It was unreachable only because no
+  # Channel::TwitterProfile can be created in this fork, which is a reason to remove the route rather than to
+  # leave it as the one path that would come alive again first.
+  #
+  # The X OAuth connect flow went with them (`POST .../twitter/authorization` and `GET /twitter/callback`).
+  # Its last step registered this installation's inbound webhook URL with X, which no longer exists, so the
+  # flow could only end in a rollback and a misleading Sentry report. Nothing about an existing X inbox is
+  # touched: the channel model, its outbound send service, the inbound parsers, the factories and the
+  # Channels::Capability `:twitter` row all stay, so Operations keeps answering `unknown` for one.
   post 'webhooks/line/:line_channel_id', to: 'webhooks/line#process_payload'
   post 'webhooks/telegram/:bot_token', to: 'webhooks/telegram#process_payload'
   post 'webhooks/sms/:phone_number', to: 'webhooks/sms#process_payload'
@@ -553,10 +563,6 @@ Rails.application.routes.draw do
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
-
-  namespace :twitter do
-    resource :callback, only: [:show]
-  end
 
   namespace :linear do
     resource :callback, only: [:show]
@@ -649,9 +655,12 @@ Rails.application.routes.draw do
   resources :widget_tests, only: [:index] unless Rails.env.production?
 
   draw :billing
+  draw :analytics
   draw :commerce
   draw :flows
   draw :campaign_audiences
   draw :whatsapp_templates
+  draw :support
+  draw :operations
   draw :documentation
 end

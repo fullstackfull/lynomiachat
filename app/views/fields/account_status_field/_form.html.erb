@@ -60,6 +60,27 @@
             ) %>
         <p class="mt-1 text-xs text-n-slate-11"><%= t('super_admin.account_suspension.form.reason_hint') %></p>
       </div>
+
+      <%#
+        Lynomia (docs/p-final/06-clean-code-review.md section 6): suspension is partly lossy and partly not, and
+        an operator cannot tell which from the word "suspended". Measured, not assumed: 401 for every member
+        (app/controllers/concerns/ensure_current_account_helper.rb:11), the web widget refused
+        (app/controllers/concerns/website_token_helper.rb:10, app/controllers/widgets_controller.rb:62), IMAP
+        polling skipped (app/jobs/inboxes/fetch_imap_email_inboxes_job.rb:18), and no check at all on the
+        provider webhook paths -- so WhatsApp and the rest keep arriving. The last line is the one that matters
+        commercially: `non_payment` is one of Account::SUSPENSION_CATEGORIES, and reaching for it loses website
+        and email messages that the billing lock would never touch.
+      %>
+      <div class="rounded border border-n-weak bg-n-slate-2 p-3">
+        <p class="text-xs font-medium text-n-slate-12"><%= t('super_admin.account_suspension.form.consequences_title') %></p>
+        <ul class="mt-2 list-disc space-y-1 ps-5 text-xs text-n-slate-11">
+          <li><%= t('super_admin.account_suspension.form.consequences_dashboard') %></li>
+          <li><%= t('super_admin.account_suspension.form.consequences_widget') %></li>
+          <li><%= t('super_admin.account_suspension.form.consequences_email') %></li>
+          <li><%= t('super_admin.account_suspension.form.consequences_webhooks') %></li>
+        </ul>
+        <p class="mt-2 text-xs text-n-slate-12"><%= t('super_admin.account_suspension.form.consequences_billing') %></p>
+      </div>
     </div>
   <% end %>
 </div>

@@ -38,7 +38,7 @@ const TEXT = {
     DATE_ENDS: 'Ends on',
     DATE_GRACE: 'Pay before',
     USAGE: 'Usage',
-    USAGE_DESC: 'Your usage compared to the limits of your plan.',
+    USAGE_DESC: 'Your usage compared to the limits that apply to this account.',
     AGENTS: 'Agents',
     INBOXES: 'Inboxes',
     STORES: 'Commerce stores',
@@ -93,7 +93,7 @@ const TEXT = {
     DATE_ENDS: 'ينتهي في',
     DATE_GRACE: 'ادفع قبل',
     USAGE: 'الاستهلاك',
-    USAGE_DESC: 'استهلاكك مقارنة بحدود خطتك.',
+    USAGE_DESC: 'استهلاكك مقارنة بالحدود المطبَّقة على هذا الحساب.',
     AGENTS: 'الوكلاء',
     INBOXES: 'صناديق الوارد',
     STORES: 'متاجر Commerce',
@@ -151,15 +151,13 @@ const checkoutResult = computed(() => route.query.checkout);
 const subscription = computed(() => billing.value?.subscription || null);
 const plans = computed(() => billing.value?.plans || []);
 const isAdmin = computed(() => !!billing.value?.is_admin);
-const usage = computed(
-  () => billing.value?.usage || { agents: 0, inboxes: 0, stores: 0 }
-);
+// { agents: { used, limit }, inboxes: {...}, stores: {...} } -- the count and the ceiling the server
+// actually enforces, including any override the operator granted this account.
+const usage = computed(() => billing.value?.usage || {});
 
-// The subscribed plan's limits come with the subscription: a plan granted by the super admin is not always in `plans`.
-const planLimits = computed(() => subscription.value?.plan_limits || {});
 // Commerce stores matter once the plan includes Lynomia Commerce, or the account still has stores connected.
 const showsStores = computed(
-  () => !!subscription.value?.plan_commerce || usage.value.stores > 0
+  () => !!subscription.value?.plan_commerce || usage.value.stores?.used > 0
 );
 
 const hasPaidSubscription = computed(() => {
@@ -203,6 +201,9 @@ const formatPrice = plan => formatMoney(plan.price, plan.currency);
 
 const limitText = value =>
   value === undefined || value === null ? t('UNLIMITED') : value;
+
+// "3 / 5", or "3 / Unlimited" when there is no ceiling. Never "3 / -1".
+const usageText = entry => `${entry?.used ?? 0} / ${limitText(entry?.limit)}`;
 
 const confirmMessage = computed(() => {
   if (!pendingChange.value) return '';
@@ -459,18 +460,15 @@ onMounted(async () => {
             class="grid grid-cols-1 gap-2 divide-x divide-n-weak"
             :class="showsStores ? 'sm:grid-cols-3' : 'sm:grid-cols-2'"
           >
-            <DetailItem
-              :label="t('AGENTS')"
-              :value="`${usage.agents} / ${limitText(planLimits.agents)}`"
-            />
+            <DetailItem :label="t('AGENTS')" :value="usageText(usage.agents)" />
             <DetailItem
               :label="t('INBOXES')"
-              :value="`${usage.inboxes} / ${limitText(planLimits.inboxes)}`"
+              :value="usageText(usage.inboxes)"
             />
             <DetailItem
               v-if="showsStores"
               :label="t('STORES')"
-              :value="`${usage.stores} / ${limitText(planLimits.stores)}`"
+              :value="usageText(usage.stores)"
             />
           </div>
         </BillingCard>

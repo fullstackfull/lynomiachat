@@ -1,92 +1,115 @@
-# Lynomia Campaigns (docs/campaigns/02-recipients.md): one row per contact a one-off WhatsApp campaign
-# addressed, on the campaign_recipients table that ships in the OSS schema (db/schema.rb:401). The
-# status ladder is queued -> skipped | sent -> delivered -> read | failed; #update_from_whatsapp_status!
-# is the only writer for the states Meta reports, and it refuses to move a recipient backwards down
-# that ladder because Meta redelivers statuses out of order.
+# One contact a one-off WhatsApp campaign addressed, and what became of the message sent to it
+# (docs/p-final/clean-room/specs/D-campaign-recipient-outcomes.md).
+#
+# The row is written when the campaign runs, because a campaign's audience cannot be reconstructed afterwards: a
+# campaign stores references to labels and shared audiences, never the conditions, and membership is resolved at
+# send time (custom/app/models/custom/campaign_audience.rb). Recomputing it later would invent recipients that
+# were never addressed and lose ones that were.
+#
+# From then on the row only moves FORWARD. Meta reports `sent`, `delivered`, `read` and `failed` asynchronously,
+# out of order, and more than once, so a reported outcome is applied through #record_outcome!, which holds a lock
+# on the row and refuses to go backwards. `#status` is therefore the furthest point reached, while the four
+# timestamps are the log of what was actually reported -- which is why Analytics::Campaigns::Metrics counts
+# delivery from `delivered_at IS NOT NULL OR read_at IS NOT NULL` rather than from the status.
 class CampaignRecipient < ApplicationRecord
+  # The numeric values are production data: these are the integers the rows already in the database carry, so
+  # they are a fact about the store rather than a choice this file gets to make. The names are read by
+  # custom/app/services/analytics/campaigns/metrics.rb and returned verbatim to the browser. Neither may change,
+  # and `spec/requests/p_final/integration_corrections_spec.rb` pins the mapping so it cannot drift again.
+  #
+  # It did drift once: the clean-room specification's own table gave the funnel order (`sent: 1 ... skipped: 5`)
+  # rather than the stored order, and this file was written to it. Every existing row would have been read as
+  # the next state along -- a skipped recipient as sent, a sent one as delivered. The declaration order below
+  # is therefore the store's, not the funnel's; LADDER immediately after it is the funnel.
+  enum :status, { queued: 0, skipped: 1, sent: 2, delivered: 3, read: 4, failed: 5 }
+
+  # How far along the ladder each state is. `skipped` is not on the ladder at all: Lynomia decided not to send,
+  # so no provider report can move it, and no provider report should.
+  LADDER = { 'queued' => 0, 'sent' => 1, 'delivered' => 2, 'read' => 3 }.freeze
+
+  # The column that records "this event was reported", per reported state. A skip has none, because nothing was
+  # attempted and so there is no provider event to time.
+  REPORTED_AT_COLUMN = {
+    'sent' => :sent_at, 'delivered' => :delivered_at, 'read' => :read_at, 'failed' => :failed_at
+  }.freeze
+
+  # A failure may still be recorded over `queued` or `sent`, never over a delivery: a message that reached the
+  # device cannot un-arrive, and Metrics#failed reads `failed_at`, so recording one here would make the failure
+  # count wrong for good.
+  FAILURE_OVERRIDES = %w[queued sent].freeze
+
   belongs_to :account
   belongs_to :campaign
   belongs_to :contact
   belongs_to :inbox
 
-  enum status: {
-    queued: 0,
-    skipped: 1,
-    sent: 2,
-    delivered: 3,
-    read: 4,
-    failed: 5
-  }
+  validates :status, presence: true
 
-  validates :contact_id, uniqueness: { scope: :campaign_id }
-  validates :source_id, uniqueness: true, allow_blank: true
+  scope :for_account, ->(account) { where(account_id: account.id) }
 
-  def mark_sent!(source_id)
-    update!(
-      source_id: source_id,
-      status: :sent,
-      sent_at: Time.current,
-      error_code: nil,
-      error_title: nil,
-      error_message: nil
-    )
-  end
-
-  def mark_skipped!(message)
-    update!(status: :skipped, error_message: message)
-  end
-
-  def mark_failed!(error = {})
-    update!(
-      status: :failed,
-      failed_at: event_time(error[:timestamp]),
-      error_code: error[:code],
-      error_title: error[:title],
-      error_message: error[:message]
-    )
-  end
-
-  def update_from_whatsapp_status!(status)
-    normalized_status = status[:status].to_s
-    return unless %w[delivered read failed].include?(normalized_status)
+  # The one write that applies a reported outcome, used by both the provider report path and the send path.
+  #
+  # `reported_at` is the provider's own timestamp for the event. It is stamped whenever its event is reported,
+  # even when the state does not move -- that is what lets a late `delivered` report backfill `delivered_at` on a
+  # recipient already at `read` without demoting it.
+  #
+  # Idempotent: a redelivered report finds the timestamp already set and writes nothing at all, so the record is
+  # byte-identical after the second application.
+  def record_outcome!(state, reported_at: nil, error_code: nil, error_title: nil, error_message: nil)
+    reported = state.to_s
+    return false unless REPORTED_AT_COLUMN.key?(reported)
 
     with_lock do
-      if normalized_status == 'delivered' && read?
-        update!(delivered_at: event_time(status[:timestamp])) if delivered_at.blank?
-        next
-      end
+      changes = if reported == 'failed'
+                  failure_changes(reported_at, error_code, error_title, error_message)
+                else
+                  progress_changes(reported, reported_at)
+                end
+      next false if changes.empty?
 
-      next if status_downgrade?(normalized_status)
-      next mark_failed!(whatsapp_error(status)) if normalized_status == 'failed'
-
-      update!(
-        status: normalized_status,
-        "#{normalized_status}_at": event_time(status[:timestamp])
-      )
+      update!(changes)
+      true
     end
   end
 
   private
 
-  def status_downgrade?(new_status)
-    return delivered? || read? if new_status == 'failed'
+  # A report on the ladder stamps its own timestamp whenever that timestamp is missing, and moves the state only
+  # when it is further along than where the record already is. Those two rules together are the ladder: a `read`
+  # report arriving before `delivered` leaves `delivered_at` null and the state at read, and the late
+  # `delivered` report then backfills the timestamp without demoting the state.
+  #
+  # A failure is terminal, so nothing is stamped over one. Without that, a `delivered` report racing a `failed`
+  # report could leave a row carrying both timestamps -- and the analytics read the two independently, so that
+  # one row would be counted once as delivered and once as failed, and the interface's breakdown would add up
+  # to more recipients than the campaign had.
+  def progress_changes(reported, reported_at)
+    return {} if failed?
 
-    self.class.statuses[new_status] < self.class.statuses[status]
+    column = REPORTED_AT_COLUMN.fetch(reported)
+    changes = {}
+    changes[column] = reported_at || Time.current if public_send(column).blank?
+    changes[:status] = reported if LADDER.fetch(reported) > LADDER.fetch(status, Float::INFINITY)
+    changes
   end
 
-  def whatsapp_error(status)
-    error = status[:errors]&.first || {}
-    {
-      code: error[:code],
-      title: error[:title],
-      message: error[:error_user_msg].presence || error[:error_data]&.dig(:details).presence || error[:message].presence,
-      timestamp: status[:timestamp]
-    }
+  # A failure is all-or-nothing, and that is what makes `failed_at` readable as the failure count. Meta does
+  # send late failures for messages it has already delivered, and a message that reached the device cannot
+  # un-arrive -- so over a delivered or read recipient the report is dropped entirely, timestamp included.
+  # Stamping `failed_at` "for the record" while leaving the state alone would make P8's failure count, which
+  # reads that column, permanently wrong.
+  def failure_changes(reported_at, error_code, error_title, error_message)
+    return {} unless FAILURE_OVERRIDES.include?(status)
+
+    changes = { status: 'failed' }
+    changes[:failed_at] = reported_at || Time.current if failed_at.blank?
+    changes.merge(failure_details(error_code, error_title, error_message))
   end
 
-  def event_time(timestamp)
-    return Time.current if timestamp.blank?
-
-    Time.zone.at(timestamp.to_i)
+  # Only values the provider actually gave. A redelivered failure must not overwrite a stored code with a nil.
+  def failure_details(error_code, error_title, error_message)
+    { error_code: error_code, error_title: error_title, error_message: error_message }
+      .compact
+      .reject { |_column, value| value.to_s.strip.empty? }
   end
 end

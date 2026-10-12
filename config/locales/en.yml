@@ -142,6 +142,12 @@ en:
         invalid: Invalid email
       phone_number:
         invalid: should be in e164 format
+      identities:
+        feature_disabled: Linked identities are not enabled for this account
+        linked_elsewhere: is already linked to another contact in this account
+        unknown_type: 'must be one of: %{types}'
+        unusable: is not a phone number or an email address we can use. A local phone number needs its country.
+        conflict: 'This already belongs to another contact in this account (contact %{contact_id}).'
       labels:
         not_found: 'do not exist in this account: %{labels}'
     companies:
@@ -217,8 +223,36 @@ en:
         smtp_error: SMTP server error. Please check your configuration and try again.
       validations:
         name: should not start or end with symbols, and it should not have < > / \ @ characters.
+    custom_roles:
+      unknown_permissions: "These are not permissions this product defines: %{permissions}."
+      not_found: Custom role not found
+      administrator_conflict: A member cannot be an administrator and hold a permission set at the same time. Choose one.
     campaigns:
       audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
+      unknown_recipient_status: "'%{status}' is not a recipient status. Allowed: %{allowed}."
+    analytics:
+      missing_date: "%{field} is required and must be a date in YYYY-MM-DD form."
+      invalid_date: "%{field} must be a date in %{expected_format} form, got '%{value}'."
+      inverted_range: "since (%{since}) cannot be later than until (%{until})."
+      invalid_group_by: "group_by '%{group_by}' is not supported. Allowed: %{allowed}."
+      range_too_large: "That range is %{buckets} %{group_by} buckets, above the maximum of %{maximum}. Narrow the range or group by a longer period."
+      unsupported_filter: "'%{filter}' is not a filter the %{family} metrics support. Allowed: %{allowed}."
+      unknown_filter_value: "The value given for '%{filter}' does not exist in this account."
+      unsupported_breakdown: "'%{breakdown}' is not a breakdown this report supports. Allowed: %{allowed}."
+      unknown_metric_family: "'%{family}' is not a known metric family. Allowed: %{allowed}."
+    timeline:
+      invalid_cursor: "That page cursor is not valid. Start from the first page."
+      unsupported_category: "'%{category}' is not a timeline category. Allowed: %{allowed}."
+      invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
+    tickets:
+      feature_disabled: "Support tickets are not enabled for this account."
+      invalid_status_transition: "A ticket cannot go from '%{from}' to '%{to}'. Allowed: %{allowed}."
+      unsupported_category: "'%{category}' is not a ticket category. Allowed: %{allowed}."
+      unsupported_status: "'%{status}' is not a ticket status. Allowed: %{allowed}."
+      unsupported_priority: "'%{priority}' is not a ticket priority. Allowed: %{allowed}."
+      unsupported_sort: "'%{sort}' is not a ticket sort order. Allowed: %{allowed}."
+      unknown_filter_value: "No %{filter} with id '%{value}' in this account."
+      invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.
@@ -247,6 +281,17 @@ en:
       provider_action_unavailable: This billing action is not available for Shopify-billed accounts
       shopify_pricing_unavailable: Shopify App Pricing is not available right now
       shopify_verification_failed: Shopify billing could not be verified right now
+      # P11 (docs/p11/05-usage-limits.md). The limit message used to be built in Ruby as an English sentence
+      # with the resource name interpolated as a bare symbol, so it could not be translated and read
+      # "up to 5 agents" whatever the interface language.
+      limit_reached:
+        generic: Your plan allows up to %{limit} of these. Upgrade your plan to add more.
+        agents: Your plan allows up to %{limit} team members. Upgrade your plan to invite more.
+        inboxes: Your plan allows up to %{limit} inboxes. Upgrade your plan to add more.
+        stores: Your plan allows up to %{limit} connected stores. Upgrade your plan to connect more.
+      channel_not_included: Your plan does not include the %{channel} channel. Upgrade your plan to connect it.
+      subscription_inactive: This account does not have an active subscription.
+      entitlement_required: Your plan does not include this feature.
     topup:
       credits_required: Credits amount is required
       invalid_credits: Invalid credits amount
@@ -677,6 +722,16 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    operations:
+      case_title: "Operational issue: %{source} %{signal}"
+      case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."
+      case_seen: "First seen %{first}, last seen %{last}, observed %{count} times."
+      case_reason: "Reason: %{reason}"
+      case_detail: "Diagnostics: %{detail}"
+      case_opened: "Opened %{reference} for this issue."
+      case_exists: "%{reference} already covers this issue."
+      case_no_account: "This issue is installation wide, so it cannot be opened as an account support case."
+      signal_not_found: "That operational issue no longer exists."
     account_suspension:
       categories:
         spam: 'Spam'
@@ -687,6 +742,12 @@ en:
         category_prompt: 'Select a category'
         reason: 'Suspension reason'
         reason_hint: 'Enter a reason of up to 256 characters.'
+        consequences_title: 'What suspending this account does'
+        consequences_dashboard: 'Every member is signed out of the account: the dashboard and the API answer 401.'
+        consequences_widget: 'The website widget stops accepting messages, so a customer writing from the site gets an error and the message is never delivered.'
+        consequences_email: 'Email inboxes stop being polled while the account is suspended.'
+        consequences_webhooks: 'Messages that arrive by provider webhook — WhatsApp, Facebook, Instagram, Telegram, LINE, SMS, TikTok — are still accepted and still create conversations.'
+        consequences_billing: 'For non-payment, prefer the billing lock: a past-due subscription closes the dashboard on its own and never stops inbound customer messages. Suspension is the tool for abuse and for administrative holds.'
       history:
         suspended_at: 'Suspended at'
         category: 'Category'

@@ -1,0 +1,258 @@
+{
+  "SUPPORT_TICKETS": {
+    "HEADER": "Support cases",
+    "DESCRIPTION": "Work that needs tracking beyond a single conversation: a title, an owner, a due time and a history you can read back.",
+    "COUNT": "{n} case | {n} cases",
+    "LOADING": "Fetching cases…",
+    "NEW_CASE": "New case",
+    "SEARCH_PLACEHOLDER": "Search by reference or subject…",
+    "ERROR": {
+      "UNEXPECTED": "These cases could not be loaded. Try again, and if it keeps failing contact support."
+    },
+    "EMPTY": {
+      "TITLE": "No cases yet",
+      "DESCRIPTION": "Open a case when a piece of work needs an owner and a due time of its own, whether or not a customer is waiting on it.",
+      "FILTERED_TITLE": "No cases match these filters",
+      "FILTERED_DESCRIPTION": "Clear the filters to see everything you have access to."
+    },
+    "VIEWS": {
+      "ALL": "All",
+      "MINE": "My cases",
+      "UNASSIGNED": "Unassigned",
+      "OVERDUE": "Overdue",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    },
+    "FILTERS": {
+      "DATE_RANGE": "Opened between",
+      "CLEAR_ALL": "Clear filters",
+      "ANY_STATUS": "Any status",
+      "ANY_PRIORITY": "Any priority",
+      "ANY_CATEGORY": "Any category",
+      "ANY_ASSIGNEE": "Anyone",
+      "ANY_TEAM": "Any team",
+      "ANY_SLA": "Any SLA state",
+      "ASSIGNEE": {
+        "ME": "Assigned to me",
+        "UNASSIGNED": "Nobody"
+      },
+      "GROUPS": {
+        "AGENTS": "Agents"
+      },
+      "SLA": {
+        "OVERDUE": "Past its resolution time",
+        "BREACHED": "Target missed",
+        "MET_OR_PENDING": "On time so far",
+        "NONE": "No SLA policy"
+      },
+      "SORT": {
+        "LAST_ACTIVITY_AT": "Newest activity first",
+        "LAST_ACTIVITY_AT_ASC": "Oldest activity first",
+        "CREATED_AT": "Newest first",
+        "CREATED_AT_ASC": "Oldest first",
+        "RESOLUTION_DUE_AT": "Due soonest first",
+        "PRIORITY": "Highest priority first"
+      }
+    },
+    "TABLE": {
+      "REFERENCE": "Reference",
+      "SUBJECT": "Subject",
+      "CONTACT": "Contact",
+      "STATUS": "Status",
+      "PRIORITY": "Priority",
+      "OWNER": "Owner",
+      "SLA": "SLA",
+      "LAST_ACTIVITY": "Last activity",
+      "UNASSIGNED": "Nobody"
+    },
+    "ENUMS": {
+      "STATUS": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In progress",
+        "WAITING_ON_CUSTOMER": "Waiting on customer",
+        "WAITING_ON_INTERNAL": "Waiting on us",
+        "RESOLVED": "Resolved",
+        "CLOSED": "Closed"
+      },
+      "PRIORITY": {
+        "LOW": "Low",
+        "MEDIUM": "Medium",
+        "HIGH": "High",
+        "URGENT": "Urgent"
+      },
+      "CATEGORY": {
+        "TECHNICAL": "Technical",
+        "BILLING": "Billing",
+        "ACCOUNT": "Account",
+        "INTEGRATION": "Integration",
+        "WHATSAPP": "WhatsApp",
+        "COMMERCE": "Commerce",
+        "CAMPAIGN": "Campaign",
+        "AUTOMATION": "Automation",
+        "OPERATIONAL": "Operational",
+        "OTHER": "Other"
+      }
+    },
+    "SLA": {
+      "NONE": "No SLA policy",
+      "BREACHED": "Target missed",
+      "OVERDUE": "Overdue",
+      "PAUSED": "Clock paused",
+      "MET": "Closed on time",
+      "DUE": "Due {time}",
+      "DUE_AT": "Resolution due {time}"
+    },
+    "PANEL": {
+      "LAST_ACTIVITY": "Last activity {time}"
+    },
+    "DETAIL": {
+      "BACK": "All cases",
+      "STATUS": "Status",
+      "PRIORITY": "Priority",
+      "DESCRIPTION_TITLE": "Description",
+      "NO_DESCRIPTION": "No description was given when this case was opened.",
+      "NOT_FOUND": "This case could not be loaded. It may have been deleted, or you may not have access to it.",
+      "CONVERSATION": {
+        "TITLE": "Linked conversation",
+        "OPEN": "Open conversation #{id}",
+        "NONE": "This case is not linked to a conversation."
+      },
+      "HISTORY": {
+        "TITLE": "History",
+        "EMPTY": "Nothing has been recorded on this case yet.",
+        "LOAD_MORE": "Load earlier history",
+        "SYSTEM": "Lynomia",
+        "CHANGE": "{from} → {to}",
+        "SET": "Set to {to}",
+        "CLEARED": "Cleared {from}"
+      },
+      "NOTE": {
+        "TITLE": "Internal note",
+        "PLACEHOLDER": "Only your colleagues can see this. The customer never does.",
+        "SUBMIT": "Add note",
+        "SUCCESS": "Note added.",
+        "ERROR": "This note could not be added. Try again, and if it keeps failing contact support."
+      },
+      "UPDATE": {
+        "SUCCESS": "Case updated.",
+        "ERROR": "This change could not be saved. Try again, and if it keeps failing contact support."
+      },
+      "PANEL": {
+        "CONTACT": "Contact",
+        "VIEW_CONTACT": "View contact",
+        "ASSIGNEE": "Assignee",
+        "TEAM": "Team",
+        "CATEGORY": "Category",
+        "LABELS": "Labels",
+        "NO_LABELS": "No labels",
+        "SLA": "SLA",
+        "TIMESTAMPS": "Timeline",
+        "UNASSIGNED": "Nobody",
+        "NO_TEAM": "No team",
+        "CREATED_AT": "Opened",
+        "LAST_ACTIVITY": "Last activity",
+        "RESOLVED_AT": "Resolved",
+        "CLOSED_AT": "Closed"
+      }
+    },
+    "EVENTS": {
+      "CREATED": "Case opened",
+      "NOTE": "Internal note",
+      "STATUS_CHANGED": "Status changed",
+      "PRIORITY_CHANGED": "Priority changed",
+      "ASSIGNED": "Assignee changed",
+      "TEAM_CHANGED": "Team changed",
+      "CATEGORY_CHANGED": "Category changed",
+      "CONVERSATION_LINKED": "Conversation linked",
+      "CONVERSATION_UNLINKED": "Conversation unlinked",
+      "SLA_APPLIED": "SLA policy attached",
+      "SLA_FIRST_RESPONSE_MET": "First response on time",
+      "SLA_FIRST_RESPONSE_BREACHED": "First response target missed",
+      "SLA_RESOLUTION_BREACHED": "Resolution target missed",
+      "RESOLVED": "Case resolved",
+      "REOPENED": "Case reopened",
+      "CLOSED": "Case closed"
+    },
+    "CREATE": {
+      "TITLE": "Open a case",
+      "DESCRIPTION": "A new case always opens, whoever it is assigned to. You can change its status once it exists.",
+      "SUBMIT": "Open case",
+      "SUCCESS": "Case opened.",
+      "ERROR": "This case could not be opened. Try again, and if it keeps failing contact support.",
+      "FIELDS": {
+        "SUBJECT": "Subject",
+        "SUBJECT_PLACEHOLDER": "What needs doing?",
+        "DESCRIPTION": "Description",
+        "DESCRIPTION_PLACEHOLDER": "What has happened so far, and what would finished look like?",
+        "CATEGORY": "Category",
+        "PRIORITY": "Priority",
+        "ASSIGNEE": "Assignee",
+        "TEAM": "Team",
+        "SLA_POLICY": "SLA policy",
+        "UNASSIGNED": "Nobody",
+        "NO_TEAM": "No team",
+        "NO_SLA_POLICY": "No SLA policy"
+      }
+    },
+    "CONVERSATION_PANEL": {
+      "TITLE": "Support cases",
+      "EMPTY": "No case is linked to this conversation.",
+      "ERROR": "These cases could not be loaded.",
+      "NEW_CASE": "Open a case from this conversation"
+    },
+    "SLA_SETTINGS": {
+      "HEADER": "Support SLA policies",
+      "DESCRIPTION": "The first-response and resolution times a support case is held to. A case has no SLA until a policy is attached to it, and every SLA figure in reporting starts from that moment.",
+      "COUNT": "{n} policy | {n} policies",
+      "LOADING": "Fetching SLA policies…",
+      "NEW_POLICY": "New policy",
+      "EDIT": "Edit policy",
+      "FETCH_ERROR": "These SLA policies could not be loaded. Try again, and if it keeps failing contact support.",
+      "LIST": {
+        "404": "No SLA policy has been created for this account yet."
+      },
+      "TABLE": {
+        "NAME": "Name",
+        "FIRST_RESPONSE": "First response",
+        "RESOLUTION": "Resolution",
+        "BUSINESS_HOURS": "Counted",
+        "ACTIONS": "Actions",
+        "NO_THRESHOLD": "Not set",
+        "MINUTES": "{count} minute | {count} minutes",
+        "HOURS": "{count} hour | {count} hours",
+        "DAYS": "{count} day | {count} days",
+        "BUSINESS_ONLY": "Business hours only",
+        "AROUND_THE_CLOCK": "Around the clock"
+      },
+      "FORM": {
+        "CREATE_TITLE": "New SLA policy",
+        "EDIT_TITLE": "Edit SLA policy",
+        "DESCRIPTION": "Enter each target in whichever unit reads most naturally. It is stored in seconds.",
+        "SUBMIT": "Save policy",
+        "NAME": "Name",
+        "NAME_PLACEHOLDER": "Standard support",
+        "POLICY_DESCRIPTION": "Description",
+        "POLICY_DESCRIPTION_PLACEHOLDER": "Who this policy is for, and why these targets",
+        "FIRST_RESPONSE": "First response within",
+        "RESOLUTION": "Resolved within",
+        "THRESHOLD_HINT": "Leave this at zero to let the policy govern the other target only.",
+        "BUSINESS_HOURS": "Count business hours only",
+        "BUSINESS_HOURS_HINT": "When on, the clock runs only during the business hours set on the inbox the case belongs to.",
+        "CREATE_SUCCESS": "SLA policy created.",
+        "UPDATE_SUCCESS": "SLA policy updated.",
+        "ERROR": "This SLA policy could not be saved. Try again, and if it keeps failing contact support."
+      },
+      "DELETE": {
+        "BUTTON": "Delete policy",
+        "SUCCESS": "SLA policy deleted.",
+        "ERROR": "This SLA policy could not be deleted. Try again, and if it keeps failing contact support.",
+        "CONFIRM": {
+          "TITLE": "Delete SLA policy",
+          "MESSAGE": "Are you sure you want to delete",
+          "YES": "Yes, delete it",
+          "NO": "No, keep it"
+        }
+      }
+    }
+  }
+}

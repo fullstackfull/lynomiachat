@@ -1,4 +1,12 @@
 class Webhooks::TiktokController < ActionController::API
+  # Lynomia (docs/p11/00-p10-security-closure.md, SC4). The window is applied in both directions. It used to
+  # reject only `delay > 5`, so a timestamp in the future produced a negative delay and passed unbounded.
+  # The timestamp is covered by the signature, so this was never an attacker's replay window -- it is a
+  # correctness fix, and it is deliberately the only change here: the tolerance itself stays at the value
+  # this integration shipped with, because narrowing or widening it on guesswork would drop real deliveries.
+  # What the right tolerance is needs a real TikTok app to measure (see the closure document).
+  TIMESTAMP_TOLERANCE = 5.seconds
+
   before_action :verify_signature!
 
   def events
@@ -32,11 +40,9 @@ class Webhooks::TiktokController < ActionController::API
 
     return head :unauthorized unless ActiveSupport::SecurityUtils.secure_compare(computed_signature, received_signature)
 
-    # Check timestamp delay (acceptable delay: 5 seconds)
-    current_timestamp = Time.current.to_i
-    delay = current_timestamp - received_timestamp
+    delay = Time.current.to_i - received_timestamp
 
-    return head :unauthorized if delay > 5
+    return head :unauthorized if delay.abs > TIMESTAMP_TOLERANCE.to_i
   end
 
   def extract_signature_parts(signature_header)

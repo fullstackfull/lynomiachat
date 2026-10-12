@@ -770,3 +770,14 @@
   value: 'https://us.cloud.langfuse.com'
   locked: false
 ## ---- End of LLM Observability ---- ##
+
+# ------- Audit Trail ------- #
+- name: AUDIT_LOG_RETENTION_DAYS
+  display_title: 'Audit Trail Retention (Days)'
+  description: 'How long audit trail entries are kept before the daily sweep deletes them. Capture is never
+    disabled by this or by any account feature; this is the only bound on the trail. Minimum 30 days; the sweep
+    refuses a lower value rather than obeying it. Defaults to 365.'
+  value: 365
+  locked: false
+  type: number
+## ---- End of Audit Trail ---- ##

@@ -2,8 +2,23 @@
   <%= f.label field.attribute, 'Limits' %>
 </div>
 <div class="field-unit__field">
+  <%#
+    The blast radius of an entitlement edit, shown where the edit happens (docs/p11/03-plans-entitlements.md).
+    P-FINAL made the rule the server's rather than this paragraph's: while a plan has billed subscribers it can
+    be widened but not narrowed (BillingPlan#refuse_narrowing_while_billed), so the copy now says what will
+    happen rather than asking the operator to be careful.
+  %>
+  <% billed = field.resource.persisted? ? field.resource.subscriptions.where(status: BillingSubscription::BILLED_STATUSES).count : 0 %>
+  <% if billed.positive? %>
+    <p class="mb-3 text-[0.8125rem] text-y-800">
+      <strong><%= billed %></strong> account<%= 's' unless billed == 1 %> currently pay for this plan. Widening it —
+      adding a feature, raising or clearing a ceiling, selling another channel — applies to all of them immediately.
+      Narrowing it is refused: to sell something smaller, create a new plan and move those accounts to it, or grant a
+      per-account override for a single exception. Either way the change is recorded in the audit log.
+    </p>
+  <% end %>
   <% BillingPlan::LIMIT_KEYS.each do |key| %>
-    <div style="margin-bottom: 8px;">
+    <div class="mb-2">
       <label for="billing_plan_limits_<%= key %>"><%= field.label(key) %></label>
       <input type="number" min="0" step="1"
              id="billing_plan_limits_<%= key %>"
@@ -12,6 +27,6 @@
              placeholder="Unlimited">
     </div>
   <% end %>
-  <p style="font-size: 12px; opacity: .7;">Leave empty for unlimited. 0 = not allowed.</p>
-  <p style="font-size: 12px; opacity: .7;">Commerce stores: stores an account keeps connected (any platform; disconnected stores do not count). Applies when the plan includes Lynomia Commerce.</p>
+  <p class="text-xs text-n-slate-11">Leave empty for unlimited. 0 = not allowed.</p>
+  <p class="text-xs text-n-slate-11">Commerce stores: stores an account keeps connected (any platform; disconnected stores do not count). Applies when the plan includes Lynomia Commerce.</p>
 </div>

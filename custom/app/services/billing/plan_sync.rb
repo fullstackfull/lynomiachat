@@ -13,6 +13,18 @@
 class Billing::PlanSync
   class NotConfigured < StandardError; end
 
+  # Archives the Stripe Product of a plan that has been deleted here. A class method because by the time it
+  # runs the BillingPlan row is gone, and the Product lifecycle belongs with the rest of it rather than in the
+  # controller that happened to delete the plan. Best effort: the plan is already gone either way.
+  def self.archive_product!(product_id)
+    api_key = Billing::Settings.stripe_secret_key
+    return if product_id.blank? || api_key.blank?
+
+    Stripe::Product.update(product_id, { active: false }, { api_key: api_key })
+  rescue Stripe::StripeError => e
+    Rails.logger.warn("[Billing] Could not archive Stripe product #{product_id}: #{e.message}")
+  end
+
   def initialize(plan)
     @plan = plan
   end

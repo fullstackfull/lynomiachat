@@ -1,4 +1,8 @@
-# Lynomia: an account owns the custom roles it defines (custom/app/models/custom_role.rb).
+# An account owns the named permission sets it defines
+# (docs/p-final/clean-room/specs/C-account-role-permissions.md §4).
+#
+# `destroy_async` because there is no foreign key on `custom_roles.account_id`, so nothing else would remove
+# them, and an account is deleted through DeleteObjectJob already.
 module Custom::Concerns::Account
   extend ActiveSupport::Concern
 

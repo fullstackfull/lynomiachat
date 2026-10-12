@@ -24,6 +24,8 @@ export default {
       applicationId: '',
       inboxName: '',
       phoneNumber: '',
+      callbackUsername: '',
+      callbackPassword: '',
     };
   },
   computed: {
@@ -38,6 +40,10 @@ export default {
     apiSecret: { required },
     applicationId: { required },
     accountId: { required },
+    // Basic auth is the only authentication Bandwidth offers for callbacks, and the webhook now fails closed
+    // without it (docs/p11/00-p10-security-closure.md), so these are required rather than optional.
+    callbackUsername: { required },
+    callbackPassword: { required },
   },
   methods: {
     async createChannel() {
@@ -57,6 +63,8 @@ export default {
               api_secret: this.apiSecret,
               application_id: this.applicationId,
               account_id: this.accountId,
+              callback_username: this.callbackUsername,
+              callback_password: this.callbackPassword,
             },
           },
         });
@@ -177,6 +185,44 @@ export default {
         }}</span>
       </label>
     </div>
+
+    <div class="flex-shrink-0 flex-grow-0">
+      <label :class="{ error: v$.callbackUsername.$error }">
+        {{ $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_USERNAME.LABEL') }}
+        <input
+          v-model="callbackUsername"
+          type="text"
+          :placeholder="
+            $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_USERNAME.PLACEHOLDER')
+          "
+          @blur="v$.callbackUsername.$touch"
+        />
+        <span v-if="v$.callbackUsername.$error" class="message">{{
+          $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_USERNAME.ERROR')
+        }}</span>
+      </label>
+    </div>
+
+    <div class="flex-shrink-0 flex-grow-0">
+      <label :class="{ error: v$.callbackPassword.$error }">
+        {{ $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_PASSWORD.LABEL') }}
+        <input
+          v-model="callbackPassword"
+          type="password"
+          :placeholder="
+            $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_PASSWORD.PLACEHOLDER')
+          "
+          @blur="v$.callbackPassword.$touch"
+        />
+        <span v-if="v$.callbackPassword.$error" class="message">{{
+          $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_PASSWORD.ERROR')
+        }}</span>
+      </label>
+    </div>
+
+    <p class="mb-0 text-sm text-n-slate-11">
+      {{ $t('INBOX_MGMT.ADD.SMS.BANDWIDTH.CALLBACK_HELP') }}
+    </p>
 
     <div class="w-full mt-4">
       <NextButton

@@ -2,7 +2,7 @@ import { shallowMount } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 
 import ProviderIndex from '../ProviderIndex.vue';
-import StripeBilling from '../Index.vue';
+import SubscriptionSettings from '../../subscription/Index.vue';
 
 const currentAccount = ref({});
 
@@ -31,6 +31,9 @@ const mountComponent = () =>
 
 // Lynomia has one billing provider, its own. Chatwoot's Shopify-billed branch went with the Enterprise
 // billing identity it read, so the only question left is whether the page waits for the account.
+//
+// What this route renders changed in P11: it used to be a component that redirected the browser to a
+// hardcoded external domain (docs/p11/06-rollout-compatibility.md). It now renders the in-app billing page.
 describe('Billing settings provider dispatcher', () => {
   beforeEach(() => {
     currentAccount.value = {};
@@ -39,7 +42,7 @@ describe('Billing settings provider dispatcher', () => {
   it('waits for the account before mounting billing', () => {
     const wrapper = mountComponent();
 
-    expect(wrapper.findComponent(StripeBilling).exists()).toBe(false);
+    expect(wrapper.findComponent(SubscriptionSettings).exists()).toBe(false);
     expect(wrapper.findComponent({ name: 'SettingsLayout' }).props()).toEqual(
       expect.objectContaining({ isLoading: true })
     );
@@ -50,6 +53,6 @@ describe('Billing settings provider dispatcher', () => {
     currentAccount.value = { id: 1, billing_provider: 'shopify' };
     await nextTick();
 
-    expect(wrapper.findComponent(StripeBilling).exists()).toBe(true);
+    expect(wrapper.findComponent(SubscriptionSettings).exists()).toBe(true);
   });
 });

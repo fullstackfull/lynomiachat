@@ -3,6 +3,7 @@ import agentBots from './agentBots.json';
 import agentMgmt from './agentMgmt.json';
 import attributesMgmt from './attributesMgmt.json';
 import auditLogs from './auditLogs.json';
+import analytics from './analytics.json';
 import automation from './automation.json';
 import bulkActions from './bulkActions.json';
 import calls from './calls.json';
@@ -41,6 +42,7 @@ import sessionLimit from './sessionLimit.json';
 import settings from './settings.json';
 import signup from './signup.json';
 import sla from './sla.json';
+import supportTickets from './supportTickets.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import whatsappTemplateMgmt from './whatsappTemplateMgmt.json';
@@ -51,6 +53,7 @@ export default {
   ...agentMgmt,
   ...attributesMgmt,
   ...auditLogs,
+  ...analytics,
   ...automation,
   ...bulkActions,
   ...calls,
@@ -89,6 +92,7 @@ export default {
   ...settings,
   ...signup,
   ...sla,
+  ...supportTickets,
   ...teamsSettings,
   ...whatsappTemplates,
   ...whatsappTemplateMgmt,

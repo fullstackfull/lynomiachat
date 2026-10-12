@@ -23,7 +23,7 @@ class Twilio::OneoffSmsCampaignService
       begin
         channel.send_message(to: contact.phone_number, body: content)
       rescue Twilio::REST::TwilioError, Twilio::REST::RestError => e
-        Rails.logger.error("[Twilio Campaign #{campaign.id}] Failed to send to #{contact.phone_number}: #{e.message}")
+        Rails.logger.error("[Twilio Campaign #{campaign.id}] Failed to send to contact_id=#{contact.id}: #{e.message}")
         next
       end
     end

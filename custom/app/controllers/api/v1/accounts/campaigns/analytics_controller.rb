@@ -1,84 +1,57 @@
+# What one campaign actually did, per contact (docs/p-final/clean-room/specs/D-campaign-recipient-outcomes.md §2).
+#
+# Two routes, both already declared and both deliberately not feature-gated (config/routes.rb:104-105): a
+# campaign that has run has results, and whether the account may still create new WhatsApp campaigns is a
+# separate question from whether it may read what the last one did.
+#
+# Authorization is the campaign's own. Reading a campaign's results must not be a wider permission than reading
+# the campaign, so this inherits CampaignPolicy rather than adding a boundary of its own -- and the campaign is
+# looked up inside `Current.account.campaigns`, so an id from another account is not found rather than refused.
 class Api::V1::Accounts::Campaigns::AnalyticsController < Api::V1::Accounts::BaseController
-  RESULTS_PER_PAGE = 25
+  DELIVERIES_PER_PAGE = 25
 
-  before_action :campaign
-  before_action :authorize_campaign
-  before_action :ensure_whatsapp_campaign_analytics_enabled!
+  before_action :fetch_campaign
+  before_action :validate_status_filter, only: [:contacts]
 
   def metrics
-    render json: delivery_metrics
+    render json: Campaigns::RecipientMetrics.new(@campaign).as_json
   end
 
   def contacts
-    recipients = filtered_recipients.includes(:contact).page(current_page).per(RESULTS_PER_PAGE)
-
-    render json: {
-      payload: recipients.map { |recipient| recipient_payload(recipient) },
-      meta: {
-        current_page: recipients.current_page,
-        total_pages: recipients.total_pages,
-        total_count: recipients.total_count
-      }
-    }
+    @recipients = recipients.page(page).per(DELIVERIES_PER_PAGE)
   end
 
   private
 
-  def campaign
-    @campaign ||= Current.account.campaigns.find_by!(display_id: params[:campaign_id])
-  end
-
-  def ensure_whatsapp_campaign_analytics_enabled!
-    return if @campaign.one_off? && @campaign.inbox.inbox_type == 'Whatsapp' && Current.account.feature_enabled?(:whatsapp_campaign)
-
-    raise Pundit::NotAuthorizedError
-  end
-
-  def authorize_campaign
+  def fetch_campaign
+    @campaign = Current.account.campaigns.find(params[:campaign_id])
     authorize @campaign, :show?
   end
 
-  def delivery_metrics
-    recipients = @campaign.campaign_recipients
-    counts = recipients.group(:status).count
-
-    {
-      audience: recipients.count,
-      sent: recipients.where.not(source_id: nil).count,
-      delivered: counts['delivered'].to_i + counts['read'].to_i,
-      read: counts['read'].to_i,
-      failed: counts['failed'].to_i,
-      skipped: counts['skipped'].to_i,
-      status_counts: CampaignRecipient.statuses.keys.index_with { |status| counts[status].to_i }
-    }
-  end
-
-  def filtered_recipients
-    return recipients unless CampaignRecipient.statuses.key?(params[:status])
-
-    recipients.where(status: params[:status])
-  end
-
+  # `includes(:contact)` rather than a per-row lookup: the list renders the contact's name and number on every
+  # row, and the query count must not grow with the page.
   def recipients
-    @recipients ||= @campaign.campaign_recipients.order(created_at: :desc)
+    scope = CampaignRecipient.where(account_id: Current.account.id, campaign_id: @campaign.id)
+                             .includes(:contact)
+                             .order(created_at: :asc, id: :asc)
+    params[:status].present? ? scope.where(status: params[:status]) : scope
   end
 
-  def recipient_payload(recipient)
-    {
-      contact: {
-        id: recipient.contact.id,
-        name: recipient.contact.name,
-        phone_number: recipient.contact.phone_number
-      },
-      status: recipient.status,
-      message_content: recipient.message_content,
-      error_code: recipient.error_code,
-      error_title: recipient.error_title,
-      error_message: recipient.error_message
-    }
+  # `to_s` first: a query string can carry any shape, and `?page[]=2` arrives as an array, on which `to_i` is not
+  # defined. An unreadable page number is the first page, which is what the pager asks for when it has no state.
+  def page
+    [params[:page].to_s.to_i, 1].max
   end
 
-  def current_page
-    params[:page].presence || 1
+  # Refused at the boundary rather than passed to the database as an unknown state, which is the repo's
+  # convention for an invalid parameter (CLAUDE.md) and keeps a typo out of the exception tracker.
+  def validate_status_filter
+    return if params[:status].blank?
+    return if CampaignRecipient.statuses.key?(params[:status].to_s)
+
+    render_could_not_create_error(
+      I18n.t('errors.campaigns.unknown_recipient_status',
+             status: params[:status], allowed: CampaignRecipient.statuses.keys.join(', '))
+    )
   end
 end

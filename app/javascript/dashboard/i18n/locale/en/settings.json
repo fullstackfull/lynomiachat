@@ -323,6 +323,13 @@
     "MENTIONED_CONVERSATIONS": "Mentions",
     "PARTICIPATING_CONVERSATIONS": "Participating",
     "UNATTENDED_CONVERSATIONS": "Unattended",
+    "ANALYTICS": "Analytics",
+    "ANALYTICS_OVERVIEW": "Overview",
+    "ANALYTICS_WHATSAPP": "WhatsApp delivery",
+    "ANALYTICS_CAMPAIGNS": "Campaigns",
+    "ANALYTICS_AUTOMATIONS": "Automations",
+    "ANALYTICS_FLOWS": "Flows",
+    "ANALYTICS_COMMERCE": "Commerce",
     "REPORTS": "Reports",
     "SETTINGS": "Settings",
     "CONTACTS": "Contacts",
@@ -433,8 +440,12 @@
       "CHANNELS": "Channels",
       "AUTOMATION": "Automation",
       "CONVERSATION_DATA": "Conversation data",
+      "SUPPORT": "Support",
       "RECORDS": "Records"
-    }
+    },
+    "ANALYTICS_TICKETS": "Support cases",
+    "SUPPORT": "Support",
+    "SUPPORT_SLA_POLICIES": "SLA policies"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

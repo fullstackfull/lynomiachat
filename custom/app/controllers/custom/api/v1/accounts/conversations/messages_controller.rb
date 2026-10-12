@@ -1,52 +1,43 @@
-# Lynomia keeps Chatwoot's audit row for a deleted message after the Enterprise overlay goes, through the
-# `prepend_mod_with` the OSS controller already declares
-# (app/controllers/api/v1/accounts/conversations/messages_controller.rb:132).
+# B13 -- a message is removed (docs/p-final/clean-room/specs/B-audit-event-capture.md).
 #
-# The deletion itself stays the OSS controller's: `super` is the only thing that touches the message, so the soft
-# delete, its transaction and its authorization are untouched. This adds the audit row and nothing else.
+# Recorded from the controller rather than from the model, because a message deletion is the one capture point
+# that must record LESS than the record holds. The entry says which conversation the message was in, by the
+# number a person recognises, and which inbox and sender it belonged to. The body and the attachments are
+# deliberately absent -- not masked later by the read surface, but never written. That is the whole reason
+# package A's renderer needs no special case for this one type (package B §5).
 #
-# The reader was already waiting for these rows, which is what makes this the missing half of a finished feature
-# rather than a new one: the serializer special-cases `auditable_type == 'Message'` to skip `push_event_data` and to
-# drop `content` from the rendered payload (custom/app/views/api/v1/accounts/audit_logs/show.json.jbuilder), the
-# dashboard has `message:destroy` -> `AUDIT_LOGS.MESSAGE.DELETE` and reads `display_id` out of `audited_changes` to
-# name the conversation (app/javascript/dashboard/helper/auditlogHelper.js), and `Message` is already a filterable
-# event type under CONVERSATIONS. Hence the payload keys below are a contract, not a choice.
+# The row lock is what makes a double deletion record once. Two agents can press delete on the same message at
+# the same moment; upstream's destroy is idempotent and would simply rewrite the placeholder, so without the
+# lock both requests would see an undeleted message and both would record. Holding it across the state change
+# makes the second request read the first one's result.
 module Custom::Api::V1::Accounts::Conversations::MessagesController
+  AUDIT_EVENT = 'message.deleted'.freeze
+
   def destroy
-    audited_message = message
+    newly_deleted = false
 
-    # Lock before the deleted check so concurrent deletes cannot both write an audit entry.
-    audited_message.with_lock do
-      next super if audited_message.deleted
-
-      audit_context = message_deletion_audit_context(audited_message)
+    message.with_lock do
+      newly_deleted = message.content_attributes['deleted'].blank?
       super
-      create_message_deletion_audit_log(audited_message, audit_context)
     end
+
+    record_message_deletion if newly_deleted
   end
 
   private
 
-  # Snapshot the context before super soft-deletes the message.
-  def message_deletion_audit_context(deleted_message)
-    {
-      'content' => deleted_message.content,
-      'conversation_id' => deleted_message.conversation_id,
-      'display_id' => deleted_message.conversation.display_id,
-      'inbox_id' => deleted_message.inbox_id,
-      'sender_type' => deleted_message.sender_type,
-      'sender_id' => deleted_message.sender_id
-    }
-  end
-
-  def create_message_deletion_audit_log(deleted_message, audit_context)
-    Custom::AuditLog.create!(
-      auditable: deleted_message,
-      action: 'destroy',
-      user: Current.user,
-      associated: deleted_message.account,
-      remote_address: request.remote_ip,
-      audited_changes: audit_context
+  def record_message_deletion
+    AuditTrail::Event.record_removal(
+      auditable_type: 'Message', auditable_id: message.id, account: Current.account, comment: AUDIT_EVENT,
+      changes: {
+        # `display_id` is the key the browser reads to name the conversation
+        # (app/javascript/dashboard/helper/auditlogHelper.js:186-189).
+        display_id: @conversation.display_id,
+        conversation_id: @conversation.id,
+        inbox_id: @conversation.inbox_id,
+        sender_type: message.sender_type,
+        sender_id: message.sender_id
+      }
     )
   end
 end

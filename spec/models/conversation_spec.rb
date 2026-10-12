@@ -1146,8 +1146,11 @@ RSpec.describe Conversation do
       conversation.reload
       expect(conversation.waiting_since).to be_within(1.second).of(conversation_start_time)
 
-      # Agent replies - this should create first response event
-      agent_reply1_time = 4.hours.ago
+      # Agent replies - this should create first response event.
+      # Derived from the one base time rather than taken fresh: the event's value is the difference between the
+      # two message timestamps, so two independent `X.hours.ago` calls would measure an hour PLUS however long
+      # the setup above took, and the assertion below allows a second.
+      agent_reply1_time = conversation_start_time + 1.hour
       create_agent_message(conversation, created_at: agent_reply1_time)
 
       first_response_events = account.reporting_events.where(name: 'first_response', conversation_id: conversation.id)
@@ -1170,11 +1173,13 @@ RSpec.describe Conversation do
     end
 
     it 'records the correct reply_time for subsequent messages' do
+      # Same reason as the first-response example: every timestamp is derived from the one base so the measured
+      # reply time is exactly an hour and not an hour plus the setup.
       create_customer_message(conversation, created_at: conversation_start_time)
-      create_agent_message(conversation, created_at: 4.hours.ago)
-      create_customer_message(conversation, created_at: 3.hours.ago)
+      create_agent_message(conversation, created_at: conversation_start_time + 1.hour)
+      create_customer_message(conversation, created_at: conversation_start_time + 2.hours)
 
-      create_agent_message(conversation, created_at: 2.hours.ago)
+      create_agent_message(conversation, created_at: conversation_start_time + 3.hours)
       reply_events = account.reporting_events.where(name: 'reply_time', conversation_id: conversation.id)
       expect(reply_events.count).to eq(1)
       expect(reply_events.first.value).to be_within(1.second).of(1.hour)

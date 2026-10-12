@@ -80,7 +80,10 @@ json.medium resource.channel.try(:medium) if resource.twilio?
 if resource.twilio?
   json.content_templates resource.channel.try(:content_templates)
   if Current.account_user&.administrator?
-    json.auth_token resource.channel.try(:auth_token)
+    # Lynomia: `auth_token` is `encrypts`ed at rest and no dashboard code reads it back from this payload --
+    # the Twilio form only ever sends one. So it is reported as configured-or-not, like `has_api_key_secret`
+    # below. `account_sid` and `api_key_sid` stay: they are identifiers, not secrets.
+    json.auth_token_configured resource.channel.try(:auth_token).present?
     json.account_sid resource.channel.try(:account_sid)
     json.api_key_sid resource.channel.try(:api_key_sid)
   end
@@ -89,6 +92,12 @@ end
 if resource.email?
   ## Email Channel Attributes
   json.email resource.channel.try(:email)
+  # Lynomia (docs/p10/06-channel-lifecycle-health.md): `Inboxes::FetchImapEmailsJob` latches an authorization
+  # error for ANY email channel, but this was reported only for Google and Microsoft inboxes and only to
+  # administrators -- so a plain IMAP inbox whose password changed showed no warning anywhere, to anyone, which
+  # is the common case on a self-hosted installation. A boolean is not a credential; the reconnect banners in
+  # Settings.vue stay scoped to the OAuth providers that can act on it.
+  json.reauthorization_required resource.channel.try(:reauthorization_required?)
   json.forwarding_enabled ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
   json.forward_to_email resource.channel.try(:forward_to_email) if ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
   if Current.account_user&.administrator? && defined?(with_branded_email_layout) && with_branded_email_layout.present? &&
@@ -99,13 +108,18 @@ if resource.email?
   ## IMAP
   if Current.account_user&.administrator?
     json.imap_login resource.channel.try(:imap_login)
-    json.imap_password resource.channel.try(:imap_password)
+    # Lynomia (docs/p10/07-security-performance.md): the password itself is never sent. It is `encrypts`ed at
+    # rest, so sending it to the browser was the one place it existed in plaintext. The settings form shows an
+    # empty field and a blank save keeps the stored value (Custom::Channel::Email#with_stored_credentials).
+    json.imap_password_configured resource.channel.try(:imap_password).present?
     json.imap_address resource.channel.try(:imap_address)
     json.imap_port resource.channel.try(:imap_port)
     json.imap_enabled resource.channel.try(:imap_enabled)
     json.imap_enable_ssl resource.channel.try(:imap_enable_ssl)
     json.imap_authentication resource.channel.try(:imap_authentication)
 
+    # An OAuth inbox with no stored authorization at all is also waiting to be connected, which the latch alone
+    # does not say. Overrides the general value above for exactly those inboxes.
     if resource.channel.try(:microsoft?) || resource.channel.try(:google?) || resource.channel.try(:legacy_google?)
       json.reauthorization_required resource.channel.try(:provider_config).empty? || resource.channel.try(:reauthorization_required?)
     end
@@ -114,7 +128,7 @@ if resource.email?
   ## SMTP
   if Current.account_user&.administrator?
     json.smtp_login resource.channel.try(:smtp_login)
-    json.smtp_password resource.channel.try(:smtp_password)
+    json.smtp_password_configured resource.channel.try(:smtp_password).present?
     json.smtp_address resource.channel.try(:smtp_address)
     json.smtp_port resource.channel.try(:smtp_port)
     json.smtp_enabled resource.channel.try(:smtp_enabled)
@@ -152,11 +166,13 @@ if resource.whatsapp?
      (resource.channel.try(:provider_config) || {}).to_h['source'] == 'embedded_signup'
     json.business_management_token_configured resource.channel.try(:business_management_token).present?
   end
-  # Only show reauthorization for embedded signup; manual flow uses API keys, not OAuth
-  json.reauthorization_required(
-    (resource.channel.try(:provider_config) || {}).to_h['source'] == 'embedded_signup' &&
-    resource.channel.try(:reauthorization_required?)
-  )
+  # Lynomia (docs/p10/06-channel-lifecycle-health.md): this used to be reported only for embedded signup, on the
+  # grounds that the manual flow uses API keys rather than OAuth. But `Channel::Whatsapp#setup_webhooks!` latches
+  # reauthorization for BOTH providers, and an API key can be revoked just as an authorization can -- so a
+  # manually configured number that could no longer authenticate showed no warning at all. The latch is now
+  # reported whichever way the number was set up; `whatsappUnauthorized` in Settings.vue still gates the
+  # reconnect flow on embedded signup, because that is the only flow that can complete it.
+  json.reauthorization_required resource.channel.try(:reauthorization_required?)
 end
 
 ## Voice attributes for TwilioSms
@@ -180,3 +196,9 @@ if resource.channel_type == 'Channel::Whatsapp' && resource.channel.respond_to?(
   json.recording_enabled resource.channel.try(:recording_enabled?)
   json.transcription_enabled resource.channel.try(:transcription_enabled?)
 end
+
+## Lynomia: one honest connection state per channel (docs/p10/06-channel-lifecycle-health.md).
+## `reauthorization_required` above stays exactly as it is -- the existing UI reads it. This says the same thing
+## for the channels that have no latch, and says `unknown` rather than nothing for the five that report no
+## health at all. It is P9's Operations::Health::Component, not a second vocabulary.
+json.connection_state Channels::ConnectionState.new(resource).call.as_json

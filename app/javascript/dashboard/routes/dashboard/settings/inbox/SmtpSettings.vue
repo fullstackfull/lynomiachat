@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFieldSection.vue';
 import { useVuelidate } from '@vuelidate/core';
-import { required, minLength } from '@vuelidate/validators';
+import { required, requiredIf, minLength } from '@vuelidate/validators';
 import InputRadioGroup from './components/InputRadioGroup.vue';
 import SingleSelectDropdown from './components/SingleSelectDropdown.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -57,6 +57,9 @@ export default {
       ],
     };
   },
+  // The server no longer sends the password, so the field starts empty and a blank save keeps what is stored
+  // (docs/p10/07-security-performance.md). Requiring it would stop an administrator changing the address
+  // without retyping the password.
   validations: {
     address: { required },
     port: {
@@ -64,11 +67,23 @@ export default {
       minLength: minLength(2),
     },
     login: { required },
-    password: { required },
+    password: {
+      required: requiredIf(function needsPassword() {
+        return !this.hasStoredPassword;
+      }),
+    },
     domain: { required },
   },
   computed: {
     ...mapGetters({ uiFlags: 'inboxes/getUIFlags' }),
+    hasStoredPassword() {
+      return Boolean(this.inbox.smtp_password_configured);
+    },
+    passwordPlaceholder() {
+      return this.hasStoredPassword
+        ? this.$t('INBOX_MGMT.SMTP.PASSWORD.PLACE_HOLDER_STORED')
+        : this.$t('INBOX_MGMT.SMTP.PASSWORD.PLACE_HOLDER');
+    },
   },
   watch: {
     inbox() {
@@ -85,7 +100,6 @@ export default {
         smtp_address,
         smtp_port,
         smtp_login,
-        smtp_password,
         smtp_domain,
         smtp_enable_starttls_auto,
         smtp_enable_ssl_tls,
@@ -96,7 +110,6 @@ export default {
       this.address = smtp_address;
       this.port = smtp_port;
       this.login = smtp_login;
-      this.password = smtp_password;
       this.domain = smtp_domain;
       this.starttls = smtp_enable_starttls_auto;
       this.ssl = smtp_enable_ssl_tls;
@@ -204,7 +217,7 @@ export default {
           :class="{ error: v$.password.$error }"
           class="w-full"
           :label="$t('INBOX_MGMT.SMTP.PASSWORD.LABEL')"
-          :placeholder="$t('INBOX_MGMT.SMTP.PASSWORD.PLACE_HOLDER')"
+          :placeholder="passwordPlaceholder"
           type="password"
           @blur="v$.password.$touch"
         />

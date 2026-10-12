@@ -3,7 +3,7 @@
 # is never saved as active with credentials that do not work. Audit entries never carry credentials.
 #
 # Every new connection of every provider, and every disconnected store coming back, passes through #attach or
-# #rotate_credentials, which keep the account within its plan's `stores` limit (Billing::PlanLimits; disconnected stores do
+# #rotate_credentials, which keep the account within its `stores` limit (Billing::ResourceLimit; disconnected stores do
 # not count, an empty limit is unlimited).
 class Commerce::StoreConnection
   def initialize(account:, user:)
@@ -125,12 +125,11 @@ class Commerce::StoreConnection
     raise Commerce::Error, 'ENCRYPTION_NOT_CONFIGURED' unless Chatwoot.encryption_configured?
   end
 
-  # A store that is not counted yet (new, or disconnected) may become connected only below the plan's limit.
+  # A store that is not counted yet (new, or disconnected) may become connected only below the account's
+  # limit. Already inside #attach's transaction and account lock, which is what Billing::ResourceLimit needs.
   def ensure_within_plan!(store)
     return if store.persisted? && !store.disconnected?
-
-    connected = @account.commerce_stores.connected.count
-    raise Commerce::Error, 'STORE_LIMIT_REACHED' if Billing::PlanLimits.reached?(@account, :stores, connected)
+    raise Commerce::Error, 'STORE_LIMIT_REACHED' if Billing::ResourceLimit.exceeded(@account, :stores)
   end
 
   # One account owns a store. Reconnecting in the same account reuses the disconnected row; a store another account

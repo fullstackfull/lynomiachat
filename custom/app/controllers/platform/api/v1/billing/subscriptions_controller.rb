@@ -68,14 +68,10 @@ class Platform::Api::V1::Billing::SubscriptionsController < Platform::Api::V1::B
 
   # POST .../:account_id/portal_link
   def portal_link
-    customer_id = subscription.stripe_customer_id
-    return render_error('no_billing_account', 'This account has never paid through Stripe', :unprocessable_entity) if customer_id.blank?
-
-    session = Stripe::BillingPortal::Session.create(
-      { customer: customer_id, return_url: "#{ENV.fetch('FRONTEND_URL', '').chomp('/')}/app/accounts/#{@account.id}/settings/subscription" },
-      { api_key: ::Billing::Settings.stripe_secret_key }
-    )
-    render_data({ url: session.url })
+    return_url = "#{ENV.fetch('FRONTEND_URL', '').chomp('/')}/app/accounts/#{@account.id}/settings/subscription"
+    render_data({ url: ::Billing::Portal.new(@account, return_url: return_url).url })
+  rescue ::Billing::Portal::Error
+    render_error('no_billing_account', 'This account has never paid through Stripe', :unprocessable_entity)
   end
 
   private

@@ -322,6 +322,13 @@
     "MENTIONED_CONVERSATIONS": "الإشارات",
     "PARTICIPATING_CONVERSATIONS": "شارك",
     "UNATTENDED_CONVERSATIONS": "بدون حضور",
+    "ANALYTICS": "التحليلات",
+    "ANALYTICS_OVERVIEW": "نظرة عامة",
+    "ANALYTICS_WHATSAPP": "تسليم واتساب",
+    "ANALYTICS_CAMPAIGNS": "الحملات",
+    "ANALYTICS_AUTOMATIONS": "الأتمتة",
+    "ANALYTICS_FLOWS": "المسارات",
+    "ANALYTICS_COMMERCE": "التجارة",
     "REPORTS": "التقارير",
     "SETTINGS": "الإعدادات",
     "CONTACTS": "جهات الاتصال",
@@ -432,8 +439,12 @@
       "CHANNELS": "القنوات",
       "AUTOMATION": "الأتمتة",
       "CONVERSATION_DATA": "بيانات المحادثات",
+      "SUPPORT": "الدعم",
       "RECORDS": "السجلات"
-    }
+    },
+    "ANALYTICS_TICKETS": "حالات الدعم",
+    "SUPPORT": "الدعم",
+    "SUPPORT_SLA_POLICIES": "سياسات اتفاقية الخدمة"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

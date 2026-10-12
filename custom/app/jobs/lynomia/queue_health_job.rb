@@ -45,6 +45,21 @@ class Lynomia::QueueHealthJob < ApplicationJob
       processes: processes, enqueued: stats.enqueued, scheduled: stats.scheduled_size,
       retrying: stats.retry_size, dead: stats.dead_size, failed_total: stats.failed, processed_total: stats.processed
     )
+    record_worker_signal(stats, processes)
+  end
+
+  # No registered worker process is the one case worth waking someone for, so it is the one that also becomes a
+  # durable row: nothing async is happening at all. The info line above stays the time series an operator greps;
+  # this is what the Operations Center can sort and link.
+  def record_worker_signal(stats, processes)
+    recorder = Operations::SignalRecorder.new(source: :queue)
+    if processes.zero?
+      recorder.record(:no_workers, severity: :critical, reason: 'No Sidekiq process is registered',
+                                   detail: { enqueued: stats.enqueued, scheduled: stats.scheduled_size,
+                                             retrying: stats.retry_size, dead: stats.dead_size })
+    else
+      recorder.resolve(:no_workers)
+    end
   end
 
   # Per queue, because queues here are strict-priority: a flooded high-priority queue starves every queue below it,
@@ -57,6 +72,26 @@ class Lynomia::QueueHealthJob < ApplicationJob
         'QUEUE_BACKLOG', queue: queue.name, size: queue.size, latency_seconds: queue.latency.round,
                          depth_threshold: DEPTH_THRESHOLD, latency_threshold: LATENCY_THRESHOLD
       )
+      Operations::SignalRecorder.new(source: :queue).record(
+        :backlog, severity: :warning, reason: "Queue #{queue.name} is over its threshold",
+                  detail: { queue: queue.name, size: queue.size, latency_seconds: queue.latency.round,
+                            depth_threshold: DEPTH_THRESHOLD, latency_threshold: LATENCY_THRESHOLD }
+      )
+    end
+    resolve_recovered_backlogs
+  end
+
+  # A queue that came back under its threshold clears its own signal. Per queue, because one flooded queue
+  # recovering says nothing about the others.
+  def resolve_recovered_backlogs
+    Operations::Signal.open_signals.where(source: 'queue', signal: 'backlog').find_each do |signal|
+      name = signal.detail['queue']
+      next if name.blank?
+
+      queue = Sidekiq::Queue.new(name)
+      next if queue.size >= DEPTH_THRESHOLD || queue.latency >= LATENCY_THRESHOLD
+
+      signal.update!(resolved_at: Time.current)
     end
   end
 
@@ -68,5 +103,9 @@ class Lynomia::QueueHealthJob < ApplicationJob
     return if previous.nil? || dead_size <= previous
 
     Lynomia::OperatorLog.warn('QUEUE_DEAD_SET_GREW', previous: previous, current: dead_size, added: dead_size - previous)
+    Operations::SignalRecorder.new(source: :queue).record(
+      :dead_set_grew, severity: :warning, reason: 'Jobs have been moved to the dead set since the last check',
+                      detail: { previous: previous, current: dead_size, added: dead_size - previous }
+    )
   end
 end

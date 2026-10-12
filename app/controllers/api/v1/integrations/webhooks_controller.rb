@@ -11,12 +11,18 @@ class Api::V1::Integrations::WebhooksController < ApplicationController
 
   private
 
-  # Skip (rather than reject) when no secret is configured, so existing installs keep working.
+  # Lynomia (docs/p11/00-p10-security-closure.md, SEC-8): this used to SKIP verification when no secret was
+  # configured, so existing installs would keep working. The tenant on this endpoint comes entirely from the
+  # body -- Integrations::Hook.find_by(reference_id: params[:event][:channel]), an unscoped global lookup --
+  # and the handler writes an OUTGOING, customer-visible message into whichever account that hook belongs to.
+  # An unsigned path to that is a cross-tenant write, so it now fails closed, as the Shopify webhook in this
+  # tree already does. An installation with the Slack integration connected but no signing secret is
+  # misconfigured, and the project's own rule is to let that fail loudly.
   def verify_slack_signature!
     secret = slack_signing_secret
     if secret.blank?
-      Rails.logger.warn('[SLACK] SLACK_SIGNING_SECRET not configured; skipping webhook signature verification')
-      return
+      Rails.logger.warn('[SLACK] SLACK_SIGNING_SECRET is not configured; rejecting the webhook')
+      return head :unauthorized
     end
 
     head :unauthorized unless valid_slack_signature?(secret)

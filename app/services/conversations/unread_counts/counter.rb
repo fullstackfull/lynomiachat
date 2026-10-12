@@ -211,3 +211,8 @@ class Conversations::UnreadCounts::Counter
     @filtered_counter ||= ::Conversations::UnreadCounts::FilteredCounter.new(account: account, user: user)
   end
 end
+
+# The three conversation_* capabilities this counter reads are enforced on the conversation read paths as well
+# (DECISION 1), and the rule has to be the same rule. The overlay points `permission_mode` at the one
+# definition so the counts and the list cannot disagree.
+Conversations::UnreadCounts::Counter.prepend_mod_with('Conversations::UnreadCounts::Counter')

@@ -19,7 +19,7 @@ class Instagram::SendOnInstagramService < Instagram::BaseSendService
       query: query
     )
 
-    process_response(response, message_content)
+    process_response(response)
   end
 
   def merge_human_agent_tag(params)

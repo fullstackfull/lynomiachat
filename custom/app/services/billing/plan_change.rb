@@ -15,6 +15,13 @@
 class Billing::PlanChange
   class Error < StandardError; end
 
+  # How long a previewed proration timestamp stays usable (P11.16). The customer confirms an amount they were
+  # shown, so the change has to be priced at the instant the preview used -- but that instant must be one this
+  # server minted. `proration_date` decides how many days of the period Stripe prorates, so a browser sending
+  # a later timestamp would be choosing its own proration, which is choosing its own price. Anything outside
+  # this window is refused rather than silently repriced.
+  QUOTE_VALIDITY = 15.minutes
+
   def initialize(account:, plan:, prorate: true)
     @account = account
     @plan = plan
@@ -44,7 +51,7 @@ class Billing::PlanChange
 
   def perform(proration_date: nil)
     validate!
-    @proration_date = proration_date.to_i if proration_date.present?
+    @proration_date = accepted_proration_date(proration_date)
 
     params = { items: new_items }
     if @prorate
@@ -99,8 +106,23 @@ class Billing::PlanChange
     @stripe_item_id ||= Stripe::Subscription.retrieve(@subscription.stripe_subscription_id, opts).items.data.first.id
   end
 
+  # Counted the one canonical way, so a per-agent price is computed from the same number the seat gate
+  # compares (Billing::ResourceLimit::COUNTS).
   def quantity
-    @plan.pricing_type == 'per_agent' ? [@account.users.count, 1].max : 1
+    return 1 unless @plan.pricing_type == 'per_agent'
+
+    [Billing::ResourceLimit.current_count(@account, :agents), 1].max
+  end
+
+  # Only a timestamp this server could have minted, and only while the quote is fresh. A date in the future
+  # is never accepted; one older than QUOTE_VALIDITY means the customer is confirming a stale amount.
+  def accepted_proration_date(given)
+    return if given.blank?
+
+    given = given.to_i
+    return given if given.between?(QUOTE_VALIDITY.ago.to_i, Time.current.to_i)
+
+    raise Error, 'This quote is no longer valid. Please review the amount again.'
   end
 
   # Same timestamp for preview and change, so the charged amount matches what was shown

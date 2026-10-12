@@ -2,6 +2,7 @@
 
 class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::BaseController
   before_action :set_plan, only: [:show, :update, :destroy, :sync, :subscribers]
+  before_action :ensure_subscribers_permissible, only: [:update, :destroy, :sync]
 
   # GET /platform/api/v1/billing/plans?active=true
   def index
@@ -37,6 +38,8 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
   # PATCH /platform/api/v1/billing/plans/:id
   def update
     @plan.update!(plan_params)
+    # Before the reload below, which clears `previous_changes`.
+    ::Billing::PlanAudit.record(@plan, actor: @platform_app)
     render_data(::Billing::ApiSerializer.plan(@plan.reload), meta: { stripe_sync: stripe_sync(@plan) })
   end
 
@@ -46,7 +49,7 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
     product_id = @plan.stripe_product_id
     return render_error('plan_in_use', @plan.errors.full_messages.to_sentence, :unprocessable_entity) unless @plan.destroy
 
-    archive_stripe_product(product_id)
+    ::Billing::PlanSync.archive_product!(product_id)
     head :no_content
   end
 
@@ -62,18 +65,27 @@ class Platform::Api::V1::Billing::PlansController < Platform::Api::V1::Billing::
     @plan = BillingPlan.find(params[:id])
   end
 
+  # Upstream's own rule, applied to a resource every tenant shares. A Platform App may CREATE without a
+  # permissible check -- PlatformController exempts `create` (app/controllers/platform_controller.rb:7) and
+  # Platform::Api::V1::AccountsController#create makes accounts installation-wide -- but it may only MODIFY
+  # what it was granted, which is why show/update/destroy go through `validate_platform_app_permissible`.
+  #
+  # A plan write modifies what every subscriber of that plan has, immediately and mid-period: dropping
+  # `limits.agents` from 25 to 1 blocks agent creation for every tenant on it, and a price change migrates
+  # them all from their next period. So the write is in scope only when every affected account is one this app
+  # was granted. Creating a plan has no subscribers, so provisioning one stays open -- which is the case a
+  # legitimate integration actually needs.
+  def ensure_subscribers_permissible
+    return unless @plan.subscriptions.where.not(account_id: permissible_account_ids).exists?
+
+    render_error('non_permissible_subscribers',
+                 'This plan has subscribers this app was not granted', :unauthorized)
+  end
+
   def plan_params
     params.require(:plan).permit(
       :name, :description, :price, :currency, :interval, :pricing_type, :active, :position,
       limits: BillingPlan::LIMIT_KEYS, features: []
     )
-  end
-
-  def archive_stripe_product(product_id)
-    return if product_id.blank? || ::Billing::Settings.stripe_secret_key.blank?
-
-    Stripe::Product.update(product_id, { active: false }, { api_key: ::Billing::Settings.stripe_secret_key })
-  rescue Stripe::StripeError => e
-    Rails.logger.warn("[Billing] Could not archive Stripe product #{product_id}: #{e.message}")
   end
 end

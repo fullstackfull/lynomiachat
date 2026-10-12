@@ -1,0 +1,69 @@
+<%#
+  The recorded issue feed. One row per distinct open problem, with its occurrence count, so a failing inbox is
+  one line and not a thousand. `detail` is rendered verbatim because the recorder already allow-listed its keys
+  and refused anything that is not a scalar -- there is no payload here to redact.
+%>
+<div class="overflow-x-auto border border-slate-100 rounded-md">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-25 text-xs text-slate-600">
+      <tr>
+        <th class="text-start px-3 py-2 font-medium">Issue</th>
+        <th class="text-start px-3 py-2 font-medium">Account</th>
+        <th class="text-start px-3 py-2 font-medium">Subject</th>
+        <th class="text-start px-3 py-2 font-medium">Seen</th>
+        <th class="text-start px-3 py-2 font-medium">Severity</th>
+        <th class="text-start px-3 py-2 font-medium">Support case</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% signals.each do |signal| %>
+        <tr class="border-t border-slate-100 align-top">
+          <td class="px-3 py-2">
+            <p class="text-slate-800"><%= signal.source.humanize %> &middot; <%= signal.signal.humanize %></p>
+            <% if signal.reason.present? %>
+              <p class="text-xs text-slate-600 mt-0.5"><%= signal.reason %></p>
+            <% end %>
+            <% if signal.detail.present? %>
+              <p class="text-xs text-slate-400 mt-0.5 font-mono break-all">
+                <%= signal.detail.map { |key, value| "#{key}=#{value}" }.join(' ') %>
+              </p>
+            <% end %>
+          </td>
+          <td class="px-3 py-2 text-xs">
+            <% if signal.account %>
+              <%= link_to "#{signal.account.name} (#{signal.account_id})", super_admin_account_path(signal.account),
+                          class: 'text-woot-500 hover:underline' %>
+            <% else %>
+              <span class="text-slate-500">Installation wide</span>
+            <% end %>
+          </td>
+          <td class="px-3 py-2 text-xs text-slate-600">
+            <%= signal.subject_type.present? ? "#{signal.subject_type} ##{signal.subject_id}" : '—' %>
+          </td>
+          <td class="px-3 py-2 text-xs text-slate-600">
+            <%= time_ago_in_words(signal.last_seen_at) %> ago
+            <span class="text-slate-400">&times;<%= signal.occurrences %></span>
+            <% unless signal.open? %>
+              <p class="text-green-700">Resolved <%= time_ago_in_words(signal.resolved_at) %> ago</p>
+            <% end %>
+          </td>
+          <td class="px-3 py-2"><%= render 'status_badge', status: signal.severity %></td>
+          <td class="px-3 py-2 text-xs">
+            <% if signal.support_ticket %>
+              <span class="text-slate-700"><%= signal.support_ticket.reference %></span>
+              <p class="text-slate-400"><%= signal.support_ticket.status.humanize %></p>
+            <% elsif show_actions && signal.account_id.present? %>
+              <%= button_to 'Open case', open_case_super_admin_operations_path(signal_id: signal.id),
+                            method: :post,
+                            class: 'border border-slate-200 bg-slate-50 px-2 py-1 rounded-md cursor-pointer' %>
+            <% elsif show_actions %>
+              <span class="text-slate-400">Installation wide</span>
+            <% else %>
+              <span class="text-slate-400">—</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -101,6 +101,13 @@ const hasDataImport = computed(() => {
   );
 });
 
+const hasSupportTickets = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.LYNOMIA_SUPPORT_TICKETS
+  );
+});
+
 const fetchConversationUnreadCounts = ([currentAccountId, isEnabled]) => {
   if (!currentAccountId) return;
 
@@ -610,6 +617,65 @@ const menuItems = computed(() => {
         },
       ],
     },
+    ...(hasSupportTickets.value
+      ? [
+          {
+            // Lynomia Support cases. A leaf rather than a group: the workspace is one screen whose views are
+            // query parameters, so a group here would be six entries that all open the same page.
+            name: 'Support',
+            label: t('SIDEBAR.SUPPORT'),
+            icon: 'i-lucide-ticket',
+            to: accountScopedRoute('support_tickets_index'),
+            activeOn: ['support_tickets_index', 'support_tickets_show'],
+          },
+        ]
+      : []),
+    {
+      name: 'Analytics',
+      label: t('SIDEBAR.ANALYTICS'),
+      icon: 'i-lucide-chart-no-axes-combined',
+      children: [
+        {
+          name: 'Analytics Overview',
+          label: t('SIDEBAR.ANALYTICS_OVERVIEW'),
+          to: accountScopedRoute('analytics_overview'),
+        },
+        {
+          name: 'Analytics WhatsApp',
+          label: t('SIDEBAR.ANALYTICS_WHATSAPP'),
+          to: accountScopedRoute('analytics_whatsapp'),
+        },
+        {
+          name: 'Analytics Campaigns',
+          label: t('SIDEBAR.ANALYTICS_CAMPAIGNS'),
+          to: accountScopedRoute('analytics_campaigns'),
+        },
+        {
+          name: 'Analytics Automations',
+          label: t('SIDEBAR.ANALYTICS_AUTOMATIONS'),
+          to: accountScopedRoute('analytics_automations'),
+        },
+        {
+          name: 'Analytics Flows',
+          label: t('SIDEBAR.ANALYTICS_FLOWS'),
+          to: accountScopedRoute('analytics_flows'),
+        },
+        {
+          name: 'Analytics Commerce',
+          label: t('SIDEBAR.ANALYTICS_COMMERCE'),
+          to: accountScopedRoute('analytics_commerce'),
+        },
+        ...(hasSupportTickets.value
+          ? [
+              {
+                name: 'Analytics Tickets',
+                label: t('SIDEBAR.ANALYTICS_TICKETS'),
+                to: accountScopedRoute('analytics_tickets'),
+              },
+            ]
+          : []),
+      ],
+    },
     {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
@@ -698,17 +764,14 @@ const menuItems = computed(() => {
               icon: 'i-lucide-briefcase',
               to: accountScopedRoute('general_settings_index'),
             },
+            // One billing entry, not two. Both routes render the same page now
+            // (docs/p11/06-rollout-compatibility.md); showing them side by side invited an administrator to
+            // pick the one that redirected off the product.
             {
               name: 'Settings Billing',
               label: t('SIDEBAR.BILLING'),
               icon: 'i-lucide-credit-card',
               to: accountScopedRoute('billing_settings_index'),
-            },
-            {
-              name: 'Settings Subscription',
-              label: t('SIDEBAR.SUBSCRIPTION'),
-              icon: 'i-lucide-wallet',
-              to: accountScopedRoute('subscription_settings_index'),
             },
           ],
         },
@@ -865,6 +928,24 @@ const menuItems = computed(() => {
             },
           ],
         },
+        ...(hasSupportTickets.value
+          ? [
+              {
+                name: 'Settings Support',
+                label: t('SIDEBAR.SETTINGS_GROUPS.SUPPORT'),
+                icon: 'i-lucide-ticket',
+                collapsible: false,
+                children: [
+                  {
+                    name: 'Settings Support SLA',
+                    label: t('SIDEBAR.SUPPORT_SLA_POLICIES'),
+                    icon: 'i-lucide-timer',
+                    to: accountScopedRoute('support_sla_policies_index'),
+                  },
+                ],
+              },
+            ]
+          : []),
         {
           name: 'Settings Records',
           label: t('SIDEBAR.SETTINGS_GROUPS.RECORDS'),

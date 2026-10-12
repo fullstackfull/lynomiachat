@@ -1,5 +1,6 @@
 {
-  "name": "playwright",
+  "name": "lynomia-chat-e2e",
+  "private": true,
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

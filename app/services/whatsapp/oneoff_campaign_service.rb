@@ -40,7 +40,7 @@ class Whatsapp::OneoffCampaignService
   end
 
   def process_contact(contact)
-    Rails.logger.info "Processing contact: #{contact.name} (#{contact.phone_number})"
+    Rails.logger.info "Processing campaign recipient contact_id=#{contact.id}"
 
     recipient, recipient_error = campaign_destination(contact)
     if recipient.blank?
@@ -49,7 +49,7 @@ class Whatsapp::OneoffCampaignService
     end
 
     if campaign.template_params.blank?
-      Rails.logger.error "Skipping contact #{contact.name} - no template_params found for WhatsApp campaign"
+      Rails.logger.error "Skipping campaign recipient contact_id=#{contact.id} - no template_params found for WhatsApp campaign"
       return
     end
 
@@ -72,11 +72,11 @@ class Whatsapp::OneoffCampaignService
     liquid_processor = Whatsapp::LiquidTemplateProcessorService.new(campaign: campaign, contact: contact)
     processed_template_params = liquid_processor.process_template_params(campaign.template_params)
 
-    Rails.logger.info "Skipping contact #{contact.name} - liquid variables resolved to blank values" if processed_template_params.nil?
+    Rails.logger.info "Skipping campaign recipient contact_id=#{contact.id} - liquid variables resolved to blank" if processed_template_params.nil?
 
     processed_template_params
   rescue StandardError => e
-    Rails.logger.error "Failed to process liquid template params for contact #{contact.name}: #{e.message}"
+    Rails.logger.error "Failed to process liquid template params for contact_id=#{contact.id}: #{e.message}"
     nil
   end
 
@@ -100,7 +100,7 @@ class Whatsapp::OneoffCampaignService
                           }, nil)
 
   rescue StandardError => e
-    Rails.logger.error "Failed to send WhatsApp template message to #{to}: #{e.message}"
+    Rails.logger.error "Failed to send WhatsApp template message: #{e.message}"
     Rails.logger.error "Backtrace: #{e.backtrace.first(5).join('\n')}"
     # continue processing remaining contacts
     nil

@@ -18,7 +18,15 @@ class Billing::Settings
     mobile_return_url: { name: 'BILLING_MOBILE_RETURN_URL', type: :string, default: nil }
   }.freeze
 
+  # See .masked: what a hint shows, and the floor under which it shows nothing.
+  SHORT_VALUE_MASK = '••••••••'
+  REVEALED_CHARACTERS = 11
+
   class << self
+    # A direct read, deliberately not through GlobalConfig's Redis cache. These are commercial settings whose
+    # staleness would mean charging or locking the wrong account, the read is a single indexed row, and the
+    # repeated cost `enforced?` used to carry on the authorization path is removed where it actually repeated
+    # -- BillingSubscription#billing_enforced? memoizes it per instance (docs/p11/07-security-performance.md §6).
     def get(key)
       definition = KEYS.fetch(key.to_sym)
       value = InstallationConfig.find_by(name: definition[:name])&.value
@@ -69,10 +77,22 @@ class Billing::Settings
       stripe_configured? || Billing::TrialStarter.configured?
     end
 
-    # "sk_test...1234" for display, never the full secret
+    # "sk_test...1234" for display, never the full secret.
+    #
+    # P-FINAL (docs/p-final/06-clean-code-review.md §5, answering P11's sixth known limitation): the hint shows
+    # 11 characters, so for a value of 11 or fewer it showed the whole thing -- "abcdefgh" came back as
+    # "abcdefg...efgh". A real Stripe key is far longer (`sk_live_` or `whsec_` plus 24 or more), which is why
+    # P11 left it; but the value here is whatever an operator pasted, including a truncated one, and this hint
+    # is rendered into the settings page and returned by Billing::ApiSerializer.settings. The floor is generic
+    # rather than Stripe-shaped: reveal the prefix and suffix only when doing so still hides at least half the
+    # value, and otherwise say nothing about it beyond that it is set. The bullet count is fixed, so a short
+    # value does not disclose its length either.
     def masked(key)
       value = get(key)
-      value.present? ? "#{value.first(7)}...#{value.last(4)}" : nil
+      return nil if value.blank?
+      return SHORT_VALUE_MASK if value.length < REVEALED_CHARACTERS * 2
+
+      "#{value.first(7)}...#{value.last(4)}"
     end
 
     private

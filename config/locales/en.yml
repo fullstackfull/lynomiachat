@@ -731,6 +731,8 @@ en:
       case_opened: "Opened %{reference} for this issue."
       case_exists: "%{reference} already covers this issue."
       case_no_account: "This issue is installation wide, so it cannot be opened as an account support case."
+      signal_updated: "Recorded."
+      signal_unchanged: "Already in that state, so nothing changed."
       signal_not_found: "That operational issue no longer exists."
     account_suspension:
       categories:

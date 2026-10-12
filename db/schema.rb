@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_11_180000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_12_091000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1593,6 +1593,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_180000) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "operations_signal_events", force: :cascade do |t|
+    t.bigint "operations_signal_id", null: false
+    t.string "event_type", null: false
+    t.bigint "actor_id"
+    t.string "actor_name", limit: 255
+    t.string "reason", limit: 500
+    t.jsonb "detail", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.index ["operations_signal_id", "created_at"], name: "index_operations_signal_events_on_signal_and_created_at"
+  end
+
   create_table "operations_signals", force: :cascade do |t|
     t.bigint "account_id"
     t.string "source", null: false
@@ -1609,10 +1620,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_180000) do
     t.bigint "support_ticket_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "acknowledged_at"
+    t.bigint "acknowledged_by_id"
+    t.datetime "suppressed_until"
+    t.string "suppression_reason", limit: 500
+    t.bigint "suppressed_by_id"
     t.index "COALESCE(account_id, (0)::bigint), source, COALESCE(subject_type, ''::character varying), COALESCE(subject_id, (0)::bigint), signal", name: "index_operations_signals_on_open_identity", unique: true, where: "(resolved_at IS NULL)"
     t.index ["account_id", "last_seen_at"], name: "index_operations_signals_on_account_open", order: { last_seen_at: :desc }, where: "(resolved_at IS NULL)"
+    t.index ["acknowledged_at", "last_seen_at"], name: "index_operations_signals_on_unacknowledged", order: { last_seen_at: :desc }, where: "((resolved_at IS NULL) AND (acknowledged_at IS NULL))"
     t.index ["last_seen_at"], name: "index_operations_signals_on_open_feed", order: :desc, where: "(resolved_at IS NULL)"
     t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
+    t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
   end
 
   create_table "platform_app_permissibles", force: :cascade do |t|
@@ -1998,6 +2016,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_11_180000) do
   add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
+  add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
   add_foreign_key "support_ticket_events", "accounts", on_delete: :cascade

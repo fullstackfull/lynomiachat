@@ -1,0 +1,130 @@
+<%#
+  The operator work list (docs/product-refinement/07-operations-control-center-v2.md §3).
+
+  Every element on this page answers an operational question. The tab counts say where the work is; the rows
+  say what it is, who it affects and how long it has been waiting; each row links to the one place an operator
+  can act. There is no decorative chart.
+%>
+<% content_for(:page_title) { 'Operations — Queue' } %>
+
+<section class="p-6">
+  <header class="mb-4">
+    <h1 class="text-xl font-medium text-slate-900">Attention queue</h1>
+    <p class="text-sm text-slate-600 mt-1">
+      Open problems that need a human, worst first. Within one severity the stalest is on top &mdash; that is
+      the one being neglected.
+    </p>
+  </header>
+
+  <%= render 'tabs' %>
+
+  <% counts = @queue.counts %>
+  <nav class="flex flex-wrap gap-2 mb-5" role="navigation" aria-label="Queue views">
+    <% @queue.filter_options[:views].each do |name| %>
+      <% active = @queue.view == name %>
+      <%= link_to queue_super_admin_operations_path(request.query_parameters.merge(view: name, page: nil)),
+                  class: "inline-flex items-center gap-2 border rounded-md px-3 py-1.5 text-sm #{active ? 'border-woot-500 text-woot-500 bg-woot-25' : 'border-slate-200 text-slate-700 hover:border-woot-300'}" do %>
+        <span><%= name.humanize %></span>
+        <span class="text-xs font-medium <%= active ? 'text-woot-500' : 'text-slate-500' %>"><%= counts[name] %></span>
+      <% end %>
+    <% end %>
+  </nav>
+
+  <%= form_with url: queue_super_admin_operations_path, method: :get, class: 'flex flex-wrap items-end gap-3 mb-5' do |form| %>
+    <%= form.hidden_field :view, value: @queue.view %>
+    <div>
+      <%= form.label :q, 'Search', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.text_field :q, value: params[:q], placeholder: 'account, signal, error code',
+                          class: 'border border-slate-200 rounded-md px-2 py-1 text-sm w-64' %>
+    </div>
+    <div>
+      <%= form.label :severity, 'Severity', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.select :severity, options_for_select([['Any', '']] + @queue.filter_options[:severities].map { |s| [s.humanize, s] }, params[:severity]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :source, 'Area', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.select :source, options_for_select([['Any', '']] + @queue.filter_options[:sources].map { |s| [s.humanize, s] }, params[:source]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :account_id, 'Account id', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.text_field :account_id, value: params[:account_id],
+                          class: 'border border-slate-200 rounded-md px-2 py-1 text-sm w-28' %>
+    </div>
+    <%= form.submit 'Apply', class: 'bg-woot-500 text-white rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+    <%= link_to 'Clear', queue_super_admin_operations_path(view: @queue.view), class: 'text-sm text-slate-600 px-2 py-1.5' %>
+  <% end %>
+
+  <% if @queue.signals.empty? %>
+    <div class="border border-slate-200 rounded-lg p-8 text-center">
+      <p class="text-sm font-medium text-slate-900">Nothing in this view.</p>
+      <p class="text-sm text-slate-600 mt-1">
+        <%# An empty queue is only good news for the views that mean "unhandled work". For the others it just
+            means nothing is in that state, so the copy does not congratulate anybody. %>
+        <% if @queue.view == 'needs_action' %>
+          Every open warning and critical signal has been acknowledged or deliberately suppressed.
+          That is not the same as nothing being wrong &mdash; check Overview for areas reporting
+          <em>unknown</em>.
+        <% else %>
+          No signal is currently in this state.
+        <% end %>
+      </p>
+    </div>
+  <% else %>
+    <div class="border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="text-start font-medium px-3 py-2">Signal</th>
+            <th class="text-start font-medium px-3 py-2">Account</th>
+            <th class="text-start font-medium px-3 py-2">Severity</th>
+            <th class="text-start font-medium px-3 py-2">Handling</th>
+            <th class="text-start font-medium px-3 py-2">Seen</th>
+            <th class="text-start font-medium px-3 py-2">Case</th>
+            <th class="px-3 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @queue.signals.each do |signal| %>
+            <tr class="border-t border-slate-100 align-top">
+              <td class="px-3 py-2">
+                <div class="font-medium text-slate-900"><%= signal.signal.humanize %></div>
+                <div class="text-xs text-slate-500"><%= signal.source.humanize %></div>
+                <% if signal.reason.present? %>
+                  <div class="text-xs text-slate-600 mt-1 max-w-md"><%= signal.reason %></div>
+                <% end %>
+              </td>
+              <td class="px-3 py-2">
+                <% if signal.account %>
+                  <%= link_to signal.account.name, super_admin_account_path(signal.account), class: 'text-woot-500' %>
+                  <div class="text-xs text-slate-500">#<%= signal.account_id %></div>
+                <% else %>
+                  <span class="text-xs text-slate-500">Installation wide</span>
+                <% end %>
+              </td>
+              <td class="px-3 py-2"><%= render 'severity_badge', severity: signal.severity %></td>
+              <td class="px-3 py-2"><%= render 'handling_badge', state: signal.handling_state %></td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                <div><%= time_ago_in_words(signal.last_seen_at) %> ago</div>
+                <div class="text-slate-500"><%= pluralize(signal.occurrences, 'time') %></div>
+              </td>
+              <td class="px-3 py-2 text-xs">
+                <% if signal.support_ticket %>
+                  <span class="text-slate-700"><%= signal.support_ticket.reference %></span>
+                <% else %>
+                  <span class="text-slate-400">&mdash;</span>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-end">
+                <%= link_to 'Open', signal_super_admin_operations_path(id: signal.id), class: 'text-woot-500' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4"><%= paginate @queue.signals, theme: 'administrate' rescue nil %></div>
+  <% end %>
+</section>

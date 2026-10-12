@@ -28,8 +28,36 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
     @status = params[:status].presence || 'open'
   end
 
-  # The one mutation on this page. Opening a case for an issue that already has an active one surfaces that case
-  # instead of creating a second, which is what stops an operator generating duplicate case spam from a refresh.
+  # ---- Control Center V2 (docs/product-refinement/07-operations-control-center-v2.md)
+
+  # The operator work list: what needs a human, worst first.
+  def queue
+    @queue = Operations::AttentionQueue.new(params: queue_params)
+  end
+
+  # One incident, in full: what it is, who it affects, its history, and what an operator may safely do about it.
+  def signal
+    @signal = Operations::Signal.includes(:account, :support_ticket).find_by(id: params[:id])
+    return redirect_to(queue_super_admin_operations_path, alert: t('super_admin.operations.signal_not_found')) if @signal.nil?
+
+    @events = @signal.events.to_a
+  end
+
+  def acknowledge_signal
+    with_signal { |lifecycle| lifecycle.acknowledge(reason: params[:reason]) }
+  end
+
+  def suppress_signal
+    with_signal { |lifecycle| lifecycle.suppress(until_time: params[:suppressed_until], reason: params[:reason]) }
+  end
+
+  def resume_signal
+    with_signal(&:resume)
+  end
+
+  # The one mutation this page had before V2. Opening a case for an issue that already has an active one
+  # surfaces that case instead of creating a second, which is what stops an operator generating duplicate case
+  # spam from a refresh.
   def open_case
     signal = Operations::Signal.find_by(id: params[:signal_id])
     return redirect_to(issues_super_admin_operations_path, alert: t('super_admin.operations.signal_not_found')) if signal.nil?
@@ -39,6 +67,35 @@ class SuperAdmin::OperationsController < SuperAdmin::ApplicationController
   end
 
   private
+
+  # Every operator mutation goes through here, so authorization, the actor, the not-found answer and the
+  # invalid-input answer are decided once rather than per action.
+  #
+  # `current_super_admin` is the actor, passed EXPLICITLY into the lifecycle service. Nothing infers it: the
+  # `audited` gem's Sweeper resolves an actor through Devise's `:user` scope while this surface authenticates
+  # under `:super_admin`, so an inferred actor would be nil or the wrong person
+  # (docs/product-refinement/08-security-performance.md §audit).
+  #
+  # The signal is looked up by id with no account scoping, which is correct and deliberate on this surface:
+  # Operations is installation-wide and an operator works across accounts. The boundary that matters here is
+  # `authenticate_super_admin!`, applied by SuperAdmin::ApplicationController to every action, and a request
+  # spec asserts that a tenant administrator and a tenant agent both bounce off it.
+  def with_signal
+    signal = Operations::Signal.find_by(id: params[:id])
+    return redirect_to(queue_super_admin_operations_path, alert: t('super_admin.operations.signal_not_found')) if signal.nil?
+
+    changed = yield Operations::SignalLifecycle.new(signal: signal, actor: current_super_admin)
+    redirect_to signal_super_admin_operations_path(id: signal.id),
+                notice: t(changed ? 'super_admin.operations.signal_updated' : 'super_admin.operations.signal_unchanged')
+  rescue Operations::SignalLifecycle::InvalidAction => e
+    redirect_to signal_super_admin_operations_path(id: signal&.id), alert: e.message
+  end
+
+  # Explicitly listed, so a parameter nobody declared cannot reach a query. The queue validates each value
+  # against the model's own allow-lists and ignores anything else.
+  def queue_params
+    params.permit(:view, :severity, :source, :signal, :account_id, :since_days, :q, :page, :per_page)
+  end
 
   def filtered_signals
     case params[:status]

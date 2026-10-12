@@ -44,6 +44,12 @@ class Operations::Signal < ApplicationRecord
   belongs_to :subject, polymorphic: true, optional: true
   belongs_to :support_ticket, class_name: 'Support::Ticket', optional: true
 
+  # The incident lifecycle: what happened to this signal, in order, machine events and operator ones together
+  # (custom/app/models/operations/signal_event.rb).
+  has_many :events, -> { oldest_first }, class_name: 'Operations::SignalEvent',
+                                         foreign_key: :operations_signal_id, dependent: :destroy,
+                                         inverse_of: :signal
+
   validates :source, inclusion: { in: SOURCES }
   validates :signal, inclusion: { in: SIGNALS }
   validates :subject_type, inclusion: { in: SUBJECT_TYPES }, allow_nil: true
@@ -57,7 +63,35 @@ class Operations::Signal < ApplicationRecord
   scope :recent_first, -> { order(last_seen_at: :desc, id: :desc) }
   scope :needing_attention, -> { open_signals.where(severity: [:warning, :critical]) }
 
+  # ---- the operator-handling layer (docs/product-refinement/07-operations-control-center-v2.md §2)
+  #
+  # These describe what an OPERATOR decided, not what the product observed. The two-state rule above is
+  # untouched: acknowledging resolves nothing and suppressing hides no fact. Both are only meaningful while the
+  # signal is open, which is why every scope here composes with `open_signals`.
+  scope :acknowledged, -> { where.not(acknowledged_at: nil) }
+  scope :unacknowledged, -> { where(acknowledged_at: nil) }
+  # Suppression is time-bounded on purpose, so a lapsed suppression needs no sweep to come back: the predicate
+  # itself stops matching the moment the clock passes it.
+  scope :suppressed, ->(now = Time.current) { where(suppressed_until: now..) }
+  scope :not_suppressed, ->(now = Time.current) { where(suppressed_until: nil).or(where(suppressed_until: ...now)) }
+
+  # The default operator queue: an open problem that matters, that nobody has picked up, and that nobody has
+  # deliberately silenced.
+  scope :attention_queue, -> { needing_attention.unacknowledged.not_suppressed }
+
   def open? = resolved_at.nil?
+  def acknowledged? = acknowledged_at.present?
+  def suppressed?(now = Time.current) = suppressed_until.present? && suppressed_until > now
+
+  # What the queue calls this signal right now. Derived, never stored: a stored status would have to be swept
+  # when a suppression lapses, and a sweep that falls behind is how a silenced problem stays silent.
+  def handling_state(now = Time.current)
+    return 'resolved' unless open?
+    return 'suppressed' if suppressed?(now)
+    return 'acknowledged' if acknowledged?
+
+    'needs_action'
+  end
 
   # The identity a reader and the support-case bridge both key on. Mirrors the partial unique index.
   def identity

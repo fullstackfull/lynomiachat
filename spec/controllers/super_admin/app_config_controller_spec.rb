@@ -57,43 +57,20 @@ RSpec.describe 'Super Admin Application Config API', type: :request do
         expect(flash[:notice]).to be_blank
       end
 
-      it 'rejects invalid Shopify Partner configuration before persisting any submitted value' do
-        create(:installation_config, name: 'SHOPIFY_PARTNER_ORGANIZATION_ID', value: '123', locked: false)
+      # The two Shopify Partner API validation examples that lived here went with the legacy Shopify
+      # integration (docs/product-refinement/02-shopify-retirement.md §2.3). The credentials they validated are
+      # no longer product configuration and no runtime code ever read them. What replaces them is the property
+      # that matters now: this form owns a closed set of keys per config page, so a legacy key submitted into
+      # it is dropped rather than written.
+      it 'drops a submitted key that the requested config page does not own' do
         sign_in(super_admin, scope: :super_admin)
 
-        post '/super_admin/app_config?config=shopify',
-             params: {
-               app_config: {
-                 SHOPIFY_PARTNER_ORGANIZATION_ID: 'not-numeric',
-                 SHOPIFY_PARTNER_APP_ID: 'gid://shopify/App/456',
-                 SHOPIFY_PARTNER_ACCESS_TOKEN: 'partner-token',
-                 SHOPIFY_PARTNER_API_VERSION: '2026-07'
-               }
-             }
-
-        expect(response).to redirect_to(super_admin_app_config_path(config: 'shopify'))
-        expect(flash[:alert]).to eq('SHOPIFY_PARTNER_ORGANIZATION_ID must be numeric')
-        expect(GlobalConfig.get('SHOPIFY_PARTNER_ORGANIZATION_ID')['SHOPIFY_PARTNER_ORGANIZATION_ID']).to eq('123')
-        expect(GlobalConfig.get('SHOPIFY_PARTNER_APP_ID')['SHOPIFY_PARTNER_APP_ID']).to be_nil
-      end
-
-      it 'validates a partial Shopify Partner update against the saved configuration' do
-        {
-          'SHOPIFY_PARTNER_ORGANIZATION_ID' => '123',
-          'SHOPIFY_PARTNER_APP_ID' => 'gid://shopify/App/456',
-          'SHOPIFY_PARTNER_ACCESS_TOKEN' => 'partner-token',
-          'SHOPIFY_PARTNER_API_VERSION' => '2026-07'
-        }.each do |name, value|
-          create(:installation_config, name: name, value: value, locked: false)
-        end
-        sign_in(super_admin, scope: :super_admin)
-
-        post '/super_admin/app_config?config=shopify',
-             params: { app_config: { SHOPIFY_PARTNER_API_VERSION: '2026-10' } }
+        post '/super_admin/app_config?config=shopify_commerce',
+             params: { app_config: { SHOPIFY_COMMERCE_CLIENT_ID: 'commerce-id', SHOPIFY_CLIENT_ID: 'hijacked' } }
 
         expect(response).to redirect_to(super_admin_settings_path)
-        expect(flash[:alert]).to be_blank
-        expect(GlobalConfig.get('SHOPIFY_PARTNER_API_VERSION')['SHOPIFY_PARTNER_API_VERSION']).to eq('2026-10')
+        expect(GlobalConfig.get('SHOPIFY_COMMERCE_CLIENT_ID')['SHOPIFY_COMMERCE_CLIENT_ID']).to eq('commerce-id')
+        expect(GlobalConfig.get('SHOPIFY_CLIENT_ID')['SHOPIFY_CLIENT_ID']).to be_nil
       end
     end
   end

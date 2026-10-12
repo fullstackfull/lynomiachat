@@ -280,11 +280,28 @@ Two correctness points came with it:
 `ActionCableListener` broadcasts and the websocket path feeds the same mutation. The action now speaks that
 shape rather than a second one.
 
-### 4.3 What was deliberately not added
+### 4.3 What is still true, and is not a guard worth adding
 
-A non-finite guard in `SET_NOTIFICATIONS_UNREAD_COUNT`. With the arithmetic moved into the module, every
-remaining caller passes a number from state or from the API, so there is no reachable path that produces
-NaN — and a guard there would hide the next version of this bug instead of failing on it.
+**A non-finite guard in `SET_NOTIFICATIONS_UNREAD_COUNT` was deliberately not added.** With the arithmetic
+moved into the module, every remaining writer passes a number: the initial state is `0`;
+`SET_NOTIFICATIONS_META` and `SET_NOTIFICATIONS_UNREAD_COUNT` take server integers; and
+`ADD_NOTIFICATION`, `UPDATE_NOTIFICATION` and `DELETE_NOTIFICATION` take `unread_count` from
+`ActionCableListener`, which computes it from `NotificationFinder` on all three broadcasts (`:4-29` — checked,
+including `notification_deleted`, which is the one the websocket path feeds into the same mutation this fix
+touches). So there is no reachable path that produces `NaN`, and a guard there would hide the next version of
+this bug instead of failing on it.
+
+**The fix is correct but not race-free, and that is worth stating rather than implying otherwise.** The
+server broadcasts `NOTIFICATION_DELETED` to the deleting user's own pubsub token, so if that broadcast lands
+while the HTTP `DELETE` is still in flight, the mutation runs twice: once with the server's authoritative
+count, once with `state.meta.unreadCount - 1` computed after it. The result is a transient off-by-one, floored
+at zero, which the next `notifications/unReadCount` dispatch repairs.
+
+That race is inherent in having two sources of truth for one counter, not something this change introduced —
+the old code was subject to it too, and resolved it by destroying the count either way. Capturing the counts
+*before* the await would not fix it; it would make the stale pre-await value win over the server's. The real
+closure is for the websocket to own the counter and the action to own only the record, which is a larger
+change to how the module is fed and is not in scope here.
 
 ## 5. Three Operations console defects, and why no spec saw them
 

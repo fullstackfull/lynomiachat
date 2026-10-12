@@ -136,11 +136,15 @@ moves after the search; both Operations console examples fail against the old te
 notification-badge defect was reproduced by driving the real mutations with the real payloads before the fix
 was written.
 
-**N. Do the Ruby suites pass?**
-Yes. 965 examples, 0 failures, 3 pending across `spec/requests/documentation`,
+**N. Do the suites pass?**
+Both, measured on the final tree.
+
+*Ruby:* 965 examples, 0 failures, 3 pending across `spec/requests/documentation`,
 `spec/controllers/super_admin`, `spec/services/operations`, `spec/models/operations`,
 `spec/requests/operations`, `spec/services/commerce`, `spec/models/commerce`, `spec/services/notifications`,
 `spec/finders` and `spec/lib/tasks`. The 3 pending are pre-existing MFA-environment skips.
+
+*JavaScript:* the **whole** suite, not a subset — `pnpm vitest run`, 494 files, 5,339 tests, 0 failures.
 
 **O. Does the production build pass?**
 Yes. `vite build --mode production` completes; build artifacts were discarded rather than committed.

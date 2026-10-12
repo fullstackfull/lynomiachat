@@ -652,4 +652,5 @@ Rails.application.routes.draw do
   draw :support
   draw :operations
   draw :documentation
+  draw :platform_support
 end

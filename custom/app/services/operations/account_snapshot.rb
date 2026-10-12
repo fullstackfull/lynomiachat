@@ -158,17 +158,28 @@ class Operations::AccountSnapshot
     }
   end
 
-  # The account's support history, and THE SEAM the Platform Support Desk plugs into.
+  # The account's support history, and THE SEAM the Platform Support Desk plugs into -- now taken.
   #
-  # Platform Support is deliberately not implemented here (docs/platform-support/11-approved-decisions.md): that
-  # phase is frozen at discovery. What this phase owes it is a place to arrive, and this is it -- the one method
-  # that answers "what support history does this account have". A Platform Support ticket count becomes one
-  # more key in this hash and one more line in the view's support block; no other file changes, because nothing
-  # else in the console asks that question, and the view renders this section from named keys rather than from
-  # whatever happens to be in the hash.
+  # `active` and `overdue` are the account's OWN helpdesk: cases they are working for their own end users.
+  # `platform_support` is the other direction entirely -- complaints this account has raised with Lynomia -- and
+  # it is one key, as this method's comment said it would be: an open-ticket count plus where the operator goes
+  # to read them. Nothing else in the console asks that question, and the view renders this section from named
+  # keys rather than from whatever happens to be in the hash.
   def support
     cases = Support::Ticket.where(account_id: @account.id)
-    { active: cases.active.count, overdue: cases.overdue.count }
+    { active: cases.active.count, overdue: cases.overdue.count, platform_support: platform_support }
+  end
+
+  # ONE grouped count, so this stays flat in the number of tickets the account has raised -- the same budget
+  # every other collection on this page keeps. `queue_path` is the staff queue filtered to this account, which
+  # is the only Platform Support read the operator needs from here: the desk is where the thread lives, and
+  # re-rendering a thread on this page would be a second console.
+  def platform_support
+    by_status = PlatformSupport::Ticket.where(account_id: @account.id).group(:status).count
+    {
+      open: by_status.slice(*PlatformSupport::Ticket::OPEN_STATUSES).values.sum,
+      queue_path: "/super_admin/platform_support?account_id=#{@account.id}"
+    }
   end
 
   # What Lynomia's own operators have recently done about this account, read from the incident timeline rather

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_12_101000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_13_000005) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1674,6 +1674,102 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_12_101000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "platform_support_agents", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.integer "role", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.string "display_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_platform_support_agents_on_user_id", unique: true
+  end
+
+  create_table "platform_support_events", force: :cascade do |t|
+    t.bigint "platform_support_ticket_id", null: false
+    t.string "event_type", null: false
+    t.string "actor_type"
+    t.bigint "actor_id"
+    t.string "actor_name"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.index ["platform_support_ticket_id", "created_at"], name: "index_platform_support_events_on_ticket_and_created_at"
+  end
+
+  create_table "platform_support_internal_notes", force: :cascade do |t|
+    t.bigint "platform_support_ticket_id", null: false
+    t.bigint "agent_id", null: false
+    t.string "author_name", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_id"], name: "index_platform_support_notes_on_agent"
+    t.index ["platform_support_ticket_id", "created_at"], name: "index_platform_support_notes_on_ticket_and_created_at"
+  end
+
+  create_table "platform_support_messages", force: :cascade do |t|
+    t.bigint "platform_support_ticket_id", null: false
+    t.string "author_type", null: false
+    t.bigint "author_id"
+    t.string "author_name", null: false
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["platform_support_ticket_id", "created_at"], name: "index_platform_support_messages_on_ticket_and_created_at"
+  end
+
+  create_table "platform_support_sla_policies", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "description"
+    t.bigint "billing_plan_id"
+    t.integer "first_response_time_threshold"
+    t.integer "resolution_time_threshold"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "((billing_plan_id IS NULL))", name: "index_platform_support_sla_policies_on_default", unique: true, where: "(billing_plan_id IS NULL)"
+    t.index ["billing_plan_id"], name: "index_platform_support_sla_policies_on_plan", unique: true, where: "(billing_plan_id IS NOT NULL)"
+  end
+
+  create_table "platform_support_tickets", force: :cascade do |t|
+    t.integer "reference_number", null: false
+    t.bigint "account_id"
+    t.string "account_name_at_creation", null: false
+    t.bigint "reporter_id"
+    t.string "reporter_name", null: false
+    t.string "category", default: "other", null: false
+    t.string "subject", null: false
+    t.text "description"
+    t.integer "status", default: 0, null: false
+    t.integer "priority", default: 1, null: false
+    t.bigint "assignee_id"
+    t.bigint "sla_policy_id"
+    t.bigint "plan_id_at_creation"
+    t.string "plan_name_at_creation"
+    t.string "subscription_status_at_creation"
+    t.datetime "first_response_due_at"
+    t.datetime "resolution_due_at"
+    t.datetime "first_responded_at"
+    t.datetime "first_response_breached_at"
+    t.datetime "resolution_breached_at"
+    t.datetime "sla_paused_at"
+    t.integer "sla_paused_seconds", default: 0, null: false
+    t.datetime "last_customer_message_at"
+    t.datetime "last_operator_message_at"
+    t.datetime "customer_last_viewed_at"
+    t.datetime "last_activity_at", null: false
+    t.datetime "resolved_at"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "last_activity_at"], name: "index_platform_support_tickets_on_account_and_activity", order: { last_activity_at: :desc }
+    t.index ["assignee_id", "status"], name: "index_platform_support_tickets_on_assignee_and_status"
+    t.index ["first_response_due_at"], name: "index_platform_support_tickets_on_awaiting_first_response", where: "((first_response_due_at IS NOT NULL) AND (first_responded_at IS NULL) AND (first_response_breached_at IS NULL) AND (status < 4))"
+    t.index ["reference_number"], name: "index_platform_support_tickets_on_reference", unique: true
+    t.index ["resolution_due_at"], name: "index_platform_support_tickets_on_open_resolution_due", where: "((resolution_due_at IS NOT NULL) AND (resolution_breached_at IS NULL) AND (status < 4))"
+    t.index ["status", "priority", "last_activity_at"], name: "index_platform_support_tickets_on_queue_order", order: { last_activity_at: :desc }
+    t.index ["status"], name: "index_platform_support_tickets_on_unassigned", where: "((assignee_id IS NULL) AND (status < 4))"
+  end
+
   create_table "portals", force: :cascade do |t|
     t.integer "account_id"
     t.string "name", null: false
@@ -2036,6 +2132,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_12_101000) do
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
+  add_foreign_key "platform_support_agents", "users", on_delete: :cascade
+  add_foreign_key "platform_support_events", "platform_support_tickets", on_delete: :cascade
+  add_foreign_key "platform_support_internal_notes", "platform_support_agents", column: "agent_id"
+  add_foreign_key "platform_support_internal_notes", "platform_support_tickets", on_delete: :cascade
+  add_foreign_key "platform_support_messages", "platform_support_tickets", on_delete: :cascade
+  add_foreign_key "platform_support_sla_policies", "billing_plans", on_delete: :nullify
+  add_foreign_key "platform_support_tickets", "accounts", on_delete: :nullify
+  add_foreign_key "platform_support_tickets", "billing_plans", column: "plan_id_at_creation", on_delete: :nullify
+  add_foreign_key "platform_support_tickets", "platform_support_agents", column: "assignee_id", on_delete: :nullify
+  add_foreign_key "platform_support_tickets", "platform_support_sla_policies", column: "sla_policy_id", on_delete: :nullify
+  add_foreign_key "platform_support_tickets", "users", column: "reporter_id", on_delete: :nullify
   add_foreign_key "support_ticket_events", "accounts", on_delete: :cascade
   add_foreign_key "support_ticket_events", "support_tickets", on_delete: :cascade
   add_foreign_key "support_ticket_events", "users", on_delete: :nullify

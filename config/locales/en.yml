@@ -253,6 +253,17 @@ en:
       unsupported_sort: "'%{sort}' is not a ticket sort order. Allowed: %{allowed}."
       unknown_filter_value: "No %{filter} with id '%{value}' in this account."
       invalid_limit: "limit must be a whole number between 1 and %{maximum}, got '%{limit}'."
+    platform_support:
+      invalid_status_transition: "You cannot move this ticket from '%{from}' to '%{to}'. Allowed: %{allowed}."
+      unsupported_category: "'%{category}' is not a support category. Allowed: %{allowed}."
+      unsupported_status: "'%{status}' is not a support ticket status. Allowed: %{allowed}."
+      unsupported_priority: "'%{priority}' is not a support ticket priority. Allowed: %{allowed}."
+      unknown_filter_value: "The value given for '%{filter}' is not one this list accepts: '%{value}'."
+      invalid_limit: "per_page must be a whole number between 1 and %{maximum}, got '%{limit}'."
+      ticket_closed: "This ticket is closed. Open a new one."
+      attachment_type_rejected: "'%{content_type}' files cannot be attached. Accepted types: %{allowed}."
+      attachment_too_large: "'%{filename}' is larger than the %{maximum} limit for one file."
+      too_many_attachments: "A message may carry at most %{maximum} files."
     custom_filters:
       number_of_records: Limit reached. The maximum number of allowed custom filters for a user per account is 1000.
       used_by_automation: This audience is used by %{count} automation rules. Remove it from those rules first.
@@ -379,6 +390,52 @@ en:
       sla_missed_resolution: 'SLA target resolution missed for conversation (#%{display_id})'
     attachment: 'Attachment'
     no_content: 'No content'
+  # Platform Support Desk (docs/platform-support/12 §2, §7). English only: every other locale comes through
+  # Crowdin and the community.
+  #
+  # Each string below names the interpolations it uses, because the mailers that supply them live in a
+  # different file: a key that reads an interpolation its caller does not pass raises at send time rather than
+  # rendering blank.
+  platform_support:
+    mailer:
+      shared:
+        view_ticket: 'View ticket'
+        open_in_desk: 'Open in the support desk'
+        operator_context: 'Account context'
+        no_plan: 'No plan on record'
+      # Customer-facing. Interpolations: reference, subject.
+      ticket_created:
+        subject: '[%{reference}] We have your request: %{subject}'
+        heading: 'We have your request'
+        body: 'A Lynomia engineer will pick this up. Reply in the thread if there is anything to add.'
+      operator_replied:
+        subject: '[%{reference}] Lynomia replied: %{subject}'
+        heading: 'Lynomia replied'
+        body: 'There is a new reply on your ticket. Open it to read the thread and respond.'
+      ticket_resolved:
+        subject: '[%{reference}] Resolved: %{subject}'
+        heading: 'Marked resolved'
+        body: 'We believe this is fixed. Reply here if it is not, and the ticket reopens.'
+      waiting_on_customer:
+        subject: '[%{reference}] We need something from you: %{subject}'
+        heading: 'We need something from you'
+        body: 'This ticket is waiting on your reply. Open it to see what we have asked for.'
+      # Operator-facing. Interpolations: reference, subject, account.
+      new_ticket:
+        subject: '[%{reference}] New ticket from %{account}: %{subject}'
+        heading: 'New support ticket'
+      new_ticket_urgent:
+        subject: '[%{reference}] URGENT ticket from %{account}: %{subject}'
+        heading: 'Urgent support ticket'
+      customer_replied:
+        subject: '[%{reference}] Customer replied: %{subject}'
+        heading: 'Customer replied'
+      sla_first_response_breached:
+        subject: '[%{reference}] First response target missed: %{subject}'
+        heading: 'First response target missed'
+      sla_resolution_breached:
+        subject: '[%{reference}] Resolution target missed: %{subject}'
+        heading: 'Resolution target missed'
   conversations:
     captain:
       handoff: 'Transferring to another agent for further assistance.'

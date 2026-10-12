@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAccount } from 'dashboard/composables/useAccount';
@@ -110,13 +110,16 @@ const fetch = async () => {
   }
 };
 
+// The page lives in the URL, so the footer navigates and ONE watcher refetches. Calling fetch() beside the
+// push would read the page the address bar still had: router.push resolves after this tick.
 const setPage = nextPage => {
   router.push({
     name: 'platform_support_tickets_index',
     query: { ...route.query, page: nextPage },
   });
-  fetch();
 };
+
+watch(page, () => fetch());
 
 onMounted(fetch);
 </script>

@@ -211,6 +211,36 @@ describe('PlatformSupportIndexPage', () => {
     );
   });
 
+  it('re-reads the list when the page in the URL changes, not before', async () => {
+    PlatformSupportAPI.getTickets.mockResolvedValue(
+      listResponse([ticket()], { total_entries: 60 })
+    );
+
+    const wrapper = mountPage();
+    await flushPromises();
+    expect(PlatformSupportAPI.getTickets).toHaveBeenCalledTimes(1);
+
+    wrapper
+      .findComponent({ name: 'PaginationFooter' })
+      .vm.$emit('update:currentPage', 2);
+    await flushPromises();
+
+    // The footer navigates; it does not fetch. The fetch follows the URL.
+    expect(push).toHaveBeenCalledWith({
+      name: 'platform_support_tickets_index',
+      query: { page: 2 },
+    });
+    expect(PlatformSupportAPI.getTickets).toHaveBeenCalledTimes(1);
+
+    routeQuery.value = { page: '2' };
+    await flushPromises();
+
+    expect(PlatformSupportAPI.getTickets).toHaveBeenLastCalledWith(
+      { page: 2, per_page: PLATFORM_SUPPORT_PAGE_SIZE },
+      expect.anything()
+    );
+  });
+
   it('renders no documentation link at all when the installation has none', async () => {
     PlatformSupportAPI.getTickets.mockResolvedValue(listResponse([ticket()]));
 

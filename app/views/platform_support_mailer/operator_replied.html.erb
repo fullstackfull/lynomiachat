@@ -1,0 +1,3 @@
+<p><%= t('platform_support.mailer.operator_replied.heading', reference: @ticket.reference) %></p>
+<p><%= t('platform_support.mailer.operator_replied.body', subject: @ticket.subject) %></p>
+<p><a href="<%= ticket_url(@ticket) %>"><%= t('platform_support.mailer.shared.view_ticket') %></a></p>

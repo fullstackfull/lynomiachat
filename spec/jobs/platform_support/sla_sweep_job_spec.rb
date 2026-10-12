@@ -5,7 +5,7 @@ RSpec.describe PlatformSupport::SlaSweepJob do
   let(:account) { create(:account) }
   let(:policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Synthetic', first_response_time_threshold: 60,
-                                      resolution_time_threshold: 180)
+                                       resolution_time_threshold: 180)
   end
 
   it 'runs on the housekeeping queue' do

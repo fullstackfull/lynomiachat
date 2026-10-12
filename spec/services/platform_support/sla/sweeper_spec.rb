@@ -9,7 +9,7 @@ RSpec.describe PlatformSupport::Sla::Sweeper do
   let(:account) { create(:account) }
   let(:policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Synthetic', first_response_time_threshold: 60,
-                                      resolution_time_threshold: 180)
+                                       resolution_time_threshold: 180)
   end
   let(:now) { Time.zone.parse('2026-03-05 09:00:00 UTC') }
 

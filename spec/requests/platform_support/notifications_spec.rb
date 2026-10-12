@@ -120,7 +120,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
 
     it 'denies a type that is not on the allow-list even when its id would resolve' do
       row = dangling_row(administrator, type: 'Account', id: account.id,
-                         notification_type: 'conversation_assignment')
+                                        notification_type: 'conversation_assignment')
 
       expect(visibility(administrator).permits?(row)).to be false
       expect(visibility(administrator).narrow(administrator.notifications)).not_to include(row)
@@ -192,7 +192,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
 
     it 'does not authorize a conversation row because a readable TICKET shares its id' do
       row = dangling_row(reporter, type: 'Conversation', id: ticket.id,
-                         notification_type: 'conversation_assignment')
+                                   notification_type: 'conversation_assignment')
 
       expect(visibility(reporter).permits?(row)).to be false
       expect(visibility(reporter).narrow(reporter.notifications)).not_to include(row)
@@ -296,7 +296,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
     # conversation notification that happens to share the ticket's id.
     it 'does not destroy a conversation notification that shares the ticket id' do
       conversation_row = dangling_row(reporter, type: 'Conversation', id: ticket.id,
-                                      notification_type: 'conversation_assignment')
+                                                notification_type: 'conversation_assignment')
 
       perform_enqueued_jobs do
         PlatformSupport::Notifications::ReplyNotifier.new(ticket: ticket).perform
@@ -309,7 +309,9 @@ RSpec.describe 'Platform Support notifications', type: :request do
     it 'does not destroy the same user row in another account' do
       create(:account_user, account: other_account, user: reporter, role: 'administrator')
       elsewhere = dangling_row(reporter, type: 'PlatformSupport::Ticket', id: ticket.id)
-      elsewhere.update_columns(account_id: other_account.id)
+      # Straight to the column: the point is a row in ANOTHER account about the same actor, which no
+      # application path would write, and which the dedup job must leave alone.
+      elsewhere.update_columns(account_id: other_account.id) # rubocop:disable Rails/SkipsModelValidations
 
       perform_enqueued_jobs do
         PlatformSupport::Notifications::ReplyNotifier.new(ticket: ticket).perform

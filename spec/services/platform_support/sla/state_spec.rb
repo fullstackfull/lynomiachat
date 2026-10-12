@@ -7,7 +7,7 @@ RSpec.describe PlatformSupport::Sla::State do
   let(:account) { create(:account) }
   let(:policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Synthetic', first_response_time_threshold: 60,
-                                      resolution_time_threshold: 180)
+                                       resolution_time_threshold: 180)
   end
   let(:resolution_only_policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Resolution only', resolution_time_threshold: 180)

@@ -11,7 +11,7 @@ RSpec.describe PlatformSupport::Sla::Clock do
   let(:account) { create(:account) }
   let(:policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Synthetic', first_response_time_threshold: synthetic_first_response,
-                                      resolution_time_threshold: synthetic_resolution)
+                                       resolution_time_threshold: synthetic_resolution)
   end
   let(:resolution_only_policy) do
     PlatformSupport::SlaPolicy.create!(name: 'Resolution only', resolution_time_threshold: synthetic_resolution)
@@ -74,7 +74,7 @@ RSpec.describe PlatformSupport::Sla::Clock do
 
     it 'treats a non-positive threshold as no promise' do
       zeroed = PlatformSupport::SlaPolicy.create!(name: 'Zeroed', first_response_time_threshold: 0,
-                                                 resolution_time_threshold: synthetic_resolution)
+                                                  resolution_time_threshold: synthetic_resolution)
       record = ticket(sla_policy: zeroed)
 
       described_class.new(record).apply(from: now)

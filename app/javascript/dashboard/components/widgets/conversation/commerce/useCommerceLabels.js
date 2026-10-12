@@ -103,9 +103,6 @@ export function useCommerceLabels() {
   const apiErrorMessage = error => {
     const { code, reason } = error?.response?.data?.error || {};
     if (code === 'INVALID_STORE_URL' && reason) return urlError(reason);
-    if (reason === 'legacy_shopify_integration') {
-      return t('COMMERCE.ERRORS.LEGACY_SHOPIFY_CONNECTED');
-    }
     return errorMessage(code);
   };
 

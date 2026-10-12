@@ -1,23 +1,5 @@
 {
   "INTEGRATION_SETTINGS": {
-    "SHOPIFY": {
-      "HEADER": "Shopify",
-      "DELETE": {
-        "TITLE": "Delete Shopify Integration",
-        "MESSAGE": "Are you sure you want to delete the Shopify integration?"
-      },
-      "STORE_URL": {
-        "TITLE": "Connect Shopify Store",
-        "LABEL": "Store URL",
-        "PLACEHOLDER": "your-store.myshopify.com",
-        "HELP": "Enter your Shopify store's myshopify.com URL",
-        "CANCEL": "إلغاء",
-        "SUBMIT": "Connect Store",
-        "INVALID_URL": "يُرجى إدخال رابط متجر Shopify صحيح (مثال: your-store.myshopify.com)"
-      },
-      "ERROR": "There was an error connecting to Shopify. Please try again or contact support if the issue persists.",
-      "INVALID_URL": "يُرجى إدخال رابط متجر Shopify صحيح (مثال: your-store.myshopify.com)"
-    },
     "HEADER": "خيارات الربط",
     "DESCRIPTION": "Chatwoot تتكامل مع أدوات وخدمات متعددة لتحسين كفاءة فريقك. استكشف القائمة أدناه لتكوين تطبيقاتك المفضلة.",
     "LEARN_MORE": "معرفة المزيد عن التكاملات",

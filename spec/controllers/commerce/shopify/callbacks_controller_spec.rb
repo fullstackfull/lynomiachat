@@ -318,13 +318,16 @@ RSpec.describe 'Shopify Commerce OAuth callback', type: :request do
     end
   end
 
-  it 'leaves the legacy Shopify callback and its hooks untouched' do
+  # Half of this assertion changed and half did not, which is exactly the shape of the retirement
+  # (docs/product-refinement/02-shopify-retirement.md): the legacy ROUTE is gone, and the legacy ROW is not.
+  it 'leaves a leftover legacy hook untouched, and no longer routes the legacy callback' do
     hook = create(:integrations_hook, account: create(:account), app_id: 'shopify', reference_id: shop, access_token: 'legacy-token')
 
     get '/commerce/shopify/callback', params: signed.call('code' => 'shopify-code-1', 'state' => state)
 
     expect(response).to redirect_to("#{settings}?shopify=connected")
     expect(hook.reload).to have_attributes(access_token: 'legacy-token', status: 'enabled', reference_id: shop)
-    expect(Rails.application.routes.recognize_path('/shopify/callback')).to eq(controller: 'shopify/callbacks', action: 'show')
+    expect { Rails.application.routes.recognize_path('/shopify/callback') }
+      .to raise_error(ActionController::RoutingError)
   end
 end

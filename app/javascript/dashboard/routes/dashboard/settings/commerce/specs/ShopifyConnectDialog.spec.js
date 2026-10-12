@@ -162,16 +162,13 @@ describe('ShopifyConnectDialog', () => {
     expect(assign).not.toHaveBeenCalled();
   });
 
-  it('explains a store already shown through the Shopify integration', async () => {
+  it('explains a store that is already connected', async () => {
+    // `legacy_shopify_integration` was the reason here until the legacy Shopify integration was retired
+    // (docs/product-refinement/02-shopify-retirement.md §5). The code is still raised, without a reason, by
+    // Commerce::StoreConnection when the shop is already held by a connected store -- which is now the only
+    // way a Shopify shop can be refused as a duplicate.
     CommerceAPI.createShopifyConnection.mockRejectedValue({
-      response: {
-        data: {
-          error: {
-            code: 'STORE_ALREADY_CONNECTED',
-            reason: 'legacy_shopify_integration',
-          },
-        },
-      },
+      response: { data: { error: { code: 'STORE_ALREADY_CONNECTED' } } },
     });
     const wrapper = await mountDialog();
 
@@ -179,6 +176,6 @@ describe('ShopifyConnectDialog', () => {
 
     expect(
       wrapper.find('[data-test-id="shopify-connection-error"]').text()
-    ).toContain("already connected through this account's Shopify integration");
+    ).toBe('This store is already connected.');
   });
 });

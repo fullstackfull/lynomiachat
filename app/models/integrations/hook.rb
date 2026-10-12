@@ -28,7 +28,7 @@ class Integrations::Hook < ApplicationRecord
   validates :account_id, presence: true
   validates :app_id, presence: true
   validates :inbox_id, presence: true, if: -> { hook_type == 'inbox' }
-  validates :reference_id, presence: true, format: { with: Shopify::ShopDomain::FORMAT }, if: :shopify?
+  validates :reference_id, presence: true, format: { with: Commerce::Shopify::ShopDomain::FORMAT }, if: :shopify?
   validates :reference_id,
             uniqueness: { case_sensitive: false, conditions: -> { where(app_id: 'shopify') } },
             if: :shopify?
@@ -119,7 +119,7 @@ class Integrations::Hook < ApplicationRecord
   end
 
   def normalize_shopify_reference_id
-    self.reference_id = Shopify::ShopDomain.normalize(reference_id)
+    self.reference_id = Commerce::Shopify::ShopDomain.normalize(reference_id)
   end
 
   def validate_settings_json_schema

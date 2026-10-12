@@ -142,7 +142,6 @@
       "STORE_ALREADY_CONNECTED": "هذا المتجر مربوط بالفعل.",
       "PROVIDER_DISABLED": "منصة المتجر هذه متوقفة في هذا التثبيت.",
       "PROTECTED_DATA_NOT_APPROVED": "لم يوافق Shopify بعد على قراءة {installationName} لبيانات عملاء هذا المتجر (البريد والهاتف)، لذلك لا يمكن مطابقة العملاء.",
-      "LEGACY_SHOPIFY_CONNECTED": "متجر Shopify هذا مربوط بالفعل عبر تكامل Shopify في هذا الحساب. افصله من هناك أولًا، ثم اربطه هنا.",
       "GENERIC": "حدث خطأ. حاول مرة أخرى.",
       "ACTIONS_DISABLED": "إجراءات الطلبات متوقفة لهذا المتجر.",
       "ACTION_UNAVAILABLE": "هذا الإجراء غير ممكن لهذا الطلب حاليًا.",

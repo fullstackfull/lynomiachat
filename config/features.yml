@@ -171,6 +171,11 @@
   display_name: Shopify Integration
   enabled: false
   chatwoot_internal: true
+  # Retired. Lynomia has one Shopify integration and it is Lynomia Commerce
+  # (docs/product-refinement/02-shopify-retirement.md). The entry STAYS so the bitmask does not shift:
+  # bit positions are persisted per column, and removing a line silently changes which features every
+  # existing account has. `deprecated` takes it out of the UI and out of BillingPlan.assignable_features.
+  deprecated: true
 - name: search_with_gin
   display_name: Search messages with GIN
   enabled: false

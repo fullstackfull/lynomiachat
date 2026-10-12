@@ -51,7 +51,7 @@
       "ORDER_NUMBER": "#{number}",
       "COPY_NUMBER": "Copy the order number",
       "NUMBER_COPIED": "Order number copied",
-      "NUMBER_COPY_FAILED": "Couldn\u2019t copy the order number."
+      "NUMBER_COPY_FAILED": "Couldn’t copy the order number."
     },
     "OVERVIEW": {
       "TAB": "Overview",
@@ -142,7 +142,6 @@
       "STORE_ALREADY_CONNECTED": "This store is already connected.",
       "PROVIDER_DISABLED": "This store platform is turned off on this installation.",
       "PROTECTED_DATA_NOT_APPROVED": "Shopify has not approved {installationName} to read this store's customer data (email and phone) yet, so customers can't be matched.",
-      "LEGACY_SHOPIFY_CONNECTED": "This Shopify store is already connected through this account's Shopify integration. Disconnect it there first, then connect it here.",
       "GENERIC": "Something went wrong. Try again.",
       "ACTIONS_DISABLED": "Order actions are off for this store.",
       "ACTION_UNAVAILABLE": "This action isn’t possible for the order right now.",

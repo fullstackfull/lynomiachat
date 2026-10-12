@@ -20,7 +20,6 @@ import CustomAttributes from './customAttributes/CustomAttributes.vue';
 import SharedFiles from './SharedFiles.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
-import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
 import CommercePanel from 'dashboard/components/widgets/conversation/commerce/CommercePanel.vue';
 import ConversationTicketsPanel from 'dashboard/components-next/SupportTickets/ConversationTicketsPanel.vue';
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
@@ -44,15 +43,6 @@ const {
 
 const dragging = ref(false);
 const conversationSidebarItems = ref([]);
-
-const shopifyIntegration = useFunctionGetter(
-  'integrations/getIntegration',
-  'shopify'
-);
-
-const isShopifyFeatureEnabled = computed(
-  () => shopifyIntegration.value.enabled
-);
 
 const { isCloudFeatureEnabled } = useAccount();
 
@@ -269,20 +259,6 @@ onMounted(() => {
             >
               <LinearSetupCTA v-if="!isLinearConnected" />
               <LinearIssuesList v-else :conversation-id="conversationId" />
-            </AccordionItem>
-          </div>
-          <div
-            v-else-if="
-              element.name === 'shopify_orders' && isShopifyFeatureEnabled
-            "
-          >
-            <AccordionItem
-              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.SHOPIFY_ORDERS')"
-              :is-open="isContactSidebarItemOpen('is_shopify_orders_open')"
-              compact
-              @toggle="() => toggleSidebarUIState('is_shopify_orders_open')"
-            >
-              <ShopifyOrdersList :contact-id="contactId" />
             </AccordionItem>
           </div>
           <div

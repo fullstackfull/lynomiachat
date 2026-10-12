@@ -5,9 +5,8 @@
 #        "Connect with Shopify", or for "Reconnect Shopify to enable order actions" (write_orders is asked only then, and
 #        only while the installation offers Shopify order actions)
 #
-# `shop` is the shop's myshopify.com domain, validated by Shopify::ShopDomain: no other host, no scheme, port, path,
-# userinfo, query or fragment. A shop this account already shows through the legacy Shopify integration is refused, so
-# its orders never appear twice; the legacy integration itself is left as it is. The browser is sent to the shop to
+# `shop` is the shop's myshopify.com domain, validated by Commerce::Shopify::ShopDomain: no other host, no scheme, port, path,
+# userinfo, query or fragment. The browser is sent to the shop to
 # authorize the app and comes back to Commerce::Shopify::CallbacksController with a code and the signed state issued
 # here, which carries the shop. The state's nonce is also set in an encrypted HttpOnly cookie, so only this browser can
 # complete the authorization. No token ever passes through the browser.
@@ -23,9 +22,8 @@ class Api::V1::Accounts::Commerce::ShopifyConnectionsController < Api::V1::Accou
   def create
     raise ::Commerce::Error, 'ENCRYPTION_NOT_CONFIGURED' unless Chatwoot.encryption_configured?
 
-    shop = ::Shopify::ShopDomain.normalize(params[:shop])
-    raise ::Commerce::Error.new('INVALID_STORE_URL', reason: 'shopify_domain') unless ::Shopify::ShopDomain.valid?(shop)
-    raise ::Commerce::Error.new('STORE_ALREADY_CONNECTED', reason: 'legacy_shopify_integration') if legacy_integration?(shop)
+    shop = ::Commerce::Shopify::ShopDomain.normalize(params[:shop])
+    raise ::Commerce::Error.new('INVALID_STORE_URL', reason: 'shopify_domain') unless ::Commerce::Shopify::ShopDomain.valid?(shop)
 
     scopes = requested_scopes
     issued = ::Commerce::OauthState.issue('shopify', account: Current.account, user: Current.user, shop: shop, scopes: scopes.join(','))
@@ -58,9 +56,5 @@ class Api::V1::Accounts::Commerce::ShopifyConnectionsController < Api::V1::Accou
     end
 
     ::Commerce::Shopify::Config::ACTION_SCOPES
-  end
-
-  def legacy_integration?(shop)
-    Current.account.hooks.exists?(app_id: 'shopify', reference_id: shop)
   end
 end

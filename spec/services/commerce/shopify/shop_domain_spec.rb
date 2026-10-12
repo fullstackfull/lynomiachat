@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Shopify::ShopDomain do
+RSpec.describe Commerce::Shopify::ShopDomain do
   describe '.valid?' do
     it 'accepts valid Shopify domains' do
       expect(described_class.valid?('store.myshopify.com')).to be(true)

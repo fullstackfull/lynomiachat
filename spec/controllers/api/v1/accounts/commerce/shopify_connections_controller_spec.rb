@@ -41,23 +41,22 @@ RSpec.describe 'Shopify Commerce connection API', type: :request do
     end
   end
 
-  it 'refuses a shop this account already shows through the legacy Shopify integration, leaving that integration alone' do
+  # This assertion is INVERTED from what it was before the legacy Shopify integration was retired
+  # (docs/product-refinement/02-shopify-retirement.md §5). A legacy hook used to refuse the Commerce
+  # connection, which is exactly what would now strand a merchant: the legacy surface is gone, so Commerce is
+  # the only way they can connect, and a leftover row must not stand in the way of their migration.
+  #
+  # The second half is the non-destruction guarantee. Retirement removed the product surface and nothing else,
+  # so the row -- including its encrypted token -- is still exactly as it was afterwards. Nothing in this
+  # phase deletes a merchant's legacy connection; `rails lynomia:shopify:legacy_audit` reports them and an
+  # operator decides.
+  it 'lets a shop with a leftover legacy hook connect, and leaves that row untouched' do
     hook = create(:integrations_hook, account: account, app_id: 'shopify', reference_id: 'lynomia-demo.myshopify.com', access_token: 'legacy-token')
 
     post path, params: { shop: 'lynomia-demo.myshopify.com' }, headers: admin.create_new_auth_token, as: :json
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body['error']).to eq('code' => 'STORE_ALREADY_CONNECTED', 'reason' => 'legacy_shopify_integration')
-    expect(hook.reload).to have_attributes(access_token: 'legacy-token', status: 'enabled')
-  end
-
-  it "is not blocked by another account's legacy integration or by another legacy shop" do
-    create(:integrations_hook, account: create(:account), app_id: 'shopify', reference_id: 'lynomia-demo.myshopify.com')
-    create(:integrations_hook, account: account, app_id: 'shopify', reference_id: 'other-shop.myshopify.com')
-
-    post path, params: { shop: 'lynomia-demo.myshopify.com' }, headers: admin.create_new_auth_token, as: :json
-
     expect(response).to have_http_status(:created)
+    expect(hook.reload).to have_attributes(access_token: 'legacy-token', status: 'enabled')
   end
 
   it 'is refused to agents, so an agent can never start an authorization' do

@@ -16,10 +16,17 @@
 # `secondary_actor.push_event_data` (:20, a Message, serialized from `attributes.symbolize_keys`
 # (app/models/message.rb:148), so the whole body again).
 #
+# AND access also moves for a reason that has nothing to do with capabilities: an inbox membership is removed, a
+# team membership is removed, or a conversation's `team_id` changes. `InboxMember` and `TeamMember` invalidate
+# one count cache on create/destroy and do nothing else (app/models/inbox_member.rb:27,39-41;
+# app/models/team_member.rb:22,26-28), so those rows went unrevisited too.
+#
 # THE RULE IS NOT RESTATED HERE, OR ANYWHERE BUT ONE PLACE. `Notifications::ConversationVisibility` translates
-# the capability rule onto this table, and the rule itself stays in `Conversations::CapabilityScope`.
-# Grandfathering, widest-wins, the administrator short-circuit and D2's entitlement bound are therefore
-# whatever D1 says they are, today and after any future change to that file.
+# the rule onto this table; the rule itself is the INTERSECTION of two existing objects, neither of which lives
+# here -- the Inbox/Team/account ceiling (`Conversations::AccessCeiling`, which `ConversationPolicy` itself
+# delegates to) AND the capability scope (`Conversations::CapabilityScope`). Grandfathering, widest-wins, the
+# administrator short-circuit, D2's entitlement bound and the inbox-or-team semantics are therefore whatever
+# those two say they are, today and after any future change to them.
 #
 # WHY THIS METHOD. `find_all_notifications` (app/finders/notification_finder.rb:39) is the one place every
 # answer this finder gives derives from: `notifications`, `unread_count` and `count` all read `@notifications`

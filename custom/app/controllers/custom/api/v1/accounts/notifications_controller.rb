@@ -21,9 +21,12 @@
 # that too; `Custom::ActionCableListener` closes the writers that are not requests at all.
 #
 # THE SAME ANSWER AS THE LIST, BY CONSTRUCTION. Both halves ask `Notifications::ConversationVisibility`, which
-# asks `Conversations::CapabilityScope`. A notification the feed omits is one this refuses, and
-# spec/requests/notification_conversation_authorization_spec.rb asserts that agreement for every mode rather
-# than trusting it.
+# composes the Inbox/Team ceiling with the capability scope. The record half goes one step further and asks
+# `ConversationPolicy#show?` itself -- the product's canonical conversation access answer -- so this route
+# cannot drift from the rest of the product at all. A notification the feed omits is one this refuses, and that
+# agreement is asserted rather than trusted: for every capability mode in
+# spec/requests/notification_conversation_authorization_spec.rb, and for the ceiling in
+# spec/requests/notification_access_ceiling_spec.rb.
 #
 # 404, NOT 403. `ActiveRecord::RecordNotFound` is what an unknown id already produces here, and it is what the
 # custom-roles endpoint chose for the same reason (custom/app/controllers/api/v1/accounts/custom_roles_controller.rb:7-8):

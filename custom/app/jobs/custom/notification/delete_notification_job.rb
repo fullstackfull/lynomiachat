@@ -2,9 +2,10 @@
 #
 # THE CONFLICT THIS RESOLVES. `POST /notifications/destroy_all` enqueues this job, which destroys every
 # notification row the user has in the account (app/jobs/notification/delete_notification_job.rb:5,9,11). Once
-# the feed is narrowed, a member can no longer SEE the notifications for conversations outside their
-# capability -- but that button would still destroy them, permanently and with no audit. That breaks the two
-# properties the decision states outright: history is not deleted, and access restored means visible again.
+# the feed is narrowed, a member can no longer SEE the notifications for conversations they cannot currently
+# access -- outside their capability, or outside their inboxes and teams -- but that button would still destroy
+# them, permanently and with no audit. That breaks the two properties the decision states outright: history is
+# not deleted, and access restored means visible again.
 # A row destroyed while hidden can never come back.
 #
 # So the job destroys exactly the set the feed would have shown, using the same single definition the feed

@@ -28,6 +28,23 @@ class InstallationConfig < ApplicationRecord
     OTEL_PROVIDER
   ]).freeze
 
+  # A key that ONCE held a secret still holds one. ConfigLoader never deletes a row (lib/config_loader.rb:40-55),
+  # so retiring a feature removes its declaration from config/installation_config.yml while the stored value stays
+  # in the database -- and the declaration was the only reason this installation had to treat that value as a
+  # secret. Without this list the generic Installation Configs page lists the stale row like any other config,
+  # with its value, which is how the retired Shopify partner credentials became readable (merge gate §V1).
+  #
+  # DELIBERATELY NOT A TOMBSTONE DECLARATION back in the YAML: ConfigLoader CREATES a row for every declaration it
+  # reads, and with `reconcile_only_new: false` it overwrites an existing value with the declaration's default, so
+  # a tombstone would either resurrect the key as configuration or destroy the value it was meant to protect.
+  #
+  # Nothing is added here to re-enable a feature; a name only ever moves INTO this list, when its declaration goes.
+  RETIRED_SECRET_NAMES = %w[
+    SHOPIFY_CLIENT_ID
+    SHOPIFY_CLIENT_SECRET
+    SHOPIFY_PARTNER_ACCESS_TOKEN
+  ].freeze
+
   # https://stackoverflow.com/questions/72970170/upgrading-to-rails-6-1-6-1-causes-psychdisallowedclass-tried-to-load-unspecif
   # https://discuss.rubyonrails.org/t/cve-2022-32224-possible-rce-escalation-bug-with-serialized-columns-in-active-record/81017
   # FIX ME : fixes breakage of installation config. we need to migrate.
@@ -45,9 +62,14 @@ class InstallationConfig < ApplicationRecord
 
   after_commit :clear_cache
 
-  # Lynomia: configs typed `secret` in config/installation_config.yml are write-only in Super Admin.
+  # Lynomia: configs typed `secret` in config/installation_config.yml are write-only in Super Admin, plus the
+  # keys whose declaration a retired feature took with it (RETIRED_SECRET_NAMES). This is the one place secret
+  # classification is decided, so every reader of it -- the Installation Configs listing, which uses it to
+  # exclude rows from `index`, `show`, `edit` and `update` alike, and App configs' keep-stored-secrets filter --
+  # inherits the historical names without a redaction check of its own.
   def self.secret_names
-    ConfigLoader.new.general_configs.filter_map { |config| config['name'] if config['type'] == 'secret' }
+    declared = ConfigLoader.new.general_configs.filter_map { |config| config['name'] if config['type'] == 'secret' }
+    declared | RETIRED_SECRET_NAMES
   end
 
   def value

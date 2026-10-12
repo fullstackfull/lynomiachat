@@ -1,0 +1,17 @@
+<%#
+  A ticket's status, as a badge. The tone carries the meaning an operator acts on: what is ours, what is the
+  customer's, and what is finished. One partial so a status is painted the same on the queue and on the detail.
+%>
+<%
+  tones = {
+    'open' => 'bg-blue-50 text-blue-700',
+    'in_progress' => 'bg-indigo-50 text-indigo-700',
+    'waiting_on_customer' => 'bg-slate-100 text-slate-700',
+    'waiting_on_lynomia' => 'bg-amber-50 text-amber-800',
+    'resolved' => 'bg-green-50 text-green-700',
+    'closed' => 'bg-slate-100 text-slate-500'
+  }
+%>
+<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium <%= tones.fetch(status, 'bg-slate-100 text-slate-700') %>">
+  <%= status.humanize %>
+</span>

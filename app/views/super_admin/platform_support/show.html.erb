@@ -1,0 +1,155 @@
+<%#
+  The Platform Support queue (docs/platform-support/12-refresh-against-product-refinement.md §2,
+  docs/platform-support/05-super-admin-operations.md §2).
+
+  Every column answers an operational question: what the ticket is, who raised it, what they pay, where it
+  stands, who owns it and how long it has been waiting. There is no chart.
+
+  The plan column reads the ticket's OWN `plan_name_at_creation` snapshot, not a join through
+  billing_subscriptions per row. That is the measured N+1 trap on this surface, and the snapshot is also the
+  more honest number: it is what the customer was paying when they raised the ticket.
+
+  English and LTR, matching the rest of the Super Admin console (docs/platform-support/05 §7, D-3). Customer-
+  facing copy is the tenant surface's job and goes through t() in both locales there.
+%>
+<% content_for(:title) { 'Customer Support — Queue' } %>
+
+<section class="p-6">
+  <header class="mb-4">
+    <h1 class="text-xl font-medium text-slate-900">Customer support</h1>
+    <p class="text-sm text-slate-600 mt-1">
+      Tickets Lynomia's own customers raised about Lynomia. Ordered by status, then priority worst first, then
+      the stalest activity last &mdash; so the top of this list is the work that has been waiting longest at
+      the highest priority.
+    </p>
+  </header>
+
+  <%= form_with url: super_admin_platform_support_path, method: :get, class: 'flex flex-wrap items-end gap-3 mb-5' do |form| %>
+    <div>
+      <%= form.label :q, 'Search', class: 'block text-xs text-slate-600 mb-1' %>
+      <%# A reference pasted out of an email works with or without its LYN- prefix. %>
+      <%= form.text_field :q, value: params[:q], placeholder: 'LYN-000123, subject, account',
+                          class: 'border border-slate-200 rounded-md px-2 py-1 text-sm w-64' %>
+    </div>
+    <div>
+      <%= form.label :status, 'Status', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.select :status,
+                      options_for_select([['Any', '']] + PlatformSupport::Ticket.statuses.keys.map { |s| [s.humanize, s] }, params[:status]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :priority, 'Priority', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.select :priority,
+                      options_for_select([['Any', '']] + PlatformSupport::Ticket.priorities.keys.map { |p| [p.humanize, p] }, params[:priority]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :category, 'Category', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.select :category,
+                      options_for_select([['Any', '']] + PlatformSupport::Ticket::CATEGORIES.map { |c| [c.humanize, c] }, params[:category]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :assignee_id, 'Assignee', class: 'block text-xs text-slate-600 mb-1' %>
+      <%# `unassigned` is a literal because a NULL cannot be expressed in a query string. %>
+      <%= form.select :assignee_id,
+                      options_for_select([['Any', ''], ['Unassigned', 'unassigned']] + @assignees.map { |a| [a.display_name, a.id] }, params[:assignee_id]),
+                      {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+    </div>
+    <div>
+      <%= form.label :account_id, 'Account id', class: 'block text-xs text-slate-600 mb-1' %>
+      <%= form.text_field :account_id, value: params[:account_id],
+                          class: 'border border-slate-200 rounded-md px-2 py-1 text-sm w-28' %>
+    </div>
+    <%= form.submit 'Apply', class: 'bg-woot-500 text-white rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+    <%= link_to 'Clear', super_admin_platform_support_path, class: 'text-sm text-slate-600 px-2 py-1.5' %>
+  <% end %>
+
+  <% if @tickets.empty? %>
+    <div class="border border-slate-200 rounded-lg p-8 text-center">
+      <p class="text-sm font-medium text-slate-900">Nothing matches.</p>
+      <p class="text-sm text-slate-600 mt-1">
+        <%# An empty queue with no filters applied is good news; with filters it only means the filters are narrow. %>
+        <%= if params.values_at(:q, :status, :priority, :category, :assignee_id, :account_id).any?(&:present?)
+              'No ticket matches these filters. Clear them to see the whole desk.'
+            else
+              'No customer has raised a ticket with Lynomia yet.'
+            end %>
+      </p>
+    </div>
+  <% else %>
+    <div class="border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr>
+            <th class="text-start font-medium px-3 py-2">Ticket</th>
+            <th class="text-start font-medium px-3 py-2">Account</th>
+            <th class="text-start font-medium px-3 py-2">Plan at creation</th>
+            <th class="text-start font-medium px-3 py-2">Status</th>
+            <th class="text-start font-medium px-3 py-2">Priority</th>
+            <th class="text-start font-medium px-3 py-2">Assignee</th>
+            <th class="text-start font-medium px-3 py-2">Waiting</th>
+            <th class="px-3 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @tickets.each do |ticket| %>
+            <tr class="border-t border-slate-100 align-top">
+              <td class="px-3 py-2">
+                <div class="font-medium text-slate-900"><%= ticket.subject %></div>
+                <div class="text-xs text-slate-500">
+                  <%= ticket.reference %> &middot; <%= ticket.category.humanize %>
+                </div>
+              </td>
+              <td class="px-3 py-2">
+                <% if ticket.account %>
+                  <%= link_to ticket.account.name, super_admin_account_path(ticket.account), class: 'text-woot-500' %>
+                  <div class="text-xs text-slate-500">#<%= ticket.account_id %></div>
+                <% else %>
+                  <%# The account was deleted. The snapshot preserves attribution; the tenant can no longer read it. %>
+                  <div class="text-slate-700"><%= ticket.account_name_at_creation %></div>
+                  <div class="text-xs text-slate-500">account deleted</div>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                <%= ticket.plan_name_at_creation.presence || '&mdash;'.html_safe %>
+              </td>
+              <td class="px-3 py-2"><%= render 'status_badge', status: ticket.status %></td>
+              <td class="px-3 py-2"><%= render 'priority_badge', priority: ticket.priority %></td>
+              <td class="px-3 py-2 text-xs">
+                <% if ticket.assignee %>
+                  <span class="text-slate-700"><%= ticket.assignee.display_name %></span>
+                  <% unless ticket.assignee.active? %>
+                    <%# Deactivation keeps the assignment rather than dumping the ticket back into Unassigned,
+                        because losing the assignment history is how a ticket gets forgotten. %>
+                    <div class="text-amber-700">reassign needed</div>
+                  <% end %>
+                <% else %>
+                  <span class="text-amber-700">Unassigned</span>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-600">
+                <div><%= time_ago_in_words(ticket.last_activity_at) %> ago</div>
+                <% if ticket.last_customer_message_at.present? &&
+                      (ticket.last_operator_message_at.nil? || ticket.last_customer_message_at > ticket.last_operator_message_at) %>
+                  <%# The single highest-value reading on a vendor desk: somebody is waiting on a human. %>
+                  <div class="text-woot-500 font-medium">customer replied last</div>
+                <% end %>
+              </td>
+              <td class="px-3 py-2 text-end">
+                <%= link_to 'Open', ticket_super_admin_platform_support_path(id: ticket.id), class: 'text-woot-500' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500">
+      Page <%= @tickets.current_page %> of <%= @tickets.total_pages %> &middot;
+      <%= pluralize(@tickets.total_count, 'ticket') %>
+      <%# Default kaminari theme: there is no app/views/kaminari/administrate directory in this installation. %>
+      <%= paginate @tickets %>
+    </div>
+  <% end %>
+</section>

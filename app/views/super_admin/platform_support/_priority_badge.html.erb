@@ -1,0 +1,15 @@
+<%#
+  A ticket's priority. Urgent is red because on this desk it means the customer's service is down, not that
+  somebody would like it faster.
+%>
+<%
+  tones = {
+    'low' => 'bg-slate-100 text-slate-600',
+    'medium' => 'bg-blue-50 text-blue-700',
+    'high' => 'bg-amber-50 text-amber-800',
+    'urgent' => 'bg-red-50 text-red-700'
+  }
+%>
+<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium <%= tones.fetch(priority, 'bg-slate-100 text-slate-700') %>">
+  <%= priority.humanize %>
+</span>

@@ -1,0 +1,279 @@
+<%#
+  One Platform Support ticket, for an operator (docs/platform-support/05-super-admin-operations.md §3).
+
+  Three regions, because the brief's warning is that this page must not become an uncontrolled dump: the
+  thread in the main column, the account's context in the second, and the decisions in the header.
+
+  THE RIGHT COLUMN LINKS RATHER THAN EMBEDS. Inbox, integration and signal state per ticket would mean
+  per-ticket queries against subsystems whose cost on this surface is already measured and high; a link costs
+  nothing and lands the operator on a page that is already built and already correct.
+
+  WHAT THIS PAGE SHOWS THAT THE CUSTOMER'S DOES NOT: operator identity on every reply, internal notes, SLA
+  targets and clocks, assignment and triage history, event metadata, and the whole account context column.
+%>
+<% content_for(:title) { "Customer Support — #{@ticket.reference}" } %>
+
+<section class="p-6 max-w-6xl">
+  <%= link_to '← Back to queue', super_admin_platform_support_path, class: 'text-sm text-woot-500' %>
+
+  <header class="mt-3 mb-5">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h1 class="text-xl font-medium text-slate-900"><%= @ticket.subject %></h1>
+        <p class="text-sm text-slate-600 mt-1">
+          <%= @ticket.reference %> &middot; <%= @ticket.category.humanize %> &middot;
+          raised by <%= @ticket.reporter_name %>
+          <% if @ticket.account %>
+            for <%= link_to @ticket.account.name, super_admin_account_path(@ticket.account), class: 'text-woot-500' %>
+          <% else %>
+            for <%= @ticket.account_name_at_creation %> <span class="text-slate-500">(account deleted)</span>
+          <% end %>
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <%= render 'status_badge', status: @ticket.status %>
+        <%= render 'priority_badge', priority: @ticket.priority %>
+      </div>
+    </div>
+  </header>
+
+  <%#
+    The decisions. Each one is its own small form posting to its own route, so a half-filled page cannot
+    submit a change nobody chose, and every one of them is a POST or a PATCH.
+  %>
+  <div class="border border-slate-200 rounded-lg p-4 mb-6 flex flex-wrap items-end gap-6">
+    <%= form_with url: status_super_admin_platform_support_path(id: @ticket.id), method: :patch, class: 'flex items-end gap-2' do |form| %>
+      <div>
+        <%= form.label :status, 'Status', class: 'block text-xs text-slate-600 mb-1' %>
+        <%= form.select :status,
+                        options_for_select(PlatformSupport::Ticket.statuses.keys.map { |s| [s.humanize, s] }, @ticket.status),
+                        {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+      </div>
+      <%= form.submit 'Set', class: 'border border-slate-300 text-slate-700 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+    <% end %>
+
+    <%= form_with url: triage_super_admin_platform_support_path(id: @ticket.id), method: :patch, class: 'flex items-end gap-2' do |form| %>
+      <div>
+        <%= form.label :priority, 'Priority', class: 'block text-xs text-slate-600 mb-1' %>
+        <%= form.select :priority,
+                        options_for_select(PlatformSupport::Ticket.priorities.keys.map { |p| [p.humanize, p] }, @ticket.priority),
+                        {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+      </div>
+      <div>
+        <%= form.label :category, 'Category', class: 'block text-xs text-slate-600 mb-1' %>
+        <%= form.select :category,
+                        options_for_select(PlatformSupport::Ticket::CATEGORIES.map { |c| [c.humanize, c] }, @ticket.category),
+                        {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+      </div>
+      <%= form.submit 'Re-triage', class: 'border border-slate-300 text-slate-700 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+    <% end %>
+
+    <%= form_with url: assign_super_admin_platform_support_path(id: @ticket.id), method: :post, class: 'flex items-end gap-2' do |form| %>
+      <div>
+        <%= form.label :assignee_id, 'Assignee', class: 'block text-xs text-slate-600 mb-1' %>
+        <%# Only an active agent row may be an assignee. Unassigning is explicit and writes its own event. %>
+        <%= form.select :assignee_id,
+                        options_for_select([['Unassign', 'unassigned']] + @assignees.map { |a| [a.display_name, a.id] }, @ticket.assignee_id),
+                        {}, class: 'border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+      </div>
+      <%= form.submit 'Apply', class: 'border border-slate-300 text-slate-700 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <h2 class="text-sm font-medium text-slate-900 mb-3">Thread</h2>
+
+      <%#
+        Public messages, internal notes and events in one chronological list, because an operator picking this
+        up needs the order things happened in, not three separate lists to interleave by eye.
+      %>
+      <%
+        entries = @messages.map { |m| [m.created_at, :message, m] } +
+                  @notes.map { |n| [n.created_at, :note, n] } +
+                  @events.map { |e| [e.created_at, :event, e] }
+      %>
+      <ol class="space-y-3 mb-6">
+        <% entries.sort_by(&:first).each do |at, kind, record| %>
+          <% case kind %>
+          <% when :message %>
+            <li class="border border-slate-200 rounded-lg p-3">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <span class="text-xs font-medium text-slate-900">
+                  <%# Operator identity IS shown here. The customer's own view never sees it. %>
+                  <%= record.author_type == 'User' ? "#{record.author_name} (customer)" : "#{record.author_name} (Lynomia)" %>
+                </span>
+                <span class="text-xs text-slate-500"><%= at.to_fs(:long) %></span>
+              </div>
+              <p class="text-sm text-slate-800 whitespace-pre-wrap mb-0"><%= record.body %></p>
+              <%= render 'attachments', attachments: record.platform_support_message_files %>
+            </li>
+          <% when :note %>
+            <%#
+              Visually distinct by border AND icon, not by colour alone: the single most likely operator error
+              on a desk like this is a note sent as a reply, and colour is the weakest signal against it.
+            %>
+            <li class="border border-amber-200 bg-amber-25 rounded-lg p-3 border-s-4 border-s-amber-400 ps-3">
+              <div class="flex items-baseline justify-between gap-3 mb-1">
+                <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-800">
+                  <svg width="12" height="12"><use xlink:href="#icon-lock-line" /></svg>
+                  Internal note &mdash; <%= record.author_name %>
+                </span>
+                <span class="text-xs text-slate-500"><%= at.to_fs(:long) %></span>
+              </div>
+              <p class="text-sm text-slate-800 whitespace-pre-wrap mb-0"><%= record.body %></p>
+              <%= render 'attachments', attachments: record.platform_support_note_files %>
+            </li>
+          <% else %>
+            <li class="flex items-baseline justify-between gap-3 text-xs text-slate-500 px-1">
+              <span>
+                <%= record.event_type.humanize %>
+                <% if record.actor_name.present? %>&middot; <%= record.actor_name %><% end %>
+                <% if record.metadata.present? %>
+                  <%# `metadata` is operator-only: it is never serialized to the tenant. %>
+                  &middot; <%= record.metadata.map { |k, v| "#{k}: #{v}" }.join(', ') %>
+                <% end %>
+              </span>
+              <span><%= at.to_fs(:long) %></span>
+            </li>
+          <% end %>
+        <% end %>
+      </ol>
+
+      <%#
+        Two compose forms, deliberately NOT one form with a visibility checkbox. The public/internal choice is
+        made by which box you type in, and the two are styled so they are not confusable: the reply is the
+        primary action, the note is the amber, lock-marked one with a different submit label.
+      %>
+      <div class="grid grid-cols-1 gap-4">
+        <div class="border border-slate-200 rounded-lg p-4">
+          <h3 class="text-sm font-medium text-slate-900 mb-1">Reply to customer</h3>
+          <p class="text-xs text-slate-600 mb-3">
+            <%# Reference and account pinned here, not only at the top: replying to the wrong ticket is the
+                other likely operator error on this desk. %>
+            Goes to <%= @ticket.account&.name || @ticket.account_name_at_creation %> on
+            <%= @ticket.reference %>. The customer is notified.
+          </p>
+          <%= form_with url: reply_super_admin_platform_support_path(id: @ticket.id), method: :post do |form| %>
+            <%= form.text_area :body, rows: 4, required: true,
+                               placeholder: 'What the customer will read.',
+                               class: 'w-full border border-slate-200 rounded-md px-2 py-1 text-sm' %>
+            <%= form.submit 'Send reply to customer',
+                            class: 'mt-2 bg-woot-500 text-white rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+          <% end %>
+        </div>
+
+        <div class="border border-amber-300 bg-amber-25 rounded-lg p-4">
+          <h3 class="inline-flex items-center gap-1 text-sm font-medium text-amber-900 mb-1">
+            <svg width="14" height="14"><use xlink:href="#icon-lock-line" /></svg>
+            Internal note
+          </h3>
+          <p class="text-xs text-amber-900 mb-3">
+            Lynomia only. The customer never sees this, is not notified, and cannot tell it happened.
+          </p>
+          <%= form_with url: note_super_admin_platform_support_path(id: @ticket.id), method: :post do |form| %>
+            <%= form.text_area :body, rows: 3, required: true,
+                               placeholder: 'Triage, findings, what you tried.',
+                               class: 'w-full border border-amber-300 rounded-md px-2 py-1 text-sm' %>
+            <%= form.submit 'Save internal note',
+                            class: 'mt-2 border border-amber-400 text-amber-900 rounded-md px-3 py-1.5 text-sm cursor-pointer' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <aside class="space-y-4">
+      <div class="border border-slate-200 rounded-lg p-4">
+        <h2 class="text-sm font-medium text-slate-900 mb-3">Account</h2>
+        <% if @ticket.account %>
+          <dl class="text-sm space-y-2">
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-600">Name</dt>
+              <dd class="text-slate-900 text-end"><%= @ticket.account.name %></dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-600">Id</dt>
+              <dd class="text-slate-900">#<%= @ticket.account.id %></dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-600">Status</dt>
+              <dd class="text-slate-900"><%= @ticket.account.status.to_s.humanize %></dd>
+            </div>
+            <% if @ticket.account.suspension_history.last.present? %>
+              <div class="flex justify-between gap-3">
+                <dt class="text-slate-600">Latest suspension</dt>
+                <dd class="text-slate-900 text-end text-xs">
+                  <%= @ticket.account.suspension_history.last['category'] || 'unknown' %>
+                </dd>
+              </div>
+            <% end %>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-600">Locale</dt>
+              <dd class="text-slate-900"><%= @ticket.account.locale %></dd>
+            </div>
+            <div class="flex justify-between gap-3">
+              <dt class="text-slate-600">Created</dt>
+              <dd class="text-slate-900"><%= @ticket.account.created_at.to_date.to_fs(:long) %></dd>
+            </div>
+          </dl>
+        <% else %>
+          <p class="text-sm text-slate-600 mb-0">
+            This account was deleted. <%= @ticket.account_name_at_creation %> is the name it had when the
+            ticket was raised; the ticket and its history survive, and the tenant can no longer read it.
+          </p>
+        <% end %>
+      </div>
+
+      <div class="border border-slate-200 rounded-lg p-4">
+        <h2 class="text-sm font-medium text-slate-900 mb-3">Billing</h2>
+        <dl class="text-sm space-y-2">
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Plan today</dt>
+            <dd class="text-slate-900 text-end"><%= @subscription&.plan&.name || 'none' %></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Subscription</dt>
+            <dd class="text-slate-900"><%= @subscription&.status || 'none' %></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-slate-600">Dashboard open</dt>
+            <%# A billing-locked account reaches the tenant desk: it is exempt from the access guard by design. %>
+            <dd class="text-slate-900"><%= @subscription.nil? ? 'unknown' : (@subscription.accessible? ? 'yes' : 'no — locked') %></dd>
+          </div>
+        </dl>
+        <%
+          plan_drifted = @ticket.plan_name_at_creation.present? && @ticket.plan_name_at_creation != @subscription&.plan&.name
+          status_drifted = @ticket.subscription_status_at_creation.present? && @ticket.subscription_status_at_creation != @subscription&.status
+        %>
+        <% if plan_drifted || status_drifted %>
+          <%# Both are shown when they differ: an operator reading today's plan for a ticket raised on another
+              one is reading the wrong context, and this is where that mistake is made. %>
+          <p class="text-xs text-slate-600 mt-3 mb-0">
+            At creation: <%= @ticket.plan_name_at_creation.presence || 'no plan' %>,
+            <%= @ticket.subscription_status_at_creation.presence || 'no subscription' %>.
+          </p>
+        <% end %>
+      </div>
+
+      <%= render 'sla', ticket: @ticket %>
+
+      <div class="border border-slate-200 rounded-lg p-4">
+        <h2 class="text-sm font-medium text-slate-900 mb-3">Elsewhere</h2>
+        <div class="flex flex-col gap-2 text-sm">
+          <% if @ticket.account %>
+            <%# The one operational view of this account, rather than the Administrate record page. %>
+            <%= link_to 'Operations Account 360', account_super_admin_operations_path(id: @ticket.account_id), class: 'text-woot-500' %>
+            <%= link_to 'Super Admin account', super_admin_account_path(@ticket.account), class: 'text-woot-500' %>
+            <% if @subscription %>
+              <%= link_to 'Billing subscription', super_admin_billing_subscription_path(@subscription), class: 'text-woot-500' %>
+            <% end %>
+            <%= link_to 'Every ticket for this account',
+                        super_admin_platform_support_path(account_id: @ticket.account_id), class: 'text-woot-500' %>
+          <% else %>
+            <p class="text-sm text-slate-600 mb-0">The account is gone, so there is nowhere to link to.</p>
+          <% end %>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>

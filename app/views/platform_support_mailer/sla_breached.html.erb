@@ -1,0 +1,7 @@
+<p><%= t("platform_support.mailer.#{@event_type}.heading", reference: @ticket.reference) %></p>
+<p><%= t('platform_support.mailer.shared.operator_context',
+         account: @ticket.account_name_at_creation,
+         plan: @ticket.plan_name_at_creation.presence || t('platform_support.mailer.shared.no_plan'),
+         category: @ticket.category,
+         priority: @ticket.priority) %></p>
+<p><a href="<%= staff_ticket_url(@ticket) %>"><%= t('platform_support.mailer.shared.open_in_desk') %></a></p>

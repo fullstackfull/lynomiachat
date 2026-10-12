@@ -22,11 +22,14 @@ no `notifications` changes, no `sla_policies` changes, no `accounts` changes.
 
 ### Non-schema production changes
 
+D-5's approval removed the riskiest entry that used to be in this table: because suspended accounts get no
+exemption in V1, `app/controllers/concerns/ensure_current_account_helper.rb` — a guard on **every**
+account-scoped request — is **not touched at all**.
+
 | Change | File | Risk |
 |---|---|---|
 | Sidebar child filter `child.href` → `child.href \|\| child.to` | `app/javascript/dashboard/components-next/sidebar/Sidebar.vue:744` | **This is the only edit to shipped tenant UI code.** It is additive in effect: today both children have `href`, so the new predicate returns the same result for them |
 | `billing_exempt?` gains one `\|\|` | `custom/app/controllers/billing/access_guard.rb:50-52` | Exempts exactly one new base class. Cannot widen by accident |
-| Suspension exemption (if D-5 approves) | `app/controllers/concerns/ensure_current_account_helper.rb` | Touches a guard on **every** account-scoped request. Needs its own review and its own spec; see §5 |
 | Administrate nav exclusion list gains `"platform_support"` | `app/views/super_admin/application/_navigation.html.erb:40` | Super Admin only |
 | New `nav_item` | `_navigation.html.erb` | Super Admin only |
 | New `Rack::Attack` rules | `config/initializers/rack_attack.rb` | New path patterns only; no existing rule changed |
@@ -82,7 +85,6 @@ withheld — which is the rollout control this module uses in place of a feature
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Suspension exemption (D-5) touches a guard on every account-scoped request | **High** | Separate commit, separate review, a spec asserting the 401 is unchanged for every other controller, and it ships *after* step 6 — the desk works for billing-locked accounts without it |
 | An internal note reaching a tenant | **High** | Structural: a separate table with no tenant-reachable association (`02-data-model.md` §7). Tested directly (`10-uat-plan.md` §3) |
 | Cross-account ticket visibility | **High** | Three layers (`03-authorization-security.md` §2). Tested directly |
 | `audited` added to a platform model by a later contributor | **High** | A spec asserting no `platform_support_*` model responds to `audited_columns`, plus the rule in every model header (`03-authorization-security.md` §10) |
@@ -101,7 +103,7 @@ withheld — which is the rollout control this module uses in place of a feature
 | After tickets exist | **Do not drop.** Revert the application code; the tables become inert. The sidebar entry and the nav item disappear; the data remains readable by a console. Dropping is a separate, deliberate decision |
 | The sidebar filter change | Independently revertible; reverting restores today's behaviour exactly |
 | `billing_exempt?` | Independently revertible; reverting re-locks the desk for billing-locked accounts, which degrades the feature rather than breaking the product |
-| The suspension exemption | Independently revertible, and the reason it ships last and separately |
+| — | D-5 grants suspended accounts no exemption, so `ensure_current_account_helper.rb` is never edited and there is nothing here to revert |
 
 The asymmetry in row 2 is deliberate: support correspondence is a record of what Lynomia told a customer. A
 rollback script that destroys it is worse than leaving seven unused tables in the schema.

@@ -15,12 +15,10 @@
 | `PlatformSupport::Agent` (`role: lead`) | Everything an agent may, plus reassign across agents and edit SLA policies | Create agents (that stays an Administrate/`super_admin` action) |
 | Future dedicated Lynomia support role | The `agent` row exists already; the only change is relaxing the `user.is_a?(SuperAdmin)` create validation (`02-data-model.md` §4) | — |
 
-> **Decision D-1 needs your approval.** Who inside a tenant may see the account's tickets? The table above
-> proposes **administrators see all, agents see their own**. The alternative — every member sees every ticket,
-> which is *not* what the existing tenant module does either (`Support::TicketPolicy::Scope` narrows to
-> assignee/team/creator, `custom/app/policies/support/ticket_policy.rb:37-43`) — is defensible if you want an
-> account's support history to be shared knowledge. Billing tickets argue for administrator-only; a WhatsApp
-> outage argues for everyone. This is a product call, not a technical one.
+> **D-1 — APPROVED as proposed.** Account administrators see every Platform Support ticket belonging to their
+> account; a normal agent sees only the tickets they personally created. Custom-role expansion is explicitly
+> deferred, so no `CustomRole::PERMISSIONS` entry is added for this module in V1 and the custom-role holder is
+> treated exactly as `agent` (the row above).
 
 ## 2. Requirement 1 — cross-tenant isolation
 
@@ -146,9 +144,19 @@ spam-suspended account is one Lynomia has decided is abusive, and a support desk
 Lynomia's own staff inbox — exactly what an abusive account would use it for. Non-payment is the opposite: it
 is the case the brief is about.
 
-> **Decision D-5 needs your approval.** Two parts: (a) do suspended accounts reach support at all, and (b) is
-> the `spam` carve-out right? If you prefer the simpler rule, V1 can ship "billing-locked yes, suspended no"
-> with no jsonb read at all, and the carve-out becomes Phase 2.
+> **D-5 — APPROVED, and simpler than the proposal.** The approved V1 rule is:
+>
+> | Account state | Reaches Platform Support in V1? |
+> |---|---|
+> | Billing-locked (402, no accessible subscription) | **Yes** — the exemption in this section exists for exactly this case |
+> | Administratively suspended (`accounts.status = suspended`) | **No.** No exemption in V1 |
+> | Suspended for spam or security | **No, and never automatically.** Explicitly excluded from any future exemption |
+>
+> Because suspended accounts get no exemption at all in V1, **`ensure_current_account_helper.rb` is not
+> touched** — the 401 stands as written. That removes the highest-risk edit in `08-rollout-migrations.md` §5
+> from the plan entirely. The `suspension_history` jsonb read is not needed either; it stays documented above
+> only as evidence that a finer rule would be *implementable* if a later phase ever wants one for `non_payment`,
+> and the spam/security exclusion above is a standing constraint on that phase.
 
 Implementation shape either way: a named predicate on the concern (`support_desk_exempt?`) checked alongside
 `account.active?`, not a parallel code path. The 401's message must not change for any other request.

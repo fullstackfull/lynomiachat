@@ -146,10 +146,15 @@ One table, staff-only by construction (`02-data-model.md` §7). Operator-facing 
 So the surface is already English-only, and this module matching it is consistency, not neglect. Flash messages
 go through `en.yml` like the Operations Center's do, so the convention is followed where it exists.
 
-> **Decision D-3 needs your approval.** If Lynomia will employ Arabic-first support staff, the staff desk needs
-> i18n and `dir` from the start — retrofitting it later means touching every view this module adds. The cost
-> now is roughly one locale file and `dir="rtl"` plumbing on a layout that currently has none; the cost later
-> is the same work plus a rewrite of every hard-coded string.
+> **D-3 — APPROVED.** English/LTR is acceptable for the V1 Super Admin desk, matching the surface as it
+> already is. The approval draws the line explicitly: **tenant and customer surfaces remain EN + AR with RTL**
+> (`04-customer-ux.md` §5), and no customer-facing English may be hard-coded anywhere. The boundary is
+> therefore a hard one — a string an operator reads may be literal English in an ERB view; a string a customer
+> reads goes through `t()` in both locales, wherever it is rendered from.
+>
+> Standing note for whoever revisits it: retrofitting Arabic here later means touching every view this module
+> adds, since the Super Admin layout carries no `dir` attribute today
+> (`app/views/layouts/super_admin/application.html.erb:16`).
 
 ## 8. Phasing, explicitly
 

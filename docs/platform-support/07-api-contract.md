@@ -196,7 +196,7 @@ thread above it incoherent — the customer adds a message instead).
 | Reply to a `closed` ticket | 422 | `{ "message": "This ticket is closed. Open a new one." }` |
 | Attachment too large / wrong type | 422 | names the limit and the accepted types |
 | Rate limit exceeded | 429 | the existing `Rack::Attack` response |
-| Account suspended | 401 | `'Account is suspended'` from `ensure_current_account` (`app/controllers/concerns/ensure_current_account_helper.rb:11`) — unless D-5 exempts it |
+| Account suspended | 401 | `'Account is suspended'` from `ensure_current_account` (`app/controllers/concerns/ensure_current_account_helper.rb:11`), **unchanged** — D-5 grants suspended accounts no exemption in V1 |
 | Account billing-locked | **200/201** | the desk is exempt (`03-authorization-security.md` §6) |
 
 All i18n keys under `errors.platform_tickets.*` in `config/locales/en.yml`, mirroring `errors.tickets.*`.

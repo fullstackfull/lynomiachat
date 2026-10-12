@@ -113,10 +113,15 @@ indicator derived from the ticket's own columns** (`04-customer-ux.md` §6) — 
 
 Reason 4 alone would be enough; reason 2 makes it a security decision rather than a design preference.
 
-> **Decision D-6 needs your approval.** If you want these in the notification bell, that is Phase 2 and it
-> carries a prerequisite: `ConversationVisibility` must stop passing unknown actor types through, replaced by a
-> positive allow-list that authorizes each known type and denies the rest. That is a change to shipped
-> notification code and should be its own reviewed phase, not a side effect of this module.
+> **D-6 — APPROVED (defer), and hardened into an absolute gate.** The approval states: *do not reuse the
+> current notification path until the positive allow-list authorization issue is fixed separately.*
+>
+> So this is no longer "a Phase 2 prerequisite" — it is a **block**. No phase of this module may write a row to
+> `notifications`, or add a type to `Notification::NOTIFICATION_TYPES`, until
+> `Notifications::ConversationVisibility` has been changed in its own separately reviewed change to deny
+> unknown primary-actor types by default instead of passing them through
+> (`custom/app/services/notifications/conversation_visibility.rb:60,86-88,98`). The derived badge in
+> `04-customer-ux.md` §6 is the V1 answer and needs none of it.
 
 ### Emails sent
 
@@ -142,7 +147,10 @@ teaches people to filter its mail.
 | SLA breach | the assignee **and** the alias |
 
 The alias is an `InstallationConfig` value, which is the existing store for installation-level configuration
-(`/super_admin/installation_configs`) — not an ENV var, so it is changeable without a deploy.
+(`/super_admin/installation_configs`) — not an ENV var, so it is changeable without a deploy. **Approved as a
+requirement, not a convenience:** no support address is hard-coded anywhere, in code, config or seed. An
+installation with no alias configured sends no operator email and says so on the desk, rather than falling back
+to a built-in address.
 
 The Super Admin surface has no notification feed of any kind, so operator in-app awareness is the queue counts
 on the desk (`05-super-admin-operations.md` §2). That is sufficient for a surface an operator opens
@@ -174,11 +182,11 @@ What Phase 2 would add: an installation-level support calendar (weekday windows,
 list) plus a calculator that takes those directly instead of an inbox. The clock class's `due_at` is the single
 seam — one method, one branch — which is why the arithmetic is worth copying rather than wrapping.
 
-> **Decision D-7 needs your approval.** Calendar time means a Thursday-evening ticket under an 8-hour target
-> breaches by Friday morning regardless of whether anyone was working. Either the V1 thresholds are set
-> generously enough to absorb that (e.g. first response in 24 calendar hours rather than 4 business hours), or
-> the calendar moves into V1. Setting the thresholds generously is the recommendation: it is honest, it needs
-> no new mechanism, and it can be tightened the day the calendar exists.
+> **D-7 — APPROVED, numbers deliberately not fixed.** Calendar time in V1, and *no* threshold values are
+> committed here. The standing consequence to carry into implementation: calendar time means a Thursday-evening
+> ticket under an 8-hour target breaches by Friday morning whether or not anyone was working, so whatever
+> numbers are entered must absorb non-working hours. That is a property of the data an operator enters, not of
+> the code — which is exactly why the thresholds live in policy records.
 
 ## 6. What the data model can and cannot measure honestly
 

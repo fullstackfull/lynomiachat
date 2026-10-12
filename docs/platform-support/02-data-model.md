@@ -25,8 +25,7 @@
 | `account_id` | bigint | **yes** | The *subject* account, not the owner. See §3 |
 | `account_name_at_creation` | string | no | Snapshot, same reason `Custom::AuditLog#capture_actor_name` snapshots the actor (`custom/app/models/custom/audit_log.rb:45-51`) |
 | `reporter_id` | bigint | yes | FK `users`, nullify |
-| `reporter_name` | string | no | Snapshot |
-| `reporter_email` | string | no | Snapshot; the operator needs a reply address that survives the user record |
+| `reporter_name` | string | no | Snapshot. The **only** personal-data snapshot on the table, and it is the minimum that keeps a thread attributable after the person's record is deleted — the same rule `Custom::AuditLog#capture_actor_name` already applies to every audit row (`custom/app/models/custom/audit_log.rb:45-51`) |
 | `category` | string | no | default `'other'`, frozen allow-list, §6 |
 | `subject` | string | no | max 255. Deliberately `subject`, not `title`, so the two vocabularies read differently |
 | `description` | text | yes | max 10 000, matching `support/ticket.rb:63` |
@@ -84,9 +83,15 @@ of the tenant scope predicate automatically rather than needing a rule. The mode
 **on create** (`validates :account_id, presence: true, on: :create`) so a live ticket always has a subject,
 while the column stays nullable so deletion can orphan rather than erase.
 
-> **Decision D-4 needs your approval.** This retains support correspondence about an account after that account
-> is deleted. That is operationally right for a vendor desk and may interact with a data-retention commitment.
-> If retention must win, the answer is `ON DELETE CASCADE` and Lynomia loses churn history.
+> **D-4 — APPROVED, with a tightening.** Nullable `account_id` plus a **minimal** snapshot. The approval
+> added: *do not snapshot unnecessary personal or sensitive data.* Applied as follows.
+>
+> | Snapshot column | Kept? | Why |
+> |---|---|---|
+> | `account_name_at_creation` | **kept** | The approved "minimal account-name snapshot". Commercial identity, not personal data |
+> | `reporter_name` | **kept** | The minimum that keeps a thread attributable; the existing audit trail already snapshots exactly this and no more |
+> | `reporter_email` | **REMOVED** | Was in the original proposal. It is personal data, and it is not necessary: the live address is reachable through `reporter_id` while the user exists, and once the user is deleted there is nobody to reply to. Operators reply in-thread, not by address |
+> | `plan_name_at_creation`, `plan_id_at_creation`, `subscription_status_at_creation` | **kept** | Commercial state, no personal data. Required for honest SLA resolution and analytics (`06-sla-notifications.md` §6) |
 
 ## 4. `platform_support_agents`
 
@@ -295,9 +300,14 @@ threshold already forced a `.round` in the existing clock (`sla_clock.rb:89`).
 Resolution order: the subject account's current plan id → the matching policy; else the default row; else no
 SLA, and the UI says so rather than implying one.
 
-> **Decision D-8 needs your approval.** V1 keys policies on plan only, not on `(plan, priority)`. Priority
-> orders the queue; it does not change the target. Four thresholds × four priorities is 16 numbers to agree
-> before anything ships, and the desk can tighten later by adding rows.
+> **D-8 — APPROVED.** V1 keys policies on plan only, not on `(plan, priority)`, through configurable policy
+> **records**. Priority orders the queue; it does not change the target. The desk tightens later by adding rows,
+> with no migration.
+>
+> **D-7 — APPROVED, reframed.** No threshold numbers are fixed anywhere — not in code, not in a constant, and
+> not in this document. Every threshold is a column on a `platform_support_sla_policies` row, supplied as
+> operator-entered data when implementation resumes. The architecture is complete without the numbers; that is
+> the point of keeping them data-driven.
 
 ## 11. `platform_support_links` — Phase 2
 
@@ -335,7 +345,7 @@ the tenant"*. The tenant ticket serializer has no `links` key at all.
 | FK | On delete | Why |
 |---|---|---|
 | `tickets.account_id → accounts` | **nullify** | §3 |
-| `tickets.reporter_id → users` | nullify | The ticket outlives the employee; `reporter_name` and `reporter_email` are snapshots |
+| `tickets.reporter_id → users` | nullify | The ticket outlives the employee; `reporter_name` is the snapshot that keeps it attributable |
 | `tickets.assignee_id → platform_support_agents` | nullify | A departed agent's tickets return to the unassigned queue |
 | `tickets.sla_policy_id → platform_support_sla_policies` | nullify | Same as `Support::Ticket`'s `dependent: :nullify` (`sla_policy.rb:19`) |
 | `tickets.plan_id_at_creation → billing_plans` | nullify | `billing_plans` is `restrict_with_error` against subscriptions (`billing_plan.rb:15-18`); a support ticket must never be the reason a plan cannot be retired, hence nullify plus the name snapshot |

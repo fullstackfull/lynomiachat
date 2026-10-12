@@ -18,8 +18,9 @@ Each phase is independently reviewable, leaves the tree green, and ships nothing
 | **H** | **Rate limits + attachments.** `Rack::Attack` rules, the authorized download controller, model-level size/MIME validation | ~4 new, 1 touched (`rack_attack.rb`) | C |
 | **I** | **Pilot rollout.** The `InstallationConfig` account allow-list, UAT execution, removal of the allow-list | ~1 new | all |
 
-Then, separately and only if approved: the suspension exemption (D-5), which touches
-`ensure_current_account_helper.rb` and ships on its own.
+There is **no tenth phase**. The original plan appended a separate suspension-exemption change; D-5's
+approval grants suspended accounts no exemption in V1, so `ensure_current_account_helper.rb` is never edited
+and that change is removed from the plan rather than deferred.
 
 Phase ordering note: **H precedes the pilot but follows C**, because an unthrottled write endpoint should not
 reach even one real customer. It is listed after G only because the specs in G cover the paths H hardens.
@@ -33,6 +34,9 @@ Five files, each a small, independently revertible edit (`08-rollout-migrations.
 3. `custom/app/controllers/billing/access_guard.rb:50-52` — one `||`
 4. `app/views/super_admin/application/_navigation.html.erb` — one nav item + one exclusion-list entry
 5. `config/initializers/rack_attack.rb` — new rules only
+
+`app/controllers/concerns/ensure_current_account_helper.rb` is **not** a sixth: D-5 grants suspended accounts
+no exemption, so the guard on every account-scoped request stays exactly as it is.
 
 Plus additive locale keys. **No existing table, model, policy, serializer or job is modified.**
 
@@ -51,7 +55,7 @@ SLA rows; typed resource links (Phase 2 per `02-data-model.md` §11); the notifi
 | **D-2** | Confirm GLOBAL reference | **Global `LYN-000001`** — confirmed correct, with the concurrency and operational analysis in `02-data-model.md` §8 | Phase A |
 | **D-3** | Staff desk language | English/LTR in V1, matching the surface | Phase E |
 | **D-4** | Account deletion vs support history | `account_id` nullable + name snapshot: the record survives, the tenant cannot read it | Phase A |
-| **D-5** | Suspended accounts and support access | Billing-locked: yes. Suspended: no in V1; `spam` never. Ships separately and last | separate |
+| **D-5** | Suspended accounts and support access | **APPROVED.** Billing-locked: yes. Administratively suspended: no. Spam/security: never, automatically or otherwise. No edit to the suspension guard | — |
 | **D-6** | In-app notification bell for tenants | Not in V1; derived badge instead. Phase 2 carries a `ConversationVisibility` prerequisite | Phase F |
 | **D-7** | Calendar-time SLA thresholds | Calendar time, with generous V1 thresholds. Needs the actual numbers from you | Phase F |
 | **D-8** | SLA keyed on plan only, not (plan, priority) | Plan only in V1 | Phase A |
@@ -173,7 +177,8 @@ Separately, because the suspension 401 fires in `ensure_current_account` **befor
 (`app/controllers/concerns/ensure_current_account_helper.rb:11`) — so the billing exemption does nothing for
 them. The category is readable from `accounts.internal_attributes['suspensions']` via
 `Account#suspension_history` (`app/models/account.rb:146-148`), so a `spam`-excluded carve-out is
-implementable. Recommended as a separate, later, separately-reviewed change (D-5).
+implementable. **Approved outcome (D-5): no exemption for suspended accounts in V1**, so that guard is not
+edited at all, and spam/security suspensions are permanently excluded from any future exemption.
 
 **18. What audit trail is required, and how do we keep it attributable?**
 Explicit `Custom::AuditLog` writes with an explicit actor, on every assignment, priority, status, note, reply,

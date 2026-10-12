@@ -158,7 +158,7 @@ RSpec.describe 'Platform Support attachments', type: :request do
 
     # The response must be byte-identical whether the id is wrong, somebody else's, real-but-unauthorized,
     # or a note's -- otherwise the status itself tells the caller the row exists.
-    it 'answers identically for a nonexistent id, a note and another account row' do
+    it 'answers identically for a nonexistent id, a note and a row of another account' do
       foreign = PlatformSupportContractStub.ticket!(account: other_account)
       foreign_message = foreign.messages.create!(author_type: 'User', author_name: 'Somebody', body: 'Hi')
       foreign_attachment = attach_to(foreign_message, :platform_support_message_files)

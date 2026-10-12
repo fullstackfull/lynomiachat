@@ -135,7 +135,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
 
   # ---- PROOF 4: a tenant cannot see another account's platform support notification ---------------------
   describe 'cross-account visibility through the feed' do
-    it 'does not serve another account administrator a row about this accountticket' do
+    it 'does not serve another account administrator a row about a ticket of this account' do
       reply_row(other_administrator, ticket, for_account: other_account)
 
       get "/api/v1/accounts/#{other_account.id}/notifications",

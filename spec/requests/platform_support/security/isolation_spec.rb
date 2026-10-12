@@ -52,7 +52,7 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
       end
     end
 
-    it 'writes no message onto another account ticket' do
+    it 'writes no message onto a ticket of another account' do
       expect { send_as(administrator, :post, "#{base}/tickets/#{foreign_ticket.id}/messages") }
         .not_to change(PlatformSupport::Message, :count)
     end
@@ -65,7 +65,7 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
       expect(response.body).not_to include(foreign_ticket.subject)
     end
 
-    it 'still resolves the caller own reference' do
+    it 'still resolves the reference of the caller own ticket' do
       send_as(reporter, :get, "#{base}/tickets/#{ticket.reference}")
 
       expect(response).to have_http_status(:success)

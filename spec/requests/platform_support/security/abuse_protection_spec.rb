@@ -83,7 +83,7 @@ RSpec.describe 'Platform Support abuse protection', type: :request do
   end
 
   # Keyed per user WITHIN the account, so one member's loop cannot throttle their colleagues.
-  it 'does not spend another member budget' do
+  it 'does not spend the budget of another member' do
     ticket
     mine = PlatformSupportContractStub.ticket!(account: account, reporter: other_reporter)
     message_limit.times { post_message(ticket.id) }

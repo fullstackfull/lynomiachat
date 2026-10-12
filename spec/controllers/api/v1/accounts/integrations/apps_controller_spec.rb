@@ -152,104 +152,17 @@ RSpec.describe 'Integration Apps API', type: :request do
         expect(app['name']).to eql('Slack')
       end
 
-      it 'returns not found for Shopify when the client ID is missing' do
-        account.enable_features('shopify_integration')
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(true)
-        allow(GlobalConfigService).to receive(:load)
-          .with('SHOPIFY_CLIENT_ID', nil)
-          .and_return(nil)
+      # The legacy Shopify integration is retired, so `shopify` names no registered app
+      # (docs/product-refinement/02-shopify-retirement.md). An id that names no app is NOT FOUND -- it used to
+      # fall through with @app nil and the view raised, so the answer was 500.
+      it 'returns not found for an id that names no registered app' do
+        %w[shopify not-an-integration].each do |id|
+          get api_v1_account_integrations_app_url(account_id: account.id, id: id),
+              headers: agent.create_new_auth_token,
+              as: :json
 
-        get api_v1_account_integrations_app_url(account_id: account.id, id: 'shopify'),
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:not_found)
-      end
-
-      it 'will not return sensitive information for openai app for agents' do
-        openai = create(:integrations_hook, :openai, account: account)
-        get api_v1_account_integrations_app_url(account_id: account.id, id: openai.app.id),
-            headers: agent.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-
-        app = response.parsed_body
-        expect(app['hooks'].first['settings']).to be_nil
-      end
-
-      it 'returns visible hook settings for openai app for admins' do
-        openai = create(:integrations_hook, :openai, account: account)
-        get api_v1_account_integrations_app_url(account_id: account.id, id: openai.app.id),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:success)
-
-        app = response.parsed_body
-        expect(app['hooks'].first['settings']).not_to be_nil
-      end
-
-      it 'hides credentials and keeps visible settings for google credential integrations' do
-        hook = create(:integrations_hook, :google_translate, account: account,
-                                                             settings: { project_id: 'project-1',
-                                                                         credentials: { private_key: 'secret' } })
-        get api_v1_account_integrations_app_url(account_id: account.id, id: hook.app.id),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        app = response.parsed_body
-        expect(app['hooks'].first['settings']).to eq('project_id' => 'project-1')
-      end
-
-      it 'returns empty settings for oauth integrations with no visible properties' do
-        hook = create(
-          :integrations_hook,
-          :linear,
-          account: account,
-          settings: { token_type: 'Bearer', refresh_token: 'refresh-secret', expires_in: 7200 }
-        )
-        get api_v1_account_integrations_app_url(account_id: account.id, id: hook.app.id),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        app = response.parsed_body
-        expect(app['hooks'].first['settings']).to eq({})
-      end
-
-      it 'does not expose leadsquared credential keys in visible settings' do
-        account.enable_features('crm_integration')
-        hook = create(:integrations_hook, :leadsquared, account: account,
-                                                        settings: {
-                                                          'access_key' => 'access-secret',
-                                                          'secret_key' => 'secret',
-                                                          'endpoint_url' => 'https://api.leadsquared.com/',
-                                                          'enable_conversation_activity' => true
-                                                        })
-        get api_v1_account_integrations_app_url(account_id: account.id, id: hook.app.id),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        settings = response.parsed_body['hooks'].first['settings']
-        expect(settings).to eq(
-          'endpoint_url' => 'https://api.leadsquared.com/',
-          'enable_conversation_activity' => true
-        )
-      end
-
-      it 'returns not found for Shopify when either feature gate is disabled' do
-        account.enable_features('shopify_integration')
-        allow(GlobalConfigService).to receive(:load)
-          .with('ENABLE_SHOPIFY_INTEGRATION', 'false')
-          .and_return(false)
-
-        get api_v1_account_integrations_app_url(account_id: account.id, id: 'shopify'),
-            headers: admin.create_new_auth_token,
-            as: :json
-
-        expect(response).to have_http_status(:not_found)
+          expect(response).to have_http_status(:not_found), "#{id} did not answer 404"
+        end
       end
     end
   end

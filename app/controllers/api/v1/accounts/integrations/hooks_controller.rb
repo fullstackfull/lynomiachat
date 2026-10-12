@@ -40,8 +40,10 @@ class Api::V1::Accounts::Integrations::HooksController < Api::V1::Accounts::Inte
     params.require(:hook).permit(:app_id, :inbox_id, :status, settings: {})
   end
 
+  # Only asked on `create`, which is the only action the refusal below applies to. The branch that read
+  # `@hook&.app_id` was left over from when every action was refused, and was unreachable.
   def shopify_hook?
-    action_name == 'create' ? permitted_params[:app_id] == 'shopify' : @hook&.app_id == 'shopify'
+    permitted_params[:app_id] == 'shopify'
   end
 
   # The legacy Shopify integration is retired: Lynomia has one Shopify product and it is Lynomia Commerce

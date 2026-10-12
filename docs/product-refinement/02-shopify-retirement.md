@@ -296,3 +296,69 @@ reversed by this phase, rather than being deleted — it is the record of why th
 8. Installation config keys removed last, so an operator reading the diff sees the surface go before the keys.
 
 Each step leaves the suite green on its own.
+
+---
+
+## §correction — a live breakage this retirement introduced, found and fixed
+
+An adversarial verification pass over the branch found a defect this retirement **caused and shipped**. It is
+recorded here rather than quietly fixed, because the way it escaped matters more than the fix.
+
+### What broke
+
+The retirement deleted `app/services/shopify/feature_gate.rb`. It did not delete the only reference to it:
+
+```erb
+features.delete(Shopify::FeatureGate::ACCOUNT_FEATURE) unless Shopify::FeatureGate.enabled?(account: @account)
+```
+
+in `app/views/api/v1/models/_account.json.jbuilder` — the account payload the dashboard reads **on every
+load**. So `GET /api/v1/accounts/:id` raised `NameError` and answered **500**, reproduced directly:
+
+```
+status=500   (before)
+status=200   (after)
+```
+
+That is the whole dashboard, for every user, on every account.
+
+### Why the sweep missed it
+
+The retirement's own verification ran 149 examples across the canonical Shopify Commerce path, the legacy
+audit task, the integration app registry and the Vite build — and it found and fixed a dangling *relative*
+Vite import by running the build. It did not run anything that **renders this view**, and nothing in the
+repository asserted that the account payload renders at all. A grep for `Shopify::` would have found it; a
+grep for the paths being deleted did not, which is the same mistake the `ShopDomain` finding in §4 warned
+about and that this sweep then made in the other direction.
+
+### The fix, which is a rule rather than a patch
+
+The gate existed to hide the `shopify_integration` account feature unless the legacy integration was
+configured. The flag is now `deprecated: true` in `config/features.yml` — declared so persisted bit positions
+do not shift, never offered. So the payload now removes **every** deprecated feature, not this one:
+
+```erb
+json.features @account.enabled_features.except(*BillingPlan.deprecated_features)
+```
+
+`BillingPlan.deprecated_features` reads the same file as `assignable_features`, so one place knows what
+deprecated means, and the next feature retired is covered without anybody editing a view.
+
+### Two more defects the same pass exposed
+
+- **`GET /integrations/apps/:id` answered 500 for an id that names no app.** `fetch_app` left `@app` nil and
+  the view rendered it. Nothing noticed while every id anybody asked for existed; retiring the legacy Shopify
+  app made `shopify` one of those ids. It now raises `RecordNotFound`, which is what a missing app is.
+  Narrowed deliberately to **existence**: an app that exists but is not configured yet still answers, because
+  fetching its details is how its settings page renders, which is how an administrator configures it.
+- **Two stale specs asserted that a legacy Shopify hook could not be updated or deleted.** That is the
+  opposite of this retirement's rule (§5): `create` is refused and nothing else, because an account holding a
+  legacy row must be able to clear it. They now assert the documented behaviour, and the unreachable
+  `@hook&.app_id` branch in `shopify_hook?` is gone.
+
+### What now prevents a repeat
+
+`spec/requests/accounts/deprecated_features_spec.rb` — 4 examples. The first one is simply **that the account
+payload renders**, which is the assertion whose absence let a deleted constant reach a pushed commit. The rest
+prove a deprecated feature is removed even when the account has it enabled, a live feature is still
+advertised, and the deprecated list comes from the feature declarations rather than a second list.

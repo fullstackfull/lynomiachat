@@ -26,9 +26,14 @@ if resource.custom_attributes.present?
   end
 end
 json.domain @account.domain
-features = @account.enabled_features
-features.delete(Shopify::FeatureGate::ACCOUNT_FEATURE) unless Shopify::FeatureGate.enabled?(account: @account)
-json.features features
+# A deprecated feature is declared but never offered: its line stays in config/features.yml so persisted bit
+# positions do not shift, and it is removed here so the dashboard is never told it has a capability whose page
+# no longer exists (BillingPlan.deprecated_features; docs/product-refinement/02-shopify-retirement.md).
+#
+# This replaces a `Shopify::FeatureGate` call that was left behind when the legacy Shopify integration was
+# retired -- the class was deleted and this reference was not, which raised NameError on every dashboard load.
+# `enabled_features` is a Hash of name => true (Featurable#enabled_features), so this removes BY KEY.
+json.features @account.enabled_features.except(*BillingPlan.deprecated_features)
 json.id @account.id
 json.locale @account.locale
 json.name @account.name

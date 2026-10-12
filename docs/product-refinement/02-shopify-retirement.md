@@ -362,3 +362,63 @@ deprecated means, and the next feature retired is covered without anybody editin
 payload renders**, which is the assertion whose absence let a deleted constant reach a pushed commit. The rest
 prove a deprecated feature is removed even when the account has it enabled, a live feature is still
 advertised, and the deprecated list comes from the feature declarations rather than a second list.
+
+## §residual — the legacy token, and why deleting our copy would make things worse
+
+Raised against this work as its "hardest blocker": the legacy webhook route and the uninstall controller are
+deleted, and nothing clears the `integrations_hooks` rows holding non-expiring offline Admin API tokens.
+
+The premise is accurate. The recommendation is backwards. Both are worth writing down.
+
+### What is actually true
+
+`Shopify::CallbacksController#handle_response` stored the shop's **offline** Admin API access token in
+`integrations_hooks.access_token`, and Shopify offline tokens do not expire. The two handlers that used to
+destroy those rows — `app/uninstalled` and the mandatory `shop/redact` topic in
+`Webhooks::ShopifyController` — were deleted with the integration, and `shopify` is no longer in
+`config/integration/apps.yml`, so the row does not render anywhere in the dashboard either. No new one can be
+created: `hooks_controller#create` is the only generic writer and it refuses `app_id == 'shopify'` (the other
+three writers in the codebase are Notion, Linear and Slack specific).
+
+Two things the finding did not account for:
+
+**The compliance obligation is already met, by the canonical app.** Commerce's own Shopify app subscribes to
+`app/uninstalled` plus the three mandatory privacy topics — the subscriptions are app-specific and deployed
+with the Shopify CLI from the operator's `shopify.app.toml`, whose template is
+`docs/commerce/shopify.app.toml.example:25,30`. Lynomia accepts exactly that set
+(`Commerce::Shopify::Webhook::TOPICS`, `custom/app/services/commerce/shopify/webhook.rb:9-11`) and
+`Commerce::Shopify::WebhookJob` handles all four (`custom/app/jobs/commerce/shopify/webhook_job.rb:16-17`).
+What was deleted was the **legacy** app's endpoint, which belonged to a separate Partner app with its own
+`SHOPIFY_CLIENT_ID`/`SHOPIFY_CLIENT_SECRET` — credentials this retirement also removed from installation
+config (§2.3).
+
+**Deleting our copy of the token does not revoke it.** A Shopify offline token is revoked when the app is
+uninstalled from the shop, or when the Partner app itself is deleted. Neither is something this codebase can
+do. Removing the row removes *our* copy and nothing else.
+
+### Why there is still no deletion task
+
+`hook.reference_id` is the shop domain. That column is the **only remaining record of which shops still have
+the legacy app installed** — which is to say, the only record of where the live tokens are. An automatic
+migration that deleted those rows on deploy would destroy the list before anybody used it, leave the tokens
+live at Shopify, and print a reassuring count on the way past. That is a worse position than the one it
+claims to fix.
+
+So the order is fixed, and it is the operator's, not the deploy's:
+
+1. `rails lynomia:shopify:legacy_audit` — which shops, which accounts. Production reports
+   `SAFE_TO_RETIRE` (zero rows), which is why there is nothing to do on this installation today.
+2. For each shop listed: uninstall the legacy app in that shop's Shopify admin, or delete the legacy Partner
+   app outright. **This is the step that revokes the token.** Nothing in Lynomia can do it or verify it.
+3. Only then remove the row. A console `destroy` on a named id, not a migration: by that point there are a
+   handful of ids from step 1, a human has confirmed each shop, and the audit has served its purpose.
+
+The read-only audit from §5 is therefore not an incomplete half of a cleanup. It is the deliverable, and it
+has to outlive the token rather than be replaced by something that deletes it.
+
+### Still open, and owned by the operator rather than the code
+
+If the legacy Partner app registration still exists and is still installed anywhere, its `app/uninstalled`
+and three compliance topics now POST to a route that returns 404, and Shopify counts those failures against
+the app. That is the expected consequence of retiring an app, and the remedy is step 2 above — not rebuilding
+an endpoint for an app the product no longer has.

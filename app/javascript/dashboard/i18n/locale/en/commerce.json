@@ -356,6 +356,7 @@
         "ORDER_STATE": "Not possible in the order’s current status.",
         "NO_EMAIL": "The order has no email address.",
         "UNSUPPORTED": "Not supported for this store.",
+        "MULTIPLE_PAYMENTS": "The order was paid in more than one payment, so refund it in your store’s admin.",
         "OTHER": "Not available right now."
       },
       "REFUND_REASONS": {

@@ -37,12 +37,6 @@ module CustomExceptions::Account
     end
   end
 
-  class PlanUpgradeRequired < CustomExceptions::Base
-    def message
-      I18n.t 'errors.plan_upgrade_required.failed'
-    end
-  end
-
   class EmailLimitExceeded < CustomExceptions::Base
     def message
       I18n.t('errors.account.email_limit_exceeded')

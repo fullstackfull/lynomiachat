@@ -103,3 +103,34 @@ at "we could not reach your store" has the page that says what to do about it on
   written but not yet reachable from the product** — they exist in the corpus and in the registry, and
   workstream E wired only commerce. The remaining surfaces are listed in
   `11-notifications-and-navigation.md` §3.3.
+
+## §correction — the audit log article asserted the opposite of the code
+
+`administration/audit-logs` said, in both locales and in its `seo_description`:
+
+> Indefinitely. There is no retention setting, no age limit, and no scheduled job that deletes entries.
+
+Every clause of that is false. `AuditTrail::RetentionJob` runs daily at 03:15 UTC
+(`config/schedule.yml:103-106`), sweeps entries older than `AUDIT_LOG_RETENTION_DAYS` (default **365**,
+minimum accepted **30**), and its `delete_all` is the only thing in the codebase that removes an audit row —
+verified rather than taken from the job's own comment.
+
+So an administrator reading the documentation to decide whether they needed their own record of a
+configuration change was told they did not. That is the worst class of documentation defect: not missing, but
+confidently wrong in the direction that stops the reader acting.
+
+Both locales now state the window, who can change it (the people operating the installation, not any account
+or plan), the 30-day floor, that the sweep errs longer rather than shorter, and — because there is no export —
+that a record needed beyond the window has to be kept outside the product at the time it is read. The
+`seo_description` carried the same falsehood into search results and is corrected too.
+
+### Three smaller items closed in the same pass
+
+| item | verdict |
+|---|---|
+| `errors.plan_upgrade_required.failed` missing from `en.yml` | real, and the fix is **deletion**: nothing in the tree raises `CustomExceptions::Account::PlanUpgradeRequired` (an Enterprise-removal leftover), so it was an unreachable message pointing at an absent key. Adding the key would have preserved dead code. |
+| `STORE_LIMIT_REACHED` falls through to a generic string | **stale**. All 31 `Commerce::Error::CODES` have a string in `en/commerce.json` and `ar/commerce.json`; checked by diffing the vocabulary against both files, not by eye. |
+| `multiple_payments` falls through to a generic string | real. Shopify emits it when an order was paid across several transactions (`providers/shopify/actions.rb:112`), and the agent saw `OTHER` — "Not available right now" — which hides both the reason and the fact that the refund is still possible in the store's own admin. Added to the resolver and to both locales. |
+
+The two real items were a one-line deletion and a one-line addition. Reporting them as found-and-fixed without
+the `STORE_LIMIT_REACHED` row would have been the easier write-up and a less honest one.

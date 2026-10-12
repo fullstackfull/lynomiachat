@@ -173,6 +173,16 @@ class SuperAdmin::PlatformSupportActionsController < SuperAdmin::PlatformSupport
 
   # The reply's three consequences, in one place: the ticket's own operator-reply clock, the customer-visible
   # event, and the audit row. This is seam 2 from the header comment.
+  #
+  # THREE CALLS BELONG HERE AND ARE NOT YET MADE, because the classes live on the SLA and notification branch
+  # and this one does not carry them. Integration adds exactly these, in this method, and nothing else on this
+  # surface changes:
+  #
+  #   PlatformSupport::Notifications::ReplyNotifier.new(ticket: @ticket).perform
+  #   PlatformSupport::Sla::Clock.new(@ticket).record_first_response
+  #   PlatformSupport::TicketMailer.operator_replied(@ticket, message).deliver_later
+  #
+  # The mailer refuses by itself when no recipient address exists, so this method does not pre-check one.
   def record_reply(message)
     @ticket.with_lock do
       @ticket.update!(last_operator_message_at: message.created_at, last_activity_at: message.created_at)

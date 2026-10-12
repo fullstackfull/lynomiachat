@@ -17,9 +17,13 @@
 # acquires both with one click. Nothing here reads `Current.user`, and nothing in PlatformSupport::TicketPolicy
 # reads `current_super_admin`.
 class PlatformSupport::StaffAuthorizer
-  # The acting agent row for an authenticated Super Admin, or nil. Inactive rows resolve to nil: deactivating
-  # an agent is how an operator leaves the desk, and it has to take effect without deleting their notes.
-  def self.resolve(super_admin)
+  # The acting agent row for an authenticated Super Admin, or nil. Inactive rows answer nil: deactivating an
+  # agent is how an operator leaves the desk, and it has to take effect without deleting their notes.
+  #
+  # Named `agent_for` rather than `resolve` so that nothing on this surface shares a method name with
+  # PlatformSupport::TicketPolicy::Scope#resolve: the two authorization paths are not interchangeable, and a
+  # shared name is the first step towards a caller treating them as if they were.
+  def self.agent_for(super_admin)
     return nil if super_admin.nil?
 
     PlatformSupport::Agent.active.find_by(user_id: super_admin.id)

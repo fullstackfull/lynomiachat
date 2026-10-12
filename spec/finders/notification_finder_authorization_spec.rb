@@ -146,15 +146,25 @@ RSpec.describe NotificationFinder do
     # and the planner picks it; an assertion about Index or Bitmap nodes would be asserting Postgres's size
     # heuristic rather than anything about this query. The indexes that serve it at production scale are
     # recorded in the closure report from db/schema.rb instead.
-    it 'evaluates the authorization subselect once, not once per row' do
+    it 'evaluates every authorization subselect once, not once per row' do
       attach('conversation_participating_manage')
       plan = ActiveRecord::Base.connection.execute(
         "EXPLAIN #{finder.notifications.to_sql}"
       ).map { |row| row['QUERY PLAN'] }.join("\n")
 
-      expect(plan).to include('SubPlan')
-      expect(plan).to match(/hashed SubPlan/)
-      expect(plan).not_to match(/Nested Loop/)
+      # Three subselects: the authorized conversation ids, and inside them the member's inbox ids and team ids.
+      # The property is that EVERY one is uncorrelated -- Postgres reports it as `hashed SubPlan N`, meaning it
+      # ran once and the outer node probes a hash. A bare `SubPlan N` reference would be re-executed per row.
+      #
+      # Deliberately NOT asserted: the absence of `Nested Loop`. There is one inside each membership subplan,
+      # joining inboxes to inbox_members and teams to team_members. Each sits INSIDE a hashed subplan, so it
+      # runs once over the member's own handful of memberships rather than once per notification. Asserting its
+      # absence would assert the wrong thing.
+      declared = plan.scan(/^\s*SubPlan (\d+)$/).flatten
+      hashed = plan.scan(/hashed SubPlan (\d+)/).flatten
+
+      expect(declared.length).to be >= 3
+      expect(hashed.sort).to eq(declared.sort)
     end
 
     it 'keeps the page bounded to RESULTS_PER_PAGE and the count describing the narrowed set' do

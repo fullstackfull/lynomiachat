@@ -21,10 +21,16 @@ RSpec.describe Notification::DeleteNotificationJob do
 
   context 'when performing the job' do
     let(:other_account) { create(:account) }
+    let(:inbox) { create(:inbox, account: account) }
+    let(:accessible) { create(:conversation, account: account, inbox: inbox) }
 
+    # The job deletes what the feed would have shown, so the user has to be a member who can reach these
+    # conversations -- which is the only state the endpoint that enqueues this job can be called in.
     before do
-      create(:notification, account: account, user: user, read_at: nil)
-      create(:notification, account: account, user: user, read_at: Time.current)
+      create(:account_user, account: account, user: user, role: :agent)
+      create(:inbox_member, inbox: inbox, user: user)
+      create(:notification, account: account, user: user, read_at: nil, primary_actor: accessible)
+      create(:notification, account: account, user: user, read_at: Time.current, primary_actor: accessible)
       create(:notification, account: other_account, user: user, read_at: Time.current)
     end
 

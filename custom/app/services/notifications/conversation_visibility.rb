@@ -1,11 +1,19 @@
 # THE ONE DEFINITION of "may this membership see this notification", and the only place that decides it.
 #
-# WHY IT EXISTS SEPARATELY FROM `Conversations::CapabilityScope`. The capability rule itself -- what
-# `conversation_manage`, `conversation_unassigned_manage` and `conversation_participating_manage` mean, widest
-# wins, grandfathering, D2's entitlement bound -- lives in `Conversations::CapabilityScope` and is NOT restated
-# here. What is here is the translation of that rule onto the `notifications` table: which column links a
-# notification to a conversation, and what to do with a notification that is about something else. Four callers
-# need that translation and they must not each write their own:
+# THE RULE, in one line:
+#
+#     a conversation notification is visible  <=>  the member can currently access that conversation
+#                                                  = the Inbox/Team/account ACCESS CEILING
+#                                                    AND the conversation_* CAPABILITY scope
+#
+# Both layers, intersected. Neither replaces the other, and neither is restated here: the ceiling is
+# `Conversations::AccessCeiling` (the rule `ConversationPolicy` has always applied, now held in one object and
+# delegated to by that policy) and the capability is `Conversations::CapabilityScope`. This object's whole job
+# is to compose them and to translate the composition onto the `notifications` table -- which column links a
+# notification to a conversation, and what to do with a notification that is about something else.
+#
+# WHY IT EXISTS SEPARATELY FROM THOSE TWO. Four callers need that translation and they must not each write
+# their own:
 #
 #   Custom::NotificationFinder                          the feed, `unread_count` and `count`, and through
 #                                                       BaseListener the websocket's badge
@@ -13,8 +21,12 @@
 #   Custom::ActionCableListener                          the created/updated socket payload
 #   Custom::Notification::DeleteNotificationJob          "delete all", so it cannot destroy what it cannot show
 #
-# `narrow` and `permits?` are deliberately the same pair of shapes `CapabilityScope` offers, and they are
-# derived from the same object, so the relation answer and the record answer cannot drift.
+# `narrow` and `permits?` are the relation and the record shape of one question. They are composed from the
+# same two objects, and the record shape is not a reimplementation at all: `permits?` asks
+# `ConversationPolicy#show?`, which IS the product's canonical conversation access answer -- the ceiling
+# through the delegation above, and the capability through `Custom::ConversationPolicy`. So the record path
+# cannot drift from the rest of the product by construction, and the relation path is held to the same answer
+# by an equivalence example that walks every combination.
 #
 # WHICH NOTIFICATIONS ARE "ABOUT A CONVERSATION".
 #
@@ -56,11 +68,15 @@ class Notifications::ConversationVisibility
     @user = user
   end
 
-  # True when this membership is not narrowed at all -- an administrator, a membership with no set attached, a
-  # set holding `conversation_manage`, a grandfathered set, or an account whose `custom_roles` entitlement has
-  # lapsed. Callers check it first so the unrestricted case costs no extra SQL.
+  # True only when BOTH layers impose nothing, which in practice means an administrator (or an agent bot).
+  # Callers check it first so that case costs no extra SQL.
+  #
+  # Note what is NOT unrestricted any more: a plain agent, and a holder of `conversation_manage`. The
+  # capability layer says nothing about either, but the ceiling does -- they see the conversations of their
+  # inboxes and teams, and no others. Before the ceiling was composed in, such a member was handed the whole
+  # account's notifications.
   def unrestricted?
-    capability_scope.unrestricted?
+    capability_scope.unrestricted? && access_ceiling.unrestricted?
   end
 
   # The relation, narrowed. One uncorrelated subselect; never a check per row.
@@ -72,25 +88,41 @@ class Notifications::ConversationVisibility
   end
 
   # The same question about one notification, so that an id is not a way around the relation.
+  #
+  # This asks the POLICY, not the two layers separately. `ConversationPolicy#show?` already composes them --
+  # the administrator and agent-bot short-circuits, then `Conversations::AccessCeiling` through the delegation
+  # in `Custom::ConversationPolicy`, then `Conversations::CapabilityScope` -- and it is what every other
+  # conversation record read in the product is authorized by. Asking it means the notification record path is
+  # the canonical answer rather than a copy of it, and it stays correct if either layer changes.
   def permits?(notification)
-    return true if unrestricted?
     return true unless CONVERSATION_DERIVED_ACTORS.include?(notification.primary_actor_type)
     return false unless notification.primary_actor_type == CONVERSATION_ACTOR
 
     conversation = notification.primary_actor
     return false if conversation.blank?
 
-    capability_scope.permits?(conversation, user: @user)
+    ::ConversationPolicy.new(
+      { user: @user, account: @account, account_user: account_user }, conversation
+    ).show?
   end
 
   private
 
+  # THE INTERSECTION, and the only place it is formed. Both narrowings are applied to the same relation, so
+  # the result is the conversations that satisfy the ceiling AND the capability. Order is irrelevant; each is
+  # an independent restriction.
+  #
   # A relation, not an array: Rails renders it as `IN (SELECT "conversations"."id" ...)`, so the ids are never
-  # loaded into Ruby and the answer cannot be bounded by how many conversations the member can reach. For the
-  # `:none` mode `narrow` returns `relation.none` and the subselect becomes unsatisfiable, which is the right
-  # answer -- no conversation notification at all.
+  # loaded into Ruby and the answer cannot be bounded by how many conversations, inboxes or teams the member
+  # can reach. For the capability's `:none` mode `narrow` returns `relation.none` and the subselect becomes
+  # unsatisfiable, which is the right answer -- no conversation notification at all.
   def authorized_conversation_ids
-    capability_scope.narrow(@account.conversations, user: @user).select(:id)
+    scope = capability_scope.narrow(@account.conversations, user: @user)
+    access_ceiling.narrow(scope).select(:id)
+  end
+
+  def access_ceiling
+    @access_ceiling ||= ::Conversations::AccessCeiling.for(account_user: account_user, user: @user, account: @account)
   end
 
   def capability_scope

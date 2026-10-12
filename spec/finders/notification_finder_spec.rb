@@ -5,10 +5,20 @@ RSpec.describe NotificationFinder do
   let!(:user) { create(:user, account: account) }
   let(:notification_finder) { described_class.new(user, account, params) }
 
+  # This file is about the finder's status filtering, ordering and counts. The notifications therefore have to
+  # be ones the user can actually reach: since the notification feed applies the Inbox/Team ceiling at read
+  # time, a notification about a conversation in an inbox the user never joined is correctly invisible -- and
+  # NotificationBuilder would never have created one, because it asks the same policy at write time. So the
+  # user is an inbox member and the conversations are in that inbox, which is the only state production
+  # produces.
+  let!(:inbox) { create(:inbox, account: account) }
+  let!(:conversation) { create(:conversation, account: account, inbox: inbox) }
+
   before do
-    create(:notification, :snoozed, account: account, user: user)
-    create_list(:notification, 2, :read, account: account, user: user)
-    create_list(:notification, 3, account: account, user: user)
+    create(:inbox_member, inbox: inbox, user: user)
+    create(:notification, :snoozed, account: account, user: user, primary_actor: conversation)
+    create_list(:notification, 2, :read, account: account, user: user, primary_actor: conversation)
+    create_list(:notification, 3, account: account, user: user, primary_actor: conversation)
   end
 
   describe '#notifications' do

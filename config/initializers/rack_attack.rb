@@ -390,6 +390,61 @@ class Rack::Attack
            limit: ENV.fetch('RATE_LIMIT_ANALYTICS', '120').to_i, period: 1.minute) do |req|
     account_user_key(req, ANALYTICS_PATHS) if req.get?
   end
+
+  # PLATFORM SUPPORT -- the desk a tenant raises a ticket with LYNOMIA on. A different product on a different
+  # path from the tenant support desk above, with its own throttle names, its own path regexes and its own ENV
+  # keys, so neither can consume the other's budget or be relaxed by accident
+  # (12-refresh-against-product-refinement.md §9, 03-authorization-security.md §8).
+  #
+  # THE WRITE LIMITS ARE THE NEW PART. Every existing rule in this family is GET-only, so until now there was
+  # no write limit anywhere in it. A support desk is a free-text channel into Lynomia's own staff inbox and is
+  # exactly what an abusive account would use as one; it is also never feature-gated and never sold, so it is
+  # reachable by every account including a billing-locked one.
+  #
+  # A 429 HERE CANNOT LEAK WHETHER A RESOURCE EXISTS. Two independent reasons, both structural: the counter key
+  # is built from the path pattern and the caller's identity and NEVER contains the ticket id -- so the message
+  # route counts and refuses identically for a real ticket, another account's ticket and an id that never
+  # existed -- and the refusal happens in middleware, before any controller or model has looked anything up.
+  # The response is Rack::Attack's default "Retry later", which names nothing.
+  #
+  # Creates are limited per USER and per ACCOUNT together: per user alone lets one account's whole team be
+  # used as a pool, per account alone lets one member exhaust their colleagues' budget.
+  PLATFORM_SUPPORT_PATHS = %r{\A/api/v1/accounts/(?<account_id>\d+)/platform_support/}
+  PLATFORM_SUPPORT_TICKETS_PATH = %r{\A/api/v1/accounts/(?<account_id>\d+)/platform_support/tickets\z}
+  PLATFORM_SUPPORT_MESSAGES_PATH = %r{\A/api/v1/accounts/(?<account_id>\d+)/platform_support/tickets/[^/]+/messages\z}
+
+  # The account alone, for a limit that is the account's rather than one member's. `account_user_key` above is
+  # the per-member key and is reused unchanged.
+  def self.account_scope_key(req, pattern)
+    match_data = pattern.match(req.path_without_extensions)
+    match_data[:account_id] if match_data.present?
+  end
+
+  # Reads AND writes, unlike the tenant desk's GET-only rule: the ceiling under which every other rule sits.
+  throttle('/api/v1/accounts/:account_id/platform_support/* per user',
+           limit: ENV.fetch('RATE_LIMIT_PLATFORM_SUPPORT', '300').to_i, period: 1.minute) do |req|
+    account_user_key(req, PLATFORM_SUPPORT_PATHS)
+  end
+
+  throttle('/api/v1/accounts/:account_id/platform_support/tickets create per user',
+           limit: ENV.fetch('RATE_LIMIT_PLATFORM_SUPPORT_TICKET_CREATE', '5').to_i, period: 1.hour) do |req|
+    account_user_key(req, PLATFORM_SUPPORT_TICKETS_PATH) if req.post?
+  end
+
+  throttle('/api/v1/accounts/:account_id/platform_support/tickets create per account',
+           limit: ENV.fetch('RATE_LIMIT_PLATFORM_SUPPORT_TICKET_CREATE_ACCOUNT', '20').to_i, period: 1.hour) do |req|
+    account_scope_key(req, PLATFORM_SUPPORT_TICKETS_PATH) if req.post?
+  end
+
+  throttle('/api/v1/accounts/:account_id/platform_support/tickets/:id/messages create per user',
+           limit: ENV.fetch('RATE_LIMIT_PLATFORM_SUPPORT_MESSAGE_CREATE', '30').to_i, period: 1.hour) do |req|
+    account_user_key(req, PLATFORM_SUPPORT_MESSAGES_PATH) if req.post?
+  end
+
+  throttle('/api/v1/accounts/:account_id/platform_support/tickets/:id/messages create per account',
+           limit: ENV.fetch('RATE_LIMIT_PLATFORM_SUPPORT_MESSAGE_CREATE_ACCOUNT', '120').to_i, period: 1.hour) do |req|
+    account_scope_key(req, PLATFORM_SUPPORT_MESSAGES_PATH) if req.post?
+  end
 end
 
 # Log blocked events

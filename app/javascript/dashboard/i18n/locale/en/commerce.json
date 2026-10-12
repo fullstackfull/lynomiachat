@@ -220,7 +220,8 @@
         "STEP_2": "Choose an administrator as the user and set Permissions to “{permission}”.",
         "STEP_3": "Generate the key, then paste the Consumer key and Consumer secret below.",
         "PERMISSION_READ": "Read",
-        "PERMISSION_READ_WRITE": "Read/Write"
+        "PERMISSION_READ_WRITE": "Read/Write",
+        "DOCS": "How to create the API key, step by step"
       },
       "PICKER": {
         "TITLE": "Add a store",
@@ -230,7 +231,8 @@
         "ZID_HINT": "Authorize the {installationName} app on Zid. No keys to copy.",
         "SHOPIFY_HINT": "Authorize the {installationName} Commerce app on your Shopify store. No keys to copy.",
         "UNAVAILABLE": "Not available yet",
-        "UNAVAILABLE_NOTE": "Platforms marked “Not available yet” aren’t offered on this workspace yet."
+        "UNAVAILABLE_NOTE": "Platforms marked “Not available yet” aren’t offered on this workspace yet.",
+        "DOCS": "What each platform can do once it is connected"
       },
       "SALLA": {
         "TITLE": "Connect with Salla",
@@ -255,7 +257,8 @@
           "LIMIT_REACHED": "Your plan’s store limit is reached, so this Salla store wasn’t connected. Upgrade your plan or disconnect a store, then create a new code."
         },
         "REAUTH_HINT": "Salla needs to authorize the {installationName} app again: update or reinstall it from your Salla dashboard. The store reconnects on its own.",
-        "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read."
+        "PROVIDER_OFF": "Salla is turned off on this installation. The store is kept but not read.",
+        "DOCS": "How to connect a Salla store"
       },
       "ZID": {
         "TITLE": "Connect with Zid",
@@ -264,7 +267,8 @@
         "CONNECT": "Connect with Zid",
         "REAUTH_HINT": "Zid needs you to authorize the {installationName} app again. Use Reconnect.",
         "PROVIDER_OFF": "Zid is turned off on this installation. The store is kept but not read.",
-        "DISCONNECT_DESCRIPTION": "The store's access, its webhooks and every customer link of this store are deleted. Nothing changes in the store. You can connect it again with Zid."
+        "DISCONNECT_DESCRIPTION": "The store's access, its webhooks and every customer link of this store are deleted. Nothing changes in the store. You can connect it again with Zid.",
+        "DOCS": "How to connect a Zid store"
       },
       "SHOPIFY": {
         "TITLE": "Connect with Shopify",
@@ -277,7 +281,8 @@
         "PROVIDER_OFF": "Shopify is turned off on this installation. The store is kept but not read.",
         "DISCONNECT_DESCRIPTION": "The store's access and every customer link of this store are deleted. Nothing changes in Shopify: to remove the app from the store, uninstall it in Shopify admin. You can connect it again with Shopify.",
         "ACTIONS_TITLE": "Reconnect Shopify to enable order actions",
-        "ACTIONS_DESCRIPTION": "Shopify will ask you to give the {installationName} Commerce app write access to orders, for cancellations and refunds. Until you approve it, the store stays read-only and keeps working."
+        "ACTIONS_DESCRIPTION": "Shopify will ask you to give the {installationName} Commerce app write access to orders, for cancellations and refunds. Until you approve it, the store stays read-only and keeps working.",
+        "DOCS": "How to connect a Shopify store"
       },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",

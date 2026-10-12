@@ -5,6 +5,7 @@ import { useBranding } from 'shared/composables/useBranding';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Label from 'dashboard/components-next/label/Label.vue';
+import DocsLink from 'dashboard/components-next/docs-link/DocsLink.vue';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
 
 // The first step of "Add store": which platform the store runs on, and how that platform connects. Every platform is
@@ -111,6 +112,12 @@ watch(
       <p v-if="hasUnavailable" class="text-label-small text-n-slate-11">
         {{ t('COMMERCE.SETTINGS.PICKER.UNAVAILABLE_NOTE') }}
       </p>
+      <!-- What each platform can do once it is connected, and what its connection needs. Asked here, before
+           the merchant picks one, rather than after they have already started the wrong flow. -->
+      <DocsLink
+        article-key="commerceProviders"
+        :label="t('COMMERCE.SETTINGS.PICKER.DOCS')"
+      />
     </div>
   </Dialog>
 </template>

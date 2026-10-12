@@ -177,3 +177,51 @@ The Platform Support architecture adds a tenant-facing entry point ("contact sup
 depends on how the installation is configured — a route on some installations, a configured URL on others.
 Under the old filter, the route-based variant would have been invisible with no error. The contract removes
 that trap, which is why the dependency was recorded rather than worked around.
+
+---
+
+## 3. Contextual help, where the decision is made
+
+Workstream E's third part. The registry already existed and is good
+(`dashboard/helper/documentationLinks.js`, 56 keys, keyed on a stable slug rather than a database id). What was
+missing was **reach**: only three consumers surfaced it — `getHelpUrlForFeature` for settings page headers,
+`MessageError.vue` for a failed WhatsApp send, and the profile menu — so half the registry was declared and
+never shown to anybody.
+
+### 3.1 One component instead of a `v-if` per call site
+
+`components-next/docs-link/DocsLink.vue`. Every documentation link in this product follows one rule: **no
+article, no link.** A branded installation with no `DOCUMENTATION_URL` gets `''` from `brandLink`, and a
+dangling "Learn more" that goes nowhere is worse than no link at all. That rule was being re-implemented at
+each call site with a `v-if`, which is how one of them eventually ships without it.
+
+The component takes a registry key, never a URL, and renders nothing when the key resolves to `''` — whether
+because the installation configured no documentation or because the key names no article.
+`specs/DocsLink.spec.js` holds all four cases, including `target="_blank"` with
+`rel="noopener noreferrer"` so the destination never gets a window reference.
+
+### 3.2 Where it was added
+
+Commerce, which had the largest gap between "articles that exist" and "articles anybody can reach":
+
+| surface | article | why there |
+|---|---|---|
+| `ProviderPicker.vue` | `commerceProviders` | before the merchant picks a platform, not after they have started the wrong flow |
+| `StoreDialog.vue` | `commerceWoocommerce` | at the step where they are creating the REST API key |
+| `SallaConnectDialog.vue` | `commerceSalla` | while they are installing the app from the Salla App Store |
+| `ZidConnectDialog.vue` | `commerceZid` | while they are authorizing on Zid |
+| `ShopifyConnectDialog.vue` | `commerceShopify` | while they are authorizing the Commerce app |
+
+Five `DOCS` strings in `en/commerce.json` and `ar/commerce.json`. Arabic is maintained in this repository as a
+first-class product language rather than left to Crowdin, which is the convention the earlier phases of this
+product set.
+
+### 3.3 Deliberately not done here
+
+The remaining unreached registry keys — the getting-started set, the three confusion pairs
+(`macrosOrAutomation`, `labelsOrAudiences`, `automationOrFlows`), and the WhatsApp operational articles
+(`whatsappNumberStatus`, `whatsappQualityAndLimits`, `whatsappDisplayName`, `whatsappReconnect` and the rest)
+— are a surface sweep across many unrelated components, and several of their articles are themselves part of
+the documentation corpus expansion. Wiring a link to an article that does not exist yet produces exactly the
+dangling link `DocsLink` is built to prevent, so those are recorded here and belong with the corpus work
+rather than ahead of it.

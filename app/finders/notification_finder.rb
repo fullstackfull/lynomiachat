@@ -60,3 +60,5 @@ class NotificationFinder
     params[:sort_order] || :desc
   end
 end
+
+NotificationFinder.prepend_mod_with('NotificationFinder')

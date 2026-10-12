@@ -80,3 +80,5 @@ class Api::V1::Accounts::NotificationsController < Api::V1::Accounts::BaseContro
     @notification_finder ||= NotificationFinder.new(Current.user, Current.account, params)
   end
 end
+
+Api::V1::Accounts::NotificationsController.prepend_mod_with('Api::V1::Accounts::NotificationsController')

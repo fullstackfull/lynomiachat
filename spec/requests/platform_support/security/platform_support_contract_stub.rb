@@ -29,6 +29,11 @@
 
 require 'rails_helper'
 
+# rubocop:disable Style/OneClassPerFile, Metrics/ModuleLength -- ONE FILE ON PURPOSE. This is the whole of
+# the absent contract, every definition guarded by `defined?`, so it is a single unit that disappears at
+# integration. Splitting it across files would make it look like production code and make it harder to
+# delete than to keep.
+
 # --- §1 the six tables -------------------------------------------------------------------------------------
 #
 # Created once, outside any example transaction, and idempotently: a migration is Agent 1's to write and this
@@ -36,8 +41,8 @@ require 'rails_helper'
 # shaped to them, and `status < 4` is why `resolved` and `closed` are numbered last.
 module PlatformSupportContractStub
   FIRST_RESPONSE_INDEX_PREDICATE = 'first_response_due_at IS NOT NULL AND first_responded_at IS NULL ' \
-                                   'AND first_response_breached_at IS NULL AND status < 4'
-  RESOLUTION_INDEX_PREDICATE = 'resolution_due_at IS NOT NULL AND resolution_breached_at IS NULL AND status < 4'
+                                   'AND first_response_breached_at IS NULL AND status < 4'.freeze
+  RESOLUTION_INDEX_PREDICATE = 'resolution_due_at IS NOT NULL AND resolution_breached_at IS NULL AND status < 4'.freeze
 
   def self.install_schema!
     connection = ActiveRecord::Base.connection
@@ -234,7 +239,7 @@ PlatformSupportContractStub.install_schema!
 
 # --- §1 the models -----------------------------------------------------------------------------------------
 
-unless defined?(::PlatformSupport::Agent)
+unless defined?(PlatformSupport::Agent)
   class PlatformSupport::Agent < ApplicationRecord
     self.table_name = 'platform_support_agents'
     belongs_to :user
@@ -242,7 +247,7 @@ unless defined?(::PlatformSupport::Agent)
   end
 end
 
-unless defined?(::PlatformSupport::SlaPolicy)
+unless defined?(PlatformSupport::SlaPolicy)
   class PlatformSupport::SlaPolicy < ApplicationRecord
     self.table_name = 'platform_support_sla_policies'
 
@@ -260,7 +265,7 @@ unless defined?(::PlatformSupport::SlaPolicy)
   end
 end
 
-unless defined?(::PlatformSupport::Ticket)
+unless defined?(PlatformSupport::Ticket)
   class PlatformSupport::Ticket < ApplicationRecord
     self.table_name = 'platform_support_tickets'
 
@@ -301,7 +306,7 @@ unless defined?(::PlatformSupport::Ticket)
   end
 end
 
-unless defined?(::PlatformSupport::Message)
+unless defined?(PlatformSupport::Message)
   class PlatformSupport::Message < ApplicationRecord
     self.table_name = 'platform_support_messages'
     belongs_to :ticket, class_name: 'PlatformSupport::Ticket', foreign_key: :platform_support_ticket_id,
@@ -310,7 +315,7 @@ unless defined?(::PlatformSupport::Message)
   end
 end
 
-unless defined?(::PlatformSupport::InternalNote)
+unless defined?(PlatformSupport::InternalNote)
   class PlatformSupport::InternalNote < ApplicationRecord
     self.table_name = 'platform_support_internal_notes'
     belongs_to :ticket, class_name: 'PlatformSupport::Ticket', foreign_key: :platform_support_ticket_id,
@@ -319,7 +324,7 @@ unless defined?(::PlatformSupport::InternalNote)
   end
 end
 
-unless defined?(::PlatformSupport::Event)
+unless defined?(PlatformSupport::Event)
   class PlatformSupport::Event < ApplicationRecord
     self.table_name = 'platform_support_events'
     belongs_to :ticket, class_name: 'PlatformSupport::Ticket', foreign_key: :platform_support_ticket_id,
@@ -337,7 +342,7 @@ end
 # The Scope applies the ACCOUNT predicate itself and then narrows by role, deliberately unlike
 # `Support::TicketPolicy::Scope`, which carries no account predicate and depends on two callers remembering
 # one. A nil account, a nil membership or a role it does not recognise resolves to `none`.
-unless defined?(::PlatformSupport::TicketPolicy)
+unless defined?(PlatformSupport::TicketPolicy)
   class PlatformSupport::TicketPolicy < ApplicationPolicy
     class Scope < ApplicationPolicy::Scope
       def resolve
@@ -365,7 +370,7 @@ end
 
 # --- §2/§3 the tenant base controller and the member routes ------------------------------------------------
 
-unless defined?(::Api::V1::Accounts::PlatformSupport::BaseController)
+unless defined?(Api::V1::Accounts::PlatformSupport::BaseController)
   class Api::V1::Accounts::PlatformSupport::BaseController < Api::V1::Accounts::BaseController
     private
 
@@ -383,14 +388,16 @@ unless defined?(::Api::V1::Accounts::PlatformSupport::BaseController)
   end
 end
 
-unless defined?(::Api::V1::Accounts::PlatformSupport::TicketsController)
+unless defined?(Api::V1::Accounts::PlatformSupport::TicketsController)
   class Api::V1::Accounts::PlatformSupport::TicketsController < Api::V1::Accounts::PlatformSupport::BaseController
     def index
-      render json: { payload: ticket_scope.order(id: :asc).map { |ticket| serialize(ticket) } }
+      tickets = ticket_scope.order(id: :asc).to_a
+      render json: { payload: tickets.map { |ticket| serialize(ticket, message_counts(tickets)[ticket.id].to_i) } }
     end
 
     def show
-      render json: serialize(fetch_ticket)
+      ticket = fetch_ticket
+      render json: serialize(ticket, message_counts([ticket])[ticket.id].to_i)
     end
 
     def mark_viewed
@@ -410,15 +417,23 @@ unless defined?(::Api::V1::Accounts::PlatformSupport::TicketsController)
       end
     end
 
-    def serialize(ticket)
+    # One grouped count for the page rather than one per row: the list has to be flat in query count as
+    # tickets grow (§10 Performance), and the proof lives in
+    # spec/requests/platform_support/security/query_budget_spec.rb.
+    def message_counts(tickets)
+      @message_counts ||= ::PlatformSupport::Message.where(platform_support_ticket_id: tickets.map(&:id))
+                                                    .group(:platform_support_ticket_id).count
+    end
+
+    def serialize(ticket, message_count)
       { id: ticket.id, reference: ticket.reference, subject: ticket.subject, status: ticket.status,
         priority: ticket.priority, category: ticket.category, reporter_name: ticket.reporter_name,
-        message_count: ticket.messages.size }
+        message_count: message_count }
     end
   end
 end
 
-unless defined?(::Api::V1::Accounts::PlatformSupport::MessagesController)
+unless defined?(Api::V1::Accounts::PlatformSupport::MessagesController)
   class Api::V1::Accounts::PlatformSupport::MessagesController < Api::V1::Accounts::PlatformSupport::BaseController
     def index
       render json: { payload: ticket.messages.order(id: :asc).map { |message| serialize(message) } }
@@ -448,7 +463,7 @@ unless defined?(::Api::V1::Accounts::PlatformSupport::MessagesController)
   end
 end
 
-unless defined?(::Api::V1::Accounts::PlatformSupport::EventsController)
+unless defined?(Api::V1::Accounts::PlatformSupport::EventsController)
   class Api::V1::Accounts::PlatformSupport::EventsController < Api::V1::Accounts::PlatformSupport::BaseController
     def index
       events = ticket_scope.find(params[:ticket_id]).events
@@ -460,3 +475,4 @@ unless defined?(::Api::V1::Accounts::PlatformSupport::EventsController)
 end
 
 PlatformSupportContractStub.install_routes!
+# rubocop:enable Style/OneClassPerFile, Metrics/ModuleLength

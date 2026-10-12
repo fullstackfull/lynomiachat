@@ -152,7 +152,14 @@
             <%# Reference and account pinned here, not only at the top: replying to the wrong ticket is the
                 other likely operator error on this desk. %>
             Goes to <%= @ticket.account&.name || @ticket.account_name_at_creation %> on
-            <%= @ticket.reference %>. The customer is notified.
+            <%= @ticket.reference %>.
+            <% if @ticket.reporter_id.nil? %>
+              <%# `reporter_id` nullifies when the user is deleted, and the ticket deliberately never stored an
+                  address (D-4), so there is nobody to email. The reply still belongs in the thread. %>
+              <strong>The person who raised this no longer has an account</strong>, so no email can be sent.
+            <% else %>
+              The customer is emailed and sees it in their support portal.
+            <% end %>
           </p>
           <%= form_with url: reply_super_admin_platform_support_path(id: @ticket.id), method: :post do |form| %>
             <%= form.text_area :body, rows: 4, required: true,

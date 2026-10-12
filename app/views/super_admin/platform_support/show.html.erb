@@ -24,6 +24,20 @@
     </p>
   </header>
 
+  <% unless PlatformSupport::SupportAlias.configured? %>
+    <%#
+      The honest statement of a real gap, not a warning about a hypothetical one: PLATFORM_SUPPORT_OPERATOR_ALIAS
+      has no fallback of any kind, so while it is unset the mailer sends NO operator email at all
+      (custom/app/mailers/platform_support/support_alias.rb). An operator who believes they are being emailed
+      about new tickets, and is not, stops watching this page -- which is the failure this banner prevents.
+    %>
+    <div class="border border-yellow-300 bg-yellow-50 rounded-md px-3 py-2 mb-5 text-sm text-yellow-900">
+      <strong>No operator support alias is configured</strong>, so Lynomia is sent no email when a customer
+      raises or answers a ticket. This page is the only place they arrive. Set
+      <code><%= PlatformSupport::SupportAlias::KEY %></code> in Installation Configs to change that.
+    </div>
+  <% end %>
+
   <%= form_with url: super_admin_platform_support_path, method: :get, class: 'flex flex-wrap items-end gap-3 mb-5' do |form| %>
     <div>
       <%= form.label :q, 'Search', class: 'block text-xs text-slate-600 mb-1' %>

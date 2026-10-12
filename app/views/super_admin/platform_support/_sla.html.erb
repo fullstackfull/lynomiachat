@@ -1,37 +1,50 @@
 <%#
   The SLA, as an operator reads it (docs/platform-support/05-super-admin-operations.md §6).
 
-  THREE HONESTY RULES, and every one of them is why this partial exists rather than a one-line "SLA: on time".
+  EVERY ANSWER COMES FROM `PlatformSupport::Sla::State`, not from reading the due columns here. The reason is
+  the one that object exists for: a policy requires at least ONE threshold, so a resolution-only policy leaves
+  `first_response_due_at` nil, and a renderer reading the column alone cannot tell "this policy set no
+  first-response target" from "the target is missing". The two clocks are therefore rendered INDEPENDENTLY and
+  a clock with no target says so, rather than showing a dash that reads as "fine".
 
-  1. CALENDAR TIME, LABELLED AS SUCH. Business hours are not available in this installation, so a target of
-     eight hours is eight calendar hours including a Friday night. Saying so is the difference between a
-     limitation and a lie.
-  2. NO POLICY MEANS NO PROMISE. A ticket with no SLA policy attached reads "No SLA policy applies", never
-     "on time": no target values are seeded until the owner supplies them, and a blank must not look green.
-  3. A BREACH SURVIVES RESOLUTION. A ticket that breached and was then resolved keeps its breach record. The
+  THREE HONESTY RULES this partial exists for:
+
+  1. `governed?` false IS the "No SLA policy applies" state. No target values exist in this installation yet,
+     so this is the state every ticket is in today and it must look correct, not broken.
+  2. CALENDAR TIME, LABELLED AS SUCH. There is no business-hours path in V1, so eight hours includes a Friday
+     night. Saying so is the difference between a limitation and a lie.
+  3. A BREACH SURVIVES RESOLUTION. A ticket that breached and was then resolved keeps its breach record: the
      point of the record is the history, not the current mood of the queue.
 %>
+<% state = PlatformSupport::Sla::State.new(ticket) %>
+
 <div class="border border-slate-200 rounded-lg p-4">
   <h2 class="text-sm font-medium text-slate-900 mb-3">SLA</h2>
 
-  <% if ticket.sla_policy_id.blank? %>
+  <% unless state.governed? %>
     <p class="text-sm text-slate-600 mb-0">
       No SLA policy applies to this ticket, so Lynomia has made no timing commitment on it. Nothing is late
       and nothing is on time.
     </p>
-  <% else %>
+  <% end %>
+
+  <% if state.governed? %>
     <dl class="text-sm space-y-2">
       <div class="flex justify-between gap-3">
         <dt class="text-slate-600">First response</dt>
         <dd class="text-end">
-          <% if ticket.first_response_breached_at.present? %>
+          <% if !state.first_response_promised? %>
+            <%# The policy set no first-response threshold. Not a miss, not a win: no promise was made. %>
+            <span class="text-slate-600">not promised by this policy</span>
+          <% elsif state.first_response_breached? %>
             <span class="text-red-700">breached <%= time_ago_in_words(ticket.first_response_breached_at) %> ago</span>
           <% elsif ticket.first_responded_at.present? %>
             <span class="text-green-700">met</span>
-          <% elsif ticket.first_response_due_at.present? %>
-            <span class="text-slate-900">due <%= time_ago_in_words(ticket.first_response_due_at) %> <%= ticket.first_response_due_at.future? ? 'from now' : 'ago' %></span>
           <% else %>
-            <span class="text-slate-600">no target</span>
+            <span class="text-slate-900">
+              due <%= time_ago_in_words(ticket.first_response_due_at) %>
+              <%= ticket.first_response_due_at.future? ? 'from now' : 'ago' %>
+            </span>
           <% end %>
         </dd>
       </div>
@@ -39,19 +52,22 @@
       <div class="flex justify-between gap-3">
         <dt class="text-slate-600">Resolution</dt>
         <dd class="text-end">
-          <% if ticket.resolution_breached_at.present? %>
+          <% if !state.resolution_promised? %>
+            <span class="text-slate-600">not promised by this policy</span>
+          <% elsif state.resolution_breached? %>
             <span class="text-red-700">breached <%= time_ago_in_words(ticket.resolution_breached_at) %> ago</span>
           <% elsif ticket.resolved_at.present? %>
-            <span class="text-green-700">resolved</span>
-          <% elsif ticket.resolution_due_at.present? %>
-            <span class="text-slate-900">due <%= time_ago_in_words(ticket.resolution_due_at) %> <%= ticket.resolution_due_at.future? ? 'from now' : 'ago' %></span>
+            <span class="text-green-700">resolved in time</span>
           <% else %>
-            <span class="text-slate-600">no target</span>
+            <span class="text-slate-900">
+              due <%= time_ago_in_words(ticket.resolution_due_at) %>
+              <%= ticket.resolution_due_at.future? ? 'from now' : 'ago' %>
+            </span>
           <% end %>
         </dd>
       </div>
 
-      <% if ticket.sla_paused_at.present? %>
+      <% if state.paused? %>
         <div class="flex justify-between gap-3">
           <dt class="text-slate-600">Paused</dt>
           <%# Waiting on the customer pauses the clock, so this reads as parked rather than as late. %>
@@ -67,9 +83,11 @@
       <% end %>
     </dl>
 
-    <p class="text-xs text-slate-500 mt-3 mb-0">
-      Calendar time, not business hours. This installation has no working-hours calendar, so a target spans
-      nights and weekends.
-    </p>
+    <% if state.calendar_time? %>
+      <p class="text-xs text-slate-500 mt-3 mb-0">
+        Calendar time, not business hours. This installation has no working-hours calendar, so a target spans
+        nights and weekends.
+      </p>
+    <% end %>
   <% end %>
 </div>

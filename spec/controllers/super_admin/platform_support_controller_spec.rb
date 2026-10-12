@@ -17,6 +17,11 @@ require 'rails_helper'
 #                                 this surface reads. Defined only when the constant does not already resolve.
 #   PLATFORM_SUPPORT_ROUTE_STUB   the staff half of the route drawer, verbatim what §2 freezes, drawn only when
 #                                 `super_admin_platform_support_path` does not already exist.
+#   PLATFORM_SUPPORT_SLA_STUB     the two collaborators the SLA and notification branch published --
+#                                 `PlatformSupport::SupportAlias` and `PlatformSupport::Sla::State` -- with the
+#                                 interface those files declare and nothing else. Defined only when the real
+#                                 ones do not resolve, so this surface is built against their contract rather
+#                                 than against a guess, and against the real objects once both branches meet.
 #
 # ALL THREE MUST BE DELETED AT INTEGRATION. They are listed in this branch's report for exactly that reason.
 # ---------------------------------------------------------------------------------------------------------
@@ -146,6 +151,63 @@ PLATFORM_SUPPORT_MODEL_STUB = lambda do
   end)
 end
 
+# Mirrors custom/app/mailers/platform_support/support_alias.rb and
+# custom/app/services/platform_support/sla/state.rb on the SLA and notification branch, read rather than
+# guessed at. `SupportAlias` has NO fallback by design, so an unset key really does mean no operator email is
+# sent; `State#governed?` is false unless a policy is attached AND it set at least one due time, and
+# `first_response_promised?` can be false while `governed?` is true.
+PLATFORM_SUPPORT_SLA_STUB = lambda do
+  Object.const_set(:PlatformSupport, Module.new) unless Object.const_defined?(:PlatformSupport)
+
+  PlatformSupport.const_set(:SupportAlias, Module.new do
+    const_set(:KEY, 'PLATFORM_SUPPORT_OPERATOR_ALIAS')
+
+    def self.address
+      GlobalConfigService.load(self::KEY, nil).presence
+    end
+
+    def self.configured?
+      address.present?
+    end
+  end)
+
+  PlatformSupport.const_set(:Sla, Module.new) unless PlatformSupport.const_defined?(:Sla, false)
+
+  PlatformSupport::Sla.const_set(:State, Class.new do
+    def initialize(ticket)
+      @ticket = ticket
+    end
+
+    def governed?
+      @ticket.sla_policy_id.present? && (first_response_promised? || resolution_promised?)
+    end
+
+    def first_response_promised?
+      @ticket.first_response_due_at.present?
+    end
+
+    def resolution_promised?
+      @ticket.resolution_due_at.present?
+    end
+
+    def first_response_breached?
+      @ticket.first_response_breached_at.present?
+    end
+
+    def resolution_breached?
+      @ticket.resolution_breached_at.present?
+    end
+
+    def paused?
+      @ticket.sla_paused_at.present?
+    end
+
+    def calendar_time?
+      true
+    end
+  end)
+end
+
 PLATFORM_SUPPORT_ROUTE_STUB = lambda do
   Rails.application.routes.disable_clear_and_finalize = true
   Rails.application.routes.draw do
@@ -168,6 +230,7 @@ end
 
 PLATFORM_SUPPORT_SCHEMA_STUB.call
 PLATFORM_SUPPORT_MODEL_STUB.call unless defined?(PlatformSupport::Ticket)
+PLATFORM_SUPPORT_SLA_STUB.call unless defined?(PlatformSupport::Sla::State)
 PLATFORM_SUPPORT_ROUTE_STUB.call unless Rails.application.routes.url_helpers.respond_to?(:super_admin_platform_support_path)
 
 RSpec.describe 'Super Admin Platform Support Desk', type: :request do
@@ -465,9 +528,57 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       expect(response.body).not_to include('Calendar time, not business hours')
     end
 
+    # No SLA target values exist in this installation by instruction, so this is the state EVERY ticket is in
+    # today: it has to look correct, not broken.
+    it 'reads as ungoverned when a policy is attached but set no due time' do
+      attached = ticket(reference_number: 903, sla_policy_id: 7)
+
+      get "/super_admin/platform_support/tickets/#{attached.id}"
+
+      expect(response.body).to include('No SLA policy applies')
+    end
+
+    # A policy requires at least ONE threshold, so a resolution-only policy promises nothing on first response.
+    it 'renders the two clocks independently and promises nothing the policy did not' do
+      resolution_only = ticket(reference_number: 904, sla_policy_id: 7,
+                               resolution_due_at: 4.hours.from_now)
+
+      get "/super_admin/platform_support/tickets/#{resolution_only.id}"
+
+      expect(response.body).to include('not promised by this policy')
+      expect(response.body).to include('from now')
+      # No cell reads "met" on a clock the policy never set a target for.
+      expect(response.body).not_to match(/>\s*met\s*</)
+    end
+
+    # Blob URLs do not expire here, so a signed id on the page would be a permanent bearer token.
+    it 'renders no signed id and no rails_blob path for an attachment' do
+      message = target.messages.create!(author_type: 'User', author_id: administrator.id, author_name: 'Dana',
+                                        body: 'See attached.')
+      message.platform_support_message_files.attach(
+        io: StringIO.new('bytes'), filename: 'screenshot.png', content_type: 'image/png'
+      )
+
+      get "/super_admin/platform_support/tickets/#{target.id}"
+
+      expect(response.body).to include('/super_admin/platform_support/attachments/')
+      expect(response.body).not_to include('/rails/active_storage')
+      expect(response.body).not_to include(message.platform_support_message_files.first.blob.signed_id)
+    end
+
+    it 'says no email can be sent when the person who raised it has no account left' do
+      orphan = ticket(reference_number: 905, reporter_id: nil)
+
+      get "/super_admin/platform_support/tickets/#{orphan.id}"
+
+      expect(response.body).to include('no longer has an account')
+      expect(response.body).not_to include('The customer is emailed')
+    end
+
     it 'keeps a breach visible after the ticket was resolved' do
       breached = ticket(reference_number: 901, status: :resolved, resolved_at: 1.hour.ago,
-                        sla_policy_id: 7, resolution_breached_at: 2.hours.ago)
+                        sla_policy_id: 7, resolution_due_at: 3.hours.ago,
+                        resolution_breached_at: 2.hours.ago)
 
       get "/super_admin/platform_support/tickets/#{breached.id}"
 
@@ -777,6 +888,32 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       get "/super_admin/platform_support/attachments/#{file.id}"
 
       expect(response).to redirect_to('/super_admin')
+    end
+  end
+
+  # Owner decision 2 is still open, so this is the state the desk is in: no alias, therefore no operator
+  # email at all. The banner says that rather than letting an operator assume mail is arriving.
+  describe 'the operator support alias' do
+    before do
+      agent
+      sign_in(super_admin, scope: :super_admin)
+    end
+
+    it 'says plainly that no operator email is sent while the alias is unset' do
+      allow(PlatformSupport::SupportAlias).to receive(:configured?).and_return(false)
+
+      get '/super_admin/platform_support'
+
+      expect(response.body).to include('No operator support alias is configured')
+      expect(response.body).to include('PLATFORM_SUPPORT_OPERATOR_ALIAS')
+    end
+
+    it 'says nothing about it once an alias is configured' do
+      allow(PlatformSupport::SupportAlias).to receive(:configured?).and_return(true)
+
+      get '/super_admin/platform_support'
+
+      expect(response.body).not_to include('No operator support alias is configured')
     end
   end
 

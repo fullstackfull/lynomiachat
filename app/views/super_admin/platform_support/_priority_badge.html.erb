@@ -1,0 +1,15 @@
+<%#
+  A ticket's priority. Urgent is the red one because on this desk it means the customer's service is down, not
+  that somebody would like it faster. Same four-step language as the severity badge next door.
+%>
+<%
+  classes = {
+    'low' => 'bg-slate-50 text-slate-700 border-slate-200',
+    'medium' => 'bg-woot-50 text-woot-700 border-woot-300',
+    'high' => 'bg-yellow-50 text-yellow-900 border-yellow-300',
+    'urgent' => 'bg-red-50 text-red-800 border-red-300'
+  }
+%>
+<span class="inline-flex items-center border rounded-md px-2 py-0.5 text-xs font-medium <%= classes.fetch(priority, classes['medium']) %>">
+  <%= priority.humanize %>
+</span>

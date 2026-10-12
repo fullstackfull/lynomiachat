@@ -37,7 +37,14 @@ as defined by the routes in the `admin/` namespace
     <ul class="my-4">
       <%= render partial: "nav_item", locals: { icon: 'icon-grid-line', url: super_admin_root_url, label: 'Dashboard' } %>
       <% Administrate::Namespace.new(namespace).resources.each do |resource| %>
-        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations"].include?  resource.resource %>
+        <%#
+          Administrate enumerates EVERY controller under super_admin/ from the route table and asks each one
+          for an index route and a dashboard. A controller that has neither -- which is every hand-written
+          page on this surface -- raises here, and the raise breaks this partial on EVERY Super Admin page,
+          not just its own. So each such controller is excluded by name, and the exclusion ships in the same
+          commit as the route and the nav item.
+        %>
+        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions"].include?  resource.resource %>
         <% next if resource.resource == "platform_banners" && !ChatwootApp.chatwoot_cloud? %>
         <%= render partial: "nav_item", locals: {
             icon: sidebar_icons[resource.resource.to_sym],
@@ -54,6 +61,11 @@ as defined by the routes in the `admin/` namespace
   <div>
     <ul class="my-4">
       <%= render partial: "nav_item", locals: { icon: 'icon-menu-search-line', url: super_admin_operations_url, label: 'Operations' } %>
+      <%# The Platform Support Desk: tickets Lynomia's own customers raised about Lynomia
+          (docs/platform-support/05-super-admin-operations.md §1). In the lower operator block beside
+          Operations, because it is an operator console and not a record type. The icon id must exist in
+          _icons.html.erb or the item renders a blank square. %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-chat-smile-3-line', url: super_admin_platform_support_url, label: 'Customer Support' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: sidekiq_web_url, label: 'Sidekiq Dashboard' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Instance Health' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-mail-send-fill', url: super_admin_push_diagnostics_url, label: 'Push Diagnostics' } %>

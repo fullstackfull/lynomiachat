@@ -1,0 +1,22 @@
+<%#
+  A message's or a note's attachments, as named rows with a download link.
+
+  THE LINK IS THE AUTHORIZED ROUTE, never `rails_blob_path` and never a signed id. Blob URLs do not expire in
+  this installation, so a signed id rendered into a page is a permanent bearer token for that blob; the
+  download action checks that the id names an attachment of a record this module owns before it streams
+  (docs/platform-support/12-refresh-against-product-refinement.md §3).
+%>
+<% if attachments.attached? %>
+  <ul class="mt-2 flex flex-wrap gap-2 list-none ps-0 mb-0">
+    <% attachments.each do |file| %>
+      <li>
+        <%= link_to attachment_super_admin_platform_support_path(id: file.id),
+                    class: 'inline-flex items-center gap-1 border border-slate-200 rounded-md px-2 py-0.5 text-xs text-slate-700 hover:border-woot-300' do %>
+          <svg width="12" height="12"><use xlink:href="#icon-draft-line" /></svg>
+          <span><%= file.filename %></span>
+          <span class="text-slate-500"><%= number_to_human_size(file.byte_size) %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

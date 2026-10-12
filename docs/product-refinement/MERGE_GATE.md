@@ -405,3 +405,112 @@ server on port 3200 so it could not disturb anything else in the container. Two 
 encountered and corrected during the review — PostgreSQL and Redis were both down — and each was diagnosed as
 environmental rather than attributed to the branch; the first produced a false `RSPEC_EXIT=1` (93 load
 errors) and the second a false trio of 500s, and both were re-run clean afterwards.
+
+---
+
+# Addendum: the pre-merge cleanup pass, and the completed 11-dimension audit
+
+Written after the gate above, on the owner's instruction to close four confirmed follow-ups and to collect the
+results of the audit fan-out that was still running when the gate was signed. Branch HEAD at the time of
+writing: `98246f39`.
+
+## U. The four authorised follow-ups
+
+| # | follow-up | commit | what changed |
+|---|---|---|---|
+| 1 | Two RuboCop offenses | `46435ae8` | `RSpec/LetSetup`: the refused notification is now named by the example that refuses it, asserting what the setup only implied — the row is hidden, not deleted. `RSpec/IteratedExpectation`: the same claim through the `all` matcher. **No cop disabled, no exclusion added** — the `.rubocop.yml` diff against base is empty and this repository has no `.rubocop_todo.yml`. |
+| 2 | `suppress_signal` answered 500 on an out-of-range date | `df4dd98f`, `98246f39` | `Operations::SignalLifecycle#parse_time` rescues `ArgumentError` from `Time.zone.parse` into the existing `InvalidAction`. Parsed before any write, so the signal, its timeline and the audit log are untouched. Two regression examples, scoped to the signal under test. |
+| 3 | Five deleted credential-redaction examples | `46435ae8` | Restored byte-identical into the `show` context they were deleted from; the two genuinely obsolete legacy-Shopify examples stay deleted. Plus one new guard on `Commerce::StoreConnection#rotate_credentials`, the other write handed live keys, covering both the audit row and the tagged log line. |
+| 4 | SEO audit deploy gate | — | Proof only, no code change. |
+
+### Exit codes, read from `$?` with no pipeline in the way
+
+| gate | exit | result |
+|---|---|---|
+| specs for every touched file | **0** | 106 examples, 0 failures |
+| broad delta (operations, notifications, finders, commerce, super_admin, integrations) | **0** | 984 examples, 0 failures, 3 pending |
+| re-run after scoping the audit assertions | **0** | 45 examples, 0 failures |
+| `rubocop --force-exclusion` on all 7 touched files | **0** | no offenses |
+| `rake lynomia:docs:seo_audit` — valid → broken → restored | **0 → 1 → 0** | INDEXABLE → NOT_INDEXABLE → INDEXABLE |
+
+The suppression fix was proved in both directions. With only the production file reverted to `c867cf17`, the
+two new examples fail with `ArgumentError: argument out of range` and `Expected response to be a <3XX:
+redirect>, but was a <500: Internal Server Error>`; with the fix they pass, the response is a 302 to the
+signal page, the flash names the problem, and no suppression, event or audit row exists.
+
+**The answer is a 302 with a flash alert, not a literal 422.** `grep -rn '\.suppress('` finds exactly one
+caller — the Super Admin HTML controller — and all three sibling validations (no reason, a past deadline, over
+30 days) already answer the same way through the same `rescue InvalidAction`. A 422 on this one input would
+have made the surface answer four equivalent mistakes two different ways.
+
+All test and documentation work ran in a throwaway `chatwoot_delta` database. No production data was touched.
+
+## V. The 11-dimension adversarial audit, completed
+
+28 agents: 11 dimension audits, then 17 agents each trying to REFUTE one MAJOR or BLOCKER finding.
+
+| dimension | verdict |
+|---|---|
+| GATE 3 — Shopify retirement | PASS_WITH_NOTES |
+| GATE 4 — Operations security | PASS_WITH_NOTES |
+| GATE 5 — Operations semantics (UNKNOWN != HEALTHY) | FAIL |
+| GATE 6 — Commerce health + secret safety | PASS_WITH_NOTES |
+| GATE 7 — Notification authorization | PASS_WITH_NOTES |
+| GATE 8 — Sidebar navigation contract | PASS_WITH_NOTES |
+| GATE 9 — Inbox regression | PASS_WITH_NOTES |
+| GATE 10 — Documentation + SEO | PASS_WITH_NOTES |
+| GATE 11 — Documentation content accuracy | FAIL |
+| GATE 12 — Public search / tenancy isolation | PASS_WITH_NOTES |
+| GATE 13 + 16 — query/performance and deploy compatibility | PASS_WITH_NOTES |
+
+### What survived refutation
+
+**No BLOCKER survived.** The single BLOCKER-labelled finding — the Overview Commerce badge rendering a wholly
+stale or unobserved store estate as green — was refuted and corrected to MAJOR, independently of the check this
+reviewer ran: with three connected stores whose last provider success was 40 hours ago, the base predicate at
+`524bd8db` (`status IN (needs_reauth, disconnected)`) counts 0 and renders **healthy**, and HEAD renders
+**healthy** too, because base never consulted `Commerce::StoreHealth` at all. The branch strictly improves the
+badge: a store failing provider requests now reads **warning** where base read **healthy**. It remains true,
+and pre-existing, that a stale estate has no amber surface on the Overview.
+
+Surviving MAJOR findings, none of which makes the branch unsafe to merge:
+
+| # | finding | branch-introduced |
+|---|---|---|
+| V1 | Three secret-typed Shopify keys lost their `installation_config.yml` declarations, so their stale rows drop out of `InstallationConfig.secret_names` and the generic Super Admin Installation Configs listing renders their plaintext values. Severity adjudicated **MINOR** on audience (Super Admin only); the mechanism was confirmed end to end by a request spec and causation isolated by swapping only the YAML. **This is a pre-deploy gate, not a merge gate.** | yes |
+| V2 | The Integrations article still documents the removed legacy Shopify integration, in both locales: `en:8` "Eleven exist in the product" (now ten), the catalogue row `en:29`, the "shown when" row `en:41`, the "There are two Shopifys" section `en:62-64`, the troubleshooting entry `en:112`, and the `seo_description` at `en:6`; Arabic mirrors all six. `git diff 524bd8db..HEAD -- custom/db/documentation/{en,ar}/integrations/` is empty. | yes |
+| V3 | `Operations::BillingState#locked_accounts` rejects up to 200 candidates in Ruby, and `accessible?` memoizes per instance over a deliberately uncached `Billing::Settings.get`, so the Operations front page measured **620 queries with a warm cache** against 200 inactive subscriptions versus 19 with none — `overview.rb:51` sits outside `build_derived`, so the 5-minute cache structurally cannot absorb it. Bounded by `LOCKED_CANDIDATES`, one line to fix by hoisting the setting out of the loop. | yes |
+| V4 | A new commerce article teaches a Shopify/Zid order-action path production cannot reach: `Commerce::Switches::PRE_UAT` blocks both providers before the scope check. | yes |
+| V5 | The SEO audit blesses a hostless canonical — with no `HELPCENTER_URL`/`FRONTEND_URL` the canonical becomes `https://hc/...` and the check that claims to catch it cannot fire — and only two of the eight error classes the SEO document advertises are structurally reachable. | yes |
+| V6 | Queue tab badges ignore the active filter, so a badge and the list beneath it disagree whenever a filter is applied (recorded in §S#4 above). | yes |
+| V7 | `StoreHealthRecorder.api_failure` does not enforce its "the only input is a `Commerce::Error`" contract. Defence-in-depth only: `Commerce::HttpClient` is the sole caller and every path there constructs or rescues a typed `Commerce::Error`, verified call site by call site. | yes |
+| V8 | Two inbox honesty issues: first-unread scroll activates on a broader condition than the separator's visibility, and UNKNOWN ("did not report a delivery state") shows during the ordinary in-flight window for provider-backed channels. | yes |
+| V9 | Every in-article link in all 62 Arabic documentation articles resolves to the English article, because the corpus uses bare slugs while the seeder suffixes non-default locales with `-ar`. | **no** — pre-existing |
+
+Refuted outright: the "five credential-redaction tests deleted with no replacement" MAJOR (the surviving
+index-context examples already pinned the allow-list positively with planted secrets, so the genuine unique
+loss was three cases, not five — and all five are restored by `46435ae8` regardless); the "no `dir` attribute"
+MAJOR; and the robots.txt sitemap finding, downgraded to MINOR.
+
+### Corrections to the gate above
+
+* **§G overstated the Shopify retirement.** It verified routes, controllers, services, constants and
+  `connect-shopify.md`, and did not read the Integrations article's catalogue copy. V2 is the hole.
+* **§M overstated the performance result.** The four services measured are genuinely flat, but the harness
+  never varied the number of lockable subscriptions, which is the one dimension the Overview is not flat in.
+  V3 is the hole.
+* **§S#3 can be extended.** `FINAL_REPORT.md`'s "is `unknown` ever rendered as healthy? No, anywhere" is false
+  for the aggregate Overview Commerce badge — before this branch as well as after.
+
+## W. What must happen before a deploy, as distinct from before this merge
+
+1. **V1, the credential one.** Either restore the three `type: secret` declarations (optionally `locked: true`)
+   so the names return to `InstallationConfig.secret_names`, or delete the stale rows deliberately. Until then
+   a Super Admin without server access can read the Shopify Partner client id, client secret and access token
+   from a listing that excluded them before this branch.
+2. **V2**, so the published documentation stops advertising a path the product no longer has.
+3. **V3**, one line, before the Operations console meets an installation with a backlog of inactive
+   subscriptions.
+
+None of the three is a merge blocker: the merge moves no secret and serves no page, and the owner has held the
+deploy separately.

@@ -7,6 +7,7 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
+import { navigableEntries } from './navigationContract';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useBranding } from 'shared/composables/useBranding';
@@ -730,7 +731,7 @@ const menuItems = computed(() => {
       name: 'HelpAndSupport',
       label: t('SIDEBAR.HELP_AND_SUPPORT.TITLE'),
       icon: 'i-lucide-life-buoy',
-      children: [
+      children: navigableEntries([
         {
           name: 'Documentation',
           label: t('SIDEBAR.HELP_AND_SUPPORT.DOCUMENTATION'),
@@ -741,7 +742,10 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.HELP_AND_SUPPORT.CONTACT_SUPPORT'),
           href: supportUrl.value,
         },
-      ].filter(child => child.href),
+        // The navigation contract, not a hand-written filter on one routing form: both entries here are
+        // href-only and either may be absent on a branded installation, and a `to`-based entry added later
+        // must survive rather than vanish (sidebar/navigationContract.js).
+      ]),
     },
     {
       name: 'Settings',

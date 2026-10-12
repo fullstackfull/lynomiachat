@@ -28,36 +28,55 @@
 # cannot drift from the rest of the product by construction, and the relation path is held to the same answer
 # by an equivalence example that walks every combination.
 #
-# WHICH NOTIFICATIONS ARE "ABOUT A CONVERSATION".
-#
-#   Conversation  Every notification this product creates. All six `NotificationBuilder.new` call sites pass a
-#                 Conversation (app/listeners/notification_listener.rb:7,21,42;
-#                 app/services/messages/new_message_notification_service.rb:20,36;
-#                 app/services/messages/mention_service.rb:55) and `Notification::PRIMARY_ACTORS` names only
-#                 this one (app/models/notification.rb:56). Narrowed by the subselect below.
-#
-#   Message       HISTORICAL, and it is why this is a list rather than one string. `Message` still declares
-#                 `has_many :notifications, as: :primary_actor` (app/models/message.rb:136) and
-#                 `Migration::RemoveMessageNotifications` exists to delete the rows
-#                 (app/jobs/migration/remove_message_notifications.rb:6), so a row could survive a lost
-#                 enqueue. Such a row IS about a conversation -- the message's own -- but the notifications row
-#                 does not say which, so it cannot be authorized from the relation. It is therefore EXCLUDED
-#                 while narrowing is active rather than passed through: failing closed on a row we cannot
-#                 authorize is the conservative direction, and it costs nothing, because the feed cannot render
-#                 one anyway (`Notification#push_message_title` calls `display_id` on the primary actor and
-#                 `Message` has no such method, so the index already raises on one today).
-#
-#   anything else Left alone, per the decision. Nothing creates one today; the three `sla_missed_*` enum values
-#                 (app/models/notification.rb:44-46) are declared and have no creation site anywhere in app/,
-#                 custom/ or lib/.
+# FAIL-CLOSED, BY A POSITIVE ALLOW-LIST. See VISIBLE_ACTOR_TYPES: a notification whose primary actor is not a
+# type this object names is refused, for every member, administrators included. There is no pass-through.
 #
 # NO ROW IS EVER WRITTEN OR DELETED HERE. This is a read-time answer, asked fresh every time. Access removed
 # means hidden; access restored means visible again, from the same untouched row.
 class Notifications::ConversationVisibility
   CONVERSATION_ACTOR = 'Conversation'.freeze
 
-  # The primary-actor types that are ABOUT a conversation, and so are this rule's business.
-  CONVERSATION_DERIVED_ACTORS = [CONVERSATION_ACTOR, 'Message'].freeze
+  # THE ALLOW-LIST, and the whole of the answer to "which notifications may a member be shown".
+  #
+  # POSITIVE AND CLOSED. Only a notification whose `primary_actor_type` is named here may be shown -- to ANY
+  # member, an administrator included -- and every type named here is authorized by the conversation rule
+  # above. A type that is not named is refused, with no default to fall back on.
+  #
+  # WHAT THIS REPLACES, AND WHY. `narrow` used to read
+  # `where.not(primary_actor_type: [Conversation, Message]).or(...)` and `permits?` used to `return true
+  # unless` that list included the type. So any actor type the product did not yet know about was visible to
+  # every member of the account, unfiltered by the ceiling and unfiltered by the capability. The first
+  # notification about something that is NOT a tenant's conversation -- an internal record, an operational
+  # signal, a platform support case -- would have been published to tenants on the day it was created, by a
+  # default nobody chose. An allow-list of one is worth having precisely because that default was wrong.
+  #
+  #   Conversation  Every notification this product creates. All six `NotificationBuilder.new` call sites pass
+  #                 a Conversation (app/listeners/notification_listener.rb:7,21,42;
+  #                 app/services/messages/new_message_notification_service.rb:20,36;
+  #                 app/services/messages/mention_service.rb:55) and `Notification::PRIMARY_ACTORS` names only
+  #                 this one (app/models/notification.rb:56). Authorized by the subselect below.
+  #
+  # TWO TYPES WERE CONSIDERED AND REFUSED, which is what makes this a decision rather than a shrug:
+  #
+  #   Message       HISTORICAL. `Message` still declares `has_many :notifications, as: :primary_actor`
+  #                 (app/models/message.rb:136) and `Migration::RemoveMessageNotifications` exists to delete
+  #                 the rows (app/jobs/migration/remove_message_notifications.rb:6), so a row could survive a
+  #                 lost enqueue. Such a row IS about a conversation -- the message's own -- but the
+  #                 notifications row does not say WHICH, so it cannot be authorized. Refused rather than
+  #                 shown, and it costs nothing: the feed cannot render one anyway
+  #                 (`Notification#push_message_title` calls `display_id` on the primary actor and `Message`
+  #                 has no such method, so the index already raises on one today).
+  #
+  #   sla_missed_*  The three enum values (app/models/notification.rb:44-46) are declared and have no creation
+  #                 site anywhere in app/, custom/ or lib/. Nothing to authorize, so nothing is allowed.
+  #
+  # ADDING A TYPE IS A DELIBERATE ACT with its own rule, taken here. Every type on this list today is
+  # conversation-scoped, which is why `narrow` can apply the conversation subselect to the whole allowed set;
+  # a type that is NOT conversation-scoped needs its own condition in `narrow` and `permits?`, not a longer
+  # list. `spec/services/notifications/conversation_visibility_spec.rb` fails if this list and
+  # `Notification::PRIMARY_ACTORS` drift apart, so a type added for any other reason cannot widen visibility
+  # silently.
+  VISIBLE_ACTOR_TYPES = [CONVERSATION_ACTOR].freeze
 
   def self.for(account:, user:)
     new(account: account, user: user)
@@ -69,7 +88,10 @@ class Notifications::ConversationVisibility
   end
 
   # True only when BOTH layers impose nothing, which in practice means an administrator (or an agent bot).
-  # Callers check it first so that case costs no extra SQL.
+  #
+  # It says nothing about the ALLOW-LIST, which applies to such a member too: "unrestricted" means unrestricted
+  # with respect to which conversations they may reach, never authorized for a kind of notification nobody has
+  # authorized them for.
   #
   # Note what is NOT unrestricted any more: a plain agent, and a holder of `conversation_manage`. The
   # capability layer says nothing about either, but the ceiling does -- they see the conversations of their
@@ -80,11 +102,15 @@ class Notifications::ConversationVisibility
   end
 
   # The relation, narrowed. One uncorrelated subselect; never a check per row.
+  #
+  # The allow-list is applied FIRST and unconditionally, so an unrestricted member is not handed a type nobody
+  # authorized; `index ["primary_actor_type", "primary_actor_id"]` already exists on this table. The subselect
+  # is then added for a member who is restricted.
   def narrow(relation)
-    return relation if unrestricted?
+    visible = relation.where(primary_actor_type: VISIBLE_ACTOR_TYPES)
+    return visible if unrestricted?
 
-    relation.where.not(primary_actor_type: CONVERSATION_DERIVED_ACTORS)
-            .or(relation.where(primary_actor_type: CONVERSATION_ACTOR, primary_actor_id: authorized_conversation_ids))
+    visible.where(primary_actor_id: authorized_conversation_ids)
   end
 
   # The same question about one notification, so that an id is not a way around the relation.
@@ -95,8 +121,17 @@ class Notifications::ConversationVisibility
   # conversation record read in the product is authorized by. Asking it means the notification record path is
   # the canonical answer rather than a copy of it, and it stays correct if either layer changes.
   def permits?(notification)
-    return true unless CONVERSATION_DERIVED_ACTORS.include?(notification.primary_actor_type)
-    return false unless notification.primary_actor_type == CONVERSATION_ACTOR
+    return false unless VISIBLE_ACTOR_TYPES.include?(notification.primary_actor_type)
+    # The account this object was built for. NOT a redundant guard on top of the callers' scoping: without it
+    # this method's own answer is wrong for an input it accepts, because `ConversationPolicy#show?`
+    # short-circuits to true for an administrator and does not care which account the conversation belongs to.
+    # So an administrator of one account asked about another account's notification would be told yes. Every
+    # caller happens to scope by account today -- the controller's `fetch_notification` reads
+    # `current_user.notifications.where(account_id: Current.account.id)`
+    # (app/controllers/api/v1/accounts/notifications_controller.rb:72), the listener takes the account from the
+    # notification itself -- so this changes no reachable behaviour. It makes the object correct on its own
+    # terms, which is what an authorization answer has to be.
+    return false unless notification.account_id == @account.id
 
     conversation = notification.primary_actor
     return false if conversation.blank?

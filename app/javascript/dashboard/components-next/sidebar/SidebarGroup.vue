@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, watch, nextTick, ref } from 'vue';
 import { useSidebarContext, usePopoverState } from './provider';
+import { isNavigable } from './navigationContract';
 import { useRoute, useRouter } from 'vue-router';
 import Policy from 'dashboard/components/policy.vue';
 import Icon from 'next/icon/Icon.vue';
@@ -108,9 +109,15 @@ const handleWindowBlur = () => {
   closeActivePopover();
 };
 
-// An `href` child points outside the Vue router (a server-rendered page or another site), so there is no route to
-// resolve permissions or a feature flag against: it is visible to anyone who can see the group.
-const isReachable = child => child.href || (child.to && isAllowed(child.to));
+// REACHABLE = declares a routing form AND the viewer is allowed there.
+//
+// The routing form is the sidebar's one navigation contract (sidebar/navigationContract.js), reused rather
+// than restated so this and `Sidebar.vue` cannot drift into two different rules. The permission half belongs
+// here: an `href` child points outside the Vue router -- a server-rendered page or another site -- so there
+// is no route to resolve permissions or a feature flag against, and it is visible to anyone who can see the
+// group. A `to` child is gated by its own route's meta.
+const isReachable = child =>
+  isNavigable(child) && (child.href ? true : isAllowed(child.to));
 
 const hasAccessibleSubChildren = child => {
   return child.children?.some(subChild => isReachable(subChild));

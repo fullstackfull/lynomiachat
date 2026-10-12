@@ -5,8 +5,16 @@ require 'rails_helper'
 # 1. A notification whose primary_actor is NOT a Conversation. No such row exists in this product -- every
 #    NotificationBuilder call site passes a Conversation -- and the index renderer cannot serialize one either,
 #    because Notification#push_message_title calls `display_id` on the primary actor unconditionally
-#    (app/models/notification.rb:103-108). So the forward-compatibility guard is asserted where it lives, on
-#    the relation, rather than through a renderer that would raise for an unrelated reason.
+#    (app/models/notification.rb:103-108). So the rule for an unauthorized actor type is asserted where it
+#    lives, on the relation, rather than through a renderer that would raise for an unrelated reason.
+#
+#    THE DECISION THESE EXAMPLES NOW ENCODE IS THE OPPOSITE OF THE ONE THEY USED TO. Until Product Refinement
+#    workstream E, `Notifications::ConversationVisibility` PASSED THROUGH any primary-actor type it did not
+#    recognise, and three examples here asserted that pass-through as forward compatibility. It was not
+#    forward compatibility, it was a default nobody chose: the first notification about something that is not
+#    a tenant's conversation would have been published to every member of the account, unfiltered by the
+#    Inbox/Team ceiling and unfiltered by the capability. The rule is now a positive allow-list
+#    (`VISIBLE_ACTOR_TYPES`) and it is fail-closed, for every member including an administrator.
 #
 # 2. The query shape. The decision requires a bounded strategy rather than a policy check per row, and that is
 #    a claim about SQL, not about a response body.
@@ -32,7 +40,7 @@ RSpec.describe NotificationFinder do
     described_class.new(agent.reload, account, {})
   end
 
-  describe 'a notification that is not about a conversation' do
+  describe 'a notification whose primary actor is not an authorized type' do
     let!(:foreign_actor_notification) do
       agent.notifications.create!(account: account, primary_actor: contact,
                                   notification_type: 'conversation_assignment')
@@ -43,21 +51,35 @@ RSpec.describe NotificationFinder do
                                                                        contact: contact, assignee: other_agent))
     end
 
-    it 'survives the narrowest mode, while the conversation one does not' do
+    it 'is refused in the narrowest mode, along with the conversation this member cannot reach' do
       attach('contact_manage')
 
-      expect(finder.notifications).to contain_exactly(foreign_actor_notification)
+      expect(finder.notifications).to be_empty
     end
 
-    it 'is counted, so the counts do not under-report it either' do
+    it 'is refused in the counts too, so the badge cannot advertise what the feed will not show' do
       attach('contact_manage')
 
-      expect(finder.count).to eq(1)
-      expect(finder.unread_count).to eq(1)
+      expect(finder.count).to be_zero
+      expect(finder.unread_count).to be_zero
     end
 
-    it 'is returned unchanged when nothing is narrowed' do
-      expect(finder.notifications).to contain_exactly(foreign_actor_notification, conversation_notification)
+    # The important one. A member with no narrowing at all -- an administrator -- is still not handed a kind of
+    # notification nobody authorized them for. "Unrestricted" means unrestricted about WHICH CONVERSATIONS
+    # they may reach, never about which kinds of thing they may be told about.
+    it 'is refused even for a member nothing else narrows' do
+      expect(finder.notifications).to contain_exactly(conversation_notification)
+    end
+
+    # The whole conversation path is unaffected by the allow-list: the member sees their own conversation's
+    # notification, in every mode, exactly as before.
+    it 'leaves the conversation notification alone in the narrowest mode that still reaches it' do
+      mine = agent.notifications.create!(account: account, notification_type: 'conversation_assignment',
+                                         primary_actor: create(:conversation, account: account, inbox: inbox,
+                                                                              contact: contact, assignee: agent))
+      attach('conversation_participating_manage')
+
+      expect(finder.notifications).to contain_exactly(mine)
     end
   end
 
@@ -152,19 +174,27 @@ RSpec.describe NotificationFinder do
         "EXPLAIN #{finder.notifications.to_sql}"
       ).map { |row| row['QUERY PLAN'] }.join("\n")
 
-      # Three subselects: the authorized conversation ids, and inside them the member's inbox ids and team ids.
-      # The property is that EVERY one is uncorrelated -- Postgres reports it as `hashed SubPlan N`, meaning it
-      # ran once and the outer node probes a hash. A bare `SubPlan N` reference would be re-executed per row.
+      # The property is that EVERY subselect is uncorrelated -- Postgres reports it as `hashed SubPlan N`,
+      # meaning it ran once and the outer node probes a hash. A bare `SubPlan N` reference would be
+      # re-executed per row, which is the N+1 this strategy exists to avoid.
       #
-      # Deliberately NOT asserted: the absence of `Nested Loop`. There is one inside each membership subplan,
-      # joining inboxes to inbox_members and teams to team_members. Each sits INSIDE a hashed subplan, so it
-      # runs once over the member's own handful of memberships rather than once per notification. Asserting its
-      # absence would assert the wrong thing.
+      # NOT a count of subselects. There used to be an assertion that at least three were declared, which
+      # encoded the shape of the query rather than the property: making the visibility rule fail-closed
+      # removed the `OR` from the WHERE clause, which let the planner flatten the authorized-conversation
+      # subselect into a semi-join against `conversations` instead of running it as a third subplan. That is
+      # strictly better, and an assertion that broke on it was asserting the wrong thing.
+      #
+      # Also deliberately NOT asserted: the absence of `Nested Loop`. There is one inside each membership
+      # subplan, joining inboxes to inbox_members and teams to team_members. Each sits INSIDE a hashed
+      # subplan, so it runs once over the member's own handful of memberships rather than once per
+      # notification.
       declared = plan.scan(/^\s*SubPlan (\d+)$/).flatten
       hashed = plan.scan(/hashed SubPlan (\d+)/).flatten
 
-      expect(declared.length).to be >= 3
+      expect(declared).not_to be_empty
       expect(hashed.sort).to eq(declared.sort)
+      # The conversation set is reached by a join or a hashed subplan, never by a per-row lookup.
+      expect(plan).to include('conversations')
     end
 
     it 'keeps the page bounded to RESULTS_PER_PAGE and the count describing the narrowed set' do

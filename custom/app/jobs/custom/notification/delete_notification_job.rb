@@ -18,11 +18,15 @@
 # NOT narrowed, and deliberately: nothing here looks at snoozed state. This job's set is "my notifications in
 # this account", not the feed's default page, and changing that would be a change to retention rather than to
 # authorization.
+# NO SHORT-CIRCUIT FOR AN UNRESTRICTED MEMBER. There used to be one -- `return super if
+# visibility.unrestricted?` -- on the reasoning that an administrator can see everything, so narrowing changed
+# nothing for them. That stopped being true when the visibility rule became fail-closed: a notification whose
+# primary actor is a type nobody authorized is now hidden from EVERY member, administrators included
+# (`Notifications::ConversationVisibility::VISIBLE_ACTOR_TYPES`), and `super` would have destroyed exactly
+# those rows. The job asks the same question as the feed, for every member, with no exception.
 module Custom::Notification::DeleteNotificationJob
   def perform(user, account, type: :all)
     visibility = ::Notifications::ConversationVisibility.for(account: account, user: user)
-    return super if visibility.unrestricted?
-
     deletable = visibility.narrow(user.notifications.where(account_id: account.id))
 
     ActiveRecord::Base.transaction do

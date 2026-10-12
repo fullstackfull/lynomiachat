@@ -191,9 +191,16 @@ defineExpose({ clear });
         :key="file.id"
         class="flex items-center gap-2 px-2 py-1 border rounded-lg border-n-weak"
       >
-        <Icon icon="i-lucide-paperclip" class="shrink-0 size-3.5 text-n-slate-10" />
-        <span class="truncate text-body-small text-n-slate-12">{{ file.name }}</span>
-        <span class="ms-auto shrink-0 tabular-nums text-label-small text-n-slate-10">
+        <Icon
+          icon="i-lucide-paperclip"
+          class="shrink-0 size-3.5 text-n-slate-10"
+        />
+        <span class="truncate text-body-small text-n-slate-12">{{
+          file.name
+        }}</span>
+        <span
+          class="ms-auto shrink-0 tabular-nums text-label-small text-n-slate-10"
+        >
           {{ formatBytes(file.size, 1) }}
         </span>
         <Button

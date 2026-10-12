@@ -102,15 +102,14 @@ const submit = () => {
 </script>
 
 <template>
-  <form
-    class="flex flex-col gap-5"
-    novalidate
-    @submit.prevent="submit"
-  >
+  <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
     <Banner v-if="errorMessage" color="ruby">{{ errorMessage }}</Banner>
 
     <div class="flex flex-col gap-1.5">
-      <label for="platform-support-category" class="text-label-small text-n-slate-12">
+      <label
+        for="platform-support-category"
+        class="text-label-small text-n-slate-12"
+      >
         {{ t('PLATFORM_SUPPORT.FORM.CATEGORY') }}
       </label>
       <Select
@@ -148,7 +147,10 @@ const submit = () => {
     />
 
     <div class="flex flex-col gap-1.5">
-      <label for="platform-support-priority" class="text-label-small text-n-slate-12">
+      <label
+        for="platform-support-priority"
+        class="text-label-small text-n-slate-12"
+      >
         {{ t('PLATFORM_SUPPORT.FORM.PRIORITY') }}
       </label>
       <Select

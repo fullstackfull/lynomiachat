@@ -20,7 +20,8 @@ defineProps({
 
 const { t } = useI18n();
 
-const downloadUrl = attachment => PlatformSupportAPI.attachmentUrl(attachment.id);
+const downloadUrl = attachment =>
+  PlatformSupportAPI.attachmentUrl(attachment.id);
 </script>
 
 <template>

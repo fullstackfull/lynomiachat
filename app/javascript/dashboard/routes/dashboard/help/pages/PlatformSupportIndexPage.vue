@@ -137,7 +137,9 @@ onMounted(fetch);
           :label="t('PLATFORM_SUPPORT.LIST.NEW_TICKET')"
           icon="i-lucide-plus"
           size="sm"
-          @click="router.push(accountScopedRoute('platform_support_tickets_new'))"
+          @click="
+            router.push(accountScopedRoute('platform_support_tickets_new'))
+          "
         />
       </div>
       <DocsLink

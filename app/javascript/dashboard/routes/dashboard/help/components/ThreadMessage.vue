@@ -45,7 +45,9 @@ const authorLabel = computed(() =>
       class="flex flex-col gap-2 p-3 border rounded-xl border-n-weak"
       :class="isFromLynomia ? 'bg-n-alpha-1 border-n-brand/20' : 'bg-n-solid-1'"
     >
-      <p class="m-0 whitespace-pre-wrap break-words text-body-main text-n-slate-12">
+      <p
+        class="m-0 whitespace-pre-wrap break-words text-body-main text-n-slate-12"
+      >
         {{ message.body }}
       </p>
       <AttachmentList :attachments="message.attachments || []" />

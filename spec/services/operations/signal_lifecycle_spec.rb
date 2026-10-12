@@ -79,7 +79,7 @@ RSpec.describe Operations::SignalLifecycle do
 
       expect(signal.reload).to have_attributes(suppressed_until: nil, suppression_reason: nil, suppressed_by_id: nil)
       expect(signal.events).to be_empty
-      expect(Custom::AuditLog.where(comment: 'operations.signal.suppressed')).to be_empty
+      expect(Custom::AuditLog.where(auditable: signal, comment: 'operations.signal.suppressed')).to be_empty
     end
 
     it 'refuses an effectively permanent suppression' do

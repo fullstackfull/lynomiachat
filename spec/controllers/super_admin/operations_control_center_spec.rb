@@ -211,7 +211,7 @@ RSpec.describe 'Super Admin Operations Control Center', type: :request do
         expect(flash[:alert]).to match(/real date and time/)
         expect(signal.reload).to have_attributes(suppressed_until: nil, suppression_reason: nil)
         expect(signal.events).to be_empty
-        expect(Custom::AuditLog.where(comment: 'operations.signal.suppressed')).to be_empty
+        expect(Custom::AuditLog.where(auditable: signal, comment: 'operations.signal.suppressed')).to be_empty
       end
 
       it 'refuses an effectively permanent suppression' do

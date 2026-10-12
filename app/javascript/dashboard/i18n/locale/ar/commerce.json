@@ -51,7 +51,8 @@
       "ORDER_NUMBER": "#{number}",
       "COPY_NUMBER": "نسخ رقم الطلب",
       "NUMBER_COPIED": "تم نسخ رقم الطلب",
-      "NUMBER_COPY_FAILED": "لم نتمكن من نسخ رقم الطلب."
+      "NUMBER_COPY_FAILED": "لم نتمكن من نسخ رقم الطلب.",
+      "WHAT_TO_DO": "ما تفعله بشأن هذا"
     },
     "OVERVIEW": {
       "TAB": "نظرة عامة",

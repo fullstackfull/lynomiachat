@@ -51,7 +51,8 @@
       "ORDER_NUMBER": "#{number}",
       "COPY_NUMBER": "Copy the order number",
       "NUMBER_COPIED": "Order number copied",
-      "NUMBER_COPY_FAILED": "Couldn’t copy the order number."
+      "NUMBER_COPY_FAILED": "Couldn’t copy the order number.",
+      "WHAT_TO_DO": "What to do about this"
     },
     "OVERVIEW": {
       "TAB": "Overview",

@@ -16,6 +16,8 @@ import CommerceOrderSearch from './CommerceOrderSearch.vue';
 import CommerceCarts from './CommerceCarts.vue';
 import { relativeTime } from './commerceHelper';
 import { useCommerceLabels } from './useCommerceLabels';
+import DocsLink from 'dashboard/components-next/docs-link/DocsLink.vue';
+import { commerceErrorArticle } from 'dashboard/helper/documentationLinks';
 
 const props = defineProps({
   conversationId: { type: [Number, String], required: true },
@@ -406,6 +408,13 @@ watch(() => props.conversationId, loadStores, { immediate: true });
             <span v-else-if="!panel.stale">{{
               errorMessage(panel.error)
             }}</span>
+            <!-- What to do about it. The code is already classified by the server, so the article is resolved
+                 from the code rather than from prose; an unmapped code falls back to the commerce overview
+                 rather than linking somewhere that does not answer the question. -->
+            <DocsLink
+              :article-key="commerceErrorArticle(panel.error) || 'commerce'"
+              :label="t('COMMERCE.PANEL.WHAT_TO_DO')"
+            />
           </p>
 
           <template v-if="panel.state === 'linked'">

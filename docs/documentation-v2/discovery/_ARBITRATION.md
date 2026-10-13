@@ -814,3 +814,79 @@ It **overstated nothing and corrected two overstatements of others**, which is w
   form; an embed template inside an image alt; `onerror` on a rendered `<img>`; `</script>` in a title against
   JSON-LD; the `og_image` `html_safe`; the Administrate field views; and the portal's inline script
   interpolations.
+
+---
+
+# Addendum 8 — the Arabic question, settled with numbers
+
+**Agent 094**, and I verified its central measurement myself because it invalidates counts used across Phase 1.
+
+## The measurement artefact, reproduced
+
+The container runs with no locale set (`LC_CTYPE` and `LANG` both unset, so POSIX). On
+`ar/contacts/contacts.md`:
+
+```
+POSIX wc -w:   191
+UTF-8 wc -w:   923
+python split:  923
+bytes, AR:     9138
+bytes, EN:     6572
+```
+
+So `wc -w` under POSIX undercounts Arabic by ~4.8×, and the Arabic file is **larger in bytes than its English
+sibling** — which is impossible if it held a sixth of the words. Agents 052, 055, 058 and 060 each noticed the
+symptom; 094 found the cause and the fix.
+
+**Consequence: every Arabic word count produced in Phase 1 with bare `wc -w` is wrong**, including ones I
+repeated in earlier addenda here. They must be recomputed with `LC_ALL=C.UTF-8` or Python before the Phase 2
+coverage matrix is sized on them. Agents 031 and 036 were right in their *conclusions* and wrong in their
+*published evidence* — worth separating, because their conclusions should not be discarded with their numbers.
+
+## The verdict the charter asked for
+
+**45 FAITHFUL / 4 REFORMATTED / 14 DIVERGENT** across the 63 pairs. True AR/EN word ratio: **median 0.82**,
+range 0.74–0.96, with character ratios tracking within 0.02. The two pairs that looked alarming —
+`contacts.md` at 0.80 and `automation-rules.md` at 0.87 — are **faithful renderings**, and the most compressed
+pair in the corpus (0.74) is claim-for-claim complete.
+
+**The Arabic corpus is not thin, not truncated and not machine-translated.** That now rests on measurement
+rather than impression, and it is consistent with agent 061's independent finding on orthography and punctuation.
+
+## What survived the attack, which matters as much as what did not
+
+Zero link-target divergence across **all 63 pairs**. Front matter at perfect structural parity — keys, position,
+tags, and `seo_title` present in all 14 `whatsapp-errors` files on both sides. **No limit, threshold or error
+code differs in value anywhere**; the apparent digit divergences in 25 pairs were all numbers spelled as Arabic
+words. Arabic conversation status labels match `ar/chatlist.json` exactly, including the awkward `فتح`. And the
+permissions matrix survives — EN 4 rows against AR 6 is row-splitting with every value identical.
+
+## The methodological finding that changes how Phase 5 works
+
+**"English is authoritative" is false.** `en/macros.json:7` is "Add a new macro", while
+`en/conversations/macros.md:49` says "Add macro" — and the **Arabic matches its locale file exactly**. The
+Arabic is right and the English is wrong.
+
+**Ruling.** Phase 5 checks **both** corpora against the **locale files**, never against each other. This is the
+natural companion to R10: the shipped locale is the authority for a quoted label in either language, and a
+cross-corpus diff will systematically mistake a correct Arabic article for a divergent one.
+
+094 also recorded a **self-correction**: it first flagged an Arabic claim as AR-only and found on re-check that
+the English has it twice. Its conclusion — audit whole files with grep, never section windows — is adopted.
+
+## The divergences that are real
+
+| # | Finding |
+|---|---|
+| R1 | `ar/workspace/roles-and-permissions.md:92` (and siblings `:57`, `:62`, `:78`) claims a custom role cannot be reassigned after a downgrade. Agent 057 found it; 094 proved it **false against code** — `feature_enabled?('custom_roles')` is checked in exactly one place, and the attachment path in `agents_controller.rb:22,53-58` has **no capability guard and no model guard**, so reassignment succeeds. Either the Arabic is wrong, or the missing guard is a product bug. **Do not "fix" it by adding the claim to English.** |
+| R4 | **Blocks Phase 3 IA.** The inbox/channel distinction is *reversed* in Arabic — English says the two words describe the same thing, Arabic says the channel "has its own inbox" (two objects) — and `ar/workspace/set-up-an-inbox.md` drops "inbox" altogether. Arabic uses three renderings for *inbox* (49/31/1), mixed inside a single sentence. **And the English pair is itself in mild tension.** Fix English first, then Arabic. |
+| R7 | `en/troubleshooting/commerce-store-unreachable.md:33` lists VPN, private network and `localhost`; the Arabic gives two, and **"VPN" appears nowhere in the 63-file Arabic corpus**. |
+| R8 | A rate limit becomes an order cap: "Salla limits requests" renders with the same Arabic word this table uses for "orders" in every other row — while the Zid row two lines down disambiguates correctly. |
+| R2/R3 | Four Arabic nav paths name a Commerce menu that does not exist (`التجارة`, which is the contact-sidebar label, instead of `المتجر`), and three of five "Account Health" references name a tab the product never shows in Arabic. All in troubleshooting articles — the worst place for a wrong menu name. |
+
+Every one of these reduces to the single missing artefact: **an EN→AR glossary keyed to
+`i18n/locale/ar/*.json`**, which R10 already ordered and which Phase 4 now freezes with 094's table as its
+seed. Two items need an explicit glossary ruling rather than a lookup, because they exist in no locale string
+at all: **"Customer 360"** (translated in all 10 Arabic occurrences including a title and an `seo_description`,
+but present only in code comments) and the **skeleton headings**, where "Who can do this" splits 22/21 across
+two different Arabic forms and so breaks portal search by section.

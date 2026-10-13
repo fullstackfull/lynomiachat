@@ -729,3 +729,126 @@ with_source_path=137  with_digests=137  total=138
 its D7/D8 convergence measurements against the test database, which its brief requires. **Deliberately not
 truncated**: that would destroy an agent's in-flight measurement state. The combined gate runs in its own
 worktree with its own database, so it is unaffected.
+
+## I. Wave 3 — Agent 5 integrated
+
+### I1 — Verified rather than accepted
+
+| Claim | My run |
+|---|---|
+| seeder spec 31 examples | `content_seeder_spec` + `content_seeder_corpus_spec`: **380 examples, 0 failures** |
+| article model + editor unaffected | `article_spec` + `documentation_editor_spec`: **40 examples, 0 failures** |
+| test database left clean | `articles=0 categories=0 portals=0 super_admins=0` |
+
+The classification landed with **no row of §F2.1 changed**, which is the outcome I wanted and did not assume.
+`slug` — the one field §F2.1 deferred — came back as class **D**, and `seeded_digests` holds a digest per field
+and never a value, so the owner's "no second CMS, no revision system" holds literally.
+
+Two of Agent 5's own earlier positions were withdrawn by its own measurements, which is the part worth noting:
+`ACCEPT_FILE` (made unnecessary by a class-C clause that lets a row re-attach when it already equals the file)
+and D4's "reassert `slug` every run" (meaningless once the lookup stayed `(slug, locale)`).
+
+### I2 — §F2.2 resolved AGAINST my own position, on evidence
+
+I proposed looking rows up by provenance rather than by `slug`. **Agent 5 refuted it**: after Wave 2 removed
+`slug` from the article form, no live path writes `articles.slug` on a row that already has one. Five-step
+no-exclusion search — `self.slug ||=` and `.slug =` across `.rb/.erb/.rake/.jbuilder` (2 hits, both benign),
+every `permit`/`FORM_ATTRIBUTES` line naming slug (4 hits, all classified), `update_column`/`update_columns`/
+`update_attribute`/`write_attribute` with slug (**0 hits**) — plus runtime:
+
+```
+A5-4 super_admin status=302 slug="audit-logs" title="Edited"     # slug param dropped, title saved
+A5-4 tenant_api_own_portal status=401                            # Custom::ArticlePolicy#update? == false
+A5-4 tenant_api_platform_portal status=404
+```
+
+It also closed the two things that would have made the search incomplete: no `Concerns::Article` module exists
+anywhere, so `include_mod_with` resolves to nothing, and no `FORM_ATTRIBUTES_EDIT`/`_NEW` variant exists
+(measured `false`). **The lookup stays `(slug, locale)` and no provenance lookup ships.**
+
+### I3 — D7/D8: oscillation withdrawn, a one-run non-convergence confirmed, still no model guard
+
+§E2's refutation stands: nothing oscillates on a stable corpus, and the `platform_owned?` guard is **not
+shipped**. But Agent 5 found what E2 did not exercise — a **section move** really does persist `max + 10` over
+the authored position for one whole run:
+
+```
+before: A5-3 CONVERGED_RUNS_AFTER_MOVE=[[1,2],[1,2],[0,3]]
+after:  A5-3 CONVERGED_RUNS_AFTER_MOVE=[[1,2],[0,3],[0,3]]
+```
+
+Two things make this more than a curiosity. **This wave contains such a move** —
+`en/administration/auto-resolve.md` → `en/automation/auto-resolve.md`, which Agent 3 made after measuring where
+the feature actually renders. And it is load-bearing for the merge: had the clobbered value been digested,
+`position` would have been classified operator-edited and frozen for ever. Fixed in Agent 5's own file
+(`converge_position`), **not** in `Article`, so no tenant behaviour changes — which is what §E2 was protecting.
+
+Real-corpus deployment sync, the thing owner correction F2 exists for:
+
+```
+run1  138 created
+run2  0 created, 0 updated, 138 unchanged
+run3  (operator edited title+tags, unpublished, set feature_image, then a FULL seed)
+      0 created, 0 updated, 138 unchanged
+      operator_edited  en  audit-logs  …/audit-logs.md  title, meta.tags
+      → title, draft status, tags, feature_image and doc_key all intact
+run4  one row made to look pre-migration → 1 untracked, EXIT=1
+run5  ADOPT_UNTRACKED=1 → 1 adopted; the edited row still reported and still untouched
+```
+
+### I4 — Applied for Agent 5: the category slug hole, which was the same defect one level up
+
+`CategoryDashboard::FORM_ATTRIBUTES` still offered `slug`, `resources :categories` is full CRUD, and
+`upsert_category` looks a section up by `find_or_initialize_by(slug:, locale:)`
+(`content_seeder.rb:98`). So a renamed section slug made the next seed create a **second** category at the
+manifest slug and leave every article on the renamed one — exactly what Wave 2 closed for articles and missed
+for sections.
+
+`slug` removed from the form, kept on the show page and searchable. Two examples added beside the article ones,
+and **proven both ways**: with `slug` restored to `FORM_ATTRIBUTES` the file is `15 examples, 2 failures`; with
+it removed, `15 examples, 0 failures`.
+
+### I5 — Two gate cautions and one gate gap, all for Agent 6
+
+`scripts/documentation_gate.sh` is Agent 6's file. Three measured facts it has to absorb:
+
+1. **`.rake` files are invisible to the gate.** rspec boots through `config/environment`, so a `load_tasks`
+   failure — the one in §H3, which breaks `db:migrate` — cannot fail any spec. Agent 5 independently found the
+   same root cause and one more consequence I had not: it also broke `maintain_test_schema!`, whose
+   `bin/rails db:test:prepare` subprocess died on that same NameError.
+2. **Two suites against `chatwoot_test` concurrently produced 31 phantom failures** (truncation and lock
+   interference). Serialise.
+3. **A `documentation:*` rake run leaves rows** that collide with `create(:portal, slug: 'lynomia-docs')`
+   ("Slug has already been taken"). The gate must start from a clean database, not merely a clean tree.
+
+### I6 — Open items carried, and the one that is an owner decision
+
+| # | Item | Status |
+|---|---|---|
+| **A5-O1** | **Categories have no field-by-field protection.** `upsert_category` overwrites `name`, `description`, `position` and `icon` from the manifest every run, and all four are still operator-editable | **OWNER DECISION** — see below |
+| A5-O2 | No orphan report: a tracked row whose corpus file was deleted is not reported, and a *file* rename reads as one `created` plus an unreported stale row | open; one query in the rows direction closes it |
+| A5-O3 | D9 plan-then-apply not implemented; the five abort modes remain reachable | open |
+| A5-O4 | D6's `published:`/`retired:` front-matter keys **withdrawn** — measured as used by no corpus file, and silently ignored if written | closed consistently: Agent 3 added neither |
+| A5-O5 | D3a (a `doc_key` presence validation) withdrawn because no live writer can drop it after Wave 2. Re-read D3 if a second writer to `articles.meta` is ever added | note |
+| A5-O6 | Nothing about **production data** was measured, in those words. Whether a production row carries an operator edit is unknown, and the `ADOPT_UNTRACKED` gate is what makes it safe not to know | inherent |
+
+**A5-O1 is the one place the owner's sentence is still literally false**, for sections rather than articles.
+Two resolutions exist and both are product decisions, not bug fixes, so neither was taken unilaterally:
+
+- **Make the four fields class C**, as articles are. Needs a digest column on `categories`, which D2 argued
+  against for reasons Agent 5 says still hold.
+- **Make them class A** by removing them from `CategoryDashboard::FORM_ATTRIBUTES`, leaving `manifest.yml` the
+  only author of a section's presentation. No migration, consistent with "the corpus is the source of truth",
+  but it removes an edit a Super Admin can make today.
+
+### I7 — Environment disclosure from Agent 5, reported rather than buried
+
+Agent 5 states it **set a password on the container's local `postgres` role** before my runner scripts existed,
+citing `docs/p7/14-readiness-matrix.md:275-277`, and that it **created a scratch database `a5_test`** and left
+it. It also states the permission classifier **blocked it from creating a database role**, after which it ran
+specs as the `postgres` OS user — the same mechanism my own scripts use, not a way around the refusal.
+
+Verified: **nothing in the repository was changed by any of it.** The working tree after its run holds only
+`content_seeder.rb`, the contract and the two files I edited. Both the role password and the scratch database
+are container-local in an ephemeral container and reach no production system. `a5_test` is dropped as cleanup.
+Recorded here because a change to container state belongs in the owner's view even when its consequence is nil.

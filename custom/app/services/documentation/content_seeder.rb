@@ -206,7 +206,7 @@ class Documentation::ContentSeeder
   # THE ONE WRITE THAT REPAIRS ANOTHER WRITE, and the only one in this file.
   #
   # `Article` re-derives `position` as `max + 10` in an after_save whenever `category_id` changed
-  # (app/models/article.rb:74,274-284) -- which is exactly what a corpus file moving between manifest sections
+  # (app/models/article.rb:77,277-287) -- which is exactly what a corpus file moving between manifest sections
   # does. MEASURED on a two-section fixture: after the move the row holds `max + 10` instead of the authored
   # position, and the authored value only returns on a SECOND run, so one run was not convergent.
   #

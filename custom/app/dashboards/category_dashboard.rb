@@ -22,7 +22,14 @@ class CategoryDashboard < Administrate::BaseDashboard
 
   COLLECTION_ATTRIBUTES = %i[name portal locale slug position articles].freeze
   SHOW_PAGE_ATTRIBUTES = %i[id name slug portal locale description position icon articles created_at updated_at].freeze
-  FORM_ATTRIBUTES = %i[portal name slug description locale position icon].freeze
+  # `slug` is deliberately absent, for the same reason it is absent from ArticleDashboard: it is the section's
+  # public address and it is the key the seeder looks a section up by --
+  # Documentation::ContentSeeder#upsert_category does `find_or_initialize_by(slug:, locale:)`
+  # (custom/app/services/documentation/content_seeder.rb:98). Renaming it here makes the next seed create a
+  # SECOND category at the manifest slug while every article stays on the renamed one, and 404s a previously
+  # indexed URL (docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md D4). It stays on SHOW_PAGE_ATTRIBUTES and
+  # stays searchable.
+  FORM_ATTRIBUTES = %i[portal name description locale position icon].freeze
 
   def display_resource(category)
     "#{category.name} (#{category.locale})"

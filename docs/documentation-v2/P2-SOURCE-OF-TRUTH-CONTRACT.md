@@ -29,6 +29,24 @@ I have written no file but this one.
 
 ---
 
+## 0A. How wave 3 was verified — PostgreSQL was up this time
+
+| Method | What it covered |
+|---|---|
+| Measurement, real corpus | both seed tasks run twice over against the shipped 69/69 corpus in the test database; an operator edit (title, status, tags, feature image) surviving a full seed; the untracked refusal and its non-zero exit; the adopt run after it |
+| Measurement, fixture probes | the section move, before and after the fix, with the callback instrumented (D8); every runtime write path to `articles.slug`, including a `PUT` that carries one (D4) |
+| Specs | `spec/custom/services/documentation/content_seeder_spec.rb`, 31 examples, extended from 17 |
+| Absence-rule searches | four no-exclusion searches for writers of `articles.slug` (§7F), one for writers of `articles.meta` (D3), and the front-matter key inventory behind D6 |
+| Not measured | anything about production data (§6.2 stays open), and the five D9 abort modes, which wave 3 does not change |
+
+**Everything below this line is the wave-1 document, with wave-3 corrections inline.** §0's statement that
+PostgreSQL was down applies to wave 1 only. Two reading notes: §1 and every paragraph headed **Today** describe
+`content_seeder.rb` **as it was before wave 3**, and that file was rewritten, so its line citations in those
+paragraphs locate the old behaviour rather than a current line — the wave-3 blocks cite the current file. Line
+citations to every other file were re-checked against the tree while writing this revision.
+
+---
+
 ## 0. How this was verified, and the one thing I could not measure
 
 | Method | What it covered |
@@ -105,13 +123,15 @@ in miniature on one column, and it is the mechanism behind §2.3.
 
 Owner correction §F2: a `content_digest` protects `content` and nothing else, and **nine fields have two
 writers**, so a content-only digest reverts an operator's title, description, position, status and SEO metadata
-while the digest still matches. The classification below is what `Documentation::ContentSeeder` now obeys. One
-row changed from §F2.1's proposal (`slug`, see D4) and no field is unclassified.
+while the digest still matches. The classification below is what `Documentation::ContentSeeder` now obeys. **No
+row of §F2.1's proposal changed**; one field §F2.1 left to §F2.2 is now classified (`slug`, class D, see D4) and
+the class-C *rule* gained one clause, so no field is unclassified.
 
 | Class | Field | Where the other writer is | Rule the seeder follows |
 |---|---|---|---|
 | **D** identity / provenance | `portal` | not on the form as a documentation portal change (`article_dashboard.rb:17` scopes it to `Documentation::Library.portals`) | the lookup scope; never written |
-| **D** | `locale` | on the form, but `ensure_locale_in_article` (`article.rb:286-292`) overrides it from the category | the lookup key; never written |
+| **D** | `locale` | on the form, but `ensure_locale_in_article` (`article.rb:289-295`) overrides it from the category | the lookup key; never written |
+| **D** | `slug` | **off the form since wave 2** (`article_dashboard.rb:42-47`); the only in-model writer is `ensure_article_slug`'s `\|\|=` (`article.rb:323-325`) | the lookup key, derived from the file's basename; never written. §F2.1 left this one to §F2.2; D4 answers it |
 | **D** | `meta['doc_key']` | not on the form; `ArticleMetaField::MANAGED_KEYS` (`article_meta_field.rb:37`) excludes it and `merge_submitted` (`:50-55`) carries it through | **reasserted on every run** from the file's basename |
 | **D** | `content_source_path` | never a form field | written on create and on adoption, and re-pointed when the file moves section |
 | **A** repository-owned | `content` | form (`article_dashboard.rb:47`) | the corpus wins on every run |
@@ -267,7 +287,7 @@ end
 - **A `detached` / `operator_edited` boolean.** Detachment is **derived** — `content_digest.present? && rd != sd` — and
   a stored flag would be a second source of truth for the same fact, free to drift from it. Derive it.
 - **Moving `doc_key` out of `meta` into a column.** It is a contextual-help key, not provenance, and
-  `Documentation::Library#article_for` queries it as `articles.meta->>'doc_key'` (`library.rb:55`) — Agent 4's file.
+  `Documentation::Library#article_for` queries it as `articles.meta->>'doc_key'` (`library.rb:63`) — Agent 4's file.
   D3 protects it where it lives; moving it would change another agent's file and three serializers to no end.
 - **An expression index on `meta->>'doc_key'`.** The predicate only ever runs after the portal filter
   (`library.rb:43,55`), which uses `index_articles_on_portal_id`, over a platform corpus of 126 rows. An index here
@@ -302,7 +322,7 @@ ownership map anticipated that I would need provenance keys there, and I do not.
    and the early return at `:48` does not fire.
 6. `update(resource_params)` (`application_controller.rb:59`) assigns the jsonb. **`doc_key` is gone.**
 7. **No merge exists anywhere else.** A no-exclusion grep for `doc_key` returns exactly two code sites in the whole
-   repository: `content_seeder.rb:107` writes it, `library.rb:55` reads it (§7). There is no `Concerns::Article`
+   repository: `content_seeder.rb:107` writes it, `library.rb:63` reads it (§7). There is no `Concerns::Article`
    override and no custom `Article` model — `./app/models/article.rb` is the only `article.rb` model in the tree.
 
 So: **any Super Admin save of a seeded article destroys `meta['doc_key']`, including a save that only fixes a typo in
@@ -453,17 +473,17 @@ instead. Never name a file `search.md`, `articles.md` or `categories.md` (D9, ab
 >
 > | Hit | What it is |
 > |---|---|
-> | `app/models/article.rb:321` | `ensure_article_slug`, `self.slug \|\|=` — writes only when the slug is **nil** |
+> | `app/models/article.rb:324` | `ensure_article_slug`, `self.slug \|\|=` — writes only when the slug is **nil** |
 > | `vendor/.../ruby_llm-2.0.0/lib/ruby_llm/provider.rb:557` | a gem's own class attribute; not this table |
 > | `app/controllers/api/v1/accounts/articles_controller.rb:110` | the tenant API permits `:slug` — **the only live permit that does**; reachability below |
 > | `app/controllers/api/v1/accounts/portals_controller.rb:97` | `Portal#slug`, a different table |
 > | `app/controllers/api/v1/accounts/categories_controller.rb:56`, `custom/app/dashboards/category_dashboard.rb:25` | `Category#slug`, a different table (§5.4 still stands) |
 > | `app/controllers/public/api/v1/portals/articles_controller.rb:109` | `params.permit` for a **read** filter, not a model write |
-> | `custom/app/services/documentation/content_seeder.rb:73` | the seeder's own lookup; it writes no slug |
+> | `custom/app/services/documentation/content_seeder.rb:115` | the seeder's own lookup; it writes no slug |
 > | `app/controllers/api/v1/accounts/articles/bulk_actions_controller.rb:44` | `slug` used to find the portal; the bulk verbs write status, category and translations |
 >
 > **(3) Aliases, helpers and config publication followed.** `Article.include_mod_with('Concerns::Article')`
-> (`article.rb:324`) resolves through `each_extension_for`
+> (`article.rb:327`) resolves through `each_extension_for`
 > (`config/initializers/01_inject_enterprise_edition_module.rb:69-79`) and **no `Concerns::Article` module exists
 > anywhere in the tree** (re-checked: no `module Concerns` under `app`, `custom` or `lib`, and there is no
 > `enterprise/` tree). Administrate's `permitted_attributes` is built **only** from `form_attributes`
@@ -1055,31 +1075,81 @@ constant, and says so in a comment, so this task cannot reintroduce it.
 
 ## 4. What Agents 2 and 3 can now rely on, in one place
 
+**Rewritten for what wave 3 actually shipped.** Every line here is true of the code in the tree.
+
 **Agent 2 (editor).**
-1. An operator's save is **durable**. No deploy reverts it. Design for that.
-2. `content_source_path` and `content_digest` are **never** form fields; the seeder owns them.
-3. `slug` **leaves** the form (§5.2). `doc_key` is **displayed, not editable**.
-4. `meta` must be **merged**, not replaced (§5.1) — and land it with your first change, because D3a 422s a seeded
-   article's save until you do.
-5. `status` stays editable and the operator's choice is now permanent (D6).
-6. Show the row's provenance and class where the operator edits it (D5).
+1. An operator's save is **durable, field by field**. No deploy reverts `title`, `description`, `position`,
+   `status` or the SEO keys once the operator has touched them (§2A). `content` and `category` are **not**
+   durable: the corpus owns them and a deploy will revert an edit to either. Design for exactly that split — and
+   if the editor is going to let an operator change the body, it should say that the corpus wins there.
+2. `content_source_path` and `seeded_digests` are **never** form fields; the seeder owns both. Neither is in
+   `ArticleDashboard::ATTRIBUTE_TYPES`, so Administrate cannot permit them.
+3. `slug` is off the form and stays off (D4). `doc_key` is **displayed, not editable** — and it is now reasserted
+   by the seeder on every run, so a row whose key was lost before wave 2 repairs itself on the next seed.
+4. `meta` merging is **done** (wave 2, `ArticleMetaField.merge_submitted`), and the model validation this contract
+   proposed for it is withdrawn — see D3. If you add a second write path to `articles.meta`, that validation
+   becomes necessary again.
+5. `status` stays editable and the operator's choice is now permanent — including through an adoption (D6).
+6. Showing provenance is still worth doing (D5), and it is now one column plus one derived fact:
+   `content_source_path` (or "authored in Super Admin" when NULL) and, if you want the per-field state,
+   `seeded_digests.keys` is the list of fields the seeder is still tracking.
 
 **Agent 3 (content).**
 1. The file basename is the `doc_key` **and** the public URL. Renaming it is a URL change (D4).
-2. Two new optional front-matter keys: `published:` (default `true`, create-only) and `retired:` (default `false`).
-   No existing file changes. No `manifest.yml` key is added by me.
-3. Retire with `retired: true`, never `git rm` — a removed file archives nothing and reports as an orphan (D6).
-4. Never name a file `search.md`, `articles.md` or `categories.md` (D9 mode 2).
-5. A new section directory needs a `manifest.yml` entry in the same commit, or phase 1 fails the run (D9 mode 5).
-6. A documentation key must not equal a changelog key — `first-release-note` is taken (D9 mode 3).
-7. `release_date:` must be a bare ISO-8601 date; a date **with a time** raises `Psych::DisallowedClass` (D9 mode 4).
-8. Every file needs a non-empty body (D9 mode 1).
+2. **Do not write `published:` or `retired:` in front matter** — withdrawn, and silently ignored (D6). There is no
+   corpus-side way to withdraw an article; ask and the key lands with the file that needs it.
+3. Deleting a file archives nothing and, in wave 3, is **not reported either** — the orphan report is deferred
+   (D5). A removed file leaves a published row behind until an operator archives it by hand.
+4. Moving a file between manifest sections is now safe in one run: the authored `position` survives the move
+   (D8). It was not safe before wave 3, and `auto-resolve.md` is one such move in this very wave.
+5. Never name a file `search.md`, `articles.md` or `categories.md` — still an abort, and still not pre-checked
+   (D9 mode 2).
+6. A new section directory still needs a `manifest.yml` entry, or the section is **silently never seeded** — that
+   is D9 mode 5 and phase 1 is not implemented, so nothing catches it for you.
+7. A documentation key must not equal a changelog key — `first-release-note` is taken (D9 mode 3). It now fails on
+   a unique index as well as on the slug index.
+8. `release_date:` must be a bare ISO-8601 date (D9 mode 4), and every file needs a non-empty body (D9 mode 1).
+9. Editing prose is always safe: `content` is class A, so a corpus correction always reaches the row.
 
 ---
 
 ## 5. REQUESTED CHANGES — files I do not own
 
 Ordered by urgency. §5.1 is the only one that gates another agent.
+
+> **WAVE 3 STATUS OF EACH REQUEST.**
+>
+> | Request | State |
+> |---|---|
+> | §5.1 `super_admin/articles_controller.rb` — merge `meta` | **LANDED in wave 2**, better than asked: the merge is on `ArticleMetaField`, so a controller that forgets cannot replace the column (see D3) |
+> | §5.2 `article_dashboard.rb` — drop `slug` | **LANDED in wave 2** (`:42-47`). It is what makes §F2.2's provenance lookup unnecessary (D4) |
+> | §5.3 `deployment/ROLLBACK.md` | **NOT APPLIED**, and I touched no deployment file. D10's procedure now reads per field rather than per row: a revert fast-forwards every field the operator has not taken over, and reports the rest |
+> | §5.4 `category_dashboard.rb` — drop `slug` | **NOT APPLIED and still live.** Re-stated with evidence below |
+> | §5.5 `deployment/deploy.sh` — drift print | **NOT APPLIED**, and now blocked on the deferred `documentation:drift` task (D5, D11) |
+> | §5.6 `documentation_seo_audit.rake` — default to platform portals | **UNKNOWN to me**; Agent 4's file, not re-checked in wave 3 |
+> | §5.7 `en.yml` — one string for D3a | **WITHDRAWN**: D3a is withdrawn, so the string is not needed. No backend i18n key is requested by wave 3 |
+> | §5.8 `P0-POST-DEPLOY-OWNER-CHECKS.md` | **UNKNOWN to me**; not re-checked in wave 3 |
+>
+> **§5.4 is still live, and the measurement is one line of code.** `CategoryDashboard::FORM_ATTRIBUTES`
+> (`custom/app/dashboards/category_dashboard.rb:25`) is
+> `%i[portal name slug description locale position icon]`, the route exists
+> (`config/routes/documentation.rb:9`, `resources :categories`, full CRUD) and
+> `SuperAdmin::CategoriesController` scopes it to the platform portals — so a super admin can rename a
+> documentation section's slug. `Documentation::ContentSeeder#upsert_category` looks a section up by
+> `find_or_initialize_by(slug:, locale:)`, so the next seed **creates a second category** at the manifest slug
+> while the renamed one keeps every article. This is the duplication §F2.2 feared for articles, still open for
+> categories, and the fix is the same one line wave 2 applied to the article dashboard:
+>
+> ```diff
+> -  FORM_ATTRIBUTES = %i[portal name slug description locale position icon].freeze
+> +  # `slug` is deliberately absent: it is the section's public address, taken from `manifest.yml` by
+> +  # Documentation::ContentSeeder#upsert_category, which looks a section up by (slug, locale). Renaming it here
+> +  # makes the next seed create a SECOND category at the manifest slug and leaves every article on the renamed
+> +  # one (docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md D4, §5.4). It stays on SHOW_PAGE_ATTRIBUTES.
+> +  FORM_ATTRIBUTES = %i[portal name description locale position icon].freeze
+> ```
+>
+> I did not apply it: `custom/app/dashboards/category_dashboard.rb` is not in my write gate.
 
 ### 5.1 — `custom/app/controllers/super_admin/articles_controller.rb` (Agent 2). Merge `meta`, do not replace it.
 
@@ -1247,6 +1317,22 @@ condition that produced the original defect. Add, after the existing checks:
 
 ## 6. OPEN — needs the owner
 
+> **Added by wave 3**, in the order I would ask them:
+>
+> 5. **Do categories get the same field-by-field treatment?** The one place the owner's sentence is still false.
+>    `upsert_category` overwrites a section's `name`, `description`, `position` and `icon` from `manifest.yml` on
+>    every run, and all four are operator-editable (`category_dashboard.rb:25`). D2 ruled out provenance on
+>    `categories` — sections come from the manifest rather than from per-file front matter, and the slug index is
+>    already unique per portal — and those reasons still hold, so this is a decision about whether a section's
+>    *presentation* is operator-owned, not a defect to patch. §5.4 (drop `slug` from that form) is the urgent half
+>    and does not need this answer.
+> 6. **Is there a corpus-side way to withdraw an article, and should there be?** D6's `retired:` key is withdrawn
+>    because no file uses it. Withdrawal is now an operator action only. What would close it: a corpus that needs
+>    to retire an article.
+> 7. **When does the orphan half of the drift detector land?** R12 ordered a drift detector before any scheduler;
+>    wave 3 ships the files-versus-counts half and not the rows-with-no-file half (D5). The deferral is safe only
+>    while nobody deletes a corpus file, which is exactly the thing nobody announces.
+
 1. **Should a deliberate URL change be possible at all, and therefore do we need redirects?** D4 makes a file rename
    safe — no 404, one `created` plus one reported `orphan` — and that is why I ruled redirects out of P2 rather than
    building a mechanism. But it means a URL, once published, is effectively permanent: to change it you publish a new
@@ -1290,7 +1376,7 @@ condition that produced the original defect. Add, after the existing checks:
 
 **A. "Nothing preserves `meta` keys the Super Admin form does not post."** (D3)
 Search: `grep -rn "doc_key" .` — 27 files. Classified: `custom/app/services/documentation/content_seeder.rb:107`
-(the only writer); `custom/app/services/documentation/library.rb:55` (the only reader);
+(the only writer); `custom/app/services/documentation/library.rb:63` (the only reader);
 `spec/requests/documentation/entry_points_spec.rb`, `spec/custom/services/documentation/content_seeder_spec.rb` (2
 assertions); 22 files under `docs/` (prose); `log/test.log` (30 hits, all captured `INSERT` statements from past
 spec runs — generated output, not code). **Aliases, helpers, concerns and config republication followed**:
@@ -1299,7 +1385,7 @@ spec runs — generated output, not code). **Aliases, helpers, concerns and conf
 module exists — `./app/models/article.rb` is the only `article.rb` model in the tree and there is no `enterprise/`
 tree. The camelCase alias `docKey` was searched separately and appears in no Ruby file. **Chain inspected**: form view
 → `permitted_attribute` → Administrate `permit` → `normalized_meta` → `update` → jsonb column, and the consumer side
-`library.rb:55` → `documentation_controller.rb:22-23` → 404 → `documentationLinks.js:11`. **Negative stated**: no
+`library.rb:63` → `documentation_controller.rb:22-23` → 404 → `documentationLinks.js:11`. **Negative stated**: no
 merge exists on any path.
 
 **B. "`documentation:content` is in no deploy path, job, controller or CI workflow."** (D9)
@@ -1323,6 +1409,14 @@ models, none of them `Article`. `custom/app/models/custom/audit/` holds 14 files
 them. The `include_mod_with` chain is followed in (A). **Negative stated**: no audit trail records who changed a
 documentation article, which is why D2's provenance is a column and not an inference.
 
+**F. "No live path writes `articles.slug` on a row that already has one."** (D4, added in wave 3 for §F2.2)
+The full five steps — four no-exclusion searches, every hit classified, the alias/helper/config chain followed
+through `include_mod_with` and Administrate's `permitted_attributes`, and the runtime path measured rather than
+inferred — are **in D4** rather than repeated here, because the claim is the whole of that decision. The negative:
+one writer exists (`Article#ensure_article_slug`) and it is `self.slug ||=`, so it cannot change a slug that is
+already set; one permit list names `:slug` on `Article` (the tenant API) and both of its reachability conditions
+fail for a documentation row, measured as `401` and `404`.
+
 **E. "Nothing in this repository emits the tracking-pixel URL."** (D9)
 Search: `grep -rn "tracking_pixel\|tracking-pixel" .` → 4 hits, every one classified: `config/routes.rb:516` (the
 route), `app/controllers/public/api/v1/portals/articles_controller.rb:7` (a `before_action` exception), `:38` (the
@@ -1337,10 +1431,33 @@ depend on which is true.
 
 ## 8. Status
 
-**Frozen.** Agents 2 and 3 are unblocked. Nothing here is implemented: this wave is design, and the only code in this
-document is the diffs in §5 — none of which I have applied — and the sketches in D2, D3a and D8, which land in my own
-files in the implementation wave.
+**Wave 1: frozen. Wave 3: revised per owner correction §F2, implemented, and measured.** §2A is the authoritative
+model and the code in the tree does what it says.
 
-One thing in this contract is **UNVERIFIED by measurement** and is flagged at the point of use: the two-run
-convergence probe for D8, because PostgreSQL is down in this environment. The derivation is in D8 and the exact probe
-is named there. Every other claim carries a `file:line` that can be read without a database.
+**Implemented** — `db/migrate/20261013230000_add_content_provenance_to_articles.rb` (additive),
+`custom/app/services/documentation/content_seeder.rb` (the field-by-field merge, the `doc_key` reassertion, the
+position convergence, the per-field divergence report), `lib/tasks/documentation.rake` (the report, the
+`ADOPT_UNTRACKED` boundary, the non-zero exit), `app/models/article.rb` (**the schema annotation only** — no
+behaviour change; the `platform_owned?` guard this contract proposed is withdrawn, see D8) and
+`spec/custom/services/documentation/content_seeder_spec.rb`. `custom/app/services/documentation/portal_seeder.rb`
+needed **no change**: it already protects operator state and already says so (`:4-6`), and class B makes the
+content seeder agree with it rather than the other way round. `app/models/category.rb` needed no change either —
+see the open item below.
+
+**Withdrawn on measurement, each at its own decision:** the `platform_owned?` position guard (D8), the `slug`
+reassertion and §F2.2's provenance lookup (D4), the `doc_key` model validation D3a and its `en.yml` string (D3,
+§5.7), the `published:`/`retired:` front-matter keys (D6), `ACCEPT_FILE` and the per-row `conflict` class (D5).
+
+**Deferred, not silently dropped:** plan-then-apply and the five abort modes (D9), the orphan report and
+`documentation:drift` (D5, D11), the `deploy.sh` drift print (§5.5), and the source-of-truth question for
+**categories** — `upsert_category` still overwrites `name`, `description`, `position` and `icon` from the manifest
+on every run, while `CategoryDashboard::FORM_ATTRIBUTES` (`:25`) lets a super admin edit all four. D2 ruled out a
+provenance column on `categories` for reasons that still hold, so applying §2A there needs a decision, not just
+code. It is the one place where "deployment never silently overwrites operator-authored content" is still false.
+
+**What is measured, and what is not.** Measured in this container, against PostgreSQL 16, on the real 138-file
+corpus and on fixtures: both seed tasks twice over (138 created → 138 unchanged; 2 → 2), an operator edit surviving
+a full seed per field, the untracked refusal with its non-zero exit and the adopt run after it, the section move
+before and after the fix, and every runtime write path to `articles.slug`. **Not measured:** anything about
+production data — whether any production row carries an operator edit is still §6's open question, and the adopt
+run is the mechanism that makes the answer safe to not know. No production system was touched.

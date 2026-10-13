@@ -60,6 +60,28 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
     end
   end
 
+  # The same guarantee for a SECTION, which had the same hole. `upsert_category` looks a section up by
+  # `find_or_initialize_by(slug:, locale:)` (custom/app/services/documentation/content_seeder.rb:98), so a
+  # renamed slug makes the next seed create a second category at the manifest slug and leave every article on
+  # the renamed one.
+  describe "a documentation section's slug" do
+    before { sign_in(super_admin, scope: :super_admin) }
+
+    it 'ignores a slug posted by hand' do
+      put "/super_admin/categories/#{category.id}", params: { category: { name: 'Renamed', slug: 'renamed-by-hand' } }
+
+      expect(category.reload.slug).to eq('administration')
+      expect(category.name).to eq('Renamed')
+    end
+
+    it 'renders no slug input' do
+      get "/super_admin/categories/#{category.id}/edit"
+
+      expect(response.body).to include('name="category[name]"')
+      expect(response.body).not_to include('name="category[slug]"')
+    end
+  end
+
   describe 'ArticleMetaField.merge_submitted' do
     it 'carries every unmanaged key through untouched' do
       stored = { 'doc_key' => 'audit-logs', 'something_else' => 'kept' }

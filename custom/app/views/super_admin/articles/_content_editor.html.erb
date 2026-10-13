@@ -1,0 +1,24 @@
+<%# locals: (f:, article:) %>
+<%#
+  Mounts the documentation editor over the `content` field.
+
+  It uses the Super Admin Vue harness that is already loaded on every Administrate page -- `render_vue_component`
+  (app/controllers/super_admin/application_controller.rb:222-231) emits the `#app` element that
+  app/javascript/entrypoints/superadmin_pages.js mounts -- so there is no new entrypoint and no new asset
+  pipeline. Orchestrator ruling R3 point 1 named this harness for exactly this.
+
+  Every string is passed in from en.yml; the component renders no copy of its own. The keys are camelised here so
+  the locale file stays snake_case Rails and the component stays camelCase JavaScript, with one name per string
+  and no mapping table.
+%>
+<%= render_vue_component(
+      'DocumentationArticleEditor',
+      content: article.content.to_s,
+      locale: article.locale.presence || Documentation::Library::DEFAULT_LOCALE,
+      fieldName: "#{f.object_name}[content]",
+      fieldId: "#{f.object_name}_content",
+      portalFieldName: "#{f.object_name}[portal_id]",
+      previewEndpoint: preview_markdown_super_admin_articles_path,
+      mediaEndpoint: super_admin_documentation_media_path,
+      labels: t('documentation.super_admin.editor').transform_keys { |key| key.to_s.camelize(:lower) }
+    ) %>

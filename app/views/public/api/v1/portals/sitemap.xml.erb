@@ -2,15 +2,65 @@
 <%#
   The portal's sitemap (docs/product-refinement/03-documentation-seo.md).
 
-  Each locale's article has its own slug and its own canonical, so each is its own <url>. The xhtml:link
-  alternates inside each entry are what tell a crawler the entries are the same page in another language --
-  the same set the page's own <link rel="alternate"> tags carry, from the same helper, so the sitemap and the
-  page cannot disagree.
+  THREE KINDS OF PAGE, and only one of them was listed. A sitemap that names the articles and not the sections
+  they are reached through tells a crawler the sections matter less than the pages inside them, and the portal
+  home -- the address every article's own breadcrumb names as its first crumb
+  (DocumentationHelper#portal_home_url) -- was not listed at all.
+
+  The articles' and the categories' alternates come from the same helper the pages' own
+  `<link rel="alternate">` tags come from (`documentation_layout/articles/_meta_head.html.erb:19-24`,
+  `documentation_layout/categories/_meta_head.html.erb`), so the sitemap and the page cannot disagree. THE
+  PORTAL HOME CARRIES NO ALTERNATES HERE because it carries no head tags at all: `rel="canonical"` appears in
+  exactly two templates in `app/views` and `portals/show.html+documentation.erb` is neither of them, so the
+  home has no canonical and no hreflang of its own. Inventing a set here that the page does not publish is
+  exactly the disagreement this file exists to avoid. The missing head is submitted as a requested change
+  rather than worked around.
+
+  Each locale's article has its own slug and its own canonical, so each is its own <url>, and the xhtml:link
+  alternates inside the entry are what tell a crawler the entries are one page in two languages.
 
   Published only, and alternates are published only too: announcing a draft translation earns a soft-404.
   `lastmod` is the article's own updated_at, which is the only modification date this product actually records.
+  A category and the portal home have no modification date of their own -- inventing one from the newest
+  article inside them would be a number nobody stated -- so those entries carry no `lastmod` rather than a
+  guess. `lastmod` is optional in the protocol; a wrong one is worse than none.
+
+  NO <image:image> ENTRIES, and this is a decision rather than an omission (R2-MEDIA-CONTRACT.md).
+  Three measured reasons. The corpus contains no image reference at all today -- a no-exclusion
+  `grep -rn '!\[' custom/db/documentation custom/db/changelog` over 128 Markdown files returns one hit, and it
+  is the example in the comment at `custom/db/documentation/media/.keep:3`, not an article -- so the markup
+  would be dead on arrival. Resolving the keys would mean one `Documentation::MediaResolver` per article, and a
+  resolver instance loads the PORTAL's whole media set to build its index (R2-MEDIA-INTERFACE.md §2.4), so an
+  N-article sitemap would do N full media loads to emit tags for screenshots of a dashboard. And the images
+  are UI screenshots: the image-search traffic an image sitemap exists to win is not traffic this corpus has.
+  If that changes, the entry point is this file plus one resolver built once outside the loop -- recorded here
+  so the next reader does not have to rediscover the shape.
 %>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <%#
+    The portal home, once per locale the portal actually allows. `allowed_locale_codes` rather than the
+    distinct locales of the rows, because a locale removed from the portal's configuration is no longer
+    served and must not be announced.
+  %>
+  <% @portal.allowed_locale_codes.each do |locale| %>
+    <url>
+      <loc><%= portal_home_url(@portal, locale) %></loc>
+    </url>
+  <% end %>
+
+  <% @portal.categories.sort_by { |category| [category.locale, category.slug] }.each do |category| %>
+    <% next unless @portal.allowed_locale_codes.include?(category.locale) %>
+    <url>
+      <loc><%= portal_category_canonical_url(@portal, category) %></loc>
+      <% portal_category_locale_alternates(@portal, category).each do |locale, url| %>
+        <xhtml:link rel="alternate" hreflang="<%= html_lang_attribute(locale) %>" href="<%= url %>"/>
+      <% end %>
+      <% if (default_url = portal_category_default_alternate_url(@portal, category)) %>
+        <xhtml:link rel="alternate" hreflang="x-default" href="<%= default_url %>"/>
+      <% end %>
+    </url>
+  <% end %>
+
   <% @portal.articles.where(status: :published).includes(:root_article).each do |article| %>
     <url>
       <loc><%= portal_canonical_url(@portal, article) %></loc>

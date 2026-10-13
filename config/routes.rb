@@ -517,6 +517,11 @@ Rails.application.routes.draw do
   get 'hc/:slug/articles/:article_slug.md', to: 'public/api/v1/portals/articles#show_markdown', as: :public_portal_article_markdown,
                                             defaults: { format: :md }
   get 'hc/:slug/articles/:article_slug', to: 'public/api/v1/portals/articles#show', as: :public_portal_article
+  # Documentation media. `format: false` is not optional: without it the non-greedy glob hands `.png` to
+  # params[:format] and the key no longer matches an attachment. The two literal-suffix routes above
+  # (`.png` for the tracking pixel, `.md` for show_markdown) are more specific, so they still win.
+  get 'hc/:slug/articles/:article_slug/media/*media_key', to: 'public/api/v1/portals/media#show',
+                                                          as: :public_portal_article_media, format: false
 
   # ----------------------------------------------------------------------
   # Used in mailer templates

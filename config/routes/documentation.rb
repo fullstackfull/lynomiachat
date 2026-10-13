@@ -9,12 +9,21 @@ namespace :super_admin do
   resources :categories
 
   resources :articles do
+    collection do
+      post :preview_markdown
+    end
+
     member do
       post :publish
       post :unpublish
       get :preview
     end
   end
+
+  # Operator media upload, the F1 path. Deliberately NOT `resources`: `replace` needs a glob, because a
+  # `media:` key contains slashes. One declaration only -- a second `as: :documentation_media` raises on boot.
+  post 'documentation_media', to: 'documentation_media#create', as: :documentation_media
+  patch 'documentation_media/*key', to: 'documentation_media#replace', as: :documentation_medium, format: false
 end
 
 # The public entry points. Stable, brandable addresses that survive a slug or default-locale change, because they

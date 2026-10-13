@@ -34,7 +34,28 @@ const tailwindConfig = {
     './app/javascript/dashboard/composables/**/*.js',
     './app/javascript/dashboard/components-next/**/*.js',
     './app/javascript/dashboard/routes/dashboard/**/**/*.js',
+    './app/javascript/super_admin/**/*.vue',
     './app/views/**/*.erb',
+    './custom/app/views/**/*.erb',
+  ],
+  // Documentation category icons come out of the DATABASE -- `categories.icon`, written by
+  // Documentation::ContentSeeder#upsert_category from custom/db/documentation/manifest.yml -- so the class
+  // name appears in no file the globs above scan, no rule is generated, and the eight render sites that call
+  // `render_emoji_or_icon` emit an empty span. These are the only database-driven icon classes in the product.
+  safelist: [
+    'i-lucide-rocket',
+    'i-lucide-messages-square',
+    'i-lucide-users',
+    'i-lucide-megaphone',
+    'i-lucide-message-circle',
+    'i-lucide-alert-triangle',
+    'i-lucide-workflow',
+    'i-lucide-shopping-bag',
+    'i-lucide-building',
+    'i-lucide-plug',
+    'i-lucide-shield',
+    'i-lucide-life-buoy',
+    'i-lucide-sparkles',
   ],
   theme: {
     extend: {

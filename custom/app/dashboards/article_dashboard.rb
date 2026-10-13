@@ -5,9 +5,12 @@ require 'administrate/base_dashboard'
 # Lynomia global documentation (docs/global-documentation/07-super-admin-management.md): Super Admin authors the
 # platform's documentation and changelog on the Help Center's own Article, so there is no second content model.
 #
-# `content` is CommonMark, the same source format the dashboard's editor produces and the same the public renderer
-# consumes (ChatwootMarkdownRenderer#render_article) -- a textarea here is the same content, not a lesser one, and the
-# Preview action renders it through the real public layout before anything is published.
+# `content` is CommonMark, the format ChatwootMarkdownRenderer#render_article CONSUMES. It does not produce it: the
+# producer is the operator, through the Markdown source editor in app/javascript/super_admin/documentation, and the
+# corpus under custom/db/documentation. The correction matters because the two differ -- a parse-and-serialize round
+# trip through the installed ProseMirror pair rewrites all 126 corpus files today
+# (app/javascript/super_admin/documentation/corpusRoundTrip.spec.js), which is why the editor edits the source and
+# never re-serializes it (orchestrator ruling R3 points 2, 7).
 class ArticleDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     id: Field::Number,
@@ -16,7 +19,10 @@ class ArticleDashboard < Administrate::BaseDashboard
     title: Field::String.with_options(searchable: true),
     slug: Field::String.with_options(searchable: true),
     description: Field::Text,
-    content: Field::Text.with_options(rows: 28),
+    # No `rows:`: administrate's text partial calls `f.text_area field.attribute` with no options
+    # (administrate-0.20.1/app/views/fields/text/_form.html.erb:21), so the option never reached the element.
+    # The editor sizes itself (ruling R3 point 8).
+    content: Field::Text,
     locale: Field::Select.with_options(collection: Documentation::Library::LOCALES),
     status: Field::Select.with_options(collection: Article.statuses.keys),
     position: Field::Number,
@@ -33,7 +39,12 @@ class ArticleDashboard < Administrate::BaseDashboard
     id title slug portal category locale status description content meta position author views created_at updated_at
   ].freeze
 
-  FORM_ATTRIBUTES = %i[portal category title slug description content locale status position meta].freeze
+  # `slug` is deliberately absent: it is the article's public address, derived from the corpus file name by
+  # Documentation::ContentSeeder#slug_for (custom/app/services/documentation/content_seeder.rb:85-87). Editing it
+  # here 404s a previously indexed URL and leaves the next seed to create a duplicate row
+  # (docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md D4). It stays on SHOW_PAGE_ATTRIBUTES and stays
+  # searchable.
+  FORM_ATTRIBUTES = %i[portal category title description content locale status position meta].freeze
 
   COLLECTION_FILTERS = {
     published: ->(resources) { resources.published },

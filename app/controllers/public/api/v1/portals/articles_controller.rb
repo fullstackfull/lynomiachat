@@ -109,8 +109,12 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
     params.permit(:slug, :category_slug, :locale, :id, :article_slug)
   end
 
+  # The resolver is per request and per portal: a `media:` key resolves only against the portal being
+  # rendered, which is what keeps one portal's key from reaching another's attachment.
   def render_article_content(content)
-    ChatwootMarkdownRenderer.new(content).render_article
+    ChatwootMarkdownRenderer.new(content).render_article(
+      media: Documentation::MediaResolver.new(portal: @portal, article: @article)
+    )
   end
 end
 

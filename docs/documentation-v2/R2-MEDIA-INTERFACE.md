@@ -1,8 +1,17 @@
 # R2 — the documentation media INTERFACE (the code-level half)
 
-Agent 1, wave 1. This is the interface **only**: nothing here is implemented, the media directory is not
-created, and the sanitizer is not touched. It is the half of R2 that Agent 2 codes the editor's
-image-insertion UI against and Agent 3 writes `media:` references against, before any of it exists.
+Agent 1. Written in wave 1 as interface-only; **amended in wave 2 to carry owner correction F1**
+(`P2-WORKSTREAM-OWNERSHIP.md` §F1, §F1.1) and then implemented. It is the half of R2 that Agent 2 codes the
+editor's image-insertion UI against and Agent 3 writes `media:` references against.
+
+**What F1 changed in this document, in one place, so nobody reads a stale rule.** The wave-1 conclusion
+"the bare direct-upload route 403s, therefore the editor inserts only references to seeded keys" is withdrawn
+by the owner. Documentation gets its own Super Admin upload path on the *same* portal namespace, the *same*
+key grammar and the *same* resolver. The sections that said otherwise are corrected in place, not left to be
+read alongside a contradiction: §0.8 (its consequence), §1.2 and §1.4 (the reserved `uploads/` segment),
+§3.5 and §3.6 (provenance, and where `Error` lives), §6.2 (the sweep is provenance-scoped, contract item 9 as
+amended), §8.1 and §8.2 (Agent 2 now has an upload endpoint). The new material is **§9**, and the width
+decision §0.4 left open is **§2.5**.
 
 The **contract** is `R2-MEDIA-CONTRACT.md` and is frozen. Where this document is more specific it is because
 the contract left the code shape open; where it *corrects* the contract it says so explicitly in §0 rather
@@ -162,17 +171,21 @@ gets `metadata` with no `width`/`height`, the `<img>` ships without dimensions, 
 shift plus one `info` log line. §3 therefore makes the seeder analyze **synchronously and report the count it
 could not measure**, so a missing libvips is a visible seed output rather than a silent SEO regression.
 
-### 0.8 The bare ActiveStorage direct-upload route answers 403 — so the editor cannot upload, by design
+### 0.8 The bare ActiveStorage direct-upload route answers 403 — so an upload must not go through it (corrected by F1)
 
 `config/initializers/active_storage.rb:52-63` installs `ActiveStorageBareDirectUploadGuard`, whose
 `reject_bare_direct_upload` is `head :forbidden if instance_of?(ActiveStorage::DirectUploadsController)`,
 included at `:71-73`. The two legitimate direct-upload endpoints are the account-scoped ones
 (`config/routes.rb:129`, `:381`).
 
-**Consequence for Agent 2**: there is no upload path available to a Super Admin editor in R2, and adding one
-is not in Agent 2's ownership. Contract item 6 already says media is "seeded from the repository" — so the
-editor's job is **inserting a reference to a key that already exists**, never uploading bytes. §8 states this
-as a hard boundary.
+**What stands, and what the owner corrected.** The guard itself stands: the **bare**
+`ActiveStorage::DirectUploadsController` route answers 403 and is not relaxed, not subclassed around and not
+exempted. What does **not** follow — and what the owner corrected as F1 — is "therefore the editor inserts
+only references to seeded keys". Documentation gets its **own** Super Admin-only upload path, which does not
+go through that controller at all: it is an ordinary authenticated Super Admin action that calls
+`Documentation::MediaUpload` server-side (§9). Contract item 6's "seeded from the repository" describes the
+corpus path; it is not an exhaustive list of ingestion paths, and F1 says the editor must not depend on
+repository-seeded images only.
 
 ### 0.9 Only **two** of the three renderers pass through `MarkdownRendererUrlSanitizer`
 
@@ -221,6 +234,13 @@ ext    ::= "png" | "jpg" | "jpeg" | "gif" | "webp"
   changelog corpus has a different section set (`custom/db/changelog/<locale>/releases`).
 - **Length**: a key is at most 200 characters, so it always fits `active_storage_blobs.filename`
   (`t.string`, `db/schema.rb:101`) and the metadata value with room to spare.
+- **`uploads/` is a reserved first segment (F1).** A key whose first segment is `uploads` belongs to the
+  operator upload path and **never** to the corpus; a key whose first segment is anything else belongs to the
+  corpus and never to an operator. The two namespaces are disjoint by this one rule, which is why an operator
+  upload can never collide with a seeded key and why the seeder's orphan sweep can tell them apart without a
+  second scheme. Enforced in both directions at the two boundaries, from one constant
+  `Documentation::MediaResolver::OPERATOR_SEGMENT` (§9.1): the seeder **fails** on a corpus file
+  under `media/uploads/`, and `Documentation::MediaUpload` allocates only under it.
 
 ### 1.3 Directory mapping
 
@@ -262,6 +282,8 @@ Rejection happens in **two** places and they do different jobs, which is the poi
 | `media:a%2Fb.png` | **seed FAILS** | `nil` → 404 | `%` is not in the character set. Measured: `escape_href` leaves `%2F` untouched, so a pre-escaped key would reach the resolver as a distinct, unmatchable string |
 | uppercase anywhere | **seed FAILS** | `nil` → 404 | §1.2 |
 | an extension outside `{png,jpg,jpeg,gif,webp}` — `.svg` especially | **seed FAILS** | `nil` → 404 | contract item 5: raster only, no SVG. The content type is checked independently of the extension at the seed boundary (§3.4), because an extension is an author's claim and the bytes are the fact |
+| `media:uploads/8f3a1c2b5d7e9a04-step-two.png` | **seed FAILS** (reserved segment) | resolves, if the portal has that operator upload | §1.2, §9.1. The operator namespace. A corpus file may not live here, and an operator key may not live outside it |
+| a corpus file at `media/uploads/x.png` | **seed FAILS** | n/a | §1.2. The corpus may not write into the operator namespace, or a later upload could be purged by the sweep as a corpus orphan |
 | `[text](media:a/b.png)` — a key in a **link** position | **seed FAILS** | n/a | `MarkdownRendererUrlSanitizer#link` (`lib/markdown_renderer_url_sanitizer.rb:6-10`) emits `href="media:a/b.png"` verbatim (same `escape_href`, §0.2), which is a dead link in every browser. Only the `image` node is resolved, so a key in a link must be caught where the bytes are read |
 
 ### 1.5 One rule, one place
@@ -379,6 +401,44 @@ memo, no `resolve_model_to_route` change (contract §2.3 — it is unset, the fr
 and automation files and exports to the proxy route at once). Resolution is **per render, per call**, exactly
 as ruling R2 requires.
 
+### 2.5 How a sized `media:` image expresses its width — it does not, and that is the decision
+
+§0.4 measured that `?cw_image_width=400px` cannot ride on a `media:` key: `URI.parse` puts the whole remainder
+in `opaque` and leaves `query` **nil**, so `CustomMarkdownRenderer#extract_image_width`
+(`lib/custom_markdown_renderer.rb:131-133`, through `query_param` at `:135-140`) reads nil and no width is ever
+applied. The integrator re-measured and confirmed it (`P2-WORKSTREAM-OWNERSHIP.md` §E3, row 1). That leaves a
+question this document has to answer rather than leave to Agent 2.
+
+**Decision: a `media:` image carries no author-chosen width. It is emitted at its intrinsic pixel size and
+displayed at whatever the content column allows.** Concretely, `#image` emits `width` and `height` attributes
+from `blob.metadata` — the image's real pixel dimensions — and nothing else. No `style="width: ..."`, no query
+string, no new grammar token, no front-matter width key.
+
+**Why that is a complete answer and not a deferral.** Tailwind's preflight is loaded on the public portal
+(`app/javascript/portal/application.scss:2` imports `tailwindcss/base`) and sets
+`img, video { max-width: 100%; height: auto; }` — measured at
+`node_modules/.pnpm/tailwindcss@3.4.19/node_modules/tailwindcss/lib/css/preflight.css:377-381`, and
+`tailwindcss` is `^3.4.19` (`package.json:150`). So the pair of intrinsic attributes plus that one rule is the
+correct behaviour on all three layouts: the browser derives the aspect ratio from `width`/`height` and reserves
+the right box **before** the bytes arrive, which is what prevents layout shift, and `max-width: 100%` then
+scales the image down to the column on a narrow screen while `height: auto` keeps the ratio. An author-chosen
+width would have to fight that rule with an inline style, which is exactly what the reply editor's
+`cw_image_width` does for message bubbles — a different surface with a different problem.
+
+**Explicitly rejected, so nobody re-derives it:**
+
+| Rejected | Why |
+|---|---|
+| extending the grammar, e.g. `media:key@400` or `media:key?w=400` | §1.2's character set is frozen and `@`/`?` are not in it; `?` additionally lands in `opaque` (§0.4), so it would become part of the key and 404 |
+| a `width:` front-matter key | front matter is per *article*, an image reference is per *use*, and the same screenshot is referenced from EN and AR (§1.3). It would also be a second home for a presentational value |
+| having the renderer emit the resolver's dimensions as an inline `style` | the resolver knows the *intrinsic* size, which is not an author choice. As a style it would cap the image at its own pixel size and stop `max-width: 100%` scaling it on mobile |
+| an ActiveStorage variant to produce a sized copy | contract item 6: originals only. Variants are what makes the product's boot depend on libvips, and `config.active_storage.previewers = []` is already set (`config/application.rb:71`) |
+
+**For Agent 2, as a UI rule**: the insertion panel offers **no resize control** for a `media:` image, and
+drag-resize is disabled on one. If a sized documentation image turns out to be a real product need, that is a
+new interface request — recorded as **R2-O11** — and not a workaround, because every workaround available at
+the Markdown layer is in the table above.
+
 ---
 
 ## 3. `Documentation::MediaSeeder`
@@ -452,6 +512,19 @@ two files happen to share bytes, which contract §0.2 forbids outright.
 `blob.metadata['documentation_key']` holds the full corpus-relative key. `blob.filename` holds the
 **basename** only (`step-2.png`).
 
+**And `blob.metadata['content_source_path']` holds the provenance (F1.1).** It is the corpus file that owns
+this attachment, relative to `Rails.root` —
+`custom/db/documentation/media/whatsapp/connect-number/step-2.png` — and it is **absent** when no file
+owns it, which is exactly an operator upload. That is the *same* vocabulary, the *same* name and the *same*
+semantics Agent 5 froze for rows: `P2-SOURCE-OF-TRUTH-CONTRACT.md` D2 adds `articles.content_source_path`,
+"the corpus file that owns this row, relative to `Rails.root`" and "NULL means no file owns it: every tenant
+article, and every row an operator authored by hand." One vocabulary, two record types, read the same way.
+
+It is deliberately **not** an `origin: 'seeder' | 'operator'` enum, because D2 rejected exactly that shape for
+rows — *"a stored flag would be a second source of truth for the same fact, free to drift from it. Derive
+it."* Origin here is derived the same way: `metadata['content_source_path'].present?`. Inventing a second
+provenance scheme for blobs is the parallel system this program keeps refusing, and F1.1 says so in terms.
+
 Why not put the key in `filename`: `ActiveStorage::Filename#to_s` is `sanitized`
 (`activestorage-7.2.3.2/app/models/active_storage/filename.rb:64-66`), and `sanitized` replaces `/` and `:`
 with `-` (`:59-61`). So `blob.filename.to_s` on a slash-bearing name returns
@@ -487,9 +560,14 @@ bytes and the prose together:
 | the key appears only in an `image` node, never a `link` node (§1.4) | `Error` |
 | a `![…](…)` whose destination is a bare space-bearing path (§0.3) | `Error` |
 
-`Documentation::MediaSeeder::Error` is a subclass of `StandardError` defined in `lib/custom_exceptions/` per
-CLAUDE.md. It carries the corpus **file path**, the line, the key and the reason — never a storage path
-(contract §3.2).
+`Documentation::MediaSeeder::Error` is a `StandardError` subclass **nested in the service's own file**, not in
+`lib/custom_exceptions/`. Corrected from wave 1 for two reasons: `lib/custom_exceptions/` is not in Agent 1's
+ownership grant, and every class in it is an API-surface exception that `RequestExceptionHandler` maps onto a
+response (`app/controllers/concerns/request_exception_handler.rb:11-14`), which a seed-time corpus defect is
+not. The repo's own precedent for a service-local failure is `class Error < StandardError; end` inside the
+service — `custom/app/services/billing/plan_change.rb:16`, `override_grant.rb:12`, `checkout.rb:9`,
+`portal.rb:11`, `admin_actions.rb:7`. It carries the corpus **file path**, the line, the key and the reason
+— never a storage path (contract §3.2).
 
 **What the operator sees.** `MediaSeeder` raises; `ContentSeeder#perform!` does not rescue; the rake task
 (`lib/tasks/documentation.rake:16-20`) does not rescue, so `rake` prints the message and backtrace and exits
@@ -646,7 +724,7 @@ end
 | Case | Headers | Why |
 |---|---|---|
 | Published article | `Cache-Control: public, max-age=3600` + `ETag: <blob.checksum>` + `Last-Modified` | Contract item 4: cacheable to anyone. A long `immutable` max-age is **wrong** here because the URL is not content-addressed — contract item 8 lets the same key take new bytes, so a year-long cache would serve a replaced screenshot indefinitely. One hour bounds post-deploy staleness; the checksum ETag makes revalidation a `304` with no body. `fresh_when` handles the conditional request |
-| Unpublished article, signed-in super admin | `Cache-Control: private, no-store` and no ETag | Contract items 3, 4 and 11, in the contract's own words. A draft's media is never cacheable and never public |
+| Unpublished article, signed-in super admin | `Cache-Control: private, no-store`, and **no validator set by the controller** | Contract items 3, 4 and 11: a draft's media is never cacheable and never public. **Measured correction to this row.** The controller calls no `fresh_when` on this path, so it sets neither ETag nor `Last-Modified` — but Rack's own middleware then appends a *weak body digest* to any 200 whose body is an array, skipping only when an ETag or `Last-Modified` is already present (`rack-3.2.6/lib/rack/etag.rb:31-34,57-59`). That check has **no `no-store` escape**, so "no ETag" is not achievable from the controller, and the contract's intent is carried by `no-store`. The weak digest is not the blob checksum, and the §4.4 predicate re-runs on every request, so replaying it as an anonymous requester answers **404, not 304** — asserted in `spec/requests/documentation/media_delivery_spec.rb` |
 
 ### 4.6 The 404 cases — every one is `head :not_found`, never 403, never a redirect
 
@@ -763,10 +841,22 @@ steps 1 and 3, and a concurrent render during it serves one of two valid images.
 
 ### 6.2 A key removed from the corpus
 
-After the referenced-key pass, any `documentation_media` attachment on this portal whose
-`metadata['documentation_key']` does not appear in this portal's corpus is purged with `purge_later`, and
-`Result.purged` counts it. That is contract item 9 verbatim: the seeder owns orphan cleanup, because nothing
-in this app cleans unattached blobs today, and portal ownership (item 1) is what makes cleanup possible at all.
+After the referenced-key pass, any `documentation_media` attachment on this portal **that the seeder itself
+created** and whose `metadata['documentation_key']` does not appear in this portal's corpus is purged with
+`purge_later`, and `Result.purged` counts it. The seeder owns orphan cleanup, because nothing in this app
+cleans unattached blobs today, and portal ownership (item 1) is what makes cleanup possible at all.
+
+**"That the seeder itself created" is the F1.1 amendment to contract item 9, and it is load-bearing.** Item 9
+as frozen in wave 1 said *any* attachment whose key no longer appears in the corpus. An operator-uploaded file
+has no corpus file **by construction**, so the unamended sweep would delete every operator upload on the next
+seed — silently, with the article still referencing it. The sweep therefore skips any attachment whose
+`metadata['content_source_path']` is absent (§3.5): no source path means no corpus file owns it, which means
+the seeder did not create it and the seeder does not remove it. Two conditions must both hold for a purge, and
+both are checked: the attachment carries a `content_source_path`, and its key is unreferenced.
+
+The reserved `uploads/` segment (§1.2) is the second, redundant half of the same guarantee. The sweep relies
+on the provenance marker; the segment rule means that even a marker-less attachment could not *look* like a
+corpus orphan, because no corpus file can produce a key under `uploads/` at all.
 
 Scope discipline, from contract §0.2: the sweep is `portal.documentation_media` only. It never touches the
 other platform portal's media, never `Portal#logo` (`app/models/portal.rb:50` — a different attachment name,
@@ -960,6 +1050,30 @@ Documentation::MediaResolver::Image.new(
 )
 ```
 
+And, new with F1, the operator upload endpoint (§9.4), which is the half Agent 2 actually calls:
+
+```
+POST  /super_admin/documentation_media         create   params: portal_id, file, alt
+                                               -> 201 { key, markdown, width, height, replaced: false }
+PATCH /super_admin/documentation_media/<key>   replace  params: portal_id, file
+                                               -> 200 { key, markdown: null, width, height, replaced: true }
+```
+
+`markdown` on **create** is the finished `![alt](media:<key>)` string, ready to insert at the caret. Agent 2
+**inserts that string verbatim** rather than assembling it, so the grammar stays in one place (§1.5) and the
+alt requirement cannot be skipped client-side. On **replace** it is `null`, and that is deliberate rather than an
+omission: the reference is already in the article and carries its own alt, which a byte replacement must not
+touch.
+
+`width` and `height` may be `null` when the host cannot measure the image (§0.7), so the panel renders without
+them rather than waiting for them. A refusal is **422** with `{ error: "..." }` carrying the service's own
+message, which is safe to show an operator: it never contains a storage path.
+
+**Both requests need the CSRF token.** `Administrate::ApplicationController` is `protect_from_forgery with:
+:exception` (`administrate-0.20.1/app/controllers/administrate/application_controller.rb:3`) and this controller
+does not skip it, because a Super Admin write surface should not. A fetch without `X-CSRF-Token` raises
+`ActionController::InvalidAuthenticityToken` — do not read that as an authorization failure.
+
 Also stable enough to build against:
 
 - the route helper name and arity — `public_portal_article_media_path(portal_slug, article_slug, key)` — and
@@ -973,7 +1087,7 @@ Also stable enough to build against:
 
 | Forbidden | Why |
 |---|---|
-| Any upload endpoint, direct-upload, or `ActiveStorage::DirectUploadsController` use | §0.8: the bare route answers `403` by design. Contract item 6: media is seeded from the repository. An editor upload path is a second ingestion route and bypasses every seed-boundary control |
+| A **second** upload endpoint, any direct-upload, or `ActiveStorage::DirectUploadsController` use | **Corrected by F1**: Agent 2 *does* have an upload path — `Documentation::MediaUpload` behind the two Super Admin routes of §9.4, which Agent 1 owns. What stays forbidden is a *different* one. The bare direct-upload route still answers `403` (§0.8) and must not be reached for, and an upload that does not go through `MediaUpload` bypasses the key grammar, the type and size checks, the alt requirement and the provenance marker |
 | `rails_blob_path`, `rails_storage_proxy_path`, `url_for(blob)`, `blob.signed_id`, `blob.url` | Contract items 3 and 10, and §1.2 of the contract: a signed id is a verifier over the blob primary key keyed from `secret_key_base`, so a committed URL is valid in exactly one database |
 | Writing `data:image/*` into article `content` on paste or drop | §7 closes it. The editor must strip or refuse such a paste, and `editorHelper.js:43-54` is the existing pattern to follow — not to reuse in place, since it is the signature surface |
 | Inventing a caption representation | §5.4 |
@@ -984,6 +1098,136 @@ Also stable enough to build against:
 
 If the interface is missing something Agent 2 needs, the answer is a request to Agent 1 via the Orchestrator —
 not a local implementation that later has to be deleted.
+
+---
+
+## 9. The operator upload path (owner correction F1)
+
+New in wave 2. F1 withdraws "the editor inserts only references to seeded keys" and requires documentation to
+have its **own** Super Admin-only upload path: same `portal.documentation_media` namespace, same `media:` key
+grammar, same `Documentation::MediaResolver`. Seeded media and operator-uploaded media are **one** abstraction,
+which is why almost nothing in §§1-7 changes — only §1.2's reserved segment, §3.5's provenance and §6.2's sweep.
+
+### 9.1 The key scheme — an operator key cannot collide with a seeded key, by construction
+
+```
+media:uploads/<token>-<slug>.<ext>
+
+token ::= 16 lowercase hex characters   (SecureRandom.hex(8))
+slug  ::= the uploaded filename's basename, parameterized; "image" when that yields nothing
+ext   ::= derived from the BYTES' content type, never from the uploaded filename
+```
+
+Two segments, so it matches `MediaResolver::KEY` (§1.5) with no change to the regexp. Example:
+`media:uploads/8f3a1c2b5d7e9a04-step-two.png`.
+
+**Why it cannot collide, in one sentence**: a seeded key's first segment is a directory under
+`<corpus root>/media/` and the seeder **fails** on a corpus file under `media/uploads/` (§1.2), so the two
+namespaces are disjoint sets and no comparison of individual keys is needed. The token then makes collision
+*within* the operator namespace a 2^-64 event, and because it is not relied on for the namespace guarantee, it
+does not need a retry loop: if the allocated key is somehow already attached to this portal, `MediaUpload`
+raises rather than attaching a second attachment under one key, because that window is the one state §6.1
+says the resolver's behaviour is undefined in, and a *permanent* one would be a bug, not a window. CLAUDE.md:
+an impossible state fails loudly.
+
+**Why the extension comes from the bytes.** §1.4 already establishes that an extension is the author's claim
+and the bytes are the fact. On the operator path the "author" is an upload form, so deriving the extension from
+the verified content type is what makes the key's extension true by construction, and it is also what keeps a
+`.php`- or `.svg`-named upload from ever producing a key with that extension.
+
+**Why the slug is in the key at all**, given the token already identifies it: the key is visible in the article
+Markdown, which an operator reads and edits in Super Admin. `uploads/8f3a1c2b5d7e9a04-step-two.png` is
+reviewable; a bare token is not. The fallback to `image` is not a speculative guard — this product ships
+Arabic (`Documentation::Library::LOCALES` is `%w[en ar]`, `library.rb:14`) and an Arabic filename
+parameterizes to the empty string, so an operator uploading `شرح.png` is an ordinary case, not an edge one.
+
+### 9.2 `Documentation::MediaUpload`
+
+`custom/app/services/documentation/media_upload.rb` — Agent 1 owns it.
+
+```ruby
+class Documentation::MediaUpload
+  class Error < StandardError; end                         # §3.6's correction applies here too
+
+  CONTENT_TYPES = { 'image/png' => 'png', 'image/jpeg' => 'jpg',
+                    'image/gif' => 'gif', 'image/webp' => 'webp' }.freeze
+  MAX_BYTES = 2.megabytes
+
+  Result = Struct.new(:key, :markdown, :width, :height, :replaced, keyword_init: true)
+
+  def initialize(portal:)
+
+  # The operator path. Allocates a key under the reserved segment (§9.1) and returns the finished Markdown.
+  def create!(io:, filename:, alt:)      # -> Result
+
+  # Replacement (F1). Same key, new bytes. Refuses a key the SEEDER owns.
+  def replace!(key:, io:, filename:)     # -> Result
+
+  # The shared attach boundary, which MediaSeeder also calls. content_source_path nil => operator (§3.5).
+  def attach!(key:, io:, filename:, content_source_path: nil)   # -> ActiveStorage::Attachment
+end
+```
+
+**`attach!` is the single place bytes become an attachment, and that is deliberate.** CLAUDE.md asks for
+enforcement at the earliest *shared* entry point; for "these bytes become documentation media under this key"
+that point is one method, so the content-type check, the byte cap, the metadata shape (`documentation_key` plus
+the optional `content_source_path`), the replace-then-purge order of §6.1 and the synchronous `blob.analyze` of
+§3.4 all exist exactly once. `MediaSeeder` passes a `content_source_path`; `create!`/`replace!` do not. If the
+two paths had their own attach code, the type and size rules would exist twice, which is the duplication this
+program has refused repeatedly.
+
+**What `create!` validates, and where alt lives.** Alt is still the Markdown's own alt and has no second home
+(§5.1): `create!` requires it, refuses a blank one with `Error`, and bakes it into the `markdown` it returns.
+`[`, `]` and `\` in the alt are backslash-escaped and newlines collapsed, because an operator typing
+`Step 2 [see note]` would otherwise produce a broken image node — and §0.3 showed that a malformed image
+destination is published as literal Markdown rather than failing visibly. The alt is **not** written to the
+blob.
+
+**What `replace!` refuses.** A key whose attachment carries a `content_source_path` is corpus-owned: F2's
+class A says the repository wins for corpus content, so replacing those bytes in the database would be
+silently reverted by the next seed. `replace!` raises instead of accepting an edit that cannot survive. The
+operator's route for a seeded image is to change the file in the corpus.
+
+### 9.3 The provenance consequence, restated where it is used
+
+| Attachment | `metadata['content_source_path']` | Seeder's sweep | `replace!` |
+|---|---|---|---|
+| seeded from the corpus | the corpus file, relative to `Rails.root` | purges it when the key leaves the corpus (§6.2) | **refuses** — the corpus is the source of truth |
+| uploaded by an operator | **absent** | **never touches it** (F1.1) | accepted |
+
+### 9.4 `SuperAdmin::DocumentationMediaController`
+
+`custom/app/controllers/super_admin/documentation_media_controller.rb` — Agent 1 owns it. **This exact name**:
+Agent 2 owns `super_admin/articles_controller.rb`, and the two must not collide.
+
+It inherits `SuperAdmin::ApplicationController`, whose `before_action :authenticate_super_admin!`
+(`app/controllers/super_admin/application_controller.rb:16`) is the authorization — the same mechanism the rest
+of the documentation Super Admin surface uses, and the reason no Pundit policy is involved. It is **not** an
+Administrate resource controller: there is no dashboard, no index and no show, because the resource it creates
+is an ActiveStorage attachment on a portal, not a model row an operator browses.
+
+```
+POST  /super_admin/documentation_media         create    params: portal_id, file, alt
+PATCH /super_admin/documentation_media/:key    replace   params: portal_id, file      (key is a glob)
+```
+
+Both answer JSON, because the caller is the editor's JS and not a form post that needs a redirect. Both
+`portal_id` values are resolved through `Documentation::Library.portals` (`library.rb:37-39`), so a tenant
+portal id is a 404 on this route even for a super admin — the namespace is per-portal (contract §0.2) and the
+two platform portals are the only ones with a documentation corpus. A `Documentation::MediaUpload::Error`
+answers **422** with its message, which is the validation contract CLAUDE.md asks for at the request boundary.
+
+**Agent 1 does not own the routes file.** The two lines are in REQUESTED CHANGES.
+
+### 9.5 No tenant path, and no new policy action
+
+Stated because item 12 is a standing rule rather than an observation. This section adds **no**
+`Portal`/`Article`/`Category` policy action: the upload path is a Super Admin controller authorized by
+`authenticate_super_admin!`, the public delivery route is authorized by the §4.4 article predicate rather than
+by a policy (contract item 2), and `has_many_attached :documentation_media` generates association methods, not
+policy actions. So there is no new enumerated-deny-list entry to add in `custom/app/policies/custom/`, and the
+`false`-override rule has nothing to bite on here. Verified rather than assumed — see the ABSENCE CLAIMS in
+Agent 1's wave-2 report.
 
 ---
 
@@ -1007,6 +1251,35 @@ Insert immediately after `:519`:
 
 **Why**: §4.1. Agent 1 owns the controller but not the routes file. No collision with `:516`, `:517-518` or
 `:519` — the segment counts differ (§4.1 table), so placement is for readability only.
+
+### #1b — `config/routes/documentation.rb` (Orchestrator-only): the two operator upload routes (F1)
+
+Inside the existing `namespace :super_admin do` block (`config/routes/documentation.rb:6-18`), after
+`resources :articles`:
+
+```diff
+   resources :articles do
+     member do
+       post :publish
+       post :unpublish
+       get :preview
+     end
+   end
++
++  # The documentation media upload path owner correction F1 requires
++  # (docs/documentation-v2/R2-MEDIA-INTERFACE.md section 9.4). Super Admin only, authorized by
++  # authenticate_super_admin! like the rest of this namespace. Not an Administrate resource: it attaches to
++  # portal.documentation_media rather than creating a row an operator browses, so there is no index or show.
++  # A glob with `format: false` for the same reason the public route uses one -- a `media:` key contains `/`
++  # and `.` (section 4.1).
++  post 'documentation_media', to: 'documentation_media#create', as: :documentation_media
++  patch 'documentation_media/*key', to: 'documentation_media#replace', as: :documentation_medium, format: false
++end
+```
+
+**Why**: F1 requires an authorized Super Admin upload path, and `config/routes/documentation.rb` is
+Orchestrator-only. The bare `ActiveStorage::DirectUploadsController` route is **not** relaxed by this; these
+are ordinary Super Admin actions that call `Documentation::MediaUpload` server-side (§9.4).
 
 ### #2 — `lib/chatwoot_markdown_renderer.rb` (unowned): let the caller pass a resolver
 
@@ -1131,3 +1404,6 @@ rather than a surprise.
 | **R2-O8** | **New, UNVERIFIED.** Whether **libvips** is installed on the production host. `load_defaults 7.0` → `variant_processor = :vips` → only `ImageAnalyzer::Vips` accepts, and a missing library is swallowed with an `info` log (§0.7). Present in this container at 8.15.1. Settled by `ldconfig -p \| grep vips` on production, or one `rails runner` printing `ActiveStorage::Analyzer::ImageAnalyzer::Vips.accept?(blob)`. §3.7's `unmeasured` count makes it visible either way |
 | **R2-O9** | **New, observation only.** `helper_method :previewing_as_super_admin?` (`articles_controller.rb:91`) is called by no view — no-exclusion search, every hit classified (§4.4). CLAUDE.md says remove unused code; it is preserved by REQUESTED CHANGES #4 because removing it is an unrelated change. Orchestrator's call |
 | **R2-O10** | **New, observation only.** `Public::Api::V1::Portals::BaseController:55` logs `"Article: not found for slug: …"` unconditionally, including when the article **is** found. Pre-existing, in nobody's ownership, and part of why the media controller does not inherit that base (§4.3) |
+| **R2-O11** | **New, wave 2.** A `media:` image has no author-chosen width, by the decision in §2.5: intrinsic `width`/`height` plus Tailwind preflight's `max-width: 100%`. Every Markdown-layer workaround is rejected there with a reason. If a sized documentation image becomes a real need it is a new interface request, not a workaround |
+| **R2-O12** | **New, wave 2. Needs the Orchestrator.** F1 lists **caption** among what the upload path must support, but contract item 7 freezes captions **out of R2** ("out of scope for R2 and belong to R3's editor, because nothing in the markdown source model represents one today") and R2-O2 defers them. I have not decided it: `MediaUpload` accepts no caption and §5.4's four prohibitions on Agent 2 stand unchanged. Settled by the Orchestrator either confirming captions stay R3's, or ruling on a source-model representation — which is a content-model decision, not a media one |
+| **R2-O13** | **New, wave 2, observation only.** `ActiveStorage::Attached::Many#attach` reassigns the whole set (`activestorage-7.2.3.2/lib/active_storage/attached/many.rb:52` — `record.public_send("#{name}=", blobs + attachables.flatten)`), so attaching N files in one seed run is O(N²) in loaded attachment rows. Measured as irrelevant at corpus scale (§0.1: zero images today) and it is the documented API, so it is not worked around. Re-measure with R2-O6 if the corpus passes roughly a thousand media files |

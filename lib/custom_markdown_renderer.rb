@@ -4,6 +4,20 @@ class CustomMarkdownRenderer < CommonMarker::HtmlRenderer
 
   CONFIG_PATH = Rails.root.join('config/markdown_embeds.yml')
 
+  # Documentation media (docs/documentation-v2/R2-MEDIA-CONTRACT.md item 10): an article references an image by
+  # a stable corpus key, never a URL, a blob id or an ActiveStorage signed id -- a signed id is a verifier over
+  # the blob primary key keyed from secret_key_base, so a committed URL would be valid in exactly one database.
+  MEDIA_SCHEME = 'media:'.freeze
+
+  # The resolver is passed in rather than reached for, and it lives for exactly one article render, which is what
+  # makes an article with twenty images two queries instead of twenty (R2-MEDIA-INTERFACE.md section 2.4). A
+  # thread-local or a Current attribute would let a render path resolve a portal with no visible dependency.
+  # Defaults to nil so every existing caller -- the message path, the specs -- keeps working untouched.
+  def initialize(media: nil, **)
+    @media = media
+    super(**)
+  end
+
   def self.config
     @config ||= YAML.load_file(CONFIG_PATH)
   end
@@ -60,6 +74,9 @@ class CustomMarkdownRenderer < CommonMarker::HtmlRenderer
   end
 
   def image(node)
+    url = node.url.to_s
+    return media_image(node, url.delete_prefix(MEDIA_SCHEME)) if url.start_with?(MEDIA_SCHEME)
+
     src = sanitized_href(node.url)
     width = extract_image_width(src)
     plain do
@@ -72,6 +89,43 @@ class CustomMarkdownRenderer < CommonMarker::HtmlRenderer
   end
 
   private
+
+  # R2: a documentation image is a `media:` key resolved to the app-owned, same-origin delivery route, so a data
+  # URI has no use in an article and would bypass every control the seed boundary enforces -- content type, byte
+  # cap, raster-only, required alt -- while being permanent once committed to git. With no img-src in the
+  # enforcing CSP (config/initializers/content_security_policy.rb:15-18) the renderer's own URL handling is the
+  # only thing constraining where an article image loads from.
+  #
+  # ARTICLE SCOPE ONLY. The message and email renderer keeps the exception, because the agent composer and the
+  # message-signature editor really do produce inline base64 images; BaseMarkdownRenderer does not override this.
+  def permitted_data_image?(_url)
+    false
+  end
+
+  # width/height are the blob's INTRINSIC pixel dimensions, so the browser can derive the aspect ratio and
+  # reserve the right box before the bytes arrive. The displayed width is then Tailwind preflight's
+  # `img { max-width: 100%; height: auto; }` (app/javascript/portal/application.scss:2). There is deliberately no
+  # author-chosen width: `?cw_image_width=` cannot ride on a `media:` key, because URI.parse puts the whole
+  # remainder in `opaque` and leaves `query` nil (R2-MEDIA-INTERFACE.md sections 0.4 and 2.5).
+  #
+  # They may be nil when libvips is absent on the host: ActiveStorage swallows the LoadError with one info log
+  # (activestorage-7.2.3.2/lib/active_storage/analyzer/image_analyzer/vips.rb:14-20), which is a measured
+  # framework behaviour and not a speculative guard. MediaSeeder reports the count so it is visible at seed time.
+  def media_image(node, key)
+    image = @media&.resolve(key)
+    # An unresolved key is a corpus defect the seed boundary should already have refused, so the runtime only has
+    # to be inert and diagnosable. No `src=""` -- an empty src re-requests the current page in several browsers.
+    # escape_html turns the key's `>` into `&gt;`, so a key cannot close the comment it is reported in.
+    return out("<!-- media: unresolved key #{escape_html(key)} -->") if image.nil?
+
+    plain do
+      out(%(<img src="#{escape_href(image.path)}"))
+      out(' alt="', :children, '"')
+      out(%( title="#{escape_html(node.title)}")) if node.title.present?
+      out(%( width="#{image.width}" height="#{image.height}")) if image.width.present? && image.height.present?
+      out(' loading="lazy" decoding="async" />')
+    end
+  end
 
   def sized_widths?(widths)
     widths.is_a?(Array) && widths.any? { |w| w.to_i.positive? }

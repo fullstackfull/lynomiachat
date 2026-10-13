@@ -328,3 +328,105 @@ rather than decided here.
 
 R2-O4 stays an operational backup gap only. No production change, no storage migration, no Meta change, no
 discovery restart. Targeted tests during implementation; one combined gate after integration.
+
+---
+
+## G. Wave 2 integration — the Orchestrator's decisions and applied changes
+
+Agents 1, 2 and 4 delivered; none committed, as instructed. Integration applied by the Orchestrator.
+
+### G1 — Applied from REQUESTED CHANGES (Orchestrator-owned or unlisted files)
+
+| File | Change | Why it was not the agent's to make |
+|---|---|---|
+| `config/routes.rb` | the public media delivery route, with `format: false` | Orchestrator-only. Without `format: false` the non-greedy glob hands `.png` to `params[:format]` and the key stops matching |
+| `config/routes/documentation.rb` | `preview_markdown` on the articles collection; `post documentation_media` + `patch documentation_media/*key` | Orchestrator-only, and the collision below |
+| `lib/chatwoot_markdown_renderer.rb` | `render_article(media: nil)` | unlisted. The default keeps every existing caller and spec working |
+| `app/controllers/public/api/v1/portals/articles_controller.rb` | passes a per-request, per-portal `MediaResolver` | unlisted. Per-portal is what stops one portal's key reaching another's attachment |
+| `config/locales/en.yml` | 30 editor keys under `documentation.super_admin.editor` | Orchestrator-only. English only; the rest go through Crowdin |
+| `app/views/super_admin/application/_navigation.html.erb` | hide `documentation_media` from the resource nav | unlisted. Without it Agent 1's upload resource 500s **every** Super Admin page |
+| `app/javascript/entrypoints/superadmin_pages.js` | register `DocumentationArticleEditor` | unlisted. The editor does not mount without it |
+| `tailwind.config.js` | scan `app/javascript/super_admin` and `custom/app/views`; safelist the 13 database-driven icon classes | unlisted. Neither path was scanned, which is why CLAUDE.md's "Tailwind only, no inline styles" was *unachievable* in `custom/app/views/`. The icons come from `categories.icon` — a database value in no scanned file, so no rule was ever generated and eight render sites emitted an empty span |
+| `app/models/article.rb` | `dictionary: 'arabic'` on the `text_search` scope | Agent 5's file. Decision below |
+
+### G2 — The route collision, resolved
+
+Agents 1 and 2 both specified a `documentation_media` create route, and Agent 1 flagged it: **a second
+`as: :documentation_media` raises on boot.** Agent 1's explicit pair landed, because `resources` cannot express
+the glob that `replace` needs (a `media:` key contains slashes). Agent 2's variant was not applied.
+
+### G3 — R2-O12 resolved: captions stay out of R2, and the conflict was mine
+
+Agent 1 correctly refused to decide this and flagged it. The conflict is between two things **I** wrote: owner
+correction **F1** lists "caption" among what the upload path must support, while frozen contract **item 7** puts
+captions out of R2 and **R2-O2** defers them to R3.
+
+**Item 7 wins, and F1 was over-broad.** Captions have no representation in the Markdown source model, and item
+7's deferral exists precisely so nobody invents a convention for one — which is what F1 would have forced. F1's
+list was me enumerating editor affordances, not amending the data model. `MediaUpload` accepts no caption;
+Agent 2's alt panel is laid out so one can be added when R3 settles a representation. **F1 is corrected here
+rather than reinterpreted.**
+
+### G4 — Agent 4's `dictionary: 'arabic'` accepted, after checking the one thing that could have made it unsafe
+
+It is a **product-wide** change: `Article.text_search` serves every tenant's Help Center, not only the
+documentation portals. Accepted on Agent 4's measurement (65 A/B cases, 9 Arabic fixed, 0 broken, `to_tsvector`
+byte-identical on 23 Latin probes) **plus two checks of my own**, because a dictionary change is the kind of
+thing that silently invalidates a stored artefact:
+
+- **No stored tsvector and no full-text index exist on `articles`** (`db/schema.rb:202-228` — only the seven
+  btree indexes). The upstream TODO at `article.rb:104` even points at update triggers as future work,
+  confirming there are none. So `to_tsvector` is computed per query: **no reindex, nothing to drift.**
+- **The configuration is present**: `select cfgname from pg_ts_config` returns `arabic` on the PostgreSQL 16.15
+  this product runs. A missing configuration would have raised on every search.
+
+Left open as **A4-O1**: alef variants (`أ إ آ` → `ا`) still do not fold, so `الخطا` finds nothing. Closing it
+needs character folding before tokenization, which `unaccent` cannot do and which pg_search cannot inject into
+`against:`.
+
+### G5 — The superseded `data:` spec, inverted by the Orchestrator
+
+Agent 1's closure turned `spec/lib/markdown_renderer_security_spec.rb:211` red — the example I wrote in P0 to
+pin that `render_article` **permits** `data:image/png`. Its own comment said why it was only pinned: *"recorded
+for the media contract rather than changed inside a security hotfix."* The media contract has now changed it
+(§2.1), so I inverted the assertion and **kept the old expectation quoted in place** rather than deleting it.
+
+A second example was added asserting the message path **still permits** it — that is the containment boundary in
+a test rather than a comment. `spec/lib/base_markdown_renderer_spec.rb` stays **unmodified and green**, which is
+what proves the closure did not leak into the conversation and email path.
+
+### G6 — Verification run (targeted; the gate is not run until integration completes)
+
+| Suite | Result |
+|---|---|
+| media resolver + upload + seeder | 58 examples, 0 failures |
+| media delivery + upload requests + custom renderer | 84 examples, 0 failures |
+| media delivery + resolver + public articles controller (after my route and resolver wiring) | **67 examples, 0 failures** |
+| `markdown_renderer_security_spec` + `base_markdown_renderer_spec` (after the inversion) | **73 examples, 0 failures** |
+| `article_spec` + `search_service_spec` + documentation `search_spec` (after the dictionary change) | **73 examples, 0 failures** |
+| editor unit + component + round-trip specs | **74 tests, 0 failures** across 4 files |
+| RuboCop, 31 changed Ruby files | no offenses |
+| eslint on `tailwind.config.js`, the entrypoint and `'app/javascript/super_admin/**/*.{js,vue}'` | 0 errors, 0 warnings |
+
+**The first eslint run of this set was vacuous, and the pre-commit hook caught it.** I passed eslint a
+*directory*; without `--ext` it lints only `.js` in a directory, so every `.vue` file — including the editor
+itself — was never checked and the run exited 0. The husky hook, which resolves staged paths individually,
+then failed the commit on `ArticleEditor.vue` (`'selectedPortalId' was used before it was defined` — a real
+TDZ error at module evaluation, not a style nit). Re-running with the explicit glob above surfaced six errors
+and one warning in that same file; all are now fixed and the 74 editor tests re-pass. The row above records
+the glob, not the directory, because the directory form is what made the earlier claim false.
+
+
+### G7 — Agent 2's gate verdict: ruling R3 point 2 does NOT open
+
+**The corpus does not round-trip through the installed ProseMirror pair.** Measured over all 126 files:
+`byteIdentical=0, changed=126, addedHardBreaks=2315, tablesReformatted=108`, independently reproducing agent
+067's figure exactly. Five defect classes, four cosmetic and one semantic: **a fenced code block's info string
+is DROPPED** (` ```json ` → ` ``` `) — which is the field P0-1 security-reviewed and renders as
+`class="language-…"`. A WYSIWYG save would silently delete it.
+
+Agent 2 therefore did **not** convert the corpus and built ruling R3's "increment one" instead: a Markdown
+**source** editor, which cannot have a round-trip problem by construction. `![alt](media:key)` round-trips
+byte-identical, so Agent 1's grammar is safe for a future adoption. `corpusRoundTrip.spec.js` goes red the
+moment the serializer changes, which is the signal to re-decide. **This is the ruling working as designed, not
+a blocker.**

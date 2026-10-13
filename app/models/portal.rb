@@ -48,6 +48,16 @@ class Portal < ApplicationRecord
   has_many :folders,  through: :categories
   has_many :articles, dependent: :destroy_async
   has_one_attached :logo
+  # Lynomia documentation media (docs/documentation-v2/R2-MEDIA-CONTRACT.md item 1). Attached to Portal rather
+  # than Article because one screenshot is legitimately referenced by both the EN and the AR translation of a
+  # page, and because portal ownership is what makes the seeder's orphan sweep possible at all (item 9) --
+  # nothing in this app cleans unattached blobs today.
+  #
+  # The `media:` key namespace is PER-PORTAL (contract section 0.2): a key resolves only against the portal
+  # currently rendering, and the docs and changelog corpora each store their own copy of a file both use. There
+  # is no cross-portal fallback, deliberately -- otherwise one corpus's purge could break the other's article.
+  # Separate from `logo` by attachment name, so the sweep can never reach it.
+  has_many_attached :documentation_media
   has_many :inboxes, dependent: :nullify
   belongs_to :channel_web_widget, class_name: 'Channel::WebWidget', optional: true
 

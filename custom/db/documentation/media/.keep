@@ -1,0 +1,12 @@
+# The documentation media tree. Layout and rules: docs/documentation-v2/R2-MEDIA-INTERFACE.md sections 1.2-1.3.
+#
+#   custom/db/documentation/media/<section>/<name>.png   ->   ![alt](media:<section>/<name>.png)
+#
+# Locale-independent on purpose: the EN and AR translations of a page reference the same screenshot, so there is
+# no en/ or ar/ level here. A sibling of the locale trees rather than inside them, so ContentSeeder's
+# Dir.glob(root/<locale>/<section>/*.md) can never pick a media file up.
+#
+# `uploads/` is RESERVED for operator uploads made in Super Admin and must stay empty in the repository: a corpus
+# file there fails the seed, because the seeder's orphan sweep uses provenance to tell the two apart.
+#
+# A dotfile, so Dir.glob never sees it and it is never counted as an unreferenced media file.

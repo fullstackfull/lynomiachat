@@ -202,14 +202,30 @@ describe 'markdown render security' do
       expect(link['title']).to eq('a"b')
     end
 
-    # DATA: URLs ARE DELIBERATELY PERMITTED FOR FOUR IMAGE SUBTYPES.
-    # MarkdownRendererUrlSanitizer::SAFE_DATA_IMAGE_PATTERN re-permits data:image/{png,gif,jpeg,webp} while
-    # DANGEROUS_URL_PATTERN blanks every other data: URL. That is a product decision, not an oversight, and it is
-    # pinned here because the P0 brief required data: behaviour to be explicitly reviewed. It is ALSO a known
-    # media-governance problem -- a data: image bypasses upload validation, type checks, EXIF stripping and
-    # review -- recorded for the media contract rather than changed inside a security hotfix.
-    it 'permits a data:image/png URL, which is the documented decision' do
-      expect(article('![a](data:image/png;base64,iVBORw0KGgo=)')).to include('src="data:image/png;base64,iVBORw0KGgo="')
+    # DATA: URLs WERE DELIBERATELY PERMITTED FOR FOUR IMAGE SUBTYPES, AND THE ARTICLE PATH NO LONGER PERMITS THEM.
+    #
+    # The example that stood here pinned the opposite -- that `render_article` emits
+    # `src="data:image/png;base64,…"` -- and its own comment said why it was only pinned and not changed: "a
+    # data: image bypasses upload validation, type checks, EXIF stripping and review -- recorded for the media
+    # contract rather than changed inside a security hotfix". The media contract has now changed it
+    # (R2-MEDIA-CONTRACT.md 2.1, arbitrated to R2 at article-renderer scope), so the assertion is inverted here
+    # rather than deleted: the old expectation is quoted above so the reversal is legible.
+    #
+    # Scope is the whole point. The closure is a `permitted_data_image?` seam in the shared module overridden to
+    # false in CustomMarkdownRenderer only -- a method on the class wins over one from an included module -- so
+    # the conversation and email path keeps the exception the agent composer and the message-signature editor
+    # really need. spec/lib/base_markdown_renderer_spec.rb:85-89 pins that and must stay green UNMODIFIED; that
+    # is the containment proof, and it is why this is not the universal sanitizer the owner ruled against.
+    it 'blanks a data:image/png URL on the article path, which the media contract closed' do
+      rendered = article('![a](data:image/png;base64,iVBORw0KGgo=)')
+
+      expect(rendered).not_to include('data:image/png')
+      expect(rendered).to include('src=""')
+    end
+
+    it 'still permits a data:image/png URL on the message path, which is the containment boundary' do
+      expect(message('![a](data:image/png;base64,iVBORw0KGgo=)'))
+        .to include('src="data:image/png;base64,iVBORw0KGgo="')
     end
 
     it 'blanks a data:text/html URL' do

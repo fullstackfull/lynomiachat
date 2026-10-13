@@ -1,15 +1,17 @@
 ---
 title: Auto-resolve conversations
 description: You will have a rule that closes conversations nobody has touched for a while, you will know exactly what "a while" is measured from, and you will know which conversations it will never close.
-position: 20
-tags: [administration, conversations]
-seo_description: "Auto-resolve in Lynomia Chat: the inactivity clock, the optional closing message and label, why pending and snoozed conversations are never closed, and what reopens one."
+position: 50
+tags: [automation, conversations]
+seo_description: "Auto-resolve in Lynomia Chat: the inactivity clock, the optional closing message and label, and why pending and snoozed conversations are never closed."
 ---
 Auto-resolve is one account-wide rule: **a conversation nobody has touched for a set period is marked resolved
 by the system.** It exists because open conversations accumulate. Someone asks a question, is answered, and
 never writes again — and the conversation sits open forever, inflating every count your team works from.
 
-It is in **Settings → Account settings**, as a block with its own switch.
+It is in **Settings → Automation → Conversation Workflow**, as a block with its own switch. It appears there
+only when auto-resolve is enabled for your account; on an account without it, the page shows the other
+conversation-workflow settings and no auto-resolve block at all.
 
 ## When to use it
 
@@ -29,15 +31,18 @@ fixes that by hand.
 
 ## What you need first
 
-An **administrator** account. Account settings is administrator-only, and the custom role permission list has
-no entry for it, so it cannot be delegated — see [roles and permissions](roles-and-permissions).
+An **administrator** account. Conversation Workflow is administrator-only, and the custom role permission list
+has no entry for it, so it cannot be delegated — see [roles and permissions](roles-and-permissions).
+
+**Auto-resolve enabled for your account.** It is a capability your installation switches on, not something you
+turn on yourself. If the block is absent, that is the reason.
 
 If you want the optional label, **create the label first**. The picker offers only labels that already exist —
 see [labels](labels).
 
 ## Steps
 
-1. Go to **Settings → Account settings** and find **Auto-resolve conversations**.
+1. Go to **Settings → Automation → Conversation Workflow** and find **Auto-resolve conversations**.
 2. Turn the switch on.
 3. Set **Inactivity duration**. The unit selector offers minutes, hours and days, and the value is stored in
    minutes either way. The accepted range is **10 minutes to 999 days**; the form refuses anything shorter than
@@ -121,8 +126,8 @@ setting on. Two consequences worth knowing:
 
 ## A worked example
 
-A Kuwait retailer has 4,000 open conversations and about 300 real ones. The administrator sets the duration to
-**14 days**, turns **Skip conversations waiting for agent's reply** on, leaves the message empty, and picks the
+A Kuwait retailer has 4,000 open conversations and about 300 real ones. On **Settings → Automation →
+Conversation Workflow** the administrator sets the duration to **14 days**, turns **Skip conversations waiting for agent's reply** on, leaves the message empty, and picks the
 label `auto-closed`.
 
 Over the next hours the open count falls in steps of 100 per five minutes. Nothing is sent to any customer.
@@ -173,5 +178,6 @@ time a conversation is idle enough to qualify. Look for the activity line saying
 **The count is falling too slowly.** That is the 100-per-run cap, not a fault. It clears at roughly 100 every
 five minutes.
 
-**Auto-resolve conversations is not on the page.** You are not an administrator, or you are signed in with a
-custom role. Account settings is administrator-only.
+**Auto-resolve conversations is not on the page.** Either auto-resolve is not enabled for your account — the
+most likely reason, and nothing in your account changes it — or you are not an administrator. Conversation
+Workflow is administrator-only.

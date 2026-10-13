@@ -624,3 +624,108 @@ Three things this measurement settles:
 **§G8's conclusion is unchanged and is still the whole cause**: the rules exist, and the markup asks for
 `i-ri-rocket` — a set that contains none of these names. The manifest fix is what makes the existing rules
 reachable.
+
+## H. Wave 3 — Agent 3 integrated, and a deploy-breaking regression found on the way
+
+### H1 — Agent 3's corpus, verified independently rather than accepted
+
+| Claim | My check |
+|---|---|
+| 126 → 138 files, 69 EN / 69 AR | `find` counts: **en=69 ar=69 total=138** |
+| parity exact per section | twelve sections compared: **no mismatch** |
+| no orphan sibling either direction | set difference both ways: **en-only none, ar-only none** |
+| every manifest icon now a full class | `icon:` lines not matching `i-lucide-`: **none**, across both manifests |
+| the registry points every key at an article that exists | `content_seeder_corpus_spec` + `library_spec`: **357 examples, 0 failures** |
+
+That last run **closes Agent 3's A3-O6**: it reported it could not execute a single spec
+(`PG::ConnectionBad: fe_sendauth: no password supplied`) and reimplemented the corpus spec's assertions in pure
+Ruby instead. The real spec now runs, with its own additions and my registry entries in the tree, and is green.
+
+Agent 3 also refined §G8 with something I had not checked: **`alert-triangle` is a lucide *alias*, not a primary
+icon.** It generates a rule because `@egoist/tailwindcss-icons` resolves through `@iconify/utils`' `getIconData`,
+which follows aliases. Had the plugin read the `icons` map directly, one of the thirteen would have stayed
+invisible after the fix. Verified at the plugin's own resolution path, with a `definitely-not-an-icon` control
+returning NULL.
+
+### H2 — Applied for Agent 3: the two Agent 4 registry changes
+
+Six entries in `documentationLinks.js` so the new articles are reachable from the product, and
+`featureHelper.js`'s `slack_integration` repointed from the ten-app catalogue to the new Slack article.
+`documentationLinks.spec.js` + `featureHelper.spec.js`: **28 tests, 0 failures**; the Ruby-side registry
+cross-check is in the 357 above. Agent 3's §5.3 media requests are **not** applied — the corpus still has no
+images, and a `media:` key with no file fails the seed.
+
+### H3 — A deploy-breaking regression, found because a migration would not run
+
+`bin/rails db:migrate` aborted with:
+
+```
+NameError: uninitialized constant DocumentationSeoAudit::Auditor::DocumentationHelper
+  lib/tasks/documentation_seo_audit.rake:66:in '<class:Auditor>'
+  ...
+  Rakefile:6:in '<main>'
+```
+
+`Rakefile` is `require_relative 'config/application'` then `load_tasks` — it **never initializes the
+application**, so Zeitwerk's autoloaders do not exist while a `.rake` file is being read. Wave 2 hoisted
+`include DocumentationHelper` from inside the task body to a **class body**, where it is dereferenced at load
+time. The result is a `NameError` out of `load_tasks`, which breaks **every rake task in the project** —
+`db:migrate` and `assets:precompile` among them. On the deploy script's path, that is a failed deploy.
+
+Confirmed it was not pre-existing: the diff against `9e6e4d58` shows the two `include` lines moving from
+six-space indentation inside the task to class-body level.
+
+**Fixed** by moving the module to `lib/documentation_seo_audit.rb`. `lib` is an eager load path
+(`config/application.rb:42`), so it autoloads when the task body — which depends on `:environment` — first names
+it, exactly as `ChatwootMarkdownRenderer` and the rest of `lib/` already do. The `.rake` file is now 48 lines of
+task and nothing else.
+
+Proven both ways: before, `rails -T` raised; after, it lists both `lynomia:` tasks and
+`rake lynomia:docs:seo_audit` runs to completion. `task_documentation_seo_audit_spec` + `seo_spec` +
+`documentation_helper_spec`: **66 examples, 0 failures**. RuboCop clean — the one new offence was
+`Rails/Output`, which does not apply to `.rake` files and came into scope purely because of the move; scoped to
+that one `puts` with the reason recorded, since live per-portal progress for an operator at a terminal is what
+it is for.
+
+**Nothing caught this**, which is the part worth keeping: the gate runs rspec, and rspec boots through
+`config/environment`, so it never loads `.rake` files. A gate that cannot see a broken `load_tasks` cannot see a
+broken deploy. Handed to Agent 6 as a gate-mechanism gap, since `scripts/documentation_gate.sh` is its file.
+
+### H4 — Two owner-stated facts Agent 3 flagged, resolved here
+
+**`WHATSAPP_API_VERSION = v22.0` is not a contradiction of the repository's `v24.0`.** `FacebookApiClient`
+reads `GlobalConfigService.load('WHATSAPP_API_VERSION', DEFAULT_API_VERSION)` (`:13`), so the stored
+installation config **wins over** the code default. Both measurements are true at once.
+
+The consequence neither of us had drawn, and it belongs in the owner's version inventory: `Whatsapp::HealthService`
+clamps **upward** to its own floor —
+`[configured, MINIMUM_HEALTH_API_VERSION].max_by { … }` with `MINIMUM_HEALTH_API_VERSION = 'v24.0'`
+(`health_service.rb:18,48`). So on a v22.0 installation, health calls go out on **v24.0** and every other
+WhatsApp call on **v22.0**: two Graph versions in play at once, which is precisely what
+`facebook_api_client.rb:4-6` says a lower default would cause. **Nothing changed** — the owner ruled this is
+handled separately under the Graph API inventory — and no article states a Graph version.
+
+**"Embedded Signup v4" has no literal in the repository**, which Agent 3 is right to call UNVERIFIED on its
+side. Only `sessionInfoVersion: '3'` is in code (`whatsapp/utils.js:136-140`); the flow version is Meta-side
+configuration, so the owner's production read is the only source for it and the repository cannot corroborate
+it. Carried as **A3-O3**, with Agent 3's time-sensitive note that Meta's own page warns Embedded Signup **v2**
+deprecates **2026-10-15**. Production is reported to be on v4, so this is a thing to know, not a thing to do.
+
+### H5 — The test database is seeded mid-wave, and that is Agent 5 working, not pollution to clean
+
+After the corpus specs ran green, `rake lynomia:docs:seo_audit` went from `no portal to audit` to
+`NOT_INDEXABLE`, and `task_documentation_seo_audit_spec` began failing on `Slug has already been taken`. The
+cause is **not** my refactor — the same file was `66 examples, 0 failures` after the refactor and before this —
+and not a leaky spec: `use_transactional_fixtures = true` and no spec runs the seeder.
+
+Measured instead of guessed:
+
+```
+with_source_path=137  with_digests=137  total=138
+["custom/db/documentation/en/getting-started/connect-your-first-channel.md", …]
+```
+
+`content_source_path` and `seeded_digests` are columns **only Agent 5's new seeder writes**. Agent 5 is running
+its D7/D8 convergence measurements against the test database, which its brief requires. **Deliberately not
+truncated**: that would destroy an agent's in-flight measurement state. The combined gate runs in its own
+worktree with its own database, so it is unaffected.

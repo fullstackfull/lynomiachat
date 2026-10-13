@@ -100,6 +100,8 @@ seo_description: "قواعد الأتمتة في Lynomia Chat: الأحداث ا
 - [أتمتة أم منشئ تدفقات؟](automation-or-flow-builder)
 - [ماكروس أم أتمتة؟](macros-or-automation)
 - [منشئ التدفقات](flow-builder)
+- [حملات أم أتمتة؟](campaigns-or-automation)
+- [الحلّ التلقائي للمحادثات](auto-resolve)
 - [الجماهير المشتركة](shared-audiences)
 
 ## إذا لم ينجح الأمر

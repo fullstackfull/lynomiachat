@@ -103,6 +103,7 @@ conversations lost while the inbox was misconfigured are not in the audit log an
 
 ## Related
 
+- [The record of your imports](data-imports)
 - [Roles and permissions](roles-and-permissions)
 - [Teams and agents](teams-and-agents)
 - [Set up an inbox](set-up-an-inbox)

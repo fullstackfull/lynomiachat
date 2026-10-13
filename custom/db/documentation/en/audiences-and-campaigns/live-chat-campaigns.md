@@ -3,7 +3,7 @@ title: Live chat campaigns
 description: You will have a message that opens itself in the live chat widget after someone has been on a page for a while, and you will know every condition that has to be true before it appears.
 position: 40
 tags: [campaigns, livechat]
-seo_description: "Live chat campaigns in Lynomia Chat: a proactive widget message triggered by URL and time on page, business-hours gating, and why a returning visitor never sees one."
+seo_description: "Live chat campaigns in Lynomia Chat: a proactive widget message triggered by URL and time on page, and why a returning visitor never sees one."
 ---
 A live chat campaign is a message the **live chat widget** shows a visitor by itself. You pick a page, say how
 long someone has to be on it, and write what appears. Nobody sends it; the widget decides, in the visitor's

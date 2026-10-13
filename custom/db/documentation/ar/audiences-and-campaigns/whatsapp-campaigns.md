@@ -153,7 +153,8 @@ APPROVED. فالقالب الذي كان معتمداً حين بنيت الحم
 - [الوسوم أم الجماهير المشتركة؟](labels-or-shared-audiences)
 - [قوالب واتساب](whatsapp-templates)
 - [نافذة الـ24 ساعة في واتساب](the-whatsapp-24-hour-window)
-- [قواعد الأتمتة](automation-rules)
+- [قواعد الأتمتة](automation-rules) · [حملات أم أتمتة؟](campaigns-or-automation)
+- [حملات الدردشة المباشرة](live-chat-campaigns)
 - [الوسوم](labels)
 
 ## إذا لم ينجح الأمر

@@ -25,7 +25,7 @@ const FEATURE_DOC_KEYS = {
   shared_audiences: 'sharedAudiences',
   shopify: 'commerceShopify',
   shopify_integration: 'commerceShopify',
-  slack_integration: 'integrations',
+  slack_integration: 'slack',
   team_management: 'teams',
   webhook: 'webhooks',
   whatsapp_templates: 'whatsappTemplates',

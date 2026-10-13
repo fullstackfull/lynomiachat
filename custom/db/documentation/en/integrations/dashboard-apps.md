@@ -3,7 +3,7 @@ title: Dashboard apps
 description: You will have your own web page appearing as a tab beside the conversation, you will know exactly what data the page is handed, and you will know what a dashboard app cannot do.
 position: 40
 tags: [integrations, dashboard-apps]
-seo_description: "Dashboard apps in Lynomia Chat: add your own page as a tab next to a conversation, read the conversation context it is sent, and the limits of an iframe integration."
+seo_description: "Dashboard apps in Lynomia Chat: add your own page as a tab beside a conversation, read the context it is sent, and the limits of an iframe."
 ---
 A dashboard app puts **a page of your own** in front of the agent, as a tab beside the conversation. When the
 agent opens that tab, your page is loaded in a frame and handed the conversation it is looking at — who the

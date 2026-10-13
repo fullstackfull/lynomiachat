@@ -93,6 +93,7 @@ seo_description: "ما يسجّله سجل التدقيق في لينوميا ت
 
 ## مواضيع ذات صلة
 
+- [سجل عمليات الاستيراد](data-imports)
 - [الأدوار والصلاحيات](roles-and-permissions)
 - [الفرق ووكلاء الدعم](teams-and-agents)
 - [إعداد قناة تواصل](set-up-an-inbox)

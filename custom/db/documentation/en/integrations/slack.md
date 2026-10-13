@@ -3,7 +3,7 @@ title: Slack
 description: You will have every incoming conversation appearing as a thread in one Slack channel, you will have decided whether replies typed there reach the customer, and you will know whose name those replies carry.
 position: 30
 tags: [integrations, slack]
-seo_description: "Connect Slack to Lynomia Chat: one channel, one thread per conversation, two-way sync versus alerts only, note: for private notes, and how agent identity is matched."
+seo_description: "Connect Slack to Lynomia Chat: one channel, a thread per conversation, two-way sync versus alerts only, and how agent identity is matched."
 ---
 The Slack integration mirrors your conversations into **one Slack channel**. Each conversation becomes a
 thread, and every message in it — incoming, outgoing, private notes and activity lines — is posted into that

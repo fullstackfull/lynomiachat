@@ -155,7 +155,8 @@ have no access to the campaigns section. See [roles and permissions](roles-and-p
 - [Labels or shared audiences?](labels-or-shared-audiences)
 - [WhatsApp templates](whatsapp-templates)
 - [The WhatsApp 24-hour window](the-whatsapp-24-hour-window)
-- [Automation rules](automation-rules)
+- [Automation rules](automation-rules) · [Campaigns or automation?](campaigns-or-automation)
+- [Live chat campaigns](live-chat-campaigns)
 - [Labels](labels)
 
 ## If it does not work

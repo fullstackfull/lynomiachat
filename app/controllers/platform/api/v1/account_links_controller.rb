@@ -72,51 +72,72 @@ class Platform::Api::V1::AccountLinksController < PlatformController
   end
 
   def destroy
-    candidate_user_ids = @resource.account_users.pluck(:user_id)
-
     # The account grant goes first, and the order is load-bearing twice over: once it is gone the app cannot
     # reach the workspace even if a user grant somehow survived, and the "what is still linked" question below
     # must not count the account being revoked.
     @platform_app.platform_app_permissibles.where(permissible: @resource).destroy_all
 
-    # A USER GRANT CAN BE SHARED. One person can administer two accounts and authorize this app on both, and
-    # both links then rest on the same single User permissible -- there is one row per (app, user), not one per
-    # link. Dropping every member of the revoked account would therefore silently break SSO for the OTHER
-    # account, which is still linked and still paid for. So a user keeps their grant while any account this app
-    # still holds has them as a member.
+    released = release_unneeded_user_grants
+
+    # A GRANT IS CHECKED AT REQUEST TIME, SO REVOKING IT DOES NOT RECALL WHAT IT ALREADY PRODUCED. An SSO link
+    # minted a minute ago is a Redis key with five minutes of life of its own, and nothing above touches it:
+    # without this, a link revoked for abuse still admits the holder for five more minutes.
     #
-    # Found by the spec, not by inspection: an earlier version of this method claimed in its own comment to do
-    # this and did not.
-    remaining_account_ids = @platform_app.platform_app_permissibles
-                                         .where(permissible_type: 'Account')
-                                         .pluck(:permissible_id)
-
-    still_needed = AccountUser.where(user_id: candidate_user_ids, account_id: remaining_account_ids)
-                              .pluck(:user_id)
-                              .uniq
-
-    @platform_app.platform_app_permissibles
-                 .where(permissible_type: 'User', permissible_id: candidate_user_ids - still_needed)
-                 .destroy_all
-
-    # A GRANT IS CHECKED AT REQUEST TIME, SO REVOKING IT DOES NOT RECALL WHAT IT ALREADY PRODUCED. An SSO
-    # link minted a minute ago is a Redis key with a five-minute life of its own, and nothing above touches
-    # it: without this, a link revoked for abuse still lets the holder in for up to five more minutes. Only
-    # the users who actually lost their grant are swept -- a user kept for another live link keeps their
-    # session too.
-    revoked_user_ids = candidate_user_ids - still_needed
-    User.where(id: revoked_user_ids).find_each { |revoked| invalidate_outstanding_sso_links(revoked) }
+    # Swept for the users whose grants were ACTUALLY returned, and no others. USER_SSO_AUTH_TOKEN::<id>::* is
+    # shared key space -- other platform apps' login links and Chatwoot's own super-admin impersonation links
+    # live in it too -- so sweeping a user this app does not hold reaches outside its own authorization and
+    # kills somebody else's in-flight session. An earlier version derived the sweep from the account's
+    # membership and did exactly that.
+    User.where(id: released).find_each { |revoked| invalidate_outstanding_sso_links(revoked) }
 
     ::Integrations::AccountLinkCode.finish(@resource.id, 'revoked')
+    # The actor is the app, not nobody. audits.user is polymorphic and Billing::OverrideGrant already stores a
+    # PlatformApp there, so capture_actor_name falls through to its name and the account's audit trail can
+    # answer "who disconnected our integration" through its own actor filter.
     ::Integrations::AccountLinkCode.record_audit(
-      'integrations.account_link.revoked', @resource, nil,
-      { platform_app_id: @platform_app.id, platform_app_name: @platform_app.name }
+      'integrations.account_link.revoked', @resource, @platform_app,
+      { platform_app_id: @platform_app.id, platform_app_name: @platform_app.name, released_user_ids: released }
     )
 
     head :ok
   end
 
   private
+
+  # Hand back every User grant this app can no longer use, and report which.
+  #
+  # DERIVED FROM THE GRANTS HELD, NOT FROM THE ACCOUNT'S MEMBERSHIP. The question that matters is "which User
+  # grants does this app hold, and are any of them still good for an account it still holds?" -- and
+  # membership is the wrong source for it twice over. It is mutable by the merchant's own admins, so a granted
+  # user removed from the workspace before the revocation arrives became invisible and kept their grant
+  # through a revocation that answered 200; and it includes users this app never held, which is how the SSO
+  # sweep came to kill other principals' sessions.
+  #
+  # The rule is now simply: a held User grant survives only while some account this app still holds has that
+  # user as a member. A service user belongs to exactly one account, so revoking its account releases it;
+  # another link's service user is a member of that link's account, so it is kept.
+  def release_unneeded_user_grants
+    held_user_ids = @platform_app.platform_app_permissibles
+                                 .where(permissible_type: 'User')
+                                 .pluck(:permissible_id)
+    return [] if held_user_ids.empty?
+
+    remaining_account_ids = @platform_app.platform_app_permissibles
+                                         .where(permissible_type: 'Account')
+                                         .pluck(:permissible_id)
+
+    still_needed = AccountUser.where(user_id: held_user_ids, account_id: remaining_account_ids)
+                              .distinct
+                              .pluck(:user_id)
+
+    released = held_user_ids - still_needed
+
+    @platform_app.platform_app_permissibles
+                 .where(permissible_type: 'User', permissible_id: released)
+                 .destroy_all
+
+    released
+  end
 
   # The membership is re-read NOW, not taken from the code. Deleted account, deleted user, membership removed,
   # or demoted to agent -- all land here, and all are refused. The code has already been burned by redeem at

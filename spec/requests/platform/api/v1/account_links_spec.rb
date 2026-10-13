@@ -301,6 +301,46 @@ RSpec.describe 'Platform account links API', type: :request do
       expect(service_user.reload.valid_sso_auth_token?(token)).to be(false)
     end
 
+    # Membership is mutable by the merchant's own admins, so deriving the revocation set from it let a
+    # granted user who had been removed from the workspace keep their grant through a revocation that
+    # answered 200.
+    it 'hands back a grant even if its user was removed from the account first' do
+      service_user = User.find_by!(email: service_user_email)
+      account.account_users.where(user_id: service_user.id).destroy_all
+
+      delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(granted?(service_user)).to be(false)
+    end
+
+    # USER_SSO_AUTH_TOKEN::<id>::* is shared key space: other platform apps' login links and super-admin
+    # impersonation links live there too. A revocation scoped to one account must not reach into them.
+    it 'does not kill another app SSO link for a member it holds no grant on' do
+      other_app = create(:platform_app)
+      member = create(:user, account: account, role: :agent)
+      create(:platform_app_permissible, platform_app: other_app, permissible: member)
+
+      get "/platform/api/v1/users/#{member.id}/login",
+          headers: { api_access_token: other_app.access_token.token }, as: :json
+      token = CGI.parse(URI.parse(response.parsed_body['url']).query)['sso_auth_token'].first
+      expect(member.reload.valid_sso_auth_token?(token)).to be(true)
+
+      delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
+
+      expect(member.reload.valid_sso_auth_token?(token)).to be(true)
+      expect(other_app.platform_app_permissibles.exists?(permissible: member)).to be(true)
+    end
+
+    it 'records the app as the actor, so the merchant can see who disconnected it' do
+      delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
+
+      log = Custom::AuditLog.where(associated: account, comment: 'integrations.account_link.revoked').sole
+      expect(log.user_type).to eq('PlatformApp')
+      expect(log.user_id).to eq(platform_app.id)
+      expect(log.username).to eq(platform_app.name)
+    end
+
     it 'leaves another linked account untouched' do
       second_account = create(:account)
       second_account.account_users.create!(user: admin, role: :administrator)

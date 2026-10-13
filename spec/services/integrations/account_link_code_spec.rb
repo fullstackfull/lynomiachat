@@ -1,0 +1,115 @@
+require 'rails_helper'
+
+RSpec.describe Integrations::AccountLinkCode do
+  include_context 'with account link codes'
+
+  let(:account) { create(:account) }
+  let(:user) { create(:user, account: account, role: :administrator) }
+
+  def stored_code_keys
+    keys = []
+    Redis::Alfred.scan_each(match: 'INTEGRATIONS::ACCOUNT_LINK::CODE::*') { |key| keys << key }
+    keys
+  end
+
+  describe '.create' do
+    it 'stores only a digest, never the code the merchant was shown' do
+      result = described_class.create(account: account, user: user)
+
+      expect(stored_code_keys.sole).not_to include(result[:code].delete('-'))
+      expect(Redis::Alfred.get(stored_code_keys.sole))
+        .to eq({ account_id: account.id, user_id: user.id }.to_json)
+      expect(Redis::Alfred.ttl(stored_code_keys.sole)).to be_between(3590, 3600)
+    end
+
+    it 'issues 80 bits from an alphabet with no look-alike characters' do
+      code = described_class.create(account: account, user: user)[:code].delete('-')
+
+      expect(code.length).to eq(described_class::LENGTH)
+      expect(code).to match(/\A[#{described_class::ALPHABET}]+\z/o)
+      expect(code).not_to match(/[01OI]/)
+    end
+
+    it 'revokes the account previous code so only one is ever live' do
+      first = described_class.create(account: account, user: user)
+      described_class.create(account: account, user: user)
+
+      expect(stored_code_keys.length).to eq(1)
+      expect(described_class.redeem(first[:code])).to be_nil
+    end
+
+    it 'records who issued it' do
+      described_class.create(account: account, user: user)
+
+      log = Custom::AuditLog.where(associated: account, comment: 'integrations.account_link.code_issued').sole
+      expect(log.user_id).to eq(user.id)
+    end
+  end
+
+  describe '.redeem' do
+    it 'returns the account and user the code was minted by' do
+      code = described_class.create(account: account, user: user)[:code]
+
+      expect(described_class.redeem(code))
+        .to eq({ 'account_id' => account.id, 'user_id' => user.id })
+    end
+
+    it 'works exactly once' do
+      code = described_class.create(account: account, user: user)[:code]
+
+      expect(described_class.redeem(code)).to be_present
+      expect(described_class.redeem(code)).to be_nil
+      expect(stored_code_keys).to be_empty
+    end
+
+    it 'ignores case, spaces and dashes, because a merchant types it' do
+      code = described_class.create(account: account, user: user)[:code]
+
+      expect(described_class.redeem("  #{code.downcase.delete('-')}  ")).to be_present
+    end
+
+    it 'refuses a code that has expired' do
+      code = described_class.create(account: account, user: user)[:code]
+
+      travel(described_class::TTL + 1.minute) do
+        expect(described_class.redeem(code)).to be_nil
+      end
+    end
+
+    it 'refuses a blank or unknown string without raising' do
+      expect(described_class.redeem(nil)).to be_nil
+      expect(described_class.redeem('')).to be_nil
+      expect(described_class.redeem('AAAABBBBCCCCDDDD')).to be_nil
+    end
+
+    it 'does not leak one account code to another account' do
+      other_account = create(:account)
+      other_user = create(:user, account: other_account, role: :administrator)
+      described_class.create(account: other_account, user: other_user)
+
+      mine = described_class.create(account: account, user: user)[:code]
+
+      expect(described_class.redeem(mine)).to eq({ 'account_id' => account.id, 'user_id' => user.id })
+    end
+  end
+
+  describe '.status' do
+    it 'reports none, then waiting, then claimed' do
+      expect(described_class.status(account)).to eq({ status: 'none' })
+
+      code = described_class.create(account: account, user: user)[:code]
+      expect(described_class.status(account)[:status]).to eq('waiting')
+
+      described_class.redeem(code)
+      expect(described_class.status(account)[:status]).to eq('claimed')
+    end
+
+    it 'reports expired once the window has passed' do
+      described_class.create(account: account, user: user)
+
+      travel(described_class::TTL + 1.minute) do
+        expect(described_class.status(account)[:status]).to eq('expired')
+      end
+    end
+  end
+end

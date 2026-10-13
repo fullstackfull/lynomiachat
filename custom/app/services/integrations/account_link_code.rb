@@ -1,0 +1,113 @@
+# One-time codes that prove a merchant controls the Lynomia account an external platform wants to link.
+#
+# THE PROBLEM THIS SOLVES. A platform app that wants to link an account it did not create has no honest way to
+# establish that the person asking actually controls it. It cannot look the account up -- the platform API
+# confines it to its own permissibles -- and it must not go by email: `POST /platform/api/v1/users` resolves
+# `User.from_email(...) || User.new(...)` and grants the caller a permissible on whatever it finds, so an email
+# that already belongs to somebody is not a link, it is a takeover. Any scheme where the CLAIMANT supplies the
+# identifier is the same mistake wearing a different hat.
+#
+# So the proof is minted here, on the side that can actually check. An administrator of the account signs in to
+# Lynomia -- which is the authentication -- and asks for a code. They hand it to the external platform, which
+# redeems it server to server. The claimant never names an account, so there is nothing to point at a workspace
+# they cannot already sign in to, and nothing an attacker can guess that is cheaper than the code itself.
+#
+# WHAT A REDEEMED CODE MEANS, precisely: "at the moment it was created, this user was an administrator of this
+# account, and whoever holds this string got it from them". Redemption re-checks the administrator role rather
+# than trusting the creation-time snapshot, because an administrator who was demoted or removed in between must
+# not still be able to authorize an app -- a code is a bearer token and the hour it lives is long enough for a
+# dismissal to matter.
+#
+# Modelled on Commerce::Salla::ConnectionCode, deliberately and almost line for line: same alphabet, same
+# entropy, same HMAC-and-forget storage, same single-use read. That service solves the identical problem in the
+# opposite direction and has been in production; this is not the place to invent a second scheme.
+class Integrations::AccountLinkCode
+  TTL = 1.hour
+  PROGRESS_TTL = 1.day
+  # 32 symbols without 0/O/1/I, so 16 of them are 80 random bits. Merchants read these aloud to support.
+  ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'.freeze
+  LENGTH = 16
+
+  class << self
+    # Replaces the account's previous code, so a merchant who generated one by mistake has not left a second
+    # live credential behind. Returns the plaintext ONCE; only its HMAC is kept.
+    def create(account:, user:)
+      code = Array.new(LENGTH) { ALPHABET[SecureRandom.random_number(ALPHABET.length)] }.join
+      expires_at = TTL.from_now.utc.iso8601
+      code_digest = digest(code)
+
+      previous = progress(account.id)
+      Redis::Alfred.delete(code_key(previous['digest'])) if previous
+
+      Redis::Alfred.setex(code_key(code_digest), { account_id: account.id, user_id: user.id }.to_json, TTL)
+      save_progress(account.id, 'status' => 'waiting', 'digest' => code_digest, 'expires_at' => expires_at)
+
+      record_audit('integrations.account_link.code_issued', account, user)
+
+      { code: code.scan(/.{4}/).join('-'), expires_at: expires_at }
+    end
+
+    # { 'account_id', 'user_id' } the code was created for, or nil.
+    #
+    # SINGLE USE IS THE GET AND THE DEL IN ONE ROUND TRIP. Reading and then deleting would let two redemptions
+    # racing on the same string both see it. The merchant types this, so case, spaces and dashes do not matter.
+    def redeem(raw_code)
+      return if raw_code.blank?
+
+      key = code_key(digest(raw_code.to_s.upcase.delete('^A-Z0-9')))
+      value, = Redis::Alfred.with do |conn|
+        conn.multi do |transaction|
+          transaction.get(key)
+          transaction.del(key)
+        end
+      end
+      return if value.nil?
+
+      JSON.parse(value).tap { |attempt| finish(attempt['account_id'], 'claimed') }
+    end
+
+    def finish(account_id, status)
+      current = progress(account_id)
+      save_progress(account_id, current.merge('status' => status)) if current
+    end
+
+    # What the merchant's settings page shows: none | waiting | expired | claimed | connected | revoked.
+    def status(account)
+      current = progress(account.id)
+      return { status: 'none' } if current.nil?
+
+      status = current['status'] == 'waiting' && Time.iso8601(current['expires_at']).past? ? 'expired' : current['status']
+      { status: status, expires_at: current['expires_at'] }.compact
+    end
+
+    # Exposed so the redeeming controller can audit under the same event vocabulary.
+    def record_audit(event, account, user, changes = {})
+      Rails.logger.info("[Integrations] #{event} account_id=#{account.id} user_id=#{user&.id}")
+      Custom::AuditLog.create!(
+        auditable: account, associated: account, user: user,
+        action: 'update', comment: event, audited_changes: changes
+      )
+    end
+
+    private
+
+    def digest(code)
+      OpenSSL::HMAC.hexdigest('SHA256', Rails.application.key_generator.generate_key('integrations_account_link_code'), code)
+    end
+
+    # The prefix is cleared wholesale by spec/support/integrations_account_link.rb between examples. Redis is a
+    # MockRedis in test and is never flushed globally, so a new prefix that nothing clears leaks across examples
+    # and makes the suite order-dependent.
+    def code_key(digest) = "INTEGRATIONS::ACCOUNT_LINK::CODE::#{digest}"
+
+    def progress_key(account_id) = "INTEGRATIONS::ACCOUNT_LINK::ACCOUNT::#{account_id}"
+
+    def progress(account_id)
+      JSON.parse(Redis::Alfred.get(progress_key(account_id)) || 'null')
+    end
+
+    def save_progress(account_id, progress)
+      Redis::Alfred.setex(progress_key(account_id), progress.to_json, PROGRESS_TTL)
+    end
+  end
+end

@@ -164,6 +164,13 @@ Markdown → HTML goes through `ChatwootMarkdownRenderer#render_article`, which 
 `:SAFE`/`UNSAFE` handling says so", leaving the question open. That framing was wrong in a way that matters, so
 the corrected finding:
 
+> **FOURTH CORRECTION, 2026-10-13 — and this one is a live vulnerability.** Everything below about raw HTML is
+> true of the `html` and `inline_html` node types. It is **not** true of a fenced code block's **info string**,
+> which agent 095 found is written into a class attribute unescaped. See `U-07` in
+> `discovery/_ARBITRATION.md`. "Raw HTML is omitted, therefore the article path is safe" was the shared
+> conclusion of agents 065, 081 and 085 and of this document, and it was wrong — the omission covers the node
+> types everyone looked at, and the hole is in a method none of them read.
+
 - **Raw HTML is DELETED, not escaped.** `CustomMarkdownRenderer.new` is built with `options: :DEFAULT`
   (`lib/custom_markdown_renderer.rb` via `renderer.rb:10`); `:UNSAFE` (`1<<17`) is never set, and `:UNSAFE`
   appears nowhere in the repository. CommonMarker's HTML renderer therefore emits `<!-- raw HTML omitted -->`

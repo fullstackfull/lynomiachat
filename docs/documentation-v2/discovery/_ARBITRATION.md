@@ -714,3 +714,103 @@ Agent 090 noted that reports 021–025 did not exist when it ran and that it att
 they write is therefore moot for the writing, but it stands for the **audit**: 090's verification has not been
 run over 021–025, which is the same unchecked-set problem agent 088 raised about 028. Both go into the Phase 4
 re-verification pass rather than being treated as closed.
+
+---
+
+# U-07 — LIVE STORED XSS in the article render path. Highest priority in the program.
+
+**Found by agent 095. Verified by me, line by line, in the gem source and this repository.** This does not wait
+for the Phase 4 contract freeze, and it is not a documentation item.
+
+## The defect
+
+A fenced code block's **info string** — the language tag after the opening backticks — is written into a class
+attribute **without escaping**:
+
+```ruby
+# commonmarker-0.23.12/lib/commonmarker/renderer/html_renderer.rb:100
+out(' class="language-', node.fence_info.split(/\s+/)[0], '">')
+```
+
+and `out` does not escape — it is `@stream.write(arg)` (`renderer.rb`). Note the line immediately below it
+*does* escape: `out(escape_html(node.string_content))`. The body is protected; the info string is not.
+
+**cmark's own C renderer escapes it.** `ext/commonmarker/html.c:243`:
+
+```c
+cmark_strbuf_puts(html, "><code class=\"language-");
+escape_html(html, node->as.code.info.data, first_tag);
+```
+
+So this is not a CommonMark design decision — **the Ruby port dropped an escape the reference implementation
+performs.**
+
+**Nothing in this repository overrides `code_block` on the article path.** I grepped: the five `def code_block`
+overrides that exist are channel message renderers (plain text, Instagram, LINE, WhatsApp, Telegram).
+`CustomMarkdownRenderer` does not override it, so `render_article` inherits the unescaped version.
+
+The payload shape closes the `<code>` and `<pre>` elements from inside the attribute and opens a script element.
+It needs no spaces, which defeats any whitespace-based filter, and HTML entities in the info string are decoded
+before the renderer sees them, which defeats entity-based filtering. A regression test should assert the exact
+rendered output for an info string containing a double quote.
+
+## Why it matters more than its class suggests
+
+**It is reachable by every tenant account administrator, not only by a Lynomia super admin.**
+`app/policies/article_policy.rb:18-20` gates article create and update on `@account_user.administrator?`, and
+`Article#content` validates presence only. So any customer's own administrator can store it in their own Help
+Center, where it executes for their agents and their end users on this product's origin.
+
+**The same renderer path serves conversation reply emails** — agent 095 traced `render_message` to
+`email_helper.rb:10` and three `conversation_reply_mailer` views.
+
+**There is no containment.** The portal CSP is `object-src 'none'; base-uri 'self'` — no `script-src`, no
+`default-src`. And there is no sanitizer anywhere in the path, which is the gap Ruling R1 already identified.
+
+## It refutes the conclusion three agents and I had settled on
+
+Agents 065, 081 and 085 each independently concluded that the article path is safe because raw HTML is omitted,
+and I wrote that into `01-current-system.md` §5 as a correction to my *own* earlier error. All four of us were
+reasoning about the `html` and `inline_html` node types. **The hole is in `code_block`, a method none of us
+read.**
+
+That is the most instructive result of the whole program, and it is worth stating plainly rather than burying:
+**three independent confirmations of "safe" were worth less than one agent whose job was to attack the
+conclusion.** Agent 095 also warns, correctly, that agent 065's "checked and safe, recorded so nobody re-checks
+it" list must **not** be carried into `06-security-review.md` as-is, precisely because a method it never checked
+holds the worst finding in its area.
+
+## What this does to Ruling R1
+
+R1 already called for **one sanitizer pass at the single existing choke point**, `render_as_html_safe`. This
+finding **validates that ruling and makes it urgent** rather than changing it: a sanitizer at that choke point
+neutralises this defect and the whole class it belongs to, including whatever else the gem's attribute writes
+have missed. R1's reasoning stands; only its priority changes.
+
+Two of R1's components are now insufficient on their own and I am recording why, because a partial fix here
+would read as a fix:
+
+- **A corpus lint is structurally blind to this.** The payload is well-formed CommonMark, contains no URL, is
+  not an `html_block`, and matches no embed pattern. A file-level check cannot see it; only a
+  **render-then-assert** check can.
+- **`script-src` alone does not stop it** in the form the portal head currently requires. That head contains
+  inline `<script>`, which forces either `'unsafe-inline'` — under which the payload still runs — or a nonce.
+  Only the nonce form helps, and the `<svg/onload=>` variant needs the nonce form too.
+
+## Agent 095's other results, kept for the record
+
+It **overstated nothing and corrected two overstatements of others**, which is why its blocker deserves weight:
+
+- It demoted agent 065's `?show_plain_layout=true` finding from major to **minor** — framing is cross-origin,
+  drafts are gated server-side, and the preview is a redirect rather than an iframe.
+- It demoted agent 085's cookie-theft impact to **conditional**, because it rests on a premise that the same
+  report marks "not checked".
+- It confirmed **SVG via ActiveStorage is *not* stored XSS** — `content_types_to_serve_as_binary` forces
+  octet-stream and attachment. It is a product defect, not a vulnerability, which agrees with agent 084.
+- It found the Wistia CSS angle is closed, but **for the wrong reason** than 065 and 085 gave: CSS strings are
+  terminated by a newline as well as a quote, and `CGI.escapeHTML` does not escape a newline — the entity
+  survives the destination scanner and is decoded to a line feed.
+- Its own attacks that **failed**: the URL sanitizer against every scheme, entity, whitespace and backslash
+  form; an embed template inside an image alt; `onerror` on a rendered `<img>`; `</script>` in a title against
+  JSON-LD; the `og_image` `html_safe`; the Administrate field views; and the portal's inline script
+  interpolations.

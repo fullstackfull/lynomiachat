@@ -55,6 +55,9 @@ signature of uniform linguistic compression rather than of dropped content.
 | `contacts/contacts.md` | 1148 | 923 | 0.80 | **faithful rendering** |
 | `automation/automation-rules.md` | 1038 | 902 | 0.87 | **faithful rendering** |
 
+Counts here are whole-file, to be directly comparable with the `wc -w` figures reports 031 and 036 quoted.
+The table in §8 counts body words only (front matter excluded); the ratios are the same to two decimals.
+
 Neither is condensed and neither is materially incomplete. `contacts.md` matches heading for heading (10/10),
 table row for table row, and sentence for sentence through the intro, "How a contact comes to exist", "The
 three identities" and "Phone numbers are stored in international form" — including the literal
@@ -89,11 +92,12 @@ Collapsing that into a verdict per pair after claim-level review:
 | REFORMATTED — content equivalent, presentation differs (prose↔list, section promotion) | 4 |
 | DIVERGENT — at least one substantive divergence | 14 |
 
-**Answer to the brief: the Arabic corpus is at parity in content volume and at parity in structure for 49 of
-63 pairs, but 15 pairs carry substantive divergences, and the divergences are concentrated in exactly the
-places where being wrong costs most — navigation paths in troubleshooting articles, the permissions matrix,
-and the corpus's central domain term.** Parity of presence is not parity of meaning, and neither is parity
-of length.
+**Answer to the brief: the Arabic corpus is at parity in content volume across all 63 pairs, at parity in
+structure for 55 of 63, and free of substantive divergence in 49 of 63. The remaining 14 pairs carry
+divergences concentrated in exactly the places where being wrong costs most — navigation paths in
+troubleshooting articles, the permissions matrix, and the corpus's central domain term.**
+
+Parity of presence is not parity of meaning, and neither is parity of length.
 
 ## 4. Refutations
 
@@ -549,7 +553,7 @@ substantive divergence, per §4.
 | 19 | `contacts/import-contacts.md` | 1401 | 1155 | 0.82 | identical | FAITHFUL |
 | 20 | `conversations/assign-and-prioritise.md` | 947 | 826 | 0.87 | identical | FAITHFUL |
 | 21 | `conversations/canned-responses.md` | 916 | 736 | 0.80 | identical | FAITHFUL |
-| 22 | `conversations/labels.md` | 1036 | 903 | 0.87 | identical | DIVERGENT |
+| 22 | `conversations/labels.md` | 1036 | 903 | 0.87 | identical | FAITHFUL |
 | 23 | `conversations/macros-or-automation.md` | 1047 | 928 | 0.89 | identical | FAITHFUL |
 | 24 | `conversations/macros.md` | 1006 | 801 | 0.80 | identical | DIVERGENT |
 | 25 | `conversations/work-in-the-inbox.md` | 1033 | 936 | 0.91 | identical | FAITHFUL |

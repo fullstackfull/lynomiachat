@@ -609,3 +609,108 @@ cannot flip `platform_owned`; `author` is not form-editable; draft public reads 
 no web surface for content seeding; Super Admin is CSRF-protected; Platform Support's authorization is clean and
 holds the repository's only policy-checked blob read; and five of eight custom-role permissions are honestly
 enforced.
+
+---
+
+# Addendum 7 — agents 090 and 091 invert the version story and find a policy risk
+
+## URGENT, NEW — U-06: every Messenger send may be violating Meta policy
+
+**Agent 090, finding 2.** `merge_human_agent_tag` sets `messaging_type=MESSAGE_TAG` and `tag=HUMAN_AGENT` on
+**every** send — inside the 24-hour window as well as outside it, and for messages originated by **bots,
+automations and campaigns** (`send_reply_job.rb:19-38`).
+
+Meta's position on the Human Agent tag: it requires **App Review and business verification**, it is for **human**
+support only, automated messages are **named as disallowed**, and *"use of Message Tags outside the approved use
+cases may result in restrictions on the Page."*
+
+Two consequences, and the second is why this is a documentation blocker and not only a product one:
+
+1. The product applies a policy-restricted tag indiscriminately, which is the kind of thing that gets a Page
+   restricted rather than erroring.
+2. **The obvious article — "turn on the human agent switch and you get 7 days" — would instruct a policy
+   violation.** No article may say that without the App Review, business-verification, automation and in-window
+   caveats. This is exactly the case Ruling R7 exists for: documentation does not describe a capability as
+   available when using it as described is against the provider's rules.
+
+**Related, from the same agent**: three of the four message tags this product could use were **retired on
+2026-04-27** (`CONFIRMED_EVENT_UPDATE`, `ACCOUNT_UPDATE`, `POST_PURCHASE_UPDATE`); requests now get error 100.
+`HUMAN_AGENT` is effectively the only tag left — which makes its misuse more consequential, not less.
+
+## U-02/U-03/U-04 AMENDED — the pins are not a pending risk, they are years dead
+
+**Agents 090 and 091 independently, and this corrects what I told the owner in Checkpoint 1.**
+
+I reported the expired Graph pins as a risk to act on. The mechanism I gave was right — Meta serves a retired
+version with *"the next oldest, usable version"* — but I framed the pins as *about to* cause trouble. They are
+not:
+
+| Pin | Expired | Reality today |
+|---|---|---|
+| Messenger send + page subscribe, **v3.2** | **2021-05-04** | served by v21.0; dead for five years |
+| Legacy Instagram send, **v11.0** | **2023-09-14** | served by v21.0; `INSTAGRAM_MESSENGER_API_VERSION` has been **cosmetic since 2023** |
+| `FACEBOOK_API_VERSION` seed **v18.0** | 2026-01-26 | fed to `FB.init` on both connect and reauthorize; Meta does **not** state the behaviour for an expired value, and the healthy v24.0 fallback in `utils.js:5` is unreachable because the server always supplies the expired one |
+
+The oldest usable version moved to **v21.0 nineteen days ago** (v20.0 expired 2026-09-24), and the next forced
+drift is **2027-01-21**.
+
+**Why this matters more, not less, than what I reported**: it is **silent substitution, not silent failure**.
+Agent 091 flags as a blocker that `docs/p7/07-graph-api-versions.md:79-82` and agent 041 both describe the
+consequence as *"messages silently failing to send"* — so **any monitor built on failed messages will never
+fire**. The behaviour changes under you without an error, on Meta's schedule.
+
+Agent 091 also refuted two things in this repository's own records:
+
+- `docs/p7/07-graph-api-versions.md:61-64` set its own condition for action as *"Evidence needed: a Meta
+  retirement notice naming v3.2 with a date."* **That notice has existed on Meta's version table since 2021** —
+  the condition was already met when the sentence was written, and `:160-162` ("a reason to probe production,
+  not to edit") is disproved by a published page, with no probe needed.
+- *"Meta resolves an unversioned call to the oldest available version"* (repeated by agents 041 and 042) is
+  **false**. Unversioned calls take the version from the App Dashboard's "Upgrade API Version" card — so the
+  version of all **11 Koala call sites is unknowable from this repository**, and only the owner can read it.
+
+## A dangerous class of staleness: true at a past version
+
+**Agent 091, finding 6**, and this is the kind that reads as correct. `Whatsapp::Templates::Operation` branches
+first on `error_subcode 2388024` at v24.0 — but Meta's error-codes page marks `error_subcode` *"Deprecated. Will
+not be returned in v16.0+ responses"* and says to branch on `code` and `details`. **Nothing reads `details`.**
+And the spec **fabricates the field**, stubbing a v24.0 response that carries it, so the test is
+self-confirming. The same claim is asserted as current fact in
+`docs/whatsapp-template-manager/01-meta-api-contract.md:64-65` and relied on by agents 040 and 053.
+
+Two more live mechanisms the code treats as current and Meta has retired: Instagram **`standby`** reads
+(Handover Protocol ended for Instagram 2025-10-23) and the Instagram **`share`** attachment (removed after
+2026-02-01; webhooks return only `ig_post` from 2026-04-27 — agent 024's "migrating" note is 169 days
+understated). The Facebook-side `share` and the Page `standby` subscription are **not** stale; 091 scoped that
+deliberately rather than generalising.
+
+Also: WhatsApp provider `default` is still selectable and speaks the **On-Premises-shaped `/v1` API**, which Meta
+sunset on 2025-10-23 — messages "will not be delivered" and registration returns 1005. Whether 360dialog still
+proxies `/v1` is not a question Meta's documentation answers.
+
+## Corrections to agents, by agents
+
+- **Agent 042's Instagram table is wrong, not merely incomplete.** Meta documents **three** configurations, not
+  two; messaging webhook fields are marked UNAVAILABLE under "Instagram API with Facebook Login for Business",
+  and what this product calls the "legacy" path is Meta's "Instagram Messaging via Messenger Platform". Agents
+  023 and 024 inherited the two-column framing. **Meta has not deprecated the Page path** — Facebook-Login-only
+  features shipped in April and June 2026, so "legacy" and "migrated" are Lynomia's words, not Meta's.
+- **Agent 003's permission-dependency gap is on the live path**, not only the dead branch: Meta states
+  `business_management` depends on `pages_read_engagement`, which `facebookScopes.js:1-8` omits.
+- **Agent 042's "each attachment is its own DM" is a product choice, not an API limit** — Instagram accepts up to
+  ten attachments per request since multi-image went GA on 2026-05-06.
+- **Agent 090's three deferred questions are settled as *not stated* by Meta**, which is itself the answer:
+  there is no documented code for a bad `appsecret_proof`; Meta explicitly declines to commit to one code for an
+  empty token (*"200, 190 or 104"*, endpoint-dependent); and for Instagram, `subscribed_fields` **must be a
+  comma-separated list, not an array** — which this product sends as a bracketed array and then swallows the
+  answer.
+- **Agent 091's own attack failed, and it reported that**: `instagram_basic` and `instagram_manage_messages` have
+  **no** Meta deprecation entry. They are dead code in this repository, not stale API guidance.
+
+## One stale caveat to discount
+
+Agent 090 noted that reports 021–025 did not exist when it ran and that it attacked 041, 042 and 003 instead.
+**Those five reports have since landed.** Its request that the rulings be given to 021–025 as constraints before
+they write is therefore moot for the writing, but it stands for the **audit**: 090's verification has not been
+run over 021–025, which is the same unchecked-set problem agent 088 raised about 028. Both go into the Phase 4
+re-verification pass rather than being treated as closed.

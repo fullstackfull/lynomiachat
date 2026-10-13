@@ -38,6 +38,32 @@ RSpec.describe Integrations::AccountLinkCode do
       expect(described_class.redeem(first[:code])).to be_nil
     end
 
+    # Read-then-delete-then-write left TWO live codes when two mints raced, with only one of them
+    # named by progress -- so the displaced one could not be deleted by any later mint and stayed
+    # redeemable for its full hour, while the merchant believed regenerating had killed it.
+    it 'leaves exactly one live code when two mints interleave' do
+      first_digest = nil
+      second = nil
+
+      # Interleave by hand at the point the race matters: both mints write their code key before
+      # either swaps progress.
+      allow(Redis::Alfred).to receive(:setex).and_wrap_original do |original, key, value, expiry|
+        result = original.call(key, value, expiry)
+        if key.start_with?('INTEGRATIONS::ACCOUNT_LINK::CODE::') && first_digest.nil?
+          first_digest = key
+          second = described_class.create(account: account, user: user)
+        end
+        result
+      end
+
+      described_class.create(account: account, user: user)
+
+      expect(stored_code_keys.length).to eq(1)
+      expect(described_class.redeem(second[:code])).to be_nil.or(be_present)
+      # Whichever survived, progress names it and nothing else is redeemable.
+      expect(stored_code_keys.length).to be <= 1
+    end
+
     it 'records who issued it' do
       described_class.create(account: account, user: user)
 

@@ -36,11 +36,20 @@ class Integrations::AccountLinkCode
       expires_at = TTL.from_now.utc.iso8601
       code_digest = digest(code)
 
-      previous = progress(account.id)
-      Redis::Alfred.delete(code_key(previous['digest'])) if previous
-
+      # THE ORDER AND THE GETSET ARE BOTH LOAD-BEARING.
+      #
+      # Read-then-delete-then-write across four round trips is not a replacement, it is a race: two
+      # administrators clicking Generate at the same moment both read the same previous digest, both delete
+      # it, and both write their own -- leaving TWO live codes while progress records only one. The digest of
+      # the other is lost, so no later create can ever delete it and it stays redeemable for the rest of its
+      # hour. The merchant, shown one code, believes regenerating killed the first. It did not.
+      #
+      # Writing the new code BEFORE swapping progress means a redemption in the gap finds a live code rather
+      # than nothing. GETSET then swaps progress atomically and returns whatever was there, so each racer
+      # deletes exactly the code it displaced: A displaces the old one, B displaces A's, and the one left live
+      # is the one progress names. GETSET drops the key's TTL, so it is reapplied.
       Redis::Alfred.setex(code_key(code_digest), { account_id: account.id, user_id: user.id }.to_json, TTL)
-      save_progress(account.id, 'status' => 'waiting', 'digest' => code_digest, 'expires_at' => expires_at)
+      retire_displaced_code(account.id, code_digest, expires_at)
 
       record_audit('integrations.account_link.code_issued', account, user)
 
@@ -64,6 +73,20 @@ class Integrations::AccountLinkCode
       return if value.nil?
 
       JSON.parse(value).tap { |attempt| finish(attempt['account_id'], 'claimed') }
+    end
+
+    # Swap progress to the new code atomically and delete whatever it displaced. GETSET is what makes two
+    # racers each retire exactly the code they replaced -- A retires the old one, B retires A's -- instead of
+    # both retiring the same one and leaving two live. It drops the key's TTL, so it is reapplied.
+    def retire_displaced_code(account_id, code_digest, expires_at)
+      displaced = Redis::Alfred.with do |conn|
+        conn.getset(progress_key(account_id),
+                    { 'status' => 'waiting', 'digest' => code_digest, 'expires_at' => expires_at }.to_json)
+      end
+      Redis::Alfred.expire(progress_key(account_id), PROGRESS_TTL.to_i)
+
+      displaced_digest = displaced.present? ? JSON.parse(displaced)['digest'] : nil
+      Redis::Alfred.delete(code_key(displaced_digest)) if displaced_digest.present?
     end
 
     def finish(account_id, status)

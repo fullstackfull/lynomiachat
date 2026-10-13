@@ -10,34 +10,94 @@ RSpec.describe 'Platform account links API', type: :request do
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:code) { Integrations::AccountLinkCode.create(account: account, user: admin)[:code] }
 
+  def service_user_email
+    digest = OpenSSL::HMAC.hexdigest(
+      'SHA256',
+      Rails.application.key_generator.generate_key('integrations_account_link_service_user'),
+      "#{platform_app.id}:#{account.id}"
+    )
+
+    "app-#{platform_app.id}-account-#{account.id}-#{digest[0, 16]}@platform-app.invalid"
+  end
+
   def granted?(resource)
     platform_app.platform_app_permissibles.exists?(permissible: resource)
   end
 
   describe 'POST /platform/api/v1/account_links' do
-    it 'grants the account and the authorizing user, and returns both' do
+    it 'grants the account and a service user, never the authorizing human' do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
 
       expect(response).to have_http_status(:created)
-      expect(response.parsed_body).to include(
-        'account_id' => account.id, 'account_name' => account.name,
-        'user_id' => admin.id, 'user_name' => admin.name
-      )
+      expect(response.parsed_body).to include('account_id' => account.id, 'account_name' => account.name)
+      expect(response.parsed_body['user_id']).not_to eq(admin.id)
+
+      service_user = User.find(response.parsed_body['user_id'])
       expect(granted?(account)).to be(true)
-      expect(granted?(admin)).to be(true)
+      expect(granted?(service_user)).to be(true)
+      expect(granted?(admin)).to be(false)
+      expect(service_user.custom_attributes['platform_app_id']).to eq(platform_app.id)
     end
 
-    it 'makes SSO possible for the authorizing user and nobody else' do
+    # THE REASON THE SERVICE USER EXISTS. generate_sso_link mints an UNSCOPED session for a human: granting
+    # the administrator's own identity would cash a proof about ONE account in for the ability to act as that
+    # person in every account they belong to.
+    it 'cannot reach an unrelated account the authorizing human also belongs to' do
+      elsewhere = create(:account)
+      elsewhere.account_users.create!(user: admin, role: :agent)
+
+      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+      service_user = User.find(response.parsed_body['user_id'])
+
+      expect(granted?(elsewhere)).to be(false)
+      # The service user is a member of the linked account and of nothing else.
+      expect(service_user.account_users.pluck(:account_id)).to eq([account.id])
+      # And the human whose session would have carried that reach is not grantable at all.
+      get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'makes SSO possible for the service user and for no other member' do
       other_admin = create(:user, account: account, role: :administrator)
 
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+      service_user = User.find(response.parsed_body['user_id'])
 
-      get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
+      get "/platform/api/v1/users/#{service_user.id}/login", headers: headers, as: :json
       expect(response).to have_http_status(:success)
 
-      # A second administrator of the same account did not authorize anything, so the app cannot become them.
       get "/platform/api/v1/users/#{other_admin.id}/login", headers: headers, as: :json
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    it 'reuses one service user across re-links rather than accumulating members' do
+      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+      first = response.parsed_body['user_id']
+
+      second_code = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
+      expect do
+        post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
+      end.not_to change(User, :count)
+
+      expect(response.parsed_body['user_id']).to eq(first)
+    end
+
+    # Resolving a user by address is the documented takeover primitive, so an address that already exists and
+    # is not ours must be refused rather than adopted. Unguessable in practice (HMAC under the installation
+    # secret); this proves the second line of defence rather than relying on that.
+    it 'refuses to adopt a pre-existing user at the service address' do
+      digest = OpenSSL::HMAC.hexdigest(
+        'SHA256',
+        Rails.application.key_generator.generate_key('integrations_account_link_service_user'),
+        "#{platform_app.id}:#{account.id}"
+      )
+      squatter = create(:user, email: "app-#{platform_app.id}-account-#{account.id}-#{digest[0, 16]}@platform-app.invalid")
+
+      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(granted?(account)).to be(false)
+      expect(granted?(squatter)).to be(false)
     end
 
     it 'refuses an unauthenticated caller before touching the code' do
@@ -118,8 +178,11 @@ RSpec.describe 'Platform account links API', type: :request do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
 
       log = Custom::AuditLog.where(associated: account, comment: 'integrations.account_link.granted').sole
+      # The actor is the human who decided; the service user is what can actually sign in. Both, separately.
       expect(log.user_id).to eq(admin.id)
       expect(log.audited_changes['platform_app_id']).to eq(platform_app.id)
+      expect(log.audited_changes['authorized_by_user_id']).to eq(admin.id)
+      expect(log.audited_changes['service_user_id']).not_to eq(admin.id)
     end
 
     it 'does not let one app redeem and then another reuse the same code' do
@@ -193,13 +256,15 @@ RSpec.describe 'Platform account links API', type: :request do
     before { post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json }
 
     it 'hands back every grant on the account, so SSO stops working' do
+      service_user = User.find_by!(email: service_user_email)
+
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
 
       expect(response).to have_http_status(:success)
       expect(granted?(account)).to be(false)
-      expect(granted?(admin)).to be(false)
+      expect(granted?(service_user)).to be(false)
 
-      get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
+      get "/platform/api/v1/users/#{service_user.id}/login", headers: headers, as: :json
       expect(response).to have_http_status(:unauthorized)
     end
 
@@ -224,27 +289,29 @@ RSpec.describe 'Platform account links API', type: :request do
     end
 
     it 'kills an SSO link already minted but not yet redeemed' do
-      get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
+      service_user = User.find_by!(email: service_user_email)
+
+      get "/platform/api/v1/users/#{service_user.id}/login", headers: headers, as: :json
       token = CGI.parse(URI.parse(response.parsed_body['url']).query)['sso_auth_token'].first
-      expect(admin.reload.valid_sso_auth_token?(token)).to be(true)
+      expect(service_user.reload.valid_sso_auth_token?(token)).to be(true)
 
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
 
       # Without this the grant is gone but the five-minute link in somebody's address bar still works.
-      expect(admin.reload.valid_sso_auth_token?(token)).to be(false)
+      expect(service_user.reload.valid_sso_auth_token?(token)).to be(false)
     end
 
-    it 'leaves a shared user reachable for another account the app still holds' do
+    it 'leaves another linked account untouched' do
       second_account = create(:account)
       second_account.account_users.create!(user: admin, role: :administrator)
       second_code = Integrations::AccountLinkCode.create(account: second_account, user: admin)[:code]
       post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
+      second_service_user = User.find(response.parsed_body['user_id'])
 
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
 
       expect(granted?(second_account)).to be(true)
-      # The user grant is shared between the two links; revoking one must not strand the other.
-      get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
+      get "/platform/api/v1/users/#{second_service_user.id}/login", headers: headers, as: :json
       expect(response).to have_http_status(:success)
     end
   end

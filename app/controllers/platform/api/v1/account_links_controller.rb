@@ -19,9 +19,27 @@
 # demoted or removed inside an hour, and a bearer token minted before a dismissal must not survive it.
 #
 # TWO GRANTS, AND BOTH ARE NEEDED. The Account grant is what lets the app read and manage the workspace. The
-# User grant is what lets it mint an SSO link, because /users/:id/login is permissible-checked on the USER. The
-# user granted is the administrator who authorized it and nobody else: the app cannot choose, cannot name a
-# different user, and cannot widen the grant afterwards.
+# User grant is what lets it mint an SSO link, because /users/:id/login is permissible-checked on the USER.
+#
+# THE USER GRANTED IS A SERVICE USER, NOT THE PERSON WHO AUTHORIZED IT, AND THAT IS THE WHOLE REASON THIS
+# METHOD HAS A find_or_create_service_user! IN IT. generate_sso_link mints an unscoped Devise session for a
+# human (app/models/concerns/sso_authenticatable.rb -- /app/login?email=...&sso_auth_token=..., with no account
+# in it). Granting the administrator's own identity therefore cashes a proof about ONE account in for the
+# ability to act as that person in EVERY account they belong to. Measured, not reasoned: with a grant on a
+# human who administers account L and is an agent of unrelated account S, the redeemed session read
+# /api/v1/accounts/S/conversations and /api/v1/accounts/S/contacts successfully. Account S consented to
+# nothing and the app holds no grant on it.
+#
+# So the administrator's consent is recorded and their identity is left alone. The grant goes to a user that
+# exists only for this (app, account) pair, is a member of that account and nothing else, and is the same
+# shape the provisioning flow already uses. It appears in the merchant's team list under its own name, which
+# is the honest version of what is happening: an integration has access, not a colleague.
+#
+# THE SERVICE ADDRESS CANNOT BE PRE-REGISTERED, which matters because resolving a user by address is the
+# documented takeover primitive. The local part is an HMAC under this installation's secret, so it cannot be
+# guessed; and if an address somehow does already exist, a user without this app's marker in its
+# custom_attributes is REFUSED rather than adopted -- custom_attributes is only writable through the platform
+# API, so a self-registered account can never carry it.
 #
 # `create` is NOT behind validate_platform_app_permissible. That is deliberate and it is the only route in this
 # namespace where its absence is a decision rather than an inherited default -- an app cannot hold a permissible
@@ -38,15 +56,18 @@ class Platform::Api::V1::AccountLinksController < PlatformController
     # into an oracle for whether a given string was ever a real code.
     return render_invalid('Invalid or expired code') if attempt.blank?
 
-    account, user = resolve_authorizer(attempt)
+    account, authorizer = resolve_authorizer(attempt)
     return render_invalid('The code is no longer valid for this account') if account.nil?
 
-    grant(account, user)
-    record_grant(account, user)
+    service_user = find_or_create_service_user!(account)
+    return render_invalid('This workspace cannot be connected automatically') if service_user.nil?
+
+    grant(account, service_user)
+    record_grant(account, authorizer, service_user)
 
     render json: {
       account_id: account.id, account_name: account.name,
-      user_id: user.id, user_name: user.name
+      user_id: service_user.id, user_name: service_user.name
     }, status: :created
   end
 
@@ -113,12 +134,68 @@ class Platform::Api::V1::AccountLinksController < PlatformController
     render json: { error: message }, status: :unprocessable_entity
   end
 
-  def record_grant(account, user)
+  # The actor on the audit row is the human who authorized it -- they are the one who made the decision, even
+  # though the grant went to the service user. Both ids are recorded so the row answers "who agreed" and "what
+  # can now sign in" separately.
+  def record_grant(account, authorizer, service_user)
     ::Integrations::AccountLinkCode.finish(account.id, 'connected')
     ::Integrations::AccountLinkCode.record_audit(
-      'integrations.account_link.granted', account, user,
-      { platform_app_id: @platform_app.id, platform_app_name: @platform_app.name, user_id: user.id }
+      'integrations.account_link.granted', account, authorizer,
+      {
+        platform_app_id: @platform_app.id, platform_app_name: @platform_app.name,
+        authorized_by_user_id: authorizer.id, service_user_id: service_user.id
+      }
     )
+  end
+
+  # The user this app signs in as for this account. One per (app, account), created on first link and reused
+  # afterwards, so re-linking does not accumulate members.
+  def find_or_create_service_user!(account)
+    email = service_email(account)
+    existing = User.from_email(email)
+
+    if existing
+      # An address that already exists and is not ours is not something to adopt. Only the platform API can
+      # write custom_attributes, so a self-registered user can never carry this marker.
+      return nil unless existing.custom_attributes.is_a?(Hash) &&
+                        existing.custom_attributes['platform_app_id'] == @platform_app.id
+
+      user = existing
+    else
+      user = User.new(
+        name: "#{@platform_app.name.presence || "App ##{@platform_app.id}"} Integration",
+        email: email,
+        # Never used and never stored: this user signs in only through a one-time SSO link.
+        # It exists because Devise requires one, and it must satisfy the installation's
+        # complexity policy (upper, lower, digit, symbol) or save! fails validation.
+        password: service_user_password,
+        custom_attributes: { 'platform_app_id' => @platform_app.id, 'linked_account_id' => account.id }
+      )
+      user.skip_confirmation!
+      user.save!
+    end
+
+    # A member of THIS account and no other, which is the scope the merchant actually consented to.
+    membership = account.account_users.find_or_initialize_by(user_id: user.id)
+    membership.update!(role: :administrator)
+
+    user
+  end
+
+  def service_user_password
+    "#{SecureRandom.alphanumeric(32)}aZ9!"
+  end
+
+  # Unguessable: an attacker who could predict this address could pre-register it and be adopted. Derived from
+  # the installation secret, so it is stable across restarts and different on every installation.
+  def service_email(account)
+    digest = OpenSSL::HMAC.hexdigest(
+      'SHA256',
+      Rails.application.key_generator.generate_key('integrations_account_link_service_user'),
+      "#{@platform_app.id}:#{account.id}"
+    )
+
+    "app-#{@platform_app.id}-account-#{account.id}-#{digest[0, 16]}@platform-app.invalid"
   end
 
   # There is no "all tokens for this user" accessor -- SsoAuthenticatable#invalidate_sso_auth_token takes one
@@ -128,13 +205,34 @@ class Platform::Api::V1::AccountLinksController < PlatformController
     Redis::Alfred.scan_each(match: "USER_SSO_AUTH_TOKEN::#{user.id}::*") { |key| Redis::Alfred.delete(key) }
   end
 
-  # find_or_create_by, so re-redeeming after a lost answer lands in the same place rather than raising on the
-  # unique index. Both rows or neither: a half-granted link would read as connected while SSO failed.
+  # Both rows or neither: a half-granted link would read as connected while SSO failed.
   def grant(account, user)
     ActiveRecord::Base.transaction do
-      @platform_app.platform_app_permissibles.find_or_create_by!(permissible: account)
-      @platform_app.platform_app_permissibles.find_or_create_by!(permissible: user)
+      grant_one(account)
+      grant_one(user)
     end
+  end
+
+  # THE RESCUE IS THE CONCURRENT CASE, AND IT IS THE ONLY WAY TO COVER BOTH.
+  #
+  # Sequentially, find_or_create_by's SELECT finds the existing row and nothing is inserted -- which is what
+  # makes a re-redemption after a lost answer a no-op. Concurrently, that SELECT cannot see an uncommitted
+  # insert from the other request, so both decide to create and the loser hits unique_permissibles_index.
+  # PlatformController rescues RecordInvalid but NOT RecordNotUnique, so without this that is a 500 on a code
+  # redeem has already burned: nothing useful to show the merchant and nothing to retry with.
+  #
+  # create_or_find_by is the obvious alternative and is wrong here: PlatformAppPermissible ALSO declares a
+  # model-level uniqueness validation, which fires on the insert-first path and raises RecordInvalid before
+  # the database is ever consulted -- a plain 422 on an ordinary second link. Measured, not guessed.
+  #
+  # The inner savepoint is not decoration either: on Postgres a failed statement poisons the surrounding
+  # transaction until it is rolled back, so the rescue would have nothing usable to re-read with.
+  def grant_one(resource)
+    ActiveRecord::Base.transaction(requires_new: true) do
+      @platform_app.platform_app_permissibles.find_or_create_by!(permissible: resource)
+    end
+  rescue ActiveRecord::RecordNotUnique
+    @platform_app.platform_app_permissibles.find_by!(permissible: resource)
   end
 
   def set_resource

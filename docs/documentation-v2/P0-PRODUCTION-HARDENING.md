@@ -5,8 +5,10 @@ Phase: an isolated hotfix phase interrupting Documentation V2 between Checkpoint
 production data touched, no Meta configuration changed, Account 21 untouched, no message sent through any real
 provider.
 
-Verdict: **HOTFIX-GO for P0-1, P0-2 and P0-3** (section L, which comes last because section M — the adversarial review the gate required — has to be read before the verdict it supports). **P0-5 is a separate, dated emergency** that this
-phase deliberately did not fix in code and that the owner has to act on within days, not weeks.
+Verdict: **HOTFIX-GO for P0-1, P0-2 and P0-3** (section L, which comes last because section M — the adversarial
+review the gate required — has to be read before the verdict it supports). **P0-5 is closed as a deprecation
+risk by owner verification** and carries one remaining confirmation step; see section I, which supersedes the
+"dated emergency" framing an earlier revision of this document carried.
 
 | Item | Status | Outcome |
 |---|---|---|
@@ -14,7 +16,7 @@ phase deliberately did not fix in code and that the owner has to act on within d
 | P0-2 cross-tenant documentation publication | **Closed, with three real holes found and fixed** | `cf9fdc6c`, `7c73a92b`, and the category-to-portal boundaries — the write *policy* was already closed; draft bodies leaked through global search, a draft oracle through the public pixel, and nothing tied an article's category to its portal (§E, §M4) |
 | P0-3 Messenger HUMAN_AGENT tag | **Confirmed invalid, fixed** | `6358087a` — one eligibility rule for Messenger and both Instagram generations |
 | P0-4 Graph API version pins | **Inventory only, no version changed** | Section H — 5 buckets, 1 critical: Messenger sends on **v3.2** from a vendored gem |
-| P0-5 Embedded Signup | **Code read-only. Owner action required by 2026-10-15** | Section I — the repository is on Embedded Signup **v2**, which Meta deprecates in two days |
+| P0-5 Embedded Signup | **No migration. Owner-verified v4; code unchanged** | Section I — the owner inspected the Meta App Dashboard and reports the active configuration as **Embedded Signup v4, Session Info Version 3**, so the 2026-10-15 v2 deprecation does not apply. One confirmation remains: that the configuration ID the production flow uses is the one inspected |
 
 ---
 
@@ -430,10 +432,47 @@ reads of Meta's own implementation page returned **different** "latest" numbers 
 through a search index), so the exact latest value is **unverified** and must be read off the page at migration
 time rather than copied from this document.
 
-## I. Embedded Signup — OWNER CHECK
+## I. Embedded Signup — OWNER-VERIFIED, NO MIGRATION
 
-**This is not a "verify, then plan" item. It is dated, and the date is 2026-10-15 — two days after this
-document.** The code is read-only as instructed; nothing was changed and no Meta configuration was touched.
+### I.0 Owner verification, 2026-10-13 — this supersedes the rest of this section
+
+The owner inspected the Meta App Dashboard by hand and reports the active Embedded Signup configuration as:
+
+| Field, as shown in the dashboard | Value |
+|---|---|
+| Embedded Signup Version | **v4** |
+| Session Info Version | **3** |
+
+**Owner decision: do not migrate, and do not modify the Meta Embedded Signup configuration for the 2026-10-15
+v2 deprecation.** The deprecation does not apply to a v4 configuration, and the owner states the repository's
+`sessionInfoVersion: '3'` is consistent with what the dashboard shows.
+
+This is recorded as the owner's own finding. It is not something this phase could check: the dashboard is not
+visible from here, and the production rules forbid touching real Meta configuration — so the dashboard is the
+authoritative source for the configuration's version and the analysis below is not.
+
+**What this corrects in my own earlier conclusion.** §I.1 below inferred "the repository is on Embedded Signup
+v2" from Meta's versions page, which tabulates `sessionInfoVersion` under v2's extras and says v4's extras are
+"purposely empty". That inference reasoned from the **extras shape in the code** to the **version of the
+configuration**, and the configuration is the thing the owner can see and I cannot. The inference is withdrawn
+as a statement about this installation. The evidence it rested on is left in place below, unedited, because it
+is still the accurate record of what Meta's page says — and because the one question it raises is worth
+confirming cheaply rather than assuming either way (§I.2).
+
+**Still open, and the only thing still owed on P0-5** — the owner's own condition for closing it:
+
+> "Still verify that the configuration ID used by the production Lynomia flow is the same configuration shown
+> here before closing the finding completely."
+
+See §I.3 for the exact read-only steps. Nothing in this phase changed any Meta configuration, and nothing in
+this phase changed the embedded signup code.
+
+### I.1 The analysis as it stood before the owner's verification
+
+*Kept verbatim as the record of what Meta's documentation says. Its conclusion about this installation's
+version is withdrawn by §I.0.*
+
+The code is read-only as instructed; nothing was changed and no Meta configuration was touched.
 
 **What the repository sends** (`app/javascript/dashboard/routes/dashboard/settings/inbox/channels/whatsapp/utils.js:119-143`):
 
@@ -464,38 +503,83 @@ WhatsApp Business Platform, checked 2026-10-13, normative):
   set you to v4" in the Facebook Login for Business configuration.
 - The implementation page adds: "Migrate your integration to v4 before that date to avoid disruption."
 
-**Therefore the repository is on Embedded Signup v2, not v3.** `sessionInfoVersion: '3'` reads like "version 3"
-and is not: it is the v2 session-info payload version, and the absence of a `version` key rules out v3 and
-v4-public-preview. That naming is almost certainly why this was recorded as a v2-or-v4 open question in
-discovery rather than as a dated break.
+*(The conclusion this analysis originally drew — that the repository was therefore on v2 and faced a dated
+break — is withdrawn by §I.0. `sessionInfoVersion: '3'` does read like "version 3" and is not the same field as
+the `version` key; what it does **not** establish, which the original text claimed it did, is the version of
+the owner's configuration.)*
 
-**The owner check — and it is now narrower than the brief assumed, because the version does not come from the
-dashboard.**
+### I.2 What stays true after the verification, and the one thing worth watching
 
-1. **Where to look:** Meta App Dashboard → the app whose ID is `WHATSAPP_APP_ID` → **Facebook Login for
-   Business → Configurations** → the configuration whose ID is the stored `WHATSAPP_CONFIGURATION_ID`
-   (Super Admin → Settings → WhatsApp shows the stored value; do not change it).
-2. **Exactly what to report:** (a) the configuration's name and ID; (b) which **products** are selected on it —
-   this is the field that auto-sets v4; (c) which **assets and permissions** it requests; (d) whether the
-   dashboard shows any deprecation or migration banner against it.
-3. **What code path is affected:** `useWhatsappEmbeddedSignup.js` → `initWhatsAppEmbeddedSignup` → the `extras`
-   object above. Everything downstream — `classifySignupEvent`, `createMessageHandler`,
-   `isValidBusinessData` — is **already v4-aware**: it handles `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING`, the
-   v4 `ERROR` spelling versus v3's `error`, a `CANCEL` carrying an `error_message`, and the three terminal
-   events `FINISH_ONLY_WABA`, `FINISH_OBO_MIGRATION`, `FINISH_GRANT_ONLY_API_ACCESS`. So the event handling is
-   ready and only the extras object is not.
-4. **What must change for v4**, per the official-source register: empty the extras object
-   (`extras: {}` — "purposely empty for v4"), which drops `sessionInfoVersion` and `featureType`; and the owner
-   selects the products on the configuration, which is what sets v4. Because `featureType:
-   'whatsapp_business_app_onboarding'` is what currently forces the **coexistence** flow — whose finish event
-   carries only `waba_id`, which is why `resolveIfReady` sends `phone_number_id: ''` — dropping it changes
-   which finish event arrives and which identifiers come with it. That is the one part of the migration that
-   needs a real signup run, not a code review.
-5. **Do not mutate real Meta configuration.** Nothing in this phase did.
+**The event handling is already v4-aware, which is why no code change is needed.** `classifySignupEvent`,
+`createMessageHandler` and `isValidBusinessData` handle `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING`, the v4
+`ERROR` spelling as well as the older lower-case `error`, a `CANCEL` carrying an `error_message`, and the three
+terminal events `FINISH_ONLY_WABA`, `FINISH_OBO_MIGRATION` and `FINISH_GRANT_ONLY_API_ACCESS`
+(`channels/whatsapp/utils.js:44-95`). Whatever shape the configuration sends back, the handler has a branch for
+it, and the `UNSUPPORTED` branch settles the promise rather than leaving the caller hanging.
 
-**Risk if nothing is done:** on 2026-10-15 the WhatsApp embedded signup flow — the only way a tenant connects a
-WhatsApp number — may stop completing. This belongs at the top of the next phase regardless of what Phase 2 was
-going to contain.
+**`featureType: 'whatsapp_business_app_onboarding'` selects the coexistence flow**, whose finish event carries
+only `waba_id`, which is why `resolveIfReady` sends `phone_number_id: ''` (`useWhatsappEmbeddedSignup.js:52-56`,
+`utils.js:35-38`). That is deliberate and documented in the code, not a defect — but it is the behaviour most
+sensitive to a version difference, so it is the thing to observe on the next real signup rather than to change
+speculatively.
+
+**One documentation nuance, recorded and not acted on.** Meta's versions page states "The Embedded Signup
+version is determined inside of the **extras object** of the implementation code", while also stating that
+selecting products on the Facebook Login for Business configuration "will automatically set you to v4". Those
+two sentences can both hold if the configuration and the extras object each contribute, and the dashboard's
+separate "Session Info Version: 3" field suggests the session-info version is a setting in its own right rather
+than a v2 marker. **No change is warranted on that basis** — the owner has verified the live configuration and
+decided. It is listed here only so that, if a future signup ever returns an unexpected payload shape, the first
+place to look is written down.
+
+**Cheap confirmation at zero risk:** the next time a tenant connects a WhatsApp number, watch the browser
+console for the `WA_EMBEDDED_SIGNUP` message and note the `event` name and which of `waba_id`,
+`phone_number_id` and `business_id` arrive. A `FINISH` or `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` that
+produces a working inbox is the end of the question. No test signup needs to be manufactured for this.
+
+### I.3 The remaining confirmation: does the production flow use the configuration that was inspected?
+
+The owner's condition for closing the finding. Both halves are read-only.
+
+**The value the flow uses, and it drives three surfaces rather than one.**
+`WHATSAPP_CONFIGURATION_ID` is an installation-level config (`config/installation_config.yml:175`), published
+to the browser by `dashboard_controller.rb:87`
+(`WHATSAPP_CONFIGURATION_ID: GlobalConfigService.load('WHATSAPP_CONFIGURATION_ID', '')`) and rendered as
+`whatsappConfigurationId` at `app/views/layouts/vueapp.html.erb:46`. Note the contrast with K14: the
+configuration **ID** is published to the browser; the API **version** beside it is not.
+
+Three consumers read it, so a wrong ID would break more than new signups:
+
+| Consumer | file:line | What breaks if the ID is wrong |
+|---|---|---|
+| New WhatsApp signup | `useWhatsappEmbeddedSignup.js:100` → `utils.js:119-131`, as `FB.login`'s `config_id` | a tenant cannot connect a number |
+| **WhatsApp reauthorize** | `channels/whatsapp/Reauthorize.vue:33-34`, guarded at `:210` and `:285` | an existing inbox cannot be re-authorised |
+| Onboarding channel detection | `onboarding/inbox-setup/useChannelConfig.js:28`, which treats mere presence as "WhatsApp is configured" | WhatsApp is offered in onboarding while signup fails |
+
+An exhaustive search for every form of the name — `WHATSAPP_CONFIGURATION_ID`, `whatsappConfigurationId`,
+`whatsapp_configuration_id`, `configuration_id` — across `app`, `lib`, `custom` and `config` returns only the
+rows above plus two spec fixtures. **There is no per-account, per-inbox or per-channel override**, so the whole
+installation uses exactly one configuration ID and there is exactly one value to compare.
+
+**How to read it without changing anything:**
+
+- In a browser, as super admin: **Super Admin → Settings → WhatsApp**, which displays the stored value
+  (`app/controllers/super_admin/app_configs_controller.rb:76` groups it under `whatsapp_embedded`). Read it;
+  do not save the form.
+- On the production server, read-only:
+  `RAILS_ENV=production bundle exec rails runner "puts InstallationConfig.find_by(name: 'WHATSAPP_CONFIGURATION_ID')&.value"`
+  This prints and returns; it writes nothing.
+
+**Then compare** that string against the ID of the configuration whose version was inspected, in Meta App
+Dashboard → the app whose ID is `WHATSAPP_APP_ID` → Facebook Login for Business → Configurations. If they
+match, P0-5 is closed completely. If they differ, the version that was verified belongs to a configuration the
+product does not use, and the version question reopens against whichever configuration the printed ID names.
+
+**Also worth comparing while in the same screen**, because it is the same flow and costs nothing: the app ID
+the dashboard shows against the stored `WHATSAPP_APP_ID`. A configuration inspected under a different app would
+be the same class of mismatch.
+
+**Do not mutate real Meta configuration.** Nothing in this phase did, and nothing above asks the owner to.
 
 ## J. Tests, with exact exit codes
 
@@ -545,7 +629,7 @@ Classified by severity, not fixed in this phase, each with the reason.
 
 | # | Finding | Severity | Why not here |
 |---|---|---|---|
-| K1 | **Embedded Signup v2 deprecation, 2026-10-15** | **Critical, dated** | Section I. Code kept read-only as instructed; needs the owner's configuration answer plus one real signup run |
+| K1 | Embedded Signup version | **Closed by owner verification** | §I.0 — the owner inspected the dashboard and reports v4 / Session Info Version 3, so the v2 deprecation does not apply and no migration is to be done. One read-only confirmation remains (§I.3): that the production configuration ID is the one inspected |
 | K2 | **Messenger sends on Graph v3.2** from a vendored gem | **High** | Section H bucket 1. Cannot be moved from the repository; needs an owner decision about the gem |
 | K3 | **Instagram-via-Messenger sends on v11.0** | Medium-high | Section H bucket 2. Needs a real IG DM UAT |
 | K4 | Contact export URL is a permanent unauthenticated ActiveStorage link | **High** | A separate product finding. `urls_expire_in` is never set, so a signed blob URL never expires. Needs reproduction and its own fix; the brief said to classify it separately and bring it back |
@@ -680,9 +764,13 @@ configuration or a deployment.
 
 **Two things this GO does not cover, and both are the owner's.**
 
-1. **P0-5 is a HOTFIX-NO-GO by instruction and a live deadline by evidence.** The repository is on Embedded
-   Signup v2 and Meta deprecates it on **2026-10-15**. Section I has the exact check and the exact one-line
-   code change. This should be the next thing worked on, ahead of Phase 2.
+1. **P0-5 needed no code change, and the owner has verified why.** The dashboard shows a v4 configuration with
+   Session Info Version 3, so the 2026-10-15 v2 deprecation does not apply and the owner has decided against
+   migrating. The embedded signup code is untouched. One read-only confirmation remains before the finding is
+   closed completely — that the production `WHATSAPP_CONFIGURATION_ID` names the configuration that was
+   inspected (§I.3) — and it needs no deploy, no test signup and no Meta change. My earlier framing of this as
+   a dated emergency rested on inferring the configuration's version from the extras shape in the code; the
+   dashboard is authoritative and I could not see it.
 2. **P0-4 changed no version, as instructed**, because no repository evidence plus existing test proves any
    single move safe. The Messenger send path on Graph v3.2 is recorded as a controlled-provider upgrade with
    its own gate.

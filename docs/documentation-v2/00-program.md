@@ -107,6 +107,20 @@ Two further contracts frozen by the same hotfix:
 
 Full reasoning, reproduction and test exit codes: `docs/documentation-v2/P0-PRODUCTION-HARDENING.md` §E, §F.
 
+### 2.2 Provider findings the P0 hotfix settled, recorded so they are not re-opened from memory
+
+- **WhatsApp Embedded Signup is on v4 and is not to be migrated.** The owner inspected the Meta App Dashboard
+  on 2026-10-13 and reports the active configuration as Embedded Signup **v4**, Session Info Version **3**, so
+  the 2026-10-15 v2 deprecation does not apply. The embedded signup code is unchanged and no Meta configuration
+  was touched. An earlier revision of the P0 report inferred "v2" from the `sessionInfoVersion: '3'` value in
+  the code's `extras` object; that inference reasoned from the code to the configuration and is withdrawn —
+  the dashboard is authoritative. One read-only confirmation remains open: that the production
+  `WHATSAPP_CONFIGURATION_ID` names the configuration that was inspected
+  (`P0-PRODUCTION-HARDENING.md` §I.3). **Do not re-raise the v2 deprecation against this installation.**
+- **The Messenger send path talks Graph v3.2**, pinned inside `facebook-messenger` 2.0.1 with no override
+  point, and Instagram-via-Messenger talks v11.0. Both are recorded as controlled-provider upgrades with their
+  own UAT gates (`P0-PRODUCTION-HARDENING.md` §H); no version was changed in the hotfix.
+
 ## 3. Production rules — absolute, for every agent
 
 - **DO NOT deploy.**

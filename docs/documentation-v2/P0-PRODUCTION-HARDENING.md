@@ -545,8 +545,11 @@ The owner's condition for closing the finding. Both halves are read-only.
 `WHATSAPP_CONFIGURATION_ID` is an installation-level config (`config/installation_config.yml:175`), published
 to the browser by `dashboard_controller.rb:87`
 (`WHATSAPP_CONFIGURATION_ID: GlobalConfigService.load('WHATSAPP_CONFIGURATION_ID', '')`) and rendered as
-`whatsappConfigurationId` at `app/views/layouts/vueapp.html.erb:46`. Note the contrast with K14: the
-configuration **ID** is published to the browser; the API **version** beside it is not.
+`whatsappConfigurationId` at `app/views/layouts/vueapp.html.erb:46`.
+
+> **The sentence that stood here was false and is withdrawn.** It said "the configuration **ID** is published
+> to the browser; the API **version** beside it is not." The version is published, on the very next line —
+> `whatsappApiVersion` at `app/views/layouts/vueapp.html.erb:47`. See the K14 withdrawal in §K.
 
 Three consumers read it, so a wrong ID would break more than new signups:
 
@@ -580,6 +583,56 @@ the dashboard shows against the stored `WHATSAPP_APP_ID`. A configuration inspec
 be the same class of mismatch.
 
 **Do not mutate real Meta configuration.** Nothing in this phase did, and nothing above asks the owner to.
+
+## I.4 PRODUCTION VERIFIED — P0 closed, and one of my findings was false
+
+The owner ran the two read-only checks from `P0-POST-DEPLOY-OWNER-CHECKS.md` on production after deploying the
+hotfix. Both answer their question completely, and the second one falsified K14.
+
+| Check | Production value | Disposition |
+|---|---|---|
+| `Article.cross_portal_category.count` | **0** | **K17 CLOSED.** No legacy cross-portal row exists, so no data cleanup is required and the read-side guards never had a row to catch. They stay as the standing enforcement of a rule the write side now also refuses |
+| `WHATSAPP_CONFIGURATION_ID` | **1069406915681447** | **K1 CLOSED.** Exactly the configuration the owner inspected in the Meta dashboard — Embedded Signup **v4**, Session Info Version **3**. The v2 deprecation does not apply, the repository's `sessionInfoVersion: '3'` is consistent with it, and no Meta configuration is to be changed |
+| `WHATSAPP_API_VERSION` | **v22.0** | Owner's instruction: treat separately under the Graph API inventory, and **do not change it** merely because Embedded Signup is on v4. Recorded in §H.1 below. It also **withdraws K14** |
+
+### H.1 The Graph version this installation actually talks, and the K14 withdrawal
+
+**K14 claimed `WHATSAPP_API_VERSION` is never published to the browser, so the documented override is dead and
+the `v24.0` literal always wins. Both halves are false**, and the production value is what exposed it. Verified
+by reading the chain rather than inferring it:
+
+| Step | file:line | What it does |
+|---|---|---|
+| Published to the browser | `app/views/layouts/vueapp.html.erb:47` | `whatsappApiVersion: '<%= @global_config['WHATSAPP_API_VERSION'] %>'` — the line directly below the configuration id |
+| Read by the signup composable | `useWhatsappEmbeddedSignup.js:120` | passes `window.chatwootConfig?.whatsappApiVersion` into `setupFacebookSdk` |
+| Used as the SDK version | `channels/whatsapp/utils.js:147-148` → `:15-16` | `const version = apiVersion \|\| DEFAULT_FACEBOOK_SDK_VERSION` → `FB.init({ version })` |
+| The literal's real role | `channels/whatsapp/utils.js:5` | `v24.0` is the **fallback when the server supplies nothing**, not an override that always wins |
+| Reauthorize reads the same value | `channels/whatsapp/Reauthorize.vue:293` | so both Meta SDK entry points agree |
+
+So on production the embedded-signup SDK initialises at **v22.0**, not `v24.0`.
+
+**And server and browser agree, which is the point worth recording.** Eleven server-side call sites read the
+same key through `GlobalConfigService.load('WHATSAPP_API_VERSION', Whatsapp::FacebookApiClient::DEFAULT_API_VERSION)`
+— `facebook_api_client.rb:13`, `providers/whatsapp_cloud_service.rb:124`,
+`providers/whatsapp_cloud_contact_info_request_service.rb:29`, `media_upload_service.rb:62`,
+`health_service.rb:47`, `business_management_token_validation_service.rb:24,30`, `csat_template_service.rb:129`
+and `custom/app/services/whatsapp/diagnosis/meta_checks.rb:75`. One configured value drives the whole WhatsApp
+surface, browser and server, which is exactly what the comment at `utils.js:4` intends ("Kept equal to
+`Whatsapp::FacebookApiClient::DEFAULT_API_VERSION` so the SDK and the server never disagree"). **There is no
+split-version condition on production.** v22.0 is a current, in-window Graph version.
+
+Left open, and explicitly not acted on per the owner: production's **v22.0** differs from the repository
+default **v24.0** (`config/installation_config.yml:190-194`), so an operator set it deliberately or it predates
+the default. That belongs with §H buckets 1-3 as a controlled provider-version decision, not a hotfix. The
+genuinely expired pins in those buckets — Messenger send on **v3.2** in a vendored gem (K2), Instagram-via-
+Messenger on **v11.0** (K3), three unversioned callers (K7) — are untouched and unaffected by this reading.
+
+**Why this one matters beyond the row.** K14 was asserted from a search that found the configuration id in
+`vueapp.html.erb` and stopped. The version is on the next line. That is the fifth claim in this program
+falsified after being written down with confidence, and the first falsified by production data rather than by a
+critic. The §N.8 rule — a sweep meant to prove a negative runs with no exclusion filter and every hit is
+classified by hand — now has a companion: **a claim that something is absent is not established by a search
+that found something else nearby.**
 
 ## J. Tests, with exact exit codes
 
@@ -630,7 +683,7 @@ Classified by severity, not fixed in this phase, each with the reason.
 
 | # | Finding | Severity | Why not here |
 |---|---|---|---|
-| K1 | Embedded Signup version | **Closed by owner verification** | §I.0 — the owner inspected the dashboard and reports v4 / Session Info Version 3, so the v2 deprecation does not apply and no migration is to be done. One read-only confirmation remains (§I.3): that the production configuration ID is the one inspected |
+| K1 | Embedded Signup version | **CLOSED — both halves verified** | The owner inspected the Meta dashboard (v4, Session Info Version 3, so the v2 deprecation does not apply) and then ran the §I.3 read-only check on production: `WHATSAPP_CONFIGURATION_ID => 1069406915681447`, which is that same configuration. The repository's `sessionInfoVersion: '3'` is consistent with it. Nothing to migrate, nothing to change |
 | K2 | **Messenger sends on Graph v3.2** from a vendored gem | **High** | Section H bucket 1. Cannot be moved from the repository; needs an owner decision about the gem |
 | K3 | **Instagram-via-Messenger sends on v11.0** | Medium-high | Section H bucket 2. Needs a real IG DM UAT |
 | K4 | Contact export URL is a permanent unauthenticated ActiveStorage link | **High** | A separate product finding. `urls_expire_in` is never set, so a signed blob URL never expires. Needs reproduction and its own fix; the brief said to classify it separately and bring it back |
@@ -641,7 +694,7 @@ Classified by severity, not fixed in this phase, each with the reason.
 | K9 | `Instagram::SendOnInstagramService` spec claims to assert the tag and asserts nothing, and reads the wrong config key | Low | Section G. Recorded; the new coverage supersedes it |
 | K12 | **`footnote_reference` drops three escapes the C renderer performs** — raw `node.string_content` into an `href`, an `id` and a text node (`html_renderer.rb:219-221` vs `html.c:443,445,455`) | Medium, **latent** | §M1. Unreachable because `:FOOTNOTES` is never passed. Adding that one word to either `render_doc` call in `lib/chatwoot_markdown_renderer.rb` arms it. An override for a node type the parser cannot emit would be unreachable code, so the module comment carries the warning instead |
 | K13 | The gem's own `link`/`image` drop C's `scan_dangerous_url` guard (`html.c:387-389,405-408`); `escape_href` does not block `javascript:` because `:` is in its safe set | Low | The repo is safe only because both renderers `include MarkdownRendererUrlSanitizer`. There is no gem-level backstop, so a future `HtmlRenderer` subclass without that include gets `javascript:` in an href immediately |
-| K14 | `WHATSAPP_API_VERSION` is never published to the browser, so the documented env override for the embedded-signup SDK version is dead and the literal `v24.0` always wins | Low | §H correction. The P0-5 migration touches this code; the SDK version is a decision to take there |
+| K14 | ~~`WHATSAPP_API_VERSION` is never published to the browser, so the documented env override for the embedded-signup SDK version is dead and the literal `v24.0` always wins~~ | **WITHDRAWN — the claim was false in both halves** | It *is* published (`app/views/layouts/vueapp.html.erb:47`, as `whatsappApiVersion`) and it *is* consumed: `useWhatsappEmbeddedSignup.js:120` passes it to `setupFacebookSdk`, which uses it as `FB.init`'s `version` and falls back to the `v24.0` literal only when it is absent (`channels/whatsapp/utils.js:5,16,147-148`). `Reauthorize.vue:293` reads the same value. Exposed by the owner's production read: `WHATSAPP_API_VERSION => v22.0`, so production's SDK initialises at **v22.0**, not the literal. Recorded properly in §H.1 |
 | K15 | `Channel::Telegram#convert_markdown_to_telegram_html` — the escaping path that used to protect the Telegram render — now has zero callers, while `TelegramRenderer` emits a raw `node.url` in an `href` and inherits a non-escaping `text` | Low | Same boundary as K8: Telegram's own HTML parse mode on an outbound payload, not a browser render. Dead code to remove in a cleanup phase, not a hotfix |
 | K16 | `CustomMarkdownRenderer#text` emits `<sup>` markup while running in **attribute** position inside `alt="…"`, so a caret in image alt text corrupts the attribute | Low | Not an XSS: `escape_html` covers `"` and every attribute in this stack is double-quoted, so the attribute cannot be closed. Accessibility/correctness only |
 | K17 | A legacy article whose `category_id` points at another portal's category | **Read side closed in §N; existence on production still UNVERIFIED** | The write boundary refuses new ones (`Article#category_in_same_portal`); the read side is now `Category#portal_articles` / `Article#portal_category` / `Portal#categories_with_published_articles` across all 28 migrated sites, including the two §N.8 found after the first sweep claimed none remained. **The query this row used to recommend was broken** — `where.not(portal_id: Category.arel_table[:portal_id])` compiles to `!= NULL` and answers "none" on any data; it is now the tested `Article.cross_portal_category` scope. Running it on production is the owner's remaining read-only step; no database constraint added (§N.1) |

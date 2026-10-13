@@ -284,7 +284,7 @@ the same way values are derived; key the `style` policy per element; fix `apply_
 on the wrapper rather than the root; and settle K18 first, because an iframe host policy is meaningless while a
 blessed host executes author code.
 
-### K18 (new, open) — `codepen` renders author-controlled JavaScript in an un-sandboxed frame on a public page
+### K18 — CLOSED by owner decision: `codepen` removed
 
 **This is reachable today. It needs no `:UNSAFE`, no sanitizer, and no change from this program.** One markdown
 link in an article body —
@@ -320,3 +320,38 @@ is **not a sufficient safety argument** — origin isolation stops the frame rea
 it does not stop top-level navigation and it does not make the framed content non-executable. The comment now
 says so and points here, rather than being quietly deleted. A false safety claim beside a security rule is what
 makes the next reader trust the wrong thing.
+
+#### K18 disposition
+
+**Owner decision: remove the provider.** Reason given: the corpus uses zero CodePen embeds; it executes
+author-controlled JavaScript in an un-sandboxed cross-origin frame; the `sandbox` tokens needed for safe
+function are not yet browser-verified; so removing an unused provider is safer and simpler than shipping an
+unverified sandbox policy.
+
+Applied. `config/markdown_embeds.yml` now carries **8** providers — youtube, loom, vimeo, mp4, arcade_tab,
+arcade, bunny, guidejar — and the three places that followed the config moved with it:
+
+| File | Change |
+|---|---|
+| `config/markdown_embeds.yml` | the `codepen` block removed; the header records the decision and what remains unresolved |
+| `spec/config/markdown_embeds_spec.rb` | the key-set contract and the named-capture table |
+| `spec/lib/markdown_renderer_security_spec.rb` | the provider table that pins each provider's exact element list |
+| `app/javascript/dashboard/components/widgets/WootWriter/VideoEmbedInput.spec.js` | the editor-preview row |
+| `app/javascript/dashboard/i18n/locale/en/components.json` | the hint string no longer advertises CodePen (English only; the rest go through Crowdin) |
+
+**Deliberately NOT touched: the "Open in CodePen" button on the widget install snippet**
+(`app/javascript/dashboard/components/Code.vue:68-80`, used by
+`modules/widget-preview/components/Widget.vue:246`, string `COMPONENTS.CODE.CODEPEN` in `en/settings.json`).
+That is a form POST to `codepen.io/pen/define` from the authenticated dashboard so an operator can try their own
+install snippet. It embeds nothing on a public page and shares nothing with the markdown provider but the
+vendor's name. Confirming that separation was the point of checking every `codepen` reference rather than
+pattern-replacing the word.
+
+Targeted verification: **118 examples, 0 failures** across the config spec, the security spec and both renderer
+specs; **1218 frontend tests, 0 failures** across 50 files; eslint clean. The provider key-set assertion and the
+no-`<script>`-template assertion both still hold, so adding any provider back must fail a test deliberately.
+
+**What K18 does not close.** None of the 8 remaining templates sets `sandbox` either. Each is trusted on the
+strength of its vendor rendering media rather than author code — a weaker argument than a control. Tightening
+that is the deferred `frame-src`/`script-src` CSP item (R1.5) plus per-provider browser verification, and the
+config header now says so at the site rather than only here.

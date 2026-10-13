@@ -20,12 +20,12 @@ describe 'Markdown Embeds Configuration' do
       end
     end
 
-    # wistia and github_gist are deliberately absent: their templates were the only two that emitted a
-    # third-party `<script src>` onto a public page on this product's own origin, and they were removed
-    # (docs/documentation-v2/08-orchestrator-rulings.md R1.3). Adding a provider has to fail this assertion
+    # Three providers are deliberately absent. `wistia` and `github_gist` emitted a third-party `<script src>`
+    # onto a public page on this product's own origin (R1.3). `codepen` emitted an un-sandboxed cross-origin
+    # iframe whose content is the author's own JavaScript (K18). Adding a provider has to fail this assertion
     # so the addition is a decision rather than an accident.
     it 'contains expected embed types' do
-      expected_types = %w[youtube loom vimeo mp4 arcade_tab arcade bunny codepen guidejar]
+      expected_types = %w[youtube loom vimeo mp4 arcade_tab arcade bunny guidejar]
       expect(config.keys).to match_array(expected_types)
     end
 
@@ -72,10 +72,6 @@ describe 'Markdown Embeds Configuration' do
             expected: { 'library_id' => '431789', 'video_id' => '1f105841-cad9-46fe-a70e-b7623c60797c' } },
           { url: 'https://iframe.mediadelivery.net/embed/256380/d9d9ab1f-fc9f-4488-9c26-4ffc653c0024',
             expected: { 'library_id' => '256380', 'video_id' => 'd9d9ab1f-fc9f-4488-9c26-4ffc653c0024' } }
-        ],
-        'codepen' => [
-          { url: 'https://codepen.io/username/pen/abcdef', expected: { 'user' => 'username', 'pen_id' => 'abcdef' } },
-          { url: 'https://www.codepen.io/testuser/pen/xyz123', expected: { 'user' => 'testuser', 'pen_id' => 'xyz123' } }
         ],
         'guidejar' => [
           { url: 'https://www.guidejar.com/embed/i2qMQRp26rtRxpZczmaA', expected: { 'guide_id' => 'i2qMQRp26rtRxpZczmaA' } },

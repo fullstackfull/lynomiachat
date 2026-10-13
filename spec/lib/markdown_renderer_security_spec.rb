@@ -314,7 +314,6 @@ describe 'markdown render security' do
       ['arcade_tab', 'https://app.arcade.software/share/abc123?embed_mobile=tab', %w[p div iframe p]],
       ['arcade', 'https://app.arcade.software/share/abc123', %w[p div iframe p]],
       ['bunny', 'https://iframe.mediadelivery.net/embed/12345/abc-def', %w[p div iframe p]],
-      ['codepen', 'https://codepen.io/user/pen/abcXYZ', %w[p div iframe p]],
       ['guidejar', 'https://guidejar.com/guides/abc123', %w[p div iframe p]]
     ].freeze
 

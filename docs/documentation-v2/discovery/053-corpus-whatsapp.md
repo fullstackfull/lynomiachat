@@ -137,7 +137,7 @@ Verdicts: **confirmed**, **wrong**, **partly wrong**, **unverifiable** (needs Me
 | C-36 | L16-18, L34-37, L112-120 | State read "immediately when WhatsApp sends an update", else every few hours | confirmed, **conditional** | Wired: `custom/.../whatsapp_events_job.rb:13-22`, `webhook_setup_service.rb:90`. Template webhooks reach only the Meta App Dashboard **default callback URL**, which is Meta-side configuration outside the repo (`docs/whatsapp-template-manager/01-meta-api-contract.md:312-330`, `03-sync-and-lifecycle.md:230-242`). Not provable that production is configured |
 | C-37 | L52-55, L81-82 | "Lynomia Chat warns you before you save" an edit to an approved template | **wrong** | Copy `whatsappTemplateMgmt.json:82-86` is never referenced; `TemplateBuilderDialog.vue:288-300` saves immediately; `Index.vue:397-408` has no edit confirmation. `git log -S EDIT_APPROVED` shows the key only in the introducing commit `f3093cca` |
 | C-38 | L57-61 | Only content and, where allowed, category go to Meta; category locked once approved | confirmed (product) | `revision.rb:53-58`, `actions.rb:16-19`; Meta rule M-47 |
-| C-39 | L65-76 | Deleting a held template: campaigns/flows stop; name blocked 30 days "in any language"; sent-not-delivered -> "being deleted"; disabled cannot be deleted | confirmed as product behaviour; scope of the block unverified | `removal.rb` comment `:4-11`; dialog warns the *deleter* `whatsappTemplateMgmt.json:90`. The repo's own contract says the block follows deletion of an **approved** template and states nothing about languages (`01-meta-api-contract.md:297-304`). M-48 |
+| C-39 | L65-76 | Deleting a held template: campaigns/flows stop; name blocked 30 days "in any language"; sent-not-delivered -> "being deleted"; disabled cannot be deleted | confirmed as product behaviour; scope of the block unverified | `removal.rb` comment `:4-11`; dialog warns the *deleter* `whatsappTemplateMgmt.json:90`. The repo's own contract says the block follows deletion of an **approved** template and states nothing about languages (`01-meta-api-contract.md:299-304`). M-48 |
 | C-40 | L99 | "There is no revision history. Lynomia Chat does not keep previous versions of a template's text" | partly wrong / contradicted | `Whatsapp::MessageTemplate` is `audited` (`message_template.rb:46`), so each update stores before/after attributes including `components`; `administration/audit-logs.md:23,30-31` says template changes are recorded and points *back at this article* for submission-as-update - which this article never mentions |
 | C-41 | L95-97 | A submit already in flight is refused, not duplicated | confirmed | `submission.rb:31-42` (row-lock claim before the HTTP call) |
 | C-42 | L90-91 | Each action is also checked on the server | confirmed | `message_templates_controller.rb:17-19`; `operation.rb:21-25` |
@@ -153,3 +153,167 @@ Verdicts: **confirmed**, **wrong**, **partly wrong**, **unverifiable** (needs Me
 | C-47 | L59-73 | Account Health states and the disconnect behaviour (banner, email) | confirmed | strings `inboxMgmt.json:936-944,1087-1088`; threshold 2 `reauthorizable.rb:16,34`; admin email `reauthorizable.rb:58,93`, `whatsapp_disconnect.liquid`; banner `inboxMgmt.json:9`. The Arabic UI shows these English strings, the AR article shows Arabic ones (section 6) |
 | C-48 | L96 vs corpus | "Deleting and recreating an inbox is rarely the fix and can release the number" | confirmed | `webhook_teardown_service.rb:43-54` |
 | C-49 | L103-105 | "a code with no page here is one nobody here has met" | wrong | DC-08 (131047, 131026 recorded in `docs/real-whatsapp-uat/`) |
+
+### 3.2 Meta assertions the repository cannot verify (routing list for agents 001-028)
+
+Each row is something an article states as Meta's rule or Meta's behaviour. "Repo" is what the repository does with it or
+records about it; **no row is verified**, and the repository's own record of Meta's contract
+(`docs/whatsapp-template-manager/01-meta-api-contract.md`, `docs/whatsapp-business/META-VERIFICATION.md`) is internal and
+non-normative - the latter was built from search-tool summaries, not from reading Meta's pages (its own preamble). Priority
+**H** = I have a specific reason to doubt the claim, or being wrong misleads an operator into a harmful action.
+
+| ID | Article, EN line | Assertion | Repo evidence / reason for doubt | Route | Pri |
+|---|---|---|---|---|---|
+| M-01 | connect L14-16 | A WABA "owns your numbers, your message templates and your messaging limits" | The window article L72-73 and the product tooltip say the limit is shared across the **business portfolio** (`inboxMgmt.json:1015`); repo contract cites "portfolio pacing" 2025-12-08 (`01-meta-api-contract.md:460`). The two articles disagree on who owns the limit | 014, 018 | H |
+| M-02 | connect L42-43 | Number must not be signed in to personal WhatsApp nor connected to another WhatsApp Business Platform account | None | 013, 014 | M |
+| M-03 | connect L44-46 | Manual route needs a Meta app with the WhatsApp use case, a number added and verified in it, and a permanent system-user token with both `whatsapp_business_management` and `whatsapp_business_messaging`, shown once | Product asks for both permissions `manual_setup_validation_service.rb:69,83` (per 039); "shown once" is copy `inboxMgmt.json` TOKEN.WARNING | 002, 003, 013 | M |
+| M-04 | connect L52-53, L70-72 | Quick setup runs in a Meta-hosted window where the number is added and verified (by SMS in the example) | Embedded Signup flow `useWhatsappEmbeddedSignup.js`; the SMS detail is the article's | 013, 014 | M |
+| M-05 | connect L85-87 | Number registration, display-name review, quality, limit and template approval are all Meta's decisions | Generic; the Lynomia side is in Account Health | 010, 014, 018 | L |
+| M-06 | connect L92-95 | Deleting a quick-setup inbox deregisters the number "so it can be connected elsewhere"; deregistering a manual number "would disable the number on your own Meta app" | Product attempts the former (`webhook_teardown_service.rb:43-54`) and swallows failures; the latter is a code comment (`:41-42`) | 014, 015 | H |
+| M-07 | coexistence L8-10, L33 | Meta's term is "coexistence"; the number joins the WhatsApp Business Platform officially | `META-VERIFICATION.md` items 1-2 (summary-derived) | 015 | L |
+| M-08 | coexistence L40-42 | History sync is possible only in the first 24 hours after onboarding | `META-VERIFICATION.md` item 10 quotes "24 hours ... otherwise they must be offboarded and complete the flow again"; not implemented in product | 015 | M |
+| M-09 | coexistence L43-44 | Contacts are not carried over | Same record, item 11 (`smb_app_state_sync`, same 24 h) | 015 | L |
+| M-10 | coexistence L45-47 | The 24-hour window and approved templates "apply exactly as on any other WhatsApp channel - **including to the phone**" | No code basis: Lynomia enforces the window only on Lynomia sends; phone-typed replies arrive as echoes already sent (`incoming_message_base_service.rb:175-190`). Whether the Business app is bound by the Cloud API window is unstated in the repo | 015, 016 | H |
+| M-11 | coexistence L54 | WhatsApp Business app version 2.24.17 or later | `META-VERIFICATION.md` item 9; product copy `inboxMgmt.json:461` | 015 | M |
+| M-12 | coexistence L63-64 | Linked devices (e.g. WhatsApp Web) are signed out at onboarding and can be linked again | Item 9 also records "WhatsApp for Windows / WearOS unsupported" and "Groups API not available" and "fixed 20 msg/s" - none of which the article mentions | 015 | M |
+| M-13 | coexistence L35-36 | Meta sends an echo of every phone-typed reply | Webhook field `smb_message_echoes` subscribed `facebook_api_client.rb:9` | 007, 015 | L |
+| M-14 | coexistence L78-79 | Deleting the inbox "releases the number from the Meta app" | **Contradicted** by `META-VERIFICATION.md` item 12 (Meta: "You cannot use the deregister endpoint" for a number in use with both; offboarding is done from the phone app) | 015 | H |
+| M-15 | coexistence L16-19 | Real onboarding needs Lynomia's own Meta app / Configuration ID enabled for Business-App onboarding (Tech Provider) | Item 14 OPEN | 027, 015 | M |
+| M-16 | window L11-12, L24-26 | Window = 24 h from the customer's most recent message; outside it only a template sends | Flat 24 h in product `message_window_service.rb:27-28` | 016 | M |
+| M-17 | window L68-70 | The window "cannot be extended, shortened or switched off" - i.e. no entry point (e.g. an ad click) changes it | Product has one constant for every WhatsApp message | 016 | H |
+| M-18 | window L25-26, L77-78 | The window is "per conversation"; one customer inside it tells you nothing about another | Product scope is the **Lynomia conversation** (`message_window_service.rb:67-69`); `lock_to_single_conversation` defaults false (`db/schema.rb:1423`), so the same customer can have a closed-window conversation while Meta's window for that customer is open. Is Meta's scope per user and business number? | 016 | H |
+| M-19 | window L27-29 | Nothing the business sends restarts the window, template and campaign included | Product reads incoming only | 016 | M |
+| M-20 | window L35-37 | Outside the window only a template sends (not images, files, voice notes) | Product refuses all non-template sends `send_on_whatsapp_service.rb:15-17` | 016 | M |
+| M-21 | window L19-20 | "Breaking it is not possible - the message simply does not go out" | What Meta actually returns when attempted: `131047 "Re-engagement message"` was observed (`docs/real-whatsapp-uat/06-delivery-status.md:83-85`) | 005, 016 | M |
+| M-22 | window L71-73 | Messaging limit = unique customers messageable outside the window in a rolling 24 h, set by Meta, shared across the portfolio | UI copy `inboxMgmt.json:1014-1015`; tiers `:1048+` | 018 | M |
+| M-24 | templates L22-23 | UTILITY approved most readily; MARKETING reviewed more strictly and the usual rejection reason | None | 010 | M |
+| M-25 | templates L25 | WhatsApp decides the final category and may change it | Product takes the category from the create response `submission.rb:55`; repo contract cites removal of `allow_category_change` 2025-04-09 | 009, 010 | M |
+| M-26 | templates L26-29 | AUTHENTICATION bodies are written by WhatsApp and need an Android package name and signature hash | Starters file repeats it `templateStarters.js:7-9` | 009 | M |
+| M-27 | templates L34-36 | Limits: header text 60 (one variable), body 1024, footer 60 (no variables); header formats text/image/video/document | `validator.rb:10-12`; repo contract claims "verified verbatim" | 009 | M |
+| M-28 | templates L37 | At most 10 buttons: 10 quick reply, 2 website, 1 call, 1 copy-code | `validator.rb:20-21` | 009, 012 | M |
+| M-29 | templates L37-38 | Quick replies must sit together; scattered ones are refused | `validator.rb:151-158` ("[QR, URL, QR] is refused") | 012 | M |
+| M-30 | templates L39 | A website button may hold one variable, at the end of the URL | `validator.rb:179-187` | 012 | M |
+| M-31 | templates L46-49 | Variable rules: not first or last, never adjacent, numbered 1..n in order, named = unique lowercase. **Do the edge/adjacency rules apply to a text header?** | Product applies them to the header too (`validator.rb:111,208`); if Meta's rule is body-only, Lynomia blocks valid headers such as "Order {{1}}" | 009 | H |
+| M-32 | templates L51-53 | A sample is required for every variable and reviewers read it | `validator.rb:225-243` | 009, 010 | M |
+| M-33 | templates L55-57 | The media-header sample is a handle you get by "uploading the file in WhatsApp Manager once" | Product needs `header_handle` `validator.rb:116-120`. The repo contract describes it as "an uploaded media handle, not a URL" and records that no upload-and-resume helper was built (`FINAL-CHECKPOINT.md` row 72(e)). Can WhatsApp Manager show a copyable handle at all? | 009, 012 | H |
+| M-34 | templates L60-66 | Review judges tone, accuracy and category fit; real-order utility messages approve quickly; vague promotion and over-promising are rejected | None | 010 | M |
+| M-35 | templates L88-90, L112-113 | Name (lowercase letters, digits, underscores) and language can never change at WhatsApp; a template in `en_US` and one in `ar` are separate | `message_template.rb:39`; repo contract section 2 | 009 | M |
+| M-36 | templates L117-118 | Copy-code sample cap in the product is "stricter than WhatsApp's own limit" | Repo contract: Meta raised 15 to 20 on 2025-12-03; product held at 15 (`validator.rb:16-19`) | 009, 012 | M |
+| M-37 | templates L141-142 | A name must be unique per language per WABA "including a name WhatsApp is still holding from a template you deleted in the last 30 days"; Lynomia shows "name already exists" | Only subcode `2388024` is mapped to NAME_TAKEN (`operation.rb:10,53`). What Meta returns in the 30-day case is not in the repo; otherwise it falls to `META_REJECTED_REQUEST` "WhatsApp refused the request." | 009, 010, 025 | H |
+| M-38 | templates L114-116 | Catalogue, carousel, product-list, limited-time-offer, location header and call-permission components exist and are managed in WhatsApp Manager | Repo contract lists them (`01-meta-api-contract.md:74-86`); carousel/LTO are **not** blocked on send (C-29) | 012 | M |
+| M-39 | templates L122-123; lifecycle L16-18; TS L17-33 | The template list endpoint returns `rejected_reason`, `quality_score` and `parameter_format` - **without a `fields` parameter** | The sync calls `GET /{waba}/message_templates` with no `fields` (`whatsapp_cloud_service.rb:47-52`), yet the UI reads `rejected_reason`/`quality_score` from that payload (`_message_template.json.jbuilder`, `TemplatePreviewDrawer.vue:75-85`) and defaults a missing `parameter_format` to POSITIONAL (`mirror.rb:97`). If the defaults omit them, "Why WhatsApp rejected it" is empty after a sync and named-variable templates are mislabelled | 009, 010, 025 | H |
+| M-40 | lifecycle L22-37 | Meaning of pending, approved, rejected, paused ("usually over quality"), disabled, in appeal, archived, being deleted, deleted, template limit reached | `status_update.rb:19-20` enum "WhatsAppBusinessHSMStatus" | 010 | M |
+| M-41 | lifecycle L16-18 | Status arrives "immediately when WhatsApp sends an update" | Template webhooks do not support callback overrides and always go to the app's default callback URL (`01-meta-api-contract.md:312-330`); depends on Meta-side configuration | 010, 026 | M |
+| M-42 | lifecycle L44-48 | Name and language are the template's identity | `01-meta-api-contract.md:60-72` | 009 | L |
+| M-43 | lifecycle L52-55, L81-83 | Editing an approved template sends it back to review and it may be unsendable meanwhile | `revision.rb:26-27`; repo contract: "re-enters review and is auto-re-approved unless it fails review" | 010, 011 | M |
+| M-44 | lifecycle L54-55 | Quotas: one change per 24 h and ten per 30 days for an approved template | Repo contract: rejected and paused are unlimited; no API field reports the remaining count | 009, 010 | M |
+| M-45 | lifecycle L57-58 | An edit replaces all components; there is no partial edit | `revision.rb:7-9` | 009 | L |
+| M-47 | lifecycle L60-61 | The category of an approved template cannot change; only while rejected or paused | `actions.rb:6-8`; UI `ERRORS.CATEGORY_NOT_EDITABLE` | 009, 010 | M |
+| M-48 | lifecycle L65-76 | After deleting a held template its **name is blocked for 30 days "in any language"**; a sent-not-delivered one becomes "being deleted" for 30 days; a disabled one cannot be deleted; a template in review can be deleted | Repo contract states the block after deleting an **approved** template and says nothing about languages (`01-meta-api-contract.md:299-304`); the article generalises to any held template | 009, 010 | H |
+| M-49 | lifecycle L100-101 | Appeals exist only in WhatsApp Manager | Repo contract `:277-278` | 010 | L |
+| M-50 | templates L103, lifecycle L119-120, UI `CONFIRM.SUBMIT` | Review takes "minutes" and can take hours | UI copy `whatsappTemplateMgmt.json:79`; no real submission was ever made (`11-real-meta-uat.md`) | 010 | M |
+| M-51 | troubleshooting L22-25 | The four "reasons you are likely to see" | Not Meta enum values and not strings the product shows (C-44); Meta's real rejection enumeration is not in the repo | 010 | H |
+| M-52 | troubleshooting L31-32 | The words explaining a rejection arrive only with the live status update | `status_update.rb:91` ("`rejection_info` is webhook-only") | 010, 026 | M |
+| M-53 | troubleshooting L68 | Display name "Not approved": messages still send, the number may show instead of the name | Product copy for REJECTED says only "update the name or appeal in Meta" (`inboxMgmt.json:994`); only AVAILABLE_WITHOUT_REVIEW mentions the number showing | 014 | H |
+| M-54 | troubleshooting L55, L67 | Status Flagged, Restricted, Banned means Meta has acted on the number; resolved with Meta | Labels `inboxMgmt.json:1058-1073`; risky set `health_service.rb:40` | 014, 017, 018 | M |
+| M-55 | troubleshooting L91, L77-81 | Messages sent while the webhook was missing "are gone ... no backfill and no replay" because WhatsApp "had nowhere to deliver them" | Meta's webhook retry and redelivery behaviour is not in the repo; the product has no replay (`whatsapp-nothing-arrives.md` says the same) | 026 | H |
+
+(M-23 and M-46 were reserved and merged into M-22 and M-45; numbering is left gapped so other reports can cite stable IDs.)
+
+### 3.3 Claims about the product's internal state and decisions that are not code facts
+
+| ID | Where | Statement | Why it cannot be settled here |
+|---|---|---|---|
+| S-01 | coexistence L16-21 | "Built, tested ... against a simulated Meta ... **not released to production**" | Deployment state. `docs/whatsapp-business/README.md:3` and `05-lynomia-capability-doc-map.md:49` ("Do not publish as GA without confirming the production gate"). A public help article that narrates engineering release status rots the day it ships. Related: XA-02 (PRE_UAT editorial rule) |
+| S-02 | coexistence title, L9, SEO text, slug, registry key `whatsappCoexistence` | Uses "Coexistence" | Product rule says the word must not appear in user-facing copy (`README.md:25`), while the shipped Account Health row says "Coexistence" (`inboxMgmt.json:983`). Agent 000 to decide which is the rule |
+| S-03 | window, templates, lifecycle (many) | Outcomes of template submission/approval/edit/delete as lived experience ("approved in minutes", "approved an hour later") | `11-real-meta-uat.md`: no template was ever created, edited or deleted at a real Meta WABA from this product. Worked examples are plausible, not observed |
+| S-04 | connect L35-37, C-10 | Quick-setup-unavailable behaviour | XA-10: the gate is cloud-only |
+| S-05 | `docs/whatsapp-template-manager/01-meta-api-contract.md:434` (internal record, candidate IR) | Says `Flows::Template::UNSUPPORTED_COMPONENTS` and `isSendableTemplate` "already exclude" CAROUSEL, LIMITED_TIME_OFFER, ALBUM, MPM, SPM, FLOW and VOICE_CALL from every send path | The exclusion list is four names - LIST, PRODUCT, CATALOG, CALL_PERMISSION_REQUEST - plus a LOCATION header (`flows/template.rb:11,31-36`; `utils.cjs.development.js:2370`). The record overstates; writers must not inherit it. Same root as C-29 |
+
+## 4. Missing articles
+
+What a stuck user in this section cannot find today. "Evidence" is why the gap is real rather than imagined. Items 6-8 need
+Meta content from agents 009-015 before they can be written honestly.
+
+| # | Missing article | The user question it answers | Evidence |
+|---|---|---|---|
+| 1 | **Send a template** (agent side: composer picker, filling variables, starting a conversation with a template, where else a template is sent) | "The window closed - how do I actually send one, what do I fill in, and what does the customer see?" | One sentence in the window article (L43-44). The surfaces exist: composer button `ReplyBottomPanel.vue:349-358`, `TemplatesPicker.vue` (reads the filtered, sendable list `inboxes.js:53-73`), `WhatsAppOptions.vue` (new conversation), automation action `send_whatsapp_template` (`constants.js:789-792`), flow node `flows/nodes/send_template.rb`. The window and troubleshooting articles both tell the reader to "send a template" and none says how |
+| 2 | **Connect WhatsApp through Twilio** | "My number is on Twilio - what do I enter, and what is different afterwards?" | A Twilio card exists (`Whatsapp.vue:108-113`) and the connect article lists it with no steps. Differences nobody states: no Account Health or Configuration tab for a Twilio WhatsApp inbox (`Settings.vue:169-174`), no local window guard so the failure text is Twilio's (C-21), templates managed in Twilio |
+| 3 | **Connect manually, step by step - and what each refusal means** | "Which three values do I paste? It says 'This Phone Number ID does not belong to the WABA ID you entered' - what now?" | 5-step wizard (`WhatsappManualSetup.vue:24`); validation refusals are bare English strings (`manual_setup_validation_service.rb:46,54,59,62,69`); 039 section 9 item 7 counts fourteen of twenty reaching a tenant verbatim. Natural half of the SPLIT of `connect-whatsapp` |
+| 4 | **Before you connect: what Meta needs from you** (business portfolio, verification, number rules, display name) | "What must I have in place with Meta before I start?" | Karzoun's four most-read articles are exactly this (`docs/global-documentation/04-karzoun-doc-map.md:42`); the connect article carries only three bullets (L41-46). Content must come from 013, 014, 027 |
+| 5 | **Template builder messages** | "It will not let me save - what does 'A variable cannot be the first or last thing in the text' mean here?" and "What does 'WhatsApp refused the request.' mean?" | 35 field messages `whatsappTemplateMgmt.json:187-212` and 14 error toasts `:214-229`; 040 section 9 item 4 |
+| 6 | **Why WhatsApp rejected my template** | "It says rejected - why, and what exactly do I change?" | Today a four-row guess table inside troubleshooting (C-44). The product shows Meta's enum or `rejection_info` (`TemplatePreviewDrawer.vue:75-83`). Needs 010's catalogue |
+| 7 | **Moving a number out / taking it back to the phone** | "How do I stop using Lynomia Chat for this number without breaking it?" | The repo's own finding is that offboarding a coexistence number is done **from the phone app** (`META-VERIFICATION.md` item 12) and that deleting a manual inbox deliberately leaves the number registered (`webhook_teardown_service.rb:43-54`). The corpus says the opposite for coexistence (C-14) and nothing about manual. Needs 014/015 |
+| 8 | **Switch an inbox from quick setup to manual setup** | "A banner says 'Manual setup recommended' - what is it and should I do it?" | `Settings.vue:431-442`, `inboxMgmt.json:1186-1190`, account flag `whatsapp_manual_transfer`; 039 section 9 item 2 ("given a guide to read and nothing to click"). Flag default not checked |
+| 9 | **Delivery states on a WhatsApp message** (sent, delivered, read, failed) | "It says delivered - did they read it?" | 040 section 9 item 1; not a gap I introduced, but it belongs in this section |
+
+Deliberately **not** needed, so no writer adds them: the Business Management Token (`ConfigurationPage.vue:481-486` renders
+it only `isOnChatwootCloud`; `channel/whatsapp.rb:84-87` ignores it unless `chatwoot_cloud?` - inert on this product, so
+`docs/global-documentation/03-chatwoot-doc-map.md:64` mapping it to `whatsapp-templates` is moot), and 360dialog (XA-11 is a
+product decision).
+
+## 5. Quality
+
+**Structure.** The six articles share one skeleton - orienting paragraph, reference table, Steps, A worked example, Who can
+do this, Limits, Related, If it does not work - and it works: a reader can jump to Limits or "If it does not work" in any of
+them. Two deviations: troubleshooting has no "If it does not work" (it is that), and it duplicates material that has a
+better home (section 2). Every article states its audience (administrators) explicitly, which is the right habit for a
+product where agents and administrators see different screens.
+
+**Task orientation.** Front-matter descriptions follow "You will ..." and name an outcome. `connect-whatsapp`, `whatsapp-templates`
+and `the-whatsapp-24-hour-window` answer the question their title names. `whatsapp-business-coexistence` answers "what is
+it" but its title promises a how-to the status block then withdraws ("treat this as a description, not an instruction").
+`whatsapp-troubleshooting` is a router in practice but is written as a reference.
+
+**Screenshots and media.** None in any of the 12 files (`grep '!\['` = 0). The two screen-heavy tasks - the 5-step manual
+wizard and the template builder dialog - are exactly where a reader checks "am I on the right screen".
+
+**Length.** 867-1,327 body words in English; the three longest (templates 1,327, connect 1,193, troubleshooting 1,223) are
+the ones with a real structural case for splitting. Nothing is padded; the long tables carry the content.
+
+**Front matter and SEO.** All fields present. No article sets `seo_title`, so the rendered `<title>` is title + a 29-character
+suffix (SA-02): the coexistence article is 56 + 29 = **85 characters** in English and 79 in Arabic, the rest 47-56. EN
+`description` lengths 132-158 (coexistence at 158 is 2 from the 160 ceiling); `seo_description` 130-151; AR `description` 89-113, `seo_description` 97-120.
+Titles "The template lifecycle" and "WhatsApp templates" carry little search language on their own.
+
+**Tags.** `[whatsapp, ...]` plus one of getting-started, inboxes, conversations, templates, troubleshooting. Two articles share
+`templates`; none is tagged `window`, `webhook` or `account-health`, so tag search cannot find the window rule or the health tab.
+
+**Links.** 53 internal links per locale, all resolve to a real key. No link leaves the corpus: no claim cites the Meta page it
+rests on, which is why §3.2 exists. The window article links to `whatsapp-campaigns` and `work-in-the-inbox`; the
+audit-log article links back to the lifecycle article for something it does not say (C-40).
+
+**Cross-article consistency.** The connect article says the WABA owns "your messaging limits"; the window article says the
+limit is shared across the portfolio (M-01). The troubleshooting article says a rejected template is fixed by "save, and
+submit again"; the lifecycle table says Submit is unavailable for rejected (C-43). Four articles repeat "Meta owns these
+outcomes" in near-identical words.
+
+**Contextual help.** The window banner in the product links to Meta's policy page, not to `whatsappWindow`
+(`links.js:6-7`; CH ledger entry from 040), so the best article in the section is not reachable from the screen that needs it.
+
+## 6. EN/AR parity
+
+Parity of **structure** is complete: 6 + 6 files, identical front-matter keys and positions, the same H2 count in
+four of six articles, 53 links each, Arabic body 0.79-0.83x the English length (normal for the language, no omitted section).
+Parity of **meaning** has these defects.
+
+| ID | Where | Mismatch | Severity |
+|---|---|---|---|
+| P-01 | All six AR files, all 53 links | Every internal link is a bare English key (e.g. AR `connect-whatsapp.md:35` -> `whatsapp-business-coexistence`). Public article URL is `hc/<portal>/articles/<slug>` with no locale (`routes.rb:519`), the controller finds by slug alone (`articles_controller.rb:81-83`) and Arabic slugs end `-ar` (`content_seeder.rb:85-87`). An Arabic reader who follows any link lands on the **English** article. Corpus-wide; I verified only this section | major |
+| P-02 | AR 24h L39, L43; AR troubleshooting L35, L39 | The Arabic articles quote Arabic UI text that the Arabic UI does not show: the composer placeholder is English in Arabic (`ar/conversation.json:274`), the stored window-refusal sentence is English (`ar.yml:152`), and the marker is "تعذّر الإرسال" (`ar/chatlist.json:28`), not the article's "فشل الإرسال" | major |
+| P-03 | AR troubleshooting L62-66; AR connect L101-105; AR coexistence L89-96 | Same mechanism for Account Health: AR articles translate "WhatsApp connection needs to be refreshed", "WhatsApp access token needs attention", "Not approved", "This access token is invalid or expired" into Arabic, while the Arabic UI shows the English originals (`ar/inboxMgmt.json:407,435,842-844,975-976`). A reader cannot match article to screen | major |
+| P-04 | AR connect L73; AR troubleshooting L62-63, L80, L89 | The AR articles send the reader to the **"Configuration"** tab in English. In the Arabic UI that tab is labelled "الإعدادات" (`ar/inboxMgmt.json:781`), the same word as the Settings tab (`:779`); "Account Health" is English in the UI (`:787`) and the AR articles keep it English - correct | major |
+| P-05 | AR templates L39 vs EN L39 | EN: the variable "has to come at the end of the **address**". AR: "في نهاية **العنوان**" - the same word the AR article uses for the **Header** row (AR L34). The product's own AR validation string uses the same word (`ar/whatsappTemplateMgmt.json:204`), so the ambiguity is inherited, but the article puts the sentence directly under the table where "العنوان" means Header | minor |
+| P-06 | AR templates L87 vs EN L88 | AR says the name uses "lowercase **English** letters"; EN says "lowercase letters". The product is ASCII-only (`message_template.rb:39`), so AR is the accurate one and EN would let an Arabic-speaking admin try Arabic letters | minor |
+| P-07 | AR templates L14 (heading), L52, L71-72 | Content or structure present only in AR: a `## متى تستخدم قالباً` heading over text that is an unheaded paragraph in EN; an extra sentence that the sample values "دانة / LY-2041" exist so the reviewer sees a realistic message; an extra tail "so the flow that confirms bookings can use it". Heading counts differ (11 vs 12) | minor |
+| P-08 | AR lifecycle L13 (heading), L93, L97 | AR-only: a `## نصفا حياة القالب` heading, "the list tells the two apart on purpose", and a whole extra limit - "a template that disappears from WhatsApp is reported, not restored; duplicate it". The last is a real product fact (`templateUtils.js:161-169`, `DETAIL.MISSING_NOTICE`) missing from EN. Heading counts differ (9 vs 10) | minor |
+| P-09 | AR coexistence L31 vs EN L33 | EN "nothing is scanned, scraped or proxied"; AR "ولا شيء يُقرأ برمز أو يُمرَّر عبر وسيط" ("nothing is read by a code or passed through an intermediary") - "scraped" is lost and "scanned" becomes "read by a code" | minor |
+| P-10 | Both locales | The wrong claims are mirrored faithfully: C-05, C-14, C-21, C-37, C-43 appear identically in Arabic. Parity is complete; accuracy is not, so fixing EN alone leaves AR wrong | note |
+
+## Not checked
+
+Stated so nothing here reads as cleared by silence: the 14 `whatsapp-errors` pages (other agents); the mobile apps; 360dialog
+sends; Twilio sends beyond reading `send_on_twilio_service.rb`; the default value of the `whatsapp_manual_transfer` and
+`whatsapp_campaign` account flags; production schedules, the Meta App Dashboard callback URL and whether the coexistence
+route has since shipped; every Arabic UI string beyond the ones cited in §6; the rendered HTML of any article (I read the
+Markdown and the renderer path only); `TemplatesPicker.vue` and `WhatsAppTemplateParser.vue` internals beyond the lines cited.

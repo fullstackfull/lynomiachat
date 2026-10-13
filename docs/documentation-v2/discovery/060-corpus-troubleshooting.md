@@ -321,3 +321,231 @@ who knows that exists will put the store name and the time in a ticket; today no
 | support:87-88 "three of them you can fix yourself" | hub:25-26, 65-68 | self-contradiction across the pair |
 | hub:11-16 "four causes" | the section's own five commerce articles | a fifth cause (a connected store) is documented but not in the taxonomy |
 
+## 4. Missing articles
+
+What a stuck reader of this section cannot find, with the evidence that the question is real. "Unmapped" means the
+code has a shipped string but no entry in `COMMERCE_ERROR_ARTICLES` (`documentationLinks.js:108-133`).
+
+| # | the user's question | evidence it is asked | note |
+|---|---|---|---|
+| M1 | My store says **Disconnected**. What happened, what is kept, and how do I reconnect on my platform? | status exists (`en/commerce.json:191`); Shopify and Salla uninstalls land here, not in `needs_reauth` (`shopify/webhook_job.rb:42-46`, `salla/installation.rb:76-82`); `canReconnect` offers it per platform (`Index.vue:93-97`) | the reconnect article misfiles this state (§3.3 R5, R7); links are deleted on disconnect (R9) |
+| M2 | I cannot connect a store: "already connected", "all the stores your plan allows", "turned off on this installation", "encryption is not configured" | `STORE_ALREADY_CONNECTED`, `PROVIDER_DISABLED`, `ENCRYPTION_NOT_CONFIGURED`, `STORE_LIMIT_REACHED` (`en/commerce.json:142-144,165`); all unmapped; `STORE_LIMIT_REACHED` is not even in `errorMessage`, so the admin sees "Something went wrong" (PD-25) | the string must ship before an article can quote it |
+| M3 | A recovery message was not prepared ("sent recently", "can't receive a free-form message", "not safe to send") | `RECOVERY_DISABLED`, `RECOVERY_COOLDOWN`, `CANNOT_REPLY`, `INVALID_RECOVERY_URL`, `CART_NOT_ABANDONED` (`en/commerce.json:159-163`); unmapped | **blocked on XA-02**: the feature is held and the corpus says it does not exist. Do not write until that editorial rule is decided |
+| M4 | An order action says it is "checking", or "couldn't confirm the result". Is it safe to try again? | `ACTIONS.RESULT.UNKNOWN`/`UNRESOLVED`/`STILL_PROCESSING` (`en/commerce.json:408-410`); `UNKNOWN_OUTCOME` is **not** in the registry mapping, and the action dialogs carry no link | content exists (the "We do not know" section); the missing piece is a registry key and a link from the dialog |
+| M5 | My account is locked for billing. What stops working and how do I unlock it? | `Billing::AccessGuard` (`custom/app/controllers/billing/access_guard.rb:22,50`); the support article spends five lines on it (S13); no billing article exists in the corpus (`rg` finds billing only inside WhatsApp pages) | cross-section (059); the symptom belongs in the hub |
+| M6 | I cannot sign in, lost my authenticator, or my invited colleague cannot join | ticket category `account_access` ("Account access", `platformSupport.json` ENUMS.CATEGORY); `rg` for password, 2FA, locked-out finds only the invite and connect pages | cross-section (049/059) |
+| M7 | Something is slow. / How do I get my data out? | ticket categories `performance` and `data_export`; the support article lists both as covered (S11) with nothing to read first | the honest article is short: what the desk can and cannot do, and what to send |
+| M8 | My Facebook, Instagram, email or web-chat inbox stopped working | the hub's symptom table has WhatsApp rows only (hub 32-36); orphaned i18n that would have been the help — `INBOX.REAUTHORIZE.TROUBLESHOOTING.*`, `INBOX_MGMT.DETAILS.ERROR_FB_UNAUTHORIZED` (`_ARBITRATION.md` §CH; 034/039/041) | wait for 041/042 on what is true before writing |
+| M9 | What do I send when I ask for help with a store, an order action, a campaign? | every commerce article dead-ends; the ticket article's checklist is generic (support 37-45) | not a new article — a mandatory block in each troubleshooting article (§5.4, element 8) |
+
+Two codes are mapped and unexplained inside articles that exist: `RATE_LIMITED` and `INVALID_RESPONSE` in the
+unreachable article (U11) and `NOT_SENT`, `IDEMPOTENCY_CONFLICT` in the order-action article (O15). Those are
+EXPAND work on existing keys, not new articles.
+
+---
+
+## 5. Quality
+
+### 5.1 Mechanics
+
+| item | finding |
+|---|---|
+| Front matter | all 14 files carry `title`, `description`, `position`, `tags`, `seo_description`; none carries `seo_title`. `seo_description` lengths 110–157 characters, inside the audit's 50–160 band. |
+| Rendered `<title>` | the portal appends a 29-character suffix the audit never counts (`01-current-system.md` §8). `commerce-store-needs-reconnecting` EN is 34 + 29 = **63 > 60**; `commerce-store-unreachable` is exactly 60. The other five EN titles are 58–59. |
+| Titles | hub and support are in the reader's words ("When something is not working", "Raising a ticket with Lynomia"). The commerce five name a *cause* ("Your store keys cannot do that", "Lynomia cannot reach your store"), which is findable only by a reader who has already diagnosed. |
+| Description voice | hub and support: "You will be able to…" / "How to reach…". Commerce five: noun phrases ("What … means, why … and the one action…"). The corpus convention elsewhere is the "You will…" reader outcome (`audit-logs`, `webhooks`, `whatsapp-nothing-arrives`). |
+| Tags | `[troubleshooting]` ×2, `[troubleshooting, commerce]` ×5. Consistent. |
+| Internal links | hub 27, support 11, **commerce five 0**. The five make seven references by bold title instead (`reconnecting:54`, `unreachable:35`, `keys:50-51` ×2, `address:50-51` ×2, `action:43`), which a reader cannot click. |
+| Role and place | only `reconnecting:12` says who can act. The hub and support have a role section; the other four commerce articles are silent although the whole Settings → Commerce route is administrator-only (`commerce.routes.js:19`). |
+| Worked example | none of the seven. (`whatsapp-error-131049` and `whatsapp-nothing-arrives` each have one.) |
+| Escalation | none of the five commerce articles links to the ticket article or says what to send; the hub says "escalating" (hub 79) with no link. `contact-lynomia-support` has **0** inbound links from the corpus. |
+| Media | none. There is no media system (`01-current-system.md` §9.8). The three images that would pay for themselves: the stale banner, a store row with its buttons per platform, and the unknown-outcome result. |
+| Length | support 1000 words is the longest; the commerce five are 404–601, which is right for one remedy each. |
+
+### 5.2 The shape of a troubleshooting article here
+
+What the good moments do, and where they are:
+
+1. **Route before explaining.** The hub's second table gives symptom → first thing to check → article, in the
+   reader's words, one check per row (`troubleshooting.md:30-46`). It is the right unit; it only lacks the commerce
+   rows and the ticket link.
+2. **Say what the product already did.** `unreachable:16-27` — bounded waits, one read retry, the stale fallback,
+   the status left alone. This is the most useful kind of sentence in a troubleshooting article because it tells the
+   reader what *not* to do (do not retry, nothing to clear). Nothing else in the section does it.
+3. **Name the unknown and the way out.** `action:26-42`: Lynomia cannot tell, here is what it does to find out,
+   here is what it never does, here is the authoritative place to look (the store's own admin, "a few seconds").
+   The only comparable moments in the wider corpus are `whatsapp-error-131049` "Limits" ("Lynomia Chat cannot tell
+   you how close a contact is to the cap. Meta does not report that") and `whatsapp-nothing-arrives` "What an
+   operator can check that you cannot".
+4. **Use the product's own sentences.** The support article is word-for-word the shipped statuses, hints and menu
+   path (S2, S4, S7) and the Arabic matches the Arabic locale (`ar/platformSupport.json`). It is the only article in
+   the section a reader can match to their screen — and the only one of the seven that never needed a correction in
+   that respect.
+5. **Distinguish the neighbour.** The "What this is not" endings (`keys:48-51`, `address:47-51`,
+   `reconnecting:50-54`) are the right move; they need real links.
+6. **Say how it ends.** `unreachable:42-45` "When it clears up" is the only "how you know it worked" in the section.
+
+What the section does wrong, as a pattern rather than a list:
+
+- **Diagnosis before symptom.** Four of five commerce articles open by classifying the problem ("This is a
+  *connection* problem, not an authorization one", "A store in this state has stopped working completely", "This
+  one is refused *before any request leaves Lynomia*"). The reader has not yet confirmed they are in that state.
+  The "What you see" table that should come first comes second, and its left column is invented (§3.2).
+- **Identifiers the reader never sees.** The right-hand "The code behind it" column prints `AUTH_INVALID`,
+  `PERMISSION_DENIED`, `read_only_key`. The product renders sentences, never codes (`useCommerceLabels.js:54-89`).
+  Codes are useful to the *desk*, not the reader; presenting them as the reader's anchor makes the table look like
+  evidence and match nothing.
+- **Causes written as facts.** §3.4. The cause tables read as if Lynomia observed the cause.
+- **One remedy for four platforms.** The reconnect article is the clearest case (R2): the generalisation was
+  written from the Zid/Shopify path and then stated for all four.
+- **No end.** No "how you know it worked" in four of five; no escalation in five of five.
+
+### 5.3 What Lynomia knows versus what it guesses
+
+Do the articles tell the reader which is which? **No — and in a few places they say the opposite of what the code
+knows.** The code distinguishes three classes and the corpus has no vocabulary for the distinction:
+
+| class | examples in this section | how the corpus should phrase it |
+|---|---|---|
+| **Recorded** — Lynomia received or wrote it | an HTTP status class; "the store did not answer within 8 s"; the `needs_reauth` flag; "nothing was sent"; the last error code and count on the store | plain statement: "Lynomia recorded…", "Lynomia received…" |
+| **Inferred** — Lynomia concluded it from a recorded fact | `REFUND_DECLINED` from one WooCommerce error code; "not approved" from Shopify's message wording (`shopify/graphql.rb:60-65`); `read_only_key` from a refused webhook registration (`woocommerce.rb:100-107`); `NOT_APPLIED` from a read-back; a Zid scope gap from a 403 | "Lynomia concluded…", with the basis, and "usually"/"can" for any cause |
+| **Provider-side** — only the provider or the host knows | the key was deleted; the app was uninstalled; the gateway's reason; whether the host throttles; whether Meta redelivers | never in the indicative; always paired with where the reader can look ("in WordPress → WooCommerce → Settings → Advanced → REST API, see whether the key still exists") |
+
+Two structural facts make the discipline necessary rather than stylistic. Lynomia **never keeps the provider's own
+error text** (`action_result.rb:6`; `http_client.rb:13`), so a sentence that paraphrases the store's reason cannot
+have come from Lynomia's data. And Lynomia's recorded snapshot **goes stale against the provider**: it learns
+`read_only_key` once and keeps it until the keys are re-entered (`woocommerce.rb:94-108`), so a merchant who raises
+the permission in WooCommerce and does nothing in Lynomia stays "read-only" — the step "Replace keys" is needed
+even when the provider side is already fixed, and the article does not say so.
+
+### 5.4 Proposed canonical troubleshooting-article pattern
+
+Scope: an article a reader reaches **from a symptom** — a banner, a failed message, a status chip, a refused action.
+It covers symptom articles and class-of-remedy articles (the commerce five). Meta code articles (agent 054's
+section) are a specialisation of the same pattern with two extra elements (the code, and who decides); I have not
+reconciled with 054 because its report was still incomplete when I read it.
+
+**Front matter**
+
+- `title` — the symptom in the product's own words, or the chip or banner text, never a cause and never a code.
+  *Reason:* the reader arrives with a string; portal search matches text; the section's own titles are only
+  findable by a reader who has already diagnosed.
+- `description` — "You will know…" reader-outcome sentence, naming the one thing they will be able to do.
+  *Reason:* the convention in the better articles; the five commerce articles are the outliers.
+- `tags` — `[troubleshooting, <area>]`. `seo_description` carries the quoted sentence, not the code.
+
+**Body — elements in order.** Elements 1, 3, 5, 6 and 8 are mandatory; 2, 4, 7, 9, 10 are included where they
+apply.
+
+| # | element | what it is | reason |
+|---|---|---|---|
+| 1 | **What you see** | the shipped sentence(s), verbatim, in quotes; the surface and route where they appear; the role that sees them | symptom first; and checkable — each quote must exist in the locale file for that language |
+| 2 | **What Lynomia already did** | automatic behaviour: retries, fallbacks, status left alone, nothing sent, no money moved | tells the reader what not to do; the strongest sentence in `unreachable` and the shipped "Nothing was sent." |
+| 3 | **What Lynomia knows, and what it cannot tell you** | two short lists. Known: what was recorded or received. Cannot tell: what only the provider or host knows. Each "cannot tell" ends with where the reader can find out | separates evidence from inference (§5.3); this is `131049` "Limits" promoted to a mandatory section and moved up |
+| 4 | **Likely causes** | only when more than one; each tagged *recorded* or *possible*; ordered by how often; each *possible* cause carries its check | stops the reconnect-article failure of stating inferred causes as fact |
+| 5 | **What to do** | numbered steps, one action each, using the exact button label; **a table by platform whenever the remedy differs**; the role that can do it | the reconnect article's generalisation (R2) is exactly the failure this prevents |
+| 6 | **How you know it worked** | the state that should change; what needs *no* action | `unreachable:42-45` is the model; four of five lack it |
+| 7 | **What this is not** | the neighbouring symptom and a **link** to its article | the endings already exist; make them links |
+| 8 | **If it did not work** | link to the ticket article; the facts to quote (store name, platform, time, the shipped sentence, the order number); one line on what the desk can see (the store's last recorded error and how many in a row) | none of the five has it; the desk *can* see the snapshot (`operations/account.html.erb:192-197`) and nothing says so |
+| 9 | **A worked example** | three sentences with real-looking values | present in the best WhatsApp articles; absent in all seven here |
+| 10 | **Related** | links only | convention |
+
+**Rules a reviewer, or a lint, can apply** (each is mechanically checkable, so 092/097 can automate them):
+
+1. Every quoted on-screen string must match a shipped string in the same language's locale file (`rg -F` over
+   `app/javascript/dashboard/i18n/locale/<loc>/` and `config/locales/<loc>.yml`). Arabic articles quote the Arabic
+   locale, never a translation of the English article's quotes.
+2. An identifier (`AUTH_INVALID`, `read_only_key`) appears only in a block marked "visible to Lynomia support, not
+   on your screen", or not at all.
+3. A causal sentence about a provider, store or host is never indicative unless it is *recorded*; "usually" and
+   "can" are required otherwise; no past-tense claim about what a provider did unless the product received it.
+4. Every registry code mapped to the article (`documentationLinks.js:108-133`) appears in it, and an article is not
+   registered for a code it does not explain.
+5. A remedy that differs by platform is a table keyed by platform, with the exact button label.
+6. Cross-references are links, never bold titles.
+7. Side effects are stated as the product states them ("Nothing was sent.", "No money was sent.").
+8. No promise on Lynomia's behalf without a mechanism behind it (S9).
+9. A setting only an operator can change (an environment variable) is not offered as something the reader does.
+10. The article states the role, and whether the page exists at all on this plan.
+
+**A compact illustration** — the reconnect article, rewritten to the pattern (the facts are the ones in §3.3):
+
+```
+title:  Needs re-authorization
+description: You will know why a store shows "Needs re-authorization", what Lynomia recorded, and the one action
+that fixes it on your platform.
+
+## What you see
+In Settings → Commerce the store shows "Needs re-authorization". In a conversation the panel says "The store
+rejected Lynomia's credentials. An administrator needs to reconnect the store."
+
+## What Lynomia already did
+It stopped asking this store for anything and cleared its cached data. Conversations, contacts and your order-action
+history are untouched.
+
+## What Lynomia knows, and what it cannot tell you
+Known: your store (or its token refresh) refused Lynomia's access. Cannot tell why: a deleted key, a removed app, a
+lapsed authorization or a host stripping the Authorization header look the same from here. Your own store's admin
+shows which.
+
+## What to do
+| Platform | Where | Who |
+| WooCommerce | Settings → Commerce → the store → Replace keys | administrator |
+| Salla | update or reinstall the app from the Salla dashboard; the store reconnects on its own | administrator |
+| Zid, Shopify | Settings → Commerce → the store → Reconnect | administrator |
+
+## How you know it worked
+The store shows "Active" and the panel loads orders again.
+
+## If it did not work
+Open a ticket (link) with the store name, the platform, when it started and the sentence above. Lynomia's support
+can see the last error recorded for your store.
+```
+
+Two things the pattern deliberately does not require yet: screenshots (there is no media system) and any response
+time for the desk (no SLA policy can be created, PD-02).
+
+---
+
+## 6. EN/AR parity
+
+Structural parity is exact: same headings, same table rows, same link list in both locales for all seven (hub 27 = 27,
+support 11 = 11, commerce 0 = 0), no sentence present in only one language. Meaning parity is strong. That is the
+problem as much as the strength: **the Arabic faithfully reproduces every English error**, and its quoted strings are
+translations of the invented English ones rather than the Arabic locale.
+
+| # | issue | EN | AR / evidence |
+|---|---|---|---|
+| P1 | quoted strings | invented (§3.2) | the AR quotes («متجرك لم يُجب», «لا نعرف إن طُبِّق ذلك», …) are absent from `ar/commerce.json`; shipped e.g. STORE_UNAVAILABLE «لا يمكن الوصول إلى المتجر حاليًا.», AUTH_INVALID «رفض المتجر بيانات اعتماد {installationName}. يجب على المسؤول إعادة ربط المتجر.» |
+| P2 | status term | "Needs re-authorization" | UI «يحتاج إعادة تفويض» (`ar/commerce.json` SETTINGS.STATUS.NEEDS_REAUTH); the AR article says «إعادة تصريح» in the reconnect title description, table and prose |
+| P3 | product names | WooCommerce, Shopify | UI keeps them in Latin (`ar/commerce.json` PROVIDERS: "WooCommerce", "Shopify"; Salla «سلة» and Zid «زد» are localised); the articles write «ووكومرس» and «شوبيفاي». `CLAUDE.md` protects product and brand names unless an official localised form exists, and a reader searching the UI name finds nothing |
+| P4 | button names | "Replace keys", "Reconnect", "Turn on order actions" | UI «استبدال المفاتيح», «إعادة الربط», «تفعيل إجراءات الطلبات»; the AR keys article says «شغّل إجراءات الطلبات» and never names «استبدال المفاتيح» (it is missing from the EN too, R2) |
+| P5 | links | bare key → the EN article | every Arabic internal link renders to the **English** article: 38 links in this section (hub 27, support 11); 494 corpus-wide — blocker in `076-internal-linking.md` Defect 1, because `articles.slug` for Arabic is `<key>-ar` and the route has no locale (`config/routes.rb:519`, `articles_controller.rb:80-82`) |
+| P6 | numerals | "40 minutes" | AR `unreachable` uses Arabic-Indic «٤٠», while the rest of the section uses Western digits or words («10 ميغابايت», «ثلاث ثوانٍ», `LYN-000123`) |
+| P7 | status label | "Resolved" | AR «مُعالَجة» (processed) is the product's own label (`ar/platformSupport.json` ENUMS.STATUS.RESOLVED) and the article mirrors it, but the next sentence says «وإن لم تُحلّ» (solved) — two roots for one idea. Product decision for 061 |
+| P8 | desk count | "two… support desks" over three rows | AR «مكتبا دعم مختلفان» over three rows (S1) |
+| P9 | "three you can fix yourself" | S10 | AR repeats the self-contradiction |
+| P10 | bidi hazards | `` `read_only_key` ``, REST API, → arrows inside Arabic sentences | inline Latin tokens and arrows in RTL prose (`commerce-keys-cannot-do-that` AR 16, 22-24); route to 061/072 |
+| P11 | "inbox" | one word for the Inbox section and a channel | AR splits it («صندوق الوارد» / «قناة تواصل») correctly; flag for 061 that the support article's AR table uses the first for both rows it needs |
+
+---
+
+## 7. Not checked, unverifiable here, and open questions
+
+- **No browser, no run.** Rendering was not observed. Arabic link targets are from route and controller reading
+  (corroborated by 076). Whether a billing-locked account can *navigate* to Help & Support in the browser (S13)
+  was not exercised; the API side is confirmed.
+- **Provider semantics** (not Lynomia's code): WooCommerce key editing and its REST API menu path (K3), WooCommerce
+  401 behaviour on an under-permissioned write (already open as item 045 in the ledger), Zid's redirect-to-login
+  reason, Salla's uninstall semantics, Shopify's protected-customer-data policy, **whether Meta redelivers missed
+  webhooks** (H8 — routes to 026/088).
+- **Hub rows I did not verify:** campaigns' per-recipient outcomes, import skip reasons (labels, country),
+  audience matching, the "fourteen event types", "an agent sees no settings at all" — owned by 051, 052, 057, 059.
+- **Vendor-policy sentences:** "we never read or answer your customers' conversations" (S12); whether the desk
+  reads application logs for automation (H6).
+- **`wc -w` and Arabic:** other agents' AR word counts (049–062) taken with plain `wc -w` are low by ~4-5x.
+- **Pattern reconciliation:** the canonical pattern in §5.4 is not yet reconciled with 054's code-article shape
+  (its report was incomplete when I read it), with decision XA-01 (Meta admission rule), or with the AR
+  link-rewrite decision (076 R1) it depends on for the "link, don't bold" rule to be true in Arabic.
+- **XA-02** (how to document a built-but-held capability) blocks the rewrite of `commerce-keys-cannot-do-that` and
+  `commerce-order-action-did-not-apply` and M3; I did not pre-empt it.

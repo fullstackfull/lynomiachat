@@ -24,6 +24,8 @@ Two facts frame everything that follows.
    article that hold today were written about the browser.
 
 Word counts are body-only, whitespace tokens containing a word character (so table pipes do not inflate them).
+Agents 061 and 062 report 853 / 910 / 893 / 535 EN and 826 / 767 / 804 / 426 AR for the same files; theirs count every
+whitespace token including table pipes. The ranking is the same.
 
 ## 1. Inventory
 
@@ -62,7 +64,7 @@ Doc cites are EN file:line; the AR file makes the same claim at the same structu
 | 2 | Administrator sees every conversation without being a collaborator (`roles:17,21-23`) | `app/policies/conversation_policy.rb:10-12`; list `app/services/conversations/permission_filter_service.rb:11-13` | confirmed |
 | 3 | An agent sees only inboxes they collaborate on; "only inbox membership grants access" (`roles:17,21-23`; `teams:19`) | list is inbox-only `permission_filter_service.rb:22`, but the record policy is inbox **or team** `app/policies/conversation_policy.rb:16-18,32-36`, `custom/app/services/conversations/access_ceiling.rb:55-57,77-81` | **wrong** (A3) |
 | 4 | Reports: administrator yes, agent no (`roles:19`) | `app/policies/report_policy.rb:2-4` | confirmed |
-| 5 | Settings and billing: administrator all, agent none (`roles:16`) | billing admin-only `custom/app/controllers/api/v1/accounts/billing_controller.rb:33`; but an agent's Settings landing page is Canned Responses `app/javascript/dashboard/routes/dashboard/settings/settings.routes.js:35-48`, `canned/canned.routes.js:27` | incomplete (agents have a Settings area: canned responses, macros, profile) |
+| 5 | Settings and billing: administrator all, agent none (`roles:16`) | billing admin-only `custom/app/controllers/api/v1/accounts/billing_controller.rb:33`; but an agent's Settings landing page is Canned Responses `app/javascript/dashboard/routes/dashboard/settings/settings.routes.js:36-52`, `canned/canned.routes.js:27` | incomplete (agents have a Settings area: canned responses, macros, profile) |
 | 6 | Contacts, canned responses, macros: yes for both (`roles:18`) | contacts `app/policies/contact_policy.rb:2-4,31-33,43-49`; canned responses have no policy at all `app/controllers/api/v1/accounts/canned_responses_controller.rb:1-22`; macros `app/policies/macro_policy.rb:2-30` | confirmed, understated (B6, B7) |
 | 7 | "The exact six permissions" / "fixed at the six entries" (`roles:3,28,92`) | client offers seven `app/javascript/dashboard/constants/permissions.js:4-12`; server validates eight `custom/app/models/custom_role.rb:19-28` | **wrong** (A5) |
 | 8 | Manage all conversations = every conversation in inboxes they collaborate on (`roles:32`) | `:base` `custom/app/services/conversations/capability_scope.rb:113`; ceiling still inbox or team | confirmed, incomplete (A3) |
@@ -73,9 +75,9 @@ Doc cites are EN file:line; the AR file makes the same claim at the same structu
 | 13 | Manage store orders = status changes and resending store emails; cancel and refund never delegable (`roles:37,43-45,93,113-114`) | `custom/app/policies/commerce/action_policy.rb:9-12,19-29` | confirmed (B12 for what it omits) |
 | 14 | The three conversation permissions are a hierarchy; all three = the first (`roles:39-40`) | `capability_scope.rb:113-115`; the modal auto-ticks the other two `CustomRoleModal.vue:74-86` | confirmed |
 | 15 | No conversation permission = no conversations at all (`roles:40-41,107-108`) | `capability_scope.rb:117,137`; grandfathered sets get `:base` | incomplete (A4) |
-| 16 | Legacy "Manage knowledge base" grants nothing (`roles:47-49`; `help:49-52`) | `custom/app/policies/custom/portal_policy.rb:25-34`, `article_policy.rb:6-12`, `category_policy.rb:4-10` | confirmed on the server; client residue (H-04) |
+| 16 | Legacy "Manage knowledge base" grants nothing (`roles:47-49`; `help:49-52`) | `custom/app/policies/custom/portal_policy.rb:25-34`, `article_policy.rb:6-14`, `category_policy.rb:3-11` | confirmed on the server; client residue (H-04) |
 | 17 | The "not on the list" items are administrator-only, no middle ground (`roles:51-59`; `inbox:71-72`) | see 3.2 per-item table | mostly confirmed; **three exceptions** (A7) |
-| 18 | Custom roles are paid; without the plan the page is not shown (`roles:61-64`) | `custom/app/controllers/api/v1/accounts/custom_roles_controller.rb:52-54`; sidebar entry absent `Sidebar.vue:840-848`; direct URL shows a paywall page `Index.vue:68-75`; plan-sellable `custom/app/models/billing_plan.rb:36-47`, `config/features.yml:155-157` (default off) | confirmed (imprecise: the page exists behind a paywall) |
+| 18 | Custom roles are paid; without the plan the page is not shown (`roles:61-64`) | `custom/app/controllers/api/v1/accounts/custom_roles_controller.rb:52-54`; sidebar entry absent `Sidebar.vue:840-848`; direct URL shows a paywall page `Index.vue:70-75,105,174`; plan-sellable `custom/app/models/billing_plan.rb:36-47`, `config/features.yml:155-157` (default off) | confirmed (imprecise: the page exists behind a paywall) |
 | 19 | Creating roles, changing anyone's role, managing agents are administrator jobs (`roles:84-86`) | `custom_roles_controller.rb:14`; `app/policies/user_policy.rb:6-20` | confirmed |
 | 20 | Account-wide, not per inbox; no read-only role (`roles:94-96`) | `capability_scope.rb` has no inbox dimension; vocabulary `custom_role.rb:19-28` | confirmed |
 | 21 | Steps: name and description, one conversation permission (`roles:66-72`) | description required in the client only `CustomRoleModal.vue:45-49`; server needs name and permissions `custom_role.rb:64-67`, permits description `custom_roles_controller.rb:56-58` | confirmed |
@@ -89,14 +91,14 @@ Doc cites are EN file:line; the AR file makes the same claim at the same structu
 |---|---|---|
 | Inboxes and channels | `inbox_policy.rb:51-61`; OAuth channel base `app/controllers/api/v1/accounts/oauth_authorization_controller.rb:28-30`; Twilio and WhatsApp `.../channels/twilio_channels_controller.rb:5,17-19`, `.../whatsapp/authorizations_controller.rb:4-6`; **Facebook page registration has no guard** `app/controllers/api/v1/accounts/callbacks_controller.rb:4-24` | **one hole** (A7) |
 | Campaigns | `app/policies/campaign_policy.rb:2-20` (every verb) | confirmed |
-| WhatsApp templates | `custom/app/policies/whatsapp/message_template_policy.rb:7-33`; the per-inbox read that feeds the composer stays open to members (controller header, `custom/app/controllers/api/v1/accounts/whatsapp/message_templates_controller.rb:12-13`) | confirmed for management |
+| WhatsApp templates | `custom/app/policies/whatsapp/message_template_policy.rb:7-33`; the per-inbox read that feeds the composer stays open to members (controller header, `custom/app/controllers/api/v1/accounts/whatsapp/message_templates_controller.rb:17-20`) | confirmed for management |
 | Flows | `custom/app/controllers/api/v1/accounts/flows_controller.rb:22` -> `AgentBotPolicy#update?` `app/policies/agent_bot_policy.rb:6-8` | confirmed |
 | Automation rules | `app/policies/automation_rule_policy.rb:2-26` (every verb including read) | confirmed |
-| Audiences | shared: administrator only `custom/app/controllers/custom/api/v1/accounts/custom_filters_controller.rb:7-22`; **personal audiences: any member** `app/policies/custom_filter_policy.rb:2-20` | **wrong as a blanket statement** (A7) |
+| Audiences | shared: administrator only `custom/app/controllers/custom/api/v1/accounts/custom_filters_controller.rb:6-23`; **personal audiences: any member** `app/policies/custom_filter_policy.rb:2-20` | **wrong as a blanket statement** (A7) |
 | Labels | write `app/policies/label_policy.rb:6-20`; **agents may list** `:2-4` | confirmed for writes |
 | Custom attributes | write `app/policies/custom_attribute_definition_policy.rb:10-20`; **agents may list and show** `:2-8` | confirmed for writes |
 | Agents and roles | `user_policy.rb:6-20`; `custom_roles_controller.rb:14` | confirmed |
-| Billing | `billing_controller.rb:33` (`entitlements` stays open to members with commercial particulars removed, `:20-30`) | confirmed |
+| Billing | `billing_controller.rb:33` (`entitlements` stays open to members with commercial particulars removed, `:28-31`) | confirmed |
 | Audit logs | `custom/app/controllers/api/v1/accounts/audit_logs_controller.rb:13` | confirmed |
 
 ### 3.3 Direction A - documented, but not enforced as documented
@@ -109,10 +111,10 @@ summary, live-reports and analytics controllers (`app/controllers/api/v2/account
 `@account_user.administrator?` (`app/policies/report_policy.rb:2-4`); CSAT responses are administrator-only too
 (`csat_survey_response_policy.rb:2-12`); drilldown re-checks administrator (`reports_controller.rb:55`). No overlay
 exists: `custom/app/policies/custom/` holds only article, category, contact, conversation and portal, and
-`ChatwootApp.extensions` is `['custom']` only (`lib/chatwoot_app.rb:47-49`). The routes accept the permission
+`ChatwootApp.extensions` is `['custom']` only (`lib/chatwoot_app.rb:42-44`). The routes accept the permission
 (`settings/reports/reports.routes.js:28`, `analytics/analytics.routes.js:18`), so a holder reaches the page and every
-panel returns 401. The role the article's own bookkeeper/analyst framing invites is the one that does not work.
-Corroborates 033 (PD-10).
+panel returns 401. A reader who builds the report-only role the article implies gets a role whose one visible
+permission does nothing. Corroborates 033 (PD-10).
 
 **A2 (major) - "participating" does not include participants.** See row 10. The article, the product label
 (`app/javascript/dashboard/i18n/locale/en/customRole.json:30`) and the `invite-your-team` copy all say "participating";
@@ -125,15 +127,15 @@ gives nobody anything they did not already have") and `teams:85` ("Team membersh
 nothing from an inbox they are not a collaborator on"; AR:19, 86). `ConversationPolicy#show?` is administrator, bot, or
 `inbox_access? || team_access?` (`conversation_policy.rb:10-18,32-36`); `Custom::ConversationPolicy` only ever narrows
 that (`custom/app/policies/custom/conversation_policy.rb:40-42,48-50`) and the repo records the asymmetry as intended
-(`:12-15`; `docs/pre-deploy/04-decisions-implemented.md:34-37`). Consequences a reader cannot anticipate:
+(`:12-15`; `docs/pre-deploy/04-decisions-implemented.md:31-35`). Consequences a reader cannot anticipate:
 
 - A team member with no membership in the conversation's inbox can open that conversation by id and read its messages,
-  because everything under a conversation hangs off `show?` (`custom/app/policies/custom/conversation_policy.rb:5-7`).
+  because everything under a conversation hangs off `show?` (`custom/app/policies/custom/conversation_policy.rb:4-8`).
 - They get its notifications (`app/builders/notification_builder.rb:31,42-55`).
-- Support cases follow the same shape: a case assigned to one of your teams is visible to every member
+- Support cases follow the same shape: a case assigned to one of your teams is visible to you
   (`custom/app/policies/support/ticket_policy.rb:40-43,54-56`).
 - They do **not** see it in their conversation list or the team's sidebar view, because the list ceiling is inbox-only
-  (`permission_filter_service.rb:22`; `app/finders/conversation_finder.rb:151-154` filters after it). So the surprise is
+  (`permission_filter_service.rb:22`; `app/finders/conversation_finder.rb:62-71,151-154` filters after it). So the surprise is
   quiet: the access exists, the listing does not show it.
 
 The corpus contradicts itself: `conversations/work-in-the-inbox.md:93-94` says an agent can read "any conversation on a
@@ -179,13 +181,14 @@ At the API a custom-role holder keeps the agent baseline everywhere except the t
 **A7 (major for the first, minor for the rest) - the administrator-only list has holes.**
 (a) `CallbacksController` has no `check_authorization`, `authorize` or administrator check anywhere in the file, and no
 global Pundit verification exists to catch it (`app/controllers/api/v1/accounts/callbacks_controller.rb:4-24,26-43,45-56`;
-routes `config/routes.rb:85-92`; `app/controllers/api/base_controller.rb:12-22`). Any account member can call
+routes `config/routes.rb:85-92`; `app/controllers/api/base_controller.rb:12-22` defines only opt-in helpers, and no
+controller in `app` or `custom` calls `verify_authorized`). Any account member can call
 `register_facebook_page` and create a Facebook channel and inbox, which `InboxPolicy#create?` (`inbox_policy.rb:51-53`)
 would refuse. Practical exploitation needs a Facebook page token, but the documented boundary ("a channel needs an
 administrator", `roles:58-59`, `inbox:71-72`) is not the enforced one. Corroborates 041 (PD-03).
 (b) Personal audiences: any member may create, edit and delete their own saved contact filters
 (`custom_filter_policy.rb:2-20`; the administrator check applies only to shared ones,
-`custom_filters_controller.rb:7-22`). (c) Read access to labels, custom attribute definitions, agent bots, teams, team
+`custom_filters_controller.rb:6-23`). (c) Read access to labels, custom attribute definitions, agent bots, teams, team
 members and the agent list is open to every member (`label_policy.rb:2-4`, `custom_attribute_definition_policy.rb:2-8`,
 `agent_bot_policy.rb:2-4,10-12`, `team_policy.rb:2-4,10-12`, `team_member_policy.rb:2-4`, `user_policy.rb:2-4`).
 
@@ -200,7 +203,7 @@ one over the API; it simply grants nothing. The UI cannot offer one only because
 | # | Severity | Enforced behaviour | Where | In the corpus? |
 |---|---|---|---|---|
 | B1 | major | `support_ticket_manage` lets an agent see **every** support case in the account; everyone else sees cases assigned to them, to one of their teams, or opened by them. The Support module is feature-gated (`lynomia_support_tickets`, 404 when off) | `custom/app/policies/support/ticket_policy.rb:7-15,24-26,37-43`; `custom/app/controllers/api/v1/accounts/support/base_controller.rb:7,17-21` | no article on in-account support cases exists; one table row in `troubleshooting/contact-lynomia-support.md:14` |
-| B2 | major | Plan ceiling on every capability: if `custom_roles` stops being entitled, no row is deleted or detached, the holder reverts to the plain agent list (wider for conversations), and the set grants again the moment the entitlement returns | `custom/app/models/custom/account_user.rb:20-62`; `billing/entitlements.rb:28-36` | no (EN); AR states something different (A8) |
+| B2 | major | Plan ceiling on every capability: if `custom_roles` stops being entitled, no row is deleted or detached, the holder reverts to the plain agent list (wider for conversations), and the set grants again the moment the entitlement returns | `custom/app/models/custom/account_user.rb:20-62`; `custom/app/services/billing/entitlements.rb:28-36` | no (EN); AR states something different (A8) |
 | B3 | major | Deleting a custom role detaches every holder, one row at a time; each reverts to the agent baseline, which is wider for conversations than a narrow set | `custom_role.rb:38-49,81-85`; `custom_roles_controller.rb:37-40` | no |
 | B4 | major | A set that predates 2026-10-11 and names no conversation permission is exempt from "none means none" until an administrator edits its conversation checkboxes; the edit is one-way | `custom_role.rb:50-53,98-111`; migration `20261011180000...:19-41` | no |
 | B5 | minor | "Unassigned" means no human assignee **and** no bot assignee: conversations held by a flow or agent bot are invisible to `conversation_unassigned_manage` | `capability_scope.rb:48-52` | no |
@@ -208,9 +211,9 @@ one over the API; it simply grants nothing. The UI cannot offer one only because
 | B7 | minor | Canned responses are account-wide and writable and deletable by every member; global macros are administrator-only, personal macros are the author's | `canned_responses_controller.rb:1-22` (no policy); `macro_policy.rb:10-30` | roles says "yes / yes" only |
 | B8 | minor | Setting a team auto-assigns whenever the team allows it, regardless of the inbox's own auto-assignment switch; and the picking step runs only when the assignee is blank after the "not a member" check, so an assignee who is a team member is kept | `app/models/concerns/assignment_handler.rb:12-29` | `teams:46-58` describes the order but not the switch independence; `inbox:84` presents the inbox switch as the control |
 | B9 | minor | Plan ceilings on workspace objects: agent count, inbox count, and which channel types a plan sells (refused with "Your plan does not include the %{channel} channel") | `app/builders/agent_builder.rb:26`; `custom/app/models/billing/inbox_limit.rb:21-27,36-41`; `config/locales/en.yml:303` | agents: `invite-your-team.md:86` only; inboxes and channels: no |
-| B10 | minor | The manual assignment endpoint accepts any account member, collaborator or not; only the UI list is restricted | `app/services/conversations/assignment_service.rb:62-64` vs `assignable_agents_controller.rb:7-14` | `teams:57-58` says such a member "cannot be chosen by hand" (true of the UI only; arbitration PD-06) |
+| B10 | minor | The manual assignment endpoint accepts any account member, collaborator or not; only the UI list is restricted | `app/services/conversations/assignment_service.rb:49-51` vs `assignable_agents_controller.rb:7-14` | `teams:57-58` says such a member "cannot be chosen by hand" (true of the UI only; arbitration PD-06) |
 | B11 | minor | Members can read inbox records and inbox member lists for their inboxes, and read all teams, team members and agents | `inbox_policy.rb:22-27`; `inbox_members_controller.rb:6`; `team_policy.rb:2-12`; `user_policy.rb:2-4` | no |
-| B12 | minor | `commerce_order_manage` also covers `update_shipping`, and an action additionally needs the feature flag, the store's opt-in and write-capable credentials | `action_policy.rb:10-11`; `custom/app/controllers/api/v1/accounts/conversations/commerce/order_actions_controller.rb:20-22`; `custom/app/services/commerce/order_actions.rb:5-12` | `roles:43-45` names status and emails only |
+| B12 | minor | `commerce_order_manage` also covers `update_shipping`, and an action additionally needs the feature flag, the store's opt-in and write-capable credentials | `action_policy.rb:10-11`; `custom/app/controllers/api/v1/accounts/conversations/commerce/order_actions_controller.rb:32-34`; `custom/app/services/commerce/order_actions.rb:5-12` | `roles:43-45` names status and emails only |
 
 ### 3.5 The plan-entitlement ceiling, in one place
 
@@ -220,7 +223,7 @@ one over the API; it simply grants nothing. The UI cannot offer one only because
 | Agent seats | `agent_builder.rb:26`; `agents_controller.rb:21-23,82` (402) | `invite-your-team:86` |
 | Inbox count | `custom/app/models/billing/inbox_limit.rb:21-27` | no |
 | Channel types per plan | `inbox_limit.rb:36-41` | no; `inbox:17` says nine are "always offered" |
-| `lynomia_commerce` for order actions | `order_actions_controller.rb:20-22` | no |
+| `lynomia_commerce` for order actions | `order_actions_controller.rb:32-34` | no |
 | `lynomia_support_tickets` for cases | `support/base_controller.rb:7,17-21` | no |
 
 One internal inconsistency worth the orchestrator's attention rather than the writers': the roles endpoint tests the raw
@@ -278,6 +281,12 @@ vs `custom/app/models/custom/account_user.rb:68-70`). They agree while overrides
 - **XA-2.** 042 says the Instagram tile in the channel list is ungated; `ChannelItem.vue:48-52` disables it without the
   Instagram app id and flag. Not mine to settle; I record what I read.
 - **XA-3.** AR `roles:62-63,92` makes a claim EN does not (A8); 061 and 094 own the parity ruling.
+- **XA-4.** 062 classifies `set-up-an-inbox`, `teams-and-agents` and `your-own-help-centre` as KEEP. 062's scope is IA and
+  link structure; it did not test the claims above. I rate them REWRITE / REWRITE / RELOCATE on I-01, I-02, A3 and H-02-H-03.
+  058 (cross-section list, line 94) independently found I-01 false and assigned it to 057. 079 (section 1.7) hands the
+  rename of `your-own-help-centre` to 057/062; my verdict is relocate and rename it, with a redirect from the old slug.
+- **XA-5.** 051 (C15d) and the arbitration ledger (DC-01, DC-04) already own the two wrong contact permission claims in
+  `contacts/contacts.md:94,96,127`; B6 here only records that the roles article is silent on the same facts.
 
 ## 4. Missing articles
 
@@ -301,8 +310,8 @@ vs `custom/app/models/custom/account_user.rb:68-70`). They agree while overrides
   has no numbered steps: it is a tour of tabs under a title that promises a procedure.
 - **Task orientation.** Strongest in `teams` ("what assigning a team actually does") and the `roles` worked example.
   Weakest in `inbox`, where the reader is told what exists but not in what order to do it.
-- **Screenshots.** None, in any of the eight files; the corpus has no media system to hold one (program charter
-  section 1).
+- **Screenshots.** None, in any of the eight files; the corpus has no media system to hold one
+  (`01-current-system.md` section 9, item 8).
 - **Length.** 491-867 EN words; appropriate. `inbox` (811) carries two topics and should be two articles.
 - **Front matter.** `title`, `description`, `position`, `tags`, `seo_description` present in all eight; no `seo_title`, so
   the title is the SEO title (`content_seeder.rb:107-110`). EN titles 15-25 characters, EN `seo_description` 127-149,
@@ -325,13 +334,13 @@ Presence is exact. Meaning is not. Findings, most serious first:
 
 | ID | Severity | Finding |
 |---|---|---|
-| P-07 | **major, cross-corpus** | **Every internal link in an Arabic article points at the English article.** The seeder stores the body raw (`content_seeder.rb:70-81`); the Arabic sibling's slug is `<key>-ar` (`:85-87`); the portal route is `/hc/:slug/articles/:article_slug` with no locale segment and the article is found by slug alone (`config/routes.rb:519`; `app/controllers/public/api/v1/portals/articles_controller.rb:80-83`); no renderer or layout rewrites links (`lib/chatwoot_markdown_renderer.rb:14-21`, no `<base>` in `app/views`). A relative `(set-up-an-inbox)` in `.../articles/roles-and-permissions-ar` resolves to `.../articles/set-up-an-inbox`, the English page. 32 links in these four files; the same pattern holds across all 494 relative links in `ar/`. Confirmed by reading, not in a browser. No other discovery report mentions it. |
+| P-07 | **major, cross-corpus** | **Every internal link in an Arabic article points at the English article.** The seeder stores the body raw (`content_seeder.rb:70-81`); the Arabic sibling's slug is `<key>-ar` (`:85-87`); the portal route is `/hc/:slug/articles/:article_slug` with no locale segment and the article is found by slug alone (`config/routes.rb:519`; `app/controllers/public/api/v1/portals/articles_controller.rb:80-83`); no renderer or layout rewrites links (`lib/chatwoot_markdown_renderer.rb:14-21`, no `<base>` in `app/views`). A relative `(set-up-an-inbox)` in `.../articles/roles-and-permissions-ar` resolves to `.../articles/set-up-an-inbox`, the English page. 32 links in these four files; the same pattern holds across all 494 relative links in `ar/`. Confirmed by reading, not in a browser. Found independently in 049 (X1), 052 (W9), 056 (item 4) and 073 (D2); this section adds 32 more affected links. |
 | P-01 | major | AR `roles:62-63,92` adds a claim EN lacks (A8): a downgrade lets an assigned role be removed "but not reassigned". Not enforced at the endpoint. |
 | P-02 | major | **Inbox and channel collapse into one Arabic word.** EN separates "the channel is the connection; the inbox is the decisions about it" (`inbox:8-10`). AR uses القناة for both: it defines القناة as connection plus governing settings, then the next sentence says "the connection is the channel, and the settings are your decisions around it" (AR `inbox:8-10`). The same word names the inbox in the roles table (AR `roles:16`) and in the link text إعداد قناة تواصل. The distinction the English article is built on does not survive. |
-| P-03 | major | **The Arabic roles article names the permissions "as the product names them" in Arabic; the Arabic product does not.** In `ar/customRole.json` only `COMMERCE_ORDER_MANAGE` and `SUPPORT_TICKET_MANAGE` are translated; the other six labels are English, and the AR sidebar entry is the English "Custom Roles". An Arabic reader comparing the article to the screen finds no matching text (AR `roles:27-37,67`). Both AR labels for the seventh permission exist and the article omits it. |
-| P-04 | minor | Tab and field names differ from the Arabic UI: CSAT tab is تقييم رضاء العملاء (doc رضا العملاء); pre-chat is نموذج ما قبل الدردشة (doc ما قبل المحادثة); the Configuration tab is labelled الإعدادات, the same as the Settings tab (doc التهيئة); bot tab اعدادات البوت (doc تهيئة البوت); Account Health and Calls are English in the UI (doc سلامة الحساب, المكالمات); team auto-assign is السماح بالتكليف التلقائي (doc الإسناد); unavailable message is رسالة غير متاح للزائرين (doc رسالة عدم التوفّر); Agents menu is وكيل الدعم (doc الوكلاء). Source: `ar/inboxMgmt.json` TABS, `ar/settings.json` SIDEBAR, `ar/teamsSettings.json` FORM.AUTO_ASSIGN. |
+| P-03 | major | **The Arabic roles article names the permissions "as the product names them" in Arabic; the Arabic product does not.** In `ar/customRole.json` only `COMMERCE_ORDER_MANAGE` and `SUPPORT_TICKET_MANAGE` are translated; the other six labels are English, and the AR sidebar entry is the English "Custom Roles". An Arabic reader comparing the article to the screen finds no matching text (AR `roles:27-37,67`). The Arabic label for the seventh permission exists (إدارة كل حالات الدعم في الحساب) and the article omits it. Corroborates 061 section 3.2. |
+| P-04 | minor | Tab and field names differ from the Arabic UI: CSAT tab is تقييم رضاء العملاء (doc رضا العملاء); pre-chat is نموذج ما قبل الدردشة (doc ما قبل المحادثة); the Configuration tab is labelled الإعدادات, the same as the Settings tab (doc التهيئة); bot tab اعدادات البوت (doc تهيئة البوت); Account Health and Calls are English in the UI (doc سلامة الحساب, المكالمات); team auto-assign is السماح بالتكليف التلقائي (doc الإسناد); unavailable message is رسالة غير متاح للزائرين (doc رسالة عدم التوفّر); Agents menu is وكيل الدعم (doc الوكلاء). Source: `ar/inboxMgmt.json` TABS, `ar/settings.json` SIDEBAR, `ar/teamsSettings.json` FORM.AUTO_ASSIGN. Corroborates 061 section 3.1. |
 | P-05 | minor | Content present in only one language: AR roles table has separate billing and canned/macros rows (EN merges them); AR roles example adds "does not get reports"; AR inbox example adds the two receptionists and auto-assignment; AR teams example adds that the coordinator sees it in her sidebar; AR channels are a table, EN prose. None contradicts the other; the Arabic is slightly fuller. |
-| P-06 | minor | Terminology drift inside Arabic: ماكروس (`roles:19`, `teams:66`) against الماكرو (`help:29`). EN says "macro" throughout. |
+| P-06 | minor | Terminology drift inside Arabic: ماكروس (`roles:19`, `teams:66`) against ماكرو / الماكرو (`help:29,54`). EN says "macro" throughout. |
 | P-08 | - | Every defect in section 3 (A1-A7, I-01, I-02, H-02) is reproduced faithfully in Arabic; the translation did not introduce errors, it copied them. |
 
 ## Appendix - what I did not check

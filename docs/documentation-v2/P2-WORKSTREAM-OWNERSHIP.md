@@ -225,3 +225,106 @@ measure it, or withdraw the finding and say discovery 069/097 overstated it.
 | `?cw_image_width=400px` cannot ride on a `media:` key | `URI.parse("media:a/b.png?cw_image_width=400px")` → `scheme="media"`, `opaque` holds the whole rest, **`query=nil`**. `custom_markdown_renderer.rb`'s width convention reads `.query`, so **the editor's existing drag-resize does not work on a `media:` key.** Agent 2 must not assume it does |
 | The bare direct-upload route 403s | `config/initializers/active_storage.rb:62` — `head :forbidden if instance_of?(ActiveStorage::DirectUploadsController)`. **Agent 2's editor cannot upload through it**; it inserts references to seeded keys |
 | `render_markdown_to_plain_text` cannot be affected by the sanitizer closure | `lib/chatwoot_markdown_renderer.rb:21-23` is `CommonMarker.render_doc(@content, :DEFAULT).to_plaintext` — **no Ruby renderer class at all**. Refines my contract §0.3: it is a third renderer, but not a sanitizer-bearing one |
+
+---
+
+## F. Two owner corrections — binding on Wave 2, incorporated before implementation
+
+### F1 — Documentation gets its OWN authorized Super Admin upload path
+
+The wave-1 conclusion "the bare direct-upload route 403s, therefore the editor inserts only references to
+seeded keys" is **not sufficient for the product**. Corrected:
+
+- The **generic/bare** `ActiveStorage::DirectUploadsController` route stays unavailable. That guard
+  (`config/initializers/active_storage.rb:62`) is not relaxed, not subclassed around, not exempted.
+- Documentation gets its **own** Super Admin-only upload path, attaching to the **same**
+  `portal.documentation_media` namespace, addressed by the **same `media:` key grammar**, resolved by the
+  **same** `Documentation::MediaResolver`. Seeded media and operator-uploaded media are one abstraction.
+- Must support: upload button, drag/drop, paste image, replacement, alt text, caption.
+- Backend-independent through ActiveStorage abstractions only — no raw blob path, no DiskService path, no
+  second media system.
+- **Super Admin only. No tenant authoring path**, and item 12's standing rule applies: any new
+  Portal/Article/Category policy action lands a `false` override in the same commit.
+
+**The editor must not depend on repository-seeded images only.**
+
+#### F1.1 This breaks frozen contract item 9, and item 9 is the thing that changes
+
+`R2-MEDIA-CONTRACT.md` item 9 froze orphan cleanup as: *after a run, any `documentation_media` attachment whose
+key no longer appears in that portal's corpus is purged.* An operator-uploaded file **has no corpus file by
+construction**, so that sweep would delete every operator upload on the next seed — silently, and with the
+article still referencing it.
+
+**Item 9 is amended:** the sweep is scoped to attachments whose provenance says *the seeder created this one*.
+Operator-uploaded attachments are never touched by the seeder's cleanup. That requires each attachment to
+record its origin, which Agent 1 specifies and which is the same provenance question Agent 5 is answering for
+rows — the two must use **one** vocabulary, not two.
+
+Agent 1 owns the backend service and the origin marker. Agent 2 consumes the interface and must not implement
+an alternative upload path, even temporarily.
+
+### F2 — Source of truth is field-by-field, not content-only
+
+A `content_digest` protects `content` and nothing else. I enumerated every field the seeder writes and every
+field Super Admin can edit; **the overlap is nine fields**, so a content-only digest silently overwrites an
+operator's title, slug, description, position, status and SEO metadata while the digest still matches.
+
+**Written by `Documentation::ContentSeeder`** (`content_seeder.rb:70-113`), complete:
+
+| Field | How | Source |
+|---|---|---|
+| `slug` | `find_or_initialize_by(slug: slug_for(key, locale))` — the identity lookup | file name |
+| `locale` | `find_or_initialize_by(locale:)`, and forced again by `ensure_locale_in_article` from the category | directory |
+| `title` | `attributes_for` | `front_matter.fetch('title')` |
+| `description` | `attributes_for` | `front_matter['description']` |
+| `content` | `attributes_for` | the body |
+| `category` | `attributes_for` | manifest section |
+| `position` | `attributes_for` | `front_matter.fetch('position')` |
+| `status` | `attributes_for` | **the `@publish` flag — the file does not express it** |
+| `meta` | `attributes_for` → `meta_for`, **whole-value replacement** | `doc_key`, SEO `title`, SEO `description`, `tags`, `version`, `release_date` |
+| `associated_article_id` | explicit, non-default locales only | root-article lookup |
+| `author` | `\|\|=` — **never overwritten**, the one field already protected | `SuperAdmin.first` |
+
+**Editable in Super Admin** — `ArticleDashboard::FORM_ATTRIBUTES` (`custom/app/dashboards/article_dashboard.rb:36`):
+`portal, category, title, slug, description, content, locale, status, position, meta`.
+
+**Every one of those except `portal` is also written by the seeder.**
+
+#### F2.1 The classification the contract must carry, field by field
+
+Proposed by the Orchestrator from the evidence above; Agent 5 owns the final text and may argue a row, with
+evidence, but may not leave a field unclassified.
+
+| Class | Fields | Rule |
+|---|---|---|
+| **D — immutable identity / provenance** | `portal`, `locale`, `meta['doc_key']`, and the new provenance column | Neither side changes these after creation. `doc_key` is the one being destroyed today (§E1) |
+| **A — repository-owned** | `content`, `category`/section, `associated_article_id` | The corpus is the source of truth for prose and placement. The seeder wins |
+| **B — operator-owned** | `status` | **The file does not express it** — the seeder forces it from its own `publish:` flag. An operator who unpublishes an article must stay unpublished across a deploy |
+| **C — mergeable, per field** | `title`, `description`, `position`, `meta['title']`, `meta['description']`, `meta['tags']`, `meta['version']`, `meta['release_date']` | The seeder writes a field **only if the current value still equals what the seeder last wrote there**. Otherwise it is operator-edited: leave it, and report it |
+
+#### F2.2 `slug` is the dangerous one and needs its own decision
+
+`slug` is both the identity lookup (`find_or_initialize_by(slug:)`) and an operator-editable form field, and
+`articles.slug` is globally unique. So **an operator who renames a slug makes the next seed create a duplicate
+article** rather than update the existing one — the lookup no longer finds it.
+
+The Orchestrator's position, for Agent 5 to confirm or refute with evidence: **look the row up by provenance,
+not by a field an operator can edit.** `meta['doc_key']` or the new `content_source_path` is the stable
+identity; `slug` then becomes class C or B and a rename stops being a corpus-duplication event. Whether a
+renamed slug needs a redirect for the previously indexed public URL is an SEO question for Agent 4, submitted
+rather than decided here.
+
+#### F2.3 Constraints on the solution
+
+- **No second CMS and no revision system** unless evidence proves one necessary. A per-field record of *what
+  the seeder last wrote* is a generalization of the accepted digest direction, not a new store, and it earns
+  D1, D5, D7 and D10 the same way.
+- **The `doc_key` fix and the merge model still land atomically** (§E1).
+- Agent 5 remains the only agent permitted a migration, and it must be additive.
+- `author` already demonstrates the pattern in one line (`\|\|=`); the merge generalizes it rather than
+  inventing a mechanism.
+
+### F3 — Unchanged by these corrections
+
+R2-O4 stays an operational backup gap only. No production change, no storage migration, no Meta change, no
+discovery restart. Targeted tests during implementation; one combined gate after integration.

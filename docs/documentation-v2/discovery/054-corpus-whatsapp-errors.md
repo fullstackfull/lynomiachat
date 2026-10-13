@@ -6,10 +6,11 @@ confidence: high
 
 # 054 — Corpus: `whatsapp-errors`
 
-Read-only. Every repository claim below carries `path:line`. Claims about what **Meta** does are marked
-`unverifiable (Meta)` because this brief is repository-only; they are routed to the Meta agents (005, 010, 014, 017,
-018, 019/020, 025, 026, 028), not resolved here. Nothing was run (no rails, rake, rspec, pnpm); the SEO audit was
-not executed, so front-matter lengths below are measured by hand.
+Read-only. Every repository claim below carries `path:line`. This brief is repository-only: I did not fetch Meta.
+Claims about what **Meta** does are marked `unverifiable (Meta)`, except where a Meta agent's report already settles
+the point — then §3.G cites that report (`NNN-….md:line`) and I say plainly that I have not re-read the Meta page.
+Nothing was run (no rails, rake, rspec, pnpm); the SEO audit was not executed, so front-matter lengths below are
+measured by hand.
 
 The section is 14 articles per locale. Five are "code articles" (131049, 131042, 131053, 131060, 190), nine are
 "symptom articles" (no code). The headline is that the section is **two very good code articles, three weak ones,
@@ -28,6 +29,9 @@ The sharpest facts, before the template sections:
 4. The 131060 article describes an "empty" message; the dashboard shows "This message is unsupported. You can view
    this message on the WhatsApp app." (`bubbles/Unsupported.vue:22-23`, `en/conversation.json:79`).
 5. The Arabic articles quote UI labels that the Arabic locale files do not contain (§6).
+6. Against the Meta agents' reports (§3.G, not re-fetched by me): the 131053 article's definition is **not** Meta's
+   ("Unable to upload the media used in the message"), and 131060 is Meta's coexistence/first-message code, not the
+   generic unsupported-type code (that is 131051).
 
 ---
 
@@ -73,12 +77,12 @@ index of its own, the hub is a hand-written paragraph in a different section.
 |---|---|---|---|
 | whatsapp-error-131049 | EXPAND | Lynomia mechanics are code-verified and the failure was observed; add Meta source and Meta's verbatim title, reconcile with the in-product "wait at least a day" copy, tell the reader the campaign table shows `Code 131049` | A1-A8 |
 | whatsapp-error-131042 | EXPAND | Mechanics verified, observed; but "Retry stays available" is false after one day, and "the one that is yours to fix" is contradicted inside the section | B1, B2, B6 |
-| whatsapp-error-131053 | REWRITE | The Lynomia half is accurate and specific (upload-first, fallback, timeout) but the code's definition is lifted from an upstream comment, a cause that re-creates the failure (the operator env switch) is missing, and it has no in-product link | C1-C6 |
-| whatsapp-error-131060 | REWRITE | Describes UI that does not exist ("empty message"), attributes the code to message types with no evidence, omits the only evidenced cause (coexistence companion-device syncs), invents the worked example | D1-D6 |
+| whatsapp-error-131053 | REWRITE | The Lynomia half is accurate and specific (upload-first, fallback, timeout) but the code's definition comes from an upstream comment and is not what Meta's pages say (G1), a cause that re-creates the failure (the operator env switch) is missing, and it has no in-product link | C1-C6, G1 |
+| whatsapp-error-131060 | REWRITE | Describes UI that does not exist ("empty message"), attributes the code to message types Meta's pages do not name, omits the cause both the repo and Meta give (coexistence), says the content is unrecoverable where Meta says to check the Business app, invents the worked example; the unsupported-type code is 131051, so this is a family | D1-D9, G2 |
 | whatsapp-error-190 | REWRITE | Trigger, banner location and "in a row" are wrong for sends; the code is a Graph-wide OAuth code used by Instagram, Facebook and the Template Manager too, so the cross-channel part should be split from the WhatsApp reconnect part (keep the key: `DOC_ARTICLES` depends on it, `documentationLinks.js:48`) | E1-E9 |
 | whatsapp-number-status | KEEP | UI facts, admin gating and the risky-status list are verified; needs a Meta-source pass and one internal inconsistency fixed ("Rate limited") | F1, F2, F2b |
 | whatsapp-quality-and-limits | KEEP | Verified what Lynomia stores/logs; contains no invented numbers; Meta semantics unsourced | F1, F2, F2b |
-| whatsapp-display-name | KEEP | Thin on repo facts (it only reports `name_status`) so almost every claim is Meta's and unsourced; short, so cheap to source | F3 |
+| whatsapp-display-name | EXPAND | Thin on repo facts (it only reports `name_status`) so almost every claim is Meta's; the Meta reports add a step the article omits (the new name does not take effect until the number is re-registered, within a 14-day window) | F3, G7 |
 | whatsapp-nothing-arrives | EXPAND | Strings verified, but one row contradicts the UI ("there but empty") and a real cause evidenced in the repo (stale phone-level callback override) is absent | F4-F6 |
 | whatsapp-reconnect-a-number | KEEP | The five refusal strings are verbatim from `en.yml`; fix invented timings and the unqualified "release the number from Meta" | F7, E7 |
 | whatsapp-number-already-connected | KEEP | Installation-wide uniqueness verified; one claim ("inboxes you may have archived") has no basis in the product | F8 |
@@ -98,7 +102,7 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 | # | claim in the article | evidence | verdict |
 |---|---|---|---|
 | A1 | Retry is withdrawn for this code, with the reason stated | `delivery_failure.rb:29,54`; `messages_controller.rb:33-41`; `MessageError.vue:56-58,137-139`; server string `en.yml:186` | confirmed |
-| A2 | "WhatsApp's own words begin with `131049`" | status-webhook path writes `"#{code}: #{title}"` (`incoming_message_base_service.rb:73-76`); request-time refusals store only Meta's `error.message`, no code (`whatsapp_cloud_service.rb:166-169`, `providers/base_service.rb:44-57`), and `CODE_IN_ERROR = /\A(\d{3,6}):/` (`delivery_failure.rb:35`) cannot match that | partly |
+| A2 | "WhatsApp's own words begin with `131049`" | status-webhook path writes `"#{code}: #{title}"` (`incoming_message_base_service.rb:73-76`); request-time refusals store only Meta's `error.message`, no code (`whatsapp_cloud_service.rb:166-169`, `providers/base_service.rb:44-57`), and `CODE_IN_ERROR = /\A(\d{3,6}):/` (`delivery_failure.rb:35`) cannot match that. (Campaign sends differ: the refusal's code and title are kept separately on the recipient by `Whatsapp::SendFailure`, `custom/app/services/whatsapp/send_failure.rb:14-36`, wired at `custom/app/services/custom/whatsapp/providers/base_service.rb:18-21`) | partly |
 | A3 | Per-recipient, interleaved with delivered/read messages on the same number | recorded observation: `delivery_failure.rb:13-15`; `spec/services/whatsapp/delivery_failure_spec.rb:1-5`. The raw data is not in the repo | confirmed as a recorded observation; not re-checkable here |
 | A4 | It is Meta's per-person cap on marketing messages | in-repo support is the observation above and the classification comment; no Meta URL appears anywhere in the repo, although `docs/p7/04-whatsapp-failure-ux.md` ("Copy") says the copy was grounded in Meta's documentation | unverifiable (Meta) |
 | A5 | UTILITY is not capped the same way; Meta reads content and reclassifies; the cap "lifts by itself"; no support request clears it; each retry is "one more signal against your number's quality rating" | the last two are repeated as code comments (`delivery_failure.rb:5-7`, `messages_controller.rb:29-32`) and in a user string (`en.yml:186`) with no source | unverifiable (Meta) |
@@ -126,7 +130,7 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 | C1 | Lynomia uploads first and sends by media id | `whatsapp_cloud_service.rb:191-192`; `media_upload_service.rb:1-5,12-20` | confirmed |
 | C2 | If you see it, "the send fell back to something Meta had to fetch" | fallback is `{ 'link' => attachment.download_url }` whenever the upload returns nil (`whatsapp_cloud_service.rb:192`); upload returns nil on any failure (`media_upload_service.rb:17-27`) | confirmed |
 | C3 | "An upload has a long but finite timeout" | 60 s open, 300 s read (`media_upload_service.rb:8-9`) | confirmed |
-| C4 | "`131053` means WhatsApp tried to download a file from your installation and could not" | the only source is a code comment ("rate limited per destination ASN and returns intermittent 131053 errors", `media_upload_service.rb:4-5`; `whatsapp_cloud_service.rb:191`) that came in with upstream Chatwoot (#15702, `docs/chatwoot-upgrade/appendix/A-upstream-whatsapp-analysis.md:338`). It is not a Meta page and not a Lynomia observation. Whether Meta's own title for 131053 says this is unchecked | unverifiable (Meta) |
+| C4 | "`131053` means WhatsApp tried to download a file from your installation and could not" | the only source is a code comment ("rate limited per destination ASN and returns intermittent 131053 errors", `media_upload_service.rb:4-5`; `whatsapp_cloud_service.rb:191`) that came in with upstream Chatwoot (#15702, `docs/chatwoot-upgrade/appendix/A-upstream-whatsapp-analysis.md:338`). It is not a Meta page and not a Lynomia observation. Whether Meta's own title for 131053 says this is unchecked here — the Meta reports say it does not (G1) | contradicted by the Meta reports (G1) |
 | C5 | (omitted) the operator switch `WHATSAPP_MEDIA_UPLOAD_STRATEGY=link` restores link sending and therefore re-creates the failure | `media_upload_service.rb:31-34`; documented as an upgrade ops note `docs/chatwoot-upgrade/01-upstream-diff.md:43` | gap |
 | C6 | "Press Retry … Retry is offered" | true by default (unclassified code takes the default branch, `MessageError.vue:60-66`), subject to the one-day limit; and the failure UI shows **no** Learn-more link for it, because unclassified | confirmed (with B2's caveat) |
 
@@ -136,12 +140,13 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 |---|---|---|---|
 | D1 | The placeholder is kept on purpose rather than dropping the event | `incoming_message_base_service.rb:92-102` | confirmed |
 | D2 | "The conversation shows an incoming message with no content" | stored content is "This message is unavailable." (`config/locales/en.yml:455`), but the agent sees the Unsupported bubble: "This message is unsupported. You can view this message on the WhatsApp app." (`bubbles/Unsupported.vue:22-23`; `en/conversation.json:79`) | wrong |
-| D3 | It happens with "some interactive and system message types, and media WhatsApp itself could not process" | the only repository statement ties 131060 to **coexistence companion-device syncs** (`incoming_message_base_service.rb:92-94`; `docs/real-whatsapp-uat/07-coexistence.md:93`; `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259`). The article never mentions coexistence | unverifiable (Meta); the evidenced cause is omitted |
+| D3 | It happens with "some interactive and system message types, and media WhatsApp itself could not process" | the only repository statement ties 131060 to **coexistence companion-device syncs** (`incoming_message_base_service.rb:92-94`; `docs/real-whatsapp-uat/07-coexistence.md:93`; `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259`). The article never mentions coexistence. The Meta reports name the same cause and not the article's (G2) | contradicted by the Meta reports (G2); the evidenced cause is omitted |
 | D4 | "The code behind that is 131060" | no code reads 131060. The branch keys on `type: unsupported` (`incoming_message_base_service.rb:84,95`); the log line records the error *title* and sender only (`incoming_message_service_helpers.rb:79-81`). A user never sees "131060" in the product | wrong as a user-facing premise |
 | D5 | "It is not reported as a failure anywhere" | a `Rails.logger.warn` line exists (`incoming_message_service_helpers.rb:79-81`); no operator-log event or Sentry capture | confirmed (a log line only) |
 | D6 | The 24-hour window opens from the customer's message | `message_window_service.rb:2,27-28,34-37` | confirmed |
 | D7 | Worked example (a forwarded catalogue product) | invented | unverifiable (illustrative) |
 | D8 | (not in article) a message event carrying `errors[]` that is not typed `unsupported` is logged and the method returns | `incoming_message_base_service.rb:85` (`log_error(message) && return if error_webhook_event?`); depends on `Logger#warn` returning truthy — not run | unverified; the "customer says they wrote and nothing is there" cause this could explain is undocumented |
+| D9 | "The content cannot be recovered, by you or by support. WhatsApp did not send it." | the product text says the opposite remedy ("You can view this message on the WhatsApp app", `en/conversation.json:79`) and so do the Meta reports (G2: "check the WhatsApp Business app for the message") | wrong |
 
 ### E. whatsapp-error-190
 
@@ -154,7 +159,7 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 | E5 | "Incoming messages are still accepted and stored" | `whatsapp_events_job.rb:147-158`: a latched channel ingests and "loses at most its attachments". The article omits the attachment loss | confirmed (incomplete) |
 | E6 | Admin-only; remedy differs for embedded vs manual | `inbox_policy.rb:79-81`; Account Health descriptions "reconfigure it using Embedded Signup" / "verify or replace it" (`en/inboxMgmt.json:940,942`) | confirmed |
 | E7 | "Deleting and recreating the inbox … can release the number from your Meta app" (repeated in number-status, reconnect, already-connected, whatsapp-troubleshooting) | `before_destroy :teardown_webhooks` (`channel/whatsapp.rb:48`) deregisters the phone number and may unsubscribe the app **for embedded-signup channels only**; manual numbers are deliberately left alone (`webhook_teardown_service.rb:41-50,55-65`) | confirmed for embedded signup; overstated for manual |
-| E8 | Why a token dies (expired, revoked, permission removed, app changed); "a token you generated by hand will expire again" | Meta token lifetimes. A system-user token need not expire; the sentence generalises. Route to 001/002 | unverifiable (Meta) |
+| E8 | Why a token dies (expired, revoked, permission removed, app changed); "a token you generated by hand will expire again" | Meta token lifetimes. The Meta reports record that a system-user token can be "Never expires" and BISU tokens default to non-expiring (G5), so "will expire again" is not true of every hand-made token | wrong as a generalisation (G5) |
 | E9 | Written and titled as a WhatsApp code | the same OAuth code 190 latches Instagram (`instagram/base_send_service.rb:76`, `instagram/message_text.rb:44`, `builders/messages/instagram/message_builder.rb:27`; threshold **1**, `channel/instagram.rb:25`), Facebook (`builders/messages/facebook/message_builder.rb:31,152`; string-matched at `facebook/send_on_facebook_service.rb:114-118`), the Template Manager (`custom/app/services/whatsapp/templates/operation.rb:11,54` → `AUTH_INVALID`) and the Account Health fetch. No subcode handling anywhere | incomplete by scope |
 
 ### F. symptom articles
@@ -163,16 +168,35 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 |---|---|---|---|---|
 | F1 | number-status, quality | six statuses are "risky"; yellow/red rating are "risky"; a transition writes an operator-log line | `health_service.rb:39-40`; `log_risky_transition` `health_service.rb:213-223` (`[WHATSAPP HEALTH] risky_phone_number`) | confirmed |
 | F2 | number-status, quality | Account Health admin-only; custom roles have no inbox permission; no history kept | `inbox_policy.rb:79-81`; `custom/app/models/custom_role.rb:19-27`; single stored record `health_service.rb:20-38` | confirmed |
-| F2b | number-status, quality | what each status/rating/tier *means* (Flagged keeps sending, Banned appealed in WhatsApp Manager, tier = unique customers per rolling 24 h, tiers rise "on their own") | nothing in the repo states these. Also internally inconsistent: number-status says Rate limited = "too many messages too quickly" (EN line 17); quality says hitting the unique-customer ceiling "shows up as Rate limited" (EN lines 32-34) | unverifiable (Meta) |
+| F2b | number-status, quality | what each status/rating/tier *means* (Flagged keeps sending, Banned appealed in WhatsApp Manager, tier = unique customers per rolling 24 h, tiers rise "on their own") | nothing in the repo states these. Also internally inconsistent: number-status says Rate limited = "too many messages too quickly" (EN line 17); quality says hitting the unique-customer ceiling "shows up as Rate limited" (EN lines 32-34) | unverifiable (Meta); 018 could not confirm `FLAGGED`/`RESTRICTED`/`RATE_LIMITED` as `status` values at all (G4) |
 | F3 | display-name | name state is reported; refusal reasons; "messages keep sending"; "customer sees your number" | `name_status` stored (`health_service.rb:24`); the rest is Meta's | partly; remainder unverifiable (Meta) |
 | F4 | nothing-arrives | table strings "Webhook not configured", "Register Webhook", "Health data is not available", "WhatsApp connection needs to be refreshed" | `en/inboxMgmt.json:913,1087-1088,844,936,939` | confirmed |
 | F5 | nothing-arrives | "An incoming message that is there but empty" | wrong for the same reason as D2 | wrong |
-| F6 | nothing-arrives | "Webhook not configured … the commonest cause by a wide margin"; "messages sent while the webhook was missing are gone, no replay" | no frequency data in the repo; replay is Meta's retry behaviour (026). The repo itself records a different real cause — a **stale phone-level callback override** pointing a number at a host that answered 502 (`spec/jobs/webhooks/whatsapp_events_job_live_status_spec.rb:7-10`) — absent from the article. "No backfill in the product" is consistent with `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259` ("History import … Not implemented") | unverifiable (Meta) |
+| F6 | nothing-arrives | "Webhook not configured … the commonest cause by a wide margin"; "messages sent while the webhook was missing are gone, no replay" | no frequency data in the repo; replay is Meta's retry behaviour (026). The repo itself records a different real cause — a **stale phone-level callback override** pointing a number at a host that answered 502 (`spec/jobs/webhooks/whatsapp_events_job_live_status_spec.rb:7-10`) — absent from the article. "No backfill in the product" is consistent with `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259` ("History import … Not implemented") | partly contradicted by the Meta reports: Meta retries a non-200 webhook for up to 7 days (G6), so "gone" holds only when Meta had no URL |
 | F7 | reconnect | five refusal strings | verbatim in `config/locales/en.yml:181-184,198`; Configuration tab `Settings.vue:232`, Account Health tab `:253`. "Total time, about four minutes" and "five-minute reconnection" are invented | confirmed; timings unverifiable |
 | F8 | already-connected | one number, once per installation; "including inboxes you may have archived" | uniqueness `channel/whatsapp.rb:40`, `channel_creation_service.rb:14`; the actual string is "Channel already exists for this phone number: %{phone_number}, please contact support if the error persists" (`en.yml:184`) — worth quoting. No archived-inbox state exists in `app/models/inbox.rb` or `en/inboxMgmt.json` | confirmed; "archived" wrong |
 | F9 | contact-info-requests | six reasons; "a failed request does not count as pending" | `en.yml:190-195`; evaluation order `contact_info_request_eligibility_service.rb:60-71`; `where.not(status: :failed)` at `:124`. Paraphrased, not quoted. Last Limit bullet ("A shared number cannot be requested twice in parallel") restates the pending rule | confirmed |
 | F10 | business-scoped | the two refusals; "Sync templates" | `authentication_template_guard.rb:6-9`; `en.yml:187-188`; `en/whatsappTemplateMgmt.json:7`. "WhatsApp does this when the customer reaches you through certain entry points" is Meta's | confirmed; remainder unverifiable (Meta) |
 | F11 | find-a-failed-message | Filter "Message delivery → Failed to send"; matches a conversation that *contains* such a message; one-day retry limit; operator diagnostic exists | `en/advancedFilters.json:71,77`; `conversations/filter_service.rb:60-66,84`; `MessageError.vue:65`; `lib/tasks/whatsapp_diagnose.rake:1-25` prints recent failures verbatim (`diagnosis/inbound_evidence.rb:73-83`) | confirmed |
+
+### G. cross-check against the Meta agents' reports
+
+These are other agents' findings from Meta's normative pages (their source registers carry the URLs and dates). I
+have **not** re-read the Meta pages; treat each row as "as reported by NNN", to be confirmed by 088.
+
+| # | point | what the Meta reports say | effect here |
+|---|---|---|---|
+| G1 | 131053 | Meta's title is "Unable to upload the media used in the message." — a **send-side media upload** error, "such as an unsupported media type", with mismatched MIME type named as the common cause (`005-whatsapp-send-failures.md:181`; `019-media-upload.md:154`; `020-media-download-expiry.md:225`). For an unreachable link "**no code is published** … 131053 is the nearest documented code but Meta does not name this cause under it" (`019-media-upload.md:162`). It arrives on the `messages` webhook (`019-media-upload.md:169-170`) | the article's definition (Meta "tried to download a file from your installation") is not Meta's. The fwdproxy/ASN story is an upstream observation (C4). A reader whose file failed on a MIME mismatch is sent to check their hosting |
+| G2 | 131060 | "The message is currently unavailable. This typically occurs when a WhatsApp user messages a business onboarded with a WhatsApp Business app phone number, for the first time" (`007-webhook-payloads.md:514`); expected for first-time messages and unsupported companion devices; remedy "check the WhatsApp Business app for the message" (`013-onboarding-embedded-signup.md:338`; `015-coexistence-migration.md:186`). `005` notes it is **absent from the main error reference** and is "not a request-time send failure" (`005-whatsapp-send-failures.md:254-256`). The unsupported-**type** code is **131051** "Message type unknown", also arriving as `unsupported`, most often polls (`007-webhook-payloads.md:513,679`) | the article's cause list is not Meta's; D9 contradicted; Lynomia's placeholder (`type: unsupported`, code-agnostic) serves both codes, so one family article. The repo already has a 131051 fixture (`spec/services/whatsapp/incoming_message_service_spec.rb:356`, per 040 §4.4) |
+| G3 | 131049 | Title as the specs have it; "wait **at least 24 hours** before resending", resending sooner "will likely fail again" (`017-marketing-limits-opt-in.md:285`, `:312-322`; `005-whatsapp-send-failures.md:177`). `017` reviewed this very article: "good and largely accurate" but omits the retry penalty and regional exclusions, and its UTILITY sentence "is vaguer than S2 permits — S2's limit is on **marketing** template messages, full stop" (`017-marketing-limits-opt-in.md:448-452`). Meta also reclassifies approved templates on a recurring basis since 2024-07-01 (`010-template-approval-quality.md:143`) | A5 partly supported; A6 confirmed as an omission: Meta's remedy is "wait a day, then a new send may work"; the article's "Nothing, for that message" leaves that out. (In the product the two combine to make a re-send through Retry impossible: the server refuses it for recipient-scoped codes, `messages_controller.rb:36-40`, and the UI hides Retry after one day, `MessageError.vue:65`.) |
+| G4 | number statuses | "The number `status` enum was not obtained … `CONNECTED` is the only number status value I can cite, and `FLAGGED` / `RESTRICTED` / `RATE_LIMITED` are **not confirmed as `status` values at all**"; third parties describe Flagged as a *quality* state (`018-messaging-limits-tiers.md:313-317`). The "flagged for 7 days" rule is observational, unconfirmed (`:301-304`) | `whatsapp-number-status` presents six values as "what Meta means by it"; the Meta reports cannot support the table. The six come from an upstream list (`health_service.rb:40`) |
+| G5 | token lifetime | System-user token "Never expires" or "Valid for 60 days" by option; BISU tokens "default to never expire" (`001-whatsapp-auth-tokens.md:106-109`) | E8: "a token you generated by hand will expire again" is not generally true |
+| G6 | webhook retry | WhatsApp Cloud API retries a non-200 delivery "with decreasing frequency … up to **7 days**", dropping after 7 days (`026-webhooks-verification-signatures.md:111-114`) | F6: "messages sent while the webhook was missing are gone" is true when no URL is registered; with a failing URL Meta may redeliver after the fix |
+| G7 | display name | The new name "does not take effect until the number is re-registered"; a **14-day window** after approval to re-register (`014-waba-phone-registration.md:161-164`); N10's enumerated rejection reasons are employee/individual name, unrelated business name, unacceptable format, not consistent with branding (`014-waba-phone-registration.md:318-326`); Meta "does not describe any service interruption" (`:167`, recorded as silence, not a guarantee) | the article's four refusal reasons do not match N10's list and it omits the re-registration step; "Do not … recreate the number" is silent on re-registering |
+
+Corroboration from inside the program: **agent 040 independently found** that only status-webhook failures can be
+classified and a synchronous refusal is always `UNCLASSIFIED` (`040-whatsapp-runtime.md` §5), and that three of the five
+articles are unreachable from the failed-message block (same section). **One contradiction with 040** is in §10 item 2.
 
 Not checked: the AR dashboard's runtime fallback when a locale key is missing (`entrypoints/dashboard.js:37-41`
 sets `locale: 'en'` and no `fallbackLocale`); I report only what the AR locale files contain.
@@ -193,7 +217,8 @@ for the Meta agents (005, 025, 028) working from the source register, not for th
 | **Account Health error with a code and subcode** | "Account Health says Meta could not return health details and shows an error — what now?" | the endpoint returns `code`, `subcode`, `http_status` (`inbox_health_management.rb:36-42`) and the UI says "Review the error below" (`en/inboxMgmt.json:944-945`); `nothing-arrives` has one table row for it |
 | **Reading a campaign's Reason and Code columns** | "My campaign shows Failed, Code N, Reason … — which of these can I fix?" | `en/campaign.json:281-290`; 052 owns the campaigns section, so this may belong there with a link back |
 | **Template Manager refusals** | "Lynomia would not submit / sync my template: NAME_TAKEN, AUTH_INVALID, RATE_LIMITED, META_UNAVAILABLE" | a second Meta-error vocabulary with its own codes (`custom/app/services/whatsapp/templates/error.rb:6-9`; mapping `operation.rb:50-57`, including code 100 with subcode 2,388,024 → NAME_TAKEN, `operation.rb:9-10,53`). 053 owns `whatsapp-template-lifecycle` |
-| **131060 as coexistence** (a rewrite target, not a new page) | "My customer's message shows 'unsupported — view it on the WhatsApp app'. Did we lose it?" | D3 |
+| **Unsupported incoming message (131051 and 131060 together)** — a rewrite of the 131060 page into a family | "My customer's message shows 'unsupported — view it on the WhatsApp app'. Did we lose it?" | D2, D3, G2; the placeholder is code-agnostic (`incoming_message_base_service.rb:84,95`) |
+| **Why can I reply to some customers and not others?** — outside the 24-hour window (131047) vs recipient cannot receive (131026) | "It failed on one customer but not another — is it them or us?" | Named in the real-WhatsApp UAT records as the expected outbound refusals (`docs/real-whatsapp-uat/05-outbound-new-contact.md:137,171-172`; `06-delivery-status.md:14-20`) and pinned by fixtures (`spec/services/whatsapp/delivery_report_spec.rb:132`; `spec/services/whatsapp/send_failure_spec.rb:53`); 005 calls this "five codes, five user explanations, and today's corpus covers one" (`005-whatsapp-send-failures.md:355`). Whether either was seen in production is asserted by 040 and not established by those lines |
 | **A section index** | "I have a number. Which page is it?" | today a hand-written paragraph in another section's article (`whatsapp-troubleshooting.md:101-122`); fine at 14 pages, a maintenance failure at 100 |
 
 Other numeric Meta codes the **executable** code already special-cases and no article mentions: 1609005 (Instagram
@@ -339,8 +364,8 @@ separates them:
 |---|---|---|---|---|
 | 131049 | strong | yes | unsourced | — |
 | 131042 | strong (minus the one-day limit) | yes | unsourced | — |
-| 131053 | strong | **none** | definition from a comment | defined the code from a comment; omitted the env switch |
-| 131060 | partly wrong (UI) | **none** | invented types | described UI from imagination; ignored the one evidenced cause |
+| 131053 | strong | **none** | contradicted by the Meta reports (G1) | defined the code from a comment; omitted the env switch |
+| 131060 | partly wrong (UI) | **none** | contradicted by the Meta reports (G2) | described UI from imagination; ignored the one evidenced cause |
 | 190 | **wrong** (trigger, banner) | **none** | unsourced | described intended design, not shipped behaviour |
 | symptom articles | strong (strings verbatim, policies cited) | n/a | unsourced in at least 5 of 9 (number-status, quality-and-limits, display-name, nothing-arrives, business-scoped-contacts) | — |
 
@@ -461,8 +486,12 @@ checked:      2026-10-13          # date Meta sources were last read
 1. **Correct the baseline.** `01-current-system.md` §7 and charter §1.2: two codes are classified, not five; only
    two have a production record. (§7)
 2. **190: fix the product or the article — decide before any rewrite.** The article documents behaviour that
-   SHO-64 says does not exist (`docs/p7/00-discovery-findings.md:833`). Owners: 039/040 (product), 001/002 (token
-   facts), 092 (claims vs code).
+   SHO-64 says does not exist (`docs/p7/00-discovery-findings.md:833`). **040 disagrees with me:** it marks the
+   article's "what Lynomia Chat does after two refusals" as *confirmed* because the threshold is 2
+   (`040-whatsapp-runtime.md`, claims-not-proven item 5), treating the health-read 190 gate as a latch. It is not: the
+   health path only labels the error (`inbox_health_management.rb:36-42`) and the only WhatsApp caller of
+   `authorization_error!` is the inbound-media 401 (`incoming_message_whatsapp_cloud_service.rb:22,41-56`). Owners:
+   039/040 (product), 001/002 (token facts), 092 (claims vs code).
 3. **Does corpus growth have to reach the UI?** If yes, the classification gate (§7) must change: widen `CODES`, or
    resolve raw codes in the UI, and handle the three `external_error` formats. Owners: 040, 041, 042.
 4. **Keep or relax the "seen here" rule.** My recommendation is §8's last paragraph.

@@ -433,3 +433,115 @@ than filling the gap from memory, which is the behaviour the contract asked for.
 | XA-20 | **Charter §6.2 calls Meta changelogs normative in one sentence and observational in another** (agent 023 caught this). Six deprecation facts rest only on a changelog. I must rule: a changelog entry is **normative for the fact that a change was announced and dated**, and observational for any behaviour it does not spell out. |
 | XA-21 | **The 005/006 boundary is a Lynomia invention.** Meta does not partition request-time from webhook errors and explicitly says to monitor both. No article may say "at send time you get X" until the taxonomy settles this. |
 | XA-22 | **`recent_buyers` preset selects the opposite of its own copy** (agent 052): the date operator means "more than N days ago", so the preset targets lapsed customers while the copy promises recent ones. Three corpus articles repeat the inversion. Fix the preset, the operator, or the docs — a product answer is needed before those articles can be corrected. |
+
+---
+
+# Addendum 4 — the security wave, and the most serious finding of the program
+
+## SEC-01 — BLOCKER: a tenant can publish into Lynomia's public documentation portal
+
+**Agent 086, confirmed by reading three files that each look correct on their own.**
+
+The write path: the tenant article API permits `category_id` **unchecked**
+(`app/controllers/api/v1/accounts/articles_controller.rb:108-115`). No `Article` validation ties the chosen
+category's portal to the article's portal. The read path: the public category page lists `@category.articles`
+**unscoped by portal** (`app/controllers/public/api/v1/portals/categories_controller.rb:32`).
+
+So a tenant account administrator can point their own published article at a **platform** documentation category,
+and it renders on Lynomia's public `/docs` — title, excerpt, and the tenant's own agent names and avatars
+(`documentation_layout/categories/_header.html.erb:1,5-11`).
+
+It is not XSS: `to_plaintext` is not `html_safe`. It is worse in a different way — it is **unauthorized
+publication on the vendor's own documentation domain**, by any customer, with no audit trail (SEC-03 below).
+
+This is the one finding in the program I would class as release-blocking on its own, and it is **pre-existing**,
+not created by anything this program proposes. The platform/tenant boundary that the whole documentation design
+rests on is asserted nowhere and enforced only by `scoped_resource`, which scopes *lookup* and not *assignment*.
+
+**Routed to agents 096 and 081 to attack independently before Phase 4 freezes the content model**, and to the
+owner now, because it is live.
+
+## SEC-02 — MAJOR: `portal_id` is mass-assignable in Super Admin, and the damage is permanent
+
+Agent 086 answered the exact question I set: **`Field::BelongsTo.with_options(scope:)` only builds the `<select>`
+options** (`belongs_to.rb:43-48`); `permitted_attribute` is the bare foreign key (`:6-13`). `scoped_resource`
+scopes lookup only (`:183-195`). Same for `category`.
+
+So a Super Admin save can set `article[portal_id]` to a tenant portal. Then `before_validation
+:ensure_account_id` (`article.rb:58,230-232`) **transfers the row to that tenant's account**; the article
+disappears from `scoped_resource` so Super Admin can no longer see or fix it; the tenant's admins get full CRUD
+over it; and the next `rails documentation:content` **raises `RecordNotUnique` on the global slug index and
+aborts permanently** (`content_seeder.rb:73,80`). One mis-click takes the content sync down until someone opens a
+Rails console.
+
+Worse, `create` **never consults `scoped_resource` at all** (Administrate `application_controller.rb:42-46`), so
+a Super Admin can create an article directly in a tenant portal with no mistake required.
+
+And one checkbox is worse still: **`archived` is a permitted Portal attribute** (`portal_dashboard.rb:31`) while
+`Documentation::Library.portals` is `.active` — so archiving the portal removes the entire documentation surface
+from both Super Admin and `/docs`, **with no UI path back**.
+
+**This bears directly on §8.1.** A re-seed cannot heal a moved row, because it dies on the slug collision
+first. Any hybrid source-of-truth answer must define the behaviour of a row whose `portal_id` no longer
+satisfies the platform predicate.
+
+## SEC-03 — MAJOR: documentation authoring is entirely unaudited, and the usual fix does not work
+
+No capture point for `Article`, `Category` or `Portal` exists in `custom/app/models/custom/audit/`. And the
+`audited` macro **cannot** fix it: its Sweeper resolves the actor via `current_user`
+(`audited-5.4.1 sweeper.rb:5-9,22-24`), which is `nil` in a `:super_admin` session. The working precedent is this
+repository's own `AuditTrail::Event` pattern (`platform_support/audit_writer.rb:4-7`).
+
+Consequence for §8.6: **an unaudited authoring surface makes any writer-ownership map unverifiable after the
+fact.** Agent 069 independently reached the same conclusion from the source-of-truth side — `audited` on
+`Article` is a prerequisite of any option that permits operator edits, and
+`docs/global-documentation/10-global-docs-implementation.md:120` explicitly deferred it.
+
+## What the security wave confirmed as CLEAN
+
+Worth recording, because an audit that only reports problems is not trustworthy. Agent 086 tried and failed to
+break these: **CSRF holds** (`protect_from_forgery with: :exception`; the Super Admin tree does *not* inherit the
+app's `skip_before_action :verify_authenticity_token`; `authenticate_super_admin!` is applied with no skip).
+`preview` is **not** an open redirect (hard-coded `/hc/` prefix plus `raise_on_open_redirects`). **`meta` is not
+an unrestricted hash** — it is a closed six-key allowlist, so arbitrary `meta` keys are impossible, which also
+refutes a mass-assignment concern I had flagged in agent 082's brief.
+
+Agent 081 likewise **tried and failed** to break four things it expected to break: JSON-LD `</script>`
+injection (`json_escape(...).to_json` plus `escape_html_entities_in_json`), Administrate's show views (all
+`<%= field.data %>`, escaped), `ArticleMetaField`'s three views (all escaped), and the URL denylist — whose `\A`
+anchor holds because cmark's own `cmark_clean_url` trims whitespace and decodes entities *before* Ruby sees the
+URL, and `houdini_href_e.c` percent-encodes controls. A `jav&#x09;ascript:` bypass dies there.
+
+**Nobody's defence here is accidental except the one that matters most** — raw-HTML omission, which is a parser
+flag rather than a chosen control. That is what Ruling R1 addresses.
+
+## Corpus findings that change the IA decision
+
+Agent 062 measured the two things I would otherwise have had to guess:
+
+- **Duplication is genuinely low** — maximum 6-gram containment 0.169, and only 6 of 1,953 article pairs above
+  0.05. So **no MERGE is warranted anywhere**, and any "fold these sections together" proposal is refuted by
+  measurement rather than by taste.
+- **Length is bimodal** (20 articles at 330–599 words, 38 at 800–1,399, only 2 in between) and a **7-slot house
+  template is observable** — `## Related` in 57 files, `## Limits` 52, `## Who can do this` 45, `## Steps` 24.
+  There are already two real article types here. They have simply never been named or enforced.
+
+Its IA recommendation is the conservative one the charter asked for: **10 of 12 sections untouched**; relocate
+the 5 commerce-error articles from `troubleshooting` to `commerce` and `whatsapp-troubleshooting` into
+`whatsapp-errors` as its index — both free, because slug and `doc_key` derive from the filename; split
+`integrations`; and create **one** new section, `channels`, **on trigger** (the fourth non-WhatsApp channel
+article) rather than up front. It explicitly rejects per-provider error sections and both failure modes, citing
+in-repo evidence for each.
+
+Two more corpus facts worth keeping: **the corpus's most-linked article is factually wrong** —
+`roles-and-permissions.md` has in-degree 24 and says the custom-role list is "fixed at six" when the product
+offers seven. And the 5 commerce-error articles are a **disconnected island**: out-degree 0, four of five with
+in-degree 0, their cross-references written in bold instead of as links.
+
+## A methodology correction that affects three other agents
+
+Agents 052, 055 and 058 independently found that **POSIX `wc -w` undercounts Arabic by three to five times** in
+this shell's locale. Several earlier reports used it, which is why some EN/AR ratios looked alarming. Measured
+properly, agent 055 gives EN 4,090 / AR 3,438 words for the automation section, and agent 052 puts the real
+overall ratio near 0.84. **The Arabic corpus is not truncated.** Agent 094 is settling this with a per-pair
+verdict; until then, no "the Arabic is half the length" claim stands, including ones in earlier addenda here.

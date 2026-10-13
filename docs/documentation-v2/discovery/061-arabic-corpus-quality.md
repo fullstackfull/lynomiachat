@@ -99,3 +99,220 @@ a faithful translation and nothing here falls outside it.
 | `set-up-an-inbox` | workspace | إعداد قناة تواصل | 10 | 853 | 826 | 0.97 | — |
 | `teams-and-agents` | workspace | الفرق ووكلاء الدعم | 20 | 910 | 767 | 0.84 | — |
 | `your-own-help-centre` | workspace | التوثيق والدعم | 40 | 535 | 426 | 0.80 | — |
+
+---
+
+## 2. Per-article verdict
+
+The Arabic files are not independent articles: each is the sibling of an English file, linked by
+`associated_article_id` (`custom/app/services/documentation/content_seeder.rb:77,90-92`) and sharing the English
+file's `doc_key`. **No Arabic file can be retired, split or relocated independently of its English sibling** —
+those verdicts belong to agents 049–060 and 062. What is in scope here is whether the Arabic text, as Arabic, is
+fit to ship.
+
+On that basis:
+
+| Verdict | Count | Files |
+|---|---|---|
+| **KEEP** — Arabic is correct and ships as-is | 43 | everything not listed below |
+| **REWRITE** (localised passages, not whole articles) | 14 | see table |
+| **EXPAND** | 0 | Arabic is never thinner than English beyond the normal ratio |
+| **SPLIT / MERGE / RETIRE / RELOCATE** | 0 | not an Arabic-layer decision |
+
+The 14 REWRITE files, and what specifically must change:
+
+| AR file | What must be rewritten |
+|---|---|
+| `ar/workspace/set-up-an-inbox.md` | five of nine inbox tab names are wrong in Arabic (§3.1) |
+| `ar/workspace/roles-and-permissions.md` | claims to use "the names the product uses" for six permissions; five are English on screen (§3.2); nav path `الأدوار المخصصة` is wrong |
+| `ar/whatsapp-errors/whatsapp-nothing-arrives.md` | both actionable UI references in "the one to check first" are wrong (§3.3) |
+| `ar/whatsapp-errors/whatsapp-number-already-connected.md` | title and body translate an error string the Arabic product shows in English (§3.4) |
+| `ar/whatsapp-errors/whatsapp-error-131053.md` | `سلامة الحساب` → `Account Health` |
+| `ar/whatsapp-errors/whatsapp-error-190.md` | `التهيئة` ×2 → `الإعدادات`; a fifth variant of "Embedded Signup" (§4.2) |
+| `ar/whatsapp-errors/whatsapp-reconnect-a-number.md` | `التهيئة` ×2; third variant of "Embedded Signup" |
+| `ar/troubleshooting/commerce-store-needs-reconnecting.md` | `الإعدادات ← التجارة` points at a Reports label, not Settings (§3.5); provider names transliterated against corpus policy |
+| `ar/troubleshooting/commerce-keys-cannot-do-that.md` | provider names transliterated |
+| `ar/troubleshooting/commerce-store-address-refused.md` | provider names transliterated |
+| `ar/troubleshooting/commerce-store-unreachable.md` | provider names transliterated; brand gender |
+| `ar/troubleshooting/contact-lynomia-support.md` | brand gender disagrees with itself inside one file (§5.4) |
+| `ar/contacts/custom-attributes.md` | both segments of the nav path wrong ×2 |
+| `ar/contacts/bulk-actions.md` + `ar/conversations/labels.md` | `تعيين الوسوم` → `إضافة وسم` |
+
+Plus one-line corrections in `ar/automation/automation-rules.md:72`, `ar/commerce/connect-salla.md:24`,
+`ar/commerce/connect-zid.md:23`, `ar/commerce/commerce-overview.md:21`, `ar/commerce/connect-woocommerce.md:90`
+and the four `إضافة قناة` near-misses, none of which justifies a REWRITE verdict on its own.
+
+---
+
+## 3. Accuracy against the product
+
+Method: every `**bold**` run and every `«guillemet»` string in the Arabic corpus was normalised and matched
+against an index of all 8,408 Arabic dashboard strings plus `config/locales/ar.yml`. The corpus contains **47
+distinct bolded navigation paths**. Of those, 26 resolve entirely to real Arabic UI strings, 10 contain a segment
+I confirmed wrong, 4 contain a near-miss, and 7 contain a segment I could not verify from the locale files
+(user-entered values such as `hawalli`, or labels that live in a component rather than the locale index).
+
+**What is right is worth stating, because it is most of it.** These Arabic quotes are character-exact against the
+Arabic UI: `الإعدادات ← قنوات التواصل` (`app/javascript/dashboard/i18n/locale/ar/settings.json:353`),
+`الإعدادات ← خيارات الربط` (`settings.json:357`), `الإعدادات ← المتجر` (`settings.json:358`),
+`الإعدادات ← الروبوتات` (`settings.json:351`), `منشئ التدفقات` (`flowBuilder.json:3`), `القوالب`
+(`whatsappTemplateMgmt.json:3`), `المتعاونون` and `ساعات العمل` (`inboxMgmt.json:780,784`), `اختر صندوق الوارد`
+(`campaign.json:38`), the five priority options `لا يوجد / منخفضة / متوسطة / عالية / عاجل`
+(`conversation.json:207-211`), `إدارة طلبات المتجر (تغيير الحالة وإعادة إرسال رسائل المتجر)`
+(`customRole.json:48`), `Connect with WhatsApp Business` (`inboxMgmt.json:425`), `Account Health`
+(`inboxMgmt.json:787`) and `لوحة Shopify ← الإعدادات ← النطاقات` (`commerce.json:278`). Somebody checked.
+
+### 3.1 `set-up-an-inbox` names five of nine inbox tabs wrong — **wrong**
+
+`ar/workspace/set-up-an-inbox.md:41-48` presents the inbox tabs as a table of bolded labels. Against
+`app/javascript/dashboard/i18n/locale/ar/inboxMgmt.json:778-790`:
+
+| Article | Line | Actual Arabic UI | Cite |
+|---|---|---|---|
+| `**الإعدادات**` | :41 | `الإعدادات` | `inboxMgmt.json:779` — correct |
+| `**المتعاونون**` | :42 | `المتعاونون` | `inboxMgmt.json:780` — correct |
+| `**ساعات العمل**` | :43 | `ساعات العمل` | `inboxMgmt.json:784` — correct |
+| `**رضا العملاء**` | :44 | `تقييم رضاء العملاء` | `inboxMgmt.json:788` — **wrong** |
+| `**نموذج ما قبل المحادثة**` | :46 | `نموذج ما قبل الدردشة` | `inboxMgmt.json:783` — **wrong** |
+| `**التهيئة**` | :46 | `الإعدادات` | `inboxMgmt.json:781` — **wrong** |
+| `**تهيئة البوت**` | :47 | `اعدادات البوت` | `inboxMgmt.json:786` — **wrong** |
+| `**سلامة الحساب**` | :47 | `Account Health` | `inboxMgmt.json:787` — **wrong** |
+| `**المكالمات**` | :48 | `Voice` / `Calls` | `inboxMgmt.json:789-790` — **wrong** |
+
+Two of these are the product's fault, not the article's: `inboxMgmt.json:781` gives the Configuration tab the
+*same* Arabic label as the Settings tab (`الإعدادات`), which is why an author reached for `التهيئة`; and
+`inboxMgmt.json:786` misspells `اعدادات` (missing hamza). Both belong in the product-fix list, not the corpus
+one. But `Account Health`, `Voice` and `Calls` are untranslated English on screen and the article invents Arabic
+for them.
+
+`سلامة الحساب` is also used at `ar/whatsapp-errors/whatsapp-error-131053.md:32` — while
+`ar/whatsapp/connect-whatsapp.md:61` quotes the same tab correctly as `Account Health`. The corpus contradicts
+itself about one tab.
+
+### 3.2 `roles-and-permissions` claims the product's own names, and five of six are English — **wrong**
+
+`ar/workspace/roles-and-permissions.md:27-28` says: *"وهذه الخيارات الستّة، بالأسماء التي يستخدمها المنتج"* —
+"these are the six options, named as the product names them." The table at :32-37 then gives six Arabic names.
+Against `app/javascript/dashboard/i18n/locale/ar/customRole.json:43-50`, five of the six are English on screen:
+
+| Article :line | Arabic given | Actual Arabic UI | Cite |
+|---|---|---|---|
+| :32 | إدارة جميع المحادثات | `Manage all conversations` | `customRole.json:43` |
+| :33 | إدارة المحادثات غير المُسندة والمُسندة إليه | `Manage unassigned conversations and those assigned to them` | `customRole.json:44` |
+| :34 | إدارة المحادثات المشارك فيها والمُسندة إليه | `Manage participating conversations and those assigned to them` | `customRole.json:45` |
+| :35 | إدارة جهات الاتصال | `Manage contacts` | `customRole.json:46` |
+| :36 | إدارة التقارير | `Manage reports` | `customRole.json:47` |
+| :37 | إدارة طلبات المتجر (تغيير الحالة وإعادة إرسال رسائل المتجر) | identical | `customRole.json:48` — correct |
+
+The Arabic is a reasonable translation of each English label. The problem is the explicit promise that these are
+what the reader will see. Either the five labels get translated in the product, or the sentence at :27-28 has to
+stop claiming it.
+
+Two further defects, both inherited from the English:
+
+- The count **six** is wrong. `app/javascript/dashboard/constants/permissions.js:4-12` offers **seven**:
+  `support_ticket_manage` is in the list and in the Arabic UI as `إدارة كل حالات الدعم في الحساب`
+  (`customRole.json:50`), and the article does not mention it at all. `ar/.../roles-and-permissions.md:90` repeats
+  the claim ("ثابتة على البنود الستّة"). The English has the same error
+  (`en/workspace/roles-and-permissions.md:3,28`), so this is 057/062's to fix in both languages — but the Arabic
+  must not be corrected in isolation.
+- `ar/.../roles-and-permissions.md:67` instructs `الإعدادات ← الأدوار المخصصة`. The Arabic sidebar entry is
+  `Custom Roles` in English (`settings.json:400`). `الأدوار المخصصة` exists in the Arabic UI only inside a
+  paywall notice body (`customRole.json:25`), never as a navigation label.
+
+### 3.3 `whatsapp-nothing-arrives` gets both of its actions wrong — **wrong**
+
+This is the article for the commonest cause of total WhatsApp silence, and both of its two actionable UI
+references are strings that do not exist in Arabic:
+
+| `ar/whatsapp-errors/whatsapp-nothing-arrives.md:14` | Actual Arabic UI | Cite |
+|---|---|---|
+| `**Webhook غير مُهيّأ**` | `Webhook not configured` | `inboxMgmt.json:990` |
+| `اضغط **تسجيل Webhook**` | `Register Webhook` | `inboxMgmt.json:991` |
+
+`ar/whatsapp/whatsapp-troubleshooting.md:61,74` quotes **the same two strings correctly**, in Latin. So do
+`ar/whatsapp/connect-whatsapp.md:108` and `ar/whatsapp/whatsapp-business-coexistence.md:96`. One file out of four
+half-translated them, and it is the file a stuck user reaches first.
+
+### 3.4 `whatsapp-number-already-connected` translates an untranslated error — **wrong**
+
+The Arabic title is `«توجد قناة لهذا الرقم بالفعل»` (`ar/whatsapp-errors/whatsapp-number-already-connected.md:2`),
+repeated in the body at :9, presented as the literal refusal. The string an Arabic-locale user actually sees is
+English: `Channel already exists for this phone number: %{phone_number}, please contact support if the error
+persists` (`config/locales/ar.yml:151`). The entire `whatsapp:` error block at `config/locales/ar.yml:147-158` is
+untranslated, including `message_outside_messaging_window` (:152), which the 24-hour-window article depends on.
+
+The English title quotes the string exactly, so an English reader who pastes what they saw into search finds the
+article. **The Arabic article contains the Latin string nowhere** — not in the title, not in the body, not in
+`seo_title`, not in `seo_description`. I verified this mechanically: `Channel already exists`,
+`Message not sent because`, `access token does not have` and `Failed to reauthorize` appear in **zero** AR files.
+
+The commerce troubleshooting set does this correctly: `INVALID_STORE_URL`, `AUTH_INVALID`, `STORE_UNAVAILABLE`,
+`ORDER_CHANGED`, `NOT_APPLIED`, `REFUND_DECLINED`, `missing_scope` and `write_orders` are all preserved verbatim in
+the Arabic files. The practice exists; it just was not applied to the WhatsApp error strings.
+
+### 3.5 `commerce-store-needs-reconnecting` sends the reader to the wrong settings page — **wrong**
+
+`ar/troubleshooting/commerce-store-needs-reconnecting.md:12` and `:18` both instruct
+`الإعدادات ← التجارة`. The Arabic Settings entry for Commerce is `المتجر`
+(`app/javascript/dashboard/i18n/locale/ar/settings.json:358`, confirmed by `commerce.json:12`
+*"اربط متجرًا من الإعدادات ← المتجر"*). `التجارة` is the Arabic label for the **Reports** Commerce page
+(`settings.json:331` `ANALYTICS_COMMERCE`). An Arabic reader following this article looks for Commerce under
+Settings, finds `المتجر`, and has been told to look for something that only exists under Reports.
+
+`ar/commerce/commerce-overview.md:64` gets the same path right (`الإعدادات ← المتجر ← إضافة متجر`). Same seam
+again.
+
+### 3.6 Other confirmed mismatches
+
+| AR file:line | Quotes | Actual Arabic UI | Cite |
+|---|---|---|---|
+| `ar/automation/automation-rules.md:72` | `**الإعدادات ← الأتمتة ← إنشاء أتمتة**` | button reads `Create Automation` | `automation.json:7` |
+| `ar/contacts/custom-attributes.md:59`, `:90` | `**الإعدادات ← السمات المخصصة ← إضافة سمة مخصصة**` | `سمات مخصصة` / `إضافة سمة خاصة` | `settings.json:365`, `contact.json:207` |
+| `ar/contacts/bulk-actions.md:87` | `**تعيين الوسوم ← hawalli**` | `إضافة وسم` | `bulkActions.json:29` |
+| `ar/conversations/labels.md:89` | `**تعيين الوسوم ← wholesale**` | `إضافة وسم` | `bulkActions.json:29` |
+| `ar/commerce/connect-salla.md:24` | `**... ← Salla**` | `سلة` | `commerce.json:6` |
+| `ar/commerce/connect-zid.md:23` | `**... ← Zid**` | `زد` | `commerce.json:7` |
+| `ar/whatsapp-errors/whatsapp-reconnect-a-number.md:14`, `ar/.../whatsapp-error-190.md:30,31` | `**التهيئة**` | `الإعدادات` | `inboxMgmt.json:781` |
+| `ar/whatsapp/connect-whatsapp.md:48,66`; `ar/whatsapp/whatsapp-business-coexistence.md:10,56` | `**إضافة قناة**` | `إضافة قناة تواصل` | `settings.json:311` — near-miss |
+
+**Unverified**, and why: `الفلتر` (`ar/audiences-and-campaigns/shared-audiences.md:116`), `إضافة روبوت`
+(`ar/automation/agent-bots.md:33`), `البيانات` (`ar/contacts/import-contacts.md:138`), `المرشِّح` and
+`تسليم الرسائل` (`ar/whatsapp-errors/whatsapp-find-a-failed-message.md:30`) are not present as values in any
+`locale/ar/*.json` file or in `config/locales/ar.yml`. They are either component-local strings outside the locale
+index or they are wrong; distinguishing the two needs the running UI, which I did not have.
+
+### 3.7 The underlying cause: the Arabic product is 37% English
+
+Measured across all 54 files in `app/javascript/dashboard/i18n/locale/ar/`: **3,126 of 8,408 strings (37.2%)
+contain no Arabic character at all** and are byte-identical to the English. `config/locales/ar.yml` is comparable:
+**250 of 519 value lines (48%)** carry no Arabic.
+
+The worst offenders are exactly the areas the corpus documents most heavily:
+
+| AR locale file | Strings | No Arabic | Share |
+|---|---|---|---|
+| `integrations.json` | 892 | 619 | 69% |
+| `inboxMgmt.json` | 997 | 473 | 47% |
+| `settings.json` | 732 | 428 | 58% |
+| `helpCenter.json` | 655 | 358 | 55% |
+| `contact.json` | 594 | 124 | 21% |
+| `conversation.json` | 409 | 134 | 33% |
+| `campaign.json` | 186 | 81 | 44% |
+| `customRole.json` | 60 | 37 | 62% |
+| `sla.json` | 72 | 48 | 67% |
+| `mfa.json` | 98 | 80 | 82% |
+| `onboarding.json` | 74 | 61 | 82% |
+| `webhooks.json` | **1 key in total** | 0 | — the whole webhooks UI has one Arabic string, `إعدادات الـ Webhook` |
+
+Whole flows are English in Arabic: the manual WhatsApp setup (`inboxMgmt.json:344,352,361,362,367,406,407`),
+Embedded Signup (`inboxMgmt.json:1079-1081`, `:843`, `:425`), assignment policies
+(`settings.json`, the entire `ASSIGNMENT_POLICY` block), SLA (`sla.json:4-6,9-10,...`), custom roles
+(`customRole.json:3-8,43-47`). `platformSupport.json` and `supportTickets.json` are, by contrast, fully Arabic —
+those are Lynomia's own additions and were localised properly.
+
+**This is the single constraint that governs how the Arabic corpus can be fixed.** An Arabic article cannot quote
+an Arabic UI label that does not exist. Every mismatch in §3.1–3.6 is either "translate the product" or "quote
+the English". That is a product decision and it has to be made before the corpus is rewritten, or the corpus will
+be rewritten twice.
+

@@ -954,3 +954,57 @@ defect, **curation is currently the only way to make the documentation home page
 collide: the fix for one re-breaks the other. §8.1 must decide which writer owns `portal.config`, and it is a
 different answer from the one for `articles`, because the portal seeder was deliberately written to preserve
 operator edits while the content seeder was deliberately written to overwrite them.
+
+---
+
+# Addendum 10 — agent 092 closes Phase 1, and audits this ledger
+
+The last of the 99. It checked my entries rather than trusting them, and the result cuts both ways.
+
+## The ledger audit
+
+**10 of 12 sampled entries exact** (DC-03, DC-05, DC-17, DC-19, DC-22, DC-24, PD-08, PD-10, PD-11, XA-06). Two
+are wrong, and both are **my** errors from transcribing digests rather than reading files:
+
+| Entry | My error | The truth |
+|---|---|---|
+| **DC-06** | I wrote that the campaign analytics routes are "explicitly not feature-gated". | `campaigns.routes.js:64-71` sets `featureFlag: FEATURE_FLAGS.WHATSAPP_CAMPAIGNS`, and `features.yml:204-206` ships it **off**. The corpus hedge is still wrong, but for a different reason: the results view carries the **same** flag as the campaign list, so no installation that can create a WhatsApp campaign lacks the results view. **Reworded here — left as written, a Phase 5 writer would assert the opposite falsehood.** |
+| **PD-34** | My citations were wrong, though the finding holds. | The guard is `billing/access_guard.rb:21-22,50-52`. `platform_support/base_controller.rb:29-31` is the **exemption** — the opposite side of the mechanism — and no `upload_controller.rb` exists under `platform_support` at all. The fix is one method in `access_guard.rb`. |
+
+I am recording these as my own mistakes because the ledger is what Phase 5 writes from, and an entry that is
+confidently wrong about *where* the defect lives wastes an implementer's afternoon and teaches them to distrust
+the rest.
+
+## New, and the pattern is consistent
+
+Fifteen refutations, and the shape repeats: **the corpus states an absolute negative that was true of the older
+subsystem and is now false of the newer one.**
+
+- `set-up-your-account.md` says there is no account-wide timezone and reports follow the browser. True of
+  legacy Reports; **false of Analytics**, which buckets by `reporting_timezone`. And the new PD underneath it:
+  that field has **no write path anywhere**, so Analytics is permanently UTC and the rollup always refuses —
+  which agent 093 found independently from the other direction.
+- `troubleshooting.md` says automation rules leave "**nothing** — no run history and no per-rule log". There is
+  a shipped Analytics screen reporting armed/executed/skipped **by rule and by skip reason**. True of immediate
+  rules only — and the article sends a troubleshooter away from the screen built for their question.
+- `labels-or-shared-audiences.md` asserts "there is no condition anywhere that asks whether a contact carries a
+  label" — **the article's central thesis** — while the filter provider offers exactly that, a shared audience
+  *is* a saved contact filter, and `whatsapp-campaigns.md:94` instructs the reader to build one.
+- Two articles deny priority escalation and then document waiting rules a few lines later; `change_priority` is
+  a permitted delayed action.
+- `audit-logs.md` repeats the "merges leave no entry" claim in a second file that DC-03 does not name — because
+  051 owns contacts and 059 owns administration, and neither looked at the other's file.
+- `contact-lynomia-support.md` says a locked account can open a ticket "including about the lock itself" and
+  that you may attach five files. The upload path is **not** exempted from the billing guard, so the attachment
+  402s on exactly that ticket.
+
+## An honest bound on Phase 1's completeness
+
+092 checked ~79 of 519 candidate negative claims, at a yield of roughly **one refutation per five checked**. So
+the corpus plausibly holds **on the order of 80 further contradictions** that nobody has found yet.
+
+That is not a reason to delay — it is the number that justifies the Phase 5 method. Hunting them
+one at a time does not scale; what scales is R7 (document what the server enforces), the article-by-article
+rewrite the corpus verdicts already call for, and a CI check that can see a claim contradicted by code. **The
+remaining ~440 unchecked claims are recorded as a known unknown, not as "clean".** A title is not coverage, and
+neither is an unexamined sentence.

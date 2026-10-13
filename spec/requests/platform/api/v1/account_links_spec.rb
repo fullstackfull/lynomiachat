@@ -149,6 +149,25 @@ RSpec.describe 'Platform account links API', type: :request do
       expect(ids).not_to include(stranger.id)
     end
 
+    # THE CONTRACT WITH THE OTHER REPOSITORY, PINNED LITERALLY.
+    #
+    # Store Syria stamps the store as a JSON NUMBER on create and queries it back as a query
+    # STRING -- measured on the wire:
+    #   POST /platform/api/v1/accounts {"name":"...","custom_attributes":{"store_syria_store_id":42}}
+    #   GET  /platform/api/v1/accounts?custom_attributes[store_syria_store_id]=42
+    # so the stored value is the integer 42 and the filter value is "42". A comparison that did
+    # not coerce would silently match nothing, and the recovery path that exists to prevent
+    # duplicate workspaces would create one every time. The raw query string is written out here
+    # rather than built from a params hash, because the hash is this spec's idea of the shape
+    # and the string is the other repository's.
+    it 'matches a numeric stored attribute against the string the platform sends' do
+      account.update!(custom_attributes: { 'store_syria_store_id' => 42 })
+
+      get '/platform/api/v1/accounts?custom_attributes[store_syria_store_id]=42', headers: headers, as: :json
+
+      expect(response.parsed_body.map { |row| row['id'] }).to eq([account.id])
+    end
+
     it 'returns nothing for an attribute no account of this app carries' do
       get '/platform/api/v1/accounts', params: { custom_attributes: { store_syria_store_id: 999 } },
                                        headers: headers, as: :json

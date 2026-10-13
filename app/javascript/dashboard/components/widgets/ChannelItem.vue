@@ -29,20 +29,6 @@ const hasTiktokConfigured = computed(() => {
   return window.chatwootConfig?.tiktokAppId;
 });
 
-// WhatsApp is onboarded only through Meta embedded signup, which needs the app id and the signup
-// configuration id, and treats the 'none' sentinel as absent -- the same three conditions
-// onboarding/inbox-setup/useChannelConfig.js:22-29 already applies. Without this the tile was the one
-// OAuth/SDK provider offered unconditionally, so a workspace on an installation with no WhatsApp
-// configuration could click through to a signup that cannot complete.
-const hasWhatsappConfigured = computed(() => {
-  const config = window.chatwootConfig ?? {};
-  return (
-    Boolean(config.whatsappAppId) &&
-    config.whatsappAppId !== 'none' &&
-    Boolean(config.whatsappConfigurationId)
-  );
-});
-
 const isActive = computed(() => {
   const { key } = props.channel;
   if (Object.keys(props.enabledFeatures).length === 0) {
@@ -72,14 +58,15 @@ const isActive = computed(() => {
     return props.enabledFeatures.channel_voice;
   }
 
-  // Rendered disabled rather than hidden when unconfigured, which is what this component already does for
-  // facebook, instagram and tiktok -- the template binds `:disabled="!isActive && !canRequestTiktokAccess"`.
-  if (key === 'whatsapp') {
-    return hasWhatsappConfigured.value;
-  }
-
+  // `whatsapp` stays unconditional, unlike facebook/instagram/tiktok. The tile does not open an embedded
+  // signup: it opens a PROVIDER SELECTION page (settings/inbox/channels/Whatsapp.vue:98-125) offering
+  // WhatsApp Cloud manual setup and Twilio, neither of which uses the Meta app id or signup configuration
+  // id, plus the Meta embedded-signup option which that page already hides when `canUseEmbeddedSignup` is
+  // false. Gating the tile on the Meta credentials removed the only route to the two Meta-independent
+  // flows, so an installation on Twilio or manual Cloud API had no way to create a WhatsApp inbox at all.
   return [
     'website',
+    'whatsapp',
     'twilio',
     'api',
     'sms',

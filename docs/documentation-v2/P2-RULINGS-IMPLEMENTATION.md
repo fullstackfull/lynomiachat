@@ -121,3 +121,95 @@ change, and it belongs with R12 rather than inside a ruling about sanitization.
 | RuboCop on every changed Ruby file | no offenses detected | **0** |
 | eslint on both changed JS files | 0 errors | **0** |
 | vitest — `VideoEmbedInput` and all of `dashboard/helper` | 50 files, 1219 tests passed | **0** |
+
+---
+
+## Post-merge corrections — two defects the merged release candidate carried
+
+Found by an adversarial audit of the frozen diff, run **after** `6232d783` had already been merged into
+`lynomia-custom` as `2a5cc568`. Both are mine, both are recorded rather than quietly fixed, and both are proven
+both ways.
+
+### C1 — R1.3 left a stale spec red, and the gate could not see it
+
+`spec/config/markdown_embeds_spec.rb` asserted the exact 11-provider key set and iterated a `test_cases` hash
+that still contained `wistia` and `github_gist`. After R1.3 removed those two providers it failed twice:
+`match_array` reporting `the missing elements were: ["github_gist", "wistia"]`, and
+`NoMethodError: undefined method '[]' for nil` at line 92 where `config['wistia']` is indexed. Reproduced:
+**5 examples, 2 failures**. Green before the change, red after — a regression, not a pre-existing failure.
+
+Worse than the failure: **the release candidate shipped two specs asserting contradictory contracts** about the
+same file, since `markdown_renderer_security_spec.rb` asserts the 9-provider set.
+
+And the gate reported green. `scripts/documentation_gate.sh` selected 38 files by subject pattern; the pattern
+was `markdown_renderer`, and the stale spec's path contains `markdown_embeds`. The repository's real CI runs
+every spec (`.github/workflows/run_foss_spec.yml:131` is `find spec -name '*_spec.rb'`), so this was red on the
+mainline, not merely latent.
+
+Fixed: the spec now asserts the 9 remaining providers, with a comment saying adding one must fail the
+assertion, plus a new example that no template contains `<script`. **6 examples, 0 failures.**
+
+#### The gate now has two independent selectors, and the second needs nobody to pick a good pattern
+
+This is the **second** time gate selection has been wrong in the same way — round one was a *directory* named
+where a sibling *file* mattered (the 500 on the documentation home page, §M5 of the P0 report); round two was a
+subject pattern one token too narrow. Widening the token to `markdown` fixes this instance and does nothing
+about the next one, so the script gained a selector that does not depend on pattern choice at all:
+
+| Selector | Mechanism |
+|---|---|
+| 1. Subject patterns | the documentation subsystem by subject, derived from the filesystem as before (`markdown`, not `markdown_renderer`) |
+| 2. **Changed-file coverage** | for every source file the branch changes, **any** spec anywhere under `spec/` whose basename matches is added to the run. No mapping table, no directory assumptions: `config/markdown_embeds.yml` finds `spec/config/markdown_embeds_spec.rb` by name alone |
+
+Selector 2 deliberately over-selects — several specs can share a basename. Over-running is the correct bias for
+a gate; under-running is what shipped a 500 and a red mainline.
+
+**Proven, not asserted.** Narrowing selector 1 back to the old `markdown_renderer` token and running with the
+pre-change baseline, selector 2 found the file on its own and labelled it:
+
+```
+spec/config/markdown_embeds_spec.rb
+(39 spec files; baseline 46836de0)
+added by changed-file coverage, not by any subject pattern:
+  spec/config/markdown_embeds_spec.rb
+```
+
+When no baseline ref resolves, the script says so loudly on stderr and names `GATE_BASE_REF` rather than
+silently dropping a selector — a gate that quietly loses coverage is the whole bug.
+
+### C2 — the WhatsApp tile gating was wrong at the premise, and I shipped it
+
+**Withdrawn: §N.5 of the P0 report.** It said WhatsApp "was the one OAuth/SDK provider offered
+unconditionally" and applied the three conditions `useChannelConfig` uses. That reasoning treats the WhatsApp
+tile as an entry to Meta embedded signup. It is not.
+
+The tile opens a **provider selection page** (`settings/inbox/channels/Whatsapp.vue:98-125`) offering:
+
+| Provider | Needs the Meta app id / configuration id? |
+|---|---|
+| WhatsApp Cloud — description switches to *manual setup* when embedded signup is unavailable | **No** |
+| Twilio | **No** |
+| WhatsApp Business App (Meta embedded signup) | Yes — and the page already omits it unless `canUseEmbeddedSignup` |
+
+So the page already degraded correctly on its own. Gating the tile removed the only route to the two
+Meta-independent flows: an installation running **Twilio or manual Cloud API** — the normal state when
+`WHATSAPP_CONFIGURATION_ID` was never set, since `config/installation_config.yml:175-178` declares no default
+— had **no UI path to create a WhatsApp inbox at all**. The onboarding wizard already filters the channel for
+the same reason (`useChannelConfig.js:21-29`, pre-existing, not introduced here), and
+`ChannelList.vue:108` is the single `router.push` to that route, so nothing else reached it.
+
+Reverted. `whatsapp` is back in the unconditional list, with a comment at the site saying why it is not
+analogous to facebook/instagram/tiktok. The problem the gate was meant to solve is already solved where it
+belongs: `useWhatsappEmbeddedSignup` refuses **before loading the SDK** with a named error instead of sending
+`config_id: undefined` to Meta. That guard stays — it is the part of §N.4 that was right.
+
+The five examples now assert the tile **stays enabled** with the credentials absent, blank, `'none'`, or with
+no installation config at all. Against the gated version: **5 failures**. With the revert: **10/10**.
+
+### What these two have in common, and the rule they produce
+
+Both come from reasoning about a shared surface from one caller's point of view. R1.3 changed a config file
+without asking which specs read it; §N.5 gated a tile without opening the page behind it. The P0 report's §N.8
+already recorded three over-broad greps with the same shape. The rule, now encoded rather than intended:
+**before changing a shared file, enumerate its readers — specs included — and open the surface it feeds.** The
+gate's selector 2 enforces the first half mechanically.

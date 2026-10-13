@@ -20,9 +20,17 @@ describe 'Markdown Embeds Configuration' do
       end
     end
 
+    # wistia and github_gist are deliberately absent: their templates were the only two that emitted a
+    # third-party `<script src>` onto a public page on this product's own origin, and they were removed
+    # (docs/documentation-v2/08-orchestrator-rulings.md R1.3). Adding a provider has to fail this assertion
+    # so the addition is a decision rather than an accident.
     it 'contains expected embed types' do
-      expected_types = %w[youtube loom vimeo mp4 arcade_tab arcade wistia bunny codepen guidejar github_gist]
+      expected_types = %w[youtube loom vimeo mp4 arcade_tab arcade bunny codepen guidejar]
       expect(config.keys).to match_array(expected_types)
+    end
+
+    it 'emits no script tag from any template, which is the rule R1.3 enforces' do
+      expect(config.select { |_key, embed| embed['template'].include?('<script') }.keys).to be_empty
     end
   end
 
@@ -56,10 +64,6 @@ describe 'Markdown Embeds Configuration' do
           { url: 'https://app.arcade.software/share/demo-with-query?foo=bar&embed_mobile=tab?user_id=1',
             expected: { 'video_id' => 'demo-with-query' } }
         ],
-        'wistia' => [
-          { url: 'https://chatwoot.wistia.com/medias/kjwjeq6f9i', expected: { 'video_id' => 'kjwjeq6f9i' } },
-          { url: 'https://www.company.wistia.com/medias/abc123def', expected: { 'video_id' => 'abc123def' } }
-        ],
         'bunny' => [
           { url: 'https://iframe.mediadelivery.net/play/431789/1f105841-cad9-46fe-a70e-b7623c60797c',
             expected: { 'library_id' => '431789', 'video_id' => '1f105841-cad9-46fe-a70e-b7623c60797c' } },
@@ -78,11 +82,6 @@ describe 'Markdown Embeds Configuration' do
           { url: 'https://guidejar.com/guides/i2qMQRp26rtRxpZczmaA', expected: { 'guide_id' => 'i2qMQRp26rtRxpZczmaA' } },
           { url: 'https://guidejar.com/guides/d6a6fdc2-4812-4777-897e-ec1b0c64238f',
             expected: { 'guide_id' => 'd6a6fdc2-4812-4777-897e-ec1b0c64238f' } }
-        ],
-        'github_gist' => [
-          { url: 'https://gist.github.com/username/1234567890abcdef1234567890abcdef',
-            expected: { 'username' => 'username', 'gist_id' => '1234567890abcdef1234567890abcdef' } },
-          { url: 'https://gist.github.com/testuser/fedcba0987654321fedcba0987654321', expected: { 'username' => 'testuser', 'gist_id' => 'fedcba0987654321fedcba0987654321' } }
         ]
       }
     end

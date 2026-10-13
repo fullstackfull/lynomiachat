@@ -273,3 +273,97 @@ in Arabic, on purpose, well.
 
 That also closes the scare from earlier addenda: the corpus is not thin. The alarming EN/AR word ratios were a
 POSIX `wc -w` artefact that three agents independently caught, and the real ratio is ~0.84.
+
+## R11 — The Meta error knowledge model, and the 23 codes that may not be published
+
+**Forced by**: 028, the cross-Meta master auditor, which built a ~380-entry register from 12 normative pages and
+audited all 27 Meta reports. It escalated one thing explicitly and correctly refused to decide it itself.
+
+### The 23 uncited codes are struck from publication
+
+Agent 028 found **23 codes that it could trace to no official page**: 2061, 2062, 1005, 192, 200002, 138024,
+132021, 415, 457, 370, 240, 294, 141002, 210, 230, 483, 10903, 10904, 80005, 2534068, 2207008, 2207042,
+2207050, 2207051. Its words: *"Must be re-cited or struck; publishing them breaks the program's own rule and is
+not mine to waive."*
+
+It is right, and the answer is the charter's own rule — **never invent an error code**.
+
+**Ruling.** None of those 23 enters the corpus. They stay in the register marked `uncited`, and a code leaves
+that state only when someone attaches a normative URL and a date. Three sub-cases:
+
+- **2061, 2062, 1005 are retired On-Premises codes.** The On-Premises client sunset on 2025-10-23, so they are
+  genuinely uncitable from current documentation *and* unreachable by this product. They are struck as
+  historical, not pending — and that distinction gets written down, so nobody re-adds them from a stale blog.
+- Codes a Lynomia surface can actually produce get **one** targeted re-citation attempt in Phase 4.
+- Everything else stays uncited and unpublished. An error-code article is worthless if its reader cannot trust
+  the code, and a fabricated code is the single fastest way to destroy that trust.
+
+### Settled by my own fetch: 131051 and 131060
+
+Agent 028 named the highest-value single fetch in the program — the unsupported-messages webhook reference,
+which would settle titles for two codes that three agents gave three different answers for, one of which has a
+**shipped article**. I did that fetch
+(`developers.facebook.com/documentation/business-messaging/whatsapp/webhooks/reference/messages/unsupported.md`,
+checked 2026-10-13). Verbatim:
+
+| Code | Meta's title | Meta's details |
+|---|---|---|
+| 131051 | `Message type unknown` | `Message type is currently not supported.` (description: "Cloud API does not support the message type.") |
+| 131060 | `This message is currently unavailable.` | no example values published; description: "The message is currently unavailable." |
+
+Two consequences:
+
+1. **131060 *is* citable from a normative reference page**, not only the coexistence page as agent 028 believed.
+   Its weak-sourcing flag is lifted, and agent 013's proposed title "Unsupported messages webhook" is struck.
+2. **The shipped `whatsapp-error-131060.md` article is scoped to the wrong thing.** Meta states 131060 "typically
+   occurs when a WhatsApp user messages a business onboarded with a WhatsApp Business app phone number for the
+   first time" — an inbound coexistence event, not an outbound send failure. This confirms agent 005's
+   independent finding. The article gets rewritten around coexistence, and 131051 joins it as the other half of
+   one "unsupported message" family rather than getting a page of its own.
+
+### The knowledge model: metadata on the existing model, no new table
+
+The brief asked whether many error codes justify a new table. **They do not.** Adopting agent 028's coverage
+decision, which answers the charter's §8 decision 4:
+
+- **Keep one article per class of failure**, as the product already does for Commerce.
+- **Decouple "has an article" from "is explained".** Roughly **12 own articles + 10 grouped = 22** for the ~120
+  codes a Lynomia user can actually reach — against **5** today. Not 120 articles nobody reads, and not 5 that
+  leave a reader stranded.
+- **All ~380 register entries get a metadata row on the existing `Article`/`meta` jsonb model.** No new table, no
+  separate "Meta Errors" application. The register lives in the corpus as data, so search, contextual help and
+  the audit all reach it through machinery that already exists.
+- A code with no article still resolves to *something* — its class article, plus a "code with no page" runbook
+  that tells the reader what to record and what to send support. That is the default path for the ~100 codes
+  that will never justify prose, and it is also what agent 054 asked for.
+
+One mechanical consequence the Phase 5 owner must honour: `errors[]` carries `title` and `message` as the **same
+text**, and `error_data.details` is the only field with the actual cause. A pipeline that keeps code + title
+throws away the one useful string. Several agents found this independently.
+
+### Three corrections this audit forces
+
+1. **Lynomia's own code comment is false.** `documentationLinks.js:43-52` claims five codes are "the codes this
+   installation classifies"; `delivery_failure.rb` classifies **two**. I already corrected my own documents for
+   this; the source comment gets corrected too, because it is how the wrong number propagated into the charter
+   and into my baseline in the first place.
+2. **131049: Meta and Lynomia disagree, and the article states neither honestly.** Meta says *wait at least 24
+   hours before resending*. Lynomia's `recipient_scoped?` withdraws retry **permanently**. The shipped article
+   must not tell a reader the message can never reach that person — it must state Meta's rule and Lynomia's
+   behaviour as two separate facts, and whether the product should soften to match Meta is a product question I
+   am routing, not answering.
+3. **Agent 002 omitted the entire 190 subcode family** believing the Graph error-handling page 404s. It does not
+   — agents 004, 025 and 028 all fetched it. The gap is filled from 028 §3.6, and subcode **492 (Page-role loss,
+   not token expiry)** is the failure a Lynomia operator most often meets, so a single "token expired" article
+   actively misroutes it.
+
+### What is still missing, and why I am not dispatching more agents for it
+
+028 found **82 register codes claimed by no agent**: all 15 Groups codes (three of which would reach Lynomia's
+classifier), ~57 Embedded Signup codes, and the Flows family. Agent 013 owns Embedded Signup and never cited its
+~90-code errors page; agent 015 recovered ~22 of them incidentally.
+
+That is a real coverage hole and it is **bounded and known**, which is the useful state. It does not need a new
+agent now: the register records exactly which codes are unclaimed and from which page they must be cited, so
+Phase 4 closes it with one targeted pass rather than another research wave. Recording a gap precisely is worth
+more here than a hurried attempt to fill it — and the charter's own standard is that a title is not coverage.

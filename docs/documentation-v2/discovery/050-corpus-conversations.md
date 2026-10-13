@@ -8,8 +8,9 @@ confidence: high
 
 Read-only pass on branch `claude/documentation-v2`. Every code citation was read in this tree; nothing was run (no browser, no
 Rails), so UI behaviour that I infer from source says so. Agents 029/030 own the feature audit - where I touch behaviour it is
-only to check what an article asserts. `01-current-system.md` was used as a map and re-verified where I relied on it
-(`content_seeder.rb:85-87` slug rule, `portal_helper.rb:77-83` article address, `featureHelper.js` wiring all held).
+only to check what an article asserts. The `01-current-system.md` claims I relied on (the `-ar` slug rule, `content_seeder.rb:85-87`;
+the `DOC_ARTICLES` registry as the product/corpus contract, `documentationLinks.js`) held; the wiring and link-resolution findings
+below are my own reads.
 
 Method note for other corpus agents: word counts below are body words (front matter excluded) from a Python split. On this
 machine `wc -w` undercounts Arabic about four-fold (it reports 180-272 for files whose real count is 736-936), so do not size the
@@ -76,11 +77,11 @@ claim column are the English article's. The Arabic text makes the same claims at
 |---|---|---|---|---|
 | W1 | 13 | A conversation has exactly one of four statuses | confirmed | `app/models/conversation.rb:86` |
 | W2 | 18 | Pending = "a bot is handling it, or it is parked for one" | confirmed, incomplete | bot path: `conversation.rb:307-325`, `conversations/assignment_service.rb:37-47`. An agent can also set it by hand: "Mark as pending" (`ResolveAction.vue:247-258`). `your-first-conversation.md:30` defines Pending as "waiting on you, deliberately parked" - the two articles disagree and both are half the truth |
-| W3 | 18 | Pending is reopened by "A human reply" | **wrong** | `message.rb:413-423`: the only code that opens on a human reply is gated on `captain_pending_conversation?`, which is hard-coded `false` (`:421-423`; no override anywhere in `app/`, `custom/`, `lib/`). `spec/models/message_spec.rb:274-280` asserts the conversation stays pending. What does reopen it: the Open button / status toggle, which also assigns the person (`conversations_controller.rb:82-93,180-186`); assigning a human to a bot-owned conversation (`conversations/assignment_service.rb:17-24`); a bot handoff (W4) |
+| W3 | 18 | Pending is reopened by "A human reply" | **wrong** | `message.rb:413-423`: the only code that opens on a human reply is gated on `captain_pending_conversation?`, which is hard-coded `false` (`:421-423`; no override anywhere in `app/`, `custom/`, `lib/`). `spec/models/message_spec.rb:274-280` asserts the conversation stays pending. What does reopen it: the Open button / status toggle, which also assigns the person if they are an agent rather than an administrator (`conversations_controller.rb:82-93,180-186`); assigning a human to a bot-owned conversation (`conversations/assignment_service.rb:17-24`); a bot handoff (W4) |
 | W4 | 18 | ...or "the bot handing it over" | confirmed | `conversation.rb:183-188`; `conversations_controller.rb:84-86,95-99` |
 | W5 | 19 | Snoozed reopens at the set time or when the customer writes | confirmed | `app/jobs/conversations/reopen_snoozed_conversations_job.rb:5`; `message.rb:404-408`. Not for a blocked contact (`message.rb:405`) |
 | W6 | 22-23 | Customer reply to a Resolved conversation -> Open; on a bot channel -> Pending | confirmed | `message.rb:425-435` |
-| W7 | 25-27 | Snooze shapes: tomorrow, next week, a date, next reply | confirmed, incomplete | Six options: next reply, an hour from now, tomorrow, next week, next month, custom (`constants/globals.js:51-58`). Timed ones resolve to 09:00 browser time; "next week" and "next month" land on a **Monday** (`snoozeHelpers.js:24-31,47-53`). A typed natural-language parser also exists (`helper/snoozeDateParser/`, `i18n/locale/en/snooze.json`) - not traced. `your-first-conversation.md` lists the options correctly; this article under-lists |
+| W7 | 25-27 | Snooze shapes: tomorrow, next week, a date, next reply | confirmed, incomplete | Six options: next reply, an hour from now, tomorrow, next week, next month, custom (`constants/globals.js:51-58`). "Tomorrow", "next week" and "next month" resolve to 09:00 browser time ("an hour from now" is +1 h), and the last two land on a **Monday** (`snoozeHelpers.js:24-31,47-53`). A typed natural-language parser also exists (`helper/snoozeDateParser/`, `i18n/locale/en/snooze.json`) - not traced. `your-first-conversation.md` lists the options correctly; this article under-lists |
 | W8 | 26-27 | "Until next reply" stays snoozed indefinitely | confirmed | `action_service.rb:13-15` (`snoozed!`, no time), `conversation.rb:285-287` |
 | W9 | 31-35 | Mine/Unassigned/All, Status, Sort are three independent controls | confirmed | `chatlist.json` `ASSIGNEE_TYPE_TABS`; `ConversationBasicFilter.vue:30-91` |
 | W10 | 35 | Sort: last activity, created, priority, longest waiting, unread | confirmed, incomplete | Ten options (`ConversationBasicFilter.vue:55-91`). The "longest waiting" sorts are labelled **"Pending Response"** in the UI (`chatlist.json` `waiting_since_asc`), which collides with the Pending status |
@@ -91,13 +92,13 @@ claim column are the English article's. The Arabic text makes the same claims at
 | W15 | 48-55 | A conversation folder is saved filters, personal, cannot be shared | confirmed | `custom_filters_controller.rb:11-14,29-33`; overlay `custom/.../custom_filters_controller.rb:28-35` (`visible_to`) and `custom/app/models/custom/custom_filter.rb:7` (`shared_only_for_contacts`) |
 | W16 | 51 | A folder "has its own unread count" in the sidebar | unverifiable | Badge is `0` unless `conversation_unread_counts` AND `unread_count_for_filters` are on (`Sidebar.vue:94-103,470-476`); both ship `enabled: false` and `chatwoot_internal: true` (`config/features.yml:28-31,237-240`), so a plan cannot grant them (`billing_plan.rb:41-47`). The code's own comment: "invisible on a default installation" (`custom/app/services/custom/conversations/unread_counts/counter.rb:23-24`). Same dependency in `labels.md:65` |
 | W17 | 59-60 | A private note is never delivered to the customer on any channel | confirmed | `app/services/base/send_on_channel_service.rb:47-50`; `message.rb:211-212`. Instagram's Messenger send path not traced |
-| W18 | 65-66 | Canned responses and variables are switched off in a note | confirmed (editor) | `Editor.vue:359-368`, `editorHelper.js:496-499`. The server still renders `{{ }}` in a note (`liquidable.rb:22-24` - notes are `outgoing`), so hand-typed braces in a note are evaluated |
+| W18 | 65-66 | Canned responses and variables are switched off in a note | confirmed (editor) | `Editor.vue:359-368`, `editorHelper.js:496-499`. The server still renders `{{ }}` in a note (`liquidable.rb:22-24`; a note is an `outgoing` message with `private: true`, `message_builder.rb:14,146-148`), so hand-typed braces in a note are evaluated |
 | W19 | 70 | `@` offers a person or a team | confirmed | `TagAgents.vue:20-62` |
 | W20 | 70-72 | Mention -> notification, Mentions view, becomes participant | confirmed | `mention_service.rb:10-12,51-73` |
 | W21 | 74-75 | A mention works only in a private note; in a reply it notifies nobody | confirmed | `mention_service.rb:17-18`; `Editor.vue:270-272` |
 | W22 | 77-78 | Only channel members or administrators; others silently ignored | confirmed | `mention_service.rb:40-48` |
 | W23 | 71-72 | Mentioning a team notifies every member | confirmed, caveat | Team is expanded (`mention_service.rb:30-38`) and then cut by the same channel-member/admin rule (`:47-48`): a team member who is not on the channel is skipped silently |
-| W24 | 93-94 | An agent can work any conversation on a channel they belong to, "or assigned to one of their teams" | **wrong** for browsing | The record policy opens by inbox OR team (`conversation_policy.rb:10-18,28-36`), but every list/filter/search goes through `PermissionFilterService`, which returns inbox-member conversations only (`permission_filter_service.rb:15-22`). The code names this asymmetry and leaves it (`custom/app/policies/custom/conversation_policy.rb:13-17`). A team-only agent can open such a conversation by link or notification but will not find it in the inbox |
+| W24 | 93-94 | An agent can work any conversation on a channel they belong to, "or assigned to one of their teams" | **wrong** for browsing | The record policy opens by inbox OR team (`conversation_policy.rb:10-18,28-36`), but the conversation list, meta counts, filter endpoint, bulk actions and saved-filter counters all go through `PermissionFilterService`, which returns inbox-member conversations only (`permission_filter_service.rb:15-22`; call sites listed in `custom/app/services/custom/conversations/permission_filter_service.rb:1-10`; global search has its own path, not traced). The code names this asymmetry and leaves it (`custom/app/policies/custom/conversation_policy.rb:13-17`). A team-only agent can open such a conversation by link or notification but will not find it in the inbox |
 | W25 | 94-95 | A custom role can narrow to "unassigned only" or "conversations the person is participating in" | **wrong** | `conversation_unassigned_manage` = unassigned **plus the holder's own**; `conversation_participating_manage` = **assigned to the holder** - `participant` rows are never consulted (`custom/app/services/conversations/capability_scope.rb:77-83,113-117`; browser mirror `store/modules/conversations/helpers.js:95-105`). The UI label says "participating" (`customRole.json:30`) so UI, doc and enforcement disagree. Same wording in `workspace/roles-and-permissions.md` ("their own, plus ones they are a participant in") |
 | W26 | 100-101 | Bulk selection covers only the visible page | confirmed | `bulkActions.json` `ALL_CONVERSATIONS_SELECTED_ALERT` |
 | W27 | 100-101 | Bulk reaches status, snooze, agent, team, labels - not priority | confirmed, incomplete | `bulk_actions_controller.rb:100-102,119`; bulk bar `conversationBulkActions/`. Omitted: bulk resolve **skips** conversations missing required attributes (`bulkActions.json` `RESOLVE.PARTIAL_SUCCESS`) |
@@ -149,7 +150,7 @@ claim column are the English article's. The Arabic text makes the same claims at
 
 | id | line | claim | verdict | evidence |
 |---|---|---|---|---|
-| L1 | 8-9 | "Nothing in Lynomia Chat ever adds or removes one on its own" | **wrong** as phrased | Auto-resolve can add a conversation label (`conversations/resolution_job.rb:11`); the web-widget SDK can label a conversation from the visitor's page (`widget/labels_controller.rb:4`); automation/macros add conversation labels (the article itself says so at 26-27); contact merge moves labels (`custom/app/services/contacts/merge_relocation.rb:124-130`). True for **contact** labels apart from merge |
+| L1 | 8-9 | "Nothing in Lynomia Chat ever adds or removes one on its own" | **wrong** as phrased | Auto-resolve can add a conversation label (`conversations/resolution_job.rb:11`); the web-widget API can add a label to a conversation on the visitor's behalf (`app/controllers/api/v1/widget/labels_controller.rb:4`); automation/macros add conversation labels (the article itself says so at 26-27); contact merge moves labels (`custom/app/services/contacts/merge_relocation.rb:124-130`). True for **contact** labels apart from merge |
 | L2 | 17-24 | Conversation and contact labels share a catalogue but are stored separately | confirmed | `Labelable` is included by both `conversation.rb:58` and `contact.rb:47` (`labelable.rb:5`) |
 | L3 | 26-27 | Automation "add label" labels the conversation; nothing labels a contact | confirmed | `action_service.rb:37-41`; contact labelling is human-driven (`contacts/bulk_assign_labels_service.rb:14`) |
 | L4 | 69-73 | Lower-cased; >=2 characters; starts with a letter/number; letters, numbers, hyphen, underscore; Arabic fine; unique | confirmed | `lib/regex_helper.rb:9`, `label.rb:25-28,33-35`, `labelsMgmt.json` `MINIMUM_LENGTH_ERROR` / `VALID_ERROR` |
@@ -214,7 +215,7 @@ claim column are the English article's. The Arabic text makes the same claims at
 
 ### 3.8 Not checked / unverifiable
 
-Nothing was run, so: the rendered output of any article in a browser (including relative-link resolution, section 6 finding 1); whether
+Nothing was run, so: the rendered output of any article in a browser (including relative-link resolution, section 6 "Link behaviour"); whether
 Liquid really blanks an unknown name (read from `liquidable.rb` and Liquid's non-strict default, not executed); production state of
 `conversation_unread_counts`, `unread_count_for_filters`, `delayed_automations` and `advanced_assignment` on real accounts (the
 charter forbids touching them); whether a super admin can set a premium flag per account; the macro-sent WhatsApp message delivery
@@ -224,13 +225,13 @@ path (M12); the Instagram Messenger send path's private-note exclusion; the natu
 
 ### 4.1 What the section must add, ranked by how often an inbox agent needs it
 
-"Evidence" shows the code that proves the feature exists; none of these is covered anywhere in the 63-article corpus (grep of
-`custom/db/documentation/en` for each topic returned nothing relevant, except where noted).
+"Evidence" shows the code that proves the feature exists. None of these has an article in the 63-article corpus (grep of
+`custom/db/documentation/en` for each topic); where another article touches the topic in passing, the note says so.
 
 | # | proposed key | the question it answers | evidence the feature exists | note |
 |---|---|---|---|---|
 | 1 | `reply-composer` | How do I send an attachment, a voice note, an emoji, an email with CC/BCC, a reply to a specific message, a template? What do `/` `{{` `#` `@` `:` each open? | `ReplyBox.vue:1307-1500` (emoji picker, audio recorder, attachments, `ReplyEmailHead` CC/BCC, `ReplyToMessage`, signature, quoted email, WhatsApp/content template buttons); triggers `Editor.vue:346-386` (`:` emoji, 2 chars) | `/` `{{` `#` `@` are scattered across four articles; `:` and the rest are in none |
-| 2 | `keyboard-shortcuts-and-command-bar` | How do I work faster without the mouse? | 14 shortcuts `components/widgets/modal/constants.js:10-95` (Alt+E resolve, Cmd+Alt+E resolve-and-next, Alt+M status menu, Alt+P note, Alt+L reply, Alt+J/K, Cmd+/ ...); extras not in that list: `L` label box (`LabelBox.vue:39`), Alt+C/V/R/S (`useSidebarKeyboardShortcuts.js`), the Cmd+K command bar (`useInboxHotKeys.js`) | `00-program` master map promised "shortcuts" for `work-in-the-inbox` (`docs/global-documentation/09-content-master-map.md` section 3); the article has none |
+| 2 | `keyboard-shortcuts-and-command-bar` | How do I work faster without the mouse? | 14 shortcuts `components/widgets/modal/constants.js:10-95` (Alt+E resolve, Cmd+Alt+E resolve-and-next, Alt+M status menu, Alt+P note, Alt+L reply, Alt+J/K, Cmd+/ ...); extras not in that list: `L` label box (`LabelBox.vue:39`), Alt+C/V/R/S (`useSidebarKeyboardShortcuts.js`), the Cmd+K command bar (`useInboxHotKeys.js`) | the content master map lists `work-in-the-inbox`'s sources as "CW Lesson 2 + filters + shortcuts" (`docs/global-documentation/09-content-master-map.md` section 3); the article has neither a shortcut list nor a filter walkthrough. `your-first-conversation.md` mentions only `/`, `@` and `Shift+Enter` |
 | 3 | `find-your-conversations` (see split) | How do I find the conversation about X, or every failed send from last week? | Filter builder `components-next/filter/provider.js:114-310` (14 attributes + custom attributes); save/edit folder strings `advancedFilters.json`; global search with Contacts / Conversations / Messages / Articles tabs `modules/search/components/SearchView.vue:22-45` | the article says "save it as a folder" but never says where the Filter control is or what to press |
 | 4 | `start-a-conversation` | How do I message a customer first? | Compose button `Sidebar.vue:1134-1148`, `components-next/NewConversation/` ("To:" / "Via:", subject and CC for email, template picker for WhatsApp `WhatsAppOptions.vue`) | `automation-or-flow-builder.md:70` says "to start a conversation you need a campaign"; that is true of automation, and the corpus never says an agent can do it by hand |
 | 5 | `conversation-statuses` (see split) | Why did this conversation resolve itself / why can't I reply / why did nobody get notified? | auto-resolve account setting `account_settings_schema.rb:11-13`, `resolution_job.rb:1-30`; bot-owned Pending and "Take over" (`ReplyBox.vue:276-281`, `ReplyBoxBanner.vue:128-144`, `conversation.json` `BOT_HANDOFF_*`); Mark as pending (`ResolveAction.vue:247-258`); **pending conversations raise no new-conversation or assigned-to-you notification** (`notification_listener.rb:4,18,40`); required attributes on resolve (Settings > Conversation Workflow, `settings.json` `CONVERSATION_WORKFLOW`, `ResolveAction.vue:120-136`) | `grep -i "auto.resolve\|required attribute"` over the EN corpus: no hits |
@@ -262,14 +263,14 @@ beyond WhatsApp (bot-owned Pending; Instagram restriction; channel windows), "my
 | Settings > Automation header | macro or rule | `automation` -> `automation-rules`; `macrosOrAutomation` | the second is **unwired** |
 
 The registry's own design rule is "a link belongs where someone is confused or blocked" (`docs/global-documentation/12-contextual-help.md`
-section 3); all five rows above meet it and none is wired. Only the four Settings headers are, and only on branded installs.
+section 3); the first five rows meet it and no key serves them; the sixth is half-wired. Only the four Settings headers carry a link, and only on branded installs.
 
 ## 5. Quality
 
 **Structure.** The six articles share the corpus skeleton (when to use / when not / need first / steps / worked example / who can
-/ limits / related / if it does not work). `work-in-the-inbox` and `assign-and-prioritise` drop "steps" and "need first" (the
-design record calls them landing pages: `docs/global-documentation/15-content-quality-audit.md` section on "where a section is
-deliberately absent"), which is why the daily-use article has no click path for the filter, snooze, folder or mention flows.
+/ limits / related / if it does not work). `work-in-the-inbox` has no "when to use", "need first" or "steps" section and `assign-and-prioritise` has no "need first"
+(both are on the design record's deliberate "landing or orientation page" list, `docs/global-documentation/15-content-quality-audit.md:89`),
+which is why the daily-use article has no click path for the filter, snooze, folder or mention flows.
 `labels`, `canned-responses` and `macros` are genuinely task-oriented and the best in the section.
 
 **Depth per topic.** `work-in-the-inbox` spends 1,033 words on nine topics (about 110 each); the composer, shortcuts, search and
@@ -306,7 +307,7 @@ follows concept rather than frequency. Not a defect.
 
 **Structure** (headings, tables, bullets, numbered steps, links, code spans, numbers): identical in three of six files; the
 other three differ only by one or two bold runs (`macros`, `macros-or-automation`, `work-in-the-inbox`) and, in
-`work-in-the-inbox`, one extra paragraph. Every numeric token and code span matches except translated placeholders (script-checked).
+`work-in-the-inbox`, one extra paragraph. Every numeric token and code span matches except translated example text (script-checked).
 **Every `wrong` in section 3 is present in both locales** - no case where AR is right and EN is wrong. The AR text also tracks the
 **AR product strings** closely (statuses فتح / معلق / مؤجلة / تم حلها, tabs محادثاتي / غير معيّن / الكل, الإشارات / شارك / بدون حضور,
 priority levels, عامة / خاص, الردود الجاهزة, ماكروس all match `app/javascript/dashboard/i18n/locale/ar/`).

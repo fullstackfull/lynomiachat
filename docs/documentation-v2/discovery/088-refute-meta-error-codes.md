@@ -52,34 +52,44 @@ could not render a page, the row says `not checked` and I draw no conclusion fro
 
 ## 2. Refutations
 
-### 2.1 Report 028's §9 blocker list is wrong in at least twelve of its eighteen rows — `blocker`
+### 2.1 Report 028's §9 withholds verification from at least twelve codes that are verbatim on the pages their agents cited — `blocker`
 
-**The claim.** 028 §9 lists codes "claimed by other agents that I could NOT verify — BLOCKERS", and states the
-governing premise explicitly: *"'Could not verify' here means not present on any of S1–S12, which includes every
-error-code reference Meta publishes for the four products."*
+**Note on versions.** I audited 028 at 07:46 and it was rewritten at 08:00 while I was fetching. The revision is
+better: the heading no longer reads "BLOCKERS", several rows now say that multiple independent reports are
+"strong", and the `133016` row now correctly directs the reader to "the registration reference those three cite".
+Everything below is checked against the **08:00 revision**. The premise, the twelve code rows and one explicit
+"**Wrong**" verdict all survive the rewrite, so the finding stands.
 
-**Why it is wrong.** That premise is false. Meta publishes error codes in three places, not one: the error-code
+**The claim.** 028 §9 lists codes "claimed by other agents that I could NOT verify", under an explicit premise:
+*"'Could not verify' means **not present on any of S1–S12** — which includes every error-code *reference* Meta
+publishes for the four products."* Of the entries, one is graded positively false: 80008's quoted sentence —
+*"**Wrong.** S10 lists 80008 as the WhatsApp Business Management BUC code with **no sentence** … Keep the code,
+strike the sentence."*
+
+**Why it is wrong.** The premise is false. Meta publishes error codes in three places, not one: the error-code
 reference pages (028's S1–S12), **per-method error tables on Graph API reference edges**, and **inline in product
 documentation pages**. The second and third are equally normative and are exactly where agents 004, 009, 013 and
-014 sourced from. 028 concedes the possibility in the same paragraph — *"most are plausibly on a Graph API
-reference edge's own error list"* — and then grades them `blocker` anyway. It never fetched those pages.
+014 sourced from. 028 concedes the possibility in the same paragraph — *"most of these plausibly sit on a Graph
+API *reference edge's* own error list"* — and then withholds verification anyway. It never fetched those pages.
+The 80008 row goes further and asserts falsity about a string that is published verbatim, three times, on one of
+the two pages the accused agents cited.
 
 I fetched them. Every quoted string below is verbatim from the page the original agent cited.
 
-| Code | 028's §9 verdict | What the cited page actually prints | Source |
+| Code | 028's §9 verdict (08:00 revision) | What the cited page actually prints | Source |
 |---|---|---|---|
-| `192` | blocker — "Not on S1–S12" | "Invalid phone number" (POST error table) | M6 |
-| `200002` | blocker | "HSM Template creation failed" (POST) | M6 |
-| `80008` *title text* | major — "publishes no such sentence" | "There have been too many calls to this WhatsApp Business account. Wait a bit and try again." — on GET, POST **and** DELETE | M6, M5 |
-| `136024` | blocker | "calling the `request_code` endpoint returns HTTP 400 with error code `136024`"; the number is already verified | M10 |
-| `137000` | blocker | "you will receive a status messages webhook with error code `137000`, notifying you of the failure and mismatch" | M10 |
-| `283` | blocker | "That action requires the extended permission pages_read_engagement and/or pages_read_user_content…" | M13 |
-| `415` | blocker | "Two factor authentication required… This could happen when accessing a 2fac-protected asset like a page that is owned by a 2fac-protected business manager." | M12 |
-| `457` | blocker | "The session has an invalid origin" (Creating) | M12 |
-| `104` | blocker | "Incorrect signature" (Reading, both pages) | M12, M13 |
-| `370` | blocker | "Invalid call to update this page" (Creating) | M12 |
-| `80001` *title text* | major — "the sentence is not on S10" | "There have been too many calls to this Page account. Wait a bit and try again." | M13 |
-| `133016` numbers | minor — "do not present as reference-sourced" | "Up to 10 requests per business number in a rolling 72-hour window"; the API "prevents the number from being registered for the next 72 hours" | M9 |
+| `192` | "Not on S1–S12" | "Invalid phone number" (POST error table) | M6 |
+| `200002` | "Not on S1–S12" | "HSM Template creation failed" (POST) | M6 |
+| `80008` *sentence* | "**Wrong** … strike the sentence" | "There have been too many calls to this WhatsApp Business account. Wait a bit and try again." — on GET, POST **and** DELETE | M6, M5 |
+| `136024` | "Not on S1–S12" | "calling the `request_code` endpoint returns HTTP 400 with error code `136024`"; the number is already verified | M10 |
+| `137000` | "Not on S1–S12" | "you will receive a status messages webhook with error code `137000`, notifying you of the failure and mismatch" | M10 |
+| `283` | "Not on S9/S10/S11" | "That action requires the extended permission pages_read_engagement and/or pages_read_user_content…" | M13 |
+| `415` | "Not on S9/S10/S11" | "Two factor authentication required… This could happen when accessing a 2fac-protected asset like a page that is owned by a 2fac-protected business manager." | M12 |
+| `457` | "Not on S9/S10/S11" | "The session has an invalid origin" (Creating) | M12 |
+| `104` | "Not on S9/S10/S11" | "Incorrect signature" (Reading, both pages) | M12, M13 |
+| `370` | "Not on S9/S10/S11" | "Invalid call to update this page" (Creating) | M12 |
+| `80001` *sentence* | "The sentences are not on S10" | "There have been too many calls to this Page account. Wait a bit and try again." | M13 |
+| `133016` numbers | "S1 gives 133016 **without numbers**" (revision now points at the registration reference) | "Up to 10 requests per business number in a rolling 72-hour window"; the API "prevents the number from being registered for the next 72 hours" | M9 |
 
 Also confirmed on the same pages and never in doubt: `139000` "Blocked by Integrity", `613` "Calls to this api
 have exceeded the rate limit.", `368` "The action attempted has been deemed abusive or is otherwise disallowed",
@@ -87,9 +97,12 @@ have exceeded the rate limit.", `368` "The action attempted has been deemed abus
 our platform" stated verbatim).
 
 **Impact.** 028 is the designated master auditor; `_ARBITRATION.md` and Phase 4's error taxonomy are being built
-from its verdicts. Acting on §9 would strike twelve correctly-sourced, verbatim Meta codes from the register and
-would brand six accurate agents as fabricators. The register in 028 §3 is good work; §9 must be rebuilt by
-fetching each original agent's cited page, not by re-testing against a different page.
+from its verdicts, and §9 is the only place in the directory that proposes *striking* codes. Acting on it would
+remove twelve correctly-sourced, verbatim Meta codes from the register and would put six accurate agents under
+suspicion. The register in 028 §3 is good work; §9 must be rebuilt by fetching each original agent's cited page,
+not by re-testing against a different page. Note that 028 reaching for corroboration instead ("three independent
+reports is strong; promote on one cite") is the wrong instrument: three agents agreeing is not evidence, and in
+every case here the single cite they needed was one fetch away.
 
 **Partly refuted, same row set.** `2061` / `2062` (claimed by 010): O1 prints them verbatim — *"Attempting to
 send a paused template in a template message now returns error code `2061`"* — so 028's *existence* verdict is

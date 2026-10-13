@@ -244,9 +244,12 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
   # columns with no constraint between them, and the public portal lists a category's articles by `category_id`
   # alone. One row with a tenant's portal_id and a documentation category_id published tenant content on /docs.
   describe 'an article whose category belongs to another portal' do
+    # custom_domain + `host!` in each request example: with no .env present `DomainHelper.chatwoot_domain?`
+    # matches nothing, so the custom domain is the only way PublicController resolves a public request.
     let!(:docs_portal) do
       create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil,
-                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en' })
+                      custom_domain: 'docs-isolation.example.com',
+                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en', 'layout' => 'documentation' })
     end
     let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-cat', locale: 'en') }
 
@@ -265,23 +268,50 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
       expect(build(:article, portal: portal, category: nil, account_id: account.id, author_id: admin.id)).to be_valid
     end
 
-    # The read boundary, tested against a row written BEFORE the validation existed -- which is the only way such
-    # a row can exist, and exactly the case defence in depth is for. `update_column` because the point is to
-    # produce the invalid state the validation now refuses.
-    it 'does not appear in the other portal\'s category listing, which is the read boundary' do
+    # THE READ BOUNDARY, ASSERTED OVER HTTP ON THE PAGE THAT PUBLISHES -- which is what the brief asked for
+    # ("public portal rendering") and what the first attempt got wrong by asserting the association instead.
+    #
+    # Scoping Category#articles itself looked like one line that closed every read site; it made the
+    # association instance-dependent, which ActiveRecord refuses inside `joins(:articles)`, and the public
+    # documentation home page -- which joins exactly that -- returned 500. So the guarantee lives at the
+    # publication site, and the test has to exercise the publication site.
+    #
+    # The row is written with `update_column` on purpose: a cross-portal article is precisely what the
+    # validation now refuses, so the only way one exists is to have predated it, and that legacy row is the
+    # whole reason a read-side guard is worth having.
+    it 'does not render on the other portal\'s public category page, which is the read boundary' do
       legacy = create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
-                                title: 'Leaked tenant page', status: :published)
+                                title: 'Leaked tenant page', content: 'Tenant body', status: :published)
       legacy.update_column(:category_id, docs_category.id) # rubocop:disable Rails/SkipsModelValidations
 
-      expect(docs_category.reload.articles).not_to include(legacy)
-      expect(docs_category.articles.published.pluck(:title)).not_to include('Leaked tenant page')
+      host! 'docs-isolation.example.com'
+      get "/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include('Leaked tenant page')
     end
 
-    it 'still lists a category\'s own articles' do
-      own = create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
-                             title: 'A real documentation page', status: :published)
+    it 'still renders the category\'s own articles on that same page' do
+      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                       title: 'A real documentation page', content: 'Docs body', status: :published)
 
-      expect(docs_category.reload.articles.published).to include(own)
+      host! 'docs-isolation.example.com'
+      get "/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('A real documentation page')
+    end
+
+    # The regression that the first attempt at this fix actually caused: the public documentation HOME page
+    # joins Category#articles, so anything done to that association has to keep the home page rendering.
+    it 'still renders the public documentation home page, which joins the articles association' do
+      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                       title: 'A real documentation page', content: 'Docs body', status: :published)
+
+      host! 'docs-isolation.example.com'
+      get "/hc/#{docs_portal.slug}/en"
+
+      expect(response).to have_http_status(:success)
     end
   end
 

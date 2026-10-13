@@ -217,9 +217,9 @@ happening, by a different route than the one the brief anticipated.
 |---|---|---|
 | Search returns published articles only | `custom/app/services/custom/search_service.rb` — `filter_articles` → `super.published` | READ, in the existing Lynomia overlay |
 | Draft oracle closed | `app/controllers/public/api/v1/portals/articles_controller.rb` — `@portal.articles.published.find_by(...)` | READ, public |
-| No personal byline on Lynomia's own documentation | `Article#public_author`, read by all six render sites (both JSON partials, both layouts, the category strip, the controller) | MODEL — **moved here by the adversarial pass, see §M** |
+| No personal byline on Lynomia's own documentation | `Article#public_author`, read by all **seven** render sites (both JSON partials, both layouts, the classic category strip, the categories controller, and `PortalHomeData#build_category_contributors`) | MODEL — reached its final form over three passes, §M2 and §M5 |
 | **Category must belong to the article's portal** (WRITE) | `Article#category_in_same_portal` — the one place both values are known | MODEL |
-| **A category lists only its own portal's articles** (READ) | `Category#articles` scoped to `portal_id`, closing all eighteen read sites at once | MODEL ASSOCIATION |
+| **A category's public page lists only its own portal's articles** (READ) | `CategoriesController#load_category_articles` → `.where(portal_id: @portal.id)`. **Not** the association — see §M5, where scoping the association broke the public documentation home page | PUBLICATION SITE |
 | Dead authoring link removed | `SearchResultArticleItem.vue` now links to the public article page via `buildPortalArticleURL` | PRODUCT SURFACE |
 
 **Narrowing after `page`/`per` is deliberate and correct.** The condition lands in the `WHERE` clause and
@@ -591,8 +591,9 @@ the test database. Nothing ran against production.
 | 1 | Focused XSS security suite — `spec/lib/markdown_renderer_security_spec.rb` | 49 examples, 0 failures | **0** |
 | 2 | Documentation authorization/isolation — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 41 examples, 0 failures | **0** |
 | 2b | Public portal rendering, the pixel and the byline — `spec/controllers/public/api/v1/portals/` | 29 examples, 0 failures | **0** |
-| 3 | Full documentation Ruby — `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, both public portal controller specs, articles/portals/categories controllers, the removal spec, all policies, `portal_helper`, `article`/`category`/`portal` models, `search_controller` | 722 examples, 0 failures | **0** |
-| 3b | Documentation isolation after the category-to-portal boundaries — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 46 examples, 0 failures | **0** |
+| 3 | Full documentation Ruby — **`spec/controllers/public/api/v1/` (the parent directory, not the `portals/` subdirectory: see §M5)**, `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, articles/portals/categories controllers, the removal spec, all policies, `portal_helper`, `article`/`category`/`portal` models, `search_controller` | 767 examples, 0 failures | **0** |
+| 3b | Documentation isolation, with the read boundary asserted over HTTP — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 47 examples, 0 failures | **0** |
+| 3c | The §M5 regression, proven both ways — `spec/controllers/public/api/v1/portals_controller_spec.rb` | 16/12 failing before the revert, 16/0 after | **0** |
 | 4 | Relevant frontend — search module, both Meta connect composables, `portalHelper`, `permissions` | 5 files, 61 tests passed | **0** |
 | 5 | Mail and render affected by the sanitizer — all of `spec/lib/`, `email_helper`, `message_format_helper`, all mailers, all of `spec/services/messages/` | 1016 examples, 0 failures | **0** |
 | 5b | HUMAN_AGENT and its blast radius — `spec/services/messages/`, `spec/services/facebook/`, `spec/services/instagram/`, `message_window_service`, `spec/models/message_spec.rb` | 381 examples, 0 failures | **0** |
@@ -643,6 +644,7 @@ Classified by severity, not fixed in this phase, each with the reason.
 | K14 | `WHATSAPP_API_VERSION` is never published to the browser, so the documented env override for the embedded-signup SDK version is dead and the literal `v24.0` always wins | Low | §H correction. The P0-5 migration touches this code; the SDK version is a decision to take there |
 | K15 | `Channel::Telegram#convert_markdown_to_telegram_html` — the escaping path that used to protect the Telegram render — now has zero callers, while `TelegramRenderer` emits a raw `node.url` in an `href` and inherits a non-escaping `text` | Low | Same boundary as K8: Telegram's own HTML parse mode on an outbound payload, not a browser render. Dead code to remove in a cleanup phase, not a hotfix |
 | K16 | `CustomMarkdownRenderer#text` emits `<sup>` markup while running in **attribute** position inside `alt="…"`, so a caret in image alt text corrupts the attribute | Low | Not an XSS: `escape_html` covers `"` and every attribute in this stack is double-quoted, so the attribute cannot be closed. Accessibility/correctness only |
+| K17 | A legacy article whose `category_id` points at another portal's category would still be **counted** in that category's article count and teaser list (~17 sites traversing `category.articles`), though it can no longer be read on the category page | Low | §M5. The validation makes new ones impossible; whether any exist is answerable read-only with `Article.joins(:category).where.not(portal_id: Category.arel_table[:portal_id]).count` — worth running once on production before deciding whether more is needed |
 | K10 | Blocked campaign has no reachable resume path | Low | A product finding from Checkpoint 1, unrelated to security |
 | K11 | Platform Support SLA-policy bootstrap path | Low | Same |
 
@@ -743,6 +745,52 @@ article inside `portal_1`'s `category_2`, which only existed because nothing enf
 claiming no assertion named it, when line 114 does — the suite caught me and `category_4` was added instead.
 Every expected count in that describe block is unchanged.
 
+### M5 — CONFIRMED, BLOCKER, FIXED: the read-boundary fix in `74453a3d` put a 500 on the public documentation home page
+
+**This was shipped and pushed before it was found.** It was found by a completeness critic run against the
+phase's own commits, not by the gate — which is the point of running one.
+
+`74453a3d` made `Category#articles` an instance-dependent association scope, `->(category) { where(portal_id:
+category.portal_id) }`. ActiveRecord refuses an instance-dependent association inside `joins`, and exactly two
+queries join it, both on every portal home request:
+
+- `app/controllers/concerns/portal_home_data.rb:14` — `.joins(:articles).where(articles: { status: :published })`
+- `app/views/public/api/v1/portals/_home_categories.html.erb:4` — the same join, inline
+
+Reproduced: `spec/controllers/public/api/v1/portals_controller_spec.rb` went from green to **16 examples, 12
+failures, every failure a 500**.
+
+**How it escaped the gate, precisely.** Gate 3 ran `spec/controllers/public/api/v1/portals/` — the
+*directory*. The spec that covers the portal home page is `spec/controllers/public/api/v1/portals_controller_spec.rb`,
+a sibling file one level **above** that directory. A path that looks like it covers the area did not, and the
+two specs differ by one character of path. The gate list now names the parent directory
+`spec/controllers/public/api/v1/` so both are always included.
+
+**The second reason it escaped**: before changing an association, I grepped for `includes(:articles)` and
+`preload(:articles)` and found none — and did not grep for `joins(:articles)`, which is where both callers
+live. An incomplete grep producing a confident conclusion, for the second time in this phase (§M1 was the
+first).
+
+**The fix.** The association is restored to unscoped, with the reason recorded at
+`app/models/category.rb` so the next person does not retry it. The read boundary moves to the page that
+actually publishes — `CategoriesController#load_category_articles` — and the write-side validation stays as the
+real guarantee that no mismatched row can be created at all. The residual is stated plainly rather than
+papered over: **the ~17 count-and-teaser sites that traverse `category.articles` are covered by the validation
+going forward, not by a second runtime guard.** A legacy row predating the validation would still be counted in
+a category block's article count, though it can no longer be read on the category page. Whether any such row
+exists is answerable with one read-only query and is listed in §K as K17.
+
+**The spec now asserts the publication site over HTTP**, which is what the brief asked for ("public portal
+rendering") and what the first attempt got wrong by asserting the association instead. Proven to bite: with the
+controller scope reverted, the example fails with the leaked tenant title present in the rendered page. A third
+example asserts the home page still renders, so this regression cannot recur silently.
+
+**A seventh byline site, found in the same pass.** `PortalHomeData#build_category_contributors`
+(`portal_home_data.rb:63`) built contributor avatars from `&:author`, so the seeding Super Admin's name and
+avatar were still published on the `/docs` category cards after §M2 claimed "all six render sites". It lives in
+a controller concern rather than a view, which is why two view-oriented sweeps missed it. Now `&:public_author`.
+The claim in §F is corrected from six sites to seven.
+
 ### M3 — CONFIRMED, MINOR, ACCEPTED: `Rails/SkipsModelValidations` in two new examples
 
 The two end-to-end Facebook examples backdate the incoming message with `update_all` to move the conversation
@@ -756,11 +804,19 @@ Accepted rather than worked around.
 `6358087a` (HUMAN_AGENT).
 
 Grounds: each fix sits at the narrowest shared boundary that covers every caller found by search rather than by
-assumption; each is covered by adversarial tests that **failed against the unfixed code first**; all eleven
-gates pass with the exit codes in section J, against pre-change baselines; the adversarial review in section M
-refuted the class-of-defect question with evidence and its one major finding — a byline fix that closed the
-HTML and left the JSON API open — is fixed and proven; and no fix changes a provider API version, a provider
-configuration or a deployment.
+assumption; each is covered by adversarial tests that **failed against the unfixed code first**, including the
+§M5 regression, which is proven both ways; every gate in section J passes with the exit codes recorded there,
+against pre-change baselines, and the gate list is corrected so the spec that caught §M5 can no longer be
+skipped; and no fix changes a provider API version, a provider configuration or a deployment.
+
+**What this GO costs in confidence, stated rather than hidden.** This phase shipped and pushed a 500 on the
+public documentation home page (§M5) and an incomplete byline fix (§M2), and both were found by adversarial
+review rather than by the gate. Twice, an incomplete `grep` produced a confident claim: §M1 missed a sibling of
+the XSS defect because the filter excluded the line it was on, and §M5 changed an association after grepping
+for `includes`/`preload` but not `joins`. The corrective in both cases was the same — run the critic, verify
+its claims against the code, and assert the mechanism at the boundary that actually publishes rather than the
+one that merely looks shared. A reader should weight this document's remaining claims accordingly: those backed
+by a named spec shown to fail without the fix are solid; those resting on a search are worth re-running.
 
 **Two things this GO does not cover, and both are the owner's.**
 

@@ -60,6 +60,9 @@ module PortalHomeData
            .where(locale: @locale, category_id: category_ids)
            .includes(:author)
            .group_by(&:category_id)
-           .transform_values { |articles| articles.filter_map(&:author).uniq.first(3) }
+           # `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article.
+           # This is a seventh render site, missed by the first byline fix because it lives in a controller
+           # concern rather than a view -- it publishes contributor avatars on the /docs category cards.
+           .transform_values { |articles| articles.filter_map(&:public_author).uniq.first(3) }
   end
 end

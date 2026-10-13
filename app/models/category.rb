@@ -30,16 +30,23 @@ class Category < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :portal
   has_many :folders, dependent: :destroy_async
-  # SCOPED TO THIS CATEGORY'S OWN PORTAL, which is the READ half of the rule Article#category_in_same_portal
-  # enforces on write. The public portal lists a category's articles by `category_id` alone in eighteen places
-  # (category pages, category blocks, article counts, the author strip, the category JSON), so scoping the
-  # association closes all of them at once instead of asking eighteen call sites to remember.
+  # DELIBERATELY UNSCOPED, after an attempt to scope it to the category's own portal broke the public
+  # documentation home page.
   #
-  # `dependent: :nullify` now nullifies only the in-portal articles. For rows created after the validation
-  # above that is the same set; a pre-existing mismatched row would keep a `category_id` pointing at a destroyed
-  # category, which is harmless -- `Article#category` is optional, there is no foreign key on the column, and
-  # every read path goes through this association, so such a row simply stops appearing anywhere.
-  has_many :articles, ->(category) { where(portal_id: category.portal_id) }, dependent: :nullify, inverse_of: :category
+  # The rule that an article's category must belong to the article's portal is enforced on WRITE, by
+  # Article#category_in_same_portal. Enforcing it here as well looked like one line that closed every read
+  # site at once -- but a scope block that takes the owner as an argument makes the association INSTANCE
+  # DEPENDENT, and ActiveRecord refuses an instance-dependent association inside `joins`. Two live queries do
+  # exactly that join: PortalHomeData#load_home_data (app/controllers/concerns/portal_home_data.rb:14) and
+  # _home_categories.html.erb:4, both on every portal home request. The result was a 500 on the public
+  # documentation home page, caught by spec/controllers/public/api/v1/portals_controller_spec.rb -- a file one
+  # directory above the spec/controllers/public/api/v1/portals/ tree the gate had run, which is why it was
+  # missed first time round.
+  #
+  # The read boundary is therefore enforced where publication actually happens, in
+  # Public::Api::V1::Portals::CategoriesController#load_category_articles, and the validation is what keeps a
+  # mismatched row from being created at all.
+  has_many :articles, dependent: :nullify
   has_many :category_related_categories,
            class_name: :RelatedCategory,
            dependent: :destroy_async

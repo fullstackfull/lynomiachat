@@ -100,8 +100,16 @@ class CreatePlatformSupportTickets < ActiveRecord::Migration[7.1]
               where: 'first_response_due_at IS NOT NULL AND first_responded_at IS NULL ' \
                      'AND first_response_breached_at IS NULL AND status < 4',
               name: 'index_platform_support_tickets_on_awaiting_first_response'
-    # The unassigned queue, which is the first thing an operator opens.
-    add_index :platform_support_tickets, :status, where: 'assignee_id IS NULL AND status < 4',
-                                                  name: 'index_platform_support_tickets_on_unassigned'
+    # The unassigned queue, which is the first thing an operator opens. Its KEY is the queue's ORDER BY and
+    # its PREDICATE is the only thing that view always says, because a partial index is used only when the
+    # query implies its predicate: `?assignee_id=unassigned` adds no status clause (the operator has not
+    # filtered one, and the view must still show unassigned resolved and closed tickets), so an index
+    # predicated on `status < 4` could never serve it. Measured on 40k rows, 26.7k of them unassigned:
+    # 767 buffers and 4.15ms through the queue-order index with a discard filter and an incremental sort,
+    # against 7 buffers and 0.06ms through this one, with no sort at all.
+    add_index :platform_support_tickets, [:status, :priority, :last_activity_at],
+              order: { priority: :desc, last_activity_at: :desc },
+              where: 'assignee_id IS NULL',
+              name: 'index_platform_support_tickets_on_unassigned'
   end
 end

@@ -1767,7 +1767,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_13_000005) do
     t.index ["reference_number"], name: "index_platform_support_tickets_on_reference", unique: true
     t.index ["resolution_due_at"], name: "index_platform_support_tickets_on_open_resolution_due", where: "((resolution_due_at IS NOT NULL) AND (resolution_breached_at IS NULL) AND (status < 4))"
     t.index ["status", "priority", "last_activity_at"], name: "index_platform_support_tickets_on_queue_order", order: { last_activity_at: :desc }
-    t.index ["status"], name: "index_platform_support_tickets_on_unassigned", where: "((assignee_id IS NULL) AND (status < 4))"
+    t.index ["status", "priority", "last_activity_at"], name: "index_platform_support_tickets_on_unassigned", order: { priority: :desc, last_activity_at: :desc }, where: "(assignee_id IS NULL)"
   end
 
   create_table "portals", force: :cascade do |t|

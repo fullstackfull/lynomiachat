@@ -69,6 +69,24 @@ RSpec.describe 'Platform Support query budget', type: :request do
     expect(response).to have_http_status(:success)
   end
 
+  # THE UNASSIGNED VIEW'S INDEX, asserted as a definition rather than as a plan, because a planner test at
+  # fixture scale proves nothing.
+  #
+  # A partial index is used only when the query IMPLIES its predicate, and `?assignee_id=unassigned` says
+  # NOTHING about status -- it has to show unassigned resolved and closed tickets too. So a predicate
+  # carrying `status < 4` is unusable on exactly the view it exists for, and the key has to be the queue's
+  # own ORDER BY or the rows still have to be sorted after they are read. Measured on 40k rows, 26.7k of them
+  # unassigned: 767 buffers and 4.15ms before, 7 buffers and 0.06ms after.
+  it 'keys the unassigned index on the queue order and predicates it only on what that view always says' do
+    index = ActiveRecord::Base.connection.indexes('platform_support_tickets')
+                              .find { |candidate| candidate.name == 'index_platform_support_tickets_on_unassigned' }
+
+    expect(index).to be_present
+    expect(index.columns).to eq(%w[status priority last_activity_at])
+    expect(index.orders).to eq('priority' => :desc, 'last_activity_at' => :desc)
+    expect(index.where).to eq('(assignee_id IS NULL)')
+  end
+
   def staff_queue_page
     PlatformSupport::Ticket.order(:status, :priority, last_activity_at: :desc)
                            .page(1).per(5)

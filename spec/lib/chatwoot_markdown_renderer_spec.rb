@@ -86,7 +86,9 @@ RSpec.describe ChatwootMarkdownRenderer do
 
         expect(output).to include('<video width="640" height="360" controls preload="metadata">')
         expect(output).to include('style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"')
-        expect(output).to include('<script src="https://fast.wistia.com/player.js" async></script>')
+        # The wistia line in the fixture above is kept on purpose: its provider was removed (R1.3), so what
+        # this boundary must now show is that nothing executable reaches the article HTML.
+        expect(output).not_to include('<script')
         expect(output).to include('<colgroup><col style="width: 120px;"><col style="width: 200px;"></colgroup>')
       end
     end

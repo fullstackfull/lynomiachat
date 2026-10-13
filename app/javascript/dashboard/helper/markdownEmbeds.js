@@ -1,12 +1,12 @@
 import config from '../../../../config/markdown_embeds.yml';
 
-// Gists rely on document.write() and can't render inline in the editor.
-const NON_PREVIEWABLE_EMBEDS = new Set(['github_gist']);
-
-export const embeds = Object.entries(config)
-  .filter(([key]) => !NON_PREVIEWABLE_EMBEDS.has(key))
-  .map(([, { regex, template, hide_source: hideSource }]) => ({
+// Every provider in the config is previewable: the two that were not -- github_gist (document.write) and wistia
+// -- were removed because their templates emitted <script src> tags, which the public portal renders on this
+// product's own origin (docs/documentation-v2/08-orchestrator-rulings.md R1.3).
+export const embeds = Object.values(config).map(
+  ({ regex, template, hide_source: hideSource }) => ({
     regex: new RegExp(regex),
     template,
     hideSource: Boolean(hideSource),
-  }));
+  })
+);

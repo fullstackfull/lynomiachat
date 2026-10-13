@@ -4,8 +4,9 @@ import VideoEmbedInput from './VideoEmbedInput.vue';
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }));
 
-// One representative link per provider in the real markdown_embeds.yml config
-// (github_gist is intentionally excluded from the previewable embeds list).
+// One representative link per provider in the real markdown_embeds.yml config. wistia and github_gist are
+// absent because they were removed from that config: their templates emitted <script src> tags
+// (docs/documentation-v2/08-orchestrator-rulings.md R1.3).
 const SUPPORTED_URLS = [
   ['youtube (watch)', 'https://youtube.com/watch?v=dQw4w9WgXcQ'],
   ['youtube (youtu.be)', 'https://youtu.be/dQw4w9WgXcQ'],
@@ -14,7 +15,6 @@ const SUPPORTED_URLS = [
   ['mp4', 'https://example.com/video.mp4'],
   ['arcade (tab)', 'https://app.arcade.software/share/abc123?embed_mobile=tab'],
   ['arcade', 'https://app.arcade.software/share/abc123'],
-  ['wistia', 'https://mybrand.wistia.com/medias/abc123'],
   ['bunny', 'https://iframe.mediadelivery.net/embed/12345/abc-def'],
   ['codepen', 'https://codepen.io/user/pen/abcXYZ'],
   ['guidejar', 'https://guidejar.com/guides/abc123'],

@@ -288,4 +288,87 @@ describe 'markdown render security' do
       expect(message('<script>alert(1)</script>')).not_to include('<script>')
     end
   end
+
+  # R1.3 / R1.4 (docs/documentation-v2/08-orchestrator-rulings.md). The embed providers are the one place in this
+  # stack where a TEMPLATE, not an author's text, decides what tags reach a public page -- the author only has to
+  # supply a matching URL. Two providers emitted `<script src>` against this product's own origin and were
+  # removed; these assertions are what keeps a third from arriving in a config edit that passes review.
+  #
+  # The link form matters and the first draft of this file got it wrong. `render_article` is built with
+  # `extensions: [:table]` and NOT `:autolink`, so a bare URL on its own line is plain text and no embed fires at
+  # all -- the examples passed while rendering a single `<p>` and proved nothing. Every example below therefore
+  # uses explicit `[text](url)` syntax and asserts the EXACT element set, so an embed that silently stops firing
+  # fails the example instead of passing it.
+  describe 'markdown embed providers' do
+    # [provider key, a URL it matches, the elements a browser must build]
+    #
+    # The trailing `p` on the iframe providers is real and not noise: the template is block-level, so the HTML
+    # parser closes the paragraph the renderer opened at the `<div>` and opens a fresh empty one for what follows.
+    # mp4 has no trailing `p` because `<video>` is permitted inside a paragraph and the parser does not split it.
+    # Pinning the exact list is the point -- it is what makes a silently-no-longer-matching provider fail.
+    provider_cases = [
+      ['youtube', 'https://youtube.com/watch?v=dQw4w9WgXcQ', %w[p div iframe p]],
+      ['loom', 'https://loom.com/share/abc123', %w[p div iframe p]],
+      ['vimeo', 'https://vimeo.com/123456789', %w[p div iframe p]],
+      ['mp4', 'https://example.com/video.mp4', %w[p video source]],
+      ['arcade_tab', 'https://app.arcade.software/share/abc123?embed_mobile=tab', %w[p div iframe p]],
+      ['arcade', 'https://app.arcade.software/share/abc123', %w[p div iframe p]],
+      ['bunny', 'https://iframe.mediadelivery.net/embed/12345/abc-def', %w[p div iframe p]],
+      ['codepen', 'https://codepen.io/user/pen/abcXYZ', %w[p div iframe p]],
+      ['guidejar', 'https://guidejar.com/guides/abc123', %w[p div iframe p]]
+    ].freeze
+
+    def embed(url)
+      Nokogiri::HTML5.fragment(ChatwootMarkdownRenderer.new("\n\n[watch](#{url})\n\n").render_article)
+    end
+
+    it 'carries exactly the providers this ruling leaves in place' do
+      expect(CustomMarkdownRenderer.config.keys).to match_array(provider_cases.map(&:first))
+    end
+
+    it 'has no template that emits a script tag' do
+      offenders = CustomMarkdownRenderer.config.select { |_key, embed| embed['template'].include?('<script') }
+
+      expect(offenders.keys).to be_empty
+    end
+
+    it 'no longer carries the two script-emitting providers' do
+      expect(CustomMarkdownRenderer.config.keys).not_to include('wistia', 'github_gist')
+    end
+
+    provider_cases.each do |key, url, expected_elements|
+      it "renders #{key} as #{expected_elements.join('/')} and nothing executable" do
+        parsed = embed(url)
+
+        # Exact set, so a provider that stopped matching fails here rather than passing on an empty <p>.
+        expect(parsed.css('*').map(&:name)).to eq(expected_elements)
+        expect(parsed.css('script')).to be_empty
+      end
+    end
+
+    # The capture groups land inside HTML attributes, and the regexes exclude `&`, `/` and `?` from an id but not
+    # `"` or `<`. `render_embed_from_match` runs each capture through CGI.escapeHTML; this is what proves it.
+    it 'escapes a quote and a tag in a capture group instead of ending the src attribute' do
+      parsed = embed(%(https://loom.com/share/abc"><script>alert(1)</script>))
+      iframe = parsed.at_css('iframe')
+
+      expect(parsed.css('*').map(&:name)).to eq(%w[p div iframe p])
+      expect(iframe.attributes.keys).not_to include('onload', 'onerror')
+      # Truncated at the `/` of `</script>`, because the loom regex's id group is `[^&/?]+`. That truncation is
+      # incidental; the assertion that matters is the one above -- the payload is DATA in the attribute, and the
+      # parser built no script element from it.
+      expect(iframe['src']).to eq(%(https://www.loom.com/embed/abc"><script>alert(1)<))
+    end
+
+    # R1.4 names an onerror attribute specifically. Author HTML is OMITTED, not escaped, so the handler never
+    # becomes an attribute on anything -- asserted structurally rather than by substring.
+    it 'omits an author-written img carrying an onerror handler' do
+      parsed = Nokogiri::HTML5.fragment(
+        ChatwootMarkdownRenderer.new(%(<img src=x onerror="alert(1)">\n)).render_article
+      )
+
+      expect(parsed.css('*').map(&:name)).not_to include('img', 'script')
+      expect(parsed.css('[onerror]')).to be_empty
+    end
+  end
 end

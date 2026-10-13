@@ -207,14 +207,19 @@ describe CustomMarkdownRenderer do
       end
     end
 
-    context 'when link is a wistia URL' do
+    # Wistia was REMOVED from config/markdown_embeds.yml because its template pulled two remote scripts onto a
+    # public page on this product's own origin (docs/documentation-v2/08-orchestrator-rulings.md R1.3). This
+    # context is inverted rather than deleted: the URL still parses, so the assertion that matters is that it
+    # now renders as an ordinary link and embeds nothing.
+    context 'when link is a wistia URL, whose provider was removed' do
       let(:wistia_url) { 'https://chatwoot.wistia.com/medias/kjwjeq6f9i' }
 
-      it 'renders a custom element with Wistia embed code' do
+      it 'renders an ordinary link and no embed' do
         output = render_markdown_link(wistia_url)
-        expect(output).to include('<script src="https://fast.wistia.com/player.js" async></script>')
-        expect(output).to include('<wistia-player')
-        expect(output).to include('media-id="kjwjeq6f9i"')
+
+        expect(output).not_to include('<script')
+        expect(output).not_to include('<wistia-player')
+        expect(output).to include(%(<a href="#{wistia_url}">))
       end
     end
 

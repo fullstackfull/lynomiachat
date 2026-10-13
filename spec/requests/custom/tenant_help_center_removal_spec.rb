@@ -239,6 +239,52 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     end
   end
 
+  # THE CATEGORY-TO-PORTAL RELATIONSHIP, which was the brief's "enforce ownership at the WRITE boundary and again
+  # at the READ/publication boundary" and which nothing enforced: `category_id` and `portal_id` are independent
+  # columns with no constraint between them, and the public portal lists a category's articles by `category_id`
+  # alone. One row with a tenant's portal_id and a documentation category_id published tenant content on /docs.
+  describe 'an article whose category belongs to another portal' do
+    let!(:docs_portal) do
+      create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil,
+                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en' })
+    end
+    let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-cat', locale: 'en') }
+
+    it 'cannot be saved, which is the write boundary' do
+      intruder = build(:article, portal: portal, category: docs_category, account_id: account.id, author_id: admin.id)
+
+      expect(intruder).not_to be_valid
+      expect(intruder.errors[:category]).to include(I18n.t('errors.articles.category_portal_mismatch'))
+    end
+
+    it 'is accepted when the category belongs to the same portal' do
+      expect(build(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id)).to be_valid
+    end
+
+    it 'is accepted with no category at all, as before' do
+      expect(build(:article, portal: portal, category: nil, account_id: account.id, author_id: admin.id)).to be_valid
+    end
+
+    # The read boundary, tested against a row written BEFORE the validation existed -- which is the only way such
+    # a row can exist, and exactly the case defence in depth is for. `update_column` because the point is to
+    # produce the invalid state the validation now refuses.
+    it 'does not appear in the other portal\'s category listing, which is the read boundary' do
+      legacy = create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
+                                title: 'Leaked tenant page', status: :published)
+      legacy.update_column(:category_id, docs_category.id) # rubocop:disable Rails/SkipsModelValidations
+
+      expect(docs_category.reload.articles).not_to include(legacy)
+      expect(docs_category.articles.published.pluck(:title)).not_to include('Leaked tenant page')
+    end
+
+    it 'still lists a category\'s own articles' do
+      own = create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                             title: 'A real documentation page', status: :published)
+
+      expect(docs_category.reload.articles.published).to include(own)
+    end
+  end
+
   # THE ONE DOCUMENTATION SURFACE THE POLICY CHOKE POINT DOES NOT REACH.
   #
   # `SearchController` runs no `check_authorization` and consults no policy, so every refusal above is irrelevant

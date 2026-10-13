@@ -30,7 +30,16 @@ class Category < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :portal
   has_many :folders, dependent: :destroy_async
-  has_many :articles, dependent: :nullify
+  # SCOPED TO THIS CATEGORY'S OWN PORTAL, which is the READ half of the rule Article#category_in_same_portal
+  # enforces on write. The public portal lists a category's articles by `category_id` alone in eighteen places
+  # (category pages, category blocks, article counts, the author strip, the category JSON), so scoping the
+  # association closes all of them at once instead of asking eighteen call sites to remember.
+  #
+  # `dependent: :nullify` now nullifies only the in-portal articles. For rows created after the validation
+  # above that is the same set; a pre-existing mismatched row would keep a `category_id` pointing at a destroyed
+  # category, which is harmless -- `Article#category` is optional, there is no foreign key on the column, and
+  # every read path goes through this association, so such a row simply stops appearing anywhere.
+  has_many :articles, ->(category) { where(portal_id: category.portal_id) }, dependent: :nullify, inverse_of: :category
   has_many :category_related_categories,
            class_name: :RelatedCategory,
            dependent: :destroy_async

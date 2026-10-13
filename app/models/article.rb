@@ -67,6 +67,7 @@ class Article < ApplicationRecord
   validates :title, presence: true
   validates :content, presence: true, if: :published?
   validates :slug, exclusion: { in: RESERVED_SLUGS }
+  validate :category_in_same_portal
 
   # ensuring that the position is always set correctly
   before_create :add_position_to_article
@@ -109,6 +110,28 @@ class Article < ApplicationRecord
 
   def platform_owned?
     portal&.platform_owned? || false
+  end
+
+  # AN ARTICLE'S CATEGORY MUST BELONG TO THE ARTICLE'S OWN PORTAL.
+  #
+  # Nothing tied the two together: `category_id` and `portal_id` are independent columns with no constraint
+  # between them and no foreign key on `category_id`. A row whose category belongs to Lynomia's documentation
+  # portal while the article belongs to a tenant portal is therefore storable -- and the public portal lists a
+  # category's articles by `category_id` alone (eighteen read sites), so that one row renders on /docs with its
+  # title, body excerpt and, until the byline change, its author's name and avatar.
+  #
+  # Not tenant-reachable: every tenant article write is refused by Custom::ArticlePolicy. It is reachable by
+  # Lynomia's own Super Admin, because Administrate builds `Article.new(resource_params)` with both `portal_id`
+  # and `category_id` mass-assignable from the form (custom/app/dashboards/article_dashboard.rb) while
+  # `scoped_resource` only governs find. So this closes an operator foot-gun that publishes cross-portal
+  # content, at the one place both values are known.
+  #
+  # This is the WRITE half. The READ half is Category#articles, scoped to the category's own portal, so the
+  # eighteen read sites are safe without eighteen edits.
+  def category_in_same_portal
+    return if category.nil? || category.portal_id == portal_id
+
+    errors.add(:category, I18n.t('errors.articles.category_portal_mismatch'))
   end
 
   # WHO TO ATTRIBUTE PUBLICLY, which is nobody for Lynomia's own documentation.

@@ -24,6 +24,14 @@
 # would silently drop working product features for a defect confined to one node type.
 #
 # The body of a code block was always escaped and still is. Only the attribute changes.
+#
+# ONE SIBLING IS LEFT UNFIXED ON PURPOSE. `HtmlRenderer#footnote_reference` (html_renderer.rb:219-221) has the
+# same defect three times over: it interpolates `node.string_content` raw into an `href`, an `id` and a text
+# node, where cmark calls `houdini_escape_href` on all three (html.c:443,445,455). It is unreachable here
+# because footnotes are a PARSE option (`FOOTNOTES: (1 << 13)`) and both `CommonMarker.render_doc` calls in
+# ChatwootMarkdownRenderer pass `:DEFAULT`. Adding `:FOOTNOTES` to either call arms it as author-triggerable
+# stored XSS, so override `footnote_reference` here in the same change — an override written now would be
+# unreachable code for a node type the parser cannot emit.
 module MarkdownRendererFenceInfoEscaping
   # Mirrors CommonMarker::HtmlRenderer#code_block byte for byte apart from the escaping. `present?` stands in for
   # the gem's `fence_info && !fence_info.empty?`: cmark strips the info string while parsing, so the only values

@@ -11,7 +11,7 @@ phase deliberately did not fix in code and that the owner has to act on within d
 | Item | Status | Outcome |
 |---|---|---|
 | P0-1 stored XSS in article rendering | **Fixed** | `d5ec6e05` — one escape at the application-owned renderer boundary; 49 adversarial examples |
-| P0-2 cross-tenant documentation publication | **Closed, with two real holes found and fixed** | `cf9fdc6c` — the write surface was already closed; draft bodies leaked through global search, and a draft oracle through the public pixel |
+| P0-2 cross-tenant documentation publication | **Closed, with three real holes found and fixed** | `cf9fdc6c`, `7c73a92b`, and the category-to-portal boundaries — the write *policy* was already closed; draft bodies leaked through global search, a draft oracle through the public pixel, and nothing tied an article's category to its portal (§E, §M4) |
 | P0-3 Messenger HUMAN_AGENT tag | **Confirmed invalid, fixed** | `6358087a` — one eligibility rule for Messenger and both Instagram generations |
 | P0-4 Graph API version pins | **Inventory only, no version changed** | Section H — 5 buckets, 1 critical: Messenger sends on **v3.2** from a vendored gem |
 | P0-5 Embedded Signup | **Code read-only. Owner action required by 2026-10-15** | Section I — the repository is on Embedded Signup **v2**, which Meta deprecates in two days |
@@ -179,7 +179,29 @@ hazard, not a live hole.
    with a pixel where an unknown slug answered 404. The view **counter** was guarded; the **response** was not.
    No content leaked, only existence. An existing spec asserted the 200 as intended behaviour.
 
-**A third exposure, found while tracing the same paths and fixed.** The documentation layout published a named
+**A third open surface, and the one this phase first missed: the category-to-portal relationship.**
+The brief's trace list named "category→portal relationship" and its enforcement requirement said "at the WRITE
+boundary **and again** at the READ/publication boundary". The first pass through P0-2 verified the write
+*policy* and the two leaks above and did not check this, so it shipped with neither boundary enforced. A
+background investigation launched before the hotfix began returned afterwards and found it; I verified it
+independently before acting.
+
+`articles.category_id` and `articles.portal_id` are independent columns. There is no validation tying them
+(`app/models/article.rb:65-69` before this change), no database constraint, and no foreign key on
+`category_id` at all. So a row carrying a tenant portal's `portal_id` and a Lynomia documentation
+`category_id` is storable — and the public portal lists a category's articles by `category_id` **alone**:
+`categories_controller.rb:32` was `@category.articles.published`, where the correctly-scoped sibling three
+files away is `@portal.articles.published` (`articles_controller.rb:13`). Eighteen public read sites traverse
+`category.articles` the same way: category pages, category blocks, article counts, the author strip and the
+category JSON. One such row renders tenant content on `/docs`.
+
+Not tenant-reachable — every tenant article write is refused. Reachable by **Lynomia's own Super Admin**:
+Administrate builds `Article.new(resource_params)` with `portal_id` and `category_id` both mass-assignable from
+the form (`custom/app/dashboards/article_dashboard.rb`), while `scoped_resource` governs only *find*. So it is
+an operator foot-gun that publishes cross-portal content, not a tenant exploit — which is why it is classified
+below the search leak and above the pixel.
+
+**A fourth exposure, found while tracing the same paths and fixed.** The documentation layout published a named
 operator's display name and avatar on **every** platform article page and category page.
 `Documentation::ContentSeeder` stamps `SuperAdmin.first` as the author
 (`custom/app/services/documentation/content_seeder.rb:22,79`), and `SuperAdmin < User` on the `users` table
@@ -194,6 +216,8 @@ happening, by a different route than the one the brief anticipated.
 | Search returns published articles only | `custom/app/services/custom/search_service.rb` — `filter_articles` → `super.published` | READ, in the existing Lynomia overlay |
 | Draft oracle closed | `app/controllers/public/api/v1/portals/articles_controller.rb` — `@portal.articles.published.find_by(...)` | READ, public |
 | No personal byline on Lynomia's own documentation | `Article#public_author`, read by all six render sites (both JSON partials, both layouts, the category strip, the controller) | MODEL — **moved here by the adversarial pass, see §M** |
+| **Category must belong to the article's portal** (WRITE) | `Article#category_in_same_portal` — the one place both values are known | MODEL |
+| **A category lists only its own portal's articles** (READ) | `Category#articles` scoped to `portal_id`, closing all eighteen read sites at once | MODEL ASSOCIATION |
 | Dead authoring link removed | `SearchResultArticleItem.vue` now links to the public article page via `buildPortalArticleURL` | PRODUCT SURFACE |
 
 **Narrowing after `page`/`per` is deliberate and correct.** The condition lands in the `WHERE` clause and
@@ -346,8 +370,19 @@ on a real page.
 | `INSTAGRAM_API_VERSION` | `v22.0` (`Channel::Instagram::DEFAULT_API_VERSION`), **`locked: true`** | `channel/instagram.rb:82`, `send_on_instagram_service.rb:14`, `user_details_service.rb:15`, `message_text.rb:79`, `builders/messages/instagram/message_builder.rb:40` | graph.instagram.com, Instagram Login generation |
 | `INSTAGRAM_MESSENGER_API_VERSION` | **`v11.0`** | `instagram/messenger/send_on_instagram_service.rb:35` | Instagram DMs on a connected Facebook Page |
 | `FACEBOOK_API_VERSION` | `v18.0` | `dashboard_controller.rb:85` → `fbApiVersion` → the Facebook JS SDK | page connect and reauthorize flows, **browser only** |
-| `WHATSAPP_API_VERSION` (frontend) | `v24.0` (`DEFAULT_FACEBOOK_SDK_VERSION`, kept equal to the Ruby default) | `channels/whatsapp/utils.js:5` → `FB.init` | embedded signup, **browser only** |
+| `WHATSAPP_API_VERSION` (frontend) | **`v24.0`, and not operator-changeable — see the correction below** | `channels/whatsapp/utils.js:5` → `FB.init` | embedded signup, **browser only** |
 | `Whatsapp::HealthService::MINIMUM_HEALTH_API_VERSION` | `v24.0`, floor | takes `max(configured, v24.0)` | health only |
+
+**Correction to the row above, from the same background investigation.** `WHATSAPP_API_VERSION` is never
+published to the browser: it is absent from both `GLOBAL_CONFIG_KEYS` and `app_config` in
+`dashboard_controller.rb` (which lists `FACEBOOK_API_VERSION` and not this one), so
+`vueapp.html.erb:47` renders `whatsappApiVersion: ''` and `utils.js:16` falls back to the repository literal
+`v24.0`. The comment at `utils.js:3-4` — "Only reached when the server did not supply WHATSAPP_API_VERSION" —
+describes a channel that is always taken. The documented env override for the browser SDK version is dead, and
+an operator cannot change the version the embedded-signup and reauthorize popups use. **Not changed here**: the
+P0-5 migration touches this exact code, and the SDK version is a decision to take there rather than in a
+hotfix. Verified independently: `WHATSAPP_API_VERSION` appears zero times in `dashboard_controller.rb` lines
+5-33.
 
 `v11.0` for Instagram-via-Messenger is the second-oldest pin in the tree and the second-highest risk after the
 gem. **Must be tested before changing:** send text and each attachment type to a real IG DM on a connected
@@ -472,14 +507,15 @@ the test database. Nothing ran against production.
 | 1 | Focused XSS security suite — `spec/lib/markdown_renderer_security_spec.rb` | 49 examples, 0 failures | **0** |
 | 2 | Documentation authorization/isolation — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 41 examples, 0 failures | **0** |
 | 2b | Public portal rendering, the pixel and the byline — `spec/controllers/public/api/v1/portals/` | 29 examples, 0 failures | **0** |
-| 3 | Full documentation Ruby — `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, both public portal controller specs, articles/portals/categories controllers, the removal spec, all policies, `portal_helper`, `article`, `message`, `search_controller` | 793 examples, 0 failures | **0** |
+| 3 | Full documentation Ruby — `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, both public portal controller specs, articles/portals/categories controllers, the removal spec, all policies, `portal_helper`, `article`/`category`/`portal` models, `search_controller` | 722 examples, 0 failures | **0** |
+| 3b | Documentation isolation after the category-to-portal boundaries — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 46 examples, 0 failures | **0** |
 | 4 | Relevant frontend — search module, both Meta connect composables, `portalHelper`, `permissions` | 5 files, 61 tests passed | **0** |
 | 5 | Mail and render affected by the sanitizer — all of `spec/lib/`, `email_helper`, `message_format_helper`, all mailers, all of `spec/services/messages/` | 1016 examples, 0 failures | **0** |
 | 5b | HUMAN_AGENT and its blast radius — `spec/services/messages/`, `spec/services/facebook/`, `spec/services/instagram/`, `message_window_service`, `spec/models/message_spec.rb` | 381 examples, 0 failures | **0** |
 | 6 | RuboCop on all 18 changed Ruby/ERB files | no offenses detected | **0** |
 | 7 | eslint on both changed Vue files | 0 errors, 1 pre-existing warning (`no-dynamic-keys`) | **0** |
 | 8 | `zeitwerk:check` → **substituted**: production-mode `Rails.application.eager_load!` | `EAGER_LOAD_OK` | **0** |
-| 9 | Documentation SEO audit — `rake documentation:setup documentation:content lynomia:docs:seo_audit` | 126 articles seeded; `0 error(s), 4 warning(s)`; **INDEXABLE** | **0** |
+| 9 | Documentation SEO audit — `rake documentation:setup documentation:content lynomia:docs:seo_audit`, re-run after the new `Article` validation to prove the seeder still writes the whole corpus | 126 created, 0 updated, 0 unchanged; `0 error(s), 4 warning(s)`; **INDEXABLE** | **0** |
 | 10 | Corpus parse — `documentation:content` reading all 126 files with front matter, plus `content_seeder_corpus_spec.rb` (cross-references, front matter, placement, dashboard link registry), inside gate 3 | 126 created, 0 updated, 0 unchanged | **0** |
 
 Baselines taken **before** the changes, so the green is a comparison and not an assumption: the four
@@ -518,6 +554,11 @@ Classified by severity, not fixed in this phase, each with the reason.
 | K7 | Three unversioned Graph callers move whenever Meta retires the app's default version | Medium | Section H bucket 3. Pin them in the controlled upgrade |
 | K8 | `TelegramRenderer#code_block` writes the body into `<pre>` unescaped | Low | Telegram's own HTML parse mode on an outbound payload, not a browser render boundary |
 | K9 | `Instagram::SendOnInstagramService` spec claims to assert the tag and asserts nothing, and reads the wrong config key | Low | Section G. Recorded; the new coverage supersedes it |
+| K12 | **`footnote_reference` drops three escapes the C renderer performs** — raw `node.string_content` into an `href`, an `id` and a text node (`html_renderer.rb:219-221` vs `html.c:443,445,455`) | Medium, **latent** | §M1. Unreachable because `:FOOTNOTES` is never passed. Adding that one word to either `render_doc` call in `lib/chatwoot_markdown_renderer.rb` arms it. An override for a node type the parser cannot emit would be unreachable code, so the module comment carries the warning instead |
+| K13 | The gem's own `link`/`image` drop C's `scan_dangerous_url` guard (`html.c:387-389,405-408`); `escape_href` does not block `javascript:` because `:` is in its safe set | Low | The repo is safe only because both renderers `include MarkdownRendererUrlSanitizer`. There is no gem-level backstop, so a future `HtmlRenderer` subclass without that include gets `javascript:` in an href immediately |
+| K14 | `WHATSAPP_API_VERSION` is never published to the browser, so the documented env override for the embedded-signup SDK version is dead and the literal `v24.0` always wins | Low | §H correction. The P0-5 migration touches this code; the SDK version is a decision to take there |
+| K15 | `Channel::Telegram#convert_markdown_to_telegram_html` — the escaping path that used to protect the Telegram render — now has zero callers, while `TelegramRenderer` emits a raw `node.url` in an `href` and inherits a non-escaping `text` | Low | Same boundary as K8: Telegram's own HTML parse mode on an outbound payload, not a browser render. Dead code to remove in a cleanup phase, not a hotfix |
+| K16 | `CustomMarkdownRenderer#text` emits `<sup>` markup while running in **attribute** position inside `alt="…"`, so a caret in image alt text corrupts the attribute | Low | Not an XSS: `escape_html` covers `"` and every attribute in this stack is double-quoted, so the attribute cannot be closed. Accessibility/correctness only |
 | K10 | Blocked campaign has no reachable resume path | Low | A product finding from Checkpoint 1, unrelated to security |
 | K11 | Platform Support SLA-policy bootstrap path | Low | Same |
 
@@ -544,14 +585,33 @@ $ grep -n "out(" .../renderer/html_renderer.rb | grep -vE "escape_html|escape_hr
 122:  out(tagfilter(node.string_content))                            <- inline_html, same
 ```
 
+> **M1 WAS WRONG, AND THE GREP ABOVE IS WHY.** The filter excludes any line matching `out("<`, and the second
+> instance of this defect is `footnote_reference` at `html_renderer.rb:219-221`, which begins
+> `out("<sup class=\"footnote-ref\"><a href=\"#fn#{node.string_content}\" id=\"fnref#{node.string_content}\">…`.
+> My own filter hid it. A background investigation running in parallel found it, and I verified it against both
+> sources before accepting it: the Ruby method interpolates `node.string_content` raw into an `href`, an `id`
+> **and** a text node, where `ext/commonmarker/html.c:443,445,455` calls `houdini_escape_href` three times.
+>
+> **Unreachable today**, which is the only reason this is not a second blocker: footnotes are a *parse* option
+> (`lib/commonmarker/config.rb:15`, `FOOTNOTES: (1 << 13)`), both `render_doc` calls pass `:DEFAULT`, and
+> `FOOTNOTES` appears nowhere in `app`, `lib` or `custom`. Adding that one word to either call in
+> `lib/chatwoot_markdown_renderer.rb` arms it as author-triggerable stored XSS. Recorded as K12 rather than
+> fixed, because an override for a node type the parser never emits is unreachable code — the module's own
+> comment now names it so whoever enables footnotes is warned.
+>
+> The claim this paragraph originally made — "no second instance of the defect exists" — is withdrawn. It is
+> left visible because a security report that quietly edits a false refutation is worse than one that got it
+> wrong.
+
 Everything else writes a literal. Lines 113 and 122 are unreachable: `:UNSAFE` is `1 << 17` and the options
 bitmask is `0` on both paths. The application's own overrides were audited the same way and are all escaped,
 sanitized or integer-bounded: `link` (`escape_href` + `escape_html`), both `image` implementations (sanitized
 `src`, escaped `title`, `alt` through `plain` so it reaches the escaping `text`, `style` bounded to `1..2000`
 px), `table`/`colgroup`/`table_sizing_style` (built only from `widths.map(&:to_i)`, and `@pending_colwidths`
 itself comes from a `([\d,]+)` capture), `render_embed_from_match` (`CGI.escapeHTML` per named capture) and
-`parse_sup` (`escape_html` on both branches). **No second instance of the defect exists.** Refuted with
-evidence rather than asserted.
+`parse_sup` (`escape_html` on both branches). Those overrides hold. **Within the set of node types either
+`render_doc` call can actually produce, the fence info string was the only unescaped node data** — which is the
+claim the evidence supports, and all the original paragraph should have said.
 
 ### M2 — CONFIRMED, MAJOR, FIXED: the byline fix closed the HTML and left the JSON API open
 
@@ -578,6 +638,26 @@ three formats.
 required, because Super Admin still needs to know who wrote a page; what changes is who is *attributed
 publicly*. Two new examples pin the JSON for a platform portal (no `author` key at all) and for a tenant portal
 (the author named), beside the two HTML ones.
+
+### M4 — CONFIRMED, MAJOR, FIXED: P0-2 shipped with neither boundary the brief named
+
+The brief's P0-2 trace list included "category→portal relationship" and its enforcement sentence read "at the
+WRITE boundary **and again** at the READ/publication boundary". The first pass verified the write *policy*,
+found and fixed the search leak and the pixel oracle, and never checked the category relationship — so the
+phase shipped with the one requirement that was spelled out in two places unenforced at both. Root cause and
+reproduction in §E; the two-line fix in §F.
+
+Worth stating plainly: this was not found by my own review. It came from a background investigation launched
+before the hotfix work began, which returned after the first report was written. I verified every claim in it
+against the code before acting — the missing validation, the absent foreign key, the unscoped
+`@category.articles` beside its correctly scoped sibling, and the Administrate mass-assignment path — and all
+of them held.
+
+The fix also found an incoherent **upstream** fixture. `spec/models/article_spec.rb` created a `portal_2`
+article inside `portal_1`'s `category_2`, which only existed because nothing enforced the rule. It now uses a
+`portal_2` category, and my first attempt at that substitution was itself wrong: I reused `category_3`,
+claiming no assertion named it, when line 114 does — the suite caught me and `category_4` was added instead.
+Every expected count in that describe block is unchanged.
 
 ### M3 — CONFIRMED, MINOR, ACCEPTED: `Rails/SkipsModelValidations` in two new examples
 

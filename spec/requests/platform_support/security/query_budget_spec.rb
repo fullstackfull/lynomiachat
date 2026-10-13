@@ -19,7 +19,8 @@ RSpec.describe 'Platform Support query budget', type: :request do
   def seed(count)
     count.times do
       ticket = create(:platform_support_ticket, account: account, reporter: reporter)
-      ticket.messages.create!(author_type: 'User', author_name: 'A reporter', body: 'Hello')
+      ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
+                              body: 'Hello')
     end
   end
 

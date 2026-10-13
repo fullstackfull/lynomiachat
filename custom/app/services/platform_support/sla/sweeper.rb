@@ -56,18 +56,25 @@ class PlatformSupport::Sla::Sweeper
     end
   end
 
+  # `sla_policy_id IS NOT NULL` is the same question `PlatformSupport::Sla::State#governed?` asks, and it is
+  # asked here so the two cannot disagree: the policy foreign key is `on_delete: :nullify`, so deleting a
+  # policy row leaves its tickets holding due times with no policy -- and a ticket the desk renders as
+  # "No SLA policy applies" must not be breached by a background job nobody can see.
   def awaiting_first_response
-    ::PlatformSupport::Ticket.where(status: ::PlatformSupport::Ticket::OPEN_STATUSES, sla_paused_at: nil)
-                             .where(first_responded_at: nil, first_response_breached_at: nil)
-                             .where.not(first_response_due_at: nil)
-                             .where(first_response_due_at: ...@now)
+    governed.where(first_responded_at: nil, first_response_breached_at: nil)
+            .where.not(first_response_due_at: nil)
+            .where(first_response_due_at: ...@now)
   end
 
   def awaiting_resolution
+    governed.where(resolution_breached_at: nil)
+            .where.not(resolution_due_at: nil)
+            .where(resolution_due_at: ...@now)
+  end
+
+  def governed
     ::PlatformSupport::Ticket.where(status: ::PlatformSupport::Ticket::OPEN_STATUSES, sla_paused_at: nil)
-                             .where(resolution_breached_at: nil)
-                             .where.not(resolution_due_at: nil)
-                             .where(resolution_due_at: ...@now)
+                             .where.not(sla_policy_id: nil)
   end
 
   # THE ONE EVENT WRITE IN THIS OBJECT, and the seam to reconcile at integration: if the domain ships a single

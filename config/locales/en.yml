@@ -398,10 +398,12 @@ en:
   # rendering blank.
   platform_support:
     mailer:
+      # Shared. Interpolations: operator_context takes account, plan, category, priority -- a key without
+      # them renders the label and silently drops everything the operator needs to triage.
       shared:
         view_ticket: 'View ticket'
         open_in_desk: 'Open in the support desk'
-        operator_context: 'Account context'
+        operator_context: 'Account: %{account} · Plan: %{plan} · Category: %{category} · Priority: %{priority}'
         no_plan: 'No plan on record'
       # Customer-facing. Interpolations: reference, subject.
       ticket_created:

@@ -118,7 +118,9 @@ const load = async () => {
         PlatformSupportAPI.getEvents(ticketId.value),
       ]);
 
-    ticket.value = ticketResponse.data;
+    // All three endpoints answer in the `payload` envelope this module's serializers use, including the
+    // single-ticket one (app/views/api/v1/accounts/platform_support/tickets/show.json.jbuilder).
+    ticket.value = ticketResponse.data.payload;
     messages.value = messagesResponse.data.payload || [];
     events.value = eventsResponse.data.payload || [];
     arrivedUnread.value = Boolean(ticket.value.unread);

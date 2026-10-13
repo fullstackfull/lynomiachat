@@ -68,7 +68,9 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
       send_as(reporter, :get, "#{base}/tickets/#{ticket.reference}")
 
       expect(response).to have_http_status(:success)
-      expect(response.parsed_body['reference']).to eq(ticket.reference)
+      # The `payload` envelope every serializer in this module uses, and the tenant helpdesk before it
+      # (app/views/api/v1/accounts/platform_support/tickets/show.json.jbuilder).
+      expect(response.parsed_body['payload']['reference']).to eq(ticket.reference)
     end
   end
 

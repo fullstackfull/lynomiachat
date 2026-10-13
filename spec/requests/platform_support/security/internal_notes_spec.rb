@@ -41,17 +41,23 @@ RSpec.describe 'Platform Support internal note secrecy', type: :request do
   end
 
   # No tenant route exists whose controller could render one -- not a filtered one, not a 403 one, none.
+  # The TENANT tree only. `/super_admin/platform_support/tickets/:id/note` is the staff surface's own writer,
+  # behind `authenticate_super_admin!` and an active agent row, and it is where notes are supposed to live.
   it 'declares no tenant route that names a note' do
     paths = Rails.application.routes.routes.map { |route| route.path.spec.to_s }
-                 .grep(%r{/platform_support/})
+                 .grep(%r{\A/api/v1/accounts/:account_id/platform_support/})
 
     expect(paths.grep(/note/)).to be_empty
   end
 
+  # Comment lines are stripped first: a serializer header listing `internal_notes` among the keys it
+  # deliberately omits is the documentation of this rule, not a breach of it.
   it 'exposes no tenant serializer key for one' do
     views = Dir.glob(Rails.root.join('app/views/api/v1/accounts/platform_support/**/*'))
                .select { |path| File.file?(path) }
-    offenders = views.select { |path| File.read(path).match?(/internal_note|InternalNote/) }
+    offenders = views.select do |path|
+      File.readlines(path).reject { |line| line.strip.start_with?('#') }.join.match?(/internal_note|InternalNote/)
+    end
 
     expect(offenders).to be_empty
   end

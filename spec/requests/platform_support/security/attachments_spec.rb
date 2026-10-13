@@ -160,7 +160,8 @@ RSpec.describe 'Platform Support attachments', type: :request do
     # or a note's -- otherwise the status itself tells the caller the row exists.
     it 'answers identically for a nonexistent id, a note and a row of another account' do
       foreign = create(:platform_support_ticket, account: other_account)
-      foreign_message = foreign.messages.create!(author_type: 'User', author_name: 'Somebody', body: 'Hi')
+      foreign_message = foreign.messages.create!(author_type: 'User', author_id: other_administrator.id,
+                                                 author_name: 'Somebody', body: 'Hi')
       foreign_attachment = attach_to(foreign_message, :platform_support_message_files)
 
       bodies = [0, note_attachment.id, foreign_attachment.id].map do |id|
@@ -199,20 +200,32 @@ RSpec.describe 'Platform Support attachments', type: :request do
   end
 
   # ---- No serializer emits a blob URL ------------------------------------------------------------------
+  # Comments are stripped first: a header stating that this partial never renders a signed id is the
+  # documentation of the rule, not a violation of it. What the rule is about is what a view can EMIT.
   it 'emits no blob url from any Platform Support view' do
     views = Dir.glob(Rails.root.join('app/views/api/v1/accounts/platform_support/**/*')) +
             Dir.glob(Rails.root.join('app/views/super_admin/platform_support/**/*')) +
             Dir.glob(Rails.root.join('app/views/platform_support_mailer/**/*'))
     emitted = views.select { |path| File.file?(path) }
-                   .select { |path| File.read(path).match?(/rails_blob|rails_storage_proxy|signed_id|service_url/) }
+                   .select { |path| rendered_code(File.read(path)).match?(/rails_blob|rails_storage_proxy|signed_id|service_url/) }
 
     expect(emitted).to be_empty
   end
 
-  it 'reaches a blob through exactly one tenant route' do
+  # TWO ROUTES, one per surface, and that is the architecture rather than a leak: each authorizes the blob's
+  # PARENT through its own boundary -- the tenant one through the policy scope, which has no path to an
+  # internal note, and the staff one through the acting-agent guard. Neither hands out a blob URL.
+  it 'reaches a blob through exactly two routes, one per authorized surface' do
     routes = Rails.application.routes.routes.map { |route| route.path.spec.to_s }
                   .grep(%r{/platform_support/attachments})
 
-    expect(routes).to eq(['/api/v1/accounts/:account_id/platform_support/attachments/:id(.:format)'])
+    expect(routes).to contain_exactly('/api/v1/accounts/:account_id/platform_support/attachments/:id(.:format)',
+                                      '/super_admin/platform_support/attachments/:id(.:format)')
+  end
+
+  # ERB and HTML comments, and the comment lines of a jbuilder, are not code this view can emit.
+  def rendered_code(body)
+    body.gsub(/<%#.*?%>/m, '').gsub(/<!--.*?-->/m, '')
+        .lines.reject { |line| line.strip.start_with?('#') }.join
   end
 end

@@ -42,9 +42,10 @@ const submit = async ticket => {
 
   try {
     const response = await PlatformSupportAPI.createTicket(ticket);
+    // 201 renders the same `payload` envelope as the show endpoint, so the new ticket's id is one level in.
     router.push(
       accountScopedRoute('platform_support_tickets_show', {
-        ticketId: response.data.id,
+        ticketId: response.data.payload.id,
       })
     );
   } catch (requestError) {

@@ -95,11 +95,31 @@ class PlatformSupport::Sla::Clock
     return if @ticket.first_responded_at.present?
 
     @ticket.first_responded_at = at
-    due = @ticket.first_response_due_at
+    # DECIDED ONCE, BY WHOEVER GOT THERE FIRST. If the sweep already stamped this breach then the outcome is
+    # already recorded, with its own event, and re-dating the column to the reply time would quietly rewrite
+    # a decision that has been read and emailed.
+    return if @ticket.first_response_breached_at.present?
+
+    due = effective_due(@ticket.first_response_due_at, at)
     @ticket.first_response_breached_at = at if due.present? && at > due
   end
 
   private
+
+  # A STOPPED CLOCK IS NOT SPENDING LYNOMIA'S TIME. `resume` is what credits a pause to the due times, so
+  # while `sla_paused_at` is set the row still carries the pre-pause target -- and a comparison made DURING a
+  # pause has to add the time the clock has been standing still. Without this an operator who replies to a
+  # ticket that has been waiting on the customer for a week is judged against a target that stopped a week
+  # ago, and the desk records a breach for time it was never spending.
+  def effective_due(due, at)
+    return nil if due.blank?
+
+    paused_at = @ticket.sla_paused_at
+    return due if paused_at.blank?
+
+    standing_still = (at - paused_at).round
+    standing_still.negative? ? due : due + standing_still
+  end
 
   # THE SEAM. Calendar time today; an installation-level support calendar would branch here and nowhere else.
   # A blank or non-positive threshold is no promise at all, so the column stays nil and nothing downstream can

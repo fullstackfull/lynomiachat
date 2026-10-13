@@ -28,13 +28,14 @@ class PlatformSupport::MessageCreation
   end
 
   def perform
-    raise CustomExceptions::PlatformTickets::TicketClosed.new({}) if @ticket.closed?
-
     message = nil
     ActiveRecord::Base.transaction do
-      # Locked because a reply READS the status to decide whether it reopens the ticket, and an operator
-      # resolving it at the same instant would otherwise leave a reopened ticket marked resolved.
+      # Locked because a reply READS the status twice: to refuse a closed thread, and to decide whether it
+      # reopens a resolved one. Both reads happen after the lock, so an operator closing or resolving the
+      # ticket in the same instant wins rather than leaving a reply on a thread nobody is reading.
       @ticket.lock!
+      raise CustomExceptions::PlatformTickets::TicketClosed.new({}) if @ticket.closed?
+
       message = write_message
       reopen_if_resolved(message)
       stamp_ticket(message)
@@ -89,7 +90,9 @@ class PlatformSupport::MessageCreation
       @ticket.last_customer_message_at = message.created_at
     else
       @ticket.last_operator_message_at = message.created_at
-      @decided_first_response = @ticket.first_responded_at.nil?
+      # Neither column set means nobody has decided the first-response outcome yet. If the sweep already
+      # stamped the breach, the outcome has its event; this reply records the response and nothing else.
+      @decided_first_response = @ticket.first_responded_at.nil? && @ticket.first_response_breached_at.nil?
       clock.record_first_response(at: message.created_at)
     end
     @ticket.last_activity_at = message.created_at

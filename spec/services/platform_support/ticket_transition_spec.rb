@@ -116,6 +116,21 @@ RSpec.describe PlatformSupport::TicketTransition do
       expect(ticket.resolution_due_at).to be >= paused_due
     end
 
+    # THE FAILURE THIS PREVENTS, end to end: without a fresh target the old one is still in the past, so the
+    # next sweep records a breach -- permanently, and with an email to the desk -- for work that restarted
+    # seconds earlier.
+    it 'gives a reopened ticket a fresh resolution target, clears the old breach, and survives a sweep' do
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'resolved' }).perform
+      ticket.update!(resolution_due_at: 1.hour.ago, resolution_breached_at: 1.hour.ago)
+
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'open' }).perform
+
+      expect(ticket.reload.resolution_breached_at).to be_nil
+      expect(ticket.resolution_due_at).to be > Time.current
+      expect(PlatformSupport::Sla::Sweeper.new.perform.values.sum).to eq(0)
+      expect(ticket.reload.resolution_breached_at).to be_nil
+    end
+
     it 'writes no history row of its own: a pause is not something the customer was told' do
       described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_customer' }).perform
 

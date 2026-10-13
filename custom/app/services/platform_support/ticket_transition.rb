@@ -35,10 +35,7 @@ class PlatformSupport::TicketTransition
       previous = @ticket.attributes.slice(*TRACKED.keys)
       @ticket.assign_attributes(@attributes)
       apply_lifecycle_timestamps(previous['status'])
-      # The pause rule reads the ticket's CURRENT status, so the clock is asked after the new status is
-      # assigned and before the save -- which is the one ordering that makes `waiting_on_customer` stop the
-      # clock and every other status resume it, without this service knowing which statuses those are.
-      PlatformSupport::Sla::Clock.new(@ticket).sync_pause
+      apply_sla(previous['status'])
       @ticket.last_activity_at = Time.current
       @ticket.save!
       record_changes(previous)
@@ -50,6 +47,22 @@ class PlatformSupport::TicketTransition
 
   private
 
+  # BOTH HALVES OF THE CLOCK, in the order the tenant desk's own update service uses
+  # (custom/app/services/support/tickets/update.rb:46-59), because the two answer different questions:
+  #
+  #   sync_pause           reads the ticket's CURRENT status, so it is asked after the new status is assigned
+  #                        and before the save -- the one ordering that makes `waiting_on_customer` stop the
+  #                        clock and every other status resume it, without this service naming either.
+  #   restart_resolution   a REOPENED ticket is new work, so its resolution target is measured from now.
+  #                        Without this the old target is still in the past, `Sla::Sweeper` matches the row on
+  #                        its next pass and records a breach for work that restarted minutes earlier -- a
+  #                        permanent false stamp on a routine operator action, with nothing that can undo it.
+  def apply_sla(previous_status)
+    clock = PlatformSupport::Sla::Clock.new(@ticket)
+    clock.sync_pause
+    clock.restart_resolution if reopening?(previous_status)
+  end
+
   # Entering a terminal state stamps it. Moving `resolved -> closed` must NOT clear `resolved_at`: the ticket
   # really was resolved then, and the pair of timestamps is how "resolved on Monday, closed on Friday" stays
   # readable. Reopening clears both, because they would otherwise claim a resolution the ticket no longer has.
@@ -59,6 +72,10 @@ class PlatformSupport::TicketTransition
     if reopening?(previous_status)
       @ticket.resolved_at = nil
       @ticket.closed_at = nil
+      # The same lifecycle fact `PlatformSupport::MessageCreation` clears on a customer-reply reopen, and for
+      # the same reason: a reopened ticket is not a ticket that breached and finished. Cleared here rather
+      # than in the clock because a ticket whose policy row has since gone has no clock to ask.
+      @ticket.resolution_breached_at = nil
       return
     end
 

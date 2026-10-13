@@ -124,7 +124,11 @@ const arrange = ({
   messages = [openingMessage, customerMessage, operatorMessage],
   events = [createdEvent],
 } = {}) => {
-  PlatformSupportAPI.getTicket.mockResolvedValue({ data: ticketPayload });
+  // The real envelope: every endpoint in this module, the single-ticket one included, answers under
+  // `payload` (app/views/api/v1/accounts/platform_support/tickets/show.json.jbuilder).
+  PlatformSupportAPI.getTicket.mockResolvedValue({
+    data: { payload: ticketPayload },
+  });
   PlatformSupportAPI.getMessages.mockResolvedValue({
     data: { payload: messages },
   });

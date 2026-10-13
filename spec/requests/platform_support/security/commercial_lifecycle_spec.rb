@@ -42,7 +42,8 @@ RSpec.describe 'Platform Support commercial and lifecycle rules', type: :request
     end
 
     it 'downloads an attachment on its own ticket' do
-      message = ticket.messages.create!(author_type: 'User', author_name: 'A reporter', body: 'The invoice')
+      message = ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
+                                        body: 'The invoice')
       message.platform_support_message_files.attach(io: StringIO.new('INVOICE'), filename: 'invoice.pdf',
                                                     content_type: 'application/pdf')
       attachment = message.platform_support_message_files.attachments.last
@@ -84,7 +85,8 @@ RSpec.describe 'Platform Support commercial and lifecycle rules', type: :request
     end
 
     it 'is refused on the attachment route' do
-      message = ticket.messages.create!(author_type: 'User', author_name: 'A reporter', body: 'The invoice')
+      message = ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
+                                        body: 'The invoice')
       message.platform_support_message_files.attach(io: StringIO.new('INVOICE'), filename: 'invoice.pdf',
                                                     content_type: 'application/pdf')
       account.update!(status: :suspended)
@@ -117,7 +119,8 @@ RSpec.describe 'Platform Support commercial and lifecycle rules', type: :request
       Custom::AuditLog.create!(auditable: ticket, user: super_admin, action: 'update',
                                comment: 'platform_support.status_changed', audited_changes: { 'status' => 'open' })
       name = ticket.account_name_at_creation
-      ticket.messages.create!(author_type: 'User', author_name: 'A reporter', body: 'Still here')
+      ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
+                              body: 'Still here')
 
       account.destroy!
 

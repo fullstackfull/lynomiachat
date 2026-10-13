@@ -8,7 +8,7 @@ require 'rails_helper'
 # being able to open /super_admin is not being able to answer a customer.
 
 RSpec.describe 'Super Admin Platform Support Desk', type: :request do
-  let(:super_admin) { create(:super_admin) }
+  let(:super_admin) { create(:super_admin, name: 'Hana') }
   let(:account) { create(:account, name: 'Alnoor Trading') }
   let(:administrator) { create(:user, account: account, role: :administrator) }
   let(:tenant_agent) { create(:user, account: account, role: :agent) }
@@ -21,8 +21,6 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
     PlatformSupport::Agent.create!(user_id: staff_user.id, role: :lead, display_name: 'Faisal')
   end
 
-  let(:reference_sequence) { PlatformSupport::Ticket.maximum(:reference_number).to_i }
-
   # A REAL policy row, because `platform_support_tickets.sla_policy_id` carries a foreign key: an invented id
   # is refused by the database, not quietly stored. Its thresholds are irrelevant here -- every assertion
   # below reads the TICKET's own due-time columns, which is what PlatformSupport::Sla::State answers from.
@@ -30,7 +28,6 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
 
   def ticket(**attributes)
     defaults = {
-      reference_number: reference_sequence + 1,
       account: account,
       account_name_at_creation: account.name,
       reporter_id: administrator.id,
@@ -213,7 +210,7 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
     end
 
     it 'keeps a deactivated agent\'s tickets assigned and asks for a reassignment' do
-      stale = PlatformSupport::Agent.create!(user_id: administrator.id, display_name: 'Departed', active: false)
+      stale = PlatformSupport::Agent.create!(user: create(:super_admin, name: 'Departed'), active: false)
       ticket(assignee: stale)
 
       get '/super_admin/platform_support'
@@ -365,7 +362,11 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
     end
 
     it 'says the account is gone rather than linking nowhere' do
-      orphan = ticket(reference_number: 902, account: nil, account_name_at_creation: 'Deleted Co')
+      orphan = ticket(reference_number: 902, account: create(:account, name: 'Deleted Co'),
+                      account_name_at_creation: 'Deleted Co')
+      # The only way a ticket loses its account is the way production does it: the account goes, and the
+      # foreign key nullifies the column. `account_id` is required on create, deliberately.
+      orphan.account.destroy!
 
       get "/super_admin/platform_support/tickets/#{orphan.id}"
 

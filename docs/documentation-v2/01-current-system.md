@@ -133,6 +133,25 @@ Phase 4:
 
 ## 5. Public rendering
 
+> **FIFTH CORRECTION, from the P0 hotfix.** Three statements that were made in this section or implied by it
+> were wrong, and the code has changed under each. They are left visible rather than quietly edited:
+>
+> 1. **The fenced code block's info string was NOT escaped.** §5 reasoned about raw HTML being omitted and
+>    concluded the render path was safe. Raw HTML being omitted says nothing about an attribute value, and the
+>    `class="language-…"` attribute was a live stored XSS on this path, the message path and reply emails. Fixed
+>    at `lib/markdown_renderer_fence_info_escaping.rb`; reproduction in `P0-PRODUCTION-HARDENING.md` §A-§C.
+> 2. **The tracking pixel answered 200 for a draft slug** where an unknown slug answered 404, over an
+>    unauthenticated route — an existence oracle for unpublished content. Only the view counter had been
+>    guarded. Now `.published`.
+> 3. **The documentation layout published a named operator's identity.** `article.author` resolves to the
+>    `SuperAdmin` row the seeder stamps, and `SuperAdmin < User`, so every public documentation article page and
+>    category page carried a staff display name and avatar. A platform-owned portal now renders no byline.
+>
+> There is also one thing this section got right that is worth restating because it keeps being misread: raw
+> HTML is **deleted** (`<!-- raw HTML omitted -->`), not escaped, and `data:image/{png,gif,jpeg,webp}` is
+> **permitted** by deliberate decision. Both are now pinned by `spec/lib/markdown_renderer_security_spec.rb`.
+
+
 The public entry points are deliberately thin redirects, so the Help Center's own renderer, layouts, locale
 handling, search and SEO are reused rather than reimplemented:
 

@@ -244,7 +244,6 @@ RSpec.describe 'Public Articles API', type: :request do
                        title: 'Platform guide', content: 'Body', status: :published)
     end
 
-
     it 'names nobody on the article page' do
       host! 'docs.example.com'
       get "/hc/#{docs_portal.slug}/articles/#{docs_article.slug}"

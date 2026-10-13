@@ -66,6 +66,47 @@ Everything below is an extension of something that already exists:
 
 **EXTEND, DO NOT DUPLICATE.**
 
+### 2.1 The documentation security model — OWNER DECISION, frozen during the P0 hotfix
+
+> **TENANT = DOCUMENTATION READER. LYNOMIA SUPER ADMIN = DOCUMENTATION AUTHOR.**
+>
+> Tenants must not create, edit, publish, unpublish, delete, move or manage documentation articles or
+> categories at all.
+
+This supersedes anything earlier in this charter, in `01-current-system.md` or in any discovery report that
+treated tenant Help Center authoring as a surface to preserve, improve or test. It is a product rule, not a
+permission default: a custom role holding every permission, including `knowledge_base_manage`, is still a
+reader.
+
+How it is enforced, and the order matters because only the first two are load-bearing:
+
+| Layer | Mechanism | Evidence |
+|---|---|---|
+| **1. Server-side authorization** | `Custom::{Portal,Category,Article}Policy` prepended onto the OSS policies; unconditional `false`, no `super`. 25 routes behind one denial, because every tenant portal/article/category controller runs an unconditional `check_authorization` | `spec/requests/custom/tenant_help_center_removal_spec.rb` |
+| **2. The prepend order itself** | produced by `config/initializers/01_inject_enterprise_edition_module.rb`, not by the policy files — so it is asserted, since an include instead of a prepend would silently turn every refusal into an administrator-is-allowed grant | same file, `prepends every documentation policy ahead of the class it overrides` |
+| **3. Read narrowing** | `Custom::SearchService#filter_articles` → `super.published`. The one documentation surface the policy choke point cannot reach, because `SearchController` runs no `check_authorization` and consults no policy | same file, `global search over articles` |
+| **4. Public read** | `Public::Api::V1::Portals::ArticlesController` serves `.published` for the page, the markdown endpoint **and** the tracking pixel, unless a signed-in super admin is previewing | `spec/controllers/public/api/v1/portals/articles_controller_spec.rb` |
+| **5. Product surface** | the tenant authoring Vue tree is unreachable (`helpcenter.routes.js` imported nowhere, no sidebar entry, `help_center` disabled in `config/features.yml`) | — |
+
+Layer 5 is **not** a security control and is never cited as one. Hiding a button is not authorization.
+
+Three things this decision deliberately does **not** do: it does not delete upstream Chatwoot's generic Help
+Center code (Lynomia's own documentation and changelog *are* Help Center portals); it does not build a
+replacement tenant CMS; and it does not remove public read, portal search, contextual help or Super Admin
+authoring, all of which are asserted to still work.
+
+Two further contracts frozen by the same hotfix:
+
+- **No personal byline on Lynomia's own documentation.** `Documentation::ContentSeeder` stamps
+  `SuperAdmin.first` as every platform article's author and `SuperAdmin < User`, so the documentation layout
+  was publishing a named operator's display name and avatar on every public page. A platform-owned portal now
+  renders no author; a tenant portal still names its own.
+- **A draft is authoring state, and authoring state is not tenant-visible.** That covers the article body in
+  dashboard search, the rendered page, the markdown endpoint and the tracking pixel's 200-versus-404 — an
+  existence oracle counts as visibility.
+
+Full reasoning, reproduction and test exit codes: `docs/documentation-v2/P0-PRODUCTION-HARDENING.md` §E, §F.
+
 ## 3. Production rules — absolute, for every agent
 
 - **DO NOT deploy.**

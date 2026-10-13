@@ -1,5 +1,13 @@
 # P2 — the source-of-truth and deployment-sync contract, frozen
 
+> **REVISED AND IMPLEMENTED IN WAVE 3.** Owner correction `P2-WORKSTREAM-OWNERSHIP.md` §F2 replaced this
+> contract's single `content_digest` with a **field-by-field** model, and §2A below is the authoritative
+> statement of it — it is what the code does. Where a decision in §2 disagrees with §2A, §2A wins, and each
+> affected decision now carries its own correction at the point of use (D1, D3, D4, D5, D6, D7, D8, D9, D11).
+> Four of this document's wave-1 conclusions are **withdrawn on measurement** and say so where they stand:
+> the `platform_owned?` position guard (D8), the `slug` reassertion (D4), the `doc_key` validation (D3a) and
+> the two new front-matter keys (D6).
+
 **Agent 5.** Implements ruling **R12** (`08-orchestrator-rulings.md:406-481`) and is bound by `00-program.md` §2.1
 (the documentation security model), §2.3 (the absence rule) and §3 (production rules), and by `R2-MEDIA-CONTRACT.md`,
 which is already frozen and which nothing here contradicts.
@@ -93,6 +101,71 @@ in miniature on one column, and it is the mechanism behind §2.3.
 
 ---
 
+## 2A. The field-by-field model, as implemented
+
+Owner correction §F2: a `content_digest` protects `content` and nothing else, and **nine fields have two
+writers**, so a content-only digest reverts an operator's title, description, position, status and SEO metadata
+while the digest still matches. The classification below is what `Documentation::ContentSeeder` now obeys. One
+row changed from §F2.1's proposal (`slug`, see D4) and no field is unclassified.
+
+| Class | Field | Where the other writer is | Rule the seeder follows |
+|---|---|---|---|
+| **D** identity / provenance | `portal` | not on the form as a documentation portal change (`article_dashboard.rb:17` scopes it to `Documentation::Library.portals`) | the lookup scope; never written |
+| **D** | `locale` | on the form, but `ensure_locale_in_article` (`article.rb:286-292`) overrides it from the category | the lookup key; never written |
+| **D** | `meta['doc_key']` | not on the form; `ArticleMetaField::MANAGED_KEYS` (`article_meta_field.rb:37`) excludes it and `merge_submitted` (`:50-55`) carries it through | **reasserted on every run** from the file's basename |
+| **D** | `content_source_path` | never a form field | written on create and on adoption, and re-pointed when the file moves section |
+| **A** repository-owned | `content` | form (`article_dashboard.rb:47`) | the corpus wins on every run |
+| **A** | `category` | form | the corpus wins on every run |
+| **A** | `associated_article_id` | not on the form | reasserted for every non-default locale, as before |
+| **B** operator-owned | `status` | form, three states (`article_dashboard.rb:27`) | **written on create only.** The file does not express it |
+| **C** mergeable | `title`, `description`, `position` | form | written while the row still holds what the seeder last wrote there |
+| **C** | `meta['title']`, `meta['description']`, `meta['tags']`, `meta['version']`, `meta['release_date']` | form (`article_meta_field.rb:11-13`) | the same rule, per key |
+| — | `meta['feature_image']` | form only (`article_meta_field.rb:13`) | the seeder never writes or removes it |
+| — | `author` | not on the form | `\|\|=`, as before |
+| — | `views`, `draft_title`, `draft_content`, `folder_id` | not on the form | never touched |
+
+**`seeded_digests`, the one new mechanism.** A jsonb column holding one SHA-256 per class-C field of the value
+the seeder last wrote there:
+`Digest::SHA256.hexdigest(JSON.generate([DIGEST_VERSION, field, canonical_value]))`, with `DIGEST_VERSION` first
+so that changing what a digest covers invalidates every stored digest loudly instead of reclassifying rows
+silently, and `canonical_value` normalising `nil` against `""` — which matters because Administrate's
+`read_param_value` (`administrate-0.20.1/app/controllers/administrate/application_controller.rb:209-224`) turns a
+blank input into `nil` while a file yields `""`. It is a **digest, never the value**: no second copy of the
+content, no revision table, no second CMS. §F2.3's requirement that this be a generalisation of the accepted
+digest direction rather than a new store is met by that sentence.
+
+**The rule, exactly.** For each class-C field, with `current` = the digest of the row's value now:
+
+| Condition | Meaning | Action |
+|---|---|---|
+| `current == seeded_digests[field]` | the row still holds what the seeder wrote | write the file's value, record its digest |
+| `current == digest(file value)` | the operator and the corpus now agree | nothing to write; **re-attach** by recording the digest |
+| otherwise | an operator edited it | **leave it**, keep the old digest, and **report the field** |
+
+The middle row is new and is not in §F2.1. Without it a field stays reported as divergent for ever once edited,
+even after the corpus catches up with the same text — and that, not a flag, is what lets a row converge again.
+It also removes the need for the `ACCEPT_FILE=<slug>` override D5 proposed (withdrawn, see D5).
+
+**A row with no digests is `untracked`, and is not written.** Every production row is in that state the moment
+the migration lands, and nothing in the repository can tell a previous seed's own writing from an operator's
+edit. The run reports those rows and exits non-zero; `ADOPT_UNTRACKED=1 rails documentation:content` is the
+operator saying once, by hand, that the corpus wins. Adoption is **not** creation: it does not write `status`,
+so an article an operator withdrew before the migration stays withdrawn.
+
+**The report** (`lib/tasks/documentation.rake`), per run, in the shape the seeder already had:
+
+```
+articles: 0 created, 3 updated, 130 unchanged, 0 adopted, 0 untracked (en, ar)
+  operator_edited  ar  connect-whatsapp-ar  custom/db/documentation/ar/whatsapp/connect-whatsapp.md  title, meta.tags
+```
+
+`created + updated + unchanged + adopted + untracked` is one outcome per file processed, so it reconciles against
+the corpus on disk. A row can be `updated` **and** carry a divergence in the same run: class A is written while a
+class-C field the operator owns is left alone. That is the owner's constraint — *deployment must never silently
+overwrite operator-authored content* — made checkable by a human rather than asserted in a comment.
+
+---
+
 ## 2. The eleven frozen decisions
 
 Each gives the current behaviour with `file:line`, the decision, why, and what an agent coding against it must do.
@@ -126,6 +199,14 @@ revision table, and without asking the operator to declare anything. `sd` is a m
 the row is "ours". It also replaces the unreliable `changed?` heuristic (§2.7) and makes content rollback a forward
 operation (§2.10) — one column earns three decisions.
 
+> **CORRECTED BY §F2 AND IMPLEMENTED AS §2A.** The row-level three-way table above is **not** what shipped, and the
+> owner's correction is why: a whole-row class makes the merge all-or-nothing, so one edited title would have frozen
+> that row's prose against every future corpus correction, and an unedited title would still have been reverted by a
+> content change. The shipped model is the same construction applied **per field** — the merge base is
+> `seeded_digests[field]` instead of one `content_digest`, and the four classes above become per-field outcomes.
+> Everything D1 promised Agents 2 and 3 still holds, field by field: an operator's save is durable, and a corpus
+> change reaches a field only when the operator has not taken that field over.
+
 **What an agent must do.** Agent 2: an editor save is authoritative and permanent for the row's content; you do not
 need to warn the operator that a deploy will erase their work, because it will not. You **must** surface the row's
 state — see D5 for the exact fields. Agent 3: a corpus change reaches a row only when that row is `unchanged` or
@@ -155,10 +236,10 @@ holds 14 capture points and none is `article.rb`; no `audited` declaration exist
 **Decision.** One additive migration, mine, `db/migrate/`:
 
 ```ruby
-class AddContentProvenanceToArticles < ActiveRecord::Migration[7.1]
+class AddContentProvenanceToArticles < ActiveRecord::Migration[7.2]
   def change
     add_column :articles, :content_source_path, :string
-    add_column :articles, :content_digest, :string, limit: 64
+    add_column :articles, :seeded_digests, :jsonb, default: {}, null: false
     add_index :articles, :content_source_path, unique: true
   end
 end
@@ -169,6 +250,10 @@ end
   article, and every row an operator authored by hand.
 - **`content_digest`** — SHA-256 hex (64 chars) of the canonical seeded-attribute tuple, as the seeder last wrote it.
   NULL means the seeder has never tracked this row.
+  **SHIPPED INSTEAD, per §F2:** `seeded_digests`, `jsonb, default: {}, null: false` — one SHA-256 **per class-C
+  field** (§2A). An empty hash on a persisted row means the seeder has never tracked it. The name changed with the
+  shape deliberately: a column called `content_digest` holding eight entries invites exactly the misreading — "the
+  digest covers the content" — that owner correction §F2 exists to kill.
 - **The unique index is a guarantee, not an optimisation**: one file, exactly one row. Postgres permits unlimited
   NULLs in a unique index, so every untracked row is unaffected. It also carries the lookup — `find_by(content_source_path:)`
   runs once per corpus file per run, 126 times today, against a table that also holds every tenant's articles, so the
@@ -259,6 +344,37 @@ end
 
 **D3b, Agent 2's, the ergonomics.** `normalized_meta` must merge rather than replace. Exact diff in §5.1.
 
+> **D3a IS WITHDRAWN. D3b SHIPPED IN WAVE 2 AND IS WHAT CLOSED THIS.**
+>
+> Wave 2 landed the fix one layer better than §5.1 asked: the merge lives on the **field**, not in the controller.
+> `ArticleMetaField::MANAGED_KEYS` (`article_meta_field.rb:37`) is every key the form posts, and
+> `merge_submitted` (`:50-55`) returns `stored.except(*MANAGED_KEYS).merge(normalize(submitted))` — so the only
+> keys a submission can set are the ones the form owns, and `doc_key` is carried through from storage by
+> construction. `SuperAdmin::ArticlesController#resource_params` (`articles_controller.rb:52-56`) calls it;
+> `#stored_meta` (`:67-69`) handles create, where there is no stored row. Measured: a `PUT` that edits only the
+> title keeps `doc_key` (`spec/controllers/super_admin/documentation_editor_spec.rb:27-35`).
+>
+> So the model validation D3a proposed would now guard a path **no live writer can reach**, and CLAUDE.md forbids
+> exactly that. The full no-exclusion search for writers of `articles.meta` on a documentation row: the seeder
+> (`content_seeder.rb`), the Super Admin form (merged, above), and
+> `Api::V1::Accounts::ArticlesController#article_params` (`articles_controller.rb:110`), which permits
+> `meta: [:title, :description, {tags: []}]` and **replaces** the column — but `Custom::ArticlePolicy#update?` is
+> `false` (`custom/app/policies/custom/article_policy.rb`, in `ArticlePolicy.ancestors`, measured) so every tenant
+> article verb is refused with `401`
+> (`spec/controllers/api/v1/accounts/articles_controller_spec.rb:68-115`), **and** `portal` there is
+> `Current.account.portals.find_by!` (`:90-92`) which cannot return an account-less platform portal — measured
+> `404`, and `account.portals.exists?(platform portal) == false`.
+>
+> The seeder instead **reasserts** `meta['doc_key']` from the file's basename on every run (§2A, class D). That is
+> not a backup guard: it is the corpus owning an identity field, in the one line that already builds the hash, and
+> it repairs any row whose key was destroyed before wave 2 closed that path
+> (`spec/custom/services/documentation/content_seeder_spec.rb`, "reasserts doc_key on a row whose key was
+> destroyed").
+>
+> **One thing this does NOT do, stated plainly**: it does not stop a *future* writer from replacing `meta`. If
+> Agent 2 or anyone else adds a second write path to that column, the model validation becomes the right answer
+> again and the evidence for it is this paragraph.
+
 **Why this split, and why this order.** CLAUDE.md: enforce at the earliest shared entry point, and let an impossible
 state fail loudly. The model is the one point every write passes through; the controller is one of several possible
 callers and Agent 2 is about to add more. Until §5.1 lands, D3a makes a Super Admin save of a seeded article return
@@ -319,6 +435,71 @@ Three behaviours follow, and they are different from each other:
 basename is a public URL.** Renaming one is an editorial act with consequences, not a tidy-up; retire and replace
 instead. Never name a file `search.md`, `articles.md` or `categories.md` (D9, abort mode 2).
 
+> **DECISION 1 IS WITHDRAWN, AND §F2.2's PROVENANCE LOOKUP IS NOT NEEDED. The lookup stays `(slug, locale)`.**
+>
+> §F2.2's premise was that `slug` is both the identity lookup and an operator-editable form field, so a rename
+> makes the next seed create a duplicate. **Wave 2 removed the second half**: `slug` left
+> `ArticleDashboard::FORM_ATTRIBUTES` (`article_dashboard.rb:42-47`, citing this decision). The question is
+> therefore whether any live path can still change `articles.slug` on a documentation row, and that is an absence
+> claim, so it is established in the five steps `00-program.md` §2.3 requires.
+>
+> **(1) No-exclusion search.** Four patterns over the whole tree with no path exclusions:
+> `(self\.slug|\.slug)\s*(\|\|)?=[^=]` across `*.rb *.erb *.rake *.jbuilder` → **2 hits**;
+> `permit(|permitted_attributes|FORM_ATTRIBUTES` lines containing `slug` → **4 hits**;
+> `update_column|update_columns|update_attribute|write_attribute|['slug']=` containing `slug` → **0 hits**;
+> every `Article`/`articles` create-or-initialise site → **4 hits**.
+>
+> **(2) Every hit classified.**
+>
+> | Hit | What it is |
+> |---|---|
+> | `app/models/article.rb:321` | `ensure_article_slug`, `self.slug \|\|=` — writes only when the slug is **nil** |
+> | `vendor/.../ruby_llm-2.0.0/lib/ruby_llm/provider.rb:557` | a gem's own class attribute; not this table |
+> | `app/controllers/api/v1/accounts/articles_controller.rb:110` | the tenant API permits `:slug` — **the only live permit that does**; reachability below |
+> | `app/controllers/api/v1/accounts/portals_controller.rb:97` | `Portal#slug`, a different table |
+> | `app/controllers/api/v1/accounts/categories_controller.rb:56`, `custom/app/dashboards/category_dashboard.rb:25` | `Category#slug`, a different table (§5.4 still stands) |
+> | `app/controllers/public/api/v1/portals/articles_controller.rb:109` | `params.permit` for a **read** filter, not a model write |
+> | `custom/app/services/documentation/content_seeder.rb:73` | the seeder's own lookup; it writes no slug |
+> | `app/controllers/api/v1/accounts/articles/bulk_actions_controller.rb:44` | `slug` used to find the portal; the bulk verbs write status, category and translations |
+>
+> **(3) Aliases, helpers and config publication followed.** `Article.include_mod_with('Concerns::Article')`
+> (`article.rb:324`) resolves through `each_extension_for`
+> (`config/initializers/01_inject_enterprise_edition_module.rb:69-79`) and **no `Concerns::Article` module exists
+> anywhere in the tree** (re-checked: no `module Concerns` under `app`, `custom` or `lib`, and there is no
+> `enterprise/` tree). Administrate's `permitted_attributes` is built **only** from `form_attributes`
+> (`administrate-0.20.1/app/dashboards/../base_dashboard.rb:53-84`), which is `FORM_ATTRIBUTES` unless a
+> `FORM_ATTRIBUTES_EDIT`/`_NEW` constant exists — measured: both `const_defined?` are **false**. There is no
+> platform-API articles controller (`app/controllers/platform/api/v1/` holds five controllers, none for articles).
+>
+> **(4) The runtime path inspected, not inferred** — measured in this container:
+>
+> ```
+> A5-4 super_admin status=302 slug="audit-logs" title="Edited"
+> A5-4 administrate_permitted=["portal_id", "category_id", :title, :description, :content, :locale, :status,
+>                             :position, {meta: [...]}]
+> A5-4 form_attributes_edit_const=false form_attributes_new_const=false
+> A5-4 tenant_api_own_portal status=401 slug="tenant-article"
+> A5-4 tenant_api_platform_portal status=404 slug="audit-logs"
+> A5-4 platform_portal_in_account_scope=false
+> A5-4 article_policy_update=false ancestors_include_custom=true
+> A5-4 ensure_article_slug on_new="1791933346-nameless" on_existing_after_title_change="audit-logs"
+> ```
+>
+> A `PUT /super_admin/articles/:id` carrying `slug` **and** `title` succeeds, changes the title and leaves the slug
+> alone — the slug param is dropped, not honoured.
+>
+> **(5) The claim.** *No live path writes `articles.slug` on a row that already has one.* The seeder's
+> `find_or_initialize_by(slug:, locale:)` is therefore as stable an identity as `content_source_path` would be, and
+> a provenance-based lookup would buy nothing while costing a second lookup path — because every production row has
+> a NULL `content_source_path` until it is adopted, so the provenance lookup would have to fall back to the slug
+> anyway. **Decision 1 of D4 is withdrawn with it**: reasserting `slug` on every run was only meaningful under a
+> provenance lookup, and under the slug lookup it is a write of the value the row was just found by.
+>
+> Decisions 2, 3 and 4 of D4 stand unchanged: `slug` stays off both forms, a **file** rename is still one `created`
+> plus one stale row, and redirects stay out of P2. One thing D4 claimed is now **narrower than the code**: the
+> stale row after a file rename is *not* reported, because wave 3 does not implement the orphan report (D11, D9).
+> That is an open item, not a silent omission.
+
 ---
 
 ### D5 — Conflict policy: the seeder refuses, reports, and exits non-zero. The operator sees the row, the file and the class.
@@ -359,6 +540,32 @@ sync that cannot tell you it missed two files cannot be trusted to tell you it o
 **What an agent must do.** Agent 2: render those three facts; they are the only reason an operator can reason about
 their own edit's fate. Agent 3: a `conflict` line names your file and blocks the corpus from converging — treat it as a
 build break.
+
+> **AS IMPLEMENTED, with two changes and one deferral.**
+>
+> The per-row `conflict` class is **gone**, because §F2 made the classes per field: a row is not conflicted, a
+> *field* is. The shipped report is in §2A and measured on the real 138-file corpus:
+>
+> ```
+> articles: 0 created, 0 updated, 137 unchanged, 0 adopted, 1 untracked (en, ar)
+>   untracked        en  welcome-to-lynomia-chat  custom/db/documentation/en/getting-started/welcome-to-lynomia-chat.md
+>   operator_edited  en  audit-logs               custom/db/documentation/en/administration/audit-logs.md  title, meta.tags
+> ```
+>
+> **`ACCEPT_FILE=<slug>,<slug>` is withdrawn.** §2A's middle rule — a field re-attaches when the row already holds
+> what the file says — gives the operator two resolutions that need no new mechanism and no new flag: edit the file
+> to match the row, or edit the row to match the file. A named-override flag would be a third way to do what those
+> two already do, and CLAUDE.md's smallest-change rule rules it out. `ADOPT_UNTRACKED=1` stays, because nothing
+> else can answer *who wrote this row before provenance existed*.
+>
+> **Exit status, as implemented:** non-zero on `untracked` only — measured `EXIT=1` with the instruction block
+> printed. `operator_edited` prints and exits zero, for the reason given above.
+>
+> **Deferred, and not implemented in wave 3: the reconciliation line and the orphan list.** The counts
+> `created + updated + unchanged + adopted + untracked` already reconcile one-to-one against the files processed
+> (measured: 138 against a 69/69 corpus), which is the half that catches "I missed two files". The other half —
+> tracked rows whose file is **gone** — needs a pass over rows rather than over files, and it is the
+> `documentation:drift` task of D11. It is an open item, named in §6, not a silent omission.
 
 ---
 
@@ -405,6 +612,29 @@ honoured on create only) and `retired:` (boolean, default `false`). All 126 exis
 `retired: true` is how you withdraw an article — not `git rm`. Agent 2: `status` stays an editable form field and the
 operator's choice is now durable; stop treating the `publish`/`unpublish` actions
 (`articles_controller.rb:10-18`) as cosmetic — they were previously undone by every seed and now are not.
+
+> **NARROWED AS IMPLEMENTED: the `status` rule shipped; the two front-matter keys are WITHDRAWN.**
+>
+> What shipped is class B exactly as §F2.1 states it: `status` is written **on create only**, from the seeder's
+> existing `publish:` constructor flag, and never on an update or an adoption. Measured on the real corpus: an
+> article set to `draft` in the database stays `draft` through a full seed, where before this change every run
+> forced every article to `published`.
+>
+> `published:` and `retired:` are withdrawn because **no corpus file uses either key**. Measured over the whole
+> shipped corpus, every front-matter key in use is: `title` (134), `tags` (134), `seo_description` (134),
+> `position` (134), `description` (134), `seo_title` (28) — and nothing else, in either locale. Implementing a key
+> no file carries is dead code by CLAUDE.md's rule, and the `retired:` half would also have been the one place
+> where the corpus is allowed to override an operator's publication choice, which is a real behaviour to add on
+> evidence rather than on anticipation.
+>
+> **Consequence, stated plainly rather than left implied:** there is now **no corpus-side way to withdraw an
+> article.** Deleting a file still archives nothing (that part of D6 stands and is deliberate), and `retired:` does
+> not exist, so withdrawal is an operator action in Super Admin — which is durable now, and which is the one
+> direction class B makes safe. Open item in §6; the thing that closes it is a corpus that actually needs to
+> retire an article.
+>
+> **Agent 3: do not write `published:` or `retired:` in front matter.** They are silently ignored. If a file needs
+> to ship unpublished, say so and the key lands with the file that needs it.
 
 ---
 
@@ -476,6 +706,25 @@ the migration existed.
 owns both columns. Agent 3: whitespace matters to the digest only through `content.strip`, so trailing-newline churn in
 a file does not reclassify a row; a one-space prose change does, and correctly.
 
+> **AS IMPLEMENTED: the digest is per field (§2A), and D7's own defect is fixed in one line.**
+>
+> The single six-input tuple above is replaced by one digest per class-C field, and the properties it was carrying
+> move with it: `content` is **not** digested at all (it is class A — the corpus always wins, so there is nothing
+> to decide), the category is **not** digested (class A), `status`, `slug`, `locale`, `author`, `views`, the draft
+> columns and `meta['feature_image']` are still outside, and the `.to_s` normalisation and `DIGEST_VERSION`-first
+> rule are kept verbatim because both reasons still hold. `meta` is no longer sliced-then-digested as a hash: each
+> key is its own field, which is what makes "an edited SEO title does not freeze the tags beside it" true.
+>
+> **D7's measured defect, fixed:** `changed = article.changed?` was read at the old `:78`, **before**
+> `article.author ||= author` and before `save!`. It is now read after every assignment, so a row whose only write
+> was its author is no longer reported `unchanged`. The second half of that defect — the `after_save` position
+> callback writing after the flag was read — is addressed by D8 instead, and the `unchanged` count is now reliable:
+> measured on the real corpus, a second consecutive run reports **`0 created, 0 updated, 138 unchanged`**.
+>
+> **The untracked/adopt path shipped as described**, with `seeded_digests == {}` standing in for the NULL digest.
+> Measured end to end on the real corpus: `1 untracked` with `EXIT=1`, then `1 adopted` under `ADOPT_UNTRACKED=1`,
+> and the operator-edited row beside it still reported and still untouched.
+
 ---
 
 ### D8 — Non-convergence is real, I re-derived the cause, and the fix is one guard in the model.
@@ -542,6 +791,68 @@ otherwise would not be: the callback would make every moved article look operato
 model. I am taking it because it is the root cause of the defect my own contract depends on and because it is inert
 outside a platform portal, and I am flagging it here for Agent 6's adversarial review and the Orchestrator's
 integration rather than landing it quietly.
+
+> **VERDICT, MEASURED. The `platform_owned?` guard is WITHDRAWN. "Oscillation" is withdrawn. The one-run
+> non-convergence is REAL, and it is repaired in the seeder.**
+>
+> §E2 refuted the finding by measuring a **stable** corpus, where the predicate `saved_change_to_category_id?` is
+> false and the callback body never runs — so a guard inside it would guard a path that does not execute, which
+> CLAUDE.md forbids. That refutation stands, and the guard is not shipped. What §E2 could not exercise is a
+> **section move**, so I built that probe: two manifest sections, three articles, the destination section already
+> occupied so `max + 10` is not the same number as the front matter's.
+>
+> **Before any change** (the code as §E2 left it):
+>
+> ```
+> A5-3 run0 counts=[3,0,0] positions={"connect"=>[10, 31], "second"=>[20, 30], "welcome"=>[10, 30]}
+> A5-3 run0 callback_fired=[["second", 20], ["welcome", 10], ["connect", 10]]
+> A5-3 run1 counts=[0,1,2] positions={"connect"=>[10, 31], "second"=>[20, 30], "welcome"=>[20, 31]}
+> A5-3 run1 callback_fired=[["welcome", 10]]
+> A5-3 run1 welcome_position=20 front_matter_position=10
+> A5-3 run2 counts=[0,1,2] positions={"connect"=>[10, 31], "second"=>[20, 30], "welcome"=>[10, 31]}
+> A5-3 run2 callback_fired=[]
+> A5-3 run3 counts=[0,0,3] positions={"connect"=>[10, 31], "second"=>[20, 30], "welcome"=>[10, 31]}
+> A5-3 CONVERGED_RUNS_AFTER_MOVE=[[1, 2], [1, 2], [0, 3]]
+> ```
+>
+> Read it exactly: on `run1` the moved article persists `position = 20` while its file says `10`, the run reports
+> it `updated`, and the authored value only returns on `run2` — which reports `updated` again. **Two runs to reach
+> the file's state, and a public page ordered wrongly in between.** That is the mechanism D8 derived, measured, and
+> it is **not** an oscillation: `run3` is `[0 updated, 3 unchanged]` and nothing alternates. Discovery 069/097
+> **overstated it** by calling it non-convergence; the accurate name is *one-time, one-run lag after a corpus
+> reorganisation*, and §E2 was right that a stable corpus never reaches it.
+>
+> It is also not hypothetical: wave 3's own corpus change contains one
+> (`custom/db/documentation/en/administration/auto-resolve.md` → `.../automation/auto-resolve.md`, a rename across
+> sections in `git status`), so the first seed after this wave would have been the run that exercises it.
+>
+> **And under §F2's merge model it stops being merely cosmetic.** The digest records what the seeder last wrote. If
+> the callback's `max + 10` were recorded, the next run would compare the row against the file, see a difference it
+> did not write, and classify `position` as **operator-edited** — freezing the authored order for ever and printing
+> a divergence nobody caused. The measurement above is therefore load-bearing for the merge, not a side quest.
+>
+> **The fix: `Documentation::ContentSeeder#converge_position`**, four lines, in my own file. The seeder captures the
+> position it decided on immediately before `save!` and restores it after, *only* when the save moved it. Why
+> there and not in the model: the callback is product-wide and a tenant Help Center legitimately wants the
+> end-of-category default, so the documentation-only writer is the narrower place — the tenant path is untouched by
+> construction rather than by a `platform_owned?` predicate. It is one write repairing one write, which D8
+> originally rejected on CLAUDE.md grounds; the grounds have changed, because the alternative is now measured to be
+> a guard on a path a stable corpus never runs. It also covers the case the model guard could not: when the
+> **operator** owns `position`, the restored value is theirs, not the file's.
+>
+> **After the change**, same probe, same fixture:
+>
+> ```
+> A5-3 run1 counts=[0,1,2] positions={"connect"=>[10, 66], "second"=>[20, 65], "welcome"=>[10, 66]}
+> A5-3 run1 callback_fired=[["welcome", 10]]
+> A5-3 run1 welcome_position=10 front_matter_position=10
+> A5-3 run2 counts=[0,0,3] positions={"connect"=>[10, 66], "second"=>[20, 65], "welcome"=>[10, 66]}
+> A5-3 CONVERGED_RUNS_AFTER_MOVE=[[1, 2], [0, 3], [0, 3]]
+> ```
+>
+> One run. The callback still fires — nothing in the shared model changed — and the authored order survives it.
+> Pinned by `spec/custom/services/documentation/content_seeder_spec.rb`, "a file that moves between manifest
+> sections".
 
 ---
 
@@ -611,6 +922,28 @@ seed stays an operator step in the post-deploy checklist. Both are files I do no
 **What an agent must do.** Agent 3: all five modes are now caught in phase 1 with your filename and a reason, before
 anything is written, so a bad file costs you a red task and not a half-published corpus. Agent 2: the editor is never
 the thing that runs a seed.
+
+> **NOT IMPLEMENTED IN WAVE 3, and this paragraph is the honest statement of that rather than a plan.**
+>
+> Wave 3's mandate is the field-by-field source of truth, the §F2.2 re-derivation, the D7/D8 re-measurement and the
+> deployment-sync report. Plan-then-apply is none of those: it is a second, larger change to the same file, and
+> shipping it alongside the merge would mean two unmeasured mechanisms landing in one pass. **The five abort modes
+> are therefore still reachable**, exactly as described above, and still abort mid-corpus with earlier sections
+> written. Nothing in the merge model makes them worse — a raise still happens where it happened before — and
+> nothing in it makes them better.
+>
+> Two things did change in their favour and are worth recording:
+>
+> - **Mode 3 (a docs key equal to a changelog key) now has a second detector.** `content_source_path` is uniquely
+>   indexed, so two corpus files claiming one row surface as a constraint violation rather than as one file
+>   silently overwriting the other. It is still a raise, not a plan-time check.
+> - **The counts reconcile.** `created + updated + unchanged + adopted + untracked` is one outcome per file
+>   processed (measured: 138 against a 69/69 corpus), so the "38 + 19 + 67 = 124 against a 126-file corpus" class of
+>   silent shortfall is now visible in the summary line without a plan phase.
+>
+> `documentation:content` still does **not** run in `deployment/deploy.sh` and that part of D9 stands unchanged and
+> unmodified: I touched no deployment file. The §5.5 drift print is still a requested change, still not applied,
+> and now depends on the deferred `documentation:drift` task.
 
 ---
 
@@ -699,12 +1032,24 @@ reimplement it. Agent 3: your front matter is checked on the pull request, not a
 | Task | Behaviour |
 |---|---|
 | `documentation:setup` | unchanged (`PortalSeeder`), still operator-run, still ordered **before** `documentation:content` — a locale added to `manifest.yml` is inert until it runs, because `locales` is `LOCALES & portal.allowed_locale_codes` (`content_seeder.rb:43`) and `allowed_locales` is written only by `PortalSeeder` (`portal_seeder.rb:63`) |
-| `documentation:content` | phase 1 then phase 2 (D9); the report of D5; non-zero on `conflict` or `untracked`; honours `ADOPT_UNTRACKED=1` and `ACCEPT_FILE=<slug>,…` |
-| `documentation:changelog` | identical semantics against `CHANGELOG_ROOT`; phase 1's uniqueness check spans **both** corpora (D9 mode 3) |
-| `documentation:drift` | **new.** Read-only. Prints files-versus-rows both directions — tracked rows with no file (orphans), files with no row, and each row's class — plus the reconciliation line. Writes nothing. This is the detector R12 orders before any scheduler, and it is what `deploy.sh` calls (§5.5). |
+| `documentation:content` | the field-by-field merge of §2A; the report below; **non-zero on `untracked`**; honours `ADOPT_UNTRACKED=1` |
+| `documentation:changelog` | identical semantics against `CHANGELOG_ROOT`, including `ADOPT_UNTRACKED=1`. Measured: `2 created`, then `2 unchanged` |
+| `documentation:drift` | **NOT IMPLEMENTED in wave 3.** See D5 and §6: the half it was for that the summary line cannot do is the orphan direction, rows whose file is gone |
 
-`Result` gains `operator_edited`, `conflict`, `adopted`, `retired` counts and an `orphans` array; `created`,
-`updated`, `unchanged` and `locales` keep their names and meanings (`content_seeder.rb:14`).
+**As implemented** (the row above is the shipped surface, not a plan): no phase 1, no `ACCEPT_FILE`, no
+`conflict` class, no `retired` count, no `orphans` array — each withdrawn or deferred at its own decision, with the
+reason there. `Result` is
+`created, updated, unchanged, adopted, untracked, locales, divergences`; `created`, `updated` and `unchanged` keep
+their names, `locales` is now actually populated (it was declared and never written), and `divergences` is an array
+of `Divergence(kind, locale, slug, path, fields)` with `kind` one of `:operator_edited` or `:untracked`.
+
+**One operational note that is not mine to fix and is already fixed.** Until the Orchestrator moved
+`DocumentationSeoAudit` into `lib/documentation_seo_audit.rb`, a `.rake` file in this repository referenced an
+autoloadable constant in a class body, and `Rails.application.load_tasks` runs **before** the application is
+initialized — measured here as `Rails.application.initialized? == false` with the constant undefined at that
+point. That raised `NameError` out of task loading and broke **every** rake task, `db:migrate` and
+`assets:precompile` among them. The report module in `lib/tasks/documentation.rake` therefore names no application
+constant, and says so in a comment, so this task cannot reintroduce it.
 
 ---
 

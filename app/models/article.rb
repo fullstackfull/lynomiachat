@@ -4,12 +4,14 @@
 #
 #  id                    :bigint           not null, primary key
 #  content               :text
+#  content_source_path   :string
 #  description           :text
 #  draft_content         :text
 #  draft_title           :string
 #  locale                :string           default("en"), not null
 #  meta                  :jsonb
 #  position              :integer
+#  seeded_digests        :jsonb            default({}), not null
 #  slug                  :string           not null
 #  status                :integer
 #  title                 :string
@@ -28,6 +30,7 @@
 #  index_articles_on_account_id             (account_id)
 #  index_articles_on_associated_article_id  (associated_article_id)
 #  index_articles_on_author_id              (author_id)
+#  index_articles_on_content_source_path    (content_source_path) UNIQUE
 #  index_articles_on_portal_id              (portal_id)
 #  index_articles_on_slug                   (slug) UNIQUE
 #  index_articles_on_status                 (status)

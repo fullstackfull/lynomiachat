@@ -121,6 +121,44 @@ Full reasoning, reproduction and test exit codes: `docs/documentation-v2/P0-PROD
   point, and Instagram-via-Messenger talks v11.0. Both are recorded as controlled-provider upgrades with their
   own UAT gates (`P0-PRODUCTION-HARDENING.md` §H); no version was changed in the hotfix.
 
+### 2.3 THE ABSENCE RULE — owner methodology correction, binding from Phase 2 onward
+
+Added after five claims in this program were written down with confidence and later falsified. Four were caught
+by critics; the fifth, "`WHATSAPP_API_VERSION` is never published to the browser", was caught by the owner's
+production read — the value *was* published, on the line directly below the one that had been traced.
+
+**Any claim of this shape is an ABSENCE CLAIM:**
+
+> "not used" · "not published" · "no caller" · "no consumer" · "only caller" · "not reachable" · "never sent" ·
+> "no second path"
+
+**An absence claim is not established until all five steps are done:**
+
+1. a search run with **no exclusion filter** — no `grep -v`, no narrowing pattern;
+2. **every hit classified by hand**, including the ones that look irrelevant;
+3. **aliases, helpers, concerns and config publication followed** — a value can be republished under another
+   name (`WHATSAPP_API_VERSION` → `whatsappApiVersion`), reached through a concern, or emitted by a template;
+4. where it matters, the chain inspected **server → serializer/view → browser/runtime consumption**, not just
+   the definition;
+5. **only then** state the negative.
+
+**A grep that found one nearby consumer is not evidence that another does not exist.** That is the exact error
+in all five cases: §M1 excluded the line the defect was on; §M5 grepped `includes`/`preload` but not `joins`;
+§N.2 excluded `portal_category`, which is a substring of `portal_category_canonical_url`; the stale embeds spec
+was outside a subject pattern; and K14 stopped one line early.
+
+**Scope, so this does not tax ordinary work.** It applies to **negative/absence assertions** and to
+**security and provider claims**. It does not apply to ordinary implementation: a routine edit does not need a
+five-step proof.
+
+Two mechanisms already encode it rather than relying on anyone remembering:
+
+- `scripts/documentation_gate.sh` carries a **changed-file coverage selector** — for every source file a branch
+  changes, any spec under `spec/` whose basename matches is added to the run, independently of the subject
+  patterns. It needs nobody to pick a good pattern.
+- The findings tables in `P0-PRODUCTION-HARDENING.md` keep **withdrawn claims visible** with their correction
+  beside them, rather than deleting them, so the failure mode stays legible to the next reader.
+
 ## 3. Production rules — absolute, for every agent
 
 - **DO NOT deploy.**

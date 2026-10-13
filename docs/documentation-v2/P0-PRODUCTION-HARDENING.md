@@ -346,7 +346,20 @@ coverage above does.
 
 ## H. Graph API version inventory
 
-No version was changed. Classification of every provider caller:
+No version was changed. **Four categories, kept separate by owner instruction** — a reading about one of them
+is not a reading about the others, and any future upgrade is its own controlled provider-UAT change:
+
+| Category | Value | Status | Owner instruction |
+|---|---|---|---|
+| **WhatsApp** — `WHATSAPP_API_VERSION`, browser SDK and all 11 server call sites | **v22.0** on production | **Current and supported.** A deliberate runtime fact, not a finding | Recorded; **do not upgrade now** |
+| **Messenger send + page subscribe** — hard-pinned inside the vendored `facebook-messenger` gem | **v3.2** | **Legacy / expired pin.** Cannot be moved from the repository | K2, bucket 1 below. Needs an owner decision about the gem |
+| **Instagram via Messenger** — legacy send path | **v11.0** | **Legacy / expired pin** | K3, bucket 2 below. Needs a real IG DM UAT |
+| **Unversioned callers** — three Graph calls with no version at all | n/a | Move whenever Meta retires the app's default, silently | K7, bucket 3 below. Separately inventoried |
+
+The WhatsApp row is the one the production read settled; see §I.4 and §H.1. It is **not** evidence about the
+other three, and Embedded Signup being on v4 is **not** a reason to touch any of them.
+
+Classification of every provider caller:
 
 ### 1. Vendored-gem-controlled — **CRITICAL**
 

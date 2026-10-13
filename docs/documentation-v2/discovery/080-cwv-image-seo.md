@@ -47,7 +47,7 @@ production build**), gzip level 6 computed by me:
 | `purify.es` | 202,757 B | 75,988 B | modulepreloaded, pulled in by the search/TOC `v-dompurify-html` |
 | `vue-dompurify-html` | 108,776 B | 47,357 B | |
 | `utils.esm` | 72,544 B | 27,066 B | |
-| four small chunks (`module`, `Icon`, `useKeyboardNavigableList`, `colorHelper`, `HTMLSanitizer`) | 24,633 B | 11,200 B | |
+| five small chunks (`module`, `Icon`, `useKeyboardNavigableList`, `colorHelper`, `HTMLSanitizer`) | 24,633 B | 11,200 B | |
 | **JS total, 9 modules** | **566,866 B** | **208,591 B** | all 8 imports `modulepreload`ed |
 | `InterVariable.woff2` | 345,588 B | (already compressed) | fetched whenever Latin text renders |
 | `InterVariable-Italic.woff2` | 380,904 B | | fetched only if italic text renders |
@@ -73,7 +73,7 @@ system font.
 | `/vite/assets/*` (hashed) | `public, max-age=31536000` | `config/environments/production.rb:23-26` (`RAILS_SERVE_STATIC_FILES` defaults to true, so Puma serves it) |
 | Tracking pixel | `private, max-age=86400` | `articles_controller.rb:43` |
 | `/rails/active_storage/{blobs,representations}/redirect/...` | `max-age=300, private`, then a 302 | `activestorage-7.2.3.2/app/controllers/active_storage/blobs/redirect_controller.rb:13`, `.../representations/redirect_controller.rb:11` |
-| `/rails/active_storage/{blobs,representations}/proxy/...` | `max-age=3155695200, public` (100 years), strong 304 support, no session cookie | `.../proxy_controller.rb:18` and `.../representations/proxy_controller.rb:14` (`http_cache_forever public: true`; `ActionController::ConditionalGet#http_cache_forever`) |
+| `/rails/active_storage/{blobs,representations}/proxy/...` | `max-age=3155695200, public` (100 years), answers conditional requests with 304, no session cookie | `.../proxy_controller.rb:18` and `.../representations/proxy_controller.rb:14` (`http_cache_forever public: true`; `ActionController::ConditionalGet#http_cache_forever`) |
 | `/rails/active_storage/disk/...` (the final hop for the Disk service) | none from the app; headers come from `Rack::Files` | `.../concerns/active_storage/file_server.rb:7-18` |
 
 `deployment/nginx_chatwoot.conf:23-63` is a bare `proxy_pass` with `http2`, HSTS and TLS settings; it has **no `gzip`/`brotli`, no `proxy_cache`, no
@@ -87,7 +87,7 @@ system font.
 
 `setImageSizing` lives in `app/javascript/shared/helpers/MessageFormatter.js:5-24` and serves chat messages. Its server-side counterparts are:
 
-- `BaseMarkdownRenderer#image` (`lib/base_markdown_renderer.rb:5-11,20-31`) for **messages**, which reads `cw_image_width`/`cw_image_height` from the URL.
+- `BaseMarkdownRenderer#image` (`lib/base_markdown_renderer.rb:4-9,23-32`) for **messages**, which reads `cw_image_width`/`cw_image_height` from the URL.
 - **`CustomMarkdownRenderer#image` (`lib/custom_markdown_renderer.rb:61-71`) for articles**, the only one that matters here. It reads `cw_image_width` only
   (`:130-146`, `\A\d+px\z`, 1..2000) and writes an inline `style`. It is reached from exactly one call site,
   `ChatwootMarkdownRenderer#render_article` (`lib/chatwoot_markdown_renderer.rb:13-19`), called only by `ArticlesController#show`. That site serves every Help Center
@@ -118,6 +118,8 @@ Markdown**; they can only come from the renderer.
   (`.../models/active_storage/attachment.rb:36,126-127`). Agent 068 reports that the editor's upload endpoint creates an ownerless blob
   (`ActiveStorage::Blob.create_and_upload!` with no `attach`, `upload_controller.rb:39-45` per `068-media-authoring-ux.md` section 1.3). An ownerless blob is
   never analysed, so `blob.metadata['width']` is empty unless something calls `blob.analyze` explicitly.
+- `Article` declares no attachment at all (`grep has_one_attached|has_many_attached app/models/article.rb` is empty); only `Portal` does, for its logo (`app/models/portal.rb:50`). There is no owner an article image
+  could be attached to today.
 - `saver` is **not** in `ActiveStorage.supported_image_processing_methods` (`activestorage-7.2.3.2/lib/active_storage.rb:66-` list contains `format`,
   `convert`, `resize_to_limit`, `strip`, `thumbnail` but no `saver` or `loader`; the repo never extends it, `grep` over `config app lib custom`), so
   `variant(saver: { Q: 85 })` raises `UnsupportedImageProcessingMethod` until `config/initializers/active_storage.rb` adds it.
@@ -127,8 +129,8 @@ Markdown**; they can only come from the renderer.
 
 Three `<img>` tags exist in the documentation layout: the topbar logo, which has **no `alt` at all** (`documentation_layout/_topbar.html.erb:12`, sized by
 `w-8 h-8` so it does not shift); the author avatar (`_user_avatar.html.erb:15`, `alt` = name, sized by classes); the footer brand mark
-(`_footer.html.erb:31`, alt = brand). The corpus has **zero** images (`grep -rn '!\[' custom/db/documentation custom/db/changelog` is empty; also
-`068` section 0). `og:image` exists only if `OG_IMAGE_CDN_URL` is configured (`app/helpers/portal_helper.rb:3-18`;
+(`_footer.html.erb:31`, alt = brand). The corpus has **zero** images (`grep -rn '!\[' custom/db/documentation custom/db/changelog` is empty; also the
+`068` introduction). `og:image` exists only if `OG_IMAGE_CDN_URL` is configured (`app/helpers/portal_helper.rb:3-18`;
 `documentation_layout/articles/_meta_head.html.erb:49-61`), and the production value is unverified (075 flagged the same). The `TechArticle` JSON-LD has no
 `image` (`custom/app/helpers/documentation_helper.rb:83-97`). The sitemap has no image entries (`sitemap.xml.erb:13-26`).
 
@@ -207,8 +209,8 @@ visitor's request.
 `vips_probe.rb` in the scratchpad against the sandbox's system libvips: `webpsave`, `webpsave_buffer`, `heifsave`, `heifsave_buffer`, `jxlsave_buffer`,
 `jpegsave_buffer`, `pngsave_buffer` all exist (`Vips.type_find` non-zero). A WebP encode succeeded (276 B for a 64x64 image). **An AVIF encode failed
 with `heifsave: Unsupported compression`**, although `heifsave` is present, because the installed libheif ships only the decoder plugin
-(`libheif-plugin-aomdec`, libheif 1.17.6; no encoder plugin). This is the sandbox, not the production host, but it demonstrates the trap: an
-operation-exists check passes while the encode fails. Version 4b in `deploy.sh` would pass this host as well.
+(`libheif-plugin-aomdec`, libheif 1.17.6; no AV1 encoder plugin is installed). This is the sandbox, not the production host, but it demonstrates the trap: an
+operation-exists check passes while the encode fails. Stage 4b in `deploy.sh` would pass this host as well.
 
 ### 2.5 What I could not measure
 
@@ -223,8 +225,8 @@ Severity is what it costs a reader or crawler once images exist, not what it cos
 | # | Sev | Defect | Evidence | Impact |
 |---|---|---|---|---|
 | D1 | blocker | The article image renderer emits no `width`/`height`, no `loading`, no `decoding`, no `srcset`, no figure, and wraps images in `<p>`; its only sizing path does not reserve space | `lib/custom_markdown_renderer.rb:61-71`; measured 2.1 | Every image causes layout shift on load, with no lazy loading and a full-size download on every viewport. This is the CWV cost of shipping the program's first image. |
-| D2 | blocker | Public images served through Active Storage's default routes are neither cacheable nor stable: redirect routes are `private, max-age=300`; the Disk and S3 final URLs carry an expiring signature that changes on every redirect, so the browser's cache entry is never reused; the Disk response has no `Cache-Control` | `redirect_controller.rb:13`; `disk_service.rb:164-175`; `file_server.rb:7-18`; `engine.rb:99` | Each page view after five minutes re-downloads every image, doubles the request count (302 then bytes), and gives Google Images an unstable final URL. |
-| D3 | blocker | Variants are generated inline on first request, by whichever visitor or crawler arrives first; an ownerless blob (the editor's current upload shape) is never analysed, so no width/height exists; and `saver` is not on the allowlist | `representations/base_controller.rb:13-15`; `attachment.rb:36,126-127`; `068` section 1.3; `active_storage.rb:66-` | A newly published article with N images triggers N x 3 concurrent libvips jobs on a 5-thread Puma, and the renderer has no dimensions to emit. |
+| D2 | blocker | Public images served through Active Storage's default routes are neither cacheable nor stable: redirect routes are `private, max-age=300`; the Disk final URL carries an expiring signature that changes on every redirect (and an S3 presigned URL behaves the same way, from general knowledge: the S3 service code was not read here), so the browser's cache entry is never reused; the Disk response has no `Cache-Control` | `redirect_controller.rb:13`; `disk_service.rb:164-175`; `file_server.rb:7-18`; `engine.rb:99` | Each page view after five minutes re-downloads every image, doubles the request count (302 then bytes), and gives Google Images an unstable final URL. |
+| D3 | blocker | Variants are generated inline on first request, by whichever visitor or crawler arrives first; an ownerless blob (the editor's current upload shape) is never analysed, so no width/height exists; and `saver` is not on the allowlist | `representations/base_controller.rb:13-15`; `attachment.rb:36,126-127`; `068` section 1.3; `active_storage.rb:66-` | Each of N x 3 first requests runs libvips inside a Puma request thread (5 by default), and concurrent first requests for the same variant each process it. The renderer also has no dimensions to emit. |
 | D4 | major | Alt text is not enforced anywhere: `![](x)` renders `alt=""`; `^` in alt injects `<sup>`; the title is a tooltip rather than a caption; the existing topbar logo has no `alt` | `custom_markdown_renderer.rb:43-52,61-71`; `_topbar.html.erb:12`; measured 2.1; `065` F9 | Screenshots are the content of a how-to page. Without alt they are invisible to screen readers, to Google Images, and to the "Open in Claude/ChatGPT" actions, which hand a model the raw Markdown (`documentation_layout/articles/_actions.html.erb:3-6`, `articles_controller.rb:29-33`). |
 | D5 | major | The portal stylesheet is the entire product's CSS (1.53 MB raw, 144 KB gzip, 922 KB of it data-URI icons) and is render-blocking on every page | `_portal_head.html.erb:7`; `tag_helpers.rb:52`; `tailwind.config.js:24-38,311-312`; section 1.2 | Paid on every first view, before any text paints. Unmeasured, but a 1.5 MB stylesheet is the dominant fixed cost of this page and images are added on top of it. |
 | D6 | major | Direction is applied only by JavaScript; the server sends `<html lang>` with no `dir`, and `ltr:`/`rtl:` rules require `[dir]` | `portalHelpers.js:153-162`; `portal.html+documentation.erb:2`; built CSS | About half the corpus is Arabic (63 EN + 63 AR). The first paint is unstyled for direction and the layout, including figure alignment and the caption's side, changes once the module runs. Layout shift on the Arabic locale is likely; **unmeasured**. Overlaps agent 072. |
@@ -309,7 +311,7 @@ from `render_article_content`, so tenant portals keep their current serving path
 | Decision | Recommendation | Evidence |
 |---|---|---|
 | Output format | **WebP only**, lossy, `Q: 85`, `smart_subsample: true`. No AVIF, no JPEG/PNG fallback `<picture>`. | Measured 2.3: about 2-17x smaller than the source PNG at 1200 px (median 2.6x), about half of JPEG Q85, text legible in the one crop I checked; AVIF encode is absent on a stock Ubuntu libvips (2.4) and the gain on flat UI screenshots is not worth a codec-availability dependency. Lossless/near-lossless is larger than the PNG on some inputs. WebP browser coverage is from memory, not re-checked. |
-| Width ladder | 800, 1200, 1800; `src` = 1200 | Column widths 327-904 CSS px (1.8) at DPR 1-3 need roughly 650-1,800 px; the ladder serves a phone at DPR 2 from 800, a laptop from 800-1800, and a 1536+ desktop at DPR 2 from 1800. Re-measure the 1800 size; I measured 640 and 1280. |
+| Width ladder | 800, 1200, 1800; `src` = 1200 | Column widths 327-904 CSS px (1.8) at DPR 1-3 need roughly 650-1,800 px; the ladder serves a phone at DPR 2 from 800, a laptop from 800-1800, and a 1536+ desktop at DPR 2 from 1800. The 1800 size was measured only on sources <= 1440 px wide (2.3). |
 | How | `blob.variant(resize_to_limit: [w, nil], format: :webp, saver: { Q: 85, smart_subsample: true })`, i.e. `resize_to_limit` never upscales | `variation.rb`; `image_processing` forwards `saver` options to the libvips saver (option names to be confirmed in a spec when implemented) |
 | Allowlist | Add `saver` to `config.active_storage.supported_image_processing_methods` in `config/initializers/active_storage.rb` | D3: absent from `active_storage.rb:66-` |
 | When | **Never on a visitor's request.** Declare the widths as named variants with `preprocessed: true` on whichever attachment owns the image (fires `transform_variants_later`, `attachment.rb:36`), or enqueue `ActiveStorage::TransformJob` per width at upload | D3. This depends on program decision 3 (below). |
@@ -343,11 +345,11 @@ Budgets are my recommendations, derived from the measurements in 2.3 and the lay
 | Images per article | warn above 12; at most 2 images in the first viewport | About 360 KB at the measured median, about 925 KB if every image is as heavy as the heaviest sample |
 | Source upload | keep the editor's existing 4 MB cap (`FullEditor.vue:40` per 068); warn above 1 MB; longest edge <= 4,000 px; PNG/JPEG/WebP | Measured desktop PNG screenshots: median 95 KB, max 349 KB, so 1 MB flags only photographs and mistakes |
 | Alt text | required; <= 125 characters (a convention, not a rule); must not begin "image of"/"screenshot of"/"picture of", equal the filename, or repeat the caption | Writing guidance |
-| Page, text-only (targets to re-measure, not measured) | CSS <= 60 KB gzip (now 144), JS <= 150 KB gzip (now 209), no font > 150 KB (now 345) | Reachable by 5.7 steps 1-2; unmeasured |
+| Page, text-only (targets to re-measure, not measured) | CSS <= 60 KB gzip (now 144), JS <= 150 KB gzip (now 209), no font > 150 KB (now 345) | Reachable by 5.6 steps 1-2; unmeasured |
 
 ### 5.4 Alt text as an SEO and accessibility requirement
 
-- **Policy: documentation images are never decorative.** A screenshot in a how-to is information; an empty alt is a **blocker-level error** in the audit (5.5), not a style
+- **Policy: documentation images are never decorative.** A screenshot in a how-to is information; an empty alt is an **audit error** (5.5), which exits 1 and blocks release, not a style
   choice. This avoids inventing a "decorative" marker in CommonMark, which has none.
 - Alt describes what the reader needs from the picture in one sentence (UI state and the label to look for); the steps stay in the prose. The
   caption says what the image is a screenshot **of** and may be shorter; they must differ.
@@ -387,7 +389,7 @@ The image work does not fix these; images add to them. Each is independent.
 3. **Server-side `dir` (D6).** Emit `dir="rtl|ltr"` from the locale in `portal.html+documentation.erb:2`, as the portals already know the locale. Overlaps 072.
 4. **Cacheable HTML (D7, D8).** Remove `csrf_meta_tags` from `_portal_head.html.erb:15` (the portal has no non-GET form of its own; confirm), add
    `fresh_when`/`expires_in ... stale-while-revalidate` for published documentation articles, and `Rails.cache.fetch` the rendered article keyed on
-   `article.cache_key_with_version` plus a renderer version constant. `select(:id, :title, :slug, :category_id, :position)` on the sidebar query.
+   `article.cache_key_with_version` plus a renderer version constant. `select` only the columns the sidebar uses (`id`, `title`, `slug`, `category_id`, `position`) on the sidebar query.
 5. **Listener leak (D11).** Register the click/change listeners once, not per `turbo:load`.
 6. **Analytics (D12).** Add `async` to the Amplitude script.
 
@@ -410,6 +412,8 @@ The image work does not fix these; images add to them. Each is independent.
 | Later, measured first | 5.6 items 1, 2, 5, 6 |
 
 ### 5.9 Verification, for Phase 6 and the adversarial agents
+
+None of these was run by this agent. Each is read-only and belongs to Phase 6 or to the owner, on staging or the owner's own hosts.
 
 1. `curl -sI https://<docs-host>/hc/lynomia-docs/articles/<slug>` twice: compare `ETag`, `Cache-Control`, `Set-Cookie` (confirms or refutes D7).
 2. `curl -sI -H 'Accept-Encoding: br, gzip' https://<docs-host>/vite/assets/portal-*.css`: `content-encoding` present or not (1.4).

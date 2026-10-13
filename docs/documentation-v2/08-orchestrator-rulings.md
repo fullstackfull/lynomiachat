@@ -187,3 +187,89 @@ CI on the pull request, where a human can fix them before merge. Data-level chec
 **Ruling.** Extend the existing corpus spec from per-file to graph invariants, add a CI content gate, and keep
 `lynomia:docs:seo_audit` for what only the server can see. The deployment-gate question is separate and waits for
 agent 097.
+
+## R10 — Arabic: the corpus quotes the UI as it ships, and the glossary follows the shipped locale
+
+**Forced by**: 061, which asked for this explicitly and was right to refuse to guess — it correctly observed that
+every Arabic defect it found has **two valid and opposite fixes**, and that rewriting the corpus before the
+decision means rewriting it twice.
+
+### The finding that forces the question
+
+Agent 061 measured it: **the Arabic product is 37% English.** 3,126 of 8,408 strings in
+`app/javascript/dashboard/i18n/locale/ar/` carry no Arabic — integrations 69%, customRole 62%, settings 58%,
+inboxMgmt 47%, and `webhooks.json` has exactly one key. `config/locales/ar.yml` is 48% untranslated, including
+the entire `whatsapp:` error block.
+
+Every UI-label defect in its report reduces to that one fact. The Arabic articles quote Arabic labels the Arabic
+screen does not show.
+
+### The two options, and why one is not available to me
+
+**Option A — translate the Arabic UI**, then let the corpus quote Arabic throughout. Correct end state. But
+`CLAUDE.md:91` states plainly: *"For product and source-string changes, only update `en.yml` and `en.json`;
+other languages are handled through Crowdin and the community."* **This program may not edit Arabic locale
+files.** Option A is not mine to take, and taking it would be a 3,126-string product/i18n project smuggled into
+a documentation programme.
+
+**Option B — the corpus quotes what the Arabic UI actually shows today**, in whatever language it shows it.
+
+### Ruling
+
+**Option B.** The Arabic corpus quotes the shipped Arabic locale verbatim, and where a label ships in English,
+the Arabic article shows the English string. This follows directly from **R7**: documentation describes what the
+product does, not what it ought to do. An Arabic article that names a button in Arabic when the button says
+`Account Health` sends the reader hunting for something that is not on screen — which is worse than a
+bilingual-looking sentence, and it is also why agent 061 found `whatsapp-number-already-connected.md` is
+currently **unfindable by the words the user saw**.
+
+Concretely, for Phase 5 writers:
+
+1. **Quote the shipped string.** When the Arabic UI shows `Account Health`, the Arabic article writes
+   `Account Health`. Set it in a code span or keep it as a bare Latin token per the house convention, never
+   translated-in-place.
+2. **A glossary term and a UI label are different things.** The *prose* term for a concept follows the glossary
+   below; the *quoted label* follows the screen. "في تبويب Account Health" is correct; inventing
+   `سلامة الحساب` is not, until the locale ships it.
+3. **Follow the shipped locale for product names too.** `سلة` and `زد` for Salla and Zid, because
+   `locale/ar/commerce.json:6-7` ships them that way — which resolves XA-09 and the `commerce/` vs
+   `troubleshooting/` split that agents 046, 047, 056 and 060 all reported. Latin brand names that the locale
+   does *not* translate stay Latin.
+4. **`inbox` → `قناة` / `قنوات التواصل` is deliberate and correct.** Agent 061 warns that the Arabic corpus
+   reserves `صندوق الوارد` for the conversation-list screen, matching `locale/ar/settings.json:353`. **Agent
+   094 must not flag those ~36 occurrences as EN/AR mismatch**, and no Phase 5 writer may "fix" them.
+5. **Flow is `تدفق`.** The 10 product-sense uses of `مسار` get corrected, because `مسار` is already in use in
+   the same corpus for a URL or failure path and `whatsapp-template-lifecycle.md:68` is genuinely ambiguous
+   today.
+6. **The 3,126 untranslated strings become a reported backlog, not program work.** They go to the owner as a
+   Crowdin/product item with agent 061's per-file percentages, because that is the only route this repository
+   permits. The documentation cannot fix a localisation gap, and pretending otherwise in the corpus is how the
+   current defects arose.
+
+### What this does not excuse
+
+Option B makes the corpus *accurate*. It does not make the Arabic experience good, and I am not going to report
+it as though it does. Arabic remains second-class until three things land, none of which is a translation task:
+**`dir` on the layout** (R8 — and note agents 061 and 072 found this independently, so it is one finding, not
+two), **locale-aware link and route resolution** (R8), and **a search dictionary that does not make 97% of
+hamzated-alef and 98.5% of teh-marbuta lexemes unreachable** (agent 078, measured). Those are in scope and they
+are where the Arabic reader's experience is actually lost.
+
+### One thing nobody has verified, and it may be worse than it looks
+
+Agents 061 and 072 both flag that `app/controllers/public/api/v1/portals/base_controller.rb:38-43` appears to
+**yield twice** — once inside `I18n.with_locale` and once unconditionally. If the second render wins, `lang` is
+set from the default locale and **Arabic articles never receive `dir=rtl` at all**, even after the JavaScript
+runs. Neither agent could settle it by reading, and both named the same remedy: one request spec. That spec is a
+Phase 4 prerequisite, because the entire RTL design rests on which render wins.
+
+### The genuinely good news, recorded because an audit that only finds fault is not trustworthy
+
+The Arabic corpus is **not** a machine translation. Agent 061 measured zero hamza and alif orthography errors
+across 63 files, 4,224 deliberate tashkeel marks, 2,325 Arabic commas with **zero** Latin commas or question
+marks, one stray bidi character in the whole corpus, internal-link target sets identical to English, and
+`ar/workspace/set-up-an-inbox.md` restructuring and *adding* content the English file lacks. Someone wrote this
+in Arabic, on purpose, well.
+
+That also closes the scare from earlier addenda: the corpus is not thin. The alarming EN/AR word ratios were a
+POSIX `wc -w` artefact that three agents independently caught, and the real ratio is ~0.84.

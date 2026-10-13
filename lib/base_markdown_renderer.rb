@@ -1,5 +1,6 @@
 class BaseMarkdownRenderer < CommonMarker::HtmlRenderer
   include MarkdownRendererUrlSanitizer
+  include MarkdownRendererFenceInfoEscaping
 
   def image(node)
     src, title = extract_img_attributes(node)

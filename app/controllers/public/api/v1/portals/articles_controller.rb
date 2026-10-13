@@ -32,11 +32,14 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
     render plain: @article.content.to_s, content_type: 'text/markdown; charset=utf-8'
   end
 
+  # Scoped to published for the same reason `set_article` is: the lookup was unscoped, so a draft slug answered
+  # 200 and a pixel while an unknown slug answered 404 -- an existence oracle for unpublished content over an
+  # unauthenticated endpoint. The view count was already guarded; the response was not.
   def tracking_pixel
-    @article = @portal.articles.find_by(slug: permitted_params[:article_slug])
+    @article = @portal.articles.published.find_by(slug: permitted_params[:article_slug])
     return head :not_found unless @article
 
-    @article.increment_view_count if @article.published?
+    @article.increment_view_count
 
     # Serve the 1x1 tracking pixel with 24-hour private cache
     # Private cache bypasses CDN but allows browser caching to prevent duplicate views from same user

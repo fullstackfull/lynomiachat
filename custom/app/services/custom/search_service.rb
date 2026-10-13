@@ -18,6 +18,28 @@ module Custom::SearchService
     @conversations = capability_scope.narrow(super, user: current_user)
   end
 
+  # TENANTS READ DOCUMENTATION; THEY DO NOT AUTHOR IT, AND A DRAFT IS AUTHORING STATE.
+  #
+  # Every tenant portal, category and article route is closed by the three prepended Custom::*Policy modules,
+  # because each of those controllers runs an unconditional `check_authorization`. `SearchController` runs none
+  # and consults no policy at all, so this is the one documentation surface that choke point does not reach --
+  # and `SearchService#filter_articles` was `current_account.articles.text_search(q)` with no status filter,
+  # while the view renders the full body (app/views/api/v1/accounts/search/_article.json.jbuilder:4). Any
+  # member -- administrator, agent, or a custom role holding knowledge_base_manage -- could read the workspace's
+  # own draft and archived article bodies through it.
+  #
+  # Lynomia's own documentation is not reachable here at all: platform articles have `account_id` NULL and this
+  # relation starts from `current_account.articles`. What leaked was the workspace's own frozen Help Center
+  # content, so this is an authoring-state leak rather than a cross-tenant one.
+  #
+  # Published only, which is what the public renderer serves too
+  # (Public::Api::V1::Portals::ArticlesController#set_article). Narrowing after `page`/`per` is deliberate and
+  # correct: the condition lands in the WHERE clause, and Kaminari re-runs the same relation without its limit
+  # for `total_count`, so the count agrees with the page instead of describing a wider set.
+  def filter_articles
+    @articles = super.published
+  end
+
   private
 
   # Messages are narrowed by the conversation they belong to, which is the only honest way to express a rule

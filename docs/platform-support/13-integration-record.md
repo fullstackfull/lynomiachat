@@ -93,7 +93,7 @@ to do with the product.
 |---|---|
 | **Platform Support Ruby suites + the three existing specs the branch touches** | **508 examples, 0 failures, exit 0** |
 | **Combined run with the Operations, notification, Super Admin and installation-config suites** | **866 examples, 0 failures, exit 0** (3 pending: pre-existing MFA skips in the Super Admin devise spec) |
-| **Whole frontend suite** (`pnpm vitest run`) | **499 files, 5393 examples, 0 failures, exit 0** (measured at `2ee56349`; the re-run on the final tree was still in flight when this was written, and the module's own 51 examples pass on it) |
+| **Whole frontend suite** (`pnpm vitest run`) | **500 files, 5395 examples, 0 failures, exit 0** on the final tree |
 | Platform Support frontend specs within it | **51 examples, 0 failures** (49 + the 2 new create-page proofs) |
 | `bundle exec rubocop` (whole repository, 3022 files) | **0 offenses**. No cop disabled, no exclusion added |
 | `npx eslint` on every changed JS/Vue file | **0 errors**, 2 pre-existing dynamic-i18n-key warnings |

@@ -213,9 +213,10 @@ RSpec.describe 'Documentation media delivery', type: :request do
     end
   end
 
-  # REQUESTED CHANGES #4 asks for this predicate to be extracted into one concern both controllers include. Until
-  # that lands there are two copies of the rule, so this asserts they still agree -- `show` and `show_markdown`
-  # already disagree (R2-O1), and that precedent is the whole argument for the extraction.
+  # REQUESTED CHANGES #4 landed: both controllers now include Public::PortalArticleVisibility, so there is one
+  # copy of the rule. This stays because it asserts the two ROUTES behave identically end to end, which sharing a
+  # method does not by itself prove -- a before_action order or a scope applied elsewhere could still diverge them,
+  # and `show` vs `show_markdown` (R2-O1) is the precedent for that happening.
   describe 'agreement with the article page' do
     it 'serves media exactly where the article page itself is served, for both roles' do
       [published, draft].each do |article|

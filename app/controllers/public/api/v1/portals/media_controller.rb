@@ -16,6 +16,8 @@
 # request (`:78-80`) and a render_404 that renders the portal's HTML error template (`:71-76`) -- the wrong body
 # for an <img> request.
 class Public::Api::V1::Portals::MediaController < PublicController
+  include Public::PortalArticleVisibility
+
   # The framework's own streamer, which is what keeps the stored-XSS defence rather than re-deriving it:
   # send_blob_stream sets type from blob.content_type_for_serving and disposition from
   # blob.forced_disposition_for_serving (blob/servable.rb:4-21), the pair that forces image/svg+xml to
@@ -61,20 +63,6 @@ class Public::Api::V1::Portals::MediaController < PublicController
   def set_article
     @article = visible_articles.find_by(slug: params[:article_slug])
     head :not_found if @article.nil?
-  end
-
-  # Contract section 0.1, matching ArticlesController#set_article (`:83-86`) exactly rather than inventing a second
-  # rule: a published article is public, and a signed-in super admin additionally sees a draft, which is the whole
-  # point of the preview. This is a separate HTTP request from the article page, so the predicate has to be
-  # evaluated again; what must not exist twice is the RULE, and REQUESTED CHANGES #4 asks for it to be extracted
-  # into one concern both controllers include. Until that lands, media_predicate_agreement_spec asserts the two
-  # controllers still agree, because `show` and `show_markdown` already disagree (R2-O1) and that is enough.
-  def visible_articles
-    previewing_as_super_admin? ? @portal.articles : @portal.articles.published
-  end
-
-  def previewing_as_super_admin?
-    respond_to?(:current_super_admin) && current_super_admin.present?
   end
 
   def resolver

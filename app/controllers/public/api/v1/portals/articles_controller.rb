@@ -1,4 +1,6 @@
 class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::BaseController
+  include Public::PortalArticleVisibility
+
   before_action :ensure_custom_domain_request, only: [:show, :index, :show_markdown]
   before_action :portal
   before_action :set_portal_layout
@@ -81,14 +83,8 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
   # The one exception is a signed-in super admin previewing before publication, which is the whole point of a preview
   # and is why the draft banner below it says what is being looked at.
   def set_article
-    scope = previewing_as_super_admin? ? @portal.articles : @portal.articles.published
-    @article = scope.find_by!(slug: permitted_params[:article_slug])
+    @article = visible_articles.find_by!(slug: permitted_params[:article_slug])
   end
-
-  def previewing_as_super_admin?
-    respond_to?(:current_super_admin) && current_super_admin.present?
-  end
-  helper_method :previewing_as_super_admin?
 
   def set_category
     return if permitted_params[:category_slug].blank?

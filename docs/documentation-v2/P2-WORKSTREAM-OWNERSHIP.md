@@ -430,3 +430,77 @@ Agent 2 therefore did **not** convert the corpus and built ruling R3's "incremen
 byte-identical, so Agent 1's grammar is safe for a future adoption. `corpusRoundTrip.spec.js` goes red the
 moment the serializer changes, which is the signal to re-decide. **This is the ruling working as designed, not
 a blocker.**
+
+### G8 — My G1 icon claim was half right, and the half I got wrong is the half that matters
+
+**Withdrawn from G1:** *"no rule was ever generated"* is true, but I gave the wrong cause and therefore shipped
+a safelist that fixes nothing on its own.
+
+`PortalHelper#render_emoji_or_icon` (`app/helpers/portal_helper.rb:107`) is
+`value.start_with?('i-') ? value : "i-ri-#{value}"`. The manifest stores **bare** names (`rocket`,
+`messages-square`, …), so every documentation category icon resolves to `i-ri-rocket` — the **Remix** set, not
+Lucide. Measured against the installed collections:
+
+```
+rocket             lucide=true  ri=false
+messages-square    lucide=true  ri=false
+users              lucide=true  ri=false
+megaphone          lucide=true  ri=false
+message-circle     lucide=true  ri=false
+alert-triangle     lucide=true  ri=false
+workflow           lucide=true  ri=false
+shopping-bag       lucide=true  ri=false
+building           lucide=true  ri=false
+plug               lucide=true  ri=false
+shield             lucide=true  ri=false
+life-buoy          lucide=true  ri=false
+sparkles           lucide=true  ri=false
+```
+
+(`@iconify-json/lucide@1.2.82`, `@iconify-json/ri@1.2.6`, checked for both `icons` and `aliases`.)
+
+**All thirteen exist in Lucide and none in Remix.** So the icon does not render because the generated class
+names a set that does not contain it — and `@egoist/tailwindcss-icons` emits a rule only for an icon the
+collection actually has, so safelisting `i-ri-rocket` would not have helped either.
+
+The fix is **one line per section in the manifest**: store the full class `i-lucide-rocket`, which the helper
+passes through untouched. That is Agent 3's file, handed to it for Wave 3 with this evidence — it is also the
+change Agent 4 requested in Wave 2 and which I deferred without understanding it.
+
+**The safelist I shipped is correct only once the manifest changes**, because `manifest.yml` is not in the
+Tailwind content globs (`.vue`, `.erb`, `.js` only) and the class still arrives from `categories.icon` at
+runtime. The two halves complete each other; neither works alone. I did not change
+`render_emoji_or_icon`: its `i-ri-` default is product-wide and serves tenant help-center categories too, so
+changing it is not a documentation-local change.
+
+### G9 — Agent 1's remaining REQUESTED CHANGES, resolved
+
+| # | Verdict | What happened |
+|---|---|---|
+| #4 — one definition of the §0.1 visibility predicate | **APPLIED** | New `app/controllers/concerns/public/portal_article_visibility.rb`; both `ArticlesController` and `MediaController` include it and their local copies are gone |
+| #5 — a queue-name note in `deployment/ROLLBACK.md` | **DECLINED, premise does not hold** | The request was "wherever queue names are mentioned". `ROLLBACK.md` mentions **no** ActiveStorage queue: its only queue check is `Sidekiq::Stats.new.queues.inspect` (`deployment/ROLLBACK.md:104-106`), which enumerates whatever queues exist rather than naming one to watch. There is nothing to correct, so nothing in `deployment/**` is touched. The fact itself stays recorded in `R2-MEDIA-CONTRACT.md` §3A.3 |
+| #6 — who owns `spec/lib/markdown_renderer_security_spec.rb` | **Orchestrator** | Answered by doing it: the inversion is §G5 above, applied by the integrator, not by Agent 1 |
+
+#### Why #4 was worth applying rather than keeping the agreement spec alone
+
+Agent 1 had written the predicate twice and guarded it with an end-to-end spec, which was the right thing to do
+while the extraction was unapproved. Two copies of one rule is the defect `R2-O1` already records for `show` vs
+`show_markdown`, and the media route evaluates the predicate in a **separate HTTP request**, so there is no way
+to have one evaluation — only one rule.
+
+The agreement example in `spec/requests/documentation/media_delivery_spec.rb` **stays**, with its comment
+rewritten. Sharing a method does not prove the two routes behave identically: a `before_action` ordering, a
+scope applied elsewhere, or a different 404 path could still diverge them, and that example hits both real
+routes for both roles.
+
+Verified: `media_delivery_spec` **15 examples, 0 failures**; `articles_controller_spec` +
+`tenant_help_center_removal_spec` **85 examples, 0 failures**; RuboCop on all four files, no offenses.
+
+#### An environment note, because it cost a false red
+
+The first run of `media_delivery_spec` against the working tree failed all 15 examples on
+`Errno::EACCES @ dir_s_mkdir - tmp/storage/...` — the spec runner runs as the `postgres` OS user (peer auth over
+the unix socket) and `tmp/` and `log/` were root-owned. Made writable; `log/test.log` had also grown to **6.4 GB**
+and was truncated, which returned 6 GB of the session's disk allowance. **Neither was a defect in the change**,
+and the failure is recorded here because a 15/15 red that is really a permission bit is exactly the kind of
+result that gets misread as a regression.

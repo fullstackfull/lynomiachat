@@ -55,9 +55,9 @@ Everything below is an extension of something that already exists:
 | Contextual help | `DOC_ARTICLES` in `documentationLinks.js` | hard-coded URLs in Vue |
 | SEO | `DocumentationHelper`, `PortalHelper`, `lynomia:docs:seo_audit` | a new SEO engine |
 | Search | the portal's existing search | a new index |
-| Media | ActiveStorage | a DAM |
+| Media | ActiveStorage as the *storage mechanism* — **see Ruling R2; this does not mean blob URLs in Markdown** | a DAM |
 | Authorization | Devise `:super_admin` scope + existing policies | new auth |
-| Sanitization | the existing article render path | a second sanitizer |
+| Sanitization | the existing article render path — **see Ruling R1, this row was wrong** | a second sanitizer |
 | Deployment | the existing deploy system | a parallel pipeline |
 
 **EXTEND, DO NOT DUPLICATE.**

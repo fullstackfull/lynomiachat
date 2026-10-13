@@ -676,10 +676,12 @@ one design note — is the single highest-leverage quality change available, bec
 
 ## 8. Contradictions for the orchestrator
 
-1. **`01-current-system.md` §7 states `DOC_ARTICLES` has "87 keys". I count 62.** The object spans
-   `app/javascript/dashboard/helper/documentationLinks.js:11-94` and contains 62 `key: 'slug'` entries mapping to 62
-   distinct slugs — one per corpus article except `your-own-help-centre`. 87 may be a count of call sites; it is not
-   the key count, and several of my reachability figures depend on which number is right.
+1. **`DOC_ARTICLES` key count — already resolved upstream, and my independent count agrees.** I measured 62
+   `key: 'slug'` entries over `app/javascript/dashboard/helper/documentationLinks.js:11-94`, mapping to 62 distinct
+   slugs — one per corpus article except `your-own-help-centre`. `01-current-system.md` originally said 87; while
+   this report was being written it was corrected to **62 keys**, crediting agent 076's challenge
+   (`01-current-system.md:226-227`). Nothing further is needed; recorded here because every reachability figure in
+   §5.7 and §7 is computed against 62.
 2. **`documentationLinks.js:139` says "Thirty codes"; `Commerce::Error::CODES` has 31**
    (`custom/app/services/commerce/error.rb:4-10`). Cosmetic, but it is a count in a comment that justifies a design
    decision.

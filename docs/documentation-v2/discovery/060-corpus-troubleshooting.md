@@ -106,3 +106,218 @@ I recommend keeping the commerce articles here — the registry comment (`docume
 "that is where a stuck reader already is", the 31-code error surface collapses to five remedies and will not grow
 the way Meta's does — and fixing the hub so it routes to them (agent 062 to decide).
 
+## 3. Accuracy against the product
+
+Verdict tokens are the template's: `confirmed`, `wrong`, `unverifiable`. Where a claim is right in one place and
+wrong in another the verdict is `wrong` if a reader following the article would be misled, with the confirmed part
+named. `en/commerce.json` below means `app/javascript/dashboard/i18n/locale/en/commerce.json`.
+
+@@COUNTS@@
+
+### 3.2 The "what you see" strings: 0 of 19 exist
+
+Every one of the five commerce articles opens with a table whose left column is quoted as on-screen text. I
+extracted all 21 curly-quoted items from the EN articles (19 are claimed on-screen strings; the other two are the
+fragment “We do not know” and the illustration “last updated 40 minutes ago”) and tested each with `rg -F` over
+the EN locale files: **0 matches**. The Arabic articles quote 27 «…» items that are translations of the English
+ones; none of the 19 Arabic equivalents appears in `ar/commerce.json` (the four `rg` hits in the contact article are
+single common words, not quotations). The panel never renders a code at all: `errorMessage` maps every code to a
+sentence (`useCommerceLabels.js:54-89`), so the right-hand "The code behind it" column names identifiers that only
+Lynomia's staff can see (`account.html.erb:192`).
+
+| article:line | quoted as on screen | code | what ships (`en/commerce.json:line`) |
+|---|---|---|---|
+| unreachable:13 | “Your store did not answer” | `STORE_UNAVAILABLE` | "The store is not reachable right now." (:133) |
+| unreachable:14 | “Your store took too long to answer” | `TIMEOUT` | "The store took too long to answer." (:137) — a near miss |
+| unreachable:23-25 | “last updated 40 minutes ago” | stale fallback | the stale banner reads "Couldn't refresh store data right now." (:36) then "Last updated {time}" (:37) and **no error text** (`CommercePanel.vue:406-410`); the Customer 360 form is "Showing data from {time}" (:78) |
+| reconnecting:18 | “This store needs to be reconnected” | `needs_reauth` | Settings chip "Needs re-authorization" (:190); Customer 360 "Store needs re-authorization" (:84); plus a per-platform hint (:260, :269, :281) |
+| reconnecting:19 | “We could not reach your store” | `AUTH_INVALID` | "The store rejected {installationName}'s credentials. An administrator needs to reconnect the store." (:134). The article's string says *could not reach*, which is the opposite diagnosis from the one it is explaining (credentials, not connection) |
+| keys:14 | “Your store refused that” | `PERMISSION_DENIED` | "The store refused access to its orders or customers. An administrator needs to check the store's permissions." (:135) |
+| keys:15 | “These keys cannot change orders” | `WRITE_ACCESS_DENIED` | "The store's credentials can't change orders. An administrator can replace them." (:153) |
+| keys:16 | “This store is not approved for customer data” | `PROTECTED_DATA_NOT_APPROVED` | "Shopify has not approved {installationName} to read this store's customer data (email and phone) yet, so customers can't be matched." (:145) |
+| keys:17 | "Order actions greyed out, with a reason" | `read_only_key` / `missing_scope` | those are internal reason ids and are never displayed. Settings shows "Order actions require a Read/Write {provider} API key." (:301), "Additional {provider} permissions are required. Reconnect {provider} to enable order actions." (:302), "Order actions are switched off on this installation." (:303) (`Index.vue:211-233`) |
+| address:14 | “That address is not a store we can reach” | `INVALID_STORE_URL` / private | "This address points to a private network and can't be used." (:172) |
+| address:15 | “That address is not valid” | `INVALID_STORE_URL` / invalid | "Enter the store address, for example https://shop.example.com." (:168), and separately "The store must use https." (:169), "Custom ports are not supported." (:170), "Use the store's domain name, not an IP address." (:171) |
+| address:16 | “That store redirected us somewhere else” | `INVALID_STORE_URL` / redirect | "The store redirected to another address. Enter the final store URL." (:173) |
+| action:16 | “The order changed while you were looking at it” | `ORDER_CHANGED` | "The order changed in the store after you opened it. Nothing was sent. Review it again." (:150) |
+| action:17 | “That did not apply” | `NOT_APPLIED` | "The store shows the change wasn’t made. You can try again." (:154) |
+| action:18 | “Your store declined the refund” | `REFUND_DECLINED` | "The payment gateway refused the refund. No money was sent." (:156) |
+| action:19 | “Your store refused that” | `PROVIDER_REJECTED` | "The store refused this change." (:155) |
+| action:20 | “That action is already running” | `ACTION_IN_PROGRESS` | "Another action on this order is still being processed." (:149) |
+| action:21 | “That amount is not valid” | `INVALID_AMOUNT` | "The amount isn’t valid for this order. Nothing was sent." (:151) |
+| action:22 | “We do not know whether that applied” | unknown outcome | "The store didn’t answer in time. {installationName} is checking the order with the store: don’t try again until it does." (:408); if read-back runs out: "…couldn’t confirm the result with the store. Check the order in the store before trying again." (:409) |
+| action:23 | “Order actions are turned off” | `ACTIONS_DISABLED` | "Order actions are off for this store." (:147) |
+| action:24 | “That action is not available for this store” | `ACTION_UNAVAILABLE` | "This action isn’t possible for the order right now." (:148), and the per-action menu reasons (:350-361) |
+
+What the real strings carry that the articles lose: **"Nothing was sent."**, **"No money was sent."** and **"don't try
+again until it does"**. Those are the three reassurances an agent most needs while a refund is on screen, and they
+are exactly the facts Lynomia *knows*.
+
+Search consequence (agent 077's area): the portal search matches article text, and a reader pastes what they see.
+The shipped sentences appear nowhere in the corpus, so the article cannot be found by the string that links to it.
+
+### 3.3 Claims checked, per article
+
+**Hub — `troubleshooting.md` (EN line numbers)**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| H1 | 20-23 | A custom role's permission list has no entry for inboxes, channels, campaigns, WhatsApp templates, flows, automation rules or audiences | confirmed | `custom/app/models/custom_role.rb:19-27` — closed list: `conversation_manage`, `conversation_unassigned_manage`, `conversation_participating_manage`, `contact_manage`, `report_manage`, `commerce_order_manage`, `support_ticket_manage`, `knowledge_base_manage` |
+| H2 | 32 | An inbox has an **Account Health** tab | confirmed (WhatsApp Cloud and Twilio inboxes) | `routes/dashboard/settings/inbox/Settings.vue:254,264`; `en/inboxMgmt.json:792`. It is the one "first check" in the hub that shows provider state Lynomia *asked for* (its error copy says "Meta could not return the current health details", `inboxMgmt.json:939`) |
+| H3 | 40 | A flow needs a WhatsApp Cloud inbox | confirmed | `custom/app/services/flows/channel_capabilities.rb:3-4,26-28` |
+| H4 | 55 | Flows keep **Sessions** | confirmed | `routes/dashboard/settings/flows/FlowBuilder.vue:38,519` |
+| H5 | 57 | Audit logs cover "fourteen event types" | unverifiable | not counted by me; agrees with `administration/audit-logs.md:20` (agent 059) |
+| H6 | 58 | Automation rules: "nothing. There is no run history and no per-rule log in the product" | confirmed (tenant surfaces) | no UI. But Lynomia writes one structured line per evaluation with outcome `executed`/`skipped`/`duplicate`/`no_conversation`, `rule_id` and a correlation id (`custom/app/services/automation/execution_log.rb:1-15`). The honest advice is "quote the rule id, time and conversation in a ticket", which the hub never says. Whether the desk reads application logs: unverified |
+| H7 | 59 | Webhooks: "nothing. No delivery log, no retry, no replay" | wrong (in part) | right for account webhooks: failure is logged and swallowed (`lib/webhooks/trigger.rb:26-35`). Not right as a blanket: an API-inbox webhook failure marks the message **failed** (`trigger.rb:65-67,100-102`); an agent-bot failure moves the conversation to open with an activity note (`trigger.rb:77-98`) and 429/500 are retried (`trigger.rb:3,125-126`) |
+| H8 | 69 | Messages sent while the webhook was missing "are gone. There is no backfill" | unverifiable (Meta) | no backfill or replay exists in the repo (`rg -i backfill\|replay` over whatsapp services and jobs finds none). "Gone" is a statement about Meta's redelivery behaviour, which Lynomia cannot know — route to 026/088 |
+| H9 | 70-73 | Automation has no business-hours, time-of-day or working-hours condition | confirmed | `routes/dashboard/settings/automation/constants.js:12-84` and every other condition list: no time attribute; the only "hours" hit is a delay default (`:815`) |
+| H10 | 73 | Refunds and cancellations cannot be delegated to a custom role | confirmed | `custom/app/policies/commerce/action_policy.rb:6,23-29` (administrators only); `en/commerce.json:ORDER_ACTIONS_HINT` |
+| H11 | 77-79 | Account Health, inbox configuration, templates, campaigns, automation and audit logs are administrator-only | unverifiable | other agents' routes (053, 055, 057, 059); not checked here |
+
+**Support — `contact-lynomia-support.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| S1 | 8 vs 11-15 | "There are two different support desks in this product" above a table of **three** desks | wrong | the article contradicts itself; AR the same (`مكتبا دعم` above three rows). Reads as "your two vs Lynomia's one", but the table never says so |
+| S2 | 13-19 | Path is **Help & Support → My tickets / New ticket** | confirmed | `components-next/sidebar/Sidebar.vue:738-760`; `en/settings.json:405-409`; `en/platformSupport.json` SIDEBAR; never feature-gated (`Sidebar.vue:744-745`, `help.routes.js:21`) |
+| S3 | 21 | "Four things are asked, and a ticket needs all four" | wrong | only **subject** and **description** are required (`NewTicketForm.vue:86-88`; `tickets_controller.rb:62-66`); category defaults to "Something else" and priority to Medium (`help/constants.js` `PLATFORM_SUPPORT_DEFAULT_CATEGORY`/`_PRIORITY`). The form's labels are "What is this about?" and "How urgent is this?", not "Category" and "Priority" (`platformSupport.json` FORM.CATEGORY, FORM.PRIORITY) |
+| S4 | 27-28 | "Urgent means the service is down for you. Everything else is High or below" | confirmed | `platformSupport.json` FORM.PRIORITY_HINT, ENUMS.PRIORITY.URGENT |
+| S5 | 30-32 | Up to 5 files of 10 MB; images, PDF, plain text, CSV; archives refused | confirmed | `custom/app/models/platform_support/message.rb:32-34` (png, jpeg, gif, webp, pdf, text/plain, text/csv; `MAX_FILES = 5`; `10.megabytes`); `base_controller.rb:184-200`. Note: a billing-locked customer cannot upload them — PD-34 |
+| S6 | 34-35 | Reference looks like `LYN-000123`; you land on the ticket; you get an email on a reply | confirmed | `ticket.rb:46-47,90-92`; `PlatformSupportNewPage.vue:46-50`; `message_creation.rb:135-145`, `ticket_mailer.rb` `operator_replied` (reporter and the account's administrators). Email failure is logged, not surfaced (`ticket_mailer.rb` header), and an in-app bell row is written too (`reply_notifier.rb:1-30`) |
+| S7 | 51-58 | The six status names and meanings | confirmed | `ticket.rb:26`; `platformSupport.json` ENUMS.STATUS and STATUS_SENTENCE — the article is word-for-word the product's own sentences |
+| S8 | 62-63 | Replying to a resolved ticket reopens it; a closed ticket takes no replies | confirmed | `message_creation.rb:7-10,37,75-83`; `platformSupport.json` REPLY.REOPENS_HINT, DETAIL.CLOSED_HINT |
+| S9 | 65-66 | "You can change a ticket's priority at any time… we may re-triage it, and we will say so on the ticket when we do" | wrong | the API accepts `priority` (`tickets_controller.rb:9-10,72-78`) but the detail page renders priority as a read-only chip (`PlatformSupportDetailPage.vue:226-230`) and no other control exists. And a staff re-triage is **not shown to the customer**: `priority_changed` and `category_changed` are excluded from the customer-visible event list (`event.rb:9-11,26-27`; `ticket_transition.rb:12-15`) and re-triage writes no message |
+| S10 | 87-88 | The hub "sorts most reports into one of four causes… and three of them you can fix yourself" | wrong | contradicts the hub: plan or installation switch — "nothing in your account changes those" (hub 25-26); Meta — "cannot appeal or override" (hub 67-68); a role — an administrator changes it, not you. Only "configuration" is self-fixable. AR repeats it (`وثلاثة منها تستطيع إصلاحها بنفسك`) |
+| S11 | 70-71 | The desk covers billing, access, channels, WhatsApp, store and orders, campaigns, automation, slowness, data export, "anything that looks broken" | confirmed | exactly the 11 categories (`ticket.rb:38-39`; ENUMS.CATEGORY). Note that only some have articles — §4 |
+| S12 | 76 | "we never read or answer [your customers' conversations]" | unverifiable | a vendor policy, not a mechanism the repo can show; staff surfaces read account snapshots (`operations/account_snapshot.rb`), message-body access by staff was not checked |
+| S13 | 90-94 | A billing-locked account can still raise a ticket; suspended accounts cannot | confirmed (API) | `base_controller.rb:127-134,140-142` (`billing_exempt?` true; suspension answers 401 one layer earlier). The browser path for a locked account was not exercised |
+| S14 | 94 | "a suspension notice says who to contact" | wrong (in part) | the notice says "please contact our support team" and names no contact (`en/settings.json:271`) |
+| S15 | 98-103 | Administrators see every ticket for the account; an agent or custom role sees only their own | confirmed | `custom/app/policies/platform_support/ticket_policy.rb:4-6,44-50` (a custom-role holder falls to the agent branch by design, `:8-13`) |
+| S16 | 106-109 | Internal notes stay internal | confirmed | `ticket.rb:57-62`; `message.rb:4-6`; `reply_notifier.rb:5-8` (no tenant route, serializer or mailer names a note) |
+| S17 | — | (absence) no response-time promise is made | confirmed | the article makes none, which is correct: no `SlaPolicy` row can be created through the product (PD-02), so any figure would be invented |
+
+**Needs reconnecting — `commerce-store-needs-reconnecting.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| R1 | 8-10 | In this state order history does not load, carts stop arriving, actions are unavailable; nothing retries | confirmed, with a contradiction | `customer360.rb:90` (listed without being read), `realtime.rb:40,49,72` and `abandoned_carts.rb:19` (`store.active?`), `token_manager.rb:64`. But "abandoned carts stop arriving" advertises a feature the corpus says does not exist: `commerce/commerce-overview.md:52` "not available on any platform", `commerce-provider-support.md:76` "there is no abandoned-cart feature" (held: `switches.rb:16`) |
+| R2 | 12 | "Only an administrator can fix it, and it takes one action: Settings → Commerce → the store → **Reconnect**" | wrong | administrator-only is right (`commerce.routes.js:19`). The one action is not: WooCommerce shows **Replace keys** (`Index.vue:495-503`); Salla shows **no button** and a hint to update or reinstall the app from the Salla dashboard (`Index.vue:93-97,438-443`; `en/commerce.json:260`); only Zid and Shopify show **Reconnect** (`Index.vue:34,507-513`). DC-15 |
+| R3 | 21-22 | The status "is durable… written the moment the store refused the access… not a guess from a single failed request" | wrong | WooCommerce: one 401 on one panel read, search, cart read or action read flips the status (`conversation_panel.rb:121`, `order_search.rb:37`, `abandoned_carts.rb:36`, `order_actions.rb:98` → `store_connection.rb:80-86`). Zid and Shopify: one refresh plus one retry (`token_manager.rb:19-28,55-61`). Salla: a refresh whose outcome is *unknown* is treated as spent and sets the status (`salla/token_manager.rb:1-12,58-61`) — a defensive guess by design |
+| R4 | 29-30 | WooCommerce: "the API key was deleted, or its permissions were changed" | unverifiable (provider), partly contradicted | Lynomia received HTTP 401 (`http_client.rb:225`). A permissions change on a key that can still read does not produce `AUTH_INVALID`; on a write it produces `WRITE_ACCESS_DENIED` (`woocommerce/actions.rb:147,155-158`). Another cause of a 401 — a host or plugin stripping the Authorization header — is indistinguishable to Lynomia |
+| R5 | 31-33 | Salla: "uninstalled or its authorization lapsed"; reinstalling reconnects on its own; no new code needed unless the store left the list | wrong (in part) | a lapse: right — a reinstall or update re-authorizes a `needs_reauth` store automatically (`salla/installation.rb:32-45,115-121`; `en/commerce.json:260`). An **uninstall**: the `app.uninstalled` event **disconnects** the store (`installation.rb:76-82`), and a reinstall then waits for a new connection code because `connected_store` excludes disconnected rows (`installation.rb:123-125`) |
+| R6 | 34-36 | Zid answers a rejected authorization with a redirect to its login page; the product treats it as rejected | confirmed | `custom/app/services/commerce/providers/zid.rb:160-161` |
+| R7 | 37 | Shopify: "uninstalled from the store's admin, or the access revoked" | wrong (in part) | an uninstall is a signed webhook that **disconnects** the store, removing token, links and cache (`shopify/webhook_job.rb:42-46`; `store_connection.rb:98-107`). `needs_reauth` for Shopify comes from a refused refresh token or from the refresh token **expiring** (`shopify/token_manager.rb:10-11,28`) — which needs nobody to have done anything. The "two can happen without anybody doing anything wrong" sentence never says which two |
+| R8 | 43-44 | On entering this state the store's access and cached data are removed | wrong (in part) | cache purged — confirmed (`token_manager.rb:113`, `store_connection.rb:84`). Access removed — only for OAuth providers (`token_manager.rb:111`; Salla removes the refresh token only, `salla/token_manager.rb:86`). WooCommerce keys stay stored: `credentials_rejected` changes the status and purges the cache, nothing else (`store_connection.rb:80-86`) |
+| R9 | 45-48 | "disconnecting does not delete your history"; conversations, contacts and action history stay | wrong (in part) | right for conversations and contacts. **Disconnect deletes the customer links** (`store_connection.rb:98-107`; `salla/installation.rb:75`) — which is why Customer 360 then says "Customer not linked" |
+| R10 | 47-48 | Reconnecting a disconnected store "rather than counting against your plan's store limit twice" | wrong (in part) | disconnected rows are not counted (`store.rb` `connected` scope; `store_connection.rb:4-7`), but a reconnect is checked against the limit and can be refused with `STORE_LIMIT_REACHED` (`store_connection.rb:130-134`). That code shows the generic "Something went wrong" string today (PD-25) |
+| R11 | 52-54 | "If the store moves back into this state within minutes of reconnecting… it is a permissions problem rather than an authorization one" | wrong | permissions problems produce `PERMISSION_DENIED` (403) or `WRITE_ACCESS_DENIED`, never `AUTH_INVALID`/`needs_reauth` (`http_client.rb:225-226`; `woocommerce/actions.rb:147`). A flapping store points to an intermittent 401 or to the Salla refresh path, not to permissions |
+| R12 | — | (omission) Lynomia-side causes of this state | gap | `refresh_interrupted`, `refresh_outcome_unknown`, `refresh_response_invalid`, `refresh_http_N` (Salla); `zid_login_redirect`, `refresh_response_invalid` (Zid); `refresh_token_expired` (Shopify) — all recorded in the audit trail as the reason (`token_manager.rb:114`; `salla/token_manager.rb:89`), none mentioned |
+
+**Cannot reach your store — `commerce-store-unreachable.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| U1 | 13 | `STORE_UNAVAILABLE` = the connection failed or the store returned a 5xx | confirmed, incomplete | `http_client.rb:229,237`. The same code also covers **DNS failure** (`:156-157`, reason `dns`) and **TLS failure** (`:237`, reason `tls`), so a mistyped domain or an expired certificate reads as "not reachable". Neither is named |
+| U2 | 14 | `TIMEOUT` = "the request was sent and no answer arrived inside the limit" | wrong (in part) | on a read, a **connect** timeout also becomes `TIMEOUT` although nothing was sent (`http_client.rb:160-161`), as does the 10 s body deadline (`:205`). On an action a connect timeout is `STORE_UNAVAILABLE`/`not_sent` (`:24-26,122-123`) |
+| U3 | 18-19 | 3 s connect, 8 s answer, 10 s body | confirmed | `http_client.rb:15,18`. Not said: an **order action** waits 25 s (`:17`) |
+| U4 | 20-22 | One retry, reads only, on a dropped connection or 502/503/504; a timeout is not retried; an action never | confirmed | `http_client.rb:20-23,67-71,135-150` |
+| U5 | 23-25 | The panel serves cached history labelled with its age | confirmed, incomplete | `cache.rb:1-3,23-27`; label `CommercePanel.vue:407`. Omitted: the fallback is only for `STORE_UNAVAILABLE`, `TIMEOUT`, `RATE_LIMITED`, `INVALID_RESPONSE` and only up to **24 hours** old (`cache.rb:9-10`). After that the panel is blank, not stale |
+| U6 | 26-27 | An unreachable store stays `active` | confirmed | the only path to a status change is `AUTH_INVALID` (`conversation_panel.rb:121`; `store_connection.rb:80-86`) |
+| U7 | 33-35 | A private-network store is refused rather than tried | confirmed | `http_client.rb:154-155` |
+| U8 | 36-38 | A host that throttles unfamiliar traffic "will refuse us consistently while a browser works… is not [a product bug]" | unverifiable (provider) | Lynomia sends one fixed `User-Agent: Lynomia-Commerce/1.0` (`http_client.rb:29`) and cannot see the host's rule; the sentence asserts the cause as certain |
+| U9 | 39-40 | A store that answers in 12 s "will time out here every time" | confirmed | follows from `http_client.rb:15,18` |
+| U10 | 44-45 | "There is no cache to clear by hand" | confirmed, but | there is a **Refresh** button with a cooldown (`en/commerce.json:38`; `cache.rb:14` `force`), which the article does not mention |
+| U11 | — | (omission) `RATE_LIMITED` and `INVALID_RESPONSE` are mapped here | gap | `documentationLinks.js:114-115`. A 429 from the store, a non-JSON or oversized answer (`http_client.rb:204,219,228,230`) — typically a WAF challenge page or a maintenance page — are the likeliest real causes of "it works in my browser" and are not described |
+
+**Address refused — `commerce-store-address-refused.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| A1 | 8-9 | Refused before any request leaves Lynomia, or when the store answers with a redirect | confirmed | `store_url.rb:3-4`; `http_client.rb:5-7,224` |
+| A2 | 9-10 | WooCommerce "is the only platform where you type an address — Salla, Zid and Shopify provide their own" | wrong | **Shopify asks you to type the store's `myshopify.com` domain** (`ShopifyConnectDialog.vue:86-91`; `en/commerce.json:277-278`) and refuses a bad one with `INVALID_STORE_URL` / `shopify_domain` (`shopify_connections_controller.rb:25-26`; "Enter the store's myshopify.com domain…", `en/commerce.json:174`). The article's advice — "use the real public address, the one a customer would type" — is the **opposite** for Shopify: a custom storefront domain is rejected on purpose (`shop_domain.rb:13-15`). The registry sends every `INVALID_STORE_URL` here (`documentationLinks.js:117`) |
+| A3 | 24-27 | `http://localhost`, `http://192.168.x.x`, `http://10.x.x.x` and a `.local` host "are all refused" by the private-address rule | wrong | refused, but each by an earlier rule with a different message: any `http://` scheme → "The store must use https." (`store_url.rb:33`; `en/commerce.json:169`); a bare IP over https → "Use the store's domain name, not an IP address." (`store_url.rb:35`; `:171`); an unresolvable `.local` name → `STORE_UNAVAILABLE`/`dns` = "The store is not reachable right now." (`http_client.rb:156-157`). The "private network" message (`:172`) appears only for a **hostname that resolves to a private address** — none of the four examples |
+| A4 | 20-22 | The connection is pinned to the address it checked | confirmed | `http_client.rb:5-6,180` |
+| A5 | 31-38 | Redirects are never followed | confirmed | `http_client.rb:7,180,224` |
+| A6 | 42-43 | `http` is possible only where "an administrator of this installation" listed the host as a development store | confirmed, misleading | mechanism is the **operator-only environment variable** `COMMERCE_TRUSTED_STORE_HOSTS` (`store_url.rb:5-6,14-16,33`). A customer administrator cannot do this; "administrator of this installation" reads as the account admin |
+| A7 | 45 | "no path: not /wp-json, not /wp-admin, not a trailing page" | wrong (in part) | a path is allowed and used — a WordPress in a subfolder (`https://example.com/shop`) is a supported address (`store_url.rb:21-24,53-56`; `http_client.rb:129-131`; `woocommerce.rb:9`). Only a trailing `/wp-json` is wrong |
+| A8 | — | (omission) port and bare-IP rules and the https message | gap | `store_url.rb:33-35`; `en/commerce.json:169-171` |
+
+**Keys cannot do that — `commerce-keys-cannot-do-that.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| K1 | 8-10 | Lynomia "never quietly upgrades the access you granted" | confirmed | `providers/base.rb:68-70`; `store_connection.rb:66-69` |
+| K2 | 21-24 | WooCommerce: `read_only_key` is recorded "the first time a write is refused" | wrong (in part) | it is also recorded at connect time when webhook registration is refused (`woocommerce.rb:94-108`), and a store that never proved write access reports `write_access_unverified` (`woocommerce.rb:25-28`) which the UI shows with the **same** "require a Read/Write key" sentence (`Index.vue:218-222`). A reader with a genuine Read/Write key can see the message and be told their key is read-only |
+| K3 | 24-26 | Create a new Read/Write key in WordPress → WooCommerce → Settings → Advanced → REST API; "an existing key's permissions cannot be raised in place" | unverifiable (provider) | WooCommerce UI and behaviour; I recall the key edit screen exposing Permissions, so treat as suspect and verify with 045 against WooCommerce's docs or a test store |
+| K4 | 27-28 | Shopify: order actions need `write_orders`; without it `missing_scope`; reconnecting re-requests scopes | wrong in production | code is consistent (`shopify.rb:126-129`; `Index.vue:464-472`) but Shopify order actions are `PRE_UAT`-held (`switches.rb:16`), and `provider_actions_enabled?` is checked **before** the scope (`order_actions.rb:103-110`), so a production Shopify store reports `provider_actions_disabled`, never `missing_scope`, and the "Reconnect for order actions" button never appears. `commerce-provider-support.md:75` says exactly this |
+| K5 | 29-30 | Zid: "the same shape… records `missing_scope`" | wrong in production | same: `PRE_UAT` (`switches.rb:16`). Also Zid supports one action only — shipped/delivered status changes (`zid/actions.rb:2-9`) — and learns `missing_scope` from a bare 403 because "Zid publishes no list of granted scopes" (`zid/actions.rb:11-12,39`): an inference |
+| K6 | 31-32 | Salla is read-only by design; no order actions | confirmed | `providers/salla.rb:3`; `providers/base.rb:66` |
+| K7 | 34-39 | Shopify needs an app approved before it may read customer names, emails, phones; until then the store works for everything else | confirmed (Lynomia side) / unverifiable (Shopify policy) | classified from Shopify's own ACCESS_DENIED wording by regex (`shopify/graphql.rb:60-65`). Not a keys problem and not fixable by the merchant — it needs Lynomia's app approval, which the article does not say |
+| K8 | 41-46 | Order actions are off per store by default; turning them on requires credentials that can write | confirmed, incomplete | `order_actions.rb:103-110`; `store_connection.rb:70-71`; toggle `Index.vue:446-458`. Omits two installation-level reasons for the same refusal (§3.3 O10) |
+| K9 | 21-23 | A Read key "is exactly right if you only want order history in conversations" | wrong (in part) | a Read key also loses **live order updates** (`en/commerce.json:185`; `woocommerce.rb:98-107`; `commerce-provider-support.md:94`), which the article never mentions |
+
+**Order action did not apply — `commerce-order-action-did-not-apply.md`**
+
+| # | line | claim | verdict | evidence |
+|---|---|---|---|---|
+| O1 | 8-9 | An order action "is the only thing Lynomia **writes** to your store" | wrong | on WooCommerce Lynomia also creates and deletes its own webhooks in the store with the key (`woocommerce.rb:94-108,112-118,153-160`); the Settings hint says so: "Lynomia only adds its own webhooks" (`en/commerce.json:218`). `commerce-provider-support.md:47` repeats the same overstatement |
+| O2 | 9-10 | A write is never sent twice | confirmed | `http_client.rb:67-71`; `action_executor.rb:5-9,49-55` |
+| O3 | 16 | `ORDER_CHANGED` = "somebody else changed the order" | confirmed (event) / wrong (cause) | `action_executor.rb:80`: the order's fingerprint (status, total, currency, paid date, payment method, refunds — `woocommerce/actions.rb:192-195`) differs from the one the agent confirmed. Lynomia cannot know *who*; a payment, a store automation or Lynomia's own earlier action all change it. The shipped string adds "Nothing was sent." |
+| O4 | 17 | `NOT_APPLIED` = "the store accepted the request and the order is provably unchanged" | wrong | `NOT_APPLIED` exists only as the verdict of a **read-back after the answer was lost** (`action_executor.rb:120`). Lynomia never learned that the store accepted anything — it lost the answer, then at least 5 minutes later (`SETTLED_AFTER`, `woocommerce/actions.rb:37,70,164,176`; `shopify/actions.rb:49,187`) saw the order unchanged. With read-backs at 30 s, 2 min and 10 min (`action_executor.rb:15`) only the last can produce it |
+| O5 | 18 | `REFUND_DECLINED` = "the payment gateway refused, not the store" | unverifiable (provider) | inferred from one WooCommerce answer: HTTP 500 with body code `woocommerce_rest_cannot_create_order_refund` (`woocommerce/actions.rb:33,149`). Nothing else produces it, so it is WooCommerce-only. Lynomia never holds the store's own reason (`action_result.rb:6`: "never the store's own error text"). The shipped string adds "No money was sent." |
+| O6 | 19 | `PROVIDER_REJECTED` — "usually in a state that does not allow it" | unverifiable | Lynomia saw a 400/403/409/422 (`woocommerce/actions.rb:31-32`) or Shopify `userErrors` (`shopify/actions.rb:69,82,146`); "usually" is a guess |
+| O7 | 20 | `ACTION_IN_PROGRESS` = "the same action is in flight" | wrong (scope) | any unresolved earlier action on the **order** blocks every other action on it (`order_actions.rb:20,161-163`), until reconciliation is exhausted |
+| O8 | 21 | `INVALID_AMOUNT` = outside what the order allows | confirmed | reasons `currency`, `precision`, `above_refundable`, `not_full` (`action_executor.rb:102-111`) |
+| O9 | 22, 26-42 | Unknown outcome: read back later, judge by what the store says now, otherwise stay unknown, never re-send | confirmed | `action_executor.rb:141-151`; timings 30 s / 2 min / 10 min (`:15`). One honest caveat the article lacks: for a status change, "in the target state" is read as success (`woocommerce/actions.rb:68-69`), which cannot tell Lynomia's write from someone else's identical change |
+| O10 | 23 | `ACTIONS_DISABLED` = "the switch is off for this store; an administrator turns it on" | wrong (incomplete) | three different causes share the code (`order_actions.rb:26-30,103-110`): the installation kill switch, the per-provider switch (held for Salla, Zid, Shopify — `switches.rb:16,21-26`), and the store opt-in. Only the last is an account administrator's to change. The UI already distinguishes it: "Order actions are switched off on this installation." (`en/commerce.json:303`; `Index.vue:227-229`) |
+| O11 | 24 | `ACTION_UNAVAILABLE` = "the platform does not support it — nothing; it is a capability, not a fault" | wrong | it is also raised when the order's **state** no longer allows the action (`action_executor.rb:82-83`), and the menu explains the fixable cases: "The order is paid: refund it first.", "Nothing is left to refund.", "The order was paid in more than one payment, so refund it in your store's admin." (`en/commerce.json:352,355,359`) |
+| O12 | 34-37 | Read back later and judge only by what the store says now | confirmed | `action_executor.rb:34-44,153-160` |
+| O13 | 46-50 | "every one is recorded with who ran it and what the store answered" | wrong (in part) | recorded: who, action, order, status and Lynomia's outcome code (`action_run.rb:78-81`). **Not** the store's answer — responses are never stored (`http_client.rb:13`; `action_result.rb:6`) |
+| O14 | 46-48 | Off per store; need write credentials; checked against the order as the agent saw it | confirmed | `order_actions.rb:103-110`; `action_executor.rb:80` |
+| O15 | — | (omission) codes mapped to this article but never explained | gap | `NOT_SENT` ("Nothing changed; you can try again", `en/commerce.json:164`), `IDEMPOTENCY_CONFLICT`, and `RATE_LIMITED` as Lynomia's own throttle (10/min/user, 30/min/store, 5/10 min/order, `order_actions.rb:35` and `ACTIONS.RATE_LIMITED`) — which the registry sends to the *unreachable* article (`documentationLinks.js:114`), because one code means both "the store limited us" and "Lynomia limited you" |
+
+### 3.4 Provider state the article states and Lynomia never received
+
+The brief's third question. Lynomia has three kinds of knowledge: what it **recorded** (an HTTP status, its own
+timeout, a status flag, a counter), what it **inferred** (a classification from a code or a pattern), and what only
+the **provider** knows. The articles routinely write the second and third in the voice of the first.
+
+| article:line | the sentence | what Lynomia actually has | class |
+|---|---|---|---|
+| action:17 | `NOT_APPLIED`: "the store accepted the request" | nothing — the answer was lost; it read the order back ≥5 min later (`action_executor.rb:120`) | provider-side, never received |
+| reconnecting:29-30 | WooCommerce "key was deleted, or its permissions were changed" | HTTP 401 (`http_client.rb:225`) | inferred, stated as fact |
+| reconnecting:31-33 | Salla "uninstalled or authorization lapsed" | a refused refresh, or a refresh whose outcome is unknown (`salla/token_manager.rb:58-61`) | inferred; unknown-outcome is a guess by design |
+| reconnecting:37 | Shopify "uninstalled… or revoked" | a refused refresh or an expired refresh token (`shopify/token_manager.rb:28`); an uninstall *is* received, as a webhook, and routes elsewhere | inferred / misrouted |
+| reconnecting:21-22 | "not a guess from a single failed request" | for WooCommerce, exactly a single failed request (`conversation_panel.rb:121`) | recorded, mis-described |
+| action:18 | `REFUND_DECLINED`: "the payment gateway refused" | one WooCommerce error code on an HTTP 500 (`woocommerce/actions.rb:149`) | inferred, WooCommerce-only |
+| action:16 | `ORDER_CHANGED`: "somebody else changed" | a different order fingerprint (`action_executor.rb:80`) | recorded fact, invented author |
+| action:19 | `PROVIDER_REJECTED`: "usually in a state that does not allow it" | a 4xx (`woocommerce/actions.rb:31-32`) | guess |
+| keys:29-30 | Zid "authorization does not include order management" | a 403 (`zid/actions.rb:11-12,39`) | inferred |
+| keys:24-26 | "an existing key's permissions cannot be raised in place" | nothing | provider-side, unverifiable |
+| unreachable:36-38 | host throttling "is not [a product bug]" | a failed request and a fixed User-Agent | provider-side, asserted as certain |
+| support:65-66 | "we will say so on the ticket" | the event is internal-only (`event.rb:9-11,26-27`) | a promise the code breaks |
+| hub:69 | webhook-gap messages "are gone" | no backfill in the repo; Meta's redelivery unknown | provider-side |
+
+Contrast: the places where the section is honest are exactly the places where Lynomia *does* have the fact — "A
+store that cannot be reached stays `active`" (recorded), "We do not know whether that applied" (recorded and
+named), "Reconnecting does not start you from scratch" (recorded) — and the places where it is not are all
+provider-side or inferred. Two repository comments say the rule out loud and the articles do not follow it:
+`delivery_failure.rb:1-17` ("transcribing Meta's catalogue from memory would be inventing policy that nothing here
+can stand behind") and `diagnosis/local_checks.rb:25-27` ("neither can be inferred from the other").
+
+What Lynomia *does* hold and the articles never offer the reader: a per-store health snapshot — last error code and
+reason, consecutive failures, last success, last webhook received and processed
+(`store_health_recorder.rb:39-47,54-62`) — visible to Lynomia's operators as "Provider failing (CODE)", "Last
+answered N ago", "N failures in a row" (`operations/account.html.erb:192-197`, `commerce.html.erb:103`). A reader
+who knows that exists will put the store name and the time in a ticket; today nothing tells them.
+
+### 3.5 Where sibling articles contradict this section
+
+| this section | other article | contradiction |
+|---|---|---|
+| reconnecting:8-9 "abandoned carts stop arriving" | `commerce-overview.md:52`, `commerce-provider-support.md:76` | those say there is no abandoned-cart feature (held, `switches.rb:16`; see also DC-11) |
+| action:8-9 "the only thing Lynomia writes" | `commerce-provider-support.md:47` | same overstatement in both; WooCommerce webhooks are also written |
+| keys:27-30 Shopify and Zid order-action remedies | `commerce-provider-support.md:75` "Only WooCommerce order actions can be used" | the troubleshooting article describes fixes for a feature the provider article says is unavailable (XA-02 is the editorial decision) |
+| support:87-88 "three of them you can fix yourself" | hub:25-26, 65-68 | self-contradiction across the pair |
+| hub:11-16 "four causes" | the section's own five commerce articles | a fifth cause (a connected store) is documented but not in the taxonomy |
+

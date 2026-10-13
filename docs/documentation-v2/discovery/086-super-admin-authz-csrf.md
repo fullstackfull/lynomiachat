@@ -331,7 +331,8 @@ degradation is silent and cross-lingual.
   no hidden input for it — the form partial iterates `STRING_KEYS` plus `tags` and nothing else
   (`custom/app/views/fields/article_meta_field/_form.html.erb:5-21`).
 - `normalized_meta` rebuilds the hash from the submitted keys only and drops blanks:
-  `meta = meta.to_h.compact_blank` (`custom/app/controllers/super_admin/articles_controller.rb:44-49`).
+  `meta = meta.to_h.compact_blank` (`custom/app/controllers/super_admin/articles_controller.rb:47-53`, reached
+  from the `resource_params` override at `:39-43`).
 - Assigning a Hash to a jsonb column **replaces** it. `doc_key` is gone.
 
 **Impact.** `Documentation::Library.article_for` resolves a key with

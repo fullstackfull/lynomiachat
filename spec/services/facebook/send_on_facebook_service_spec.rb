@@ -17,7 +17,12 @@ describe Facebook::SendOnFacebookService do
   let!(:facebook_inbox) { create(:inbox, channel: facebook_channel, account: account) }
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: facebook_inbox) }
-  let(:conversation) { create(:conversation, contact: contact, inbox: facebook_inbox, contact_inbox: contact_inbox) }
+  # `account:` matters: without it the conversation factory creates its own account, the incoming message created
+  # above lands under a different account_id, and MessageWindowService -- which scopes last_incoming_message by the
+  # conversation's account -- sees an empty conversation.
+  let(:conversation) do
+    create(:conversation, account: account, contact: contact, inbox: facebook_inbox, contact_inbox: contact_inbox)
+  end
 
   describe '#perform' do
     context 'without reply' do
@@ -99,14 +104,36 @@ describe Facebook::SendOnFacebookService do
         expect(bot).not_to have_received(:deliver).with(hash_including(:tag), anything)
       end
 
-      it 'sends with HUMAN_AGENT tag when ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT is enabled' do
+      # THIS USED TO ASSERT THAT THE SWITCH ALONE PRODUCED THE TAG, on a message sent seconds after the person
+      # wrote. That is the defect, not the contract: Meta's tagged-message type means "outside the standard
+      # messaging window" and the HUMAN_AGENT tag means a human agent is answering. The eligibility rule itself is
+      # covered case by case in spec/services/messages/human_agent_tag_eligibility_spec.rb; these two prove the
+      # delivery params that actually leave this service for the eligible and the ineligible case.
+      it 'sends an agent reply after the standard window as a tagged human agent message' do
         with_modified_env ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT: 'true' do
-          message = create(:message, message_type: 'outgoing', inbox: facebook_inbox, account: account, conversation: conversation)
+          conversation.messages.incoming.update_all(created_at: 48.hours.ago) # rubocop:disable Rails/SkipsModelValidations
+          agent = create(:user, account: account, role: :agent)
+          message = create(:message, message_type: 'outgoing', inbox: facebook_inbox, account: account,
+                                     conversation: conversation, sender: agent)
           described_class.new(message: message).perform
           expect(bot).to have_received(:deliver).with(
             hash_including(messaging_type: 'MESSAGE_TAG', tag: 'HUMAN_AGENT'),
             { page_id: facebook_channel.page_id }
           )
+        end
+      end
+
+      it 'sends a bot reply after the standard window as a plain response, with no tag' do
+        with_modified_env ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT: 'true' do
+          conversation.messages.incoming.update_all(created_at: 48.hours.ago) # rubocop:disable Rails/SkipsModelValidations
+          message = create(:message, message_type: 'outgoing', inbox: facebook_inbox, account: account,
+                                     conversation: conversation, sender: create(:agent_bot))
+          described_class.new(message: message).perform
+          expect(bot).to have_received(:deliver).with(
+            hash_including(messaging_type: 'RESPONSE'),
+            { page_id: facebook_channel.page_id }
+          )
+          expect(bot).not_to have_received(:deliver).with(hash_including(:tag), anything)
         end
       end
 

@@ -94,8 +94,11 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     merge_human_agent_tag(params)
   end
 
+  # Eligibility is Messages::HumanAgentTagEligibility's to decide; this only shapes the params. The switch alone
+  # used to be the whole condition, which tagged bot, automation and campaign sends as human-agent work and
+  # tagged ordinary replies made well inside the 24-hour window.
   def merge_human_agent_tag(params)
-    unless GlobalConfigService.load('ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT', nil)
+    unless human_agent_tag_eligible?
       params[:messaging_type] = 'RESPONSE'
       return params
     end
@@ -103,6 +106,12 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     params[:messaging_type] = 'MESSAGE_TAG'
     params[:tag] = 'HUMAN_AGENT'
     params
+  end
+
+  def human_agent_tag_eligible?
+    Messages::HumanAgentTagEligibility.new(
+      message: message, config_key: 'ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT'
+    ).eligible?
   end
 
   def attachment_type(attachment)

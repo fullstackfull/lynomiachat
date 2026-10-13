@@ -89,7 +89,22 @@ class Instagram::BaseSendService < Base::SendOnChannelService
     raise NotImplementedError, 'Subclasses must implement send_message'
   end
 
+  # The two Instagram generations differ only in which installation switch asserts the Human Agent approval, so
+  # the rule lives here once and each subclass names its key. Eligibility itself is
+  # Messages::HumanAgentTagEligibility's: the switch used to be the whole condition, which tagged bot, automation
+  # and campaign sends as human-agent work and tagged ordinary replies made well inside the 24-hour window.
+  #
+  # Unlike the Messenger path this leaves `messaging_type` unset when the tag does not apply, which is what both
+  # Instagram paths have always sent.
   def merge_human_agent_tag(params)
-    raise NotImplementedError, 'Subclasses must implement merge_human_agent_tag'
+    return params unless Messages::HumanAgentTagEligibility.new(message: message, config_key: human_agent_config_key).eligible?
+
+    params[:messaging_type] = 'MESSAGE_TAG'
+    params[:tag] = 'HUMAN_AGENT'
+    params
+  end
+
+  def human_agent_config_key
+    raise NotImplementedError, 'Subclasses must implement human_agent_config_key'
   end
 end

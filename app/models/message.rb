@@ -284,6 +284,23 @@ class Message < ApplicationRecord
     '[Attachment]' if attachments.any?
   end
 
+  # Whether a person at this business wrote this message, as opposed to a bot, an automation or a campaign.
+  #
+  # Public because it is no longer only this model's own business: Messages::HumanAgentTagEligibility needs it to
+  # decide whether a Meta send may claim the HUMAN_AGENT tag, and that claim has to mean the same thing as the
+  # first-reply and SLA accounting already built on this predicate rather than a second definition of "human".
+  #
+  # if the sender is not a user, it's not a human response
+  # if automation rule id is present, it's not a human response
+  # if campaign id is present, it's not a human response
+  # external echo messages are responses sent from the native app (WhatsApp Business, Instagram)
+  def human_response?
+    outgoing? &&
+      content_attributes['automation_rule_id'].blank? &&
+      additional_attributes['campaign_id'].blank? &&
+      (sender.is_a?(User) || content_attributes['external_echo'].present?)
+  end
+
   private
 
   def prevent_message_flooding
@@ -358,17 +375,6 @@ class Message < ApplicationRecord
   def set_waiting_since_on_incoming_message
     # Set waiting_since when customer sends a message (if currently blank)
     conversation.update(waiting_since: created_at) if incoming? && conversation.waiting_since.blank?
-  end
-
-  def human_response?
-    # if the sender is not a user, it's not a human response
-    # if automation rule id is present, it's not a human response
-    # if campaign id is present, it's not a human response
-    # external echo messages are responses sent from the native app (WhatsApp Business, Instagram)
-    outgoing? &&
-      content_attributes['automation_rule_id'].blank? &&
-      additional_attributes['campaign_id'].blank? &&
-      (sender.is_a?(User) || content_attributes['external_echo'].present?)
   end
 
   def bot_response?

@@ -56,6 +56,12 @@
             <span class="text-slate-600">not promised by this policy</span>
           <% elsif state.resolution_breached? %>
             <span class="text-red-700">breached <%= time_ago_in_words(ticket.resolution_breached_at) %> ago</span>
+          <%# Resolved past the target but never swept -- the sweep only looks at open tickets, so the breach
+              column stays NULL. `resolved_late?` makes the comparison the sweep would have made. %>
+          <% elsif state.resolved_late? %>
+            <span class="text-red-700">
+              resolved <%= distance_of_time_in_words(ticket.resolution_due_at, ticket.resolved_at) %> late
+            </span>
           <% elsif ticket.resolved_at.present? %>
             <span class="text-green-700">resolved in time</span>
           <% else %>

@@ -351,6 +351,19 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       expect(response.body).not_to include('The customer is emailed')
     end
 
+    # The sweep only looks at OPEN tickets, so a ticket resolved past its target keeps a NULL breach column
+    # for good. Whether the sweep ran in the five minutes before the operator resolved it is not a fact about
+    # the work, and the desk must not report it as one.
+    it 'does not call a late resolution "in time" because the sweep never saw it' do
+      late = ticket(reference_number: 908, status: :resolved, resolved_at: 1.hour.ago,
+                    sla_policy: policy, resolution_due_at: 3.hours.ago)
+
+      get "/super_admin/platform_support/tickets/#{late.id}"
+
+      expect(response.body).to match(/resolved\s+about 2 hours\s+late/)
+      expect(response.body).not_to include('resolved in time')
+    end
+
     it 'keeps a breach visible after the ticket was resolved' do
       breached = ticket(reference_number: 901, status: :resolved, resolved_at: 1.hour.ago,
                         sla_policy: policy, resolution_due_at: 3.hours.ago,

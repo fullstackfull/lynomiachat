@@ -42,6 +42,16 @@ class PlatformSupport::Sla::State
     @ticket.sla_paused_at.present?
   end
 
+  # RESOLVED AFTER THE TARGET, AND NEVER SWEPT. `PlatformSupport::Sla::Sweeper` only looks at OPEN tickets,
+  # so a ticket resolved an hour past its target keeps a NULL breach column for good -- and whether the
+  # sweep happened to run in the five minutes before an operator resolved it is not a fact about the work.
+  # The comparison the sweep would have made is therefore made here, against the resolution time and never
+  # against now, so the desk cannot call a late resolution "in time".
+  def resolved_late?
+    @ticket.resolved_at.present? && @ticket.resolution_due_at.present? &&
+      @ticket.resolved_at > @ticket.resolution_due_at
+  end
+
   def calendar_time?
     true
   end

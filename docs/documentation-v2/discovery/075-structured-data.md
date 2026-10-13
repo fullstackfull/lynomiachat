@@ -30,7 +30,7 @@ documentation).
 | Design record | `docs/product-refinement/03-documentation-seo.md` §3.3; before that phase `docs/global-documentation/FINAL-CHECKPOINT.md:26` records "no JSON-LD" |
 
 Where there is **no** structured data: portal home (`portals/show.html+documentation.erb` has no `content_for :head`,
-so `_portal_head.html.erb:16-20` prints only `<title>`), category pages (`categories/_meta_head.html.erb:1-33`),
+so `_portal_head.html.erb:16-20` prints only `<title>`), category pages (`documentation_layout/categories/_meta_head.html.erb:1-33`),
 search, 404, the classic variant (`articles/_meta_head.html.erb:1-21`) and the plain variant. The only emitter is
 `documentation_layout/articles/_meta_head.html.erb` and nothing else.
 
@@ -52,8 +52,7 @@ Built from the helper and the `seo_spec.rb:14-27` fixture, not captured from a l
  "publisher":{"@type":"Organization","name":"Lynomia Chat Documentation"}}
 ```
 
-Dates are `created_at&.iso8601` / `updated_at&.iso8601` (`documentation_helper.rb:90-91`); `config/application.rb` and
-`config/environments/*.rb` set no `time_zone`, so Rails' UTC default gives the `Z` form above.
+Dates are `created_at&.iso8601` / `updated_at&.iso8601` (`documentation_helper.rb:90-91`); nothing under `config/` sets `time_zone` (grep), so Rails' UTC default gives the `Z` form above.
 
 ### 2.2 Are the values valid for the types
 

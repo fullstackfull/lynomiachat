@@ -217,3 +217,106 @@ Admin, and `tags: []` from the account API.
 | XA-13 | **A "UI offers what the server refuses" pattern now appears seven times** (PD-10, PD-11, PD-12, PD-13, PD-07, PD-08, and the `conversation_participating_manage` "All" tab that equals "Mine"). This is a product-wide honesty defect, not seven documentation gaps. Decide whether the corpus describes the server's truth, the UI's offer, or refuses to document the surface until it is fixed. My position: the corpus documents the **server's** truth and the Phase-5 owner gets the list. |
 | XA-14 | **Author-time SEO validation is worthless in Administrate alone**, because `ContentSeeder` overwrites `meta` wholesale on the next run. 070 recommends one shared rule object called from the form, a CI front-matter check, and `seo_audit`. This depends entirely on the §8.1 source-of-truth freeze, and is the strongest argument yet for a controlled hybrid rather than a pure database-canonical model. |
 | XA-15 | Adding `validates :slug, uniqueness: true` touches a shared OSS model used by every tenant help center. 064 must confirm no tenant flow depends on the current exception before PD-49 is fixed. |
+
+---
+
+# Addendum 2 — the editor/SEO/security and Meta research waves
+
+## URGENT — production risk, time-critical, owner decision required
+
+These are not documentation items. They came out of the Meta research wave and they have dates attached.
+
+| # | Risk | Evidence | Why it is urgent |
+|---|---|---|---|
+| U-01 | **Embedded Signup v2 is deprecated on 2026-10-15 — two days from today.** Meta carries this banner on five pages. v4 changes the post-flow contract materially: users can finish with a verified, unverified, or *no* phone number, where v2 required a verified one, and "the `extras` object is purposely empty for v4", so the entire pre-filled-data contract is v2-only. | agent 013, `developers.facebook.com/docs/whatsapp/embedded-signup/versions` | If this installation runs v2, WhatsApp onboarding for new customers stops working in two days. I could not determine the version from the repository — the code has no version or `config_id` literal; it is supplied at runtime. **The owner must check the Meta app's Embedded Signup configuration version now.** |
+| U-02 | `FACEBOOK_API_VERSION` defaults to **v18.0**, whose availability ended **2026-01-26**. Only one server-side reader exists and it merely publishes the value to the browser, so the Super Admin control does not do what its description claims. | agent 003 (`app/controllers/dashboard_controller.rb:85`, `config/installation_config.yml:152-156`), agent 041 | Past end-of-life. |
+| U-03 | Messenger **send** and page **subscribe/unsubscribe** are pinned at Graph **v3.2** inside a vendored gem, and all Page reads are unversioned Koala calls. | agent 041 (`vendor/.../facebook-messenger-2.0.1/lib/facebook/messenger/bot.rb:16`, `subscriptions.rb:12`) | v3.2 is many years past end-of-life. Agent 090 is verifying what Meta returns for it today. |
+| U-04 | A legacy Instagram send path is pinned at **v11.0**. | agent 042 (`app/services/instagram/messenger/send_on_instagram_service.rb:9,34-36`) | Same class. |
+| U-05 | WhatsApp billing: `/pricing/non-template-messages` says service messages and in-window utility messages become **charged** "Effective October 1, 2026", while the main `/pricing` page still says both are free, and the changelog has no entry confirming it took effect. Today is 2026-10-13 — past the date. | agent 008 | Affects what any cost article may claim, and possibly customer invoices. Must be re-checked immediately before publishing anything about cost. |
+
+Graph API version status as of 2026-10-13, derived by agent 001 from Meta's own version table (arithmetic, not a
+Meta label): **v26.0 current** (released 2026-07-29); v20.0 passed its end date 2026-09-24; **v21.0 is the lowest
+still in window**. Agent 091 is producing the full repository version inventory.
+
+## BLOCKERS — confirmed by multiple independent agents
+
+| # | Blocker | Agreed by | Status |
+|---|---|---|---|
+| B-01 | **Every Super Admin article save destroys `meta['doc_key']`.** English is masked by a literal-slug fallback; **Arabic contextual help silently serves the English article**. | 064, 069, 070 — three independent readings | Confirmed. Nothing may be added to `meta` until fixed. 064 proposes promoting `doc_key` to an indexed column with `UNIQUE (portal_id, locale, doc_key)`, which fixes it structurally rather than by remembering to merge. |
+| B-02 | **All 494 Arabic internal links resolve to the English article.** AR slugs are `<key>-ar`, the article route has no locale segment, the renderer emits the href verbatim, and there is no `<base>` or JS rewrite. The Arabic corpus is navigationally unusable. | 073, 076, 085 — three independent readings | Confirmed. Same bug class as B-03. |
+| B-03 | **`/docs/:article_slug` has no locale in its route**, so `article_for(key, locale: nil)` always falls back to English: **every contextual-help click from the dashboard lands in English**, whatever the reader's language. | 073, 076 | Confirmed. B-02 and B-03 are one decision, not two. |
+| B-04 | **Editing `slug` creates a duplicate, not a rename.** The seeder upserts on `(slug, locale)`, so the next run creates a second published row carrying the same `doc_key`; which one a help link opens is undefined, the SEO audit cannot see it (different canonicals), and nothing ever deletes it. | 069, 070, 074 | Confirmed. `slug` must leave the form. |
+| B-05 | **Every other operator edit is silently reverted** and `status` is force-published on each run, and `Article` is **not audited**, so the revert is unrecoverable and invisible — the task prints one aggregate line. | 069, 070 | Confirmed. |
+| B-06 | **No working retirement path.** Deleting the `.md` retires nothing; `archived`/`unpublish` work but are force-republished on the next run. | 069, 074, 079 | Confirmed. |
+| B-07 | **The seeder is not single-run convergent.** A file moving between sections fires `after_save :category_id_changed_action`, which `update_column`s position to max+10 and discards the front-matter position; it heals only on a second run. | 069 (inferred from the callback chain, not measured) | **A sync that is not convergent cannot be a deploy gate.** Agent 097 is verifying. This is the single most important fact for the deployment decision. |
+| B-08 | **An author can publish third-party `<script>` with one Markdown link.** `config/markdown_embeds.yml` turns a bare link into raw embed HTML for 11 providers; Wistia and GitHub Gist emit `<script>` tags, interpolated verbatim with no sanitizer pass. Gist content is attacker-authored. The portal CSP is `object-src 'none'; base-uri 'self'` and nothing else. | 065, 085 | Confirmed, reachable today. The corpus uses **zero** embeds, so removing those two providers costs nothing. |
+| B-09 | **`?show_plain_layout=true` — the Super Admin preview URL — deletes `X-Frame-Options`** with no `frame-ancestors` to replace it. Any site can frame any article. | 065 | Confirmed. |
+| B-10 | **`![](data:image/png;base64,…)` publishes a live inline image.** The URL sanitizer deliberately allows image data URIs. This bypasses every media control the program is about to build — no blob, no filename, no EXIF step, no review — and it is permanent in git. | 087 | Confirmed. **Must be closed before Phase 5 writes any image**, or the media contract is unenforceable by construction. |
+| B-11 | **`/docs` publishes a named staff byline and avatar on every article and category page**, where the avatar may be a personal Gravatar fetched from the staff email. This contradicts the product's own written policy, which forbids publishing a staff name and is implemented in the JSON-LD only — the HTML body two files away publishes name *and* photo. | 087 | Confirmed, and it is a contradiction in shipped code rather than an ambiguity. The policy is right; the view is wrong. Fix scoped to the `documentation` variant only — the classic layout serves tenant portals, where a byline is the tenant's own choice. |
+| B-12 | **Portal search has no index at all** — no GIN/GiST, no tsvector column; the vector is built per row per request and the matching subquery is `model.unscoped`, so every documentation search scans the whole installation's articles table. The model's own TODO names exactly this. | 077 | Confirmed. Breaks at the corpus size this program will produce. |
+| B-13 | **The primary search UI throws the ranking away.** The hero/⌘K typeahead reorders by `position` *after* searching, wiping `ORDER BY rank DESC`, and it is **unlimited** — no `per_page` — while CommonMarker-rendering every matching body. Only `/search` is ranked and paginated. | 077 | Confirmed. |
+| B-14 | **The search dictionary is `simple` by default and was never chosen**, so there is no stemming, no stopwords and no unaccent in either language, and all terms AND together. "why is my whatsapp message failing" returns zero. `meta` — `seo_title`, `seo_description`, `tags` — is **write-only and unsearchable**: the three fields authors fill in for findability do not affect findability. | 077 | Confirmed. Good news: `131049` *does* find its article today, through the A-weighted title, because digits survive `simple`. |
+
+## Corrections to my own documents
+
+| # | What I wrote | What is true | Who caught it |
+|---|---|---|---|
+| C-01 | §5: "no `sanitize` call appears… CommonMark's `:DEFAULT` does not escape raw HTML unless `:SAFE`/`UNSAFE` says so", question left open | Raw HTML is **deleted** (`<!-- raw HTML omitted -->`), not escaped. There is no sanitize call because no author HTML is ever emitted. Saying "escaping" is how someone later reasons their way to enabling `:UNSAFE` — which would also *not* enable `tagfilter`, because the renderer is built with `extensions: []`. | 065, 071 |
+| C-02 | §8 listed x-default, hreflang self-inclusion and duplicate-canonical as live audit errors | None can fail for a published article. The duplicate-canonical branch is unreachable because the DB's unique index catches the collision first. | 070, 073 |
+| C-03 | §7: "`DOC_ARTICLES` — 87 keys" | **62 keys** (plus 19 `COMMERCE_ERROR_ARTICLES` mappings = 81 `key: 'value'` lines). I verified this myself after the challenge. | 076 |
+
+All three are now corrected in `01-current-system.md`, with the correction and its evidence left in place rather
+than quietly overwritten.
+
+## Decisive findings for the Phase 4 contracts
+
+**Source of truth.** Agent 069 recommends **Option C, controlled hybrid with files canonical by default**, and the
+mechanism matters: the detachment marker must be a **column** (`doc_source`, `doc_detached_at`), not a `meta`
+key, because both writers replace `meta` wholesale. The precedent already exists in this repository
+(`db/migrate/20260623000000_add_draft_columns_to_articles.rb`). The seeder skips and *reports* detached rows,
+with a non-zero exit so it can gate. Retirement becomes front-matter `retired: true` → `archived`, and the file
+stays. Three prerequisite fixes are nearly one-liners: merge `meta` instead of replacing it, drop `slug` and
+`locale` from `FORM_ATTRIBUTES`, and stop forcing `status`. `audited` on `Article` is a prerequisite of any
+edit-permitting option, and `docs/global-documentation/10-global-docs-implementation.md:120` explicitly deferred
+it. **A/B/C cannot be frozen until B-07 is settled** — under Option A with a non-syncing deploy, the corpus
+cannot be corrected at all, including taking down something wrong.
+
+**Editor.** Agent 071 establishes that raw HTML is impossible on **both** sides — the server omits it and the
+editor's own schema cannot represent it (`html: false`, no `html_block` node). The corpus has **no callout
+convention to inherit** (zero uses of Note/Warning/Important/Tip/Caution as labels), and cautions were instead
+routed into `## Limits` (52 files), `## If it does not work` (39) and `## Who can do this` (45). Recommendation:
+one component — a callout with two variants, Note and Warning — expressed as `> **Note** — …` and recognised by a
+renderer override, with labels declared in YAML on the existing `config/markdown_embeds.yml` pattern. It
+round-trips byte-exact. `> [!NOTE]` is **provably broken** here, because prosemirror-markdown escapes `[` and
+`]`. Steps, tables, UI paths and key names are **already** the component set — written down, measured, not to be
+replaced.
+
+**But 071 found a blocker under the editor itself**: the round trip is **already lossy for ordinary prose**.
+`softbreak` becomes `hard_break` with `breaks: true`, and `hard_break` serialises as `'\\\n'` — so every
+~110-column wrap in all 126 files becomes an explicit `<br />` on the first editor save. The component set cannot
+be frozen until 067 and 069 arbitrate that.
+
+**Arabic/RTL.** The public documentation layout emits `lang` but **never `dir`**
+(`app/views/layouts/portal.html+documentation.erb:2`); `dir="rtl"` arrives only from JavaScript after first
+paint, so an Arabic article paints LTR and stays LTR if the script fails. Three agents flag it (069, 071, 072).
+An RTL preview cannot be built on a layout that has no RTL. Tailwind Typography itself is already fully
+logical-property based, and the corpus already mirrors UI-path arrows per locale (EN 141 `→` / 0 `←`; AR 137 `←`
+/ 2 `→`), so the convention is real — it is the layout that is missing.
+
+**Meta documentation has moved.** `/docs/whatsapp/**` → `/documentation/business-messaging/whatsapp/**`. Several
+old URLs are redirect stubs, 404s, or navigation-only shells, while a few pages serve *only* from the old path.
+Agent 010 found the decisive technique: **appending `.md` to any path in
+`developers.facebook.com/documentation/business-messaging/whatsapp/llms.txt` returns the full plain-text
+article.** Every Meta URL in the corpus and in the code needs re-checking, and the program must freeze one URL
+convention before Phase 5. Reported independently by 001, 005, 009, 010, 011, 012, 013, 014.
+
+**The error taxonomy question is now answerable.** Agent 005 reproduced ~100 published WhatsApp codes across
+Meta's ten sections; the corpus has per-code articles for **4** of them. Three facts decide the model:
+Meta publishes **no HTTP status** for send failures and says to build handling on `code` and `error_data.details`
+rather than subcodes or status; **`error_subcode` is not returned by Cloud API v16.0+**, so any taxonomy keyed on
+subcode is wrong; and **code 2388103 carries 11 distinct failures under one code**, discriminated only by the
+string Meta tells you not to depend on. Agent 005 also found that **131060 is not a request-time failure at all**
+and the existing corpus article is scoped to the wrong channel, and that **code 368 contradicts itself across
+Meta's own pages**. Agent 011 adds that 132001 conflates "template does not exist in that language" with "not
+approved" — two different user fixes behind one code — and that **no language fallback exists anywhere in Meta's
+docs**, so `(name, language)` must be treated as the lookup key.

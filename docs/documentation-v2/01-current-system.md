@@ -159,12 +159,42 @@ Markdown → HTML goes through `ChatwootMarkdownRenderer#render_article`, which 
 `:table` extension through `CustomMarkdownRenderer` and then calls `html_safe` with a RuboCop
 `Rails/OutputSafety` disable (`lib/chatwoot_markdown_renderer.rb:14-21,27-31`).
 
-**No `sanitize` call appears in that path.** Grepping the portal documentation views and the renderer for
-`sanitize` returns nothing. CommonMark's own `:DEFAULT` option set does not escape raw HTML blocks unless
-`:SAFE`/`UNSAFE` handling says so, and `CustomMarkdownRenderer`/`BaseMarkdownRenderer` must be read before any
-claim is made either way. **This is the single most important security question in the program**, because the
-editor upgrade is about to let an author paste rich content. Agents 065, 081, 082 and 084 own it; nothing in
-Phase 4 gets frozen until they report.
+**CORRECTED 2026-10-13, after agents 065, 071 and 085 read the path in full.** My original text here said no
+`sanitize` call appears and that CommonMark's `:DEFAULT` set "does not escape raw HTML blocks unless
+`:SAFE`/`UNSAFE` handling says so", leaving the question open. That framing was wrong in a way that matters, so
+the corrected finding:
+
+- **Raw HTML is DELETED, not escaped.** `CustomMarkdownRenderer.new` is built with `options: :DEFAULT`
+  (`lib/custom_markdown_renderer.rb` via `renderer.rb:10`); `:UNSAFE` (`1<<17`) is never set, and `:UNSAFE`
+  appears nowhere in the repository. CommonMarker's HTML renderer therefore emits `<!-- raw HTML omitted -->`
+  for both block and inline HTML (`commonmarker-0.23.12/lib/commonmarker/renderer/html_renderer.rb:110-126`),
+  which `spec/lib/custom_markdown_renderer_spec.rb:31-38` already asserts. There is no `sanitize` call because
+  no author HTML is ever emitted. The mechanism is **omission**, and saying "escaping" is how someone later
+  reasons their way to turning `:UNSAFE` on.
+- **`javascript:`, `vbscript:`, `file:` and `data:` URLs are blanked** by
+  `lib/markdown_renderer_url_sanitizer.rb:14-18`. The `\A` anchor holds, because cmark's own `cmark_clean_url`
+  trims whitespace and decodes entities before Ruby sees the URL. `blob:`, `intent:` and protocol-relative
+  `//host` pass.
+- **`onerror`/`onload` are unreachable**: the hand-built `<img>`/`<a>` interpolate only through `escape_href`,
+  `escape_html` and a `\A(\d+)px\z`-bounded width.
+- **A latent trap**: enabling `:UNSAFE` would NOT enable `tagfilter`, because the renderer is built with
+  `extensions: []`. A "one-flag" change to let authors write HTML is a full stored-XSS hole, not a relaxation.
+
+**But the real finding is one nobody was looking for.** `config/markdown_embeds.yml` already turns a bare
+Markdown link into raw embed HTML for **11 providers** — 8 iframes, one `<video>`, and **two that emit
+third-party `<script>` tags (Wistia and GitHub Gist)** — interpolated verbatim by
+`lib/custom_markdown_renderer.rb:198-209` with no sanitizer pass afterwards. Gist content is attacker-authored.
+So an author can publish third-party script on the product's own origin with one Markdown link, today, and the
+portal's Content-Security-Policy is `object-src 'none'; base-uri 'self'` and nothing else
+(`config/initializers/content_security_policy.rb:14-17`) — no `script-src`, no `default-src`, no `frame-src`.
+`object-src 'none'` blocks `<object>`/`<embed>`; it does not block an iframe or a script tag.
+
+Worse, `?show_plain_layout=true` — **the Super Admin preview URL** — deletes `X-Frame-Options`
+(`base_controller.rb:66-68`) with no `frame-ancestors` to replace it, so any site can frame any article.
+
+The corpus uses **zero** embeds and **zero** images today, so the cost of removing `github_gist` and `wistia`
+from that YAML is nil. That file is imported by the dashboard editor too
+(`app/javascript/dashboard/helper/markdownEmbeds.js:1`), so it needs one owner across both trees.
 
 ## 6. Authoring: Administrate, and a textarea
 
@@ -193,7 +223,9 @@ content quality checks, or any relationship to the Markdown files that the seede
 `app/javascript/dashboard/helper/documentationLinks.js` is the single registry — *"a documentation link lives in
 exactly one place and a Vue file never carries a URL"*. It exports:
 
-- `DOC_ARTICLES` — **87 keys**, grouped by product area, each mapping a product moment to a stable article slug
+- `DOC_ARTICLES` — **62 keys** (corrected 2026-10-13; I first wrote 87, agent 076 challenged it and is right — 62
+  `DOC_ARTICLES` keys plus 19 `COMMERCE_ERROR_ARTICLES` mappings is 81 `key: 'value'` lines in the file),
+  grouped by product area, each mapping a product moment to a stable article slug
 - `documentationArticleUrl(base, key)` — builds the URL from the installation's own `DOCUMENTATION_URL`; returns
   `''` when the installation has no documentation URL, so the caller renders no link
 - `commerceErrorArticle(code)` — maps 19 `Commerce::Error` codes onto **5** articles, grouped by *remedy*
@@ -220,8 +252,8 @@ and 0 on warnings only, and it audits **data rather than templates** — deliber
 | canonical URL without a host | error |
 | missing title | error |
 | missing meta description *and* description | error |
-| hreflang set not containing the article itself | error |
-| hreflang set without `x-default` | error |
+| hreflang set not containing the article itself | error — **but unreachable, see below** |
+| hreflang set without `x-default` | error — **but unreachable, see below** |
 | duplicate hreflang locales | error |
 | structured data that fails to build | error |
 | title over 60 chars | warning |
@@ -229,6 +261,28 @@ and 0 on warnings only, and it audits **data rather than templates** — deliber
 
 It renders through the real helpers (`DocumentationHelper`, `PortalHelper`) rather than reimplementing them
 (`documentation_seo_audit.rake:36-38`). The reported production run was `0 SEO errors / INDEXABLE`.
+
+**CORRECTED 2026-10-13.** I listed those checks as if they were live gates. Agents 070 and 073 established that
+several of them cannot fail, which makes "0 SEO errors" a much weaker statement than it reads as:
+
+- The **duplicate-canonical** error is structurally unreachable: `index_articles_on_slug` is UNIQUE, so the
+  database refuses the collision before the audit can see it. Its own spec has to stub `Article#slug` to reach
+  the branch (`spec/.../task_documentation_seo_audit_spec.rb:50-56`).
+- **x-default** and **hreflang self-inclusion** cannot fail for a published article, because the alternates are
+  derived from `associated_article_id` rather than from the slug suffix.
+- The **title-length warning measures the wrong field** — `article.title`, while the page renders `meta['title']`
+  when present. It flags four files that already carry a compliant `seo_title`, and misses the real problem:
+  the rendered `<title>` appends `" | Lynomia Chat Documentation"`, a 29-character suffix the audit never
+  counts, so **27 of 126 articles render a `<title>` over 60 characters while the audit reports 4**.
+- A **hostless canonical passes**: with `HELPCENTER_URL` and `FRONTEND_URL` unset — or `HELPCENTER_URL` set to
+  the empty string, which is truthy in Ruby and therefore shadows the fallback — every URL becomes
+  `https://hc/...`, and `start_with?('http')` is satisfied.
+- The audit cannot see the failure modes this program will actually create: a renamed slug leaving a live
+  duplicate article at the old slug that the seeder recreates and nothing deletes; an article orphaned from
+  every index; a `DOC_ARTICLES` key resolving to nothing; thin or duplicated content.
+
+So the audit is a useful per-article front-matter check and **not** a corpus integrity check. The program needs
+the second thing, and it does not exist yet.
 
 Agents 073–080 own canonical/hreflang, sitemap/robots, JSON-LD, internal linking, search relevance, synonyms,
 retirement/redirects and image/CWV.

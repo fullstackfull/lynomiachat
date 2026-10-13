@@ -62,47 +62,56 @@ describe('ChannelItem availability', () => {
     window.chatwootConfig = originalConfig;
   });
 
-  // WhatsApp was the one OAuth/SDK provider offered unconditionally: it sat in the fallback `includes(key)`
-  // list while facebook, instagram and tiktok each checked their installation credential. A workspace on an
-  // installation with no WhatsApp configuration could click through to a signup that cannot complete.
+  // THE REGRESSION THESE EXAMPLES EXIST TO PREVENT.
+  //
+  // An earlier version of this component gated the WhatsApp tile on the Meta embedded-signup credentials
+  // (whatsappAppId, whatsappConfigurationId), by analogy with facebook/instagram/tiktok. That analogy is
+  // wrong, and it shipped. The tile does not open an embedded signup; it opens a PROVIDER SELECTION page
+  // (settings/inbox/channels/Whatsapp.vue:98-125) whose list is WhatsApp Cloud (whose description switches to
+  // manual setup when embedded signup is unavailable), Twilio, and -- only when `canUseEmbeddedSignup` --
+  // the Meta embedded-signup option. Two of the three never touch the Meta credentials, and the page already
+  // removes the one that does. So gating the tile left an installation running Twilio or manual Cloud API
+  // with no route to a WhatsApp inbox at all.
+  //
+  // The real "cannot complete" guard is in the composable: useWhatsappEmbeddedSignup refuses before loading
+  // the SDK and surfaces a named error, rather than sending config_id: undefined to Meta.
   describe('whatsapp', () => {
-    it('is available when both the app id and the configuration id are present', () => {
+    it('is available with the Meta credentials present', () => {
       expect(isDisabled(mountTile('whatsapp'))).toBe(false);
     });
 
-    it('is unavailable when the configuration id is missing', () => {
-      delete window.chatwootConfig.whatsappConfigurationId;
+    it.each([
+      [
+        'the configuration id is missing',
+        c => delete c.whatsappConfigurationId,
+      ],
+      [
+        'the configuration id is blank',
+        c => {
+          c.whatsappConfigurationId = '';
+        },
+      ],
+      ['the app id is missing', c => delete c.whatsappAppId],
+      [
+        "the app id is the 'none' sentinel",
+        c => {
+          c.whatsappAppId = 'none';
+        },
+      ],
+      [
+        'there is no installation config at all',
+        () => {
+          window.chatwootConfig = {};
+        },
+      ],
+    ])(
+      'stays available when %s, because Twilio and manual Cloud API do not need it',
+      (_label, mutate) => {
+        mutate(window.chatwootConfig);
 
-      expect(isDisabled(mountTile('whatsapp'))).toBe(true);
-    });
-
-    it('is unavailable when the configuration id is blank', () => {
-      window.chatwootConfig.whatsappConfigurationId = '';
-
-      expect(isDisabled(mountTile('whatsapp'))).toBe(true);
-    });
-
-    it('is unavailable when the app id is missing', () => {
-      delete window.chatwootConfig.whatsappAppId;
-
-      expect(isDisabled(mountTile('whatsapp'))).toBe(true);
-    });
-
-    // The sentinel an installation uses for "no Meta app"; useChannelConfig reads it the same way.
-    it("is unavailable when the app id is the 'none' sentinel", () => {
-      window.chatwootConfig.whatsappAppId = 'none';
-
-      expect(isDisabled(mountTile('whatsapp'))).toBe(true);
-    });
-
-    // Disabled rather than hidden: the component renders the tile either way and binds `disabled`, which is
-    // the pattern it already uses for the other three providers.
-    it('still renders the tile when unavailable, rather than hiding it', () => {
-      delete window.chatwootConfig.whatsappConfigurationId;
-      const wrapper = mountTile('whatsapp');
-
-      expect(wrapper.findComponent(ChannelSelectorStub).exists()).toBe(true);
-    });
+        expect(isDisabled(mountTile('whatsapp'))).toBe(false);
+      }
+    );
   });
 
   // Asserted so the whatsapp branch cannot have changed the providers around it.

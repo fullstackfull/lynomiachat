@@ -896,6 +896,16 @@ message. Six examples assert `FB.login` **and** the SDK loader are never called.
 
 ### N.5 WhatsApp onboarding tile follows the existing pattern
 
+> **WITHDRAWN AFTER MERGE — this section is wrong at its premise and the change it describes was reverted.**
+> The tile does not open an embedded signup; it opens a provider selection page offering WhatsApp Cloud manual
+> setup and Twilio, neither of which uses the Meta credentials, plus the Meta option that the page already
+> omits when `canUseEmbeddedSignup` is false. Gating the tile left an installation on Twilio or manual Cloud
+> API with no route to a WhatsApp inbox at all. It reached `lynomia-custom` before an adversarial audit of the
+> frozen diff caught it. Full account, evidence and the both-ways proof:
+> `docs/documentation-v2/P2-RULINGS-IMPLEMENTATION.md` §C2. The §N.4 composable guard is unaffected and
+> stands. The original text is kept below unaltered.
+
+
 WhatsApp was the one OAuth/SDK provider offered unconditionally: it sat in `ChannelItem`'s fallback
 `includes(key)` list while facebook, instagram and tiktok each checked their installation credential. It now
 applies the same three conditions `useChannelConfig` already computes, and is **rendered disabled rather than

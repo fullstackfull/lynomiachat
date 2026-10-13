@@ -574,3 +574,38 @@ through `Documentation::Library.articles`, so that unpublishing an article actua
 And a decisive argument against signed IDs in article content: because `urls_expire_in` is nil, **rotating
 `SECRET_KEY_BASE` would break every embedded image URL at once**, and they would be unfindable inside free-text
 `articles.content`.
+
+---
+
+# Addendum 6 — the refuters correct the ledger
+
+Agent 096 re-derived my PD entries from the files rather than from the digests I built them out of. It confirmed
+PD-03, PD-05, PD-10, PD-36, PD-46 and 064's search finding — several of them *wider* than recorded — and
+corrected three. Corrections first, because a wrong ledger entry is worse than a missing one.
+
+| Entry | Correction |
+|---|---|
+| **PD-11** | **Downgraded to minor and removed from XA-13.** I recorded `knowledge_base_manage` as granting nothing. The policy finding holds, but the *impact* does not: the permission is not offered in the role editor, has no nav or command entry, its routes sit behind a `help_center` feature that ships `enabled: false`, **and the corpus already describes it correctly**. XA-13 drops from seven instances to six. This is the one permission the corpus gets right. |
+| **PD-36** | **Reworded.** My entry reads as a visibility hole; it is not — the bulk-actions job *does* narrow by capability. The real defect it obscured: `fields: [:assignee_id, :team_id]` are written raw by `conversation.update` with **no account scoping**, while both single-record paths scope them — a cross-account assignee/team write that notifies a non-member. |
+| **PD-10** | **Needs a DC entry beside its PD entry.** Both locales of `roles-and-permissions.md:36` document the `report_manage` grant as real. A corpus writer must **not** reword it to "grants nothing" while the role editor still offers it — that is a product decision, not a writing one. Escalated, too: `routeHelpers.js:28` makes `reports/overview` the **post-login landing page** for a holder of that permission, so they land on a page where every panel 401s. |
+
+New from 096, and the most consequential: **`create` is routed with no `only:`**, so a Super Admin can author an
+article *directly into a named tenant portal* — no mistake required, and no spec exists for any of
+`SuperAdmin::{Articles,Portals,Categories}Controller`. `category_id` and the whole `CategoryDashboard` have the
+same shape as SEC-02. And `roles-and-permissions.md:55,58` (both locales) states "inboxes and channels …
+administrator-only, with no middle ground" — **a documented security boundary the product does not keep**, while
+PD-03 stands.
+
+Also newly recorded: canned responses — the product's broadest unauthorized write surface — appear in **neither**
+the permission table nor the "what is not on the list" section of the article that describes authorization, and
+`settings.routes.js:50` makes that page the **default settings page for non-administrators**. Message `destroy`
+has no ownership check either: any member who can open a conversation can delete another agent's reply or a
+customer's incoming message, and the custom overlay audits it rather than gating it.
+
+**What 096 could not break, and says not to relax**: the three `Custom::` documentation policies deny
+unconditionally and the overlay is genuinely wired; row separation is a **model** invariant on `Portal`, so
+`Account#articles` can never hold a platform article, which closes the reverse of SEC-01; `PortalDashboard`
+cannot flip `platform_owned`; `author` is not form-editable; draft public reads are super-admin-gated; there is
+no web surface for content seeding; Super Admin is CSRF-protected; Platform Support's authorization is clean and
+holds the repository's only policy-checked blob read; and five of eight custom-role permissions are honestly
+enforced.

@@ -367,3 +367,114 @@ That is a real coverage hole and it is **bounded and known**, which is the usefu
 agent now: the register records exactly which codes are unclaimed and from which page they must be cited, so
 Phase 4 closes it with one targeted pass rather than another research wave. Recording a gap precisely is worth
 more here than a hurried attempt to fill it — and the charter's own standard is that a title is not coverage.
+
+## R11-AMENDED — agent 088 refuted agent 028, and it is right
+
+**Forced by**: 088, re-fetching each agent's own cited page rather than trusting a cross-reference.
+
+I wrote R11 striking 23 codes on agent 028's authority. **Agent 088 refuted that, and I am amending rather than
+defending.** 028's premise — that its own 12 sources were "every error-code reference Meta publishes" — is
+false, and its method was absence-of-evidence across a source set it had chosen itself.
+
+**12 of the 23 struck codes are verbatim on the pages their original agents cited**: 192, 200002, 139000
+(`graph-api/reference/whats-app-business-account/message_templates/`); 136024, 137000
+(`business-phone-numbers/phone-numbers.md`); 283, 104, 80001 (`graph-api/reference/page/roles`); 415, 457, 370,
+613 (`graph-api/reference/business/business_users/`).
+
+**Those 12 are restored.** They are cited, and they may be published. The strike stands only for the remaining
+11, pending the same per-page re-check.
+
+Two further 028 instructions are withdrawn:
+
+- **80008's sentence is not wrong.** "There have been too many calls to this WhatsApp Business account. Wait a
+  bit and try again." is printed verbatim on the `message_templates` GET/POST/DELETE page *and* on
+  `subscribed_apps` — the two pages agents 009 and 013 actually cited. 028 told me to strike it; 088 fetched it.
+- **028's own self-correction is accepted**: its claim that Meta publishes no titles was too broad, and agent
+  005 was right that the template-creation, migration and insights tables do carry titles.
+
+**The method ruling that follows, and it generalises beyond error codes.** A claim is verified or refuted by
+**fetching the source the claiming agent cited** — not by checking whether a different agent's source set
+happens to contain it, and not by counting how many agents agree. 088's line is the right standard and I am
+adopting it program-wide: *"Three independent reports is strong is not a substitute for one fetch."* Agent 028's
+§9 table gets rebuilt that way before Phase 4 freezes the taxonomy, and the same verification runs over the
+error-code claims in reports 001, 003, 007, 015–024, 026 and 027, which landed during or after 088's run and are
+therefore unchecked.
+
+This is the clearest vindication of the refuter design in the program: the completeness backstop was itself
+incomplete, and only an agent whose job was to attack it found that out.
+
+## R12 — The deployment question has to be reposed, because production is not where we thought
+
+**Forced by**: 097, and verified by me directly against git.
+
+### What 097 found
+
+The production run the brief cites as evidence — `38 created / 19 updated / 67 unchanged / 124 published` —
+**did not repair the corpus, and the counters prove it.** They sum to the number of files *read*
+(`content_seeder.rb:82,115-123`, with no rescue), so 38+19+67 = **124**. The baseline tree has **126**.
+
+I verified this myself rather than taking it on report:
+
+```
+files at baseline 021ea6e3: 126
+files at 309d7a20:          124
+contact-lynomia-support.md added in 48574e65 — an ancestor of the baseline
+```
+
+So that hand-run processed a tree that predates `contact-lynomia-support` in **both** locales. **Production is
+two articles behind HEAD, the two missing articles are the Platform Support Desk's only documentation link, and
+nothing anywhere reports the shortfall.** Agent 079 suspected this and could not prove it; 097 proved it from
+git history. The consequence is that the `contactLynomiaSupport` contextual-help link — the one a stuck customer
+clicks to reach the support desk you just shipped — is very likely a 404 in production right now.
+
+(Stated honestly: a 124-file count matching that commit is strong evidence, not proof. One operator query
+settles it, and that query is in the owner list.)
+
+### Why this changes the question rather than answering it
+
+Checkpoint 1 §L posed six questions about *where in the deploy pipeline* a content sync belongs. **097 shows
+that question was not yet well-posed**, because it assumed production and HEAD were in sync apart from the
+missing call. They are not. Sequencing a sync into a pipeline is the second problem; the first is that the
+corpus has silent drift with no detector.
+
+**Ruling.** Phase 4 answers these in order, and the ordering is not negotiable:
+
+1. **A drift detector before a scheduler.** Something must be able to say "production holds N articles, the tree
+   holds M, here are the differences" — files-versus-rows, both directions, including orphans. Until that exists,
+   no sync placement can be validated, because a short run is indistinguishable from a complete one. This is
+   also the check agent 069 asked for and the thing the SEO audit structurally cannot see.
+2. **Convergence, proven by a spec that can fail.** 097 confirmed 069's non-convergence finding *and* found that
+   the existing spec cannot detect it: `content_seeder_spec.rb:19-42` builds exactly **one** section, so a
+   section move is structurally unrepresentable, and `:55-64` asserts convergence over the only shape where
+   convergence was never in doubt. A green suite is currently evidence of nothing here.
+3. **The mid-run aborts, named.** 097 found four unnamed ways the sync dies part-way: an empty body against a
+   forced `published`; a file named `search.md` or `categories.md`; a documentation key colliding with a
+   changelog key through the global unique slug index with no model validation; and `release_date: <date time>`
+   raising `Psych::DisallowedClass`. CI catches none. A new section directory absent from `manifest.yml` passes
+   every CI check and is silently never seeded — *the original bug, one layer down, with the suite green.*
+
+### Three corrections to my own §4
+
+097 attacked my framing and was right three times:
+
+- **The hazard I posed first does not exist.** I wrote that running the sync before the restart means "old code
+  writes content new code expects". After `deploy.sh:232` the working tree *is* the release, so every placement
+  runs new code. The real window is **stage 6 plus stage 6b** — two Vite builds and thirty boot-and-sleep probe
+  cycles — during which new rows are served by the old renderer. That is **minutes**, not an instant, and it is
+  a different risk requiring a different answer.
+- **My question 6 was already answered.** "Should `status` be force-written at all?" — no; `content_seeder.rb:101`
+  plus the absent retirement path settle it.
+- **I overstated `SuperAdmin.first`.** It orders by id, and the raise sits in `initialize`, before any write — so
+  it is a startup precondition, not a mid-run hazard.
+
+### And the SEO audit cannot be the gate
+
+097 established why, beyond what agent 070 found: it audits **all** portals including tenants' (`PORTAL_SLUG` is
+optional), it is read-only and runs last, its only environment-level error is dead code, and it returns
+**INDEXABLE for a corpus missing every Arabic sibling**. Meanwhile the deploy's own ERR trap prints *"Nothing was
+restarted; the previous version is still serving"* — which is **false after a partial sync** — and `ROLLBACK.md`
+is code-only, reversing no content at all.
+
+The real concurrency hazard is also not the one I expected: no job writes `Article`, so the Sidekiq drain is
+irrelevant. It is `increment_view_count` on the public read path, which is the unnamed cost of the obvious
+"wrap the whole sync in a transaction" fix.

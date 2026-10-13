@@ -103,7 +103,7 @@ claim column are the English article's. The Arabic text makes the same claims at
 | W26 | 100-101 | Bulk selection covers only the visible page | confirmed | `bulkActions.json` `ALL_CONVERSATIONS_SELECTED_ALERT` |
 | W27 | 100-101 | Bulk reaches status, snooze, agent, team, labels - not priority | confirmed, incomplete | `bulk_actions_controller.rb:100-102,119`; bulk bar `conversationBulkActions/`. Omitted: bulk resolve **skips** conversations missing required attributes (`bulkActions.json` `RESOLVE.PARTIAL_SUCCESS`) |
 | W28 | 102-104 | Folder conditions: status, assignee, priority, channel, team, contact, campaign, labels, browser language, referrer, dates, custom attributes | **wrong** (incomplete) | The live filter has two more: **message delivery status** (failed/sent/delivered/read) and **conversation ID** (`components-next/filter/provider.js:132-143,226`). The first is the only way to find a failed send and is the subject of `whatsapp-find-a-failed-message.md` |
-| W29 | 105-106 | Muting resolves the conversation and blocks the contact | confirmed | `conversation_mute_helpers.rb:4-10`; new conversations from a blocked contact are born resolved (`conversation.rb:307-309`) and do not reopen (`message.rb:405`). **But the agent never sees the word "mute"**: the More-actions item is **"Block Contact" / "Unblock Contact"** (`MoreActions.vue:32-52`; `contact.json` `CONTACT_PANEL.MUTE_CONTACT`). "Mute" is only the macro/automation action name (`macros.json` `MUTE_CONVERSATION`). The article never says where it is or how to undo it |
+| W29 | 105-106 | Muting resolves the conversation and blocks the contact | confirmed | `conversation_mute_helpers.rb:4-10`; new conversations from a blocked contact are born resolved (`conversation.rb:307-309`) and do not reopen (`message.rb:405`). **But the agent never sees the word "mute"**: the More-actions item is **"Block Contact" / "Unblock Contact"** (`MoreActions.vue:32-52`; `contact.json` `CONTACT_PANEL.MUTE_CONTACT`). "Mute" is only the macro/automation action name (`macros.json` `MUTE_CONVERSATION`). The article never says where it is or how to undo it (029 section 10 item 1 makes the same naming point and treats the "opens a conversation" wording as unproven - see 3.9) |
 | W30 | 121-122 | "Only send a template" = the WhatsApp 24-hour window, not permissions | confirmed (WhatsApp only) | `ReplyBox.vue:225-238`; `conversation.json` `MESSAGING_RESTRICTED_WHATSAPP`. Other channels have their own windows (Facebook/Instagram 24 h, TikTok 48 h, API inbox configurable - `MessagesView.vue:200-258`) and a **bot-owned Pending** conversation locks the composer to notes until "Take over" (`ReplyBox.vue:276-281`, `ReplyBoxBanner.vue:128-144`); the troubleshooting entry covers none of these |
 
 ### 3.2 `assign-and-prioritise`
@@ -220,6 +220,20 @@ Liquid really blanks an unknown name (read from `liquidable.rb` and Liquid's non
 `conversation_unread_counts`, `unread_count_for_filters`, `delayed_automations` and `advanced_assignment` on real accounts (the
 charter forbids touching them); whether a super admin can set a premium flag per account; the macro-sent WhatsApp message delivery
 path (M12); the Instagram Messenger send path's private-note exclusion; the natural-language snooze parser's accepted phrases.
+
+### 3.9 Agreement and disagreement with the sibling reports
+
+Read after writing section 3, to help the orchestrator de-duplicate; nothing above was changed to match them.
+
+| topic | sibling | relation |
+|---|---|---|
+| "Assigning a bot sets Pending and clears the human" | `029-conversation-inbox-lifecycle.md` section 10 item 4 | 029 left this **unverified**, saying it needed a read of `app/services/conversations/assignment_service.rb`. Read here: `assign_ai_assignee` clears the assignee and sets `pending` (`:37-47`), reached from the assignments endpoint when `assignee_type` is `AgentBot` (`assignments_controller.rb:3-5,15-23`). A15 is **confirmed**; 029's "partly" should be updated |
+| "Nothing further from that person opens a conversation" (mute) | 029 section 10 item 1 | same facts, different wording-verdict: 029 calls the sentence unproven because a resolved conversation is still created and listed under Resolved/All; W29 marks it confirmed in effect. Arbitrate on wording, not on behaviour |
+| Team-only access (`W24`) | 029 section 10 item 3 | agree |
+| Custom-role "participating" (`W25`) | `033-custom-roles-permissions.md:42,328` | agree: assigned-to-me only, `participant?` never called |
+| Balanced assignment, Auto offline (`A6`, `A12`) | `032-teams-assignment.md:137-139,188` | agree |
+| Variables: server-side Liquid, undefined-variable confirmation (`C8-C10`) | `035-canned-responses-macros.md:68-70,295`; `030-composer-attachments.md:338-350` | agree on mechanism. 030 rates `canned-responses.md:66-67` confirmed for the empty-but-known case, as C7 does; the unknown-name statements at `:99` and `:112-113` are the ones that fail |
+| "Block Contact" naming, missing `block-a-contact` article | 029 sections 9-10 | agree |
 
 ## 4. Missing articles
 

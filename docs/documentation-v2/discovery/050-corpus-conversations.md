@@ -32,20 +32,20 @@ slug = `<key>-ar` (`content_seeder.rb:85-87`).
 | **total** | | | **5985** | **5130** | |
 
 How the four wired links work: `BaseSettingsHeader.vue:46` -> `getHelpUrlForFeature` (`featureHelper.js:66-80`), which only
-returns a documentation URL on a **branded** installation (`featureHelper.js:73-76`). The `automation` header resolves to
+returns a documentation URL on a **branded** installation (`featureHelper.js:75-77`). The `automation` header resolves to
 `automation-rules`, not to `macros-or-automation` (`featureHelper.js:10`). The inbox itself - conversation list, filter panel,
 status dropdown, composer, side panel, bulk bar - carries **no** documentation link: the only callers of `DocsLink`/`docsLink`
-are Commerce, Platform Support and `MessageError.vue` (grep across `app/javascript`).
+are Commerce, Platform Support, `MessageError.vue` and the profile-menu "Documentation" item (grep across `app/javascript`).
 
 ## 2. Per-article verdict
 
 | key | verdict | reason (one sentence) | evidence |
 |---|---|---|---|
 | `work-in-the-inbox` | **SPLIT**, then REWRITE the pieces | One 1,033-word landing page carries nine tasks (statuses, narrowing, folders, notes, mentions, permissions, bulk, block, troubleshooting) with no click paths, and it holds the section's worst errors (the Pending row, "Participating", custom-role narrowing, folder conditions). | W3, W12, W16, W24, W25, W28, W29 |
-| `assign-and-prioritise` | **REWRITE** the auto-assignment half; keep the manual half | Manual assignment, team behaviour and "priority is a marker" are right, but "online" omits dashboard presence/Auto-offline (the commonest cause of "nothing is assigned") and the policy paragraph promises a "balanced" order and a "paid capability" this build can neither store nor sell. | A6, A12, A13 |
-| `labels` | **KEEP** (two sentence fixes) | The strongest article: conversation-vs-contact labels, naming rules, permissions, rename/delete and bulk limits all check out; only the opening "nothing ever adds a label" and the sidebar unread-count claim need changing. | L1-L12 |
+| `assign-and-prioritise` | **REWRITE** the auto-assignment half; keep the manual half | Manual assignment, team behaviour and "priority is a marker" are right, but "online" omits dashboard presence/Auto-offline (the commonest cause of "nothing is assigned") and the policy paragraph promises a "balanced" order and a "paid capability" this build can neither store nor sell. | A6, A11, A12 |
+| `labels` | **KEEP** (two sentence fixes) | The strongest article: conversation-vs-contact labels, naming rules, permissions, rename/delete and bulk limits all check out; only the opening "nothing ever adds a label" and the sidebar unread-count claim need changing. | L1, L10 |
 | `canned-responses` | **REWRITE** the Variables section | Picker, search, scope and permissions are right, but three statements about variables are contradicted by code (a pre-send warning exists; a misspelled variable renders empty, not literally; the composer does not always show the final text). | C8, C9, C10 |
-| `macros` | **KEEP** (one fix, add visuals) | All 15 actions, visibility, per-agent order, silent failure, Self and Mute semantics confirmed; the "label that does not exist" troubleshooting claim is wrong, and the starter gallery and `#` picker are visual features with no image. | M1-M18, M19 |
+| `macros` | **KEEP** (one fix, add visuals) | All 15 actions, visibility, per-agent order, silent failure, Self and Mute semantics confirmed; the "label that does not exist" troubleshooting claim is wrong, and the starter gallery and `#` picker are visual features with no image. | M17 |
 | `macros-or-automation` | **EXPAND** (+3 corrections) | The "person vs event" distinction is right, but the trigger and action inventories are presented as complete and are not (WhatsApp-template action, cart-abandoned trigger, message-level delayed triggers) and one sentence about commerce rules is wrong. | MA4, MA6, MA7, MA10 |
 
 Nothing proposed for MERGE, RETIRE or RELOCATE: I found no evidence for moving `macros-or-automation` into the automation
@@ -315,14 +315,14 @@ priority levels, عامة / خاص, الردود الجاهزة, ماكروس al
 
 | AR location | EN counterpart | difference | severity |
 |---|---|---|---|
-| `ar/labels.md:45-46` | `labels.md:65` | adds "وعشرون منها ليست شريطاً جانبياً" ("and twenty of them are not a sidebar") - an invented figure and a clause that makes no sense | major (fabricated number) |
+| `ar/labels.md:65-66` | `labels.md:65` | adds "وعشرون منها ليست شريطاً جانبياً" ("and twenty of them are not a sidebar") - an invented figure and a clause that makes no sense | major (fabricated number) |
 | `ar/macros-or-automation.md:27` | `macros-or-automation.md:28` | row label "تعمل وأحد لا يعمل" is garbled; EN is "Runs while nobody is working" (the answer column "no / yes" now has no readable question) | major |
 | `ar/macros-or-automation.md:32-33` | `:33-34` | extra example "هل يبدو أن هذا العميل على وشك الرحيل؟ أقل من ذلك" not in EN | minor |
-| `ar/macros-or-automation.md:42` | `:43` | adds "حلّ محادثة" (resolving a conversation) to the examples of a fact-trigger | minor |
+| `ar/macros-or-automation.md:42` | `:43-44` | adds "حلّ محادثة" (resolving a conversation) to the examples of a fact-trigger | minor |
 | `ar/work-in-the-inbox.md:82` and `:88-89` | `:82`, `:88-89` | adds "بعد ظهر الخميس" (Thursday afternoon) and "فتراها يوم الجمعة" ("so you will see it on Friday") - invented, and Friday is a weekend day in Kuwait | minor |
 | `ar/work-in-the-inbox.md:22` | (none) | extra lead-in sentence before the two bold paragraphs | cosmetic |
 | `ar/labels.md:90-91` | `labels.md:90-91` | button left in English, "Use in a new WhatsApp campaign"; the AR UI string is "استخدمه في حملة واتساب جديدة" (`ar/contact.json:445`) | minor (reader cannot match the UI) |
-| `ar/labels.md:81-83` | `labels.md:81` | "تعيين الوسوم"; the AR contacts bulk bar says "تعيين التسميات" (`ar/contact.json` `CONTACTS_BULK_ACTIONS.ASSIGN_LABELS`) and the conversation bulk bar says "إضافة وسم" - the AR product itself uses three words (وسم / تسمية) | minor |
+| `ar/labels.md:82,89` | `labels.md:81-82,89` | "تعيين الوسوم"; the AR contacts bulk bar says "تعيين التسميات" (`ar/contact.json` `CONTACTS_BULK_ACTIONS.ASSIGN_LABELS`) and the conversation bulk bar says "إضافة وسم" - the AR product itself uses three words (وسم / تسمية) | minor |
 | `ar/work-in-the-inbox.md:46` | `:44` | "قنوات التواصل"; the AR sidebar group is "القنوات" (`ar/settings.json` `SIDEBAR.CHANNELS`) | minor |
 | Snooze button | n/a | AR UI shows "غفوة" on the status dropdown (`ar/conversation.json` `RESOLVE_DROPDOWN.SNOOZE_UNTIL`); docs say "تأجيل" | minor |
 

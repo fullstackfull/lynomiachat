@@ -1,5 +1,6 @@
 class CustomMarkdownRenderer < CommonMarker::HtmlRenderer
   include MarkdownRendererUrlSanitizer
+  include MarkdownRendererFenceInfoEscaping
 
   CONFIG_PATH = Rails.root.join('config/markdown_embeds.yml')
 

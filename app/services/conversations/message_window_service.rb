@@ -12,6 +12,23 @@ class Conversations::MessageWindowService
     last_message_in_messaging_window?(messaging_window)
   end
 
+  # Meta's HUMAN_AGENT tag is a claim about BOTH who is sending and when (Messages::HumanAgentTagEligibility), and
+  # `can_reply?` cannot answer the "when" half: it reports the EFFECTIVE window, which is already 7 days whenever
+  # the installation switch is on, so it cannot tell "still inside the standard window, where a RESPONSE is
+  # correct" from "past it, where only a tag will do". These name the two boundaries directly, off the same
+  # constants and the same last-incoming-message query the rest of this class uses, so there is still one
+  # implementation of the arithmetic.
+  #
+  # Both are false when the person has never written, which is the honest answer: there is no message to respond
+  # to and no message to be within 7 days of.
+  def in_standard_messaging_window?
+    last_message_in_messaging_window?(MESSAGING_WINDOW_24_HOURS)
+  end
+
+  def in_human_agent_window?
+    last_message_in_messaging_window?(MESSAGING_WINDOW_7_DAYS)
+  end
+
   private
 
   def messaging_window

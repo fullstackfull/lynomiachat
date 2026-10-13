@@ -26,6 +26,29 @@ export function useWhatsappEmbeddedSignup() {
 
   const runEmbeddedSignup = () => {
     if (isAuthenticating.value) return Promise.resolve(null);
+
+    // NO FB.login WITHOUT A CONFIGURATION.
+    //
+    // This path used to pass window.chatwootConfig values straight into FB.login, so a missing or blank
+    // configuration id meant `config_id: undefined` went to Meta and came back as an opaque "Login cancelled"
+    // -- indistinguishable from the user closing the popup, with nothing for an operator to act on. The
+    // reauthorize flow already refuses both missing values with these exact strings
+    // (channels/whatsapp/Reauthorize.vue:208-213, :283-288), so this reuses that source and those semantics
+    // rather than inventing either. The `'none'` sentinel counts as missing, which is how
+    // onboarding/inbox-setup/useChannelConfig.js:26-28 already reads it. Neither message echoes a value.
+    const { whatsappAppId, whatsappConfigurationId } =
+      window.chatwootConfig ?? {};
+    if (!whatsappAppId || whatsappAppId === 'none') {
+      return Promise.reject(
+        new Error(t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APP_ID_MISSING'))
+      );
+    }
+    if (!whatsappConfigurationId) {
+      return Promise.reject(
+        new Error(t('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_CONFIG_ID_MISSING'))
+      );
+    }
+
     isAuthenticating.value = true;
 
     return new Promise((resolve, reject) => {
@@ -93,12 +116,10 @@ export function useWhatsappEmbeddedSignup() {
       (async () => {
         try {
           await setupFacebookSdk(
-            window.chatwootConfig?.whatsappAppId,
+            whatsappAppId,
             window.chatwootConfig?.whatsappApiVersion
           );
-          authCode = await initWhatsAppEmbeddedSignup(
-            window.chatwootConfig?.whatsappConfigurationId
-          );
+          authCode = await initWhatsAppEmbeddedSignup(whatsappConfigurationId);
           resolveIfReady();
         } catch (error) {
           // FB.login() rejects with 'Login cancelled' when the user dismisses

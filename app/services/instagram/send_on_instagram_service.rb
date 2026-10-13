@@ -22,13 +22,7 @@ class Instagram::SendOnInstagramService < Instagram::BaseSendService
     process_response(response)
   end
 
-  def merge_human_agent_tag(params)
-    global_config = GlobalConfig.get('ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT')
-
-    return params unless global_config['ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT']
-
-    params[:messaging_type] = 'MESSAGE_TAG'
-    params[:tag] = 'HUMAN_AGENT'
-    params
+  def human_agent_config_key
+    'ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT'
   end
 end

@@ -284,4 +284,66 @@ describe('useWhatsappEmbeddedSignup', () => {
     expect(removeSpy).toHaveBeenCalledWith('message', registeredListener);
     removeSpy.mockRestore();
   });
+
+  // NO FB.login WITHOUT A CONFIGURATION. The whole point is that initWhatsAppEmbeddedSignup -- which is what
+  // calls FB.login -- is never reached, so each example asserts it was not called at all, and that the SDK was
+  // not even loaded.
+  describe('when the installation has no usable WhatsApp configuration', () => {
+    const expectRefused = async messageKey => {
+      const { runEmbeddedSignup, isAuthenticating } =
+        useWhatsappEmbeddedSignup();
+
+      await expect(runEmbeddedSignup()).rejects.toThrow(messageKey);
+
+      expect(initWhatsAppEmbeddedSignup).not.toHaveBeenCalled();
+      expect(setupFacebookSdk).not.toHaveBeenCalled();
+      expect(isAuthenticating.value).toBe(false);
+    };
+
+    it('refuses when the configuration id is absent', async () => {
+      delete window.chatwootConfig.whatsappConfigurationId;
+
+      await expectRefused(
+        'INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_CONFIG_ID_MISSING'
+      );
+    });
+
+    it('refuses when the configuration id is blank', async () => {
+      window.chatwootConfig.whatsappConfigurationId = '';
+
+      await expectRefused(
+        'INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_CONFIG_ID_MISSING'
+      );
+    });
+
+    it('refuses when the app id is absent', async () => {
+      delete window.chatwootConfig.whatsappAppId;
+
+      await expectRefused('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APP_ID_MISSING');
+    });
+
+    // `'none'` is the sentinel an installation uses for "no Meta app", and useChannelConfig already reads it
+    // as unconfigured; FB.login with it would fail at Meta rather than here.
+    it("refuses when the app id is the 'none' sentinel", async () => {
+      window.chatwootConfig.whatsappAppId = 'none';
+
+      await expectRefused('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APP_ID_MISSING');
+    });
+
+    it('refuses when chatwootConfig is missing entirely', async () => {
+      window.chatwootConfig = undefined;
+
+      await expectRefused('INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_APP_ID_MISSING');
+    });
+
+    it('does not expose the configuration value in the error', async () => {
+      window.chatwootConfig.whatsappConfigurationId = '';
+      const { runEmbeddedSignup } = useWhatsappEmbeddedSignup();
+
+      await expect(runEmbeddedSignup()).rejects.toThrow(
+        'INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_CONFIG_ID_MISSING'
+      );
+      expect(initWhatsAppEmbeddedSignup).not.toHaveBeenCalled();
+    });
+  });
 });

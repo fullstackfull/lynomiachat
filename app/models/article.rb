@@ -67,6 +67,7 @@ class Article < ApplicationRecord
   validates :title, presence: true
   validates :content, presence: true, if: :published?
   validates :slug, exclusion: { in: RESERVED_SLUGS }
+  validate :category_in_same_portal
 
   # ensuring that the position is always set correctly
   before_create :add_position_to_article
@@ -85,6 +86,20 @@ class Article < ApplicationRecord
   # without one fall to the end and keep their hand-set order among themselves.
   scope :order_by_release_date, -> { reorder(Arel.sql("articles.meta->>'release_date' DESC NULLS LAST, articles.position ASC")) }
   scope :order_by_views, -> { reorder(views: :desc) }
+
+  # LEGACY ROWS THAT `category_in_same_portal` NOW REFUSES: an article whose category belongs to a different
+  # portal. There is no foreign key on `category_id` and nothing ever tied the two columns, so these were
+  # storable before that validation existed.
+  #
+  # A scope rather than an ad-hoc query because an operator runs this on production to decide whether the
+  # read-side guards are load-bearing, and the obvious first attempt is silently wrong:
+  # `where.not(portal_id: Category.arel_table[:portal_id])` compiles to `articles.portal_id != NULL`, which is
+  # never true in SQL, so it answers "none" on any data at all. (It was written into a report as the check to
+  # run before being caught here.) The Arel form below compiles to a real column-to-column comparison, and
+  # spec/models/article_spec.rb plants a mismatched row to prove the scope finds one.
+  scope :cross_portal_category, lambda {
+    joins(:category).where(arel_table[:portal_id].not_eq(Category.arel_table[:portal_id]))
+  }
 
   # TODO: if text search slows down https://www.postgresql.org/docs/current/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS
   # - the A, B and C are for weightage. See: https://github.com/Casecommons/pg_search#weighting
@@ -109,6 +124,54 @@ class Article < ApplicationRecord
 
   def platform_owned?
     portal&.platform_owned? || false
+  end
+
+  # AN ARTICLE'S CATEGORY MUST BELONG TO THE ARTICLE'S OWN PORTAL.
+  #
+  # Nothing tied the two together: `category_id` and `portal_id` are independent columns with no constraint
+  # between them and no foreign key on `category_id`. A row whose category belongs to Lynomia's documentation
+  # portal while the article belongs to a tenant portal is therefore storable -- and the public portal lists a
+  # category's articles by `category_id` alone (eighteen read sites), so that one row renders on /docs with its
+  # title, body excerpt and, until the byline change, its author's name and avatar.
+  #
+  # Not tenant-reachable: every tenant article write is refused by Custom::ArticlePolicy. It is reachable by
+  # Lynomia's own Super Admin, because Administrate builds `Article.new(resource_params)` with both `portal_id`
+  # and `category_id` mass-assignable from the form (custom/app/dashboards/article_dashboard.rb) while
+  # `scoped_resource` only governs find. So this closes an operator foot-gun that publishes cross-portal
+  # content, at the one place both values are known.
+  #
+  # This is the WRITE half. The READ half is Category#portal_articles and Article#portal_category, which every
+  # public read goes through -- NOT a scope on the `Category#articles` association, which was tried, broke the
+  # public documentation home page and was reverted (see app/models/category.rb).
+  def category_in_same_portal
+    return if category.nil? || category.portal_id == portal_id
+
+    errors.add(:category, I18n.t('errors.articles.category_portal_mismatch'))
+  end
+
+  # THE CATEGORY THIS ARTICLE MAY BE PUBLISHED UNDER, which is none when the category belongs to a different
+  # portal. Public pages render a category's name, icon and URL beside an article; for a legacy cross-portal row
+  # that published a foreign category's name and emitted a category URL that 404s under the rendering portal.
+  def portal_category
+    category if category && category.portal_id == portal_id
+  end
+
+  # WHO TO ATTRIBUTE PUBLICLY, which is nobody for Lynomia's own documentation.
+  #
+  # `author_id` is required on every article and stays required: Super Admin needs to know who wrote a page, and
+  # Documentation::ContentSeeder stamps `SuperAdmin.first` on the whole platform corpus
+  # (custom/app/services/documentation/content_seeder.rb:22,79). But SuperAdmin is a User
+  # (app/models/super_admin.rb:47), so every public documentation page and category page was publishing a named
+  # operator's display name and avatar. The product's author is Lynomia.
+  #
+  # One reader rather than a condition in each view, because there are six render sites and they are not all
+  # HTML: both public JSON partials, both portal layouts, and the category author strip. A per-view condition
+  # closed the one a reader happened to be looking at and left the JSON API open, which is exactly what the
+  # adversarial pass over the first version of this fix found.
+  #
+  # A tenant Help Center keeps its bylines: there the author is a colleague the reader works with.
+  def public_author
+    author unless platform_owned?
   end
 
   def self.search(params)

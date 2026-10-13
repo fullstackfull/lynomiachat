@@ -76,7 +76,7 @@
     "TAB_EMBED": "Embed link",
     "TAB_UPLOAD": "Upload",
     "PLACEHOLDER": "Paste a video link",
-    "HINT": "Works with YouTube, Vimeo, Loom, Wistia, Arcade, Bunny, CodePen, GuideJar and mp4 links",
+    "HINT": "Works with YouTube, Vimeo, Loom, Arcade, Bunny, CodePen, GuideJar and mp4 links",
     "ERROR": "That doesn't look like a supported video link",
     "UPLOAD_LABEL": "Choose a video file",
     "UPLOAD_HINT": "MP4 · up to {size}MB · or drop it here",

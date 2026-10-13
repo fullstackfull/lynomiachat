@@ -55,8 +55,9 @@ class Public::Api::V1::Portals::BaseController < PublicController
     Rails.logger.info "Article: not found for slug: #{params[:article_slug]}"
     render_404 && return if article.blank?
 
-    @locale = if article.category.present?
-                article.category.locale
+    # `portal_category`: the page locale must not be driven by a category belonging to another portal.
+    @locale = if article.portal_category.present?
+                article.portal_category.locale
               else
                 article.locale
               end

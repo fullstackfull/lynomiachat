@@ -1,7 +1,7 @@
 <%# locals: (portal:, locale:) %>
 <%# Categories with articles %>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-  <% portal.categories.where(locale: locale).joins(:articles).where(articles: { status: :published }).order(position: :asc).group('categories.id').each do |category| %>
+  <% portal.categories_with_published_articles(locale).each do |category| %>
     <%= render "public/api/v1/portals/category-block", category: category, portal: portal %>
   <% end %>
 </div>

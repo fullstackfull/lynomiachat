@@ -41,13 +41,9 @@ class Instagram::Messenger::SendOnInstagramService < Instagram::BaseSendService
     )
   end
 
-  def merge_human_agent_tag(params)
-    global_config = GlobalConfig.get('ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT')
-
-    return params unless global_config['ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT']
-
-    params[:messaging_type] = 'MESSAGE_TAG'
-    params[:tag] = 'HUMAN_AGENT'
-    params
+  # This path reads the MESSENGER key rather than the Instagram one because it is the Facebook-Page generation of
+  # Instagram messaging, on graph.facebook.com under the page's own Human Agent approval.
+  def human_agent_config_key
+    'ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT'
   end
 end

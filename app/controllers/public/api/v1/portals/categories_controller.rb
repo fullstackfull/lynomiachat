@@ -29,8 +29,12 @@ class Public::Api::V1::Portals::CategoriesController < Public::Api::V1::Portals:
   end
 
   def load_category_articles
-    articles = @category.articles.published.includes(:author)
+    # `portal_articles`, not `articles`: see app/models/category.rb. This before_action only runs for the
+    # documentation layout, and the plain variant re-queries in its own view, so the reader has to be the
+    # boundary rather than this assignment.
+    articles = @category.portal_articles.published.includes(:author)
     @articles = @portal.article_order == 'release_date' ? articles.order_by_release_date : articles.order(:position)
-    @category_authors = @articles.filter_map(&:author).uniq
+    # `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article.
+    @category_authors = @articles.filter_map(&:public_author).uniq
   end
 end

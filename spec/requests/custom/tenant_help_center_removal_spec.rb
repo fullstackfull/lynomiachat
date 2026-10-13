@@ -134,6 +134,374 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     end
   end
 
+  # THE WHOLE REFUSAL RESTS ON PREPEND ORDER, and nothing in the three Custom:: files produces it.
+  # `Custom::ArticlePolicy#create?` returns `false` unconditionally and never calls `super`, so it closes a route
+  # only while it sits AHEAD of the OSS policy in the ancestor chain. That ordering comes from an initializer
+  # reading `ChatwootApp.extensions` (config/initializers/01_inject_enterprise_edition_module.rb:24-28,64-88). If a
+  # refactor ever turned the prepend into an include, every refusal above would silently become an
+  # administrator-is-allowed grant and the request specs would keep passing for the admin arm. So the ordering is
+  # asserted rather than assumed.
+  it 'prepends every documentation policy ahead of the class it overrides' do
+    { PortalPolicy => Custom::PortalPolicy, CategoryPolicy => Custom::CategoryPolicy, ArticlePolicy => Custom::ArticlePolicy }
+      .each do |oss_policy, overlay|
+        ancestors = oss_policy.ancestors
+
+        expect(ancestors).to include(overlay)
+        expect(ancestors.index(overlay)).to be < ancestors.index(oss_policy)
+      end
+  end
+
+  # CROSS-TENANT AND CROSS-PORTAL ATTEMPTS, each one of the moves the hardening brief named: attaching an article
+  # to Lynomia's public documentation portal, moving an article into another tenant's category, reading another
+  # tenant's article directly, and doing any of it through update rather than create.
+  #
+  # These answer 404 rather than 401, and the difference is the point: `before_action :portal` runs ahead of
+  # `before_action :check_authorization` (app/controllers/api/v1/accounts/articles_controller.rb:2-3) and resolves
+  # the slug inside `Current.account.portals` (:91), so a portal belonging to somebody else is not found before
+  # any policy is consulted. Two independent refusals in series, and the assertions below also check that nothing
+  # moved -- a status code alone would not prove the write did not happen.
+  describe 'reaching across accounts' do
+    let(:other_account) { create(:account) }
+    let(:other_admin) { create(:user, account: other_account, role: :administrator) }
+    let!(:other_portal) { create(:portal, account_id: other_account.id, slug: 'other-tenant-portal') }
+    let!(:other_category) { create(:category, portal: other_portal, account_id: other_account.id) }
+    let!(:other_article) do
+      create(:article, portal: other_portal, category: other_category, account_id: other_account.id, author_id: other_admin.id)
+    end
+    let!(:docs_portal) do
+      create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil,
+                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en' })
+    end
+    let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-category', locale: 'en') }
+
+    def expect_closed(verb, path, params = nil)
+      public_send(verb, path, params: params, headers: admin.create_new_auth_token, as: :json)
+      expect(response).to have_http_status(:not_found), "#{verb.upcase} #{path} returned #{response.status}"
+    end
+
+    it 'cannot create an article in Lynomia\'s public documentation portal' do
+      expect do
+        expect_closed(:post, "/api/v1/accounts/#{account.id}/portals/#{docs_portal.slug}/articles",
+                      { article: { title: 'injected', content: 'x', author_id: admin.id, category_id: docs_category.id } })
+      end.not_to change(docs_portal.articles, :count)
+    end
+
+    it 'cannot create an article in another tenant\'s portal' do
+      expect do
+        expect_closed(:post, "/api/v1/accounts/#{account.id}/portals/#{other_portal.slug}/articles",
+                      { article: { title: 'injected', content: 'x', author_id: admin.id, category_id: other_category.id } })
+      end.not_to change(other_portal.articles, :count)
+    end
+
+    it 'cannot read another tenant\'s article directly' do
+      expect_closed(:get, "/api/v1/accounts/#{account.id}/portals/#{other_portal.slug}/articles/#{other_article.id}")
+    end
+
+    it 'cannot update another tenant\'s article' do
+      expect_closed(:patch, "/api/v1/accounts/#{account.id}/portals/#{other_portal.slug}/articles/#{other_article.id}",
+                    { article: { title: 'renamed by a stranger' } })
+      expect(other_article.reload.title).not_to eq('renamed by a stranger')
+    end
+
+    it 'cannot list the categories of Lynomia\'s documentation portal' do
+      expect_closed(:get, "/api/v1/accounts/#{account.id}/portals/#{docs_portal.slug}/categories")
+    end
+
+    # The bypass the brief asked about by name: not creating a new article, but MOVING an existing one the tenant
+    # does own into a category that belongs to Lynomia or to somebody else. Both the single-article update and the
+    # bulk category change are closed, and the article's own `category_id` is unchanged after each.
+    it 'cannot move its own article into Lynomia\'s documentation portal by update' do
+      patch "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/#{article.id}",
+            params: { article: { category_id: docs_category.id, portal_id: docs_portal.id } },
+            headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(article.reload.category_id).to eq(category.id)
+      expect(article.reload.portal_id).to eq(portal.id)
+    end
+
+    it 'cannot move its own article into another tenant\'s category by update' do
+      patch "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/#{article.id}",
+            params: { article: { category_id: other_category.id } },
+            headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(article.reload.category_id).to eq(category.id)
+    end
+
+    it 'cannot move its own article into another category in bulk' do
+      patch "/api/v1/accounts/#{account.id}/portals/#{portal.slug}/articles/bulk_actions/update_category",
+            params: { ids: [article.id], category_id: docs_category.id },
+            headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(article.reload.category_id).to eq(category.id)
+    end
+  end
+
+  # THE CATEGORY-TO-PORTAL RELATIONSHIP, which was the brief's "enforce ownership at the WRITE boundary and again
+  # at the READ/publication boundary" and which nothing enforced: `category_id` and `portal_id` are independent
+  # columns with no constraint between them, and the public portal lists a category's articles by `category_id`
+  # alone. One row with a tenant's portal_id and a documentation category_id published tenant content on /docs.
+  describe 'an article whose category belongs to another portal' do
+    # custom_domain + `host!` in each request example: with no .env present `DomainHelper.chatwoot_domain?`
+    # matches nothing, so the custom domain is the only way PublicController resolves a public request.
+    let!(:docs_portal) do
+      create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil,
+                      custom_domain: 'docs-isolation.example.com',
+                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en', 'layout' => 'documentation' })
+    end
+    let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-cat', locale: 'en') }
+
+    let!(:genuine) do
+      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                       title: 'A real documentation page', content: 'Docs body', status: :published)
+    end
+    let!(:legacy) do
+      article = create(:article, portal: portal, category: category, account_id: account.id,
+                                 author_id: tenant_agent.id, title: 'Leaked tenant page',
+                                 content: 'Tenant body', status: :published)
+      article.update_column(:category_id, docs_category.id) # rubocop:disable Rails/SkipsModelValidations
+      article
+    end
+    # THE READ BOUNDARY, ACROSS EVERY PUBLIC SURFACE THAT PUBLISHES A CATEGORY'S ARTICLES.
+    #
+    # The first attempt scoped the `Category#articles` association, which broke the home page (ActiveRecord
+    # refuses an instance-dependent association inside `joins`). The second scoped one controller
+    # before_action -- which an audit then showed was bypassable two ways: the action is conditional on
+    # `@portal_layout == 'documentation'`, and `set_view_variant` gives `:plain` priority, so
+    # `?show_plain_layout=true` renders a view that re-queries `category.articles` inline and discards the
+    # scoped assignment entirely.
+    #
+    # So the boundary is `Category#portal_articles` / `Article#portal_category`, plain readers that every
+    # public site goes through, and these examples assert the SURFACES rather than the assignment.
+    #
+    # The row is written with `update_column` on purpose: it is exactly what the validation now refuses, so the
+    # only way one exists is to have predated it.
+    let(:tenant_agent) { create(:user, account: account, role: :agent, display_name: 'TenantAgentByline') }
+
+    it 'cannot be saved, which is the write boundary' do
+      intruder = build(:article, portal: portal, category: docs_category, account_id: account.id, author_id: admin.id)
+
+      expect(intruder).not_to be_valid
+      expect(intruder.errors[:category]).to include(I18n.t('errors.articles.category_portal_mismatch'))
+    end
+
+    it 'is accepted when the category belongs to the same portal' do
+      expect(build(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id)).to be_valid
+    end
+
+    it 'is accepted with no category at all, as before' do
+      expect(build(:article, portal: portal, category: nil, account_id: account.id, author_id: admin.id)).to be_valid
+    end
+
+    def get_public(path)
+      host! 'docs-isolation.example.com'
+      get path
+      expect(response).to have_http_status(:success)
+      response.body
+    end
+
+    it 'is absent from the public category page' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")
+
+      expect(body).not_to include(legacy.title)
+      expect(body).to include(genuine.title)
+    end
+
+    # The bypass the audit found: the plain variant takes priority over the documentation variant and its view
+    # re-queries the category's articles itself, so a controller-level scope never reaches it.
+    it 'is absent from the plain-layout category page, which re-queries in its own view' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}?show_plain_layout=true")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the public documentation home page' do
+      body = get_public("/hc/#{docs_portal.slug}/en")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the plain-layout home page' do
+      body = get_public("/hc/#{docs_portal.slug}/en?show_plain_layout=true")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    # Counts and teasers are the sites the previous pass left to the validation alone.
+    it 'does not count towards the category article count, and is not offered as a teaser' do
+      expect(docs_category.portal_articles.published).to contain_exactly(genuine)
+      expect(docs_category.portal_articles.published.count).to eq(1)
+    end
+
+    # `public_author` keys off the ARTICLE's portal, so it cannot help here: the legacy row belongs to a tenant
+    # portal and is not platform-owned, so its author is public by that rule. Scoping the article source is
+    # what keeps the tenant agent's name off a Lynomia documentation URL.
+    it 'does not contribute its author to the public byline strip' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")
+
+      expect(body).not_to include(tenant_agent.available_name)
+    end
+
+    it 'is absent from portal search results' do
+      body = get_public("/hc/#{docs_portal.slug}/en/search?q=page")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the public articles index' do
+      body = get_public("/hc/#{docs_portal.slug}/en/articles")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    # A correctly matched article keeps working on every one of those surfaces -- the point of the guard is to
+    # drop foreign rows, not to break the portal.
+    it 'still publishes the portal\'s own article normally' do
+      expect(get_public("/hc/#{docs_portal.slug}/en")).to include(genuine.title)
+      expect(get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")).to include(genuine.title)
+      expect(get_public("/hc/#{docs_portal.slug}/articles/#{genuine.slug}")).to include(genuine.title)
+    end
+
+    # The regression the first attempt caused: the home page joins the articles association.
+    it 'still renders the public documentation home page, which joins the articles association' do
+      expect(get_public("/hc/#{docs_portal.slug}/en")).to be_present
+    end
+
+    # THE OTHER DIRECTION, which none of the examples above reach: the ARTICLE is the documentation portal's and
+    # the CATEGORY is a tenant's. That row is genuinely a documentation article, so every portal-scoped article
+    # query returns it and it belongs at its own URL and in the sitemap. What must not happen is its foreign
+    # category being PUBLISHED beside it -- above all into structured data, which is what a search engine indexes.
+    #
+    # Both sites proven here were missed by the first all-surfaces sweep and found by re-running it with no
+    # exclusion filter: the earlier grep dropped every line containing `portal_category`, which silently
+    # swallowed `portal_category_canonical_url` on the structured-data line. Third over-broad-grep miss of this
+    # phase; recorded as such in the report.
+    context "when the article is the documentation portal's and the category is a tenant's" do
+      # Same slug as `docs_category` on purpose -- allowed, because Category scopes slug uniqueness by portal --
+      # so the sidebar's active-state comparison really does match a documentation entry on the foreign slug.
+      let!(:foreign_category) do
+        create(:category, portal: portal, account_id: account.id, name: 'TenantCategoryName',
+                          slug: docs_category.slug, locale: 'en')
+      end
+      let!(:stray) do
+        row = create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                               title: 'A documentation page with a foreign category', content: 'Body',
+                               status: :published, locale: 'en')
+        row.update_column(:category_id, foreign_category.id) # rubocop:disable Rails/SkipsModelValidations
+        row
+      end
+
+      it 'is what the production audit scope is for' do
+        expect(Article.cross_portal_category).to include(stray)
+      end
+
+      it 'publishes no foreign crumb in the BreadcrumbList structured data a search engine reads' do
+        body = get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}")
+        breadcrumb = Nokogiri::HTML5(body).css('script[type="application/ld+json"]')
+                             .map { |node| JSON.parse(node.text) }
+                             .find { |payload| payload['@type'] == 'BreadcrumbList' }
+
+        expect(breadcrumb['itemListElement'].pluck('name'))
+          .to contain_exactly(docs_portal.display_title('en'), stray.title)
+        expect(body).not_to include(foreign_category.name)
+      end
+
+      # No URL assertion here, deliberately: the foreign category shares `docs_category`'s slug, so a crumb URL
+      # built from it is byte-identical to the legitimate one. The NAME is what distinguishes them, and the
+      # structured-data example above asserts the crumb list has no category entry at all.
+      it 'renders the article itself without the foreign category name anywhere on the page' do
+        body = get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}")
+
+        expect(body).to include(stray.title)
+        expect(body).not_to include(foreign_category.name)
+      end
+
+      # The sidebar publishes nothing from the foreign category, but it did compare against its slug, so a
+      # documentation entry sharing that slug was marked active and opened. Correctness, not disclosure.
+      it 'marks no sidebar entry active from the foreign category slug' do
+        expect(get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}"))
+          .not_to include('<details class="group" open>')
+      end
+    end
+  end
+
+  # THE ONE DOCUMENTATION SURFACE THE POLICY CHOKE POINT DOES NOT REACH.
+  #
+  # `SearchController` runs no `check_authorization` and consults no policy, so every refusal above is irrelevant
+  # to it. Before Custom::SearchService#filter_articles narrowed the relation, `GET /search/articles` returned the
+  # full body of the workspace's own drafts and archived pages to any member -- including an agent and a custom
+  # role -- because `_article.json.jbuilder` renders `article.content`.
+  describe 'global search over articles' do
+    let!(:draft) do
+      create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
+                       title: 'Secret pricing plan', content: 'Unreleased pricing', status: :draft)
+    end
+    let!(:archived) do
+      create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
+                       title: 'Secret retired policy', content: 'Withdrawn policy', status: :archived)
+    end
+    let!(:published) do
+      create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
+                       title: 'Secret published page', content: 'Published body', status: :published)
+    end
+
+    let!(:other_account) { create(:account) }
+    let!(:other_portal) { create(:portal, account_id: other_account.id, slug: 'another-tenant') }
+    let!(:other_admin) { create(:user, account: other_account, role: :administrator) }
+    let!(:other_published) do
+      create(:article, portal: other_portal, account_id: other_account.id, author_id: other_admin.id,
+                       title: 'Secret neighbour page', content: 'Neighbour body', status: :published)
+    end
+
+    def search_titles(user)
+      get "/api/v1/accounts/#{account.id}/search/articles",
+          params: { q: 'Secret' }, headers: user.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:success)
+      response.parsed_body['payload']['articles'].pluck('title')
+    end
+
+    %i[admin agent power_user].each do |principal|
+      it "returns no draft or archived article to #{principal}" do
+        titles = search_titles(send(principal))
+
+        expect(titles).to contain_exactly(published.title)
+        expect(titles).not_to include(draft.title, archived.title)
+      end
+    end
+
+    it 'leaks no body text for an unpublished article' do
+      get "/api/v1/accounts/#{account.id}/search/articles",
+          params: { q: 'Secret' }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response.body).not_to include('Unreleased pricing')
+      expect(response.body).not_to include('Withdrawn policy')
+    end
+
+    it 'returns no article belonging to another account' do
+      expect(search_titles(admin)).not_to include(other_published.title)
+    end
+
+    # Narrowing after `page`/`per` would be wrong if the count still described the wider set: the page would show
+    # one row while the UI claimed three, which is how a narrowing silently turns into a disclosure of how many
+    # drafts exist.
+    it 'counts only what it returns' do
+      get "/api/v1/accounts/#{account.id}/search/articles",
+          params: { q: 'Secret' }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['payload']['articles'].length).to eq(1)
+    end
+
+    it 'is also narrowed on the combined search endpoint' do
+      get "/api/v1/accounts/#{account.id}/search",
+          params: { q: 'Secret' }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['payload']['articles'].pluck('title')).to contain_exactly(published.title)
+    end
+  end
+
   it 'leaves the tenant content itself untouched: nothing here deletes a row' do
     expect { expect_refused(:delete, "/api/v1/accounts/#{account.id}/portals/#{portal.slug}", admin) }
       .not_to change(Portal, :count)

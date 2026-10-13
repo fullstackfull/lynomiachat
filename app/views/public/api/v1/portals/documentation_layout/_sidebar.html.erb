@@ -1,6 +1,8 @@
 <%# locals: (portal:, locale:, article: nil, category: nil) %>
 <%
-  current_category_slug = article&.category&.slug || category&.slug
+  # `portal_category`, not `category`: a legacy cross-portal row must not mark a same-slug sidebar entry
+  # active. See app/models/article.rb.
+  current_category_slug = article&.portal_category&.slug || category&.slug
   current_article_slug = article&.slug
   sidebar_categories = portal.categories.where(locale: locale).order(position: :asc)
   by_release_date = portal.article_order == 'release_date'

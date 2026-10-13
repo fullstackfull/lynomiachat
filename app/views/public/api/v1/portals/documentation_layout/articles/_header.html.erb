@@ -12,14 +12,15 @@
     </div>
   </div>
   <%= render 'public/api/v1/portals/documentation_layout/articles/release_meta', article: article %>
-  <% if article.author.present? %>
+  <%# `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article. %>
+  <% if article.public_author.present? %>
     <div class="mt-6 flex items-center gap-3">
       <%= render 'public/api/v1/portals/documentation_layout/user_avatar',
-                 user: article.author,
+                 user: article.public_author,
                  size: :lg,
                  border: 'border border-solid border-n-weak' %>
       <div>
-        <p class="text-sm font-medium text-n-slate-12"><%= article.author.available_name %></p>
+        <p class="text-sm font-medium text-n-slate-12"><%= article.public_author.available_name %></p>
         <% if show_last_updated %>
           <p class="mt-0.5 text-xs text-n-slate-11">
             <%= I18n.t('public_portal.common.last_updated_on', last_updated_on: last_updated_on) %>

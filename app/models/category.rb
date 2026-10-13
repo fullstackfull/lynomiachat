@@ -30,7 +30,33 @@ class Category < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :portal
   has_many :folders, dependent: :destroy_async
+  # DELIBERATELY UNSCOPED, after an attempt to scope it to the category's own portal broke the public
+  # documentation home page.
+  #
+  # The rule that an article's category must belong to the article's portal is enforced on WRITE, by
+  # Article#category_in_same_portal. Enforcing it here as well looked like one line that closed every read
+  # site at once -- but a scope block that takes the owner as an argument makes the association INSTANCE
+  # DEPENDENT, and ActiveRecord refuses an instance-dependent association inside `joins`. Two live queries do
+  # exactly that join: PortalHomeData#load_home_data (app/controllers/concerns/portal_home_data.rb:14) and
+  # _home_categories.html.erb:4, both on every portal home request. The result was a 500 on the public
+  # documentation home page, caught by spec/controllers/public/api/v1/portals_controller_spec.rb -- a file one
+  # directory above the spec/controllers/public/api/v1/portals/ tree the gate had run, which is why it was
+  # missed first time round.
+  #
+  # The read boundary is therefore enforced where publication actually happens, in
+  # Public::Api::V1::Portals::CategoriesController#load_category_articles, and the validation is what keeps a
+  # mismatched row from being created at all.
   has_many :articles, dependent: :nullify
+
+  # THE READ BOUNDARY, as a plain method rather than an association scope.
+  #
+  # `articles` is matched on `category_id` alone, so a legacy row carrying another portal's `portal_id` and
+  # this category's `category_id` is in it. Every public read of a category's articles must go through this
+  # instead, which is a one-token change at each site and leaves `joins(:articles)` alone -- the 500 described
+  # above cannot recur, because this is a method on the record and not a scope on the association.
+  def portal_articles
+    articles.where(portal_id: portal_id)
+  end
   has_many :category_related_categories,
            class_name: :RelatedCategory,
            dependent: :destroy_async

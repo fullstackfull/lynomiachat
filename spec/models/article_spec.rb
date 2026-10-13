@@ -77,10 +77,47 @@ RSpec.describe Article do
     end
   end
 
+  # The operational check behind K17 in docs/documentation-v2/P0-PRODUCTION-HARDENING.md. It exists as a spec
+  # because the first version of this query was silently wrong -- `where.not(portal_id: Category.arel_table[
+  # :portal_id])` compiles to `portal_id != NULL` and so reports zero on any data -- and an operator was going
+  # to run it on production to decide whether the read-side guards matter.
+  describe '.cross_portal_category' do
+    let!(:other_portal) { create(:portal, account_id: account.id, config: { allowed_locales: ['en'] }) }
+    let!(:matched) do
+      create(:article, portal: portal_1, category: category_1, account_id: account.id, author_id: user.id,
+                       title: 'coherent', content: 'body')
+    end
+
+    it 'finds an article whose category belongs to a different portal' do
+      # `update_column` on purpose: this is exactly the state the validation now refuses, so the only way such
+      # a row exists is to predate it.
+      stray = create(:article, portal: other_portal, account_id: account.id, author_id: user.id,
+                               title: 'stray', content: 'body')
+      stray.update_column(:category_id, category_1.id) # rubocop:disable Rails/SkipsModelValidations
+
+      expect(described_class.cross_portal_category).to contain_exactly(stray)
+    end
+
+    it 'does not flag an article whose category belongs to its own portal' do
+      expect(described_class.cross_portal_category).not_to include(matched)
+    end
+
+    it 'does not flag an article with no category' do
+      uncategorised = create(:article, portal: portal_1, category: nil, account_id: account.id,
+                                       author_id: user.id, title: 'loose', content: 'body')
+
+      expect(described_class.cross_portal_category).not_to include(uncategorised)
+    end
+  end
+
   describe 'search' do
     let!(:portal_2) { create(:portal, account_id: account.id, config: { allowed_locales: %w[en es] }) }
     let!(:category_2) { create(:category, slug: 'category_2', locale: 'es', portal_id: portal_1.id) }
     let!(:category_3) { create(:category, slug: 'category_3', locale: 'es', portal_id: portal_2.id) }
+    # portal_2's second `es` category, added because the row below used to sit in portal_1's category_2 -- a
+    # pairing Article#category_in_same_portal now refuses. It needs a category of portal_2's own that no
+    # assertion names by slug: category_3 is named at :114, so reusing it would turn that count from 1 into 2.
+    let!(:category_4) { create(:category, slug: 'category_4', locale: 'es', portal_id: portal_2.id) }
 
     before do
       create(:article, category_id: category_1.id, content: 'This is the content', description: 'this is the description',
@@ -88,7 +125,10 @@ RSpec.describe Article do
                        portal_id: portal_1.id, author_id: user.id)
       create(:article, category_id: category_1.id, slug: 'title-1', title: 'title 1', content: 'This is the content', portal_id: portal_1.id,
                        author_id: user.id)
-      create(:article, category_id: category_2.id, slug: 'title-2', title: 'title 2', portal_id: portal_2.id, author_id: user.id)
+      # category_4, not category_2: this row is portal_2's and category_2 belongs to portal_1. Same `es` locale,
+      # so every expected count below is unchanged -- the fixture was simply incoherent in a way nothing had
+      # been enforcing.
+      create(:article, category_id: category_4.id, slug: 'title-2', title: 'title 2', portal_id: portal_2.id, author_id: user.id)
       create(:article, category_id: category_2.id, slug: 'title-3', title: 'title 3', portal_id: portal_1.id, author_id: user.id)
       create(:article, category_id: category_3.id, slug: 'title-6', title: 'title 6', portal_id: portal_2.id, author_id: user.id, status: :published)
       create(:article, category_id: category_2.id, slug: 'title-7', title: 'title 7', portal_id: portal_1.id, author_id: user.id, status: :published)

@@ -1,6 +1,4 @@
 <script setup>
-import { useMapGetter } from 'dashboard/composables/store.js';
-
 import SearchResultSection from './SearchResultSection.vue';
 import SearchResultArticleItem from './SearchResultArticleItem.vue';
 
@@ -22,8 +20,6 @@ defineProps({
     default: true,
   },
 });
-
-const accountId = useMapGetter('getCurrentAccountId');
 </script>
 
 <template>
@@ -37,13 +33,12 @@ const accountId = useMapGetter('getCurrentAccountId');
     <ul v-if="articles.length" class="space-y-3 list-none">
       <li v-for="article in articles" :key="article.id">
         <SearchResultArticleItem
-          :id="article.id"
           :title="article.title"
           :description="article.description"
           :content="article.content"
+          :slug="article.slug"
           :portal-slug="article.portalSlug"
           :locale="article.locale"
-          :account-id="accountId"
           :category="article.categoryName"
           :status="article.status"
           :updated-at="article.updatedAt"

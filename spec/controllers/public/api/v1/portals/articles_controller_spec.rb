@@ -192,15 +192,16 @@ RSpec.describe 'Public Articles API', type: :request do
       expect(article.reload.views).to eq 1
     end
 
-    it 'serves a PNG image but does not increment view count for draft article' do
+    # THIS USED TO ASSERT A 200 WITH NO VIEW INCREMENT, which made the endpoint an existence oracle for
+    # unpublished content: a draft slug answered 200 and a pixel where an unknown slug answered 404, over an
+    # unauthenticated route. Guarding only the counter was not enough -- the response itself had to stop
+    # distinguishing the two -- so a draft now answers exactly as a slug that does not exist.
+    it 'answers 404 for a draft article, so a draft slug is indistinguishable from an unknown one' do
       draft_article = create(:article, category: category, status: :draft, portal: portal, account_id: account.id, author_id: agent.id, views: 0)
 
       get "/hc/#{portal.slug}/articles/#{draft_article.slug}.png"
 
-      expect(response).to have_http_status(:success)
-      expect(response.headers['Content-Type']).to eq('image/png')
-      expect(response.headers['Cache-Control']).to include('max-age=86400')
-      expect(response.headers['Cache-Control']).to include('private')
+      expect(response).to have_http_status(:not_found)
       expect(draft_article.reload.views).to eq 0
     end
 
@@ -216,6 +217,89 @@ RSpec.describe 'Public Articles API', type: :request do
       expect(response.headers['Cache-Control']).to include('max-age=86400')
       expect(response.headers['Cache-Control']).to include('private')
       expect(response.headers['Content-Type']).to eq('image/png')
+    end
+  end
+
+  # LYNOMIA'S OWN DOCUMENTATION CARRIES NO PERSONAL BYLINE, and a tenant Help Center still does. Documentation
+  # ::ContentSeeder stamps `SuperAdmin.first` as the author of every platform article, and SuperAdmin is a User,
+  # so the operator who ran the seeder was named and pictured on every public documentation page.
+  describe 'author bylines on a platform-owned documentation portal' do
+    # Each portal gets its own custom domain and each example sets that host, which is how the rest of this file
+    # reaches a portal: with no .env present `DomainHelper.chatwoot_domain?` matches nothing, so the custom domain
+    # is the only way `PublicController#ensure_custom_domain_request` resolves a request. The domain is test
+    # scaffolding; what is being asserted is the byline, which does not depend on it.
+    let!(:docs_portal) do
+      create(:portal, slug: 'lynomia-docs-byline', platform_owned: true, account_id: nil, custom_domain: 'docs.example.com',
+                      config: { allowed_locales: ['en'], default_locale: 'en', layout: 'documentation' })
+    end
+    let!(:docs_category) do
+      create(:category, name: 'Guides', portal: docs_portal, account_id: nil, locale: 'en', slug: 'guides')
+    end
+    # `available_name` prefers display_name, which the user factory fills with a Faker first name -- so it is set
+    # here to something that cannot appear in the page by coincidence, which a negative assertion needs. One word,
+    # because the factory builds the email out of display_name and a space would make it invalid.
+    let!(:operator) { create(:user, account: account, role: :administrator, display_name: 'BylineOperator') }
+    let!(:docs_article) do
+      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: operator.id,
+                       title: 'Platform guide', content: 'Body', status: :published)
+    end
+
+    it 'names nobody on the article page' do
+      host! 'docs.example.com'
+      get "/hc/#{docs_portal.slug}/articles/#{docs_article.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Platform guide')
+      expect(response.body).not_to include(operator.available_name)
+    end
+
+    it 'names nobody on the category page' do
+      host! 'docs.example.com'
+      get "/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include(operator.available_name)
+    end
+
+    # THE SITE THE FIRST VERSION OF THIS FIX MISSED. The byline was first removed in the documentation layout
+    # only, which left the public JSON API -- the same route with a .json format -- still serving the operator's
+    # available_name, name and avatar_url through models/hc/_author.json.jbuilder. The rule now lives on the
+    # model (`Article#public_author`) so every render site reads one answer.
+    it 'names nobody in the public article JSON' do
+      host! 'docs.example.com'
+      get "/hc/#{docs_portal.slug}/en/articles.json"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include(operator.available_name)
+      expect(response.parsed_body['payload'].first).not_to have_key('author')
+    end
+
+    it 'still names the author in a tenant portal\'s article JSON' do
+      tenant_portal = create(:portal, slug: 'tenant-json', account_id: account.id, custom_domain: 'tenantjson.example.com',
+                                      config: { allowed_locales: ['en'], default_locale: 'en', layout: 'documentation' })
+      tenant_category = create(:category, name: 'Help', portal: tenant_portal, account_id: account.id, locale: 'en', slug: 'help-json')
+      create(:article, portal: tenant_portal, category: tenant_category, account_id: account.id,
+                       author_id: operator.id, title: 'Tenant JSON guide', content: 'Body', status: :published)
+
+      host! 'tenantjson.example.com'
+      get "/hc/#{tenant_portal.slug}/en/articles.json"
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['payload'].first['author']['available_name']).to eq(operator.available_name)
+    end
+
+    it 'still names the author on a tenant portal, where the author is a colleague' do
+      tenant_portal = create(:portal, slug: 'tenant-byline', account_id: account.id, custom_domain: 'tenant.example.com',
+                                      config: { allowed_locales: ['en'], default_locale: 'en', layout: 'documentation' })
+      tenant_category = create(:category, name: 'Help', portal: tenant_portal, account_id: account.id, locale: 'en', slug: 'help')
+      tenant_article = create(:article, portal: tenant_portal, category: tenant_category, account_id: account.id,
+                                        author_id: operator.id, title: 'Tenant guide', content: 'Body', status: :published)
+
+      host! 'tenant.example.com'
+      get "/hc/#{tenant_portal.slug}/articles/#{tenant_article.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include(operator.available_name)
     end
   end
 

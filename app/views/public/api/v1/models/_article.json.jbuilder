@@ -15,19 +15,21 @@ if article.portal.present?
   end
 end
 
-if article.category.present?
+# `portal_category`, not `category`: a legacy cross-portal row would otherwise publish a foreign
+# category's id, slug and locale, and the widget builds a category URL from them.
+if article.portal_category.present?
   json.category do
-    json.id article.category.id
-    json.slug article.category.slug
-    json.locale article.category.locale
+    json.id article.portal_category.id
+    json.slug article.portal_category.slug
+    json.locale article.portal_category.locale
   end
 end
 
 json.views article.views
 
-if article.author.present?
+if article.public_author.present?
   json.author do
-    json.partial! 'public/api/v1/models/hc/author', formats: [:json], resource: article.author
+    json.partial! 'public/api/v1/models/hc/author', formats: [:json], resource: article.public_author
   end
 end
 

@@ -140,12 +140,20 @@ class Article < ApplicationRecord
   # `scoped_resource` only governs find. So this closes an operator foot-gun that publishes cross-portal
   # content, at the one place both values are known.
   #
-  # This is the WRITE half. The READ half is Category#articles, scoped to the category's own portal, so the
-  # eighteen read sites are safe without eighteen edits.
+  # This is the WRITE half. The READ half is Category#portal_articles and Article#portal_category, which every
+  # public read goes through -- NOT a scope on the `Category#articles` association, which was tried, broke the
+  # public documentation home page and was reverted (see app/models/category.rb).
   def category_in_same_portal
     return if category.nil? || category.portal_id == portal_id
 
     errors.add(:category, I18n.t('errors.articles.category_portal_mismatch'))
+  end
+
+  # THE CATEGORY THIS ARTICLE MAY BE PUBLISHED UNDER, which is none when the category belongs to a different
+  # portal. Public pages render a category's name, icon and URL beside an article; for a legacy cross-portal row
+  # that published a foreign category's name and emitted a category URL that 404s under the rendering portal.
+  def portal_category
+    category if category && category.portal_id == portal_id
   end
 
   # WHO TO ATTRIBUTE PUBLICLY, which is nobody for Lynomia's own documentation.

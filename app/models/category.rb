@@ -47,6 +47,16 @@ class Category < ApplicationRecord
   # Public::Api::V1::Portals::CategoriesController#load_category_articles, and the validation is what keeps a
   # mismatched row from being created at all.
   has_many :articles, dependent: :nullify
+
+  # THE READ BOUNDARY, as a plain method rather than an association scope.
+  #
+  # `articles` is matched on `category_id` alone, so a legacy row carrying another portal's `portal_id` and
+  # this category's `category_id` is in it. Every public read of a category's articles must go through this
+  # instead, which is a one-token change at each site and leaves `joins(:articles)` alone -- the 500 described
+  # above cannot recur, because this is a method on the record and not a scope on the association.
+  def portal_articles
+    articles.where(portal_id: portal_id)
+  end
   has_many :category_related_categories,
            class_name: :RelatedCategory,
            dependent: :destroy_async

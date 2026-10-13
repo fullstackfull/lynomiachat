@@ -1,6 +1,6 @@
 <%# `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article.
     `filter_map` because a platform article answers nil and must not count as an anonymous author. %>
-<% authors = category.articles.published.order(position: :asc).filter_map(&:public_author).uniq %>
+<% authors = category.portal_articles.published.order(position: :asc).filter_map(&:public_author).uniq %>
 <% author_count = authors.size %>
 <% if author_count > 0 %>
   <div class="flex flex-row items-center gap-1">

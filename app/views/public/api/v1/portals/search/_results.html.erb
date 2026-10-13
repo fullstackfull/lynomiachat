@@ -28,9 +28,9 @@
                 </p>
               </div>
               <div class="flex flex-row items-center gap-2">
-                <% if article.category.present? %>
+                <% if article.portal_category.present? %>
                   <span class="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                    <%= article.category.name %>
+                    <%= article.portal_category.name %>
                   </span>
                   <span class="text-slate-600 dark:text-slate-400">•</span>
                 <% end %>

@@ -253,6 +253,33 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     end
     let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-cat', locale: 'en') }
 
+    let!(:genuine) do
+      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                       title: 'A real documentation page', content: 'Docs body', status: :published)
+    end
+    let!(:legacy) do
+      article = create(:article, portal: portal, category: category, account_id: account.id,
+                                 author_id: tenant_agent.id, title: 'Leaked tenant page',
+                                 content: 'Tenant body', status: :published)
+      article.update_column(:category_id, docs_category.id) # rubocop:disable Rails/SkipsModelValidations
+      article
+    end
+    # THE READ BOUNDARY, ACROSS EVERY PUBLIC SURFACE THAT PUBLISHES A CATEGORY'S ARTICLES.
+    #
+    # The first attempt scoped the `Category#articles` association, which broke the home page (ActiveRecord
+    # refuses an instance-dependent association inside `joins`). The second scoped one controller
+    # before_action -- which an audit then showed was bypassable two ways: the action is conditional on
+    # `@portal_layout == 'documentation'`, and `set_view_variant` gives `:plain` priority, so
+    # `?show_plain_layout=true` renders a view that re-queries `category.articles` inline and discards the
+    # scoped assignment entirely.
+    #
+    # So the boundary is `Category#portal_articles` / `Article#portal_category`, plain readers that every
+    # public site goes through, and these examples assert the SURFACES rather than the assignment.
+    #
+    # The row is written with `update_column` on purpose: it is exactly what the validation now refuses, so the
+    # only way one exists is to have predated it.
+    let(:tenant_agent) { create(:user, account: account, role: :agent, display_name: 'TenantAgentByline') }
+
     it 'cannot be saved, which is the write boundary' do
       intruder = build(:article, portal: portal, category: docs_category, account_id: account.id, author_id: admin.id)
 
@@ -268,50 +295,135 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
       expect(build(:article, portal: portal, category: nil, account_id: account.id, author_id: admin.id)).to be_valid
     end
 
-    # THE READ BOUNDARY, ASSERTED OVER HTTP ON THE PAGE THAT PUBLISHES -- which is what the brief asked for
-    # ("public portal rendering") and what the first attempt got wrong by asserting the association instead.
-    #
-    # Scoping Category#articles itself looked like one line that closed every read site; it made the
-    # association instance-dependent, which ActiveRecord refuses inside `joins(:articles)`, and the public
-    # documentation home page -- which joins exactly that -- returned 500. So the guarantee lives at the
-    # publication site, and the test has to exercise the publication site.
-    #
-    # The row is written with `update_column` on purpose: a cross-portal article is precisely what the
-    # validation now refuses, so the only way one exists is to have predated it, and that legacy row is the
-    # whole reason a read-side guard is worth having.
-    it 'does not render on the other portal\'s public category page, which is the read boundary' do
-      legacy = create(:article, portal: portal, category: category, account_id: account.id, author_id: admin.id,
-                                title: 'Leaked tenant page', content: 'Tenant body', status: :published)
-      legacy.update_column(:category_id, docs_category.id) # rubocop:disable Rails/SkipsModelValidations
-
+    def get_public(path)
       host! 'docs-isolation.example.com'
-      get "/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}"
-
+      get path
       expect(response).to have_http_status(:success)
-      expect(response.body).not_to include('Leaked tenant page')
+      response.body
     end
 
-    it 'still renders the category\'s own articles on that same page' do
-      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
-                       title: 'A real documentation page', content: 'Docs body', status: :published)
+    it 'is absent from the public category page' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")
 
-      host! 'docs-isolation.example.com'
-      get "/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}"
-
-      expect(response).to have_http_status(:success)
-      expect(response.body).to include('A real documentation page')
+      expect(body).not_to include(legacy.title)
+      expect(body).to include(genuine.title)
     end
 
-    # The regression that the first attempt at this fix actually caused: the public documentation HOME page
-    # joins Category#articles, so anything done to that association has to keep the home page rendering.
+    # The bypass the audit found: the plain variant takes priority over the documentation variant and its view
+    # re-queries the category's articles itself, so a controller-level scope never reaches it.
+    it 'is absent from the plain-layout category page, which re-queries in its own view' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}?show_plain_layout=true")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the public documentation home page' do
+      body = get_public("/hc/#{docs_portal.slug}/en")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the plain-layout home page' do
+      body = get_public("/hc/#{docs_portal.slug}/en?show_plain_layout=true")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    # Counts and teasers are the sites the previous pass left to the validation alone.
+    it 'does not count towards the category article count, and is not offered as a teaser' do
+      expect(docs_category.portal_articles.published).to contain_exactly(genuine)
+      expect(docs_category.portal_articles.published.count).to eq(1)
+    end
+
+    # `public_author` keys off the ARTICLE's portal, so it cannot help here: the legacy row belongs to a tenant
+    # portal and is not platform-owned, so its author is public by that rule. Scoping the article source is
+    # what keeps the tenant agent's name off a Lynomia documentation URL.
+    it 'does not contribute its author to the public byline strip' do
+      body = get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")
+
+      expect(body).not_to include(tenant_agent.available_name)
+    end
+
+    it 'is absent from portal search results' do
+      body = get_public("/hc/#{docs_portal.slug}/en/search?q=page")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    it 'is absent from the public articles index' do
+      body = get_public("/hc/#{docs_portal.slug}/en/articles")
+
+      expect(body).not_to include(legacy.title)
+    end
+
+    # A correctly matched article keeps working on every one of those surfaces -- the point of the guard is to
+    # drop foreign rows, not to break the portal.
+    it 'still publishes the portal\'s own article normally' do
+      expect(get_public("/hc/#{docs_portal.slug}/en")).to include(genuine.title)
+      expect(get_public("/hc/#{docs_portal.slug}/en/categories/#{docs_category.slug}")).to include(genuine.title)
+      expect(get_public("/hc/#{docs_portal.slug}/articles/#{genuine.slug}")).to include(genuine.title)
+    end
+
+    # The regression the first attempt caused: the home page joins the articles association.
     it 'still renders the public documentation home page, which joins the articles association' do
-      create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
-                       title: 'A real documentation page', content: 'Docs body', status: :published)
+      expect(get_public("/hc/#{docs_portal.slug}/en")).to be_present
+    end
 
-      host! 'docs-isolation.example.com'
-      get "/hc/#{docs_portal.slug}/en"
+    # THE OTHER DIRECTION, which none of the examples above reach: the ARTICLE is the documentation portal's and
+    # the CATEGORY is a tenant's. That row is genuinely a documentation article, so every portal-scoped article
+    # query returns it and it belongs at its own URL and in the sitemap. What must not happen is its foreign
+    # category being PUBLISHED beside it -- above all into structured data, which is what a search engine indexes.
+    #
+    # Both sites proven here were missed by the first all-surfaces sweep and found by re-running it with no
+    # exclusion filter: the earlier grep dropped every line containing `portal_category`, which silently
+    # swallowed `portal_category_canonical_url` on the structured-data line. Third over-broad-grep miss of this
+    # phase; recorded as such in the report.
+    context "when the article is the documentation portal's and the category is a tenant's" do
+      # Same slug as `docs_category` on purpose -- allowed, because Category scopes slug uniqueness by portal --
+      # so the sidebar's active-state comparison really does match a documentation entry on the foreign slug.
+      let!(:foreign_category) do
+        create(:category, portal: portal, account_id: account.id, name: 'TenantCategoryName',
+                          slug: docs_category.slug, locale: 'en')
+      end
+      let!(:stray) do
+        row = create(:article, portal: docs_portal, category: docs_category, account_id: nil, author_id: admin.id,
+                               title: 'A documentation page with a foreign category', content: 'Body',
+                               status: :published, locale: 'en')
+        row.update_column(:category_id, foreign_category.id) # rubocop:disable Rails/SkipsModelValidations
+        row
+      end
 
-      expect(response).to have_http_status(:success)
+      it 'is what the production audit scope is for' do
+        expect(Article.cross_portal_category).to include(stray)
+      end
+
+      it 'publishes no foreign crumb in the BreadcrumbList structured data a search engine reads' do
+        body = get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}")
+        breadcrumb = Nokogiri::HTML5(body).css('script[type="application/ld+json"]')
+                             .map { |node| JSON.parse(node.text) }
+                             .find { |payload| payload['@type'] == 'BreadcrumbList' }
+
+        expect(breadcrumb['itemListElement'].pluck('name'))
+          .to contain_exactly(docs_portal.display_title('en'), stray.title)
+        expect(body).not_to include(foreign_category.name)
+      end
+
+      # No URL assertion here, deliberately: the foreign category shares `docs_category`'s slug, so a crumb URL
+      # built from it is byte-identical to the legitimate one. The NAME is what distinguishes them, and the
+      # structured-data example above asserts the crumb list has no category entry at all.
+      it 'renders the article itself without the foreign category name anywhere on the page' do
+        body = get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}")
+
+        expect(body).to include(stray.title)
+        expect(body).not_to include(foreign_category.name)
+      end
+
+      # The sidebar publishes nothing from the foreign category, but it did compare against its slug, so a
+      # documentation entry sharing that slug was marked active and opened. Correctness, not disclosure.
+      it 'marks no sidebar entry active from the foreign category slug' do
+        expect(get_public("/hc/#{docs_portal.slug}/articles/#{stray.slug}"))
+          .not_to include('<details class="group" open>')
+      end
     end
   end
 

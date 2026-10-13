@@ -70,6 +70,19 @@ class Portal < ApplicationRecord
 
   scope :active, -> { where(archived: false) }
   scope :platform, -> { where(platform_owned: true) }
+
+  # Categories of this portal that have at least one published article OF THIS PORTAL, for the locale.
+  #
+  # Two places built this query inline and identically -- PortalHomeData#load_home_data and
+  # _home_categories.html.erb -- and neither constrained the joined articles to this portal, so a category
+  # whose only published articles were a legacy cross-portal row appeared on both home pages. A plain `joins`
+  # here is deliberate: the association must stay unscoped so this join keeps working.
+  def categories_with_published_articles(locale)
+    categories.where(locale: locale)
+              .joins(:articles).where(articles: { status: :published, portal_id: id })
+              .order(position: :asc)
+              .group('categories.id')
+  end
   scope :tenant, -> { where(platform_owned: false) }
 
   # Analytics id fields and the format each must match. Formats keep values safe to

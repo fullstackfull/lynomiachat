@@ -644,7 +644,7 @@ Classified by severity, not fixed in this phase, each with the reason.
 | K14 | `WHATSAPP_API_VERSION` is never published to the browser, so the documented env override for the embedded-signup SDK version is dead and the literal `v24.0` always wins | Low | §H correction. The P0-5 migration touches this code; the SDK version is a decision to take there |
 | K15 | `Channel::Telegram#convert_markdown_to_telegram_html` — the escaping path that used to protect the Telegram render — now has zero callers, while `TelegramRenderer` emits a raw `node.url` in an `href` and inherits a non-escaping `text` | Low | Same boundary as K8: Telegram's own HTML parse mode on an outbound payload, not a browser render. Dead code to remove in a cleanup phase, not a hotfix |
 | K16 | `CustomMarkdownRenderer#text` emits `<sup>` markup while running in **attribute** position inside `alt="…"`, so a caret in image alt text corrupts the attribute | Low | Not an XSS: `escape_html` covers `"` and every attribute in this stack is double-quoted, so the attribute cannot be closed. Accessibility/correctness only |
-| K17 | A legacy article whose `category_id` points at another portal's category would still be **counted** in that category's article count and teaser list (~17 sites traversing `category.articles`), though it can no longer be read on the category page | Low | §M5. The validation makes new ones impossible; whether any exist is answerable read-only with `Article.joins(:category).where.not(portal_id: Category.arel_table[:portal_id]).count` — worth running once on production before deciding whether more is needed |
+| K17 | A legacy article whose `category_id` points at another portal's category | **Read side closed in §N; existence on production still UNVERIFIED** | The write boundary refuses new ones (`Article#category_in_same_portal`); the read side is now `Category#portal_articles` / `Article#portal_category` / `Portal#categories_with_published_articles` across all 28 migrated sites, including the two §N.8 found after the first sweep claimed none remained. **The query this row used to recommend was broken** — `where.not(portal_id: Category.arel_table[:portal_id])` compiles to `!= NULL` and answers "none" on any data; it is now the tested `Article.cross_portal_category` scope. Running it on production is the owner's remaining read-only step; no database constraint added (§N.1) |
 | K10 | Blocked campaign has no reachable resume path | Low | A product finding from Checkpoint 1, unrelated to security |
 | K11 | Platform Support SLA-policy bootstrap path | Low | Same |
 
@@ -798,25 +798,221 @@ past the 24-hour window, with an inline cop disable. `update_all` is the only wa
 record the shared `before` block already created, and a spec backdating its own fixture is the intended use.
 Accepted rather than worked around.
 
+## N. P0 FOLLOW-UP: publication boundaries, byline closure, onboarding reliability
+
+Commissioned after the §M5 correction, because the owner declined to close P0 with K17 and the two WhatsApp
+onboarding findings outstanding. Earlier sections are **not** rewritten; where this section supersedes one, it
+says so and the original stays readable.
+
+### N.1 K17 disposition — and a wrong query in this very document
+
+**The query §K recommended was broken.** It read
+`Article.joins(:category).where.not(portal_id: Category.arel_table[:portal_id]).count`, which compiles to
+`WHERE "articles"."portal_id" != NULL` — never true in SQL. It would have reported "no legacy rows" on any
+data whatsoever, and an operator was going to run it on production to decide whether the read guards mattered.
+Caught by running it rather than reading it.
+
+It is now `Article.cross_portal_category` (`app/models/article.rb`), a real column-to-column Arel comparison,
+**with a spec that plants a mismatched row to prove it finds one** — because an untested query in a document is
+exactly what went wrong here.
+
+| Question | Answer |
+|---|---|
+| Test-environment count | **0 mismatched, of 0 articles** — the test database is empty, so this is not evidence either way |
+| Production count | **UNVERIFIED and not run.** No production access was used |
+| The read-only check for the owner | `RAILS_ENV=production bundle exec rails runner "puts Article.cross_portal_category.count"` — and for detail, `.pluck(:id, :slug, :portal_id, :category_id)`. Selects only |
+| Database constraint | **Evaluated, not added.** A cross-row rule is not expressible as a `CHECK`. `articles` has **no foreign keys at all** (verified), so a composite FK would need a new unique index on `categories(id, portal_id)` plus a backfill — not a hotfix change, and not before the production count is known |
+
+### N.2 Every public read boundary, and the bypass that mattered
+
+**The §F read fix covered one surface of eleven, and was bypassable by a query parameter.** Verified
+first-hand, all three links in the chain:
+
+1. `categories_controller.rb:8` — `before_action :load_category_articles, only: [:show], if: -> { @portal_layout == 'documentation' }`. It does not run on a classic portal at all.
+2. `base_controller.rb:27-31` — `set_view_variant` gives `:plain` **priority** over `:documentation`.
+3. `categories/show.html+plain.erb` renders `_article_list`, whose `:plain` variant re-queried `category.articles.published` **inline** and never touched the scoped `@articles` the before_action had just computed.
+
+So `…/categories/<slug>?show_plain_layout=true` ran the fix and discarded it.
+
+**The boundary is now two plain readers that every public selection goes through**, not a controller
+assignment and not an association scope:
+
+| Reader | Where | Why this shape |
+|---|---|---|
+| `Category#portal_articles` | `app/models/category.rb` | `articles.where(portal_id: portal_id)`. A **method on the record**, so `joins(:articles)` is untouched and the §M5 500 cannot recur. One-token change at 16 sites |
+| `Article#portal_category` | `app/models/article.rb` | The category only when it is this article's portal's. Public pages render a category's name, icon and URL beside an article; a foreign one published the wrong name and a URL that 404s under the rendering portal |
+| `Portal#categories_with_published_articles(locale)` | `app/models/portal.rb` | Replaces two **duplicated and unscoped** `joins(:articles)` queries, so a category whose only published article was a legacy foreign row no longer appears on either home page |
+
+Sites migrated: **16** `category.articles` reads (category pages and their plain variants, both category-block
+partials and their plain variants, the hero count, the article-count partial, the author strip, the category
+JSON), **8** `article.category` renders (article JSON, article card, article header breadcrumb, the
+documentation back-to-category link, search result label, and the locale resolution in `base_controller`), and
+the **2** join sites. Verified afterwards that no unscoped `category.articles` or `article.category` remains on
+any public path.
+
+> **WITHDRAWN — that last sentence was false when written, and the count was 8 of 10.** The verifying grep
+> excluded every line containing `portal_category`, which swallowed `portal_category_canonical_url` on the
+> structured-data line. Two unscoped reads remained: the **BreadcrumbList JSON-LD** and the sidebar's
+> active-state comparison. Both are now fixed and proven both ways. The claim and its correction are both kept
+> here on purpose; the full account, including why this was the third over-broad grep of the phase, is **§N.8**.
+
+Portal-scoped already and left alone: article index, portal search root, sitemap, sidebar, uncategorised block,
+featured/recommended, category contributors, markdown endpoint, tracking pixel, `TechArticle` schema.
+
+`associated_articles` / `root_article` (related article, hreflang) are genuinely unscoped but **no writer can
+cross portals into them**, so they are unreachable rather than fixed — recorded, not patched, because an
+override for an unreachable path is unreachable code.
+
+Also corrected: `app/models/article.rb` still claimed the read half lived on `Category#articles`. That sentence
+was false after §M5 reverted it, and a false comment next to a security rule is what makes the next reader
+trust the wrong thing.
+
+### N.3 Byline sweep — final, semantic
+
+`public_author` keys off the **article's** portal, so it could never have covered this case: a legacy row
+belongs to a *tenant* portal, is therefore not platform-owned, and its author is public by that rule — so a
+tenant agent's name and avatar published on a Lynomia documentation URL through the author strip. **Scoping
+the article source is what closes it**, not another byline condition. An example asserts the tenant agent's
+`available_name` is absent from the rendered category page.
+
+Swept semantically across `.rb`, `.erb`, `.jbuilder`, `.vue` and `.js` for `author`, `&:author`, `author_id`,
+`authors`, `contributor`, `avatar`, `avatar_url`, `thumbnail`, `display_name`, `available_name`, and the
+meta-tag and JSON-LD builders. **Result: no selection site on a public documentation path exposes an internal
+identity.** Four files still read a user directly, and all four are *presentation partials fed a user as a
+local* — `models/hc/_author.json.jbuilder`, `documentation_layout/_user_avatar.html.erb`,
+`portals/_thumbnail.html.erb`, `PortalHelper#format_authors_label`. They render whatever they are handed; every
+caller that hands them something now selects through `public_author` and `portal_articles`. Guarding the source
+rather than the renderer is the point — it is what the seventh-site miss in §M5 taught.
+
+### N.4 WhatsApp signup will not call `FB.login` without a configuration
+
+`useWhatsappEmbeddedSignup` passed `window.chatwootConfig` values straight through, so a blank configuration id
+sent `config_id: undefined` to Meta and returned an opaque `"Login cancelled"` — indistinguishable from the
+user closing the popup. It now refuses **before loading the SDK**, reusing the configuration source, the
+failure semantics and the exact i18n strings the reauthorize flow already uses
+(`INBOX_MGMT.SETTINGS_POPUP.WHATSAPP_{APP,CONFIG}_ID_MISSING`), and treating the `'none'` app-id sentinel as
+absent the way `useChannelConfig` already does. No fallback id, no silent attempt, no value echoed into a
+message. Six examples assert `FB.login` **and** the SDK loader are never called.
+
+### N.5 WhatsApp onboarding tile follows the existing pattern
+
+WhatsApp was the one OAuth/SDK provider offered unconditionally: it sat in `ChannelItem`'s fallback
+`includes(key)` list while facebook, instagram and tiktok each checked their installation credential. It now
+applies the same three conditions `useChannelConfig` already computes, and is **rendered disabled rather than
+hidden** — which is this component's existing convention, not a new one: the template binds
+`:disabled="!isActive && !canRequestTiktokAccess"` and does the same for the other three providers. No new
+feature flag; the installation configuration is the source. A new spec covers both states and asserts the other
+providers' gating is unchanged.
+
+### N.6 Gate scope, corrected durably
+
+The §M5 gate named `spec/controllers/public/api/v1/portals/` — the directory — and so missed
+`portals_controller_spec.rb`, its sibling one level up, which is the spec that would have caught the home-page
+500. `scripts/documentation_gate.sh` now **derives** its list from the filesystem by subject (`portal`,
+`article`, `categor`, `documentation`, `markdown_renderer`, `tenant_help_center`, `search`), the way the
+repository's own CI does (`.github/workflows/run_foss_spec.yml:131` is `find spec -name '*_spec.rb'`), and
+never names a file. Verified it selects **both** `portals_controller_spec.rb` and
+`portals/articles_controller_spec.rb`. It fails rather than passing vacuously if the patterns match nothing.
+
+### N.7 The renderer issue that remains, and is unreachable
+
+Unchanged from §M1/§K12: `HtmlRenderer#footnote_reference` drops three escapes the C renderer performs. It is
+unreachable because `:FOOTNOTES` is a parse option this application never passes, and an override for a node
+type the parser cannot emit would be unreachable code. The warning lives at the fix site
+(`lib/markdown_renderer_fence_info_escaping.rb`) so that whoever enables footnotes sees it.
+
+### N.8 The two reads the sweep missed, the third over-broad grep, and the single combined gate
+
+**Found while assembling the final gate, by re-running the §N.2 sweep with no exclusion filter at all.** The
+sweep that produced §N.2's "no unscoped read remains" piped its output through
+`grep -v 'portal_category\|...'` to drop the already-migrated sites. `portal_category` is a *substring* of
+`portal_category_canonical_url`, so the filter silently deleted the one line that still needed changing.
+
+| Site | What it published | Severity |
+|---|---|---|
+| `custom/app/helpers/documentation_helper.rb:66` — the **BreadcrumbList JSON-LD** | `article.category.name` and a crumb URL built under *this* portal. For a cross-portal row that puts **another portal's category name into Lynomia's structured data**, behind a URL that 404s — and structured data is precisely what a search engine indexes and shows | **The real one.** A tenant string published to search engines on a Lynomia documentation URL |
+| `app/views/public/api/v1/portals/documentation_layout/_sidebar.html.erb:3` — the active-state comparison | Nothing. It only decided which sidebar entry got the active style and opened, so a documentation entry sharing the foreign category's slug was highlighted | Correctness, not disclosure |
+
+Both now read `Article#portal_category`. Migrated-site count for §N.2 is therefore **10**, not 8.
+
+**This is the third time in this phase an over-broad grep produced a confident claim**, and the three share one
+shape — the filter removed the evidence:
+
+| # | Where | The filter | What it hid |
+|---|---|---|---|
+| 1 | §M1 — "no second renderer defect exists" | excluded lines matching `out("<` | `footnote_reference`, which begins exactly that way (K12) |
+| 2 | §M5 — the association change | grepped `includes`/`preload`, not `joins` | the home page's `joins(:articles)`, which 500'd in production |
+| 3 | §N.2 — "no unscoped read remains" | excluded lines matching `portal_category` | `portal_category_canonical_url`, the structured-data crumb |
+
+The corrective applied here, and the one worth carrying into Phase 2: **when a sweep's purpose is to prove a
+negative, run it with no exclusion filter and classify every hit by hand.** The clean sweep is 1 remaining
+`.category` hit (`json.category do`, a key name whose body reads `portal_category`) and 23 `.articles` hits,
+every one of them `portal.articles` or a view local. There is also no spec at all for
+`custom/app/helpers/documentation_helper.rb` — the derived gate cannot catch what has no spec, which is why the
+new proof is a request example through the rendered page rather than a helper unit test.
+
+**Four new examples, three of which fail against the unfixed code.** `spec/requests/custom/tenant_help_center_removal_spec.rb:381`
+adds the direction these proofs had not reached: the **article** is the documentation portal's and the
+**category** is a tenant's. Reverted both fixes in the gate worktree and ran them: 3 failures, naming
+`TenantCategoryName` present in the page body, the breadcrumb crumb list carrying a third entry, and
+`<details class="group" open>` on the wrong sidebar entry. Restored: 4/0.
+
+#### The single combined gate
+
+Run once, at the end, over the whole batch — per the execution-speed instruction. All in `/tmp/p0gate` as the
+`postgres` OS user against the test database. Nothing ran against production.
+
+| # | Gate | Result | Exit |
+|---|---|---|---|
+| G1 | `scripts/documentation_gate.sh` — derived, **37 spec files** | 1055 examples, 0 failures | **0** |
+| G2 | Renderer / mail / Meta blast radius — all of `spec/lib/`, `spec/helpers/`, `spec/mailers/`, `spec/services/messages|facebook|instagram/`, `message_window_service_spec`, `message_spec` | 1301 examples, 0 failures | **0** |
+| G3 | `rake documentation:setup documentation:content lynomia:docs:seo_audit`, re-run after the breadcrumb change | 126 created; `0 error(s), 4 warning(s)`; **INDEXABLE** | **0** |
+| G4 | RuboCop over the **whole** changeset — 28 Ruby/jbuilder files | no offenses detected | **0** |
+| G5 | eslint on all 6 changed JS/Vue files | 0 errors, 1 pre-existing `no-dynamic-keys` warning | **0** |
+| G6 | `zeitwerk:check` → **substituted**: production-mode `Rails.application.eager_load!` | `EAGER_LOAD_OK`, 54 autoload dirs, `extensions == ["custom"]`, all four new readers resolve | **0** |
+| G7 | Frontend vitest — `ChannelItem`, `useWhatsappEmbeddedSignup`, the search module, `portalHelper` | 4 files, 66 tests passed | **0** |
+| G8 | The §N.8 regression, proven both ways — `tenant_help_center_removal_spec.rb:381` | 3 failures before the revert was undone, 4/0 after | **0** |
+| G9 | Test-database hygiene after G3 | 0 portals, 0 articles, 0 categories, 0 users, 0 accounts remaining | **0** |
+
+Two honest notes, both carried forward from §J rather than restated as new:
+
+- **G6 is a substitute.** `bundle exec rails zeitwerk:check` aborts in this container on a missing
+  development-group gem (`annotate_rb`), a pre-existing environment gap. A production-mode full eager load
+  covers the same property.
+- **G3 writes to the test database and must run last.** It inserts the two platform portals and 126 articles
+  outside transactional fixtures. It also needs a `SuperAdmin` to exist — cleaning the previous run's seed
+  deleted the gate's own, and G3 failed with
+  `ArgumentError: A super admin is required to author documentation` until one was recreated. Both the write
+  and that ordering trap are recorded in §J and are unchanged here.
+
+### N.9 K17's disposition is unchanged by this
+
+Still **UNVERIFIED on production and not run**: no production access was used. `Article.cross_portal_category`
+is the read-only check, now covered by a spec in **both** directions. No database constraint added, for the
+reasons in §N.1. What changed in §N.8 is only the completeness of the read-side guard, not the question of
+whether any legacy row exists.
+
 ## L. HOTFIX-GO / HOTFIX-NO-GO
 
-**HOTFIX-GO** for the three code fixes in this phase: `d5ec6e05` (XSS), `cf9fdc6c` (documentation isolation),
-`6358087a` (HUMAN_AGENT).
+**HOTFIX-GO** for the code in this phase: `d5ec6e05` (XSS), `cf9fdc6c` (documentation isolation),
+`6358087a` (HUMAN_AGENT), `cf3b7f69` (the §M5 home-page repair), `03ec46e1` (WhatsApp signup refusal + tile
+gating), and the publication-boundary / structured-data commit that carries §N.
 
 Grounds: each fix sits at the narrowest shared boundary that covers every caller found by search rather than by
-assumption; each is covered by adversarial tests that **failed against the unfixed code first**, including the
-§M5 regression, which is proven both ways; every gate in section J passes with the exit codes recorded there,
-against pre-change baselines, and the gate list is corrected so the spec that caught §M5 can no longer be
-skipped; and no fix changes a provider API version, a provider configuration or a deployment.
+assumption; each is covered by adversarial tests that **failed against the unfixed code first** — the §M5
+regression, the byline selection rule, the `FB.login` refusal, and the §N.8 structured-data crumb are all
+proven both ways; the single combined gate in §N.8 is **G1–G9, every one exit 0**, with the derived gate at
+1055/0 and the renderer/Meta blast radius at 1301/0; and no fix changes a provider API version, a provider
+configuration, or a deployment.
 
 **What this GO costs in confidence, stated rather than hidden.** This phase shipped and pushed a 500 on the
-public documentation home page (§M5) and an incomplete byline fix (§M2), and both were found by adversarial
-review rather than by the gate. Twice, an incomplete `grep` produced a confident claim: §M1 missed a sibling of
-the XSS defect because the filter excluded the line it was on, and §M5 changed an association after grepping
-for `includes`/`preload` but not `joins`. The corrective in both cases was the same — run the critic, verify
-its claims against the code, and assert the mechanism at the boundary that actually publishes rather than the
-one that merely looks shared. A reader should weight this document's remaining claims accordingly: those backed
-by a named spec shown to fail without the fix are solid; those resting on a search are worth re-running.
+public documentation home page (§M5) and an incomplete byline fix (§M2); both were found by adversarial review
+rather than by the gate. **Three times**, an over-broad `grep` produced a confident claim — §M1, §M5 and §N.2,
+tabulated with their filters in §N.8. All three share one shape: the exclusion filter deleted the evidence. The
+corrective now encoded rather than merely intended: the gate derives its spec list from the filesystem
+(`scripts/documentation_gate.sh`), and a sweep meant to prove a negative is run **with no exclusion filter**
+and classified by hand. A reader should weight this document's remaining claims accordingly: those backed by a
+named spec shown to fail without the fix are solid; those resting on a search are worth re-running.
 
 **Two things this GO does not cover, and both are the owner's.**
 
@@ -831,4 +1027,9 @@ by a named spec shown to fail without the fix are solid; those resting on a sear
    single move safe. The Messenger send path on Graph v3.2 is recorded as a controlled-provider upgrade with
    its own gate.
 
-Phase 2 implementation has **not** been started. Stopping here to report, as instructed.
+**Three things this GO does not claim.** `Article.cross_portal_category` has **not** been run on production
+(§N.9) — the read side is closed regardless, but whether any legacy row exists is unknown. No database
+constraint was added (§N.1). `custom/app/helpers/documentation_helper.rb` still has **no unit spec**; its
+breadcrumb schema is covered only through a rendered page.
+
+Phase 2 implementation has **not** been started.

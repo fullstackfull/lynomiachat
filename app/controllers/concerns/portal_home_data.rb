@@ -9,11 +9,7 @@ module PortalHomeData
     # documentation-layout home data (also used on custom-domain home pages).
     return unless @portal.layout == 'documentation'
 
-    @visible_categories = @portal.categories
-                                 .where(locale: @locale)
-                                 .joins(:articles).where(articles: { status: :published })
-                                 .order(position: :asc)
-                                 .group('categories.id')
+    @visible_categories = @portal.categories_with_published_articles(@locale)
     @popular_topics = @recommended_categories.presence || @visible_categories.first(3)
     @featured = base_articles.order_by_views.limit(6)
     @category_contributors = build_category_contributors(@visible_categories)

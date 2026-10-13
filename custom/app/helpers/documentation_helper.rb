@@ -63,7 +63,12 @@ module DocumentationHelper
   # bare URL. Built from the records the page is already rendering; no extra query.
   def documentation_breadcrumb_schema(portal, article)
     crumbs = [[portal.display_title(article.locale), portal_home_url(portal, article.locale)]]
-    crumbs << [article.category.name, portal_category_canonical_url(portal, article.category)] if article.category
+    # `portal_category`, not `category`: this crumb publishes a category NAME and a URL under THIS portal to
+    # search engines. A legacy cross-portal row would put another portal's category name in Lynomia's
+    # structured data behind a URL that 404s. See app/models/article.rb.
+    if (crumb_category = article.portal_category)
+      crumbs << [crumb_category.name, portal_category_canonical_url(portal, crumb_category)]
+    end
     crumbs << [article.title, portal_canonical_url(portal, article)]
 
     {

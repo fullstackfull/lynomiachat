@@ -201,7 +201,7 @@ Searched with no exclusion filter and every hit classified, per `00-program.md` 
 | `deployment/deploy.sh:126-130` | stage 2 is **`pg_dump` only** — one `.dump` into `BACKUP_DIR` (`/var/backups/lynomia`, `:33`), retained `KEEP_BACKUPS=14` (`:36`, pruned at `:450`). **No `storage/`, no rsync, no tar, no object copy** |
 | `deployment/ROLLBACK.md`, `deployment/INCIDENT.md` | **zero mentions** of storage, ActiveStorage, attachment or blob. The rollback runbook does not cover media at all |
 | `deployment/setup_18.04.sh`, `setup_20.04.sh` | install no backup tooling. One prose line, `setup_20.04.sh:977`, "Always backup your database before proceeding" |
-| `config/schedule.yml`, `config/sidekiq.yml` | nothing backs anything up. (`sidekiq.yml:31-32` does carry the `active_storage_analysis` and `active_storage_purge` queues, so `purge_later` really is processed — relevant to items 8 and 9, not to backup) |
+| `config/schedule.yml`, `config/sidekiq.yml` | nothing backs anything up. **A claim I made here was wrong and is corrected in §3A.3**: `sidekiq.yml:31-32` name queues that nothing enqueues to |
 | `deployment/*.service`, `*.target` | no mount, no snapshot, no `ReadWritePaths` for storage |
 | `.gitignore:59` | `/storage` — so it is not in the repository either |
 | **`docker-compose.production.yaml:8,61`** | **does** mount `storage_data:/app/storage` as a named Docker volume. Not nothing, and worth recording: on a Docker topology the bytes live in a Docker volume rather than a host directory. Production is the **systemd** topology (`deploy.sh` + `chatwoot*.service` + `/var/backups/lynomia`), so the host-directory case is the live one and the compose file matters only if the topology changes |
@@ -212,6 +212,27 @@ Searched with no exclusion filter and every hit classified, per `00-program.md` 
 hypervisor or volume snapshot, a filesystem-level agent, a hand-written cron on the host. None of that is
 visible from repository evidence. The owner's point 5 was right to warn against inferring absence from the
 `pg_dump`, and the honest boundary is that the repository implements none while the host may.
+
+### 3A.3 CORRECTION — `purge_later` does not run on the queue I said it did
+
+I wrote above that `config/sidekiq.yml:31-32` carry the `active_storage_analysis` and `active_storage_purge`
+queues "so `purge_later` really is processed". **The conclusion holds and the reason was wrong.** Agent 1
+caught it; I verified the chain myself:
+
+| Step | Evidence |
+|---|---|
+| The job asks the config for its queue | `activestorage-7.2.3.2/app/jobs/active_storage/purge_job.rb:5` — `queue_as { ActiveStorage.queues[:purge] }` |
+| `load_defaults "6.0"` sets the named queues | `railties-7.2.3.2/lib/rails/application/configuration.rb:174`, inside `when "6.0"` which begins at `:157` |
+| `load_defaults "6.1"` then sets both to **nil** | same file `:205`, inside `when "6.1"` which begins at `:180` |
+| This app loads 7.0, which chains down through 6.1 | `config/application.rb:39` — `config.load_defaults 7.0`; `when "7.0"` begins at `:218` |
+| No application override | a no-exclusion search for `active_storage.queues`, `queues[:purge]` and `queues[:analysis]` across `config/ app/ custom/ lib/` returns nothing |
+
+So `ActiveStorage.queues[:purge]` is **nil**, `queue_as { nil }` falls through to ActiveJob's default, and the
+job runs on **`default`**. `purge_later` is therefore processed — because `default` is processed — but
+**`config/sidekiq.yml:31-32` are dead queue names**, and anyone watching them for purge throughput would be
+watching an empty queue.
+
+Kept visible rather than edited away, per the program's rule on withdrawn claims.
 
 ### 3A.2 The smallest safe addition — designed, NOT applied
 

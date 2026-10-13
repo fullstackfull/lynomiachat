@@ -193,6 +193,20 @@ RSpec.describe 'Platform account links API', type: :request do
       expect(platform_app.platform_app_permissibles.where(permissible_type: 'User').count).to eq(1)
     end
 
+    it 'names the app that took the code, so a misdirected grant is visible' do
+      other_app = create(:platform_app)
+
+      post '/platform/api/v1/account_links', params: { code: code },
+                                             headers: { api_access_token: other_app.access_token.token },
+                                             as: :json
+
+      expect(response).to have_http_status(:created)
+      # A code is not bound to an app at mint time, so the wrong integration CAN take it. The
+      # merchant's own status page is then the only place that can say so.
+      expect(Integrations::AccountLinkCode.status(account))
+        .to include(status: 'connected', connected_app: other_app.name)
+    end
+
     it 'records who authorized which app' do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
 

@@ -17,7 +17,8 @@
     "STATUS": {
       "WAITING": "Waiting for the code to be used.",
       "CLAIMED": "The code has been used. The connection is being completed.",
-      "CONNECTED": "Connected.",
+      "CONNECTED": "Connected to {app}.",
+      "CONNECTED_UNKNOWN": "Connected.",
       "EXPIRED": "That code expired before it was used. Generate a new one.",
       "REVOKED": "This connection was ended. Generate a new code to connect again."
     }

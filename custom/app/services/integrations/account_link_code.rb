@@ -89,9 +89,21 @@ class Integrations::AccountLinkCode
       Redis::Alfred.delete(code_key(displaced_digest)) if displaced_digest.present?
     end
 
-    def finish(account_id, status)
+    # `app` names the platform app that acted, and it is recorded so the merchant can SEE WHICH INTEGRATION
+    # took their code. A code is not bound to an app at mint time -- the merchant has no way to say which one
+    # they mean -- so on an installation carrying more than one, pasting it into the wrong integration's field
+    # hands that app a working grant while the intended one is told only "Invalid or expired code". Verified
+    # by execution during review: the unintended app redeemed, held the grant, and minted a session, and
+    # nothing anywhere said so. Naming the app does not prevent that; it makes it visible, which is the
+    # difference between a mistake somebody can undo and one nobody can see.
+    def finish(account_id, status, app: nil)
       current = progress(account_id)
-      save_progress(account_id, current.merge('status' => status)) if current
+      return if current.nil?
+
+      update = { 'status' => status }
+      update['connected_app'] = app.name.presence || "App ##{app.id}" if app
+
+      save_progress(account_id, current.merge(update))
     end
 
     # What the merchant's settings page shows: none | waiting | expired | claimed | connected | revoked.
@@ -100,7 +112,7 @@ class Integrations::AccountLinkCode
       return { status: 'none' } if current.nil?
 
       status = current['status'] == 'waiting' && Time.iso8601(current['expires_at']).past? ? 'expired' : current['status']
-      { status: status, expires_at: current['expires_at'] }.compact
+      { status: status, expires_at: current['expires_at'], connected_app: current['connected_app'] }.compact
     end
 
     # Exposed so the redeeming controller can audit under the same event vocabulary.

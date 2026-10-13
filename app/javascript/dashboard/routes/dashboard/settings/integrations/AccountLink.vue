@@ -42,12 +42,20 @@ const expiresAt = computed(() =>
 
 // The vocabulary is AccountLinkCode's, not Salla's: there is no `conflict` or `limit_reached`
 // here, and there IS a `revoked`, which is what the merchant sees after support hands a grant back.
+const connectedApp = ref('');
+
 const statusMessage = computed(
   () =>
     ({
       waiting: t('ACCOUNT_LINK.STATUS.WAITING'),
       claimed: t('ACCOUNT_LINK.STATUS.CLAIMED'),
-      connected: t('ACCOUNT_LINK.STATUS.CONNECTED'),
+      // Named, because a code is not bound to an integration at mint time: pasting it into
+      // the wrong one hands that one a working grant while the intended one reports only
+      // "Invalid or expired code". Saying which app took it is what makes a misdirected
+      // connection something the merchant can notice and undo.
+      connected: connectedApp.value
+        ? t('ACCOUNT_LINK.STATUS.CONNECTED', { app: connectedApp.value })
+        : t('ACCOUNT_LINK.STATUS.CONNECTED_UNKNOWN'),
       expired: t('ACCOUNT_LINK.STATUS.EXPIRED'),
       revoked: t('ACCOUNT_LINK.STATUS.REVOKED'),
     })[status.value] || ''
@@ -71,6 +79,7 @@ const readStatus = async () => {
   try {
     const response = await AccountLinkAPI.getStatus();
     status.value = response.data.status;
+    connectedApp.value = response.data.connected_app || '';
     if (PENDING.includes(status.value)) return;
     stopPolling();
   } catch (error) {

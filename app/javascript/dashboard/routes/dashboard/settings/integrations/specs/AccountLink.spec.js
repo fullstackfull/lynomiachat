@@ -104,10 +104,11 @@ describe('AccountLink', () => {
     expect(statusText(wrapper)).toContain('Waiting');
 
     AccountLinkAPI.getStatus.mockResolvedValue({
-      data: { status: 'connected' },
+      data: { status: 'connected', connected_app: 'Store Syria' },
     });
     await vi.advanceTimersByTimeAsync(5000);
-    expect(statusText(wrapper)).toContain('Connected');
+    // Named, so a code pasted into the wrong integration is something the merchant can see.
+    expect(statusText(wrapper)).toContain('Connected to Store Syria');
 
     const callsWhenSettled = AccountLinkAPI.getStatus.mock.calls.length;
     await vi.advanceTimersByTimeAsync(20000);

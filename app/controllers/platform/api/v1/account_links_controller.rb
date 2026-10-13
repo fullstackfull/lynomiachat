@@ -90,7 +90,7 @@ class Platform::Api::V1::AccountLinksController < PlatformController
     # membership and did exactly that.
     User.where(id: released).find_each { |revoked| invalidate_outstanding_sso_links(revoked) }
 
-    ::Integrations::AccountLinkCode.finish(@resource.id, 'revoked')
+    ::Integrations::AccountLinkCode.finish(@resource.id, 'revoked', app: @platform_app)
     # The actor is the app, not nobody. audits.user is polymorphic and Billing::OverrideGrant already stores a
     # PlatformApp there, so capture_actor_name falls through to its name and the account's audit trail can
     # answer "who disconnected our integration" through its own actor filter.
@@ -159,7 +159,7 @@ class Platform::Api::V1::AccountLinksController < PlatformController
   # though the grant went to the service user. Both ids are recorded so the row answers "who agreed" and "what
   # can now sign in" separately.
   def record_grant(account, authorizer, service_user)
-    ::Integrations::AccountLinkCode.finish(account.id, 'connected')
+    ::Integrations::AccountLinkCode.finish(account.id, 'connected', app: @platform_app)
     ::Integrations::AccountLinkCode.record_audit(
       'integrations.account_link.granted', account, authorizer,
       {

@@ -93,6 +93,35 @@ RSpec.describe 'Documentation SEO', type: :request do
     it 'emits no hreflang when the article has no translation' do
       expect(body).not_to include('rel="alternate" hreflang=')
     end
+
+    # The result heading a search engine shows is <title>, and nothing pinned it, which is how it came to be the
+    # one title tag on the page that ignored the operator's SEO title.
+    it 'titles the page from the article when no SEO title overrides it' do
+      expect(body).to include('<title>Connect WooCommerce | Lynomia Chat Documentation</title>')
+    end
+  end
+
+  describe 'an article whose SEO title overrides its heading' do
+    before do
+      article.update!(meta: article.meta.merge('title' => 'WooCommerce integration setup guide'))
+      get_article
+    end
+
+    it 'uses the SEO title in the one tag a search result heading comes from' do
+      expect(body).to include('<title>WooCommerce integration setup guide | Lynomia Chat Documentation</title>')
+    end
+
+    it 'agrees with the social and meta titles rather than carrying two different headings' do
+      expect(body).to include('<meta name="title" content="WooCommerce integration setup guide">')
+      expect(body).to include('<meta property="og:title" content="WooCommerce integration setup guide">')
+      expect(body).to include('<meta name="twitter:title" content="WooCommerce integration setup guide">')
+    end
+
+    # The on-page <h1> is the article's own heading and is deliberately NOT the SEO title: the override exists to
+    # say something different to a crawler than to a reader who is already on the page.
+    it 'leaves the article heading itself alone' do
+      expect(body).to include('Connect WooCommerce')
+    end
   end
 
   describe 'an article with a published translation' do

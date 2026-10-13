@@ -504,3 +504,28 @@ the unix socket) and `tmp/` and `log/` were root-owned. Made writable; `log/test
 and was truncated, which returned 6 GB of the session's disk allowance. **Neither was a defect in the change**,
 and the failure is recorded here because a 15/15 red that is really a permission bit is exactly the kind of
 result that gets misread as a regression.
+
+### G10 — Agent 4's `<title>` request, applied to the documentation layout and declined for the shared one
+
+`documentation_layout/articles/_meta_head.html.erb` computed `meta_title` from `article.meta["title"]` and used
+it for `meta name="title"`, `og:title` and `twitter:title` — and then wrote **`article.title`** into `<title>`.
+So an operator's SEO title reached every tag except the one a search engine shows as the result heading.
+Categories never had the defect: `documentation_layout/categories/_meta_head.html.erb:9-10` builds one
+`meta_title` and uses it for both.
+
+**Applied** to the documentation layout. The brand suffix stays, because it is what every other documentation
+page's title carries.
+
+**Not applied** to `app/views/public/api/v1/portals/articles/_meta_head.html.erb`, which has the same shape.
+That template is rendered by `articles/show.html.erb` and `articles/show.html+plain.erb` — the **tenant** Help
+Center's default variant and the chrome-less preview — while documentation portals render
+`show.html+documentation.erb`. Changing it would change every tenant's Help Center `<title>`, which is a
+product-wide behaviour change outside a documentation program. Recorded as an owner decision rather than taken:
+**the same fix is almost certainly right there too**, since the field is labelled an SEO title in the tenant UI
+as well, but it is not mine to widen into.
+
+Nothing pinned `<title>` anywhere, which is how the divergence survived. Three examples added to
+`spec/requests/documentation/seo_spec.rb`, and **proven both ways**: with the fix reverted the suite is
+`31 examples, 1 failure` at `:110`; with it, `31 examples, 0 failures`. Only one of the three fails without the
+fix — the other two assert the `og`/`twitter`/`meta` titles agree with it and that the on-page heading is
+deliberately left alone, which were already true. That is the honest split, not three regression pins.

@@ -8,6 +8,7 @@ import DashboardApps from './DashboardApps/Index.vue';
 import Slack from './Slack.vue';
 import Linear from './Linear.vue';
 import Notion from './Notion.vue';
+import AccountLink from './AccountLink.vue';
 
 export default {
   routes: [
@@ -38,6 +39,18 @@ export default {
           path: 'webhook',
           component: Webhook,
           name: 'settings_integrations_webhook',
+          meta: {
+            featureFlag: FEATURE_FLAGS.INTEGRATIONS,
+            permissions: ['administrator'],
+          },
+        },
+        {
+          // Minting the proof that lets an external platform link this workspace.
+          // administrator only, matching the server: the API refuses an agent, and a route
+          // that let one in would only show them a page that 401s.
+          path: 'account_link',
+          component: AccountLink,
+          name: 'settings_integrations_account_link',
           meta: {
             featureFlag: FEATURE_FLAGS.INTEGRATIONS,
             permissions: ['administrator'],

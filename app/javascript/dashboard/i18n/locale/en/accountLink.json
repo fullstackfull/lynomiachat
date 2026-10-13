@@ -1,0 +1,25 @@
+{
+  "ACCOUNT_LINK": {
+    "TITLE": "Connect an external platform",
+    "DESCRIPTION": "Generate a one-time code so a platform you already use can connect to this {installationName} workspace. The code proves you control this workspace — nothing else is shared.",
+    "LOADING": "Loading connection status",
+    "STEP_CODE": "Generate a connection code below. It is shown once and expires in one hour.",
+    "STEP_PASTE": "Paste it into the platform you are connecting from.",
+    "STEP_APPROVE": "That platform's support team completes the connection. You will see the status change here.",
+    "CODE_LABEL": "Connection code",
+    "SHOWN_ONCE": "This code is shown only once. Generate a new one if you lose it.",
+    "COPY": "Copy",
+    "COPIED": "Connection code copied",
+    "EXPIRES": "Expires at {time}",
+    "CREATE_CODE": "Generate code",
+    "NEW_CODE": "Generate a new code",
+    "ERROR": "Something went wrong. Please try again.",
+    "STATUS": {
+      "WAITING": "Waiting for the code to be used.",
+      "CLAIMED": "The code has been used. The connection is being completed.",
+      "CONNECTED": "Connected.",
+      "EXPIRED": "That code expired before it was used. Generate a new one.",
+      "REVOKED": "This connection was ended. Generate a new code to connect again."
+    }
+  }
+}

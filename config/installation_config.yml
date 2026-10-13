@@ -735,3 +735,15 @@
   locked: false
   type: number
 ## ---- End of Audit Trail ---- ##
+
+# ------- Platform Support Desk ------- #
+- name: PLATFORM_SUPPORT_OPERATOR_ALIAS
+  display_title: 'Platform Support operator alias'
+  description: 'The address Lynomia support operators are notified at when a customer raises or replies to a
+    Platform Support ticket. There is deliberately NO default and no fallback: with nothing set, operator
+    notifications are not sent at all and the desk says so, rather than mailing an invented address or the
+    customer''s own support inbox. Customer-side email is unaffected -- it goes to the reporter and the
+    account''s administrators, read from their live user records.'
+  value: null
+  locked: false
+## ---- End of Platform Support Desk ---- ##

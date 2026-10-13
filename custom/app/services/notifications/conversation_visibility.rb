@@ -6,6 +6,13 @@
 #                                                  = the Inbox/Team/account ACCESS CEILING
 #                                                    AND the conversation_* CAPABILITY scope
 #
+# ONE MORE ACTOR TYPE NOW EXISTS, with its own rule rather than a share of this one:
+#
+#     a platform support notification is visible  <=>  PlatformSupport::TicketPolicy lets this member read
+#                                                      that ticket (account predicate included)
+#
+# The two rules never mix. See VISIBLE_ACTOR_TYPES, and the per-type branches in `narrow` and `permits?`.
+#
 # Both layers, intersected. Neither replaces the other, and neither is restated here: the ceiling is
 # `Conversations::AccessCeiling` (the rule `ConversationPolicy` has always applied, now held in one object and
 # delegated to by that policy) and the capability is `Conversations::CapabilityScope`. This object's whole job
@@ -35,6 +42,7 @@
 # means hidden; access restored means visible again, from the same untouched row.
 class Notifications::ConversationVisibility
   CONVERSATION_ACTOR = 'Conversation'.freeze
+  PLATFORM_SUPPORT_TICKET_ACTOR = 'PlatformSupport::Ticket'.freeze
 
   # THE ALLOW-LIST, and the whole of the answer to "which notifications may a member be shown".
   #
@@ -70,13 +78,26 @@ class Notifications::ConversationVisibility
   #   sla_missed_*  The three enum values (app/models/notification.rb:44-46) are declared and have no creation
   #                 site anywhere in app/, custom/ or lib/. Nothing to authorize, so nothing is allowed.
   #
-  # ADDING A TYPE IS A DELIBERATE ACT with its own rule, taken here. Every type on this list today is
-  # conversation-scoped, which is why `narrow` can apply the conversation subselect to the whole allowed set;
-  # a type that is NOT conversation-scoped needs its own condition in `narrow` and `permits?`, not a longer
-  # list. `spec/services/notifications/conversation_visibility_spec.rb` fails if this list and
+  #   PlatformSupport::Ticket
+  #                 A Lynomia support ticket raised BY a tenant, about Lynomia. One notification type only --
+  #                 `platform_support_reply`, an operator's public reply -- and never an internal note
+  #                 (docs/platform-support/12-refresh-against-product-refinement.md §5). It is NOT
+  #                 conversation-scoped, so it does not share the conversation subselect: it has its own
+  #                 branch in `narrow` and its own branch in `permits?`, authorized by
+  #                 `PlatformSupport::TicketPolicy`, whose Scope supplies the account predicate itself and
+  #                 then narrows by role (an administrator sees their account's tickets, an agent sees only
+  #                 the ones they reported).
+  #
+  # ADDING A TYPE IS A DELIBERATE ACT with its own rule, taken here, and a LONGER LIST ALONE IS A DEFECT.
+  # `narrow` used to apply the conversation subselect to the whole allowed set, so a ticket id would have been
+  # compared against conversation ids -- not a refusal but a silent WRONG ANSWER by id collision, in both
+  # directions: a ticket notification shown because some conversation happens to share its id, and hidden when
+  # none does. That is why every type named here now has its own condition in both methods, and why `narrow`
+  # ends in an explicit `else` that excludes.
+  # `spec/services/notifications/conversation_visibility_spec.rb` fails if this list and
   # `Notification::PRIMARY_ACTORS` drift apart, so a type added for any other reason cannot widen visibility
   # silently.
-  VISIBLE_ACTOR_TYPES = [CONVERSATION_ACTOR].freeze
+  VISIBLE_ACTOR_TYPES = [CONVERSATION_ACTOR, PLATFORM_SUPPORT_TICKET_ACTOR].freeze
 
   def self.for(account:, user:)
     new(account: account, user: user)
@@ -101,16 +122,17 @@ class Notifications::ConversationVisibility
     capability_scope.unrestricted? && access_ceiling.unrestricted?
   end
 
-  # The relation, narrowed. One uncorrelated subselect; never a check per row.
+  # The relation, narrowed. One uncorrelated subselect per actor type; never a check per row.
   #
-  # The allow-list is applied FIRST and unconditionally, so an unrestricted member is not handed a type nobody
-  # authorized; `index ["primary_actor_type", "primary_actor_id"]` already exists on this table. The subselect
-  # is then added for a member who is restricted.
+  # TYPE-DISPATCHED, AND THE DISPATCH IS THE POINT. Each allowed type contributes its own `(type, ids)` pair
+  # and the pairs are OR-ed, so an id is only ever compared against ids of its own kind. A type that is not
+  # named contributes nothing and is therefore excluded -- the same fail-closed answer the allow-list gives,
+  # arrived at structurally rather than by a second filter.
+  #
+  # Both halves are `relation.where(...)` over the same relation, which is what `Relation#or` requires, and
+  # `index ["primary_actor_type", "primary_actor_id"]` already exists on this table.
   def narrow(relation)
-    visible = relation.where(primary_actor_type: VISIBLE_ACTOR_TYPES)
-    return visible if unrestricted?
-
-    visible.where(primary_actor_id: authorized_conversation_ids)
+    conversation_rows(relation).or(platform_support_ticket_rows(relation))
   end
 
   # The same question about one notification, so that an id is not a way around the relation.
@@ -120,6 +142,8 @@ class Notifications::ConversationVisibility
   # in `Custom::ConversationPolicy`, then `Conversations::CapabilityScope` -- and it is what every other
   # conversation record read in the product is authorized by. Asking it means the notification record path is
   # the canonical answer rather than a copy of it, and it stays correct if either layer changes.
+  # The same question about one notification, in the order the implementation contract fixes (§5.3): the actor
+  # type is on the allow-list, the row belongs to this account, then the type's own rule.
   def permits?(notification)
     return false unless VISIBLE_ACTOR_TYPES.include?(notification.primary_actor_type)
     # The account this object was built for. NOT a redundant guard on top of the callers' scoping: without it
@@ -133,6 +157,18 @@ class Notifications::ConversationVisibility
     # terms, which is what an authorization answer has to be.
     return false unless notification.account_id == @account.id
 
+    # One branch per allowed type, and an `else` that refuses. A type reaching here with no branch would be a
+    # type on the allow-list with no rule, which is the one combination this object must never answer yes to.
+    case notification.primary_actor_type
+    when CONVERSATION_ACTOR then permits_conversation?(notification)
+    when PLATFORM_SUPPORT_TICKET_ACTOR then permits_platform_support_ticket?(notification)
+    else false
+    end
+  end
+
+  private
+
+  def permits_conversation?(notification)
     conversation = notification.primary_actor
     return false if conversation.blank?
 
@@ -141,7 +177,52 @@ class Notifications::ConversationVisibility
     ).show?
   end
 
-  private
+  # The ticket must exist, belong to THIS account, and have a non-nil `account_id`.
+  #
+  # The non-nil part is not pedantry: `platform_support_tickets.account_id` is nullable and goes NULL when the
+  # subject account is deleted, keeping `account_name_at_creation` for Lynomia's own history. A nil there must
+  # never compare equal to anything, and an orphaned ticket must stop being readable by any tenant -- which is
+  # exactly what the policy scope's `where(account_id: account.id)` already answers, asserted here as well so
+  # the record path cannot drift from the relation path.
+  def permits_platform_support_ticket?(notification)
+    ticket = notification.primary_actor
+    return false if ticket.blank?
+    return false if ticket.account_id.nil? || ticket.account_id != @account.id
+
+    ::PlatformSupport::TicketPolicy.new(
+      { user: @user, account: @account, account_user: account_user }, ticket
+    ).show?
+  end
+
+  # The conversation half, unchanged: the allow-list pins the type, and the subselect is added only for a
+  # member who is restricted.
+  def conversation_rows(relation)
+    rows = relation.where(primary_actor_type: CONVERSATION_ACTOR)
+    return rows if unrestricted?
+
+    rows.where(primary_actor_id: authorized_conversation_ids)
+  end
+
+  # The ticket half. `unrestricted?` is DELIBERATELY NOT CONSULTED: it answers a question about which
+  # conversations a member may reach, and being unrestricted there says nothing about which support tickets
+  # they may read. Ticket visibility is only ever the Platform Support policy scope, for every member
+  # including an administrator.
+  def platform_support_ticket_rows(relation)
+    relation.where(
+      primary_actor_type: PLATFORM_SUPPORT_TICKET_ACTOR,
+      primary_actor_id: authorized_platform_support_ticket_ids
+    )
+  end
+
+  # A relation, not an array, for the same reason as the conversation subselect: Rails renders it as
+  # `IN (SELECT "platform_support_tickets"."id" ...)`, so the answer is not bounded by how many tickets the
+  # member can reach. The Scope applies the account predicate itself, so the unscoped relation is what it
+  # expects (§3).
+  def authorized_platform_support_ticket_ids
+    ::PlatformSupport::TicketPolicy::Scope.new(
+      { user: @user, account: @account, account_user: account_user }, ::PlatformSupport::Ticket.all
+    ).resolve.select(:id)
+  end
 
   # THE INTERSECTION, and the only place it is formed. Both narrowings are applied to the same relation, so
   # the result is the conversations that satisfy the ceiling AND the capability. Order is irrelevant; each is

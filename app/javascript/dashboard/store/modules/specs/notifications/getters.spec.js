@@ -103,4 +103,48 @@ describe('#getters', () => {
       expect(getters.getHasUnreadNotifications(state)).toBe(false);
     });
   });
+
+  // PLATFORM SUPPORT ROWS ARE NOT FEED ROWS. The Inbox feed is conversation-shaped: the list destructures
+  // `primaryActor: { inboxId, id: conversationId }` and routes to `inbox_view_conversation` with them, and
+  // the card reads `primaryActor.meta.sender`. A ticket row carries none of that, so it is dropped here --
+  // before any renderer or click handler can see it -- while the unread badge, which reads the
+  // server-supplied `meta.unreadCount`, still counts it.
+  describe('feed rows the Inbox cannot render', () => {
+    const state = {
+      records: {
+        1: {
+          id: 1,
+          created_at: 2,
+          primary_actor_type: 'Conversation',
+          primary_actor_id: 7,
+        },
+        2: {
+          id: 2,
+          created_at: 1,
+          primary_actor_type: 'PlatformSupport::Ticket',
+          primary_actor_id: 7,
+        },
+      },
+      meta: { unreadCount: 2 },
+    };
+
+    it('excludes a PlatformSupport::Ticket row from getFilteredNotifications', () => {
+      expect(
+        getters.getFilteredNotifications(state)({ sortOrder: 'desc' })
+      ).toEqual([state.records[1]]);
+    });
+
+    it('excludes it from getFilteredNotificationsV4 as well', () => {
+      expect(
+        getters
+          .getFilteredNotificationsV4(state)({ sortOrder: 'desc' })
+          .map(record => record.id)
+      ).toEqual([1]);
+    });
+
+    it('still counts it in the unread badge', () => {
+      expect(getters.getUnreadCount(state)).toBe(2);
+      expect(getters.getHasUnreadNotifications(state)).toBe(true);
+    });
+  });
 });

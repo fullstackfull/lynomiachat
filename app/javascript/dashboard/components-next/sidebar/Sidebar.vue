@@ -8,6 +8,7 @@ import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { useSidebarKeyboardShortcuts } from './useSidebarKeyboardShortcuts';
 import { navigableEntries } from './navigationContract';
+import { usePlatformSupportUnread } from 'dashboard/routes/dashboard/help/platformSupportStore';
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useBranding } from 'shared/composables/useBranding';
@@ -61,6 +62,11 @@ const isACustomBrandedInstance = useMapGetter(
   'globalConfig/isACustomBrandedInstance'
 );
 const isRTL = useMapGetter('accounts/isRTL');
+
+// The Platform Support Desk's unread count, read from THAT MODULE'S OWN STORE and never from `notifications`.
+// The number is derived server side from the ticket's own columns, so the badge cannot disagree with the
+// thread; a feed row could (dashboard/routes/dashboard/help/platformSupportStore.js).
+const { unreadCount: platformSupportUnreadCount } = usePlatformSupportUnread();
 
 const { width: windowWidth } = useWindowSize();
 const isMobile = computed(() => windowWidth.value < 768);
@@ -732,6 +738,26 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.HELP_AND_SUPPORT.TITLE'),
       icon: 'i-lucide-life-buoy',
       children: navigableEntries([
+        // The in-product destination first: a customer with a question about Lynomia should reach Lynomia
+        // before they reach a link that leaves the product (docs/platform-support/04-customer-ux.md §2).
+        // Never feature-gated -- the route carries no featureFlag, so the entry is visible to every member.
+        {
+          name: 'PlatformSupportMyTickets',
+          label: t('PLATFORM_SUPPORT.SIDEBAR.MY_TICKETS'),
+          icon: 'i-lucide-message-square-warning',
+          badgeCount: platformSupportUnreadCount.value,
+          activeOn: [
+            'platform_support_tickets_index',
+            'platform_support_tickets_show',
+          ],
+          to: accountScopedRoute('platform_support_tickets_index'),
+        },
+        {
+          name: 'PlatformSupportNewTicket',
+          label: t('PLATFORM_SUPPORT.SIDEBAR.NEW_TICKET'),
+          icon: 'i-lucide-message-square-plus',
+          to: accountScopedRoute('platform_support_tickets_new'),
+        },
         {
           name: 'Documentation',
           label: t('SIDEBAR.HELP_AND_SUPPORT.DOCUMENTATION'),

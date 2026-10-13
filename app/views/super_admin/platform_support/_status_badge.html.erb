@@ -1,0 +1,22 @@
+<%#
+  A ticket's status, as a badge, in the colour language this console already speaks: red is loud, yellow is
+  ours and ticking, green is done, slate is quiet (operations/_severity_badge.html.erb and _status_badge).
+
+  NOTE THE TWO WAITING STATES READ THE OPPOSITE WAY FROM THE CUSTOMER'S SCREEN, and deliberately.
+  `waiting_on_customer` pauses the SLA clock, so from this side it is parked: quiet. `waiting_on_lynomia` is
+  our own delay with the clock running, so it is the yellow one. On the customer's screen it is the reverse,
+  because there "your turn" is the thing they need to see.
+%>
+<%
+  classes = {
+    'open' => 'bg-woot-50 text-woot-700 border-woot-300',
+    'in_progress' => 'bg-violet-50 text-violet-700 border-violet-200',
+    'waiting_on_customer' => 'bg-slate-50 text-slate-700 border-slate-200',
+    'waiting_on_lynomia' => 'bg-yellow-50 text-yellow-900 border-yellow-300',
+    'resolved' => 'bg-green-50 text-green-800 border-green-200',
+    'closed' => 'bg-slate-100 text-slate-600 border-slate-300'
+  }
+%>
+<span class="inline-flex items-center border rounded-md px-2 py-0.5 text-xs font-medium <%= classes.fetch(status, classes['open']) %>">
+  <%= status.humanize %>
+</span>

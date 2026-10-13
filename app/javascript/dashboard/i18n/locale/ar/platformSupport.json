@@ -1,0 +1,127 @@
+{
+  "PLATFORM_SUPPORT": {
+    "SIDEBAR": {
+      "MY_TICKETS": "تذاكري",
+      "NEW_TICKET": "تذكرة جديدة"
+    },
+    "LIST": {
+      "HEADER": "تذاكري",
+      "DESCRIPTION": "أسئلتك عن لينوميا نفسها — الفواتير، أو إعداد واتساب، أو شيء لا يعمل.",
+      "NEW_TICKET": "تذكرة جديدة",
+      "OPEN_GROUP": "مفتوحة",
+      "CLOSED_GROUP": "مغلقة",
+      "LAST_ACTIVITY": "آخر نشاط {time}",
+      "UNREAD": "ردّت لينوميا بعد آخر مرة نظرت فيها",
+      "MESSAGES": "رسالة واحدة | {n} رسائل",
+      "EMPTY": {
+        "TITLE": "لا تذاكر بعد",
+        "DESCRIPTION": "هذا مكان حديثك مع لينوميا — الفواتير، وإعداد واتساب، وما لا يعمل.",
+        "NOT_FOR": "أمّا محادثاتك مع عملائك أنت، فمكانها صندوق الوارد."
+      }
+    },
+    "FORM": {
+      "HEADER": "تذكرة جديدة",
+      "DESCRIPTION": "أخبرنا بما يحدث. وسيردّ مهندس من لينوميا على التذكرة.",
+      "BACK_TO_LIST": "تذاكري",
+      "CATEGORY": "عن أي شيء هذه التذكرة؟",
+      "CATEGORY_HINT": "اختر الأقرب. وسنعيد تصنيفها إن كان مكانها غير ذلك.",
+      "SUBJECT": "الموضوع",
+      "SUBJECT_PLACEHOLDER": "سطر واحد: ما الذي لا يعمل",
+      "SUBJECT_REQUIRED": "أضف موضوعاً حتى نعرف عن أي شيء هذه التذكرة.",
+      "DESCRIPTION_LABEL": "الوصف",
+      "DESCRIPTION_PLACEHOLDER": "ما توقّعته، وما حدث بدلاً منه، ومتى بدأ.",
+      "DESCRIPTION_HINT": "ما توقّعته، وما حدث بدلاً منه، ومتى بدأ — هذا يكفينا عادةً للبدء.",
+      "DESCRIPTION_REQUIRED": "أضف وصفاً حتى نبدأ من غير أن نسأل أولاً.",
+      "PRIORITY": "ما مدى إلحاح هذا؟",
+      "PRIORITY_HINT": "«عاجل» تعني أن الخدمة متوقفة عندكم. وما دون ذلك «مرتفع» أو أقل.",
+      "ATTACHMENTS": "المرفقات",
+      "ATTACHMENTS_LIMITS": "حتى {count} ملفات، وحجم كل ملف {size}.",
+      "ATTACHMENTS_TYPES": "المقبول: PNG وJPEG وGIF وWebP وPDF والنص العادي وCSV.",
+      "ATTACHMENTS_ADD": "أضف ملفات",
+      "ATTACHMENTS_FULL": "هذا أقصى عدد، وهو {count} ملفات.",
+      "ATTACHMENT_REMOVE": "أزل الملف",
+      "ATTACHMENT_TYPE_REFUSED": "{name} ليس من أنواع الملفات المقبولة.",
+      "ATTACHMENT_TOO_LARGE": "{name} أكبر من {size}.",
+      "ATTACHMENT_COUNT_REFUSED": "تستطيع إرفاق {count} ملفات على الأكثر.",
+      "ATTACHMENT_UPLOAD_FAILED": "لم يُرفع هذا الملف. أعد المحاولة، أو أرسل التذكرة من دونه.",
+      "CANCEL": "إلغاء",
+      "SUBMIT": "أرسل إلى لينوميا"
+    },
+    "DETAIL": {
+      "BACK_TO_LIST": "تذاكري",
+      "OPENED_ON": "فُتحت في {date}",
+      "NEW_REPLY": "ردّ جديد",
+      "CLOSED_HINT": "هذه التذكرة مغلقة. افتح واحدة جديدة ونكمل من هناك.",
+      "OPEN_NEW_TICKET": "افتح تذكرة جديدة"
+    },
+    "THREAD": {
+      "TITLE": "المحادثة",
+      "LYNOMIA_SUPPORT": "دعم لينوميا",
+      "DOWNLOAD": "تنزيل"
+    },
+    "REPLY": {
+      "TITLE": "الرد",
+      "PLACEHOLDER": "أضف ما يفيد — ما الذي تغيّر، وما الذي جرّبته.",
+      "REOPENS_HINT": "هذه التذكرة مُعالَجة. والردّ عليها يعيد فتحها.",
+      "SEND": "أرسل الرد"
+    },
+    "STATUS_SENTENCE": {
+      "OPEN": "وصلت. وسيتولّاها مهندس من لينوميا.",
+      "IN_PROGRESS": "مهندس من لينوميا يعمل عليها الآن.",
+      "WAITING_ON_CUSTOMER": "نحتاج منك شيئاً — راجع آخر رد.",
+      "WAITING_ON_LYNOMIA": "عند لينوميا. ولا نحتاج منك شيئاً.",
+      "RESOLVED": "مُعالَجة. وإن لم تُحلّ فردّ هنا.",
+      "CLOSED": "مغلقة."
+    },
+    "ENUMS": {
+      "STATUS": {
+        "OPEN": "مفتوحة",
+        "IN_PROGRESS": "قيد العمل",
+        "WAITING_ON_CUSTOMER": "في انتظارك",
+        "WAITING_ON_LYNOMIA": "عند لينوميا",
+        "RESOLVED": "مُعالَجة",
+        "CLOSED": "مغلقة"
+      },
+      "PRIORITY": {
+        "LOW": "منخفض",
+        "MEDIUM": "متوسط",
+        "HIGH": "مرتفع",
+        "URGENT": "عاجل — الخدمة متوقفة عندنا"
+      },
+      "CATEGORY": {
+        "BILLING": "الفواتير والمدفوعات",
+        "ACCOUNT_ACCESS": "الوصول إلى الحساب",
+        "CHANNEL_CONNECTION": "ربط قناة تواصل",
+        "WHATSAPP": "واتساب",
+        "COMMERCE": "المتجر والطلبات",
+        "CAMPAIGNS": "الحملات",
+        "AUTOMATION": "الأتمتة والتدفقات",
+        "PERFORMANCE": "شيء بطيء",
+        "DATA_EXPORT": "إخراج بياناتي",
+        "BUG": "شيء يبدو معطّلاً",
+        "OTHER": "شيء آخر"
+      }
+    },
+    "EVENTS": {
+      "CREATED": "فُتحت التذكرة",
+      "STATUS_CHANGED": "تغيّرت الحالة",
+      "CUSTOMER_REPLIED": "ردّيت",
+      "OPERATOR_REPLIED": "ردّ دعم لينوميا",
+      "RESOLVED": "وُسمت بأنها مُعالَجة",
+      "REOPENED": "أُعيد فتحها",
+      "CLOSED": "أُغلقت"
+    },
+    "DOCS": {
+      "ABOUT_THE_DESK": "كيف يعمل دعم لينوميا",
+      "WHAT_TO_INCLUDE": "ما تضعه في التذكرة",
+      "WHAT_STATUSES_MEAN": "معنى كل حالة"
+    },
+    "ERROR": {
+      "LIST_FAILED": "لم تُحمّل تذاكرك. أعد المحاولة بعد قليل.",
+      "DETAIL_FAILED": "لم تُحمّل هذه التذكرة. أعد المحاولة بعد قليل.",
+      "NOT_FOUND": "هذه التذكرة غير موجودة، أو ليست مما تستطيع رؤيته.",
+      "CREATE_FAILED": "لم تُرسل هذه التذكرة. أعد المحاولة بعد قليل.",
+      "REPLY_FAILED": "لم يُرسل ردّك. أعد المحاولة بعد قليل."
+    }
+  }
+}

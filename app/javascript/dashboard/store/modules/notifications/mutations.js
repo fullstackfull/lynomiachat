@@ -25,12 +25,22 @@ export const mutations = {
   },
   [types.SET_NOTIFICATIONS]: ($state, data) => {
     data.forEach(notification => {
-      // Find existing notification with same primary_actor_id (primary_actor_id is unique)
+      // Find the existing notification about the SAME actor: the pair (primary_actor_type,
+      // primary_actor_id), never the id alone.
+      //
+      // `primary_actor_id` is NOT unique. It is an id within a type, and
+      // `uniq_primary_actor_per_account_notifications` is not a unique index despite its name. While
+      // `Notification::PRIMARY_ACTORS` named only 'Conversation' that was invisible; it no longer does, and
+      // on the id alone a Platform Support ticket row would silently evict the conversation row that happens
+      // to share its id -- a row that then stays missing from the list until the next full refetch, while the
+      // server-supplied unread count still counts it.
       const existingNotification = Object.values($state.records).find(
-        record => record.primary_actor_id === notification.primary_actor_id
+        record =>
+          record.primary_actor_id === notification.primary_actor_id &&
+          record.primary_actor_type === notification.primary_actor_type
       );
       // This is to handle the case where the same notification is received multiple times
-      // On reconnect, if there is existing notification with same primary_actor_id,
+      // On reconnect, if there is an existing notification about the same actor,
       // it will be deleted and the new one will be added. So it will solve with duplicate notification
       if (existingNotification) {
         delete $state.records[existingNotification.id];

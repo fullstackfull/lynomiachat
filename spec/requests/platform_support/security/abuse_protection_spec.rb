@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # THE WRITE THROTTLES, and the one property that matters beyond the limit itself: A 429 MUST NOT TELL THE
 # CALLER WHETHER A RESOURCE EXISTS.
@@ -19,7 +18,7 @@ RSpec.describe 'Platform Support abuse protection', type: :request do
   let(:other_account) { create(:account) }
   let(:reporter) { create(:user, account: account, role: :agent) }
   let(:other_reporter) { create(:user, account: account, role: :agent) }
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
   let(:base) { "/api/v1/accounts/#{account.id}/platform_support" }
 
   around do |example|
@@ -61,7 +60,7 @@ RSpec.describe 'Platform Support abuse protection', type: :request do
   # THE NON-LEAK PROPERTY. Once the caller is throttled, a real ticket, another account's ticket and an id
   # that never existed all answer identically -- so a 429 reveals nothing a 404 would have hidden.
   it 'answers identically for a real ticket, a foreign ticket and a nonexistent id once throttled' do
-    foreign = PlatformSupportContractStub.ticket!(account: other_account)
+    foreign = create(:platform_support_ticket, account: other_account)
     ticket
     message_limit.times { post_message(ticket.id) }
 
@@ -85,7 +84,7 @@ RSpec.describe 'Platform Support abuse protection', type: :request do
   # Keyed per user WITHIN the account, so one member's loop cannot throttle their colleagues.
   it 'does not spend the budget of another member' do
     ticket
-    mine = PlatformSupportContractStub.ticket!(account: account, reporter: other_reporter)
+    mine = create(:platform_support_ticket, account: account, reporter: other_reporter)
     message_limit.times { post_message(ticket.id) }
 
     post_message(mine.id, as: other_reporter)

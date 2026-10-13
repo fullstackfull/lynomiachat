@@ -14,7 +14,6 @@ import ThreadEvent from '../components/ThreadEvent.vue';
 import ReplyBox from '../components/ReplyBox.vue';
 import PlatformSupportAPI from '../platformSupportApi';
 import { refreshPlatformSupportUnreadCount } from '../platformSupportStore';
-import { PLATFORM_SUPPORT_AUTHOR_CUSTOMER } from '../constants';
 
 // One ticket, in full.
 //
@@ -81,39 +80,15 @@ const sendErrorMessage = computed(() => {
   );
 });
 
-// The ticket's own `description` as the thread's opening message.
-//
-// It is a column on the ticket, not an M4 row (§1 M3), so without this the thread of a brand-new ticket would
-// be empty and the customer would see no trace of what they wrote. Rendered through the same component as
-// every other message, attributed to the reporter and stamped with the ticket's creation, because that is what
-// it is.
-const openingMessage = computed(() => {
-  if (!ticket.value?.description) return null;
-
-  return {
-    id: 'description',
-    author_role: PLATFORM_SUPPORT_AUTHOR_CUSTOMER,
-    author_name: ticket.value.reporter_name,
-    body: ticket.value.description,
-    attachments: [],
-    created_at: ticket.value.created_at,
-  };
-});
+// The ticket's `description` is NOT rendered here. Creating a ticket writes the customer's own words as the
+// thread's first message as well (PlatformSupport::TicketCreation), which is what carries the opening
+// attachments, so the thread already opens with it. Rendering the column too would show the same text twice.
+// The column remains the canonical statement for the list and for search.
 
 // Messages and events in one list. A message and an event stamped in the same second keep their relative
 // order from the two payloads, which is the order the server wrote them in.
 const thread = computed(() => {
   const entries = [
-    ...(openingMessage.value
-      ? [
-          {
-            key: 'message-description',
-            kind: 'message',
-            at: Number(openingMessage.value.created_at) || 0,
-            message: openingMessage.value,
-          },
-        ]
-      : []),
     ...messages.value.map(message => ({
       key: `message-${message.id}`,
       kind: 'message',

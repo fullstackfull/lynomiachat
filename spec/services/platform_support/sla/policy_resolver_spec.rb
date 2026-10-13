@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative '../../../requests/platform_support/security/platform_support_contract_stub'
 
 # Policy resolution is DATA-DRIVEN by `billing_plan_id`, with the single default row (`billing_plan_id IS
 # NULL`) as the fallback, and a desk with no rows promises nothing.

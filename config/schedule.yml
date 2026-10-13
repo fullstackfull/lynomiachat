@@ -98,6 +98,15 @@ support_sla_sweep_job:
   class: 'Support::SlaSweepJob'
   queue: housekeeping
 
+# executed every 5 minutes
+# decides the SLA outcome of the Platform Support tickets whose targets have just passed, over two partial
+# indexes, and records each outcome once. A met first response is decided at reply time, never here
+# (docs/platform-support/12-refresh-against-product-refinement.md §6)
+platform_support_sla_sweep_job:
+  cron: '*/5 * * * *'
+  class: 'PlatformSupport::SlaSweepJob'
+  queue: housekeeping
+
 # executed daily at 0315 UTC
 # bounds the audit trail by time rather than by a flag (DECISION 5): capture is never gated, so the table needs
 # a retention window instead. The window is AUDIT_LOG_RETENTION_DAYS (default 365) and is read on every run.

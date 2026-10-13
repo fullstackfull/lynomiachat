@@ -77,7 +77,7 @@ RSpec.describe Notifications::ConversationVisibility do
     # Each entry must have a rule that can actually say yes. A type added to the list without one would make
     # this fail rather than quietly become visible-but-unauthorizable.
     it 'can answer yes for every type it names' do
-      expect(described_class::VISIBLE_ACTOR_TYPES).to all(eq('Conversation'))
+      expect(described_class::VISIBLE_ACTOR_TYPES).to contain_exactly('Conversation', 'PlatformSupport::Ticket')
 
       row = notification(agent, create(:conversation, account: account, inbox: inbox, contact: contact, assignee: agent))
       expect(visibility(agent).permits?(row)).to be true

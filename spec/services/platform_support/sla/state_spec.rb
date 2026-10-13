@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative '../../../requests/platform_support/security/platform_support_contract_stub'
 
 # The object both surfaces read to decide whether to show a target at all, so that "no target was set" is
 # never rendered as a zero, a dash, or a number nobody committed to.
@@ -15,7 +14,7 @@ RSpec.describe PlatformSupport::Sla::State do
   let(:now) { Time.zone.parse('2026-03-05 09:00:00 UTC') }
 
   def ticket(**attributes)
-    PlatformSupportContractStub.ticket!(account: account, **attributes)
+    create(:platform_support_ticket, account: account, **attributes)
   end
 
   # THE SURFACE SAYS SO. This false is what the staff desk turns into "No SLA policy applies" and what the

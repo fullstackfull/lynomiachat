@@ -1,237 +1,11 @@
 require 'rails_helper'
 
-# The Super Admin Platform Support Desk.
+# The Super Admin Platform Support Desk: the operator's queue, one ticket in full, the six decisions, and the
+# boundary that keeps all of it away from a tenant.
 #
-# ---------------------------------------------------------------------------------------------------------
-# PARALLEL-DEVELOPMENT SCAFFOLD. Read this before anything else in this file.
-#
-# This branch owns the surfaces, not the domain: the migrations, the models and the route drawer belong to the
-# backend branch and do not exist here yet. So that these examples exercise the REAL controller against the
-# REAL schema contract rather than a pile of doubles, this file builds three things at load time, each guarded
-# so that it steps aside the moment the real one lands:
-#
-#   PLATFORM_SUPPORT_SCHEMA_STUB  the five tables, exactly as §1 of
-#                                 docs/platform-support/12-refresh-against-product-refinement.md declares them,
-#                                 created with `if_not_exists` so the real migration wins.
-#   PLATFORM_SUPPORT_MODEL_STUB   the five models, with only the enums, associations, constants and `#reference`
-#                                 this surface reads. Defined only when the constant does not already resolve.
-#   PLATFORM_SUPPORT_ROUTE_STUB   the staff half of the route drawer, verbatim what §2 freezes, drawn only when
-#                                 `super_admin_platform_support_path` does not already exist.
-#   PLATFORM_SUPPORT_SLA_STUB     the two collaborators the SLA and notification branch published --
-#                                 `PlatformSupport::SupportAlias` and `PlatformSupport::Sla::State` -- with the
-#                                 interface those files declare and nothing else. Defined only when the real
-#                                 ones do not resolve, so this surface is built against their contract rather
-#                                 than against a guess, and against the real objects once both branches meet.
-#
-# ALL THREE MUST BE DELETED AT INTEGRATION. They are listed in this branch's report for exactly that reason.
-# ---------------------------------------------------------------------------------------------------------
-
-PLATFORM_SUPPORT_SCHEMA_STUB = lambda do
-  connection = ActiveRecord::Base.connection
-
-  connection.create_table :platform_support_agents, if_not_exists: true do |t|
-    t.bigint :user_id, null: false
-    t.integer :role, null: false, default: 0
-    t.boolean :active, null: false, default: true
-    t.string :display_name, null: false
-    t.timestamps
-  end
-
-  connection.create_table :platform_support_tickets, if_not_exists: true do |t|
-    t.integer :reference_number, null: false
-    t.bigint :account_id
-    t.string :account_name_at_creation, null: false
-    t.bigint :reporter_id
-    t.string :reporter_name, null: false
-    t.string :category, null: false, default: 'other'
-    t.string :subject, null: false
-    t.text :description
-    t.integer :status, null: false, default: 0
-    t.integer :priority, null: false, default: 1
-    t.bigint :assignee_id
-    t.bigint :sla_policy_id
-    t.bigint :plan_id_at_creation
-    t.string :plan_name_at_creation
-    t.string :subscription_status_at_creation
-    t.datetime :first_response_due_at
-    t.datetime :resolution_due_at
-    t.datetime :first_responded_at
-    t.datetime :first_response_breached_at
-    t.datetime :resolution_breached_at
-    t.datetime :sla_paused_at
-    t.integer :sla_paused_seconds, null: false, default: 0
-    t.datetime :last_customer_message_at
-    t.datetime :last_operator_message_at
-    t.datetime :customer_last_viewed_at
-    t.datetime :last_activity_at, null: false
-    t.datetime :resolved_at
-    t.datetime :closed_at
-    t.timestamps
-  end
-
-  connection.create_table :platform_support_messages, if_not_exists: true do |t|
-    t.bigint :platform_support_ticket_id, null: false
-    t.string :author_type, null: false
-    t.bigint :author_id
-    t.string :author_name, null: false
-    t.text :body, null: false
-    t.timestamps
-  end
-
-  connection.create_table :platform_support_internal_notes, if_not_exists: true do |t|
-    t.bigint :platform_support_ticket_id, null: false
-    t.bigint :agent_id, null: false
-    t.string :author_name, null: false
-    t.text :body, null: false
-    t.timestamps
-  end
-
-  connection.create_table :platform_support_events, if_not_exists: true do |t|
-    t.bigint :platform_support_ticket_id, null: false
-    t.string :event_type, null: false
-    t.string :actor_type
-    t.bigint :actor_id
-    t.string :actor_name
-    t.jsonb :metadata, null: false, default: {}
-    t.datetime :created_at, null: false
-  end
-end
-
-# `const_set` plus anonymous classes rather than `class PlatformSupport::Ticket`: a constant declared with the
-# keyword inside this file would be a second, competing declaration of a name the backend branch owns, and the
-# linter is right to say so. Declared this way, these five exist only while the real ones do not.
-PLATFORM_SUPPORT_MODEL_STUB = lambda do
-  Object.const_set(:PlatformSupport, Module.new) unless Object.const_defined?(:PlatformSupport)
-
-  PlatformSupport.const_set(:Agent, Class.new(ApplicationRecord) do
-    self.table_name = 'platform_support_agents'
-
-    enum :role, { agent: 0, lead: 1 }
-
-    belongs_to :user
-  end)
-
-  PlatformSupport.const_set(:Message, Class.new(ApplicationRecord) do
-    self.table_name = 'platform_support_messages'
-
-    has_many_attached :platform_support_message_files
-  end)
-
-  PlatformSupport.const_set(:InternalNote, Class.new(ApplicationRecord) do
-    self.table_name = 'platform_support_internal_notes'
-
-    has_many_attached :platform_support_note_files
-  end)
-
-  PlatformSupport.const_set(:Event, Class.new(ApplicationRecord) do
-    self.table_name = 'platform_support_events'
-  end)
-
-  PlatformSupport.const_set(:Ticket, Class.new(ApplicationRecord) do
-    self.table_name = 'platform_support_tickets'
-
-    const_set(:CATEGORIES, %w[billing account_access channel_connection whatsapp commerce campaigns automation
-                              performance data_export bug other].freeze)
-    const_set(:OPEN_STATUSES, %w[open in_progress waiting_on_customer waiting_on_lynomia].freeze)
-    const_set(:CLOSED_STATUSES, %w[resolved closed].freeze)
-
-    enum :status, { open: 0, in_progress: 1, waiting_on_customer: 2, waiting_on_lynomia: 3, resolved: 4, closed: 5 }
-    enum :priority, { low: 0, medium: 1, high: 2, urgent: 3 }
-
-    belongs_to :account, optional: true
-    belongs_to :assignee, class_name: 'PlatformSupport::Agent', optional: true
-    has_many :messages, class_name: 'PlatformSupport::Message', foreign_key: :platform_support_ticket_id,
-                        inverse_of: false, dependent: :destroy
-    has_many :internal_notes, class_name: 'PlatformSupport::InternalNote', foreign_key: :platform_support_ticket_id,
-                              inverse_of: false, dependent: :destroy
-    has_many :events, class_name: 'PlatformSupport::Event', foreign_key: :platform_support_ticket_id,
-                      inverse_of: false, dependent: :destroy
-
-    define_method(:reference) { format('LYN-%<number>06d', number: reference_number) }
-  end)
-end
-
-# Mirrors custom/app/mailers/platform_support/support_alias.rb and
-# custom/app/services/platform_support/sla/state.rb on the SLA and notification branch, read rather than
-# guessed at. `SupportAlias` has NO fallback by design, so an unset key really does mean no operator email is
-# sent; `State#governed?` is false unless a policy is attached AND it set at least one due time, and
-# `first_response_promised?` can be false while `governed?` is true.
-PLATFORM_SUPPORT_SLA_STUB = lambda do
-  Object.const_set(:PlatformSupport, Module.new) unless Object.const_defined?(:PlatformSupport)
-
-  PlatformSupport.const_set(:SupportAlias, Module.new do
-    const_set(:KEY, 'PLATFORM_SUPPORT_OPERATOR_ALIAS')
-
-    def self.address
-      GlobalConfigService.load(self::KEY, nil).presence
-    end
-
-    def self.configured?
-      address.present?
-    end
-  end)
-
-  PlatformSupport.const_set(:Sla, Module.new) unless PlatformSupport.const_defined?(:Sla, false)
-
-  PlatformSupport::Sla.const_set(:State, Class.new do
-    def initialize(ticket)
-      @ticket = ticket
-    end
-
-    def governed?
-      @ticket.sla_policy_id.present? && (first_response_promised? || resolution_promised?)
-    end
-
-    def first_response_promised?
-      @ticket.first_response_due_at.present?
-    end
-
-    def resolution_promised?
-      @ticket.resolution_due_at.present?
-    end
-
-    def first_response_breached?
-      @ticket.first_response_breached_at.present?
-    end
-
-    def resolution_breached?
-      @ticket.resolution_breached_at.present?
-    end
-
-    def paused?
-      @ticket.sla_paused_at.present?
-    end
-
-    def calendar_time?
-      true
-    end
-  end)
-end
-
-PLATFORM_SUPPORT_ROUTE_STUB = lambda do
-  Rails.application.routes.disable_clear_and_finalize = true
-  Rails.application.routes.draw do
-    namespace :super_admin do
-      resource :platform_support, only: [:show], controller: 'platform_support' do
-        collection do
-          get 'tickets/:id', action: :ticket, as: :ticket
-          get 'attachments/:id', action: :attachment, as: :attachment
-          post 'tickets/:id/reply', action: :reply, as: :reply, controller: 'platform_support_actions'
-          post 'tickets/:id/note', action: :note, as: :note, controller: 'platform_support_actions'
-          patch 'tickets/:id/status', action: :status, as: :status, controller: 'platform_support_actions'
-          patch 'tickets/:id/triage', action: :triage, as: :triage, controller: 'platform_support_actions'
-          post 'tickets/:id/assign', action: :assign, as: :assign, controller: 'platform_support_actions'
-        end
-      end
-    end
-  end
-  Rails.application.routes.disable_clear_and_finalize = false
-end
-
-PLATFORM_SUPPORT_SCHEMA_STUB.call
-PLATFORM_SUPPORT_MODEL_STUB.call unless defined?(PlatformSupport::Ticket)
-PLATFORM_SUPPORT_SLA_STUB.call unless defined?(PlatformSupport::Sla::State)
-PLATFORM_SUPPORT_ROUTE_STUB.call unless Rails.application.routes.url_helpers.respond_to?(:super_admin_platform_support_path)
+# The acting-agent layer is the one thing this surface has that Operations does not: authentication proves a
+# Super Admin, and an ACTIVE PlatformSupport::Agent row proves support staff. Both are asserted here, because
+# being able to open /super_admin is not being able to answer a customer.
 
 RSpec.describe 'Super Admin Platform Support Desk', type: :request do
   let(:super_admin) { create(:super_admin) }
@@ -618,12 +392,16 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       expect(entry.associated_id).to be_nil
     end
 
+    # The key list is `PlatformSupport::AuditWriter`'s, because the staff reply and the tenant reply are the
+    # same write and therefore the same audit row: ids, the reference string and enum values, and nothing a
+    # customer typed.
     it 'puts no body, payload or credential in the audit row' do
       post "/super_admin/platform_support/tickets/#{target.id}/reply", params: { body: 'secret-token-abc123' }
 
       entry = Custom::AuditLog.find_by(comment: 'platform_support.operator_replied')
       expect(entry.audited_changes.to_json).not_to include('secret-token-abc123')
       expect(entry.audited_changes.keys).to contain_exactly('ticket_id', 'reference', 'subject_account_id',
+                                                            'status', 'priority', 'category', 'event',
                                                             'agent_id', 'message_id')
     end
 

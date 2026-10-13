@@ -13,8 +13,10 @@ RSpec.describe Notification::RemoveDuplicateNotificationJob do
   end
 
   it 'removes duplicate notifications' do
-    create(:notification, user: user, notification_type: 'conversation_creation', primary_actor: conversation)
-    duplicate_notification = create(:notification, user: user, notification_type: 'conversation_creation', primary_actor: conversation)
+    create(:notification, account: conversation.account, user: user, notification_type: 'conversation_creation',
+                          primary_actor: conversation)
+    duplicate_notification = create(:notification, account: conversation.account, user: user,
+                                                   notification_type: 'conversation_creation', primary_actor: conversation)
 
     described_class.perform_now(duplicate_notification)
     expect(Notification.count).to eq(1)

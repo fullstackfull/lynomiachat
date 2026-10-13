@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'security/platform_support_contract_stub'
 
 # THE SIX PROOFS §5 REQUIRES, plus the two cross-type collisions the second actor type made destructive.
 #
@@ -22,7 +21,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
   let(:bystander) { create(:user, account: account, role: :agent) }
   let(:other_administrator) { create(:user, account: other_account, role: :administrator) }
 
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
 
   def visibility(user, for_account: account)
     Notifications::ConversationVisibility.for(account: for_account, user: user)
@@ -89,7 +88,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
     # The ticket's own account, not only the notification's. An administrator short-circuit that did not look
     # at the ticket would answer yes here.
     it 'denies a row about a ticket belonging to another account' do
-      foreign_ticket = PlatformSupportContractStub.ticket!(account: other_account)
+      foreign_ticket = create(:platform_support_ticket, account: other_account)
       row = reply_row(administrator, foreign_ticket)
 
       expect(visibility(administrator).permits?(row)).to be false
@@ -248,7 +247,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
     end
 
     it 'writes one row, not two, for a reporter who is also an administrator' do
-      self_served = PlatformSupportContractStub.ticket!(account: account, reporter: administrator)
+      self_served = create(:platform_support_ticket, account: account, reporter: administrator)
 
       rows = PlatformSupport::Notifications::ReplyNotifier.new(ticket: self_served).perform
 

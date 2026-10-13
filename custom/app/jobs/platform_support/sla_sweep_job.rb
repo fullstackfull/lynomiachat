@@ -3,8 +3,8 @@
 # Read-mostly and bounded: two partial-index scans and one UPDATE per ticket whose outcome has just been
 # decided. It makes no provider call, sends no customer message and touches no conversation.
 #
-# The schedule entry itself is not added here. `config/schedule.yml` is owned by nobody in this phase's file
-# split, so the orchestrator adds the entry -- the job is the unit of work and is callable without it.
+# Scheduled every five minutes as `platform_support_sla_sweep_job` in `config/schedule.yml`, beside the tenant
+# desk's own sweep. Five minutes is the resolution of a breach timestamp, and nothing reads it sooner.
 class PlatformSupport::SlaSweepJob < ApplicationJob
   queue_as :housekeeping
 

@@ -21,10 +21,10 @@
 # live on messages and notes, never on the ticket, so `attachment_ids` on this endpoint would otherwise have
 # nowhere to go.
 #
-# NO SLA IS RESOLVED HERE. The policy lookup, the due times and the `sla_policy_applied` event belong to the
-# SLA engine (`custom/app/services/platform_support/sla/`), which owns that arithmetic in one place. A ticket
-# created before any policy row exists carries no promise, which is the correct answer and what the staff desk
-# says.
+# THE SLA IS RESOLVED HERE AND ITS ARITHMETIC IS NOWHERE IN THIS FILE. This service asks
+# `Sla::PolicyResolver` which policy governs the account and lets `Sla::Clock` compute the due times; not one
+# threshold value and not one date calculation lives here. A ticket created before any policy row exists
+# carries no promise, which is the correct answer and what both surfaces say -- no policy is invented.
 class PlatformSupport::TicketCreation
   def initialize(account:, reporter:, attributes:, blobs: [])
     @account = account
@@ -46,8 +46,10 @@ class PlatformSupport::TicketCreation
       PlatformSupport::EventRecorder.new(ticket: ticket, actor: @reporter).record(
         'created', metadata: { category: ticket.category, priority: ticket.priority, status: ticket.status }
       )
+      apply_sla(ticket)
     end
 
+    announce(ticket)
     ticket
   end
 
@@ -75,5 +77,35 @@ class PlatformSupport::TicketCreation
     )
     message.platform_support_message_files.attach(@blobs) if @blobs.present?
     ticket.update!(last_customer_message_at: message.created_at)
+  end
+
+  # RESOLVED ONCE, AT CREATION, so an upgrade mid-ticket does not retroactively change a commitment Lynomia
+  # already made -- which is why the ticket snapshots `plan_id_at_creation` beside `sla_policy_id`. Measured
+  # from `created_at` rather than from `Time.current`: the promise starts when the customer asked, not when the
+  # last callback in this transaction finished.
+  #
+  # The event's actor is the SYSTEM, not the reporter. The customer asked for a ticket; the target is Lynomia's
+  # own commitment and no customer-visible event type covers it.
+  def apply_sla(ticket)
+    policy = PlatformSupport::Sla::PolicyResolver.for(account: @account)
+    return if policy.nil?
+
+    ticket.sla_policy = policy
+    PlatformSupport::Sla::Clock.new(ticket).apply(from: ticket.created_at)
+    ticket.save!
+    PlatformSupport::EventRecorder.new(ticket: ticket).record(
+      'sla_policy_applied',
+      metadata: { sla_policy_id: policy.id, first_response_due_at: ticket.first_response_due_at&.iso8601,
+                  resolution_due_at: ticket.resolution_due_at&.iso8601 }
+    )
+  end
+
+  # AFTER THE COMMIT, deliberately: a job enqueued inside the transaction can be picked up by a worker before
+  # that transaction commits, and an email about a ticket the database does not have yet is the one failure
+  # mode this ordering removes. The operator message refuses itself when no support alias is configured, so
+  # there is no pre-check here and no invented address anywhere.
+  def announce(ticket)
+    PlatformSupport::TicketMailer.ticket_created(ticket).deliver_later
+    PlatformSupport::TicketMailer.new_ticket(ticket).deliver_later
   end
 end

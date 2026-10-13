@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # CROSS-ACCOUNT IDOR ON EVERY MEMBER ROUTE, and the role narrowing D-1 defines.
 #
@@ -16,8 +15,8 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
   let(:bystander) { create(:user, account: account, role: :agent) }
   let(:other_administrator) { create(:user, account: other_account, role: :administrator) }
 
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
-  let(:foreign_ticket) { PlatformSupportContractStub.ticket!(account: other_account) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
+  let(:foreign_ticket) { create(:platform_support_ticket, account: other_account) }
 
   def base(for_account = account)
     "/api/v1/accounts/#{for_account.id}/platform_support"
@@ -96,8 +95,8 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
 
   describe 'the roles D-1 defines' do
     it 'shows an administrator every ticket of their account' do
-      mine = PlatformSupportContractStub.ticket!(account: account, reporter: reporter)
-      theirs = PlatformSupportContractStub.ticket!(account: account, reporter: bystander)
+      mine = create(:platform_support_ticket, account: account, reporter: reporter)
+      theirs = create(:platform_support_ticket, account: account, reporter: bystander)
 
       send_as(administrator, :get, "#{base}/tickets")
 
@@ -105,8 +104,8 @@ RSpec.describe 'Platform Support tenant isolation', type: :request do
     end
 
     it 'shows a normal agent only the tickets they reported' do
-      mine = PlatformSupportContractStub.ticket!(account: account, reporter: bystander)
-      PlatformSupportContractStub.ticket!(account: account, reporter: reporter)
+      mine = create(:platform_support_ticket, account: account, reporter: bystander)
+      create(:platform_support_ticket, account: account, reporter: reporter)
 
       send_as(bystander, :get, "#{base}/tickets")
 

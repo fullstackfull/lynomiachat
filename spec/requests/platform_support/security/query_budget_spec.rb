@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # THE TENANT LIST AND THE STAFF QUEUE MUST BE FLAT IN QUERY COUNT AS TICKETS GROW.
 #
@@ -19,7 +18,7 @@ RSpec.describe 'Platform Support query budget', type: :request do
 
   def seed(count)
     count.times do
-      ticket = PlatformSupportContractStub.ticket!(account: account, reporter: reporter)
+      ticket = create(:platform_support_ticket, account: account, reporter: reporter)
       ticket.messages.create!(author_type: 'User', author_name: 'A reporter', body: 'Hello')
     end
   end

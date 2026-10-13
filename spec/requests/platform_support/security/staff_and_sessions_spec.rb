@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # STAFF AUTHORITY, SESSION ISOLATION AND AUDIT ATTRIBUTION.
 #
@@ -13,7 +12,7 @@ RSpec.describe 'Platform Support staff authority and sessions', type: :request d
   let(:administrator) { create(:user, account: account, role: :administrator) }
   let(:reporter) { create(:user, account: account, role: :agent) }
   let(:super_admin) { create(:super_admin) }
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
   let(:base) { "/api/v1/accounts/#{account.id}/platform_support" }
 
   describe 'being a Super Admin is not being support staff' do
@@ -71,7 +70,7 @@ RSpec.describe 'Platform Support staff authority and sessions', type: :request d
   describe 'co-resident tenant and Super Admin sessions' do
     it 'does not let a tenant session reach another account through a staff principal' do
       other_account = create(:account)
-      foreign = PlatformSupportContractStub.ticket!(account: other_account)
+      foreign = create(:platform_support_ticket, account: other_account)
       PlatformSupport::Agent.create!(user_id: super_admin.id, display_name: super_admin.name)
 
       get "#{base}/tickets/#{foreign.id}", headers: administrator.create_new_auth_token, as: :json

@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative '../../../requests/platform_support/security/platform_support_contract_stub'
 
 # Calendar-time arithmetic, two clocks, and the pause rule.
 #
@@ -19,7 +18,7 @@ RSpec.describe PlatformSupport::Sla::Clock do
   let(:now) { Time.zone.parse('2026-03-05 09:00:00 UTC') }
 
   def ticket(**attributes)
-    PlatformSupportContractStub.ticket!(account: account, **attributes)
+    create(:platform_support_ticket, account: account, **attributes)
   end
 
   describe '#apply' do
@@ -72,14 +71,16 @@ RSpec.describe PlatformSupport::Sla::Clock do
       expect(record.resolution_due_at).to be_nil
     end
 
-    it 'treats a non-positive threshold as no promise' do
-      zeroed = PlatformSupport::SlaPolicy.create!(name: 'Zeroed', first_response_time_threshold: 0,
-                                                  resolution_time_threshold: synthetic_resolution)
-      record = ticket(sla_policy: zeroed)
+    # A zero threshold would read as "due immediately", which is not a promise anybody made. The model refuses
+    # it outright, so the clock can never meet one -- that refusal is the guarantee, asserted here rather than
+    # a clock branch no persisted policy can reach. A NULL threshold IS representable (a policy needs only one
+    # of the two) and is covered by the resolution-only example above.
+    it 'cannot be handed a non-positive threshold, because the policy refuses to hold one' do
+      zeroed = PlatformSupport::SlaPolicy.new(name: 'Zeroed', first_response_time_threshold: 0,
+                                              resolution_time_threshold: synthetic_resolution)
 
-      described_class.new(record).apply(from: now)
-
-      expect(record.first_response_due_at).to be_nil
+      expect(zeroed).not_to be_valid
+      expect(zeroed.errors[:first_response_time_threshold].join).to match(/greater than 0/)
     end
   end
 

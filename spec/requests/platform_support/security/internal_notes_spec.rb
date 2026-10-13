@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # INTERNAL-NOTE SECRECY, END TO END.
 #
@@ -14,7 +13,7 @@ RSpec.describe 'Platform Support internal note secrecy', type: :request do
   let(:account) { create(:account) }
   let(:administrator) { create(:user, account: account, role: :administrator) }
   let(:reporter) { create(:user, account: account, role: :agent) }
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
 
   # The secret only ever lives in the note.
   let(:secret) { 'SUB-ETHA-SENS-O-MATIC' }

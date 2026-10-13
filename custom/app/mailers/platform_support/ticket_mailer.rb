@@ -133,7 +133,8 @@ class PlatformSupport::TicketMailer < ApplicationMailer
   end
 
   def subject_for(ticket, key)
-    I18n.t("platform_support.mailer.#{key}.subject", reference: ticket.reference, subject: ticket.subject)
+    I18n.t("platform_support.mailer.#{key}.subject", reference: ticket.reference, subject: ticket.subject,
+                                                      account: ticket.account_name_at_creation)
   end
 
   # The tenant surface, at the frontend route the collision table reserves for this module (§9). No

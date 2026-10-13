@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative '../../../requests/platform_support/security/platform_support_contract_stub'
 
 # The sweep stamps breaches, writes the two `sla_*` events, and is idempotent because the partial-index
 # predicate excludes a row whose breach is already recorded.
@@ -14,7 +13,7 @@ RSpec.describe PlatformSupport::Sla::Sweeper do
   let(:now) { Time.zone.parse('2026-03-05 09:00:00 UTC') }
 
   def ticket(**attributes)
-    PlatformSupportContractStub.ticket!(account: account, sla_policy: policy, **attributes)
+    create(:platform_support_ticket, account: account, sla_policy: policy, **attributes)
   end
 
   describe 'first response' do
@@ -79,7 +78,7 @@ RSpec.describe PlatformSupport::Sla::Sweeper do
   end
 
   it 'ignores an ungoverned ticket, because it has no due time at all' do
-    record = PlatformSupportContractStub.ticket!(account: account)
+    record = create(:platform_support_ticket, account: account)
 
     described_class.new(now: now).perform
 

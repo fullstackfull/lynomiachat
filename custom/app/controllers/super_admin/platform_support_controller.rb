@@ -71,9 +71,11 @@ class SuperAdmin::PlatformSupportController < SuperAdmin::ApplicationController
 
   private
 
-  # Staff authority is a row, not a role name.
+  # Staff authority is a row, not a role name, and the rule that reads that row lives in
+  # `PlatformSupport::StaffAuthorizer` -- which is also what decides who may reassign, so there is one answer
+  # to "is this person staff" rather than one per controller.
   def require_support_agent!
-    @agent = PlatformSupport::Agent.find_by(user_id: current_super_admin&.id, active: true)
+    @agent = PlatformSupport::StaffAuthorizer.agent_for(current_super_admin)
     return if @agent.present?
 
     redirect_to super_admin_root_path,

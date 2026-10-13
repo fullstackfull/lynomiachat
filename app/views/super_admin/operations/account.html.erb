@@ -114,7 +114,7 @@
         <div class="flex justify-between gap-3">
           <dt class="text-slate-600">Open Lynomia support tickets</dt>
           <dd class="text-slate-900">
-            <%= @snapshot[:support].key?(:platform_support_open) ? @snapshot[:support][:platform_support_open] : 'not recorded' %>
+            <%= @snapshot[:support].dig(:platform_support, :open) || 0 %>
           </dd>
         </div>
       </dl>

@@ -25,15 +25,22 @@ class PlatformSupport::TicketTransition
   end
 
   def perform
+    previous = nil
+
     ActiveRecord::Base.transaction do
       previous = @ticket.attributes.slice(*TRACKED.keys)
       @ticket.assign_attributes(@attributes)
       apply_lifecycle_timestamps(previous['status'])
+      # The pause rule reads the ticket's CURRENT status, so the clock is asked after the new status is
+      # assigned and before the save -- which is the one ordering that makes `waiting_on_customer` stop the
+      # clock and every other status resume it, without this service knowing which statuses those are.
+      PlatformSupport::Sla::Clock.new(@ticket).sync_pause
       @ticket.last_activity_at = Time.current
       @ticket.save!
       record_changes(previous)
     end
 
+    announce(previous['status'])
     @ticket
   end
 
@@ -78,6 +85,21 @@ class PlatformSupport::TicketTransition
     return after.to_s if PlatformSupport::Ticket::CLOSED_STATUSES.include?(after.to_s)
 
     'status_changed'
+  end
+
+  # THE TWO STATUS CHANGES THAT ASK THE CUSTOMER SOMETHING, and no others. `resolved` says the work is done
+  # and invites them to close or come back; `waiting_on_customer` is a question they will not see unless they
+  # happen to open the ticket. Every other transition is Lynomia's own bookkeeping, and an email per status
+  # change would train the customer to ignore the two that matter.
+  #
+  # Keyed on the status the ticket now holds rather than on who asked for it: the customer's own vocabulary is
+  # `resolved -> closed`, so neither of these is reachable from the tenant surface. After the commit, because
+  # a worker can pick up a mail job before the transaction that enqueued it has committed.
+  def announce(previous_status)
+    return if @ticket.status == previous_status
+
+    PlatformSupport::TicketMailer.ticket_resolved(@ticket).deliver_later if @ticket.resolved?
+    PlatformSupport::TicketMailer.waiting_on_customer(@ticket).deliver_later if @ticket.waiting_on_customer?
   end
 
   # Staff actions only, with the agent's own `User` as the actor so the trail names a person the `users` table

@@ -50,24 +50,31 @@ namespace :api, defaults: { format: 'json' } do
 end
 
 namespace :super_admin do
-  get 'platform_support', to: 'platform_support#index', as: :platform_support
+  # The operator desk. TWO controllers, not one: `platform_support` holds the reads and
+  # `platform_support_actions` (which inherits from it, and so inherits the acting-agent guard) holds the six
+  # decisions, so a read path can never be reached by a verb that writes. Both names are in the Administrate
+  # exclusion array at app/views/super_admin/application/_navigation.html.erb -- Administrate enumerates every
+  # controller under super_admin/ from this route table and raises for one with no index route and no
+  # dashboard, so a controller added here without that entry breaks EVERY Super Admin page.
+  #
+  # Reads are GET and every mutation is POST or PATCH, following config/routes/operations.rb.
+  #
+  # `agents` and `sla_policies` are deliberately absent: the first PlatformSupport::Agent row cannot be created
+  # from a page that is itself behind the acting-agent guard, so it is created by
+  # `rails platform_support:grant_agent` instead (lib/tasks/platform_support.rake), and SLA policy records wait
+  # on the owner's target values (docs/platform-support/12 §11).
+  # `controller:` is required: without it a singular `resource :platform_support` routes to
+  # PlatformSupportsController and the queue 404s.
+  resource :platform_support, only: [:show], controller: 'platform_support' do
+    collection do
+      get 'tickets/:id', action: :ticket, as: :ticket
+      get 'attachments/:id', action: :attachment, as: :attachment
 
-  scope path: 'platform_support', controller: :platform_support, as: :platform_support do
-    get 'tickets/:id', action: :show, as: :ticket
-    post 'tickets/:id/reply', action: :reply, as: :ticket_reply
-    post 'tickets/:id/note', action: :note, as: :ticket_note
-    patch 'tickets/:id/status', action: :status, as: :ticket_status
-    patch 'tickets/:id/triage', action: :triage, as: :ticket_triage
-    post 'tickets/:id/assign', action: :assign, as: :ticket_assign
-    get 'attachments/:id', action: :attachment, as: :attachment
-
-    # Operator administration of the staff rows and the SLA policy records. Both are reads plus writes on the
-    # same controller for the reason above; editing a policy additionally requires a `lead`.
-    get 'agents', action: :agents, as: :agents
-    post 'agents', action: :create_agent, as: :create_agent
-    patch 'agents/:id', action: :update_agent, as: :update_agent
-    get 'sla_policies', action: :sla_policies, as: :sla_policies
-    post 'sla_policies', action: :create_sla_policy, as: :create_sla_policy
-    patch 'sla_policies/:id', action: :update_sla_policy, as: :update_sla_policy
+      post 'tickets/:id/reply', action: :reply, as: :reply, controller: 'platform_support_actions'
+      post 'tickets/:id/note', action: :note, as: :note, controller: 'platform_support_actions'
+      patch 'tickets/:id/status', action: :status, as: :status, controller: 'platform_support_actions'
+      patch 'tickets/:id/triage', action: :triage, as: :triage, controller: 'platform_support_actions'
+      post 'tickets/:id/assign', action: :assign, as: :assign, controller: 'platform_support_actions'
+    end
   end
 end

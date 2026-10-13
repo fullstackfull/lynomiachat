@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # THE COMMERCIAL AND LIFECYCLE RULES, which pull in opposite directions on purpose.
 #
@@ -17,7 +16,7 @@ RSpec.describe 'Platform Support commercial and lifecycle rules', type: :request
   let(:administrator) { create(:user, account: account, role: :administrator) }
   let(:reporter) { create(:user, account: account, role: :agent) }
   let(:plan) { create(:billing_plan) }
-  let!(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let!(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
   let(:base) { "/api/v1/accounts/#{account.id}/platform_support" }
 
   def as(user, path = "#{base}/tickets")

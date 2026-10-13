@@ -1,5 +1,4 @@
 require 'rails_helper'
-require_relative 'platform_support_contract_stub'
 
 # THE SIX PROOFS §3 REQUIRES of the first authorized ActiveStorage download in this repository.
 #
@@ -15,7 +14,7 @@ RSpec.describe 'Platform Support attachments', type: :request do
   let(:bystander) { create(:user, account: account, role: :agent) }
   let(:other_administrator) { create(:user, account: other_account, role: :administrator) }
 
-  let(:ticket) { PlatformSupportContractStub.ticket!(account: account, reporter: reporter) }
+  let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
   let(:message) do
     ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
                             body: 'Here is the invoice')
@@ -159,7 +158,7 @@ RSpec.describe 'Platform Support attachments', type: :request do
     # The response must be byte-identical whether the id is wrong, somebody else's, real-but-unauthorized,
     # or a note's -- otherwise the status itself tells the caller the row exists.
     it 'answers identically for a nonexistent id, a note and a row of another account' do
-      foreign = PlatformSupportContractStub.ticket!(account: other_account)
+      foreign = create(:platform_support_ticket, account: other_account)
       foreign_message = foreign.messages.create!(author_type: 'User', author_name: 'Somebody', body: 'Hi')
       foreign_attachment = attach_to(foreign_message, :platform_support_message_files)
 

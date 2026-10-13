@@ -69,13 +69,18 @@ RSpec.describe 'Platform Support tenant messages and events API', type: :request
       expect(payload.length).to eq(1)
     end
 
-    it 'answers 404 for a ticket in another account' do
+    # 401, and the title now says so: a caller who is not a member of the account is refused by
+    # `ensure_current_account` one layer before this module is reached, so the thread is never looked up at
+    # all. The 404-not-403 rule covers the other case -- a member asking for a ticket that is not theirs --
+    # and is proven in spec/requests/platform_support/security/isolation_spec.rb.
+    it 'refuses a caller who is not a member of the account, before the ticket is looked up' do
       other = create(:account)
       other_admin = create(:user, account: other, role: :administrator)
 
       get "#{base}/tickets/#{ticket.id}/messages", headers: other_admin.create_new_auth_token
 
       expect(response).to have_http_status(:unauthorized)
+      expect(response.body).not_to include('reference')
     end
   end
 

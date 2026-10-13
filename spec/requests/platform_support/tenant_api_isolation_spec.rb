@@ -123,8 +123,10 @@ RSpec.describe 'Platform Support tenant API isolation', type: :request do
   describe 'the commercial rules' do
     # A customer whose plan lapsed must still be able to complain -- usually about the billing itself.
     it 'serves a billing-locked account, which every other account-scoped endpoint refuses' do
+      # Enforcement is not a flag: `Billing::Settings.enforced?` is true once Stripe keys or a trial plan
+      # exist, and `BILLING_TRIAL_ENABLED` already defaults to true. A cancelled subscription is therefore
+      # all this setup needs -- a config row named BILLING_ENFORCED would be read by nothing.
       create(:billing_subscription, account: account, status: 'canceled')
-      create(:installation_config, name: 'BILLING_ENFORCED', value: true)
 
       get "/api/v1/accounts/#{account.id}/conversations", headers: administrator.create_new_auth_token
       expect(response).to have_http_status(:payment_required)

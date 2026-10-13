@@ -105,24 +105,23 @@ const submit = () => {
   <form class="flex flex-col gap-5" novalidate @submit.prevent="submit">
     <Banner v-if="errorMessage" color="ruby">{{ errorMessage }}</Banner>
 
-    <div class="flex flex-col gap-1.5">
-      <label
-        for="platform-support-category"
-        class="text-label-small text-n-slate-12"
-      >
+    <!-- The label WRAPS the control rather than naming it by id: Select renders a wrapper div and the id
+         lands there, not on the native <select>, so a `for` would point at something unfocusable and
+         clicking the label would do nothing. Nesting associates it for real. -->
+    <label class="flex flex-col gap-1.5">
+      <span class="text-label-small text-n-slate-12">
         {{ t('PLATFORM_SUPPORT.FORM.CATEGORY') }}
-      </label>
+      </span>
       <Select
-        id="platform-support-category"
         v-model="category"
         class="!w-full"
         :options="categoryOptions"
         :aria-label="t('PLATFORM_SUPPORT.FORM.CATEGORY')"
       />
-      <p class="m-0 text-label-small text-n-slate-10">
+      <span class="text-label-small text-n-slate-10">
         {{ t('PLATFORM_SUPPORT.FORM.CATEGORY_HINT') }}
-      </p>
-    </div>
+      </span>
+    </label>
 
     <Input
       v-model="subject"
@@ -146,24 +145,23 @@ const submit = () => {
       min-height="8rem"
     />
 
-    <div class="flex flex-col gap-1.5">
-      <label
-        for="platform-support-priority"
-        class="text-label-small text-n-slate-12"
-      >
+    <!-- The label WRAPS the control rather than naming it by id: Select renders a wrapper div and the id
+         lands there, not on the native <select>, so a `for` would point at something unfocusable and
+         clicking the label would do nothing. Nesting associates it for real. -->
+    <label class="flex flex-col gap-1.5">
+      <span class="text-label-small text-n-slate-12">
         {{ t('PLATFORM_SUPPORT.FORM.PRIORITY') }}
-      </label>
+      </span>
       <Select
-        id="platform-support-priority"
         v-model="priority"
         class="!w-full"
         :options="priorityOptions"
         :aria-label="t('PLATFORM_SUPPORT.FORM.PRIORITY')"
       />
-      <p class="m-0 text-label-small text-n-slate-10">
+      <span class="text-label-small text-n-slate-10">
         {{ t('PLATFORM_SUPPORT.FORM.PRIORITY_HINT') }}
-      </p>
-    </div>
+      </span>
+    </label>
 
     <div class="flex flex-col gap-1.5">
       <span class="text-label-small text-n-slate-12">

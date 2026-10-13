@@ -362,11 +362,13 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
     end
 
     it 'says the account is gone rather than linking nowhere' do
-      orphan = ticket(reference_number: 902, account: create(:account, name: 'Deleted Co'),
-                      account_name_at_creation: 'Deleted Co')
       # The only way a ticket loses its account is the way production does it: the account goes, and the
-      # foreign key nullifies the column. `account_id` is required on create, deliberately.
-      orphan.account.destroy!
+      # foreign key nullifies the column. `account_id` is required on create and the reporter must be a
+      # member of that account, so the doomed account needs a member of its own.
+      doomed = create(:account, name: 'Deleted Co')
+      orphan = ticket(reference_number: 902, account: doomed, account_name_at_creation: 'Deleted Co',
+                      reporter_id: create(:user, account: doomed, role: :administrator).id)
+      doomed.destroy!
 
       get "/super_admin/platform_support/tickets/#{orphan.id}"
 
@@ -747,12 +749,16 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       expect(response.body).to include("/super_admin/platform_support?account_id=#{account.id}")
     end
 
-    # The count key arrives with the backend branch. Until it does, the row says so rather than breaking the
-    # page an operator needs for everything else.
-    it 'says the count is not recorded while the snapshot has no key for it' do
+    # The key always arrives now -- `Operations::AccountSnapshot#platform_support` ships one grouped count --
+    # so the row states a number, and the number is this account's OPEN tickets and nobody else's.
+    it 'counts the open Lynomia tickets of this account alone' do
+      ticket
+      ticket(reference_number: 907, status: :closed, closed_at: 1.hour.ago)
+      create(:platform_support_ticket, account: create(:account, name: 'Somebody Else'))
+
       get "/super_admin/operations/account?id=#{account.id}"
 
-      expect(response.body).to include('not recorded')
+      expect(response.body).to match(%r{Open Lynomia support tickets</dt>\s*<dd[^>]*>\s*1\s*</dd>}m)
     end
   end
 

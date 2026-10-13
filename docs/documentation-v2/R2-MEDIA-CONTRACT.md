@@ -150,25 +150,90 @@ article image may come from.
 
 ---
 
-## 3. BLOCKED — one read-only production value
+## 3. RESOLVED — production storage, measured by the owner
 
-**Freeze item 3 cannot be completed without knowing production's storage service.** Three independent traces
-flagged it UNVERIFIED and the delivery recommendation turns on it: whether the app streams bytes itself or
-proxies them differs by backend, and local disk also means media lives in a `.gitignore`d directory with no
-documented backup (066 R1).
-
-Read-only, no write anywhere:
-
-```bash
-RAILS_ENV=production bundle exec rails runner '
-puts "service=#{Rails.application.config.active_storage.service.inspect}"
-puts "class=#{ActiveStorage::Blob.service.class}"
-puts "urls_expire_in=#{ActiveStorage.urls_expire_in.inspect}"
-puts "resolve_model_to_route=#{ActiveStorage.resolve_model_to_route.inspect}"
-'
+```
+service=:local
+class=ActiveStorage::Service::DiskService
+urls_expire_in=nil
+resolve_model_to_route=:rails_storage_redirect
 ```
 
-Everything else in this contract is independent of the answer and implementation proceeds on it.
+`config/storage.yml:5-7` gives the `local` service root as `Rails.root.join("storage")`. So production media
+would be plain files under the application directory on one host.
+
+**Three rules this adds to the contract.**
+
+- **3.1 Freeze against ActiveStorage abstractions, never DiskService internals.** The implementation uses
+  `attachment.blob`, `blob.download` / `blob.open`, `blob.content_type`, `blob.byte_size`, `blob.checksum`,
+  `blob.metadata`. It must **never** touch `ActiveStorage::Blob.service.path_for`, `service.root`, a
+  `storage/` path, or anything else that only exists on `DiskService`. Moving to S3 or any object store must
+  then be an ENV change with **no change to the documentation content model** — the `media:` key, the corpus
+  layout and the resolver are all backend-independent by construction.
+- **3.2 No raw filesystem path is ever exposed.** Not in a URL, not in a page, not in an API response, not in
+  a log line, not in an error message. The app-owned route takes a portal, an article and a key; the filesystem
+  is behind `blob`.
+- **3.3 `urls_expire_in=nil` is a measured runtime fact and nothing more.** It is **not** the source of the
+  authorization semantics. Those come from the traced controller behaviour: every ActiveStorage controller
+  inherits `ActiveStorage::BaseController`, whose only concerns are `SetCurrent` and `protect_from_forgery`
+  (`activestorage-7.2.3.2/app/controllers/active_storage/base_controller.rb:4-10`) — **no authentication, no
+  policy call, and no application override adds any**. That, not the expiry setting, is why delivery is
+  app-owned.
+
+**No storage migration in R2.** The backend stays `:local`.
+
+---
+
+## 3A. Backup and restore — the operational gap, traced rather than assumed
+
+**A PostgreSQL backup alone is insufficient.** An ActiveStorage attachment is two things: rows in
+`active_storage_blobs` / `active_storage_attachments`, and an object in the service. Restoring only the database
+yields rows whose bytes are gone — every `media:` key resolves to a blob record whose file is missing, so every
+documentation image 404s while the article still renders. Restoring only the files yields orphans nothing
+references. **The two must be backed up and restored consistently, as one unit.**
+
+### 3A.1 What the repository actually implements
+
+Searched with no exclusion filter and every hit classified, per `00-program.md` §2.3:
+
+| Place | What is there |
+|---|---|
+| `deployment/deploy.sh:126-130` | stage 2 is **`pg_dump` only** — one `.dump` into `BACKUP_DIR` (`/var/backups/lynomia`, `:33`), retained `KEEP_BACKUPS=14` (`:36`, pruned at `:450`). **No `storage/`, no rsync, no tar, no object copy** |
+| `deployment/ROLLBACK.md`, `deployment/INCIDENT.md` | **zero mentions** of storage, ActiveStorage, attachment or blob. The rollback runbook does not cover media at all |
+| `deployment/setup_18.04.sh`, `setup_20.04.sh` | install no backup tooling. One prose line, `setup_20.04.sh:977`, "Always backup your database before proceeding" |
+| `config/schedule.yml`, `config/sidekiq.yml` | nothing backs anything up. (`sidekiq.yml:31-32` does carry the `active_storage_analysis` and `active_storage_purge` queues, so `purge_later` really is processed — relevant to items 8 and 9, not to backup) |
+| `deployment/*.service`, `*.target` | no mount, no snapshot, no `ReadWritePaths` for storage |
+| `.gitignore:59` | `/storage` — so it is not in the repository either |
+| **`docker-compose.production.yaml:8,61`** | **does** mount `storage_data:/app/storage` as a named Docker volume. Not nothing, and worth recording: on a Docker topology the bytes live in a Docker volume rather than a host directory. Production is the **systemd** topology (`deploy.sh` + `chatwoot*.service` + `/var/backups/lynomia`), so the host-directory case is the live one and the compose file matters only if the topology changes |
+
+**Claim, scoped exactly as the evidence supports it: the repository implements no backup of `storage/`.**
+
+**What this evidence cannot settle, and I will not claim either way:** a backup outside the repository — a
+hypervisor or volume snapshot, a filesystem-level agent, a hand-written cron on the host. None of that is
+visible from repository evidence. The owner's point 5 was right to warn against inferring absence from the
+`pg_dump`, and the honest boundary is that the repository implements none while the host may.
+
+### 3A.2 The smallest safe addition — designed, NOT applied
+
+Not applied, and not to be applied without separate approval. Recorded so the decision is costed:
+
+1. **Back the files up in the same stage as the database, so the two cannot drift.** `deploy.sh` stage 2
+   already computes `STAMP` and `PREVIOUS_SHA` and already checks free space on `BACKUP_DIR`'s filesystem
+   (`:71-81`). One `tar` of `$APP_DIR/storage` into `$BACKUP_DIR/$STAMP-pre-deploy-$PREVIOUS_SHA-storage.tar.zst`,
+   immediately after the dump, inherits the same stamp, the same retention prune and the same ERR trap.
+2. **Order matters for consistency: files first, then the database.** A file present with no row is an orphan
+   the seeder reclaims; a row present with no file is a broken published page. So capture files *before* the
+   dump if they are captured in one stage, and state that in `ROLLBACK.md`.
+3. **The free-space check must grow with it.** `:78-79` demands 2 GB for a dump; a media corpus makes that
+   figure wrong, and the check must measure `du -s storage` rather than assume.
+4. **`ROLLBACK.md` gains a media section**: restoring the dump without the matching storage archive leaves
+   every documentation image broken, and the two archives share a stamp precisely so an operator can pair them.
+5. **The alternative that removes the problem rather than managing it** is moving the service to S3 or an
+   S3-compatible store, which is ENV-only (`config/storage.yml:10-16,33-40`) and is what §3.1 keeps possible.
+   That is a bigger operational decision than R2 and is explicitly **not** proposed here.
+
+Until one of those is approved, **R2-O4 is confirmed as an open operational gap**, not a solved problem, and
+this contract says so rather than implying the media is safe.
 
 ---
 
@@ -179,4 +244,4 @@ Everything else in this contract is independent of the answer and implementation
 | **R2-O1** | `show_markdown` refuses a draft to a super admin while `show` serves one. Media follows `show`. Whether `show_markdown` should change is a product question, not a media one |
 | **R2-O2** | Captions have no representation in the Markdown source model. Deferred to R3 with the editor, not invented here |
 | **R2-O3** | Responsive variants need `config.active_storage.web_image_content_types` set explicitly, which is product-wide and affects avatars and message thumbnails. Out of scope; originals only |
-| **R2-O4** | Production storage is local disk unless §3 says otherwise, in a `.gitignore`d directory with no documented backup. A media corpus multiplies what a host rebuild loses |
+| **R2-O4** | **CONFIRMED.** Production storage is local disk (`:local` / `DiskService`, root `Rails.root.join("storage")`), in a `.gitignore`d directory, and the repository implements no backup of it (§3A). A media corpus multiplies what a host rebuild or a database-only restore loses. The smallest safe addition is designed in §3A.2 and **not applied** |

@@ -31,8 +31,7 @@ class Public::Api::V1::Portals::CategoriesController < Public::Api::V1::Portals:
   def load_category_articles
     articles = @category.articles.published.includes(:author)
     @articles = @portal.article_order == 'release_date' ? articles.order_by_release_date : articles.order(:position)
-    # No personal byline on Lynomia's own documentation; see
-    # documentation_layout/articles/_header.html.erb for why.
-    @category_authors = @portal.platform_owned? ? [] : @articles.filter_map(&:author).uniq
+    # `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article.
+    @category_authors = @articles.filter_map(&:public_author).uniq
   end
 end

@@ -12,19 +12,15 @@
     </div>
   </div>
   <%= render 'public/api/v1/portals/documentation_layout/articles/release_meta', article: article %>
-  <%# LYNOMIA'S OWN DOCUMENTATION CARRIES NO PERSONAL BYLINE. Documentation::ContentSeeder stamps
-      `SuperAdmin.first` as the author of every platform article (content_seeder.rb:22,79) and SuperAdmin is a
-      User (app/models/super_admin.rb:47), so this published a named operator's display name and avatar on every
-      public documentation page. The product's author is Lynomia. A tenant Help Center keeps its bylines: there
-      the author is a colleague the reader works with. %>
-  <% if article.author.present? && !portal.platform_owned? %>
+  <%# `public_author`, not `author`: Lynomia's own documentation carries no personal byline. See Article. %>
+  <% if article.public_author.present? %>
     <div class="mt-6 flex items-center gap-3">
       <%= render 'public/api/v1/portals/documentation_layout/user_avatar',
-                 user: article.author,
+                 user: article.public_author,
                  size: :lg,
                  border: 'border border-solid border-n-weak' %>
       <div>
-        <p class="text-sm font-medium text-n-slate-12"><%= article.author.available_name %></p>
+        <p class="text-sm font-medium text-n-slate-12"><%= article.public_author.available_name %></p>
         <% if show_last_updated %>
           <p class="mt-0.5 text-xs text-n-slate-11">
             <%= I18n.t('public_portal.common.last_updated_on', last_updated_on: last_updated_on) %>

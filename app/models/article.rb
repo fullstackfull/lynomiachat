@@ -111,6 +111,24 @@ class Article < ApplicationRecord
     portal&.platform_owned? || false
   end
 
+  # WHO TO ATTRIBUTE PUBLICLY, which is nobody for Lynomia's own documentation.
+  #
+  # `author_id` is required on every article and stays required: Super Admin needs to know who wrote a page, and
+  # Documentation::ContentSeeder stamps `SuperAdmin.first` on the whole platform corpus
+  # (custom/app/services/documentation/content_seeder.rb:22,79). But SuperAdmin is a User
+  # (app/models/super_admin.rb:47), so every public documentation page and category page was publishing a named
+  # operator's display name and avatar. The product's author is Lynomia.
+  #
+  # One reader rather than a condition in each view, because there are six render sites and they are not all
+  # HTML: both public JSON partials, both portal layouts, and the category author strip. A per-view condition
+  # closed the one a reader happened to be looking at and left the JSON API open, which is exactly what the
+  # adversarial pass over the first version of this fix found.
+  #
+  # A tenant Help Center keeps its bylines: there the author is a colleague the reader works with.
+  def public_author
+    author unless platform_owned?
+  end
+
   def self.search(params)
     records = left_outer_joins(
       :category

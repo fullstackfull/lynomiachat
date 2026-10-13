@@ -8,8 +8,8 @@ json.account_id article.account_id
 json.last_updated_at article.updated_at
 json.views article.views
 
-if article.author.present?
+if article.public_author.present?
   json.author do
-    json.partial! 'public/api/v1/models/hc/author', formats: [:json], resource: article.author
+    json.partial! 'public/api/v1/models/hc/author', formats: [:json], resource: article.public_author
   end
 end

@@ -261,6 +261,33 @@ RSpec.describe 'Public Articles API', type: :request do
       expect(response.body).not_to include(operator.available_name)
     end
 
+    # THE SITE THE FIRST VERSION OF THIS FIX MISSED. The byline was first removed in the documentation layout
+    # only, which left the public JSON API -- the same route with a .json format -- still serving the operator's
+    # available_name, name and avatar_url through models/hc/_author.json.jbuilder. The rule now lives on the
+    # model (`Article#public_author`) so every render site reads one answer.
+    it 'names nobody in the public article JSON' do
+      host! 'docs.example.com'
+      get "/hc/#{docs_portal.slug}/en/articles.json"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include(operator.available_name)
+      expect(response.parsed_body['payload'].first).not_to have_key('author')
+    end
+
+    it 'still names the author in a tenant portal\'s article JSON' do
+      tenant_portal = create(:portal, slug: 'tenant-json', account_id: account.id, custom_domain: 'tenantjson.example.com',
+                                      config: { allowed_locales: ['en'], default_locale: 'en', layout: 'documentation' })
+      tenant_category = create(:category, name: 'Help', portal: tenant_portal, account_id: account.id, locale: 'en', slug: 'help-json')
+      create(:article, portal: tenant_portal, category: tenant_category, account_id: account.id,
+                       author_id: operator.id, title: 'Tenant JSON guide', content: 'Body', status: :published)
+
+      host! 'tenantjson.example.com'
+      get "/hc/#{tenant_portal.slug}/en/articles.json"
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['payload'].first['author']['available_name']).to eq(operator.available_name)
+    end
+
     it 'still names the author on a tenant portal, where the author is a colleague' do
       tenant_portal = create(:portal, slug: 'tenant-byline', account_id: account.id, custom_domain: 'tenant.example.com',
                                       config: { allowed_locales: ['en'], default_locale: 'en', layout: 'documentation' })

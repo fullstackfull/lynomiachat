@@ -5,7 +5,7 @@ Phase: an isolated hotfix phase interrupting Documentation V2 between Checkpoint
 production data touched, no Meta configuration changed, Account 21 untouched, no message sent through any real
 provider.
 
-Verdict: **HOTFIX-GO for P0-1, P0-2 and P0-3** (section L). **P0-5 is a separate, dated emergency** that this
+Verdict: **HOTFIX-GO for P0-1, P0-2 and P0-3** (section L, which comes last because section M — the adversarial review the gate required — has to be read before the verdict it supports). **P0-5 is a separate, dated emergency** that this
 phase deliberately did not fix in code and that the owner has to act on within days, not weeks.
 
 | Item | Status | Outcome |
@@ -193,7 +193,7 @@ happening, by a different route than the one the brief anticipated.
 |---|---|---|
 | Search returns published articles only | `custom/app/services/custom/search_service.rb` — `filter_articles` → `super.published` | READ, in the existing Lynomia overlay |
 | Draft oracle closed | `app/controllers/public/api/v1/portals/articles_controller.rb` — `@portal.articles.published.find_by(...)` | READ, public |
-| No personal byline on Lynomia's own documentation | `documentation_layout/articles/_header.html.erb` and `categories_controller.rb:34`, both gated on `portal.platform_owned?` | RENDER |
+| No personal byline on Lynomia's own documentation | `Article#public_author`, read by all six render sites (both JSON partials, both layouts, the category strip, the controller) | MODEL — **moved here by the adversarial pass, see §M** |
 | Dead authoring link removed | `SearchResultArticleItem.vue` now links to the public article page via `buildPortalArticleURL` | PRODUCT SURFACE |
 
 **Narrowing after `page`/`per` is deliberate and correct.** The condition lands in the `WHERE` clause and
@@ -471,8 +471,8 @@ the test database. Nothing ran against production.
 |---|---|---|---|
 | 1 | Focused XSS security suite — `spec/lib/markdown_renderer_security_spec.rb` | 49 examples, 0 failures | **0** |
 | 2 | Documentation authorization/isolation — `spec/requests/custom/tenant_help_center_removal_spec.rb` | 41 examples, 0 failures | **0** |
-| 2b | Public portal rendering and the pixel — `spec/controllers/public/api/v1/portals/articles_controller_spec.rb` | 25 examples, 0 failures | **0** |
-| 3 | Full documentation Ruby — `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, both public portal controller specs, articles/portals/categories controllers, the removal spec, all policies, `portal_helper` | 630 examples, 0 failures | **0** |
+| 2b | Public portal rendering, the pixel and the byline — `spec/controllers/public/api/v1/portals/` | 29 examples, 0 failures | **0** |
+| 3 | Full documentation Ruby — `spec/custom/services/documentation/`, `spec/requests/documentation/`, the SEO audit spec, both public portal controller specs, articles/portals/categories controllers, the removal spec, all policies, `portal_helper`, `article`, `message`, `search_controller` | 793 examples, 0 failures | **0** |
 | 4 | Relevant frontend — search module, both Meta connect composables, `portalHelper`, `permissions` | 5 files, 61 tests passed | **0** |
 | 5 | Mail and render affected by the sanitizer — all of `spec/lib/`, `email_helper`, `message_format_helper`, all mailers, all of `spec/services/messages/` | 1016 examples, 0 failures | **0** |
 | 5b | HUMAN_AGENT and its blast radius — `spec/services/messages/`, `spec/services/facebook/`, `spec/services/instagram/`, `message_window_service`, `spec/models/message_spec.rb` | 381 examples, 0 failures | **0** |
@@ -493,6 +493,12 @@ failures, exit 1** against unfixed code.
   development-group gem that is not installed here. That is a pre-existing environment gap, unrelated to any
   change in this phase. A production-mode full eager load covers the same property (every constant resolves
   from its path) and passes.
+- **Gate 9 writes to the test database and must be run last, or against its own.** `documentation:setup` and
+  `documentation:content` insert the two platform portals and 126 articles outside transactional fixtures, so
+  every later spec that creates a portal with the `lynomia-docs` slug fails on uniqueness. That happened once
+  here, was diagnosed as contamination rather than regression, the rows were deleted, and gate 3 was re-run
+  clean at 793/0. Worth recording because the same trap will catch the next person who runs the gate list in
+  order.
 - **Gate 9's "0 errors / INDEXABLE" is a weaker statement than it reads as**, and this phase did not change
   that: 8 of the audit's 10 ERROR-level checks cannot fail on this corpus, as recorded in
   `docs/documentation-v2/01-current-system.md` §8. It is reported here as run, not as proof of SEO health.
@@ -520,6 +526,66 @@ rename duplicates, Super Admin save dropping `meta['doc_key']`, Arabic contextua
 normalization, category icons, outdated documentation claims, contextual help gaps, editor modernization,
 search and SEO expansion.
 
+## M. Adversarial review of the two security fixes
+
+Required by the gate: review specifically against the XSS fix and the isolation fix, and fix or refute every
+blocker or major finding with evidence. Three findings. One refuted, two confirmed and fixed.
+
+### M1 — REFUTED: is the fence info string the only unescaped node data on the HTML path?
+
+The class-of-defect question, since finding one instance of "attribute written without escaping" says nothing
+about the rest. Every `out(` call in the gem's `HtmlRenderer` was audited:
+
+```
+$ grep -n "out(" .../renderer/html_renderer.rb | grep -vE "escape_html|escape_href|:children|out\("<|out\('<"
+ 95:  out(' lang="', node.fence_info.split(/\s+/)[0], '"') if …     <- fixed
+100:  out(' class="language-', node.fence_info.split(/\s+/)[0], '">') <- fixed
+113:  out(tagfilter(node.string_content))                            <- html, behind option_enabled?(:UNSAFE)
+122:  out(tagfilter(node.string_content))                            <- inline_html, same
+```
+
+Everything else writes a literal. Lines 113 and 122 are unreachable: `:UNSAFE` is `1 << 17` and the options
+bitmask is `0` on both paths. The application's own overrides were audited the same way and are all escaped,
+sanitized or integer-bounded: `link` (`escape_href` + `escape_html`), both `image` implementations (sanitized
+`src`, escaped `title`, `alt` through `plain` so it reaches the escaping `text`, `style` bounded to `1..2000`
+px), `table`/`colgroup`/`table_sizing_style` (built only from `widths.map(&:to_i)`, and `@pending_colwidths`
+itself comes from a `([\d,]+)` capture), `render_embed_from_match` (`CGI.escapeHTML` per named capture) and
+`parse_sup` (`escape_html` on both branches). **No second instance of the defect exists.** Refuted with
+evidence rather than asserted.
+
+### M2 — CONFIRMED, MAJOR, FIXED: the byline fix closed the HTML and left the JSON API open
+
+The first version removed the byline in `documentation_layout/articles/_header.html.erb` and in the categories
+controller. Both are HTML. The same route with a `.json` format renders
+`app/views/public/api/v1/models/_article.json.jbuilder:28-32`, which serves
+`models/hc/_author.json.jbuilder` — `available_name`, `name` and `thumbnail` — and
+`hc/_associated_article.json.jbuilder` does the same for every linked translation. So a fix that *claimed* to
+stop publishing a named operator on Lynomia's documentation still published it at
+`GET /hc/lynomia-docs/en/articles.json`.
+
+Proven, not reasoned: with the model fix in place but the jbuilder reverted, the new example fails with
+`expected "…" not to include "BylineOperator"`.
+
+Two further sites the same pass found: the classic layout's `articles/index.html.erb:19-23` reads
+`article.author.avatar_url` and `.name` unconditionally, and `_authors.html.erb` builds the category author
+strip from `map(&:author)`. Neither renders for a platform portal **today**, because `PortalSeeder` sets
+`layout: 'documentation'` — but `config` is an editable `SerializedField` on the Super Admin portal dashboard
+(`custom/app/dashboards/portal_dashboard.rb:19,28`), so an operator can switch a platform portal to the classic
+layout and bring the byline back. A view-level condition is the wrong shape for a rule with six render sites in
+three formats.
+
+**Fix:** `Article#public_author` — `author unless platform_owned?` — read by all six. `author_id` stays
+required, because Super Admin still needs to know who wrote a page; what changes is who is *attributed
+publicly*. Two new examples pin the JSON for a platform portal (no `author` key at all) and for a tenant portal
+(the author named), beside the two HTML ones.
+
+### M3 — CONFIRMED, MINOR, ACCEPTED: `Rails/SkipsModelValidations` in two new examples
+
+The two end-to-end Facebook examples backdate the incoming message with `update_all` to move the conversation
+past the 24-hour window, with an inline cop disable. `update_all` is the only way to set `created_at` on a
+record the shared `before` block already created, and a spec backdating its own fixture is the intended use.
+Accepted rather than worked around.
+
 ## L. HOTFIX-GO / HOTFIX-NO-GO
 
 **HOTFIX-GO** for the three code fixes in this phase: `d5ec6e05` (XSS), `cf9fdc6c` (documentation isolation),
@@ -527,8 +593,10 @@ search and SEO expansion.
 
 Grounds: each fix sits at the narrowest shared boundary that covers every caller found by search rather than by
 assumption; each is covered by adversarial tests that **failed against the unfixed code first**; all eleven
-gates pass with the exit codes in section J, against pre-change baselines; and no fix changes a provider API
-version, a provider configuration or a deployment.
+gates pass with the exit codes in section J, against pre-change baselines; the adversarial review in section M
+refuted the class-of-defect question with evidence and its one major finding — a byline fix that closed the
+HTML and left the JSON API open — is fixed and proven; and no fix changes a provider API version, a provider
+configuration or a deployment.
 
 **Two things this GO does not cover, and both are the owner's.**
 

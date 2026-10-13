@@ -37,7 +37,7 @@ Section facts:
 | Key | Verdict | Reason | Evidence |
 |---|---|---|---|
 | `integrations` | **SPLIT**, with three targeted **REWRITE**s | One page is doing three jobs: a catalogue (`integrations.md:16-29`), the visibility rules (`:31-43`), and three mini-guides for Slack, Dashboard Apps and Google Translate (`:45-58`). The structure and the visibility table are accurate; the problem is that nine apps get 9-21 words each and no setup, no limits, no failure guidance. Keep the page as the hub (key must not change), move the three paragraphs into per-app articles, and fix the Notion row, the "HTTPS URL" wording and the language-detection wording (section 3, items 14, 7, 9). | `apps.yml` has 10 apps (section 4.1 B); `integrations.md:18-29` rows of 9-21 words; `featureHelper.js:22,24,28` route three settings pages to this one page. |
-| `webhooks` | **EXPAND**, with four targeted **REWRITE**s | The strongest article in the section: the signature algorithm, the three header names, the once-only delivery, the five-second timeout and the event list all check out against code (section 3, items 22-33). It is missing a worked example (no sample payload, no receiver code, `webhooks.md` has the only formula in the section), omits two of the six things that POST to a URL (API-inbox webhook, agent bot), contradicts itself on the secret, and promises a plan paywall that this fork cannot normally show. | `lib/webhooks/trigger.rb:26-63`; `app/listeners/webhook_listener.rb:110-133`; `webhooks.md:34`, `:28,159`, `:128-137`. |
+| `webhooks` | **EXPAND**, with four targeted **REWRITE**s | The strongest article in the section: the signature algorithm, the three header names, the once-only delivery, the five-second timeout and the event list all check out against code (section 3, items 22-31 and 34). It is missing a worked example (no sample payload, no receiver code, `webhooks.md` has the only formula in the section), omits two of the six things that POST to a URL (API-inbox webhook, agent bot), contradicts itself on the secret, and promises a plan paywall that this fork cannot normally show. | `lib/webhooks/trigger.rb:26-63`; `app/listeners/webhook_listener.rb:110-133`; `webhooks.md:34`, `:28,159`, `:128-137`. |
 
 Nothing is a candidate for RETIRE, MERGE or RELOCATE. One IA question is raised in section 4.5: the section is titled
 "Integrations" but the product separates channels (Settings, Inboxes) from integrations (Settings, Integrations), and the
@@ -62,9 +62,9 @@ Every checkable claim in both EN articles, with the code that settles it. AR car
 | 11 | :47-49 | Slack: two modes; alert mode sends nothing back | `apps.yml:82,89` (`two_way`, `alert`); `hook.rb:62-66`; the inbound builder drops replies in alert mode `lib/integrations/slack/incoming_message_builder.rb:71` | confirmed |
 | 12 | :23, :86-87 | Dialogflow: one per inbox, connected inbox not offered again, email inboxes excluded | `apps.yml:97-98`; `hook.rb:39`; `NewHook.vue:14-23`; `store/modules/inboxes.js:121-125` (`channel_type !== EMAIL`) | confirmed |
 | 13 | :25, :82-83 | OpenAI entry is a key; it also switches label suggestions on | `apps.yml:33-59`; every AI task reads the account hook key first -- `lib/captain/base_task_service.rb:180-193` and the six subclasses that return `true` from `use_account_openai_hook?` (`rewrite_service.rb:60`, `summary_service.rb:28`, `reply_suggestion_service.rb:41`, `label_suggestion_service.rb:90`, `follow_up_service.rb:107`, `csat_utility_analysis_service.rb:67`) | confirmed -- but the article names "the AI writing features" and no article describes them (section 4.3) |
-| 14 | :28 | Notion "gives the AI assistant read access to your Notion content" | The only code that touches a Notion hook creates it (`app/controllers/notion/callbacks_controller.rb:15-31`), deletes it (`api/v1/accounts/integrations/notion_controller.rb:13`) and decides visibility (`app.rb:63-64,124-126`). **No code anywhere reads Notion content.** The product's own copy promises it for Captain (`en.yml:571-574`), but there is no Captain assistant in this fork: no `Captain::Assistant` model, and the `captain` routes are `preferences` and five `tasks` only (`config/routes.rb:63-71`); `lib/chatwoot_app.rb:5-12` states Enterprise is not part of this codebase | **unverifiable, probably wrong**: connecting Notion stores a token and nothing consumes it |
+| 14 | :28 | Notion "gives the AI assistant read access to your Notion content" | The only code that touches a Notion hook creates it (`app/controllers/notion/callbacks_controller.rb:14-30`), deletes it (`api/v1/accounts/integrations/notion_controller.rb:13`) and decides visibility (`app.rb:63-64,124-126`). **No code anywhere reads Notion content.** The product's own copy promises it for Captain (`en.yml:571-574`), but there is no Captain assistant in this fork: no `Captain::Assistant` model, and the `captain` routes are `preferences` and five `tasks` only (`config/routes.rb:63-71`); `lib/chatwoot_app.rb:5-12` states Enterprise is not part of this codebase | **unverifiable, probably wrong**: connecting Notion stores a token and nothing consumes it |
 | 15 | :29 | LeadSquared creates leads and logs conversation activity | `hook_job.rb:6-12,28-61` (events `contact.updated`, `conversation.created`, `conversation.resolved`); `hook.rb` setup job creates the activity types on create (`after_create :trigger_setup_if_crm`, `:23`); `apps.yml:257-331` | confirmed |
-| 16 | :27 | Linear creates an issue or links an existing one | routes `config/routes.rb:308-318` (`create_issue`, `link_issue`, `unlink_issue`, `search_issue`, `linked_issues`) | confirmed -- but **omits** that a private note containing a Linear issue URL is linked automatically (`lib/integrations/linear/auto_link_service.rb:11-20`, wired at `hook_job.rb:60-63`) |
+| 16 | :27 | Linear creates an issue or links an existing one | routes `config/routes.rb:308-318` (`create_issue`, `link_issue`, `unlink_issue`, `search_issue`, `linked_issues`) | confirmed -- but **omits** that a private note containing a Linear issue URL is linked automatically (`lib/integrations/linear/auto_link_service.rb:4-24`, wired at `hook_job.rb:60-65`) |
 | 17 | :26 | RealtimeKit starts a call from inside a conversation | `routes.rb:302-306` `create_a_meeting`; `lib/integrations/dyte/processor_service.rb:4-15`; customers join through the client route `routes.rb:404-409` | confirmed |
 | 18 | :62, :71-74 | Administrator-only; no custom-role entry | all seven integrations child routes carry `permissions: ['administrator']` (`integrations.routes.js:15-91`); `WebhookPolicy` is admin-only (`app/policies/webhook_policy.rb`); `CustomRole::PERMISSIONS` has 8 entries, none for integrations or webhooks (`custom/app/models/custom_role.rb:19-28`). Nuance: `GET .../integrations/apps` is **not** admin-gated (`apps_controller.rb:2`) and Dashboard Apps list/show are open to every agent (`dashboard_app_policy.rb`) -- correct, since agents must see the tabs | confirmed |
 | 19 | :78-79 | One connection per app, except Webhooks, Dashboard Apps, Dialogflow | `apps.yml` `allow_multiple_hooks`; `hook.rb:39` | confirmed |
@@ -79,7 +79,7 @@ Every checkable claim in both EN articles, with the code that settles it. AR car
 | 28 | :98-108 | Attempted once; slow = abandoned at the timeout (5 s default); 4xx/5xx and outages are failures; logged only; nothing retried | `trigger.rb:26-37` (rescue -> `handle_failure` -> `Rails.logger.warn`), `:118-123` (`WEBHOOK_TIMEOUT`, default 5; `config/installation_config.yml:94-98`), `lib/safe_fetch/fetcher.rb:9` (non-2xx -> `HttpError`), `app/jobs/webhook_job.rb` (no `retry_on`) | confirmed -- for account webhooks. The same job class behaves differently for two other senders: an **API-inbox** failure marks the message failed (`trigger.rb:72-75,100-102`) and an **agent-bot** delivery is retried 3x on 429/500 (`app/jobs/agent_bots/webhook_job.rb:3`) |
 | 29 | :115-121, :123 | Private/internal addresses refused; response body and content type never read | `lib/safe_fetch.rb:36-38` and `fetcher.rb:46-48` (SSRF filter unless env `SAFE_FETCH_ALLOW_PRIVATE_NETWORK`); `trigger.rb:43-51` (`validate_content_type: false`, block returns nil) | confirmed (operator can switch the refusal off by env) |
 | 30 | :119 | One webhook per URL per account | `webhook.rb:28`; unique index `(account_id, url)` | confirmed |
-| 31 | :125-126 | Subscriptions are account-wide | `webhook_listener.rb:113` delivers to every `account_type` webhook subscribed; `inbox_id` is permitted by the controller but never filters (`webhooks_controller.rb:24`) | confirmed |
+| 31 | :125-126 | Subscriptions are account-wide | `webhook_listener.rb:113` delivers to every `account_type` webhook subscribed; `inbox_id` is permitted by the controller but never filters (`webhooks_controller.rb:25-27`) | confirmed |
 | 32 | :34 | "The secret is shown once on the confirmation screen; copy it then. You can also reveal it later in the webhook's edit form." | The secret is serialised on **every** webhook response (`app/views/api/v1/accounts/webhooks/_webhook.json.jbuilder:6`) and the edit form has an eye toggle (`WebhookForm.vue:127-150`). "Shown once" is false; the two sentences contradict each other | wrong (self-contradictory) |
 | 33 | :28, :159 | "On some plans, Webhooks shows an upgrade notice"; "API and webhooks are not included on your plan" | The notice needs `deploymentEnv === 'cloud'` **and** the account feature off (`Webhooks/Index.vue:53-60`; `shared/store/globalConfig.js:66`). `DEPLOYMENT_ENV` defaults to `self-hosted` (`installation_config.yml:313-315`). Server side, `Account#api_and_webhooks_enabled?` is a constant `true` (`app/models/account.rb:166-168`) and `ChatwootApp.chatwoot_cloud?` is constant `false` (`lib/chatwoot_app.rb:14-16`), so deliveries are never withheld. A plan *can* clear the flag (`features.yml:284-287` is assignable) but then only the notice appears | **unverifiable** (depends on the production `DEPLOYMENT_ENV`, not checked); at best a cosmetic notice |
 | 34 | :132-137 | Rule, macro and flow webhooks: event names, signed or not | rule: `automation_event.<trigger>` + `commerce` block (`custom/app/services/custom/automation_rules/action_service.rb:12-19`), unsigned; macro: `macro.executed` (`app/services/macros/execution_service.rb:66-68`), unsigned; flow: `flow_webhook`, signed with the flow bot secret (`custom/app/services/flows/nodes/webhook.rb:14,25`) | confirmed |
@@ -135,8 +135,9 @@ page, endpoint or API in this repository. Five groups.
 | 11 | TikTok | `Channel::Tiktok` `tiktok.rb:19` | `ChannelList.vue:82-94`, **pushed only if `tiktokAppId` is set** | `routes.rb:558` | `Tiktok::SendOnTiktokService` | feature `channel_tiktok` |
 | 12 | X / Twitter | `Channel::TwitterProfile` `twitter_profile.rb:19` | **not creatable**: connect flow and both webhooks removed (`routes.rb:532-544`); `ChannelFactory.vue:21-23` | none | the send service is still mapped (`send_reply_job.rb:5`) | n/a |
 
-Also not offered: Voice and WhatsApp calling (`ChannelList.vue:96-98`). Per-channel health: only six channels report a
-connection state; five say `unknown` (`capability.rb:21-24`).
+Also not offered: Voice and WhatsApp calling (`ChannelList.vue:96-98`). Per-channel health: five channels report a
+connection state (Facebook, Instagram, TikTok, WhatsApp, Email), five say `unknown` (Telegram, LINE, Twilio SMS, Bandwidth
+SMS, X) and two have no provider to lose (widget, API) -- `capability.rb:21-24,53-78`.
 
 **B. The ten catalogue apps** (`config/integration/apps.yml`): see the coverage table in 4.2. Visibility and flags are in
 section 3, items 3-6. `POST .../integrations/hooks/:id/process_event` is a dead route: `Integrations::Hook#process_event`
@@ -155,7 +156,7 @@ comment; `docs/product-refinement/02-shopify-retirement.md`; see 044).
 
 | # | Surface | Evidence |
 |---|---|---|
-| 1 | Account webhooks (12 allowed events, signed) | `app/models/webhook.rb:32-34`, `trigger.rb:54-63` |
+| 1 | Account webhooks (12 allowed events, signed) -- the same target as catalogue app **Webhooks**, counted once, in B | `app/models/webhook.rb:32-34`, `trigger.rb:54-63` |
 | 2 | API-inbox outbound webhook | `webhook_listener.rb:122-128`; `channel/api.rb:26` (`webhook_url`, `hmac_mandatory`) |
 | 3 | Agent-bot webhook (retried 3x on 429/500) | `agent_bots/webhook_job.rb:3` |
 | 4 | Automation-rule and macro "send webhook event" action | `automation_rules/action_service.rb:38-40`; `macros/execution_service.rb:66-68` |
@@ -188,18 +189,19 @@ guidance. Mentions were counted by case-insensitive search over all 63 EN files,
 | Group | Targets | L3 | L2 | L1 | L0 |
 |---|---|---|---|---|---|
 | A. Channels (UI cards) | 10 | 1 (WhatsApp) | 0 | 9 | 0 |
-| B. Catalogue apps | 10 | 1 (Webhooks) | 3 (Slack, Dashboard Apps, Google Translate) | 6 (Dialogflow, OpenAI, RealtimeKit, Linear, Notion, LeadSquared) | 0 |
+| B. Catalogue apps (Webhooks counted here, once) | 10 | 1 (Webhooks) | 3 (Slack, Dashboard Apps, Google Translate) | 6 (Dialogflow, OpenAI, RealtimeKit, Linear, Notion, LeadSquared) | 0 |
 | C. Commerce | 4 | 4 | 0 | 0 | 0 |
-| D. Developer surfaces | 9 | 2 (account webhooks, agent bot) | 0 | 2 (rule/macro action, flow node) | 5 (API-inbox webhook, Application API, Client API, Platform API, widget SDK) |
-| **Core total (A-D)** | **33** | **8 (24%)** | **3 (9%)** | **17 (52%)** | **5 (15%)** |
-| E. Adjacent | 5 | 0 | 0 | 0 | 5 |
-| **All** | **38** | **8 (21%)** | **3 (8%)** | **17 (45%)** | **10 (26%)** |
+| D. Developer surfaces (D1 is B's Webhooks, so 8 here) | 8 | 1 (agent bot) | 0 | 2 (rule/macro action, flow node) | 5 (API-inbox webhook, Application API, Client API, Platform API, widget SDK) |
+| **Core total (A-D)** | **32** | **7 (22%)** | **3 (9%)** | **17 (53%)** | **5 (16%)** |
+| E. Adjacent (Intercom, Freshdesk, Google sign-in, Stripe, push) | 5 | 0 | 0 | 0 | 5 |
+| **All** | **37** | **7 (19%)** | **3 (8%)** | **17 (46%)** | **10 (27%)** |
 
-Read it this way: of 33 things an administrator can connect or call, **8 have a real article. 25 do not.** Of those 25,
-17 are a table row. 5 are not mentioned at all. And 3 (Slack, Dashboard Apps, Google Translate) get a paragraph but no
-setup. The `integrations` section has **2 articles for 38 targets (0.05 per target)**. The eight L3 targets are served
-almost entirely from outside it: WhatsApp (6 articles in `whatsapp`, 14 in `whatsapp-errors`), commerce (7 in `commerce`,
-5 commerce-specific in `troubleshooting`) and agent bots (1, in `automation`). Only `webhooks` is in `integrations`.
+Read it this way: of 32 things an administrator can connect or call, **7 have a real article. 25 do not.** Of those 25,
+17 are a table row, 5 are not mentioned at all, and 3 (Slack, Dashboard Apps, Google Translate) get a paragraph but no
+setup. The `integrations` section has **2 articles for 37 targets (about 0.05 per target)**. The seven L3 targets are
+served almost entirely from outside it: WhatsApp (6 articles in `whatsapp`, 14 in `whatsapp-errors`), commerce (7 in
+`commerce`, 5 commerce-specific in `troubleshooting`) and agent bots (1, in `automation`). Only `webhooks` is in
+`integrations`.
 
 Concrete corpus counts behind the L1 rows (EN files that mention the term at all, `integrations/` excluded unless stated):
 Facebook/Messenger 5 files, 3 of them about WhatsApp; Instagram 3; TikTok 3; Telegram 2; LINE 2 (a third hit is a table
@@ -227,7 +229,7 @@ Whole targets, zero mentions:
 Sub-surfaces of documented-looking targets, zero mentions:
 
 - Email: IMAP, SMTP, the forwarding address, Google OAuth, Microsoft OAuth, reauthorisation (`Channel::Email` is a `Reauthorizable`, `email.rb:40`).
-- The five AI task endpoints behind the OpenAI key (`config/routes.rb:63-71`; `tasks_controller.rb:4-52`), and the Settings, Captain page.
+- The five AI task endpoints behind the OpenAI key (`config/routes.rb:63-71`; `tasks_controller.rb:4-52`), and the Settings > Captain page.
 - Linear automatic linking; Slack link unfurling and file sharing (`incoming_message_builder.rb:6-8`).
 - Dialogflow handoff (`lib/integrations/bot_processor_service.rb:57-58`), region and language fields (`apps.yml:99-176`).
 - WhatsApp through 360dialog (reachable by URL only), and any existing X/Twitter inbox (outbound still mapped).
@@ -235,8 +237,8 @@ Sub-surfaces of documented-looking targets, zero mentions:
 
 ### 4.4 Missing articles
 
-Each row answers one question a stuck user has. Priority P1 = a Settings page exists with no "Learn more" link and a real
-failure mode; P2 = developer enablement; P3 = completeness. Proposed keys are suggestions for Agent 000.
+Each row answers one question a stuck user has. Priority P1 = users hit it today (a Settings page with no "Learn more"
+link, or a failure the product does not show); P2 = developer enablement; P3 = completeness. Proposed keys are suggestions for Agent 000.
 
 Contextual-help state today (verified, `featureHelper.js:6-32,72-77`): on a branded installation a page whose feature has no
 `FEATURE_DOC_KEYS` entry shows **no help link at all**. That is the case for Dashboard Apps (`DashboardApps/Index.vue:138`,
@@ -251,9 +253,9 @@ catalogue page (`featureHelper.js:22,24,28`). Of all channel pages only `channel
 | 2 | Put a Dialogflow bot on an inbox | "Why did my bot stop answering, and how does it hand over to a person?" | `apps.yml:92-176`; `NewHook.vue:14-23`; `bot_processor_service.rb:57-58` | P1 |
 | 3 | Connect Google Translate | "What do I paste where, and what exactly does it translate?" | `apps.yml:177-214`; `detect_language_service.rb:5-9`; `messages_controller.rb:48-63` | P1 |
 | 4 | Add your OpenAI key | "What does the key do, and why does Save say it is invalid?" error `en.yml:210` | `apps.yml:26-59`; `hook.rb:134-136,162-166` | P1 |
-| 5 | AI writing tools in the composer | "What can rewrite, summarise, suggest a reply and suggest labels, and who pays for it?" | `routes.rb:63-71`; `tasks_controller.rb`; `base_task_service.rb:180-193` | P1 |
+| 5 | AI writing tools in the composer | "What can rewrite, summarise, suggest a reply and suggest labels, and whose OpenAI key is used?" | `routes.rb:63-71`; `tasks_controller.rb`; `base_task_service.rb:180-193` | P1 |
 | 6 | Start a video or voice call (RealtimeKit) | "Which three values do I need, and what do the credential errors mean?" errors `en.yml:169-177` incl. the retired-Dyte message | `apps.yml:215-255`; `hook.rb:59-61,168-173` | P1 |
-| 7 | Connect Linear | "How do I turn a conversation into an issue, and what is auto-linking?" | `routes.rb:308-318`; `auto_link_service.rb:11-20` | P2 |
+| 7 | Connect Linear | "How do I turn a conversation into an issue, and what is auto-linking?" | `routes.rb:308-318`; `auto_link_service.rb:4-24` | P2 |
 | 8 | Connect LeadSquared | "What gets created, when, and what do the scores mean?" | `apps.yml:257-331`; `hook_job.rb:28-61` | P2 |
 | 9 | Build a Dashboard App | "What does my page receive, and how do I listen for it?" (event `appContext`, payload keys, `postMessage` to `*`) | `Frame.vue:5,44-50,118-121`; `dashboard_app.rb:25-45` | P1 |
 | 10 | Notion: decide before writing | "What does connecting Notion actually give me?" -- today, nothing consumes it (item 14). Either document it as connect-only or hold the article until a consumer exists | section 3 item 14 | decision |
@@ -264,9 +266,9 @@ catalogue page (`featureHelper.js:22,24,28`). Of all channel pages only `channel
 | 15 | Webhook payload reference and a receiver example | "What exactly does a `message_created` body look like, and what does verification code look like?" | `message.rb:181-199`; `trigger.rb:54-63` | P2 |
 | 16 | Platform API | "How does an operator provision accounts?" -- audience is the operator; may belong outside the customer corpus | `routes.rb:458-481` | decision |
 | 17 | Import from Intercom or Freshdesk | "Can I bring my history over?" -- flag-gated, default off | `importSources.js`; `features.yml:280-283` | P3 |
-| 18-27 | Channel guides (see 4.5): Facebook, Instagram, Website, Email (IMAP/SMTP), Email (Google/Microsoft), Telegram, LINE, SMS (Twilio, Bandwidth), TikTok, API | "How do I connect it, and what breaks?" | section 4.1 A; 041 and 042 hold the Facebook and Instagram detail | P1 for Facebook, Instagram, Email |
+| 18-26 | Channel guides (see 4.5): Facebook, Instagram, Website, Email (IMAP/SMTP), Email (Google/Microsoft), Telegram, LINE, SMS (Twilio, Bandwidth), TikTok (the API channel is item 13) | "How do I connect it, and what breaks?" | section 4.1 A; 041 and 042 hold the Facebook and Instagram detail | P1 for Facebook, Instagram, Email |
 
-That is **27 proposed rows** against 2 articles today. They are proposals, not a target; items 10 and 16 are decisions, and
+That is **26 proposed rows** (24 articles and 2 decisions) against 2 articles today. They are proposals, not a target;
 any row whose article would not answer its question should not be written (charter section 9).
 
 ### 4.5 Where they live (IA, for arbitration)
@@ -275,7 +277,7 @@ Evidence for a split rather than stuffing channels into `integrations`: the prod
 (`Settings > Inboxes` via `ChannelList.vue`, `Settings > Integrations` via `integrations.routes.js`), and
 `integrations.md:12-14` already tells the reader that stores and bots are *not* integrations. The corpus today has
 `whatsapp` and `whatsapp-errors` as top-level sections and **no home for the nine other channels**. Recommendation: a
-`channels` section for items 18-27 (charter section 8.5 requires evidence for a new section; this is it), keep
+`channels` section for items 18-26 (charter section 8.5 requires evidence for a new section; this is it), keep
 `integrations` for items 1-17 and the hub, and keep `connect-your-first-channel` as the channel chooser. This is a
 recommendation for Agent 000 and 062, not a decision.
 
@@ -284,11 +286,12 @@ recommendation for Agent 000 and 062, not a decision.
 - **Structure.** Both articles follow the corpus pattern (what/when/steps/limits/related/if-it-does-not-work) and the
   tone is plain and exact. `webhooks.md` is genuinely task-oriented (Steps, Verifying, When a delivery fails, a
   five-symptom troubleshooting block); `integrations.md` is a reference table plus three paragraphs, not a task.
-- **Missing structural elements.** `webhooks.md` has no worked example (every other long article has one; the only code
-  block is the one-line formula at `:79-81`), no sample payload, no receiver snippet. `integrations.md` has one worked
+- **Missing structural elements.** `webhooks.md` has no worked example (`agent-bots.md`, `set-up-an-inbox.md` and
+  `connect-your-first-channel.md` each carry one; the only code block here is the one-line formula at `:79-81`), no sample
+  payload, no receiver snippet. `integrations.md` has one worked
   example (Slack alert mode, `:64-69`) for ten apps.
-- **Screenshots/media.** None, in either article. Of everything in the corpus a screenshot would help most, the
-  Integrations catalogue and the Webhook form are in this section.
+- **Screenshots/media.** None, in either article. A screenshot of the Integrations catalogue (which of the ten a given
+  account actually sees) and of the Webhook form would remove the most ambiguity in this section.
 - **Front matter / SEO.** Titles are one generic word (`Integrations`, `Webhooks`; AR `Webhook`) with no `seo_title`;
   the EN article title equals the section name, so a breadcrumb reads "Integrations > Integrations". `seo_description`
   is present and within the audit's 50-160 range in all four (142, 127, 146, 94 characters;
@@ -298,10 +301,10 @@ recommendation for Agent 000 and 062, not a decision.
 - **Length.** `integrations.md` is 896 words for ten apps; `webhooks.md` is 1,257 words for one. The imbalance is the
   finding.
 - **Honesty.** The "you will usually see fewer than ten" framing and the explicit statement that webhooks are not retried
-  are exactly the honest posture this program wants. The weak spots (Notion, the secret sentence, the paywall) are
-  places where the article asserted something it did not verify.
-- **Contextual help.** Both keys are wired (`documentationLinks.js:84-85`); eight other integration-related Settings
-  pages are not (section 4.4).
+  are exactly the honest posture this program wants. The weak spots (Notion, the secret sentence, the paywall) are the
+  places where the text states something the code does not support, or contradicts itself.
+- **Contextual help.** Both keys are wired (`documentationLinks.js:84-85`). Beyond them, six integration pages show no help
+  link on a branded installation and three send the reader to the catalogue page (section 4.4).
 
 ## 6. EN/AR parity
 
@@ -309,8 +312,9 @@ Presence is exact (2 + 2, same keys, same positions 10 and 20, same headings in 
 Length is healthy: AR is 82% (735/896) and 83% (1,039/1,257) of EN, which is the normal Arabic/English ratio, so nothing
 was truncated. I compared every table row, number and limit across the pair and found **no semantic mismatch**: "ten", "ten plus
 one eleventh", "three headers", "five seconds", "attempted once", "one per URL", "private addresses refused" and the
-three-row signed/unsigned table all agree, and the AR carries the same defects as the EN (Notion, secret, paywall), so
-fixing the EN means fixing the AR in lockstep.
+three-row signed/unsigned table all agree, and the AR carries the same defects as the EN (Notion `integrations.md:26`, secret `webhooks.md:32`, paywall
+`webhooks.md:25-26,153`, "رابط HTTPS" `integrations.md:48`, first-message wording `:52,79`), so fixing the EN means
+fixing the AR in lockstep.
 
 Terminology and form problems (route to 061):
 

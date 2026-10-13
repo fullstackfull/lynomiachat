@@ -128,7 +128,12 @@ says "CSP would stop this" is naming work that is already planned and not yet do
 ## 3. Findings
 
 ### F1 — Saving an article in Super Admin destroys `meta['doc_key']` and silently breaks contextual help
-**Severity: major today, blocker with autosave. Reachable today.**
+**Severity: blocker. Reachable today.**
+
+*Convergent, three independent reads.* Agents 064 (`064-editor-backend-model.md:16,361-385`) and 069
+(`069-authoring-workflow-source-of-truth.md:215-236`) found this too; 064 rates it BLOCKER and I adopt that
+rating over my own initial "major today". I reached it from the editor side and keep it here because the
+**autosave** multiplier below is the part that is specific to this brief.
 
 The content seeder writes `doc_key` into `meta` (`custom/app/services/documentation/content_seeder.rb:106-113`)
 and `Documentation::Library.article_for` resolves every contextual-help key through
@@ -163,7 +168,9 @@ An autosave path turns one deliberate click into a write every 500 ms (the tenan
 
 **Minimum control:** merge instead of replace in `normalized_meta` —
 `article.meta.merge(permitted_meta)` — and keep the key allowlist as the write filter. Existing mechanism: the
-field's own `permitted_attribute`. No new validation layer.
+field's own `permitted_attribute`. No new validation layer. Agent 064 additionally recommends promoting
+`doc_key` to an indexed column (`064-editor-backend-model.md:502-503`); the merge is the minimum **either way**,
+because it protects every future `meta` key the form does not render, not just this one.
 
 ### F2 — The in-page preview would run author content in the Super Admin origin; the current redirect preview is *less* isolated than it looks
 **Severity: major. Reachable after the upgrade.**
@@ -226,6 +233,12 @@ that is an agent session. In Super Admin it is the super-admin session, with `/s
 
 The script host is fixed by the YAML, so this is a third-party-supply-chain exposure rather than arbitrary XSS.
 It is still the most direct route from "author types a URL" to "super admin session compromised".
+
+*Partially convergent.* Agent 081 quotes the same `buildEmbedWidget` re-creation (`081-xss-sanitizer.md:289,299`).
+Two things here are mine and should not be lost in deduplication: that the destination origin becomes **Super
+Admin** once `FullEditor` is reused there, and that **`wistia` is the one script-bearing embed `markdownEmbeds.js`
+does not exclude** — `NON_PREVIEWABLE_EMBEDS` lists `github_gist` only
+(`app/javascript/dashboard/helper/markdownEmbeds.js:3-4`).
 
 **Minimum control:** do not enable `embedPreviewPlugin` in the Super Admin editor instance (it is passed
 explicitly at `FullEditor.vue:108`, so omitting it is a one-line change), and add `script-src` to the CSP whose
@@ -531,10 +544,15 @@ renderer or a new framework.
   whether the preview is cross-origin in fact, and it is a database question (`Portal#custom_domain`,
   `app/controllers/public_controller.rb:13`).
 - The sanitization question in `docs/documentation-v2/01-current-system.md` §5 end to end — that is agent 065's
-  and 081's scope. I verified only the specific claims §2 needs, and §2(a) answers §5's open question for the
-  article path: raw HTML is omitted at `:DEFAULT`, and `spec/lib/custom_markdown_renderer_spec.rb:33-36` pins it.
+  and 081's scope. I reached §2(a) independently and it agrees with §5's **corrected** text (raw HTML is
+  *omitted*, not escaped) and with `065-markdown-render-sanitization.md`. I verified only the claims §2 needs; I
+  did not re-check §5's further points (`blob:` / `intent:` / protocol-relative URLs passing the scheme filter,
+  and `:UNSAFE` not enabling `tagfilter`). Both strengthen the case for control 8.
 - Blob URL authorization and expiry (`urls_expire_in` is unset, so blob URLs are durable) — agent 083.
-- Whether the portal's third-party embed hosts are an acceptable trust set — agent 085.
+- Whether the portal's third-party embed hosts are an acceptable trust set — agent 085, whose
+  `085-external-links-iframes.md` and `01-current-system.md` §5 both now call for removing `github_gist` and
+  `wistia` from the YAML. F3 is the **editor-origin** half of that and survives independently: the removal fixes
+  it at the source, and until then `wistia` is the one script-bearing embed the editor preview does not exclude.
 - DOMPurify's configuration on the Super Admin island: `app.use(VueDOMPurifyHTML)` is called with no config
   (`app/javascript/entrypoints/superadmin_pages.js:23`), unlike the dashboard and widget entrypoints which pass
   `domPurifyConfig`. I did not trace what that difference permits.

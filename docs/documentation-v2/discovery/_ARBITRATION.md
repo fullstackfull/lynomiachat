@@ -320,3 +320,116 @@ and the existing corpus article is scoped to the wrong channel, and that **code 
 Meta's own pages**. Agent 011 adds that 132001 conflates "template does not exist in that language" with "not
 approved" — two different user fixes behind one code — and that **no language fallback exists anywhere in Meta's
 docs**, so `(name, language)` must be treated as the lookup key.
+
+---
+
+# Addendum 3 — media, retirement, Meta depth
+
+## Media: the finding that reframes the whole media decision
+
+Agent 068 established that **the media authoring UX already exists and ships**: `FullEditor.vue` does picker,
+drag-and-drop at the drop position, paste, external-URL rehost, progress, failure/retry/remove, cancel,
+drag-resize and a pending-upload navigation guard. Rebuilding any of it is duplication. It is unreachable from
+documentation authoring for two reasons that have nothing to do with media: the dashboard editor resolves portals
+as `Current.account.portals` while documentation portals are account-less, and **no upload endpoint answers a
+`:super_admin` session**. Super Admin can already mount Vue (`render_vue_component`), so that is the extension
+point. Only three genuinely new primitives are needed: an alt/decorative/caption panel, a drop-target highlight,
+and a publish-time missing-alt blocker. **Required alt text is the only part of the scope with zero precedent
+anywhere** in the editor, schema, insert path, renderer or SEO audit.
+
+Agent 066 then found the fact that decides the media model, and it contradicts my own charter table:
+
+> **An ActiveStorage signed id is a `message_verifier("ActiveStorage")` over the blob's primary key, keyed from
+> `secret_key_base`. A blob URL committed into the git-canonical corpus is valid in exactly one database.**
+
+So "Media → ActiveStorage" as written in `00-program.md` §2 cannot mean "commit `url_for(blob)` into a Markdown
+file". Agent 066 recommends **Option D**: media files live beside the Markdown in the repository, referenced by a
+stable `media:` key (never a URL), uploaded idempotently by checksum by the existing `ContentSeeder`, attached to
+the platform **Portal** rather than the Article (because the seeder rewrites Articles wholesale), resolved at
+render time per call, raster only, originals not variants, alt text required at the seed boundary. Agent 068
+independently reached the same blocker from the UX side. **I am treating this as the leading candidate and will
+freeze it in Phase 4 after 083 and 084 report.**
+
+Supporting facts, all cited in the reports: production storage is **local Disk** unless overridden, and
+**staging sets no service at all**; `urls_expire_in` is nil, so every `url_for(blob)` is a permanent
+unauthenticated redirect URL; SVG is already forced to `octet-stream` + attachment, which is what closes upload
+XSS, so the inline-SVG question is a sanitizer question and not a storage one; the existing article-image path
+mints **orphan blobs with no validation and no reclamation**, and is account-scoped so a Super Admin author
+cannot reach it; and the house pattern in `custom/` is deliberately an authorized streaming controller rather
+than `rails_blob_path` — zero uses, with two code comments and a spec enforcing it.
+
+## Retirement: a complete minimum design, from 079
+
+No redirect mechanism exists anywhere — no model, table, gem, rack rewrite or route redirect, and `nginx` is a
+sample config the deploy never touches. **No article has ever been deleted or renamed in git history (0 D, 0 R
+across the corpus),** which is why nobody has hit this yet. `archived` already exists and is already excluded
+from the sitemap, search, hreflang, `Library`, the home page and the SEO audit — so no new status value and no
+new `meta` key is needed. Recommended minimum: `retired: [{key, to?}]` in `manifest.yml`, append-only, where `to`
+must be a live key so there is one hop and no loops; an in-memory map in `Library`; **301** to a published
+successor, **410** when there is no successor, 404 unchanged for unknown or draft. The redirect must **not** live
+in article `meta`, for exactly the reason B-01 names.
+
+A detail worth keeping: a retired `DOC_ARTICLES` key opens a **blank 404 tab**, because `DocsLink` uses
+`target=_blank`. CI guards corpus files only — never the database, never external links.
+
+## A possible live production defect, unverifiable from here
+
+Agent 079 noticed that the baseline has **126** corpus files while the reported production run processed
+**124** articles. The two-file gap matches one commit, `48574e65`, which added `contact-lynomia-support` in both
+locales. **If production predates that commit, the `contactLynomiaSupport` product link — the Platform Support
+Desk's only documentation link — 404s live today.** This needs one production read, which Phase 1 forbids;
+recorded for the owner.
+
+## Meta research: the facts that change existing articles
+
+These are not gaps. They are things the shipped corpus currently states incorrectly, or omits where the omission
+misleads.
+
+| # | Finding | Source agent |
+|---|---|---|
+| M-01 | **A voice call now opens and resets the 24-hour window**, not just a message. No Lynomia article says this. | 016 |
+| M-02 | The window error is **131047**; **code 470 does not appear on Meta's error page at all** — it was the On-Premises code, and On-Premises sunset 2025-10-23. | 016 |
+| M-03 | **Free entry points are a separate 72-hour window** (click-to-WhatsApp ads, Page CTA), and are the only documented way to send a non-template message outside the service window. Absent from Lynomia entirely. | 016 |
+| M-04 | Inside the window Meta permits a **closed list of 16 service message types** — "any service message type" is not "anything". **Read receipts are not window-gated** (30 days); typing indicators need an inbound wamid within 25 s. Reactions and media *are* gated. | 016 |
+| M-05 | **Inbound customer media expires in 7 days, not 30** — cut from 30 on 2025-10-09. A retrieved media URL lives **5 minutes**. Media Lynomia uploads: 30 days. Three lifetimes, easily conflated. | 019, 020 |
+| M-06 | The media download is **token-authenticated, not pre-signed** — the URL cannot be handed to a browser or a third party. Every failure is one bare `404`: expired URL, expired ID, deleted asset and bad token are indistinguishable. | 020 |
+| M-07 | **Per-type media size limits**: audio 16 MB, document 100 MB, **image 5 MB**, video 16 MB, sticker 100 KB static / 500 KB animated. Image is 5 MB, not the 100 MB platform ceiling. WebP is sticker-only. | 019 |
+| M-08 | **Template pause durations are 3h / 6h / disabled** — not the widely-repeated "3h/6h/24h". Template *Pacing* is a second, distinct pause that does **not** self-clear and needs a manual `POST /{id}/unpause`. | 010, 011 |
+| M-09 | **Meta re-categorises approved templates**: utility→marketing with one day's notice, or none since 2025-04-16 after a warning, staying APPROVED; marketing/utility→authentication sets the template **REJECTED on the 1st of the following month**. | 008, 010 |
+| M-10 | Messaging limits are **250 / 2,000 / 10,000 / 100,000 / Unlimited**, counted as unique recipients messaged **outside** a window per moving 24h — not a message count. The step off 250 is **gated**, and business verification is the highest-leverage operator action. Above 2,000, scaling needs quality **and** ≥half the current limit used in 7 days, so steady low-volume senders never advance. | 018 |
+| M-11 | **Throughput is a third, separate thing**: 80 mps default, up to 1,000, coexistence fixed at 20, **inclusive of inbound**, exceeded → 130429. Lynomia's `whatsapp-quality-and-limits.md` omits throughput entirely, and its "Rate limited on the number's status" is not Meta vocabulary. | 018 |
+| M-12 | **Per-message pricing has been live since 2025-07-01**; conversation-based pricing is deprecated, and on v24.0+ the `conversation` object is **omitted entirely** except inside an open free-entry-point window — so cost attribution by `conversation.id` is no longer reconstructable. | 008 |
+| M-13 | A **fourth approval gate** exists that nobody documents: **Access Verification as a Tech Provider**, explicitly independent of App Review and permission access levels, failing with error 100. Onboarding is throttled to **10 new business customers per rolling 7 days** by default, 200 after all three verifications. | 027 |
+| M-14 | **Instagram no longer requires a linked Facebook Page** on the Instagram-Login path — which is the path Lynomia uses, and its scope request matches Meta's current reference exactly. The Facebook-Login path still requires one. | 023 |
+| M-15 | Instagram's **"Connected Tools → Allow Access to Messages"** toggle is the top onboarding failure, and Meta documents it **only** on the Facebook-Login page — whether it gates the Instagram-Login path is not stated anywhere. | 023 |
+| M-16 | Meta documents, as designed behaviour, that messages handled through the API are **not marked read in the Instagram app inbox** until a reply is sent, and that "inbox folders are not supported". Both read as Lynomia bugs. | 023 |
+| M-17 | **Handover Protocol is retired for Instagram** as of 2025-10-23. | 023 |
+| M-18 | **Expired and revoked tokens are indistinguishable** from any error response — Meta maps 102/190/463/467 to one meaning with one handling. **`error_subcode` is not returned by Cloud API v16.0+**, so any Lynomia taxonomy keyed on a WhatsApp subcode is wrong. Tokens are **opaque** — Meta says do not parse, decode or assume a format or maximum length. | 001 |
+| M-19 | **Error code 200 is overloaded**: "no access token provided" *and* "the token's user lacks access to the resource" — a permission problem and an asset-access problem, one code, two completely different fixes. This is the most common multi-tenant connect failure and no article explains it. | 001, 003, 004 |
+| M-20 | **Embedded Signup does not register the number.** Registration is a separate API call with a 6-digit PIN, and is **capped at 10 register/deregister per number per 72 hours** → error **133016**, which blocks registration for 72 hours. A business guessing a forgotten PIN can lock its own number out for three days, and Meta documents no wrong-PIN error at all. | 013, 014 |
+| M-21 | **Adding and verifying a number is not registering it**, and registration is API-only — not possible in WhatsApp Manager. `health_status` / `can_send_message` (AVAILABLE / LIMITED / BLOCKED) is the only field that answers "can this number send" and evaluates phone number, WABA, business and app in one call — it belongs at step 0 of any triage article. | 014 |
+| M-22 | **Display-name approval does not apply the name** — re-registration does, within a 14-day window, or the name returns to review. | 014 |
+| M-23 | Meta publishes **no `status` enum** for a phone number (only `CONNECTED`), no `code_verification_status` enum beyond `VERIFIED`, and **no definition of any `quality_rating` value**; the quality-rating pages are JS-gated and unreadable by fetch. No article may assert a value. | 014, 018 |
+| M-24 | **`phone_number_quality_update` is now documented as a throughput webhook** — events `ONBOARDING` and `THROUGHPUT_UPGRADE` only, with no quality-rating field and no FLAGGED/UNFLAGGED. Any Lynomia code parsing it for quality drops is at risk. | 014 |
+| M-25 | **No webhook reports a number going blocked or disconnected.** Health must be polled. | 014 |
+| M-26 | **Meta's own pages contradict each other** in ways the corpus must not paper over: 131052 has two different titles on two normative pages; code 368 is a temporary block on one page and a policy restriction on another; webhook retry is 7 days on one page and 36 hours on another; MPM allows 30 products "across all sections" and "30 per section" in the same page; field casing is inconsistent (`CATALOG` vs lowercase, `format: location` vs `LOCATION`); and `index` appears as both integer and string. | 005, 006, 011, 012, 019, 020 |
+| M-27 | Meta's **documentation tree has moved** from `/docs/whatsapp/**` to `/documentation/business-messaging/whatsapp/**`, with some pages serving only from the old path and some only from the new, several 404s, and several JS-only shells. **Appending `.md` to any path in `/documentation/business-messaging/whatsapp/llms.txt` returns the full plain-text article** — that is the technique that worked. Every Meta URL in the corpus and the code needs re-checking, and the program must freeze one URL convention. | 001, 005, 009–014, 016, 018, 027 |
+
+## Unverified by design, and recorded as such
+
+Meta's quality-rating pages, the accepted-document lists for business verification, Page access levels, and
+several Business Help articles are **client-rendered and return only a title** to a plain fetch. Nothing from
+them has been published as fact. Agents 002, 004, 014, 018, 023 and 027 all hit this and all recorded it rather
+than filling the gap from memory, which is the behaviour the contract asked for.
+
+## XA — added
+
+| # | Question |
+|---|---|
+| XA-16 | **Charter §2 says "Media → ActiveStorage".** Agent 066 shows that cannot mean committing blob URLs, and proposes repository-canonical media files with a `media:` key. Agent 068 agrees from the UX side. I must either amend that charter row or state the `media:`-key reading explicitly — an agent should not have to guess. |
+| XA-17 | **Is Access Verification a hard gate or a limit-raiser?** Four Meta pages disagree. This decides whether the onboarding critical path has three gates or four, which is the spine of the WhatsApp onboarding article. |
+| XA-18 | **Portfolio vs phone number for messaging limits.** Meta's own page uses both scopes and never reconciles them. It decides whether "will a second number double our capacity?" is yes or no. No article may state a scope until this is settled. |
+| XA-19 | **Is a service reply billable from 2026-10-01?** Two Meta pages disagree and the date has passed. Blocks any cost article. |
+| XA-20 | **Charter §6.2 calls Meta changelogs normative in one sentence and observational in another** (agent 023 caught this). Six deprecation facts rest only on a changelog. I must rule: a changelog entry is **normative for the fact that a change was announced and dated**, and observational for any behaviour it does not spell out. |
+| XA-21 | **The 005/006 boundary is a Lynomia invention.** Meta does not partition request-time from webhook errors and explicitly says to monitor both. No article may say "at send time you get X" until the taxonomy settles this. |
+| XA-22 | **`recent_buyers` preset selects the opposite of its own copy** (agent 052): the date operator means "more than N days ago", so the preset targets lapsed customers while the copy promises recent ones. Three corpus articles repeat the inversion. Fix the preset, the operator, or the docs — a product answer is needed before those articles can be corrected. |

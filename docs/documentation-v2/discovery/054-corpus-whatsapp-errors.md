@@ -13,7 +13,7 @@ not executed, so front-matter lengths below are measured by hand.
 
 The section is 14 articles per locale. Five are "code articles" (131049, 131042, 131053, 131060, 190), nine are
 "symptom articles" (no code). The headline is that the section is **two very good code articles, three weak ones,
-and nine mostly sound symptom articles**, and that quality tracks one variable exactly: whether the repository
+and nine mostly sound symptom articles**, and that quality tracks one variable closely: whether the repository
 holds a record of the failure having been *seen*.
 
 The sharpest facts, before the template sections:
@@ -24,7 +24,7 @@ The sharpest facts, before the template sections:
    `props.deliveryFailure`, which the server sends only for classified codes, `delivery_failure.rb:64-68`). The other
    twelve articles have **no in-product entry point at all**.
 3. The 190 article describes a mechanism the code does not implement for sends, and a banner that is not where it
-   says (§3 E1-E3). It contradicts a defect already logged as SHO-64 (`docs/p7/00-discovery-findings.md:833`).
+   says (§3 E1-E3). The missing mechanism is the defect already logged as SHO-64 (`docs/p7/00-discovery-findings.md:833`).
 4. The 131060 article describes an "empty" message; the dashboard shows "This message is unsupported. You can view
    this message on the WhatsApp app." (`bubbles/Unsupported.vue:22-23`, `en/conversation.json:79`).
 5. The Arabic articles quote UI labels that the Arabic locale files do not contain (§6).
@@ -57,7 +57,7 @@ parentheses are file lines.
 | **total** | 14 | 14 | | | **6,473** | **5,261** |
 
 Facts about the set, measured: exact EN/AR key parity (the corpus spec enforces it,
-`spec/custom/services/documentation/content_seeder_corpus_spec.rb:21-23`); zero broken internal links in either
+`spec/custom/services/documentation/content_seeder_corpus_spec.rb:25-27`); zero broken internal links in either
 locale (every `](key)` target exists in the 63-key corpus, scripted check); zero images in 28 files; 8 of 14 articles
 contain a table; **the only article outside the section that links in is `whatsapp/whatsapp-troubleshooting`, and it
 links to all 14** (`custom/db/documentation/en/whatsapp/whatsapp-troubleshooting.md:101-122`) — the section has no
@@ -73,11 +73,11 @@ index of its own, the hub is a hand-written paragraph in a different section.
 |---|---|---|---|
 | whatsapp-error-131049 | EXPAND | Lynomia mechanics are code-verified and the failure was observed; add Meta source and Meta's verbatim title, reconcile with the in-product "wait at least a day" copy, tell the reader the campaign table shows `Code 131049` | A1-A8 |
 | whatsapp-error-131042 | EXPAND | Mechanics verified, observed; but "Retry stays available" is false after one day, and "the one that is yours to fix" is contradicted inside the section | B1, B2, B6 |
-| whatsapp-error-131053 | REWRITE | The Lynomia half is accurate and specific (upload-first, fallback, timeout) but the code's definition is lifted from an upstream comment, the likeliest real cause (operator env switch) is missing, and it has no in-product link | C1-C6 |
+| whatsapp-error-131053 | REWRITE | The Lynomia half is accurate and specific (upload-first, fallback, timeout) but the code's definition is lifted from an upstream comment, a cause that re-creates the failure (the operator env switch) is missing, and it has no in-product link | C1-C6 |
 | whatsapp-error-131060 | REWRITE | Describes UI that does not exist ("empty message"), attributes the code to message types with no evidence, omits the only evidenced cause (coexistence companion-device syncs), invents the worked example | D1-D6 |
 | whatsapp-error-190 | REWRITE | Trigger, banner location and "in a row" are wrong for sends; the code is a Graph-wide OAuth code used by Instagram, Facebook and the Template Manager too, so the cross-channel part should be split from the WhatsApp reconnect part (keep the key: `DOC_ARTICLES` depends on it, `documentationLinks.js:48`) | E1-E9 |
-| whatsapp-number-status | KEEP | UI facts, admin gating and the risky-status list are verified; needs a Meta-source pass and one internal inconsistency fixed ("Rate limited") | F1, F2 |
-| whatsapp-quality-and-limits | KEEP | Verified what Lynomia stores/logs; contains no invented numbers; Meta semantics unsourced | F1, F2 |
+| whatsapp-number-status | KEEP | UI facts, admin gating and the risky-status list are verified; needs a Meta-source pass and one internal inconsistency fixed ("Rate limited") | F1, F2, F2b |
+| whatsapp-quality-and-limits | KEEP | Verified what Lynomia stores/logs; contains no invented numbers; Meta semantics unsourced | F1, F2, F2b |
 | whatsapp-display-name | KEEP | Thin on repo facts (it only reports `name_status`) so almost every claim is Meta's and unsourced; short, so cheap to source | F3 |
 | whatsapp-nothing-arrives | EXPAND | Strings verified, but one row contradicts the UI ("there but empty") and a real cause evidenced in the repo (stale phone-level callback override) is absent | F4-F6 |
 | whatsapp-reconnect-a-number | KEEP | The five refusal strings are verbatim from `en.yml`; fix invented timings and the unqualified "release the number from Meta" | F7, E7 |
@@ -124,7 +124,7 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 | # | claim | evidence | verdict |
 |---|---|---|---|
 | C1 | Lynomia uploads first and sends by media id | `whatsapp_cloud_service.rb:191-192`; `media_upload_service.rb:1-5,12-20` | confirmed |
-| C2 | If you see it, "the send fell back to something Meta had to fetch" | fallback is `|| { 'link' => attachment.download_url }` (`whatsapp_cloud_service.rb:192`); upload returns nil on any failure (`media_upload_service.rb:17-27`) | confirmed |
+| C2 | If you see it, "the send fell back to something Meta had to fetch" | fallback is `{ 'link' => attachment.download_url }` whenever the upload returns nil (`whatsapp_cloud_service.rb:192`); upload returns nil on any failure (`media_upload_service.rb:17-27`) | confirmed |
 | C3 | "An upload has a long but finite timeout" | 60 s open, 300 s read (`media_upload_service.rb:8-9`) | confirmed |
 | C4 | "`131053` means WhatsApp tried to download a file from your installation and could not" | the only source is a code comment ("rate limited per destination ASN and returns intermittent 131053 errors", `media_upload_service.rb:4-5`; `whatsapp_cloud_service.rb:191`) that came in with upstream Chatwoot (#15702, `docs/chatwoot-upgrade/appendix/A-upstream-whatsapp-analysis.md:338`). It is not a Meta page and not a Lynomia observation. Whether Meta's own title for 131053 says this is unchecked | unverifiable (Meta) |
 | C5 | (omitted) the operator switch `WHATSAPP_MEDIA_UPLOAD_STRATEGY=link` restores link sending and therefore re-creates the failure | `media_upload_service.rb:31-34`; documented as an upgrade ops note `docs/chatwoot-upgrade/01-upstream-diff.md:43` | gap |
@@ -167,7 +167,7 @@ not another, and `unverifiable (Meta)` where the only possible evidence is Meta'
 | F3 | display-name | name state is reported; refusal reasons; "messages keep sending"; "customer sees your number" | `name_status` stored (`health_service.rb:24`); the rest is Meta's | partly; remainder unverifiable (Meta) |
 | F4 | nothing-arrives | table strings "Webhook not configured", "Register Webhook", "Health data is not available", "WhatsApp connection needs to be refreshed" | `en/inboxMgmt.json:913,1087-1088,844,936,939` | confirmed |
 | F5 | nothing-arrives | "An incoming message that is there but empty" | wrong for the same reason as D2 | wrong |
-| F6 | nothing-arrives | "Webhook not configured … the commonest cause by a wide margin"; "messages sent while the webhook was missing are gone, no replay" | no frequency data in the repo; replay is Meta's retry behaviour (026). The repo itself records a different real cause — a **stale phone-level callback override** pointing a number at a host that answered 502 (`spec/jobs/webhooks/whatsapp_events_job_live_status_spec.rb:5-9`) — absent from the article. "No backfill in the product" is consistent with `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259` ("History import … Not implemented") | unverifiable (Meta) |
+| F6 | nothing-arrives | "Webhook not configured … the commonest cause by a wide margin"; "messages sent while the webhook was missing are gone, no replay" | no frequency data in the repo; replay is Meta's retry behaviour (026). The repo itself records a different real cause — a **stale phone-level callback override** pointing a number at a host that answered 502 (`spec/jobs/webhooks/whatsapp_events_job_live_status_spec.rb:7-10`) — absent from the article. "No backfill in the product" is consistent with `docs/whatsapp-qr/07-meta-coexistence-pivot.md:259` ("History import … Not implemented") | unverifiable (Meta) |
 | F7 | reconnect | five refusal strings | verbatim in `config/locales/en.yml:181-184,198`; Configuration tab `Settings.vue:232`, Account Health tab `:253`. "Total time, about four minutes" and "five-minute reconnection" are invented | confirmed; timings unverifiable |
 | F8 | already-connected | one number, once per installation; "including inboxes you may have archived" | uniqueness `channel/whatsapp.rb:40`, `channel_creation_service.rb:14`; the actual string is "Channel already exists for this phone number: %{phone_number}, please contact support if the error persists" (`en.yml:184`) — worth quoting. No archived-inbox state exists in `app/models/inbox.rb` or `en/inboxMgmt.json` | confirmed; "archived" wrong |
 | F9 | contact-info-requests | six reasons; "a failed request does not count as pending" | `en.yml:190-195`; evaluation order `contact_info_request_eligibility_service.rb:60-71`; `where.not(status: :failed)` at `:124`. Paraphrased, not quoted. Last Limit bullet ("A shared number cannot be requested twice in parallel") restates the pending rule | confirmed |
@@ -187,8 +187,8 @@ for the Meta agents (005, 025, 028) working from the source register, not for th
 
 | missing page | the user question it answers | repository evidence that the state is reachable |
 |---|---|---|
-| **A code with no page** — what to read and what to send support | "My message failed with a number that is not listed. What do I do?" | the hub says there is nothing for such a code and stops (`whatsapp-troubleshooting.md:101-105`); that path is the default for every unclassified code (`delivery_failure.rb:9-11,50`); the operator log already tags it `classification=UNCLASSIFIED` (`custom/messages/status_update_service.rb:28-44`); Retry is on by default and ends at one day (`MessageError.vue:60-66`) |
-| **A failure with no code at all** — Meta's sentence vs a Lynomia refusal | "It says 'Template not found or invalid template name' / 'window is closed'. Is that Meta or Lynomia?" | two strings are Lynomia's own (`en.yml:185`; `send_on_whatsapp_service.rb:40`), request-time Meta refusals are stored as bare text without a code (`providers/base_service.rb:44-57`); the diagnostic itself calls the distinction essential (`diagnosis/inbound_evidence.rb:125-127`) |
+| **A code with no page** — what to read and what to send support | "My message failed with a number that is not listed. What do I do?" | the hub says there is nothing for such a code and stops (`whatsapp-troubleshooting.md:101-105`); that path is the default for every unclassified code (`delivery_failure.rb:9-11,50`); the operator log already tags it `classification=UNCLASSIFIED` (`custom/app/services/custom/messages/status_update_service.rb:28-44`); Retry is on by default and ends at one day (`MessageError.vue:60-66`) |
+| **A failure with no code at all** — Meta's sentence vs a Lynomia refusal | "It says 'Template not found or invalid template name' / 'window is closed'. Is that Meta or Lynomia?" | two strings are Lynomia's own (`en.yml:185`; `send_on_whatsapp_service.rb:40`), request-time Meta refusals are stored as bare text without a code (`providers/base_service.rb:44-57`); the diagnostic itself calls the distinction essential (`diagnosis/inbound_evidence.rb:124-126`) |
 | **Token no longer valid, across channels** (the Graph 190 family) | "My Instagram / Messenger / WhatsApp inbox says reconnect. Why, and how?" | one code, four channels, different thresholds and remedies (E9). No Instagram or Messenger page exists anywhere in the corpus (`troubleshooting/` holds only commerce and support) |
 | **Account Health error with a code and subcode** | "Account Health says Meta could not return health details and shows an error — what now?" | the endpoint returns `code`, `subcode`, `http_status` (`inbox_health_management.rb:36-42`) and the UI says "Review the error below" (`en/inboxMgmt.json:944-945`); `nothing-arrives` has one table row for it |
 | **Reading a campaign's Reason and Code columns** | "My campaign shows Failed, Code N, Reason … — which of these can I fix?" | `en/campaign.json:281-290`; 052 owns the campaigns section, so this may belong there with a link back |
@@ -210,8 +210,8 @@ illustrations in a comment (`whatsapp/provider_error_log.rb:47`) and carry no be
 topic H2s, then the same three closing H2s: **Who can do this**, **Limits**, **Related** (14 of 14 EN, 14 of 14 AR).
 **A worked example** appears in 7 of 14 (131049, 131042, 131060, 190, nothing-arrives, quality-and-limits, reconnect).
 `description` begins "You will know …" in 14 of 14 (AR: "ستعرف …"). EN and AR have the same number of H2s in every
-article. The section is the most uniformly structured in the corpus I read and the uniformity is a strength: it
-makes the "Limits" list a reliable place to look for what the product cannot do.
+article. The uniformity is a strength: it makes the "Limits" list a reliable place to look for what the product cannot do.
+(I read only this section closely; I make no comparison with other sections.)
 
 **Task orientation.** Good. The best sentences are the product-behaviour explanations that stop an agent reading a
 deliberate behaviour as a bug (why Retry is withdrawn for 131049 and kept for 131042; why a placeholder exists; why
@@ -221,7 +221,7 @@ media is uploaded first). The symptom articles that quote exact product strings 
 **Weaknesses, all measured:**
 
 - No article quotes **Meta's verbatim title** for its code, though two are in the repo
-  ("This message was not delivered to maintain healthy ecosystem engagement." — `delivery_failure_spec.rb:25-27`;
+  ("This message was not delivered to maintain healthy ecosystem engagement." — `delivery_failure_spec.rb:26`;
   "Business eligibility payment issue" — `whatsapp_events_job_live_status_spec.rb:70`). A reader who pastes the string
   they see ("WhatsApp said: 131049: This message …") finds the article only through the number.
 - No article states a **Meta source, API version or date checked**. All Meta behaviour is therefore unauditable
@@ -242,7 +242,7 @@ media is uploaded first). The symptom articles that quote exact product strings 
 
 **What guards the section mechanically** (`content_seeder_corpus_spec.rb`): EN/AR key parity, every `](key)` link
 resolves, `title` and integer `position` present, same section and position per locale, every `DOC_ARTICLES` slug exists,
-and an article exists for every key in `DeliveryFailure::CODES` (`:80-83`). **Not guarded:** that a UI string quoted
+and an article exists for every key in `DeliveryFailure::CODES` (`:81-83`). **Not guarded:** that a UI string quoted
 in an article exists in that language's locale file, that a code article has the required sections, that an article
 exists only for a code with a record, that two locales have the same headings.
 
@@ -251,20 +251,20 @@ exists only for a code with a record, that two locales have the same headings.
 ## 6. EN/AR parity
 
 **Structure: perfect.** Same 14 keys, same position, tags, link set, table row counts and H2 count in every pair;
-the AR is a close translation, line for line (worked-example figures, weekdays and durations all agree). I found no
-case of an AR article asserting something the EN one does not.
+the AR is a close translation, line for line (worked-example figures, weekdays and durations all agree). In the line-by-line
+pass I made, no AR article adds a claim the EN one lacks.
 
-**Meaning: three real mismatches, all of one kind — the AR article names a UI label that the AR product does not
+**Meaning: one kind of mismatch, six instances — the AR article names a UI label that the AR product does not
 show.** The AR articles translate English UI labels independently of `app/javascript/dashboard/i18n/locale/ar/*.json`.
 
 | AR article says | AR locale file says | where |
 |---|---|---|
 | "فشل الإرسال" for the failed-message marker (131049 line 9; find-a-failed-message lines 9, 30) | `"FAILED_TO_SEND": "تعذّر الإرسال"` | `ar/chatlist.json:28` |
-| tab "**التهيئة**" for Configuration (190, reconnect, nothing-arrives) | `"CONFIGURATION": "الإعدادات"` — the same word as the Settings tab | `ar/inboxMgmt.json:779-781` |
+| tab "**التهيئة**" for Configuration (190, reconnect) | `"CONFIGURATION": "الإعدادات"` — the same word as the Settings tab | `ar/inboxMgmt.json:779-781` |
 | tab "**سلامة الحساب**" for Account Health (8 articles) | the literal English `"Account Health"` | `ar/inboxMgmt.json:787` |
 | button "**تسجيل Webhook**" | the literal English `"Register Webhook"` | `ar/inboxMgmt.json:991` |
 | filter path "تسليم الرسائل ← يساوي ← فشل الإرسال" | `MESSAGE_STATUS` keys **absent** from `ar/advancedFilters.json` (125 lines; EN has 132 with the keys at `en/advancedFilters.json:71,77`) | what the Arabic UI shows for this filter is unverified (no `fallbackLocale`, `entrypoints/dashboard.js:37-41`) |
-| (131049, 190) banner / Account Health error text | English strings in the AR file: `ar/inboxMgmt.json:9,839-844` | an Arabic reader sees English where the article gives Arabic |
+| (190, nothing-arrives) banner / Account Health error text | English strings in the AR file: `ar/inboxMgmt.json:9,839-844` | an Arabic reader sees English where the article gives Arabic |
 
 Either the AR locale is incomplete (a Crowdin matter) or the articles are ahead of it. Either way a stuck Arabic
 reader sees words the article does not use, and no check catches it. Settings → Inboxes itself matches
@@ -276,7 +276,7 @@ reader sees words the article does not use, and no check catches it. Settings �
   strengthens a claim already wrong in EN (B6).
 - 131053 AR table row 3 drops "filtered to failed messages" (EN line 35 → AR line 33).
 - 131049 AR uses "حجبت" for *withheld* (line 9), "محجوب" for *banned* in the next paragraph (line 12) and in the
-  status table of number-status, and "يحجب الناس الرسائل" for *recipients blocking* (quality-and-limits line 14):
+  status table of number-status, and "بحجب الرقم" for *recipients blocking the number* (quality-and-limits line 14):
   one root, three meanings. Not an error in any one sentence; a hazard for a reader skimming.
 - The contact-info Limit "لا يُطلب رقم مشترك مرتين" is as unclear as the EN "A shared number cannot be requested twice".
 
@@ -306,9 +306,9 @@ Consequences:
   point at") but its 190 row cites `ApiError#authorization_error?` and the threshold, neither of which is the send path.
 - **Classification gates the link.** `push_event_data` returns nil for an unclassified code
   (`delivery_failure.rb:64-68`), so `MessageError.vue` never learns the code, so `whatsappErrorArticle()` is only ever
-  called with 131049 or 131042. The `?? 'whatsappTroubleshooting'` fallback (`MessageError.vue:74-75`) is unreachable
+  called with 131049 or 131042. The `?? 'whatsappTroubleshooting'` fallback (`MessageError.vue:73-76`) is unreachable
   today. **Adding Meta error articles to the corpus does not put them in front of a user** unless either
-  `CODES` grows (each entry also needing title/body strings in both `chatlist.json` files, `en:172-185`) or the
+  `CODES` grows (each new *classification* also needing title/body strings in both `chatlist.json` files, `en:172-185`) or the
   UI resolves a raw code.
 - **Three `external_error` formats exist for Meta channels**, and the classifier parses one:
   WhatsApp status webhook `"<code>: <title>"` (`incoming_message_base_service.rb:73-76`); WhatsApp request-time
@@ -342,7 +342,7 @@ separates them:
 | 131053 | strong | **none** | definition from a comment | defined the code from a comment; omitted the env switch |
 | 131060 | partly wrong (UI) | **none** | invented types | described UI from imagination; ignored the one evidenced cause |
 | 190 | **wrong** (trigger, banner) | **none** | unsourced | described intended design, not shipped behaviour |
-| symptom articles | strong (strings verbatim, policies cited) | n/a | unsourced in 5 of 9 | — |
+| symptom articles | strong (strings verbatim, policies cited) | n/a | unsourced in at least 5 of 9 (number-status, quality-and-limits, display-name, nothing-arrives, business-scoped-contacts) | — |
 
 **What the two strong code articles do that the weak three do not:**
 
@@ -352,7 +352,8 @@ separates them:
 3. They separate **Meta's rule from Lynomia's policy** ("the cap is Meta's; withdrawing Retry is ours").
 4. They name **where the fix lives and who can do it** (business.facebook.com; an administrator of the Business
    account, who may not be a Lynomia admin).
-5. They are not a restatement of a code comment.
+5. Their central claims are **pinned by tests**, not only by comments (`delivery_failure_spec.rb`; `messages_controller_spec.rb:291-330`;
+   `message/specs/MessageError.spec.js`).
 
 The weak three invert each: no incident, a code comment taken as the definition, UI described from memory.
 
@@ -362,7 +363,7 @@ They are the pattern to scale — and the reason is not that they avoid Meta, bu
 verifiable from the repository.
 
 **The P7 rule and where it over-reached.** P7-F wrote "the set is the failure modes this repository can point at a
-line for" (`docs/p7/09-whatsapp-error-knowledge-base.md:19-20`). That is the right rule for **L** claims and it was
+line for" (`docs/p7/09-whatsapp-error-knowledge-base.md:18-19`). That is the right rule for **L** claims and it was
 not fully applied (190, 131060). As a rule for *which Meta codes get a page* it was a proxy for "we have no source".
 The program now has a Meta source register (`03-meta-source-register.md`); with a normative source, a code Lynomia can
 *display* and that has a distinct remedy can earn a page without having been observed here — provided every **M**
@@ -380,11 +381,13 @@ I do" — and every sentence belongs to exactly one evidence class (L, O, M) tha
 | kind | when | example in this section |
 |---|---|---|
 | **code** | Lynomia classifies or special-cases the code, **or** a distinct, sourced remedy exists for a code the product can display | 131049, 131042 |
-| **family** | several codes share one remedy (follows `commerceErrorArticle`'s "grouped by remedy", `documentationLinks.js:134-143`); the codes are a table, each with Meta's verbatim title | not yet present; 190 should become one |
+| **family** | several codes share one remedy (follows `commerceErrorArticle`'s "grouped by remedy", `documentationLinks.js:139-150`); the codes are a table, each with Meta's verbatim title | not yet present; 190 should become one |
 | **symptom** | the user has a string or state, no code | the nine |
 
 One article per code only where Lynomia's behaviour *differs* per code. Otherwise a family, with every member code
-resolving to it.
+resolving to it. Keep the existing key form `<product>-error-<code>`: it is the contract the registry already uses and
+the string a person pastes into a search engine (`docs/p7/09-whatsapp-error-knowledge-base.md:93-94`); a family takes a
+remedy-named key and its codes resolve to it.
 
 ### 9.2 Skeleton
 
@@ -439,8 +442,8 @@ checked:      2026-10-13          # date Meta sources were last read
    mechanism the code does not implement (the 190 example does).
 7. **Keep "Who can do this", "Limits", "Related".** They are 14/14 and they work.
 8. **Structured front matter, extending `meta`, not a new table.** `codes` lets one resolver serve `/docs/...` and the
-   dashboard; it replaces five hand-maintained JS keys and a hand-written hub paragraph, and is the only way the
-   registry scales. This is charter decision §8.4's input: the existing `meta` jsonb is enough; the seeder's
+   dashboard; it can replace five hand-maintained JS keys and a hand-written hub paragraph, and some such mechanism is needed for the
+   registry to scale. This is charter decision §8.4's input: the existing `meta` jsonb is enough; the seeder's
    `meta_for` is the single extension point.
 
 ### 9.4 Mechanical gates this shape makes possible (all extensions of the existing corpus spec)

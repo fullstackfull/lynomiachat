@@ -515,10 +515,23 @@ attribute value. Safe today; a trap the moment the helper is reused in an attrib
 `.../documentation_layout/_article_card.html.erb:11`. Titles there are escaped too (`:24` and `:10`).
 `render_emoji_or_icon` validates against `/\A[a-z][a-z0-9-]*\z/` and the colour against `/\A#\h{3,8}\z/`
 (`portal_helper.rb:101-110`). The sitemap carries only URLs built from slugs, no titles
-(`app/views/public/api/v1/portals/sitemap.xml.erb:16-23`), and the slug is route-constrained
-(`01-current-system.md` §5, `config/routes/documentation.rb:28`) and validated against reserved values
-(`app/models/article.rb:63,69`). `show_markdown` serves the raw source as `text/markdown`
-(`articles_controller.rb:29-33`), which does not render HTML.
+(`app/views/public/api/v1/portals/sitemap.xml.erb:16-23`). `show_markdown` serves the raw source as
+`text/markdown` (`articles_controller.rb:29-33`), which does not render HTML.
+
+**`Article#slug` in a `<script>` context is safe, though the slug itself is barely validated.** This is the
+other `<script>`-context interpolation of author-controlled data, so I checked it. The slug is **not**
+charset-validated: `ensure_article_slug` is `self.slug ||= …` (`app/models/article.rb:234-236`), so a
+client- or form-supplied value is stored verbatim — `:slug` is permitted by both the HC API
+(`app/controllers/api/v1/accounts/articles_controller.rb:110`) and the Super Admin form
+(`custom/app/dashboards/article_dashboard.rb:17,36`) — and the only validation is the reserved-word exclusion
+(`app/models/article.rb:63,69`). The route constraint `/[a-z0-9][a-z0-9\-_]*/` applies to the `/docs/:article_slug`
+redirect entry point (`config/routes/documentation.rb:25-26`), **not** to `/hc/:slug/articles/:article_slug`
+(`config/routes.rb:519`). It is still not exploitable: the one `<script>`-context use is
+`img.src = '<%= request.base_url %>/hc/<%= @portal.slug %>/articles/<%= @article.slug %>.png';`
+(`app/views/layouts/_portal_scripts.html.erb:9`), and `<script>` content is RAWTEXT — the HTML parser never
+decodes entities there — so ERB's `'` → `&#39;` stays literal inside the JS string instead of terminating it,
+and `</script>` → `&lt;/script&gt;` cannot close the element. Everywhere else the slug lands in a path helper or
+an ERB-escaped `href`.
 
 ## 4. What the editor upgrade would newly expose
 

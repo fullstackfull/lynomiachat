@@ -41,6 +41,10 @@ module PortalHelper
     locale.to_s.tr('_', '-')
   end
 
+  # `dir` is the other half of this attribute pair and lives in TextDirectionHelper#html_dir_attribute
+  # (app/helpers/text_direction_helper.rb). It is not here because this module is at RuboCop's
+  # Metrics/ModuleLength limit, and because writing direction is not portal-specific.
+
   def theme_query_string(theme)
     theme.present? && theme != 'system' ? "?theme=#{theme}" : ''
   end

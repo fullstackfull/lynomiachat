@@ -156,6 +156,18 @@ RSpec.describe 'Documentation SEO', type: :request do
 
       expect(body).not_to include('hreflang="ar"')
     end
+
+    # `dir`, paired with `lang`. Half the documentation corpus is Arabic and the portal's own `rtl:` Tailwind
+    # utilities compile to an `[dir="rtl"]` ancestor selector, so without this the Arabic pages rendered
+    # left-to-right with every one of those rules inert.
+    # `response.body`, not the memoized `body` let, because this example makes two requests.
+    it 'declares the writing direction of each language on the page itself' do
+      get_article(translation)
+      expect(response.body).to include('<html lang="ar" dir="rtl">')
+
+      get_article
+      expect(response.body).to include('<html lang="en" dir="ltr">')
+    end
   end
 
   describe 'a category page' do

@@ -529,3 +529,68 @@ Nothing pinned `<title>` anywhere, which is how the divergence survived. Three e
 `31 examples, 1 failure` at `:110`; with it, `31 examples, 0 failures`. Only one of the three fails without the
 fix — the other two assert the `og`/`twitter`/`meta` titles agree with it and that the on-page heading is
 deliberately left alone, which were already true. That is the honest split, not three regression pins.
+
+### G11 — Agent 2's "strikethrough is silently dead in articles": measured, and correctly NOT a defect
+
+`render_article` passes `[:table]` only, while `render_message` passes `[:strikethrough, :autolink]`
+(`lib/chatwoot_markdown_renderer.rb:8,17`). Measured through commonmarker directly:
+
+```
+[:table]                              -> <p>Strike ~~this~~ out.</p>
+                                         <p>Bare https://example.com/docs link.</p>
+[:table, :strikethrough]              -> <p>Strike <del>this</del> out.</p>
+[:table, :strikethrough, :autolink]   -> <p>Bare <a href="https://example.com/docs">...</a> link.</p>
+```
+
+So in an article `~~x~~` renders literally and a bare URL stays plain text. **No change made**, because
+`markdownCommands.js:15-16` shows Agent 2 already read this and declined to offer a strikethrough button for
+exactly this reason: *"Offering a strikethrough button would store syntax the published page …"*. The editor and
+the renderer agree, so there is no mismatch to fix — and enabling either extension would change rendering for
+every tenant Help Center article too, which nobody asked for. Recorded as a capability fact, not a bug.
+
+### G12 — Agent 2's "Arabic articles render LTR" is real, and the markup was already written for the fix
+
+Agent 2 reported no `dir` attribute anywhere and no server-side direction source. Both confirmed, and the
+important half is what a no-exclusion search for RTL handling turned up: the portal views **already carry
+`rtl:` Tailwind utilities** — the sidebar's side and border (`_sidebar.html.erb:17`), the header's logo gap and
+dropdown edge (`_header.html.erb:6,15,47,107`), the author stack's order (`_authors.html.erb:7`), eight in all.
+That variant compiles to an `[dir="rtl"]` ancestor selector (`tailwind.config.js:204`). **The markup was built
+for both directions and the attribute that selects one was missing**, so half the corpus rendered
+left-to-right with every one of those rules inert.
+
+Fixed: new `TextDirectionHelper#html_dir_attribute`, wired into all three portal layouts beside the `lang` they
+already set, so the two come from one source and cannot disagree. Its own module rather than a method on
+`PortalHelper` because direction is not portal-specific — and because `PortalHelper` is at RuboCop's
+`Metrics/ModuleLength` limit (adding it there measured `104/100`).
+
+`RTL_LOCALES = %w[ar fa he]` — the right-to-left locales among the **44** the product offers
+(`config/initializers/languages.rb`, `iso_639_1_code`). Deliberately not a copy of the frontend's
+`getLanguageDirection` list (`languages.js:746-749`), which includes `as` (Assamese, **left-to-right**) and
+`ku`/`ur`, none of which are available locales here. A region suffix is ignored, so `ar_EG` is still RTL.
+
+This is a **product-wide** change: it also fixes any tenant's Arabic, Persian or Hebrew Help Center, where the
+same `rtl:` utilities are equally inert today. Flagged rather than buried, because the `<title>` fix in §G10 was
+declined on exactly that ground. The difference is that the title change would alter output every tenant
+currently relies on, while this one activates markup that was written for it and is doing nothing.
+
+Verified: `text_direction_helper_spec` + `portal_helper_spec` + `seo_spec` = **69 examples, 0 failures**;
+RuboCop on all five files, no offenses. The SEO spec asserts the real page:
+`<html lang="ar" dir="rtl">` for the Arabic article and `<html lang="en" dir="ltr">` for the English one.
+
+#### A false lead I chased, recorded so nobody re-chases it
+
+The first version of that example read the memoized `let(:body)` twice across two requests, so the second
+assertion compared against the **first** response. I read the Arabic body on an English request as evidence that
+`BaseController#set_locale` runs the action twice — it calls `switch_locale_with_article(&)`, which yields
+inside `I18n.with_locale`, and then calls a bare `yield` again (`base_controller.rb:38-43`). Probed it rather
+than asserting it:
+
+```
+PROBE status=200
+PROBE with_locale_calls=["en"]
+PROBE show_renders=1  all=["show.html+documentation.erb"]
+```
+
+**One render, one locale window.** ActiveSupport's callback chain does not re-run the action on a second yield.
+The trailing `yield` is the necessary path when neither `locale` nor `article_slug` is present, and it is inert
+otherwise. **Not a defect, and the spec was mine.**

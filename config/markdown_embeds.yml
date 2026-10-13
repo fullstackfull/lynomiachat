@@ -10,11 +10,20 @@
 # 2. Define the regex pattern with named capture groups: (?<name>pattern)
 # 3. Create an HTML template using %{name} placeholders matching the capture groups
 #
-# NO TEMPLATE HERE MAY EMIT A <script> TAG. Every template below renders an <iframe> or a <video>, which the
-# browser isolates in its own origin. A <script src> runs third-party code with this product's origin, on a
-# public page, chosen by whoever wrote the article. `wistia` and `github_gist` were removed for exactly that
+# NO TEMPLATE HERE MAY EMIT A <script> TAG. A <script src> runs third-party code with THIS product's origin, on
+# a public page, chosen by whoever wrote the article. `wistia` and `github_gist` were removed for exactly that
 # reason (docs/documentation-v2/08-orchestrator-rulings.md R1.3); Gist content is attacker-authored and Wistia's
 # template pulled two remote scripts. A spec asserts this file stays script-free.
+#
+# AN EARLIER VERSION OF THIS COMMENT ALSO CLAIMED THE REMAINING TEMPLATES ARE SAFE BECAUSE AN <iframe> IS
+# "isolated in its own origin". THAT IS TRUE AND IT IS NOT A SUFFICIENT SAFETY ARGUMENT, so it is corrected here
+# rather than deleted. Origin isolation stops a frame reading this page's DOM or cookies. It does NOT stop the
+# frame navigating the TOP-LEVEL page, because none of these templates sets `sandbox`, and it does not make the
+# FRAMED CONTENT non-executable. `codepen` is the live case: a CodePen embed runs the pen's own HTML, CSS and
+# JavaScript, and the pen is named by path segments taken from the author's markdown link. See
+# docs/documentation-v2/P2-RULINGS-IMPLEMENTATION.md K18 -- open, classified, and awaiting an owner decision
+# between removing the provider (what R1.3 did to github_gist, at zero content cost since the corpus uses no
+# embeds) and sandboxing it (which needs browser verification per provider before it can be trusted).
 
 youtube:
   regex: 'https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)(?<video_id>[^&/?]+)'

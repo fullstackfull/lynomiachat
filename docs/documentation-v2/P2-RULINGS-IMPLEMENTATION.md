@@ -213,3 +213,110 @@ without asking which specs read it; §N.5 gated a tile without opening the page 
 already recorded three over-broad greps with the same shape. The rule, now encoded rather than intended:
 **before changing a shared file, enumerate its readers — specs included — and open the surface it feeds.** The
 gate's selector 2 enforces the first half mechanically.
+
+---
+
+## R1.1 — boundary derived, proposal REJECTED by its own adversarial pass, one new finding
+
+The owner's condition was: prove the selected boundary preserves all legitimate existing renderer output before
+committing. Five independent inventories were run — four static readings and one that **measured** rather than
+read — then a design pass, then three refuters. **No sanitizer code is committed.** The design is rejected on
+its own evidence, and the exercise produced one finding worth more than the sanitizer would have been.
+
+### What the measurement settled: one shared profile is not available
+
+Rendering a 23-case corpus plus all 126 real articles through both public methods and taking the
+`Nokogiri::HTML5` union:
+
+| | `render_article` | `render_message` |
+|---|---|---|
+| Elements | **32** | **20** |
+| Distinct `style` values | **18** | **2** |
+| Only on this path | `iframe`, `video`, `source`, `table`, `thead`, `tbody`, `tr`, `th`, `td`, `colgroup`, `col`, `div`, `sup` | `del` |
+
+Neither set contains the other, so a single safelist must be their union — which would permit
+`iframe[src,allow,allowfullscreen,…]`, `video`, `source` and `div[style]` on **every conversation message and
+every outbound email**, including contact-authored incoming content replayed into agent notification mail. That
+is precisely the "dangerous universal safelist" the owner's instruction names. `height: Npx;` is
+**message-only** (`lib/base_markdown_renderer.rb:29-30` honours `cw_image_height`;
+`lib/custom_markdown_renderer.rb:131-133` reads width only), so even the `style` policies differ by path.
+
+Two further measured facts, recorded because they will matter whenever this is picked up again:
+
+- **`Rails::HTML5::SafeListSanitizer` delegates `style` to Loofah's global CSS safelist with no per-call
+  override** (`rails-html-sanitizer-1.7.1/lib/rails/html/sanitizer.rb:160-171`). It scrubs declarations
+  individually, and `position`, `top`, `left`, `table-layout`, `box-sizing`, `border` and `max()` are not
+  permitted — so a naive safelist silently degrades every embed aspect-ratio box and both table-sizing modes.
+  Widening those gem constants is global and would also change `app/models/channel/telegram.rb:150` and
+  `app/services/data_imports/importer.rb:804`.
+- The way around it needs **no gem patch**: `sanitize` with `options[:scrubber]` does `fragment.scrub!(scrubber)`
+  and nothing else, so an application-owned `Loofah::Scrubber` owns the whole policy and `style` values survive
+  byte-for-byte. Verified independently by two agents against the vendored source.
+
+### Why the proposal was rejected
+
+A prototype was built and measured: 28 fidelity cases with 0 losses, all 126 corpus files unchanged, 20 attack
+payloads neutralised (including `:UNSAFE`-simulated `script`/`svg`/`form`/`srcdoc`/mXSS, `javascript:` hrefs, a
+`position:fixed` overlay and CSS `url()` exfiltration), and 266 consumer examples passing unchanged. It still
+fails, on three findings I accept:
+
+| | Finding | Why it is disqualifying |
+|---|---|---|
+| **A1 — fatal** | The profile pins `iframe@src` to 7 derived hosts, and one of them is **`codepen.io`, whose product is to execute the author's own JavaScript**. See K18 below | The control presented as the answer to "an attacker host" blesses a host that runs attacker code. Internally inconsistent with R1.3, which removed `github_gist` because its content is attacker-authored — a Gist *renders* attacker text, a pen *runs* attacker script |
+| **A2** | The iframe attribute **names** are a hardcoded 15-item list with no `sandbox`, `referrerpolicy` or `csp`; attribute **values** are auto-derived from the YAML | Fail-open for widening, fail-closed for hardening. It would silently delete a security attribute a future developer adds to a template, and the fix would work in the editor preview and not in production |
+| **A3** | `permitted_style?` tests one **element-agnostic** exact set, so the embed wrapper's `position: absolute; top: 0; left: 0; width: 100%; height: 100%;` is accepted on `div`, `img`, `table` **and** `iframe` alike | Hands back the overlay primitive the sanitizer is partly there to remove |
+
+A second refuter found one **false positive** that is not fatal but is a real regression of a shipped feature:
+the article profile strips `style` from a **resized mp4 `<video>`**, because `apply_embed_width`
+(`lib/custom_markdown_renderer.rb:178-186`) mutates `fragment.elements.first` — the wrapper `<div>` for the 8
+iframe providers, but the `<video>` itself for `mp4`, whose template has no `style`. The existing spec that pins
+that value drives `CustomMarkdownRenderer` directly rather than `render_as_html_safe`, so it would have kept
+passing and the regression would have shipped silently. That is the fourth gate-blindness of this program and
+the same shape as the others.
+
+The third refuter attacked the **shape** and could not break it: one module beside the two that already own this
+boundary, one pass at the existing choke point, `:DEFAULT` untouched, no parallel system, no gem patch, complete
+entry-point coverage (the only three construction sites are `lib/chatwoot_markdown_renderer.rb:7,14` and
+`app/services/messages/markdown_renderer_service.rb:44`, the third proven to be an independent path rather than
+a duplicated backup guard). So **the shape survives and the policy does not**. The next iteration keeps
+two application-owned profiles at that choke point and must: derive iframe attribute names from the templates
+the same way values are derived; key the `style` policy per element; fix `apply_embed_width` so the width lands
+on the wrapper rather than the root; and settle K18 first, because an iframe host policy is meaningless while a
+blessed host executes author code.
+
+### K18 (new, open) — `codepen` renders author-controlled JavaScript in an un-sandboxed frame on a public page
+
+**This is reachable today. It needs no `:UNSAFE`, no sanitizer, and no change from this program.** One markdown
+link in an article body —
+
+```
+[v](https://codepen.io/attacker/pen/EvilPen)
+```
+
+— expands through `config/markdown_embeds.yml` into an `<iframe src="https://codepen.io/attacker/embed/EvilPen">`
+on the public, unauthenticated article page. Verified in the repository: **no template in that file sets
+`sandbox` or `referrerpolicy`** (grep count: 0), and the live CSP is only `object_src :none` + `base_uri :self`
+(`config/initializers/content_security_policy.rb:14-17`) — there is no `frame-src` and no `script-src`, and
+ruling item R1.5 defers that CSP to a later contract. Without `sandbox`, a cross-origin frame may navigate the
+**top-level** page, so the consequence is a silent redirect of a Lynomia documentation URL to a phishing clone.
+
+**Severity, stated honestly.** The attacker must be a **Lynomia Super Admin content author** — tenants cannot
+author documentation at all, by the owner's product rule. So this is insider threat and defence in depth, not a
+path for an untrusted user. It is recorded as a finding rather than silently fixed because the two candidate
+fixes are not mine to choose:
+
+1. **Remove the provider**, exactly as R1.3 did to `github_gist` on exactly this rationale. Cost is **nil on
+   content** — the corpus uses zero embeds — and the change is one config block plus one spec line. It is
+   consistent, needs no browser, and is trivially revertible. It goes one step beyond R1.3's letter, so it is
+   the owner's call.
+2. **`sandbox` the iframe templates.** Correct in principle and the general fix, but which `sandbox` tokens let
+   each of the 9 providers still play is **not verifiable without a browser**, and shipping it unverified would
+   break video playback on the documentation pages. Needs per-provider verification first.
+3. Treat it as subsumed by the deferred `frame-src`/`script-src` CSP work, accepting the exposure until then.
+
+**I also corrected my own false comment.** The header I added to `config/markdown_embeds.yml` in the R1.3 commit
+argued the remaining templates are safe because an iframe is "isolated in its own origin". That is true and it
+is **not a sufficient safety argument** — origin isolation stops the frame reading this page's DOM and cookies;
+it does not stop top-level navigation and it does not make the framed content non-executable. The comment now
+says so and points here, rather than being quietly deleted. A false safety claim beside a security rule is what
+makes the next reader trust the wrong thing.

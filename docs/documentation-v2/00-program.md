@@ -24,8 +24,12 @@ Four things are missing.
    map, not from the code.
 2. **The product fails against Meta's APIs and the documentation cannot explain it.** Fourteen WhatsApp error
    articles exist. Meta's error surface across WhatsApp Cloud API, Graph API, Messenger and Instagram Messaging
-   is far larger, and the five codes this installation classifies are the five somebody already hit in
-   production — not the five that matter most.
+   is far larger — agent 005 reproduced roughly 100 published WhatsApp codes alone. And this installation
+   classifies exactly **two** codes, `131049` and `131042` (`delivery_failure.rb:28-31`), which is also what
+   gates the in-product link — so 12 of the 14 existing articles cannot be reached from the product at all.
+   (This item first said "five codes this installation classifies"; agents 040 and 054 corrected it and I
+   verified the code myself.)
+
 3. **The corpus is small.** 126 Markdown files, 63 EN + 63 AR, 124 published articles. For a product with
    WhatsApp, Facebook, Instagram, four commerce providers, campaigns, automation, flows, a platform support
    desk and a super-admin operations centre, that is a skeleton.

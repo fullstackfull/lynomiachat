@@ -20,8 +20,8 @@ The headline, before the template sections:
    not the Arabic locale). This is ledger item DC-14 (agent 056); I confirm it for every string and extend it in
    §3.2. The section's one promise — match what is on your screen to a cause — fails at its first step.
 2. **Several articles state provider state Lynomia never received.** The sharpest: `NOT_APPLIED` is explained as
-   "the store accepted the request", but the code can only produce that code after Lynomia *lost* the answer
-   (`action_executor.rb:120`). The reconnect article names causes (key deleted, app uninstalled) that Lynomia
+   "the store accepted the request", but the code produces that code only from a read-back (`action_executor.rb:120`),
+   which on WooCommerce — the one provider live in production — happens only after Lynomia *lost* the answer. The reconnect article names causes (key deleted, app uninstalled) that Lynomia
    inferred from a bare 401 or a refused or lost token refresh, and the uninstall it names actually takes a
    different path (`disconnected`, not `needs_reauth`). §3.4.
 3. **Remedies are wrong or unreachable.** "Reconnect" is given for all four platforms (DC-15) but WooCommerce shows
@@ -98,7 +98,7 @@ action codes mapped at `documentationLinks.js:123-132` have a registry entry and
 | `commerce-store-unreachable` | **EXPAND** | The best-verified commerce article (timeouts, retry rule, stale fallback and "status unchanged" all confirmed). It needs the true strings, the 24-hour bound on the stale fallback, DNS and TLS as named causes, and the two codes the registry sends here that it never explains (`RATE_LIMITED`, `INVALID_RESPONSE`). | §3.3 U1-U11; `documentationLinks.js:112-115` |
 | `commerce-store-address-refused` | **REWRITE** | Its examples do not produce its message; it says WooCommerce is the only platform where you type an address (Shopify also does, and gets the opposite advice); "no path" is wrong for a WordPress subfolder; port and bare-IP rules are not mentioned. | §3.3 A2-A7 |
 | `commerce-keys-cannot-do-that` | **REWRITE** | Groups three codes with three different remedies under "keys" (a Shopify approval nobody on the customer side can obtain is not a key problem); its Shopify and Zid remedies target order actions that are held out of production; omits that a Read key also loses live updates and that "order actions off" has installation-level causes. Consider splitting `PROTECTED_DATA_NOT_APPROVED` into its own article. | §3.3 K2-K9; `switches.rb:16-26`; XA-02 |
-| `commerce-order-action-did-not-apply` | **REWRITE** (table) / **KEEP** ("We do not know") | The conceptual core is right and unique in the corpus. Two table rows are wrong (`NOT_APPLIED`, `ACTION_UNAVAILABLE`), three are incomplete (`ACTIONS_DISABLED`, `ACTION_IN_PROGRESS`, `ORDER_CHANGED`), the opening "only thing Lynomia writes" is false, and `NOT_SENT`, `IDEMPOTENCY_CONFLICT` and the action-throttle `RATE_LIMITED` are mapped here and never explained. | §3.3 O1-O16 |
+| `commerce-order-action-did-not-apply` | **REWRITE** (table) / **KEEP** ("We do not know") | The conceptual core is right and unique in the corpus. Four of the nine table rows are wrong or misleading (`NOT_APPLIED`, `ACTION_UNAVAILABLE`, `ACTIONS_DISABLED`, `ACTION_IN_PROGRESS`), `ORDER_CHANGED` names an author nobody can know, the opening "only thing Lynomia writes" is false, and `NOT_SENT`, `IDEMPOTENCY_CONFLICT` and the action-throttle `RATE_LIMITED` are mapped here and never explained. | §3.3 O1-O15 |
 
 No article should be RETIRED or MERGED. **RELOCATE** is an open IA question, not a verdict: five of the seven
 articles are commerce while a seven-article `commerce` section exists, and WhatsApp errors have their own section.
@@ -115,7 +115,7 @@ named. `en/commerce.json` below means `app/javascript/dashboard/i18n/locale/en/c
 ### 3.1 Totals
 
 83 individual claims or omissions checked in §3.3 (the 19 on-screen strings of §3.2 are counted separately and are
-all `wrong`). **42 confirmed** (8 of them with a stated caveat), **28 wrong** (12 of those wrong only in part),
+all `wrong`). **42 confirmed** (8 of them carry an explicit caveat in the verdict cell), **28 wrong** (12 of those wrong only in part),
 **9 unverifiable**, **4 recorded omissions**. The ordering by how much a reader can trust the article:
 
 | article | rows | confirmed | wrong | unverifiable | omission |
@@ -137,9 +137,10 @@ behaviour, and the **remedy** stated generally where it differs by platform.
 Every one of the five commerce articles opens with a table whose left column is quoted as on-screen text. I
 extracted all 21 curly-quoted items from the EN articles (19 are claimed on-screen strings; the other two are the
 fragment “We do not know” and the illustration “last updated 40 minutes ago”) and tested each with `rg -F` over
-the EN locale files: **0 matches**. The Arabic articles quote 27 «…» items that are translations of the English
-ones; none of the 19 Arabic equivalents appears in `ar/commerce.json` (the four `rg` hits in the contact article are
-single common words, not quotations). The panel never renders a code at all: `errorMessage` maps every code to a
+the EN locale files: **0 matches**. The Arabic commerce articles quote 22 «…» items (the same 19 plus three fragments), all
+translations of the English ones; none of the 19 appears in `ar/commerce.json`. The only `rg` hits among all 27 Arabic
+quotes in the section are single common words (one in the order-action article, three in the contact article), not
+quotations. The panel never renders a code at all: `errorMessage` maps every code to a
 sentence (`useCommerceLabels.js:54-89`), so the right-hand "The code behind it" column names identifiers that only
 Lynomia's staff can see (`account.html.erb:192`).
 
@@ -181,12 +182,12 @@ The shipped sentences appear nowhere in the corpus, so the article cannot be fou
 | # | line | claim | verdict | evidence |
 |---|---|---|---|---|
 | H1 | 20-23 | A custom role's permission list has no entry for inboxes, channels, campaigns, WhatsApp templates, flows, automation rules or audiences | confirmed | `custom/app/models/custom_role.rb:19-27` — closed list: `conversation_manage`, `conversation_unassigned_manage`, `conversation_participating_manage`, `contact_manage`, `report_manage`, `commerce_order_manage`, `support_ticket_manage`, `knowledge_base_manage` |
-| H2 | 32 | An inbox has an **Account Health** tab | confirmed (WhatsApp Cloud and Twilio inboxes) | `routes/dashboard/settings/inbox/Settings.vue:254,264`; `en/inboxMgmt.json:792`. It is the one "first check" in the hub that shows provider state Lynomia *asked for* (its error copy says "Meta could not return the current health details", `inboxMgmt.json:945`) |
+| H2 | 32 | An inbox has an **Account Health** tab | confirmed (WhatsApp Cloud inboxes; a Twilio variant also exists, `Settings.vue:592`) | `routes/dashboard/settings/inbox/Settings.vue:254,264`; `en/inboxMgmt.json:792`. It is the one "first check" in the hub that shows provider state Lynomia *asked for* (its error copy says "Meta could not return the current health details", `inboxMgmt.json:945`) |
 | H3 | 40 | A flow needs a WhatsApp Cloud inbox | confirmed | `custom/app/services/flows/channel_capabilities.rb:2-3,19-22` |
 | H4 | 55 | Flows keep **Sessions** | confirmed | `routes/dashboard/settings/flows/FlowBuilder.vue:38,519` |
 | H5 | 57 | Audit logs cover "fourteen event types" | unverifiable | not counted by me; agrees with `administration/audit-logs.md:20` (agent 059) |
 | H6 | 58 | Automation rules: "nothing. There is no run history and no per-rule log in the product" | confirmed (tenant surfaces) | no UI. But Lynomia writes one structured line per evaluation with outcome `executed`/`skipped`/`duplicate`/`no_conversation`, `rule_id` and a correlation id (`custom/app/services/automation/execution_log.rb:1-15`). The honest advice is "quote the rule id, time and conversation in a ticket", which the hub never says. Whether the desk reads application logs: unverified |
-| H7 | 59 | Webhooks: "nothing. No delivery log, no retry, no replay" | wrong (in part) | right for account webhooks: failure is logged and swallowed (`lib/webhooks/trigger.rb:26-35`). Not right as a blanket: an API-inbox webhook failure marks the message **failed** (`trigger.rb:65-67,100-102`); an agent-bot failure moves the conversation to open with an activity note (`trigger.rb:77-98`) and 429/500 are retried (`trigger.rb:3,125-126`) |
+| H7 | 59 | Webhooks: "nothing. No delivery log, no retry, no replay" | wrong (in part) | right for account webhooks: failure is logged and swallowed (`lib/webhooks/trigger.rb:26-35`). Not right as a blanket: an API-inbox webhook failure marks the message **failed** (`trigger.rb:65-67,100-102`); an agent-bot failure moves the conversation to open with an activity note (`trigger.rb:77-98`) and 429/500 are raised as retryable errors (`trigger.rb:3,125-126`; the retry itself is the job queue's default, not verified) |
 | H8 | 69 | Messages sent while the webhook was missing "are gone. There is no backfill" | unverifiable (Meta) | no backfill or replay exists in the repo (`rg` for backfill, history sync and missed-message handling over `app/services/whatsapp`, `custom/app/services/whatsapp` and the job directories finds nothing relevant). "Gone" is a statement about Meta's redelivery behaviour, which Lynomia cannot know — route to 026/088 |
 | H9 | 70-73 | Automation has no business-hours, time-of-day or working-hours condition | confirmed | `routes/dashboard/settings/automation/constants.js:12-84` and every other condition list: no time attribute; the only "hours" hit is a delay default (`:815`) |
 | H10 | 73 | Refunds and cancellations cannot be delegated to a custom role | confirmed | `custom/app/policies/commerce/action_policy.rb:6,23-29` (administrators only); `en/commerce.json:ORDER_ACTIONS_HINT` |
@@ -281,7 +282,7 @@ The shipped sentences appear nowhere in the corpus, so the article cannot be fou
 | O1 | 8-9 | An order action "is the only thing Lynomia **writes** to your store" | wrong | on WooCommerce Lynomia also creates and deletes its own webhooks in the store with the key (`woocommerce.rb:94-108,112-118,153-160`); the Settings hint says so: "Lynomia only adds its own webhooks" (`en/commerce.json:218`). `commerce-provider-support.md:47` repeats the same overstatement |
 | O2 | 9-10 | A write is never sent twice | confirmed | `http_client.rb:67-71`; `action_executor.rb:5-9,49-55` |
 | O3 | 16 | `ORDER_CHANGED` = "somebody else changed the order" | confirmed (event) / wrong (cause) | `action_executor.rb:80`: the order's fingerprint (status, total, currency, paid date, payment method, refunds — `woocommerce/actions.rb:192-195`) differs from the one the agent confirmed. Lynomia cannot know *who*; a payment, a store automation or Lynomia's own earlier action all change it. The shipped string adds "Nothing was sent." |
-| O4 | 17 | `NOT_APPLIED` = "the store accepted the request and the order is provably unchanged" | wrong | `NOT_APPLIED` exists only as the verdict of a **read-back after the answer was lost** (`action_executor.rb:120`). Lynomia never learned that the store accepted anything — it lost the answer, then at least 5 minutes later (`SETTLED_AFTER`, `woocommerce/actions.rb:37,70,164,176`; `shopify/actions.rb:49,187`) saw the order unchanged. With read-backs at 30 s, 2 min and 10 min (`action_executor.rb:15`) only the last can produce it |
+| O4 | 17 | `NOT_APPLIED` = "the store accepted the request and the order is provably unchanged" | wrong | `NOT_APPLIED` exists only as the verdict of a **read-back** (`action_executor.rb:120`); on WooCommerce, the one live provider, the read-back happens only after the answer was lost. Lynomia never learned that the store accepted anything — it lost the answer, then at least 5 minutes later (`SETTLED_AFTER`, `woocommerce/actions.rb:37,70,164,176`; `shopify/actions.rb:49,187`) saw the order unchanged. With read-backs at 30 s, 2 min and 10 min (`action_executor.rb:15`) only the last can produce it. (The one case where the store did accept — a Shopify cancellation job that finished without cancelling, `shopify/actions.rb:166-171` — is on a held provider.) |
 | O5 | 18 | `REFUND_DECLINED` = "the payment gateway refused, not the store" | unverifiable (provider) | inferred from one WooCommerce answer: HTTP 500 with body code `woocommerce_rest_cannot_create_order_refund` (`woocommerce/actions.rb:33,149`). Nothing else produces it, so it is WooCommerce-only. Lynomia never holds the store's own reason (`action_result.rb:6`: "never the store's own error text"). The shipped string adds "No money was sent." |
 | O6 | 19 | `PROVIDER_REJECTED` — "usually in a state that does not allow it" | unverifiable | Lynomia saw a 400/403/409/422 (`woocommerce/actions.rb:31-32`) or Shopify `userErrors` (`shopify/actions.rb:69,82,146`); "usually" is a guess |
 | O7 | 20 | `ACTION_IN_PROGRESS` = "the same action is in flight" | wrong (scope) | any unresolved earlier action on the **order** blocks every other action on it (`order_actions.rb:13,161-163`), until reconciliation is exhausted |
@@ -371,7 +372,7 @@ EXPAND work on existing keys, not new articles.
 | Front matter | all 14 files carry `title`, `description`, `position`, `tags`, `seo_description`; none carries `seo_title`. `seo_description` lengths 110–157 characters, inside the audit's 50–160 band. |
 | Rendered `<title>` | the portal appends a 29-character suffix the audit never counts (`01-current-system.md` §8). `commerce-store-needs-reconnecting` EN is 34 + 29 = **63 > 60**; `commerce-store-unreachable` is exactly 60. The other five EN titles are 58–59. |
 | Titles | hub and support are in the reader's words ("When something is not working", "Raising a ticket with Lynomia"). The commerce five name a *cause* ("Your store keys cannot do that", "Lynomia cannot reach your store"), which is findable only by a reader who has already diagnosed. |
-| Description voice | hub and support: "You will be able to…" / "How to reach…". Commerce five: noun phrases ("What … means, why … and the one action…"). The corpus convention elsewhere is the "You will…" reader outcome (`audit-logs`, `webhooks`, `whatsapp-nothing-arrives`). |
+| Description voice | hub: "You will be able to…" (the corpus convention elsewhere: `audit-logs`, `webhooks`, `whatsapp-nothing-arrives`). Support: "How to reach…, what each ticket status means, and what we will and will not answer" (a topic list with no outcome). Commerce five: noun phrases ("What … means, why … and the one action…"). Only 1 of 7 follows the convention. |
 | Tags | `[troubleshooting]` ×2, `[troubleshooting, commerce]` ×5. Consistent. |
 | Internal links | hub 27, support 11, **commerce five 0**. The five make seven references by bold title instead (`reconnecting:54`, `unreachable:35`, `keys:50-51` ×2, `address:50-51` ×2, `action:43`), which a reader cannot click. |
 | Role and place | only `reconnecting:12` says who can act. The hub and support have a role section; the other four commerce articles are silent although the whole Settings → Commerce route is administrator-only (`commerce.routes.js:19`). |
@@ -392,7 +393,7 @@ What the good moments do, and where they are:
    reader what *not* to do (do not retry, nothing to clear). Nothing else in the section does it.
 3. **Name the unknown and the way out.** `action:26-42`: Lynomia cannot tell, here is what it does to find out,
    here is what it never does, here is the authoritative place to look (the store's own admin, "a few seconds").
-   The only comparable moments in the wider corpus are `whatsapp-error-131049` "Limits" ("Lynomia Chat cannot tell
+   The comparable moments I found in the wider corpus are `whatsapp-error-131049` "Limits" ("Lynomia Chat cannot tell
    you how close a contact is to the cap. Meta does not report that") and `whatsapp-nothing-arrives` "What an
    operator can check that you cannot".
 4. **Use the product's own sentences.** The support article is word-for-word the shipped statuses, hints and menu
@@ -432,9 +433,10 @@ knows.** The code distinguishes three classes and the corpus has no vocabulary f
 Two structural facts make the discipline necessary rather than stylistic. Lynomia **never keeps the provider's own
 error text** (`action_result.rb:6`; `http_client.rb:13`), so a sentence that paraphrases the store's reason cannot
 have come from Lynomia's data. And Lynomia's recorded snapshot **goes stale against the provider**: it learns
-`read_only_key` once and keeps it until the keys are re-entered (`woocommerce.rb:94-108`), so a merchant who raises
-the permission in WooCommerce and does nothing in Lynomia stays "read-only" — the step "Replace keys" is needed
-even when the provider side is already fixed, and the article does not say so.
+`read_only_key` once and keeps it until the keys are replaced or the store is re-enabled (the only callers of webhook
+registration, `woocommerce.rb:94-108`; `webhook_registration_job.rb:1-12`), so a merchant who raises the permission
+in WooCommerce and does nothing in Lynomia stays "read-only" — the step "Replace keys" is needed even when the
+provider side is already fixed, and the article does not say so.
 
 ### 5.4 Proposed canonical troubleshooting-article pattern
 
@@ -449,7 +451,7 @@ reconciled with 054 because its report was still incomplete when I read it.
   *Reason:* the reader arrives with a string; portal search matches text; the section's own titles are only
   findable by a reader who has already diagnosed.
 - `description` — "You will know…" reader-outcome sentence, naming the one thing they will be able to do.
-  *Reason:* the convention in the better articles; the five commerce articles are the outliers.
+  *Reason:* the convention in the better articles elsewhere; in this section only the hub follows it.
 - `tags` — `[troubleshooting, <area>]`. `seo_description` carries the quoted sentence, not the code.
 
 **Body — elements in order.** Elements 1, 3, 5, 6 and 8 are mandatory; 2, 4, 7, 9, 10 are included where they
@@ -528,7 +530,7 @@ time for the desk (no SLA policy can be created, PD-02).
 ## 6. EN/AR parity
 
 Structural parity is exact: same headings, same table rows, same link list in both locales for all seven (hub 27 = 27,
-support 11 = 11, commerce 0 = 0), no sentence present in only one language. Meaning parity is strong. That is the
+support 11 = 11, commerce 0 = 0); I found no sentence present in only one language. Meaning parity is strong. That is the
 problem as much as the strength: **the Arabic faithfully reproduces every English error**, and its quoted strings are
 translations of the invented English ones rather than the Arabic locale.
 

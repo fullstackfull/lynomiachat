@@ -67,7 +67,7 @@ against `setweight(to_tsvector('simple', coalesce(title::text,'')), 'A') || …`
 ### 1.3 What is searchable, and what only looks searchable
 
 `Documentation::ContentSeeder#attributes_for` maps front matter onto columns, and
-`#meta_for` puts everything else into the `meta` jsonb (`custom/app/services/documentation/content_seeder.rb:94-113`):
+`#meta_for` puts everything else into the `meta` jsonb (`custom/app/services/documentation/content_seeder.rb:94-113`, methods at `:94` and `:106`):
 
 | Front-matter key | Lands in | In the search document? |
 |---|---|---|
@@ -95,10 +95,10 @@ and used to label a changelog entry (`custom/app/fields/article_meta_field.rb:27
 ### 1.4 The search UI
 
 Two entry points, and they disagree. The results page is a plain GET form that percent-encodes correctly
-(`app/views/public/api/v1/portals/search/_form.html.erb:2-16`). The typeahead is a Vue component whose API client
+(`app/views/public/api/v1/portals/search/_form.html.erb:2-17`). The typeahead is a Vue component whose API client
 interpolates the raw term into the URL with no encoding —
-`` `${this.baseUrl}/hc/${portalSlug}/${locale}/articles.json?query=${query}` `` (`app/javascript/portal/api/article.js:8`),
-called from `PublicArticleSearch#fetchArticlesByQuery` (`app/javascript/portal/components/PublicArticleSearch.vue:119-139`).
+`` `${this.baseUrl}/hc/${portalSlug}/${locale}/articles.json?query=${query}` `` (`app/javascript/portal/api/article.js:9`),
+called from `PublicArticleSearch#fetchArticlesByQuery` (`app/javascript/portal/components/PublicArticleSearch.vue:119-139`, term trimmed only at `:40-42`).
 
 ---
 
@@ -201,7 +201,7 @@ but the code itself appears in no article, so the contextual link resolves and t
 
 ### 2.5 WhatsApp error codes
 
-`Whatsapp::DeliveryFailure::CODE_IN_ERROR = /\A(\d{3,6}):/` (`custom/app/services/whatsapp/delivery_failure.rb:37`)
+`Whatsapp::DeliveryFailure::CODE_IN_ERROR = /\A(\d{3,6}):/` (`custom/app/services/whatsapp/delivery_failure.rb:35`, used at `:40`)
 means **any** 3–6 digit Meta code is captured and shown verbatim to the agent under "WhatsApp said:"
 (`app/javascript/dashboard/i18n/locale/en/chatlist.json` `CHAT_LIST.DELIVERY_FAILURE.PROVIDER_RESPONSE_LABEL`).
 The corpus contains exactly five: `131042`, `131049`, `131053`, `131060`, `190` — the five with articles in
@@ -300,7 +300,7 @@ before any design argument begins.
 mechanism in this system.
 
 **An `aliases` key in `meta`: rejected for the same reason, plus one more.** `ContentSeeder#meta_for` reads named
-keys only (`content_seeder.rb:105-112`), so an `aliases:` key added to a `.md` file today is silently discarded —
+keys only (`content_seeder.rb:106-113`), so an `aliases:` key added to a `.md` file today is silently discarded —
 it would not even reach `meta`, let alone the index. It is the right *authoring shape* (see 5.3) but `meta` is the
 wrong destination.
 
@@ -340,7 +340,7 @@ PostgreSQL server-side artefact:
    and downcase. This is deterministic, needs no data, and no maintenance. It is what removes 679 + 358 + 912 + 63
    + 287 unreachable lexemes from §2.3 in one stroke.
 3. **`search_text` is written by the seeder**, in `attributes_for` beside the columns it already sets
-   (`content_seeder.rb:94-103`), as `normalise(title + description + body) + aliases`. The seeder already
+   (`content_seeder.rb:94-104`), as `normalise(title + description + body) + aliases`. The seeder already
    overwrites every file-backed field on every run, so this field is consistent by construction and needs no
    migration backfill beyond one `documentation:content` run.
 4. **The query is normalised identically**, once, in `Article.search` before `text_search`
@@ -396,7 +396,7 @@ Two guardrails, both extending things that already exist:
   question answered, because without a GIN trgm index on the expression it is a full scan. Scope it to
   `title` + `search_text`, not `content`.
 - **Add `#` to `DISALLOWED_TSQUERY_CHARACTERS`'s effect at the application layer** and fix
-  `app/javascript/portal/api/article.js:8` to encode the query (D10). One `encodeURIComponent` call.
+  `app/javascript/portal/api/article.js:9` to encode the query (D10). One `encodeURIComponent` call.
 - **Translate `ar.yml:481-489`** (D11) and fix `ar.yml:476` (D12). This is `en.yml`/`ar.yml` work, in scope for
   this program by `00-program.md` §Project-Specific, and it is the cheapest findability fix in this report: the
   Arabic reader currently cannot read the message telling them their Arabic search failed.

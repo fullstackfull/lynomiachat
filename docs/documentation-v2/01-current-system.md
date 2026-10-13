@@ -171,10 +171,17 @@ the corrected finding:
   which `spec/lib/custom_markdown_renderer_spec.rb:31-38` already asserts. There is no `sanitize` call because
   no author HTML is ever emitted. The mechanism is **omission**, and saying "escaping" is how someone later
   reasons their way to turning `:UNSAFE` on.
-- **`javascript:`, `vbscript:`, `file:` and `data:` URLs are blanked** by
+- **`javascript:`, `vbscript:` and `file:` URLs are blanked** by
   `lib/markdown_renderer_url_sanitizer.rb:14-18`. The `\A` anchor holds, because cmark's own `cmark_clean_url`
   trims whitespace and decodes entities before Ruby sees the URL. `blob:`, `intent:` and protocol-relative
   `//host` pass.
+- **`data:` is NOT blanked for images.** Corrected 2026-10-13 — I wrote that it was. `SAFE_DATA_IMAGE_PATTERN`
+  (`markdown_renderer_url_sanitizer.rb:4`) explicitly re-permits `data:image/png`, `gif`, `jpeg` and `webp`, and
+  `sanitized_href` blanks a dangerous URL only when it does *not* match that pattern (`:16`). Agents 083 and 087
+  both found this, and I verified it. It is load-bearing: **`![](data:image/png;base64,…)` is a working media
+  channel that bypasses ActiveStorage, every size and type check, EXIF stripping and any review step — and it is
+  permanent in git.** It must be closed before Phase 5 writes a single image, or the media contract is
+  unenforceable by construction.
 - **`onerror`/`onload` are unreachable**: the hand-built `<img>`/`<a>` interpolate only through `escape_href`,
   `escape_html` and a `\A(\d+)px\z`-bounded width.
 - **A latent trap**: enabling `:UNSAFE` would NOT enable `tagfilter`, because the renderer is built with

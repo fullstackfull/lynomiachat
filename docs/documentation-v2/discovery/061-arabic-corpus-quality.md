@@ -560,3 +560,179 @@ Arabic slug as `"#{key}-ar"`, so the Arabic URL is
 decision (it keeps slugs ASCII and the `-ar` convention is load-bearing per `01-current-system.md` §10), but it is
 an Arabic SEO cost and it should be a recorded decision rather than an accident. Agent 073's call.
 
+---
+
+## 6. EN/AR parity
+
+Parity is the strongest part of this corpus. Measured mechanically over all 63 pairs:
+
+| Check | Result |
+|---|---|
+| File presence | 63/63, exact per-section parity |
+| `position` | identical in all 63 pairs |
+| `tags` | identical in all 63 pairs |
+| `seo_title` presence | identical (14 files in both) |
+| Internal links | **493 in each language**, and the set of link *targets* is identical in all 63 pairs |
+| Structural divergence (headings, tables, lists, code spans, fences) | **10 of 63 files**, and in 9 of those the Arabic adds structure rather than losing it |
+| Word ratio | 0.74–0.97, mean ≈0.86 — the expected band for EN→AR |
+
+The ten divergent files, and what diverges:
+
+| File | Ratio | Divergence |
+|---|---|---|
+| `workspace/set-up-an-inbox` | 0.97 | AR has 17 table rows vs EN 6 — the nine-channel prose list became a table (§5.1) |
+| `workspace/roles-and-permissions` | 0.90 | AR 16 table rows vs 14; one extra bullet; one extra numbered step |
+| `workspace/teams-and-agents` | 0.84 | AR one extra bullet |
+| `whatsapp/whatsapp-template-lifecycle` | 0.81 | AR one extra `##`, one extra bullet, **three numbered steps where EN has none** |
+| `whatsapp/whatsapp-templates` | 0.83 | AR one extra `##` |
+| `commerce/commerce-provider-support` | 0.95 | AR 34 table rows vs 31 |
+| `commerce/customer-360` | 0.89 | AR three extra bullets |
+| `audiences-and-campaigns/whatsapp-campaigns` | 0.83 | AR two extra bullets |
+| `integrations/webhooks` | 0.83 | AR one extra code span |
+| `troubleshooting/commerce-store-unreachable` | 0.74 | AR **one fewer** code span — the only case where Arabic drops something |
+
+**Semantic parity defects** (meaning, not shape):
+
+1. **Link text drifts from target titles more in Arabic than in English.** 161 of 493 Arabic link texts differ
+   from the target article's `title`, against 137 of 493 in English. Most of that is intentional inline phrasing
+   in both languages. The Arabic-specific cases are the ones where the drift introduces a *second term* for the
+   same feature: `ar/commerce/commerce-overview.md:21` links `[منشئ المسارات](flow-builder)` while eight other
+   files link `[منشئ التدفقات]`; `ar/audiences-and-campaigns/labels-or-shared-audiences.md:61,130` link
+   `[الإجراءات بالجملة](bulk-actions)` while `ar/administration/audit-logs.md:39` links
+   `[الإجراءات الجماعية]`; `ar/whatsapp-errors/whatsapp-error-131049.md` links
+   `[نافذة واتساب الـ 24 ساعة]` while the target's own title is `نافذة الـ24 ساعة في واتساب`.
+2. **`ar/workspace/set-up-an-inbox.md:100`** links `[الإسناد وترتيب الأولوية](assign-and-prioritise)` while the
+   target's title is `الإسناد والأولوية`.
+3. **The `integrations` category name and its hub article disagree in Arabic, and only in Arabic.**
+   `custom/db/documentation/manifest.yml:104` names the section `التكاملات`;
+   `ar/integrations/integrations.md:2` titles the hub article `خيارات الربط`; the product's Arabic sidebar says
+   `خيارات الربط` (`app/javascript/dashboard/i18n/locale/ar/settings.json:357`). The category name is the odd one
+   out and it is the one a reader sees in the portal navigation. English has no such clash
+   (`manifest.yml:101` `Integrations`, `en/integrations/integrations.md` `Integrations`). The Arabic UI is itself
+   split here — `integrations.json:3` says `خيارات الربط` but `:5,6` say `التكاملات`.
+4. **Inherited factual errors.** The "six permissions" error (§3.2) is in both languages
+   (`en/workspace/roles-and-permissions.md:3,28`). The Arabic must not be corrected alone.
+
+**Not a parity defect, and worth recording as a decision already made well:** the Arabic corpus systematically
+renders the English word *inbox* as `قناة` / `قنوات التواصل` rather than `صندوق الوارد` — `ar/workspace/set-up-an-inbox.md`
+is titled `إعداد قناة تواصل`, not `إعداد صندوق وارد`. That is not a mistranslation. It matches this
+installation's own Arabic UI, where `Settings → Inboxes` reads `قنوات التواصل`
+(`app/javascript/dashboard/i18n/locale/ar/settings.json:353`, `inboxMgmt.json:3`). The corpus reserves
+`صندوق الوارد` (19 occurrences, 16 files) for the *conversation-list screen*, which is also what the Arabic UI
+calls it (`settings.json:381` `صندوق الوارد الجديد`, `analytics.json:91` `صندوق الوارد`,
+`campaign.json:38` `اختر صندوق الوارد`). An EN/AR diff tool will flag this as a mismatch on 36 occurrences; it is
+correct and must not be "fixed". **Agent 094 should be told this before it refutes it.**
+
+---
+
+## 7. Proposed EN→AR terminology glossary
+
+Columns: the term; what the corpus currently uses, with counts; what the product's Arabic UI uses, with a
+citation; the recommendation; and the reason. Where the UI string is English, that is stated — because the
+recommendation then depends on a product decision (§3.7) that has not been made.
+
+| EN term | In the corpus today | In the Arabic UI | **Recommend** | Note |
+|---|---|---|---|---|
+| **inbox** (the entity in Settings) | `قناة` / `قنوات التواصل` / `قناة تواصل` (330) | `قنوات التواصل` (`settings.json:353`, `inboxMgmt.json:3`) | **`قناة تواصل`** / pl. `قنوات التواصل` | already correct and deliberate; do not "restore" `صندوق الوارد` |
+| **inbox** (the conversation-list screen) | `صندوق الوارد` (19) | `صندوق الوارد` (`settings.json:381`, `analytics.json:91`) | **`صندوق الوارد`** | the two senses are genuinely distinct in this product; keep both terms, never interchange |
+| **channel** | `قناة` | `القنوات` (`settings.json` `SIDEBAR.CHANNELS`) | **`قناة`** | collides with *inbox* above; in prose that must disambiguate, use `نوع القناة` for the channel type |
+| **conversation** | `محادثة` / `المحادثات` (uniform) | `المحادثات` (`settings.json`, `conversation.json`) | **`محادثة`** | no variance found; already consistent |
+| **contact** | `جهة الاتصال` / `جهات الاتصال` (232) | `جهة الاتصال` (`ar.yml:273`, `contact.json`, `supportTickets.json`) | **`جهة الاتصال`** | already consistent |
+| **campaign** | `حملة` / `الحملات` (116) | `الحملات` (`ar.yml:187`, `campaign.json`) | **`حملة`** | already consistent |
+| **template** | `قالب` / `القوالب` (238) | `القوالب` (`whatsappTemplateMgmt.json:3`) | **`قالب`** | already consistent. Keep `UTILITY`, `MARKETING`, `APPROVED`, `PENDING` etc. **untranslated** — the corpus already does |
+| **webhook** | `Webhook` (53), `webhook` (33), `الـ Webhook` (22), `الـwebhook` (14); `ويب هوك` zero | `إعدادات الـ Webhook` (`webhooks.json:3` — the only Arabic string in the whole webhooks UI) | **`Webhook`**, Latin, capitalised, with `الـ Webhook` (kashida + space) when the article is needed | never transliterate; never lowercase; fix the 14 `الـwebhook` |
+| **access token** | `رمز وصول` (10), `رمز الوصول` (7), `الرمز` (38); `توكن` zero | **English**: `Permanent access token`, `Paste access token` (`inboxMgmt.json:361-362`); `رمز وصول` only at `commerce.json:240` | **`رمز الوصول`** for prose, **and quote the English field label verbatim** until `inboxMgmt.json` is translated | `الرمز` alone is ambiguous with Salla/Zid connection codes, which are a different thing |
+| **permission** | `صلاحية` / `الصلاحيات` (88); `إذن` (4); `تصريح` (12, authorization sense) | `Permissions` **English** (`customRole.json:49,65`); `الصلاحية` (`commerce.json:232`) | **`صلاحية`** for permission; **`تصريح`** reserved for *authorization* (OAuth); never `إذن` | the corpus already keeps the two senses apart — formalise it |
+| **business portfolio** | `محفظة أعمال` / `محفظة الأعمال` (5); `Business Manager` / `Meta Business Manager` (3) | not present | **`محفظة الأعمال`** | Meta's own Arabic term; `Business Manager` is Meta's **retired** name and must go — see `ar/whatsapp-errors/whatsapp-error-131042.md:18,35,42` |
+| **WABA / WhatsApp Business account** | `حساب واتساب للأعمال` (10), `حساب الأعمال` (9), `حساب WhatsApp Business` (1), `WABA` (1) | `WhatsApp Business Account ID` **English** (`inboxMgmt.json:406`) | **`حساب واتساب للأعمال`** on first use per article, `حساب الأعمال` thereafter; **`WABA` only beside the Latin field label** | four variants for one entity, all inside `whatsapp/` |
+| **Embedded Signup** | `الإعداد السريع` (5), `التجهيز السريع` (4), `التسجيل الموجَّه` (5), `تسجيل واتساب الموجَّه` (1), `نافذة Meta` (10) | `WhatsApp Embedded Signup` **English** (`inboxMgmt.json:1079-1081`) | **`التسجيل المدمج (Embedded Signup)`** on first use, `التسجيل المدمج` thereafter; keep `نافذة Meta` only for the popup itself | five Arabic names for one flow; the Latin term must appear at least once per article so it is searchable |
+| **provider** (commerce platform) | `منصة` / `المنصة` (≈28); `المزوّد` (5) | `PROVIDERS` → the four names (`commerce.json:4-8`) | **`منصة`** for commerce platforms; **`المزوّد`** only for SMS/voice carriers (Twilio, Bandwidth) | the corpus already splits this way by accident — make it policy |
+| **integration** | `خيارات الربط` (8); `تكامل` / `التكاملات` (4 + `manifest.yml:104`) | `خيارات الربط` (`settings.json:357`, `integrations.json:3`), but `التكاملات` at `integrations.json:5,6` | **`خيارات الربط`** | and change `manifest.yml:104` from `التكاملات` to `خيارات الربط`; see §6.3 |
+| **automation / automation rule** | `أتمتة` / `الأتمتة` / `قواعد الأتمتة` (177); `التشغيل الآلي` zero | `الأتمتة` (`settings.json`), `إضافة قاعدة أتمتة` (`automation.json:12`), but button is `Create Automation` **English** (`automation.json:7`) | **`قاعدة أتمتة`** / `قواعد الأتمتة` | already consistent in the corpus; the UI button is the problem |
+| **flow / flow builder** | `تدفق` / `التدفقات` / `منشئ التدفقات` (131); **`مسار` / `المسارات` / `منشئ المسارات` (10 in the product sense)** | `منشئ التدفقات`, `التدفق` (`flowBuilder.json:3,6`) | **`تدفق`** / `منشئ التدفقات`; **retire `مسار` in the product sense entirely** | `مسار` is also used in the corpus for *URL path* (`commerce-store-address-refused.md:41`) and *failure path* (`agent-bots.md:126`); the collision makes `whatsapp-template-lifecycle.md:68` genuinely ambiguous |
+| **SLA** | **absent from the corpus** | `اتفاقات مستوى الخدمة` (`sla.json:3`) **and** `اتفاقية الخدمة` (`supportTickets.json` TABLE.SLA) and `بلا سياسة اتفاقية خدمة`; rest of `sla.json` is English | **`اتفاقية مستوى الخدمة (SLA)`** on first use, `اتفاقية مستوى الخدمة` thereafter | the UI contradicts itself; no article exists to be consistent with yet |
+| **support ticket** — two distinct features | Lynomia-facing: `تذكرة` / `تذاكري` (26, 2 files). Account's own cases: **absent** | Lynomia-facing: `تذكرة` / `تذاكري` (`platformSupport.json` SIDEBAR). Account's own: `حالات الدعم` / `حالة` (`supportTickets.json` HEADER) | **`تذكرة`** for a ticket raised with Lynomia; **`حالة دعم`** for the account's own case | the corpus is already right on the one it covers; §4.1 is the gap |
+| **assignment / assign** | `إسناد` / `الإسناد` (135); `تعيين` (10) | **split in the UI**: `إسناد لي` (`conversation.json:45`) but `تعيين وكيل` / `تعيين فريق` (`conversation.json:238,243`) | **`إسناد`** | the corpus is *more* consistent than the product; fix the product toward the corpus |
+| **label** | `وسم` / `الوسوم` (228); `تسمية` (10); `ملصق` (2, a deliberate metaphor at `labels-or-shared-audiences.md:3`) | **split in the UI**: `الوسوم` (`settings.json`, `labelsMgmt.json`, `bulkActions.json:29`) but `التسمية` / `التسميات` (`conversation.json:255`, `bulkActions.json:31`) | **`وسم`** / `الوسوم` | corpus is right; UI needs the fix |
+| **agent** | `وكيل الدعم` / `وكلاء الدعم` (132); `موظف` (14, generic prose) | `وكيل الدعم` (`agentMgmt.json:27`), `الوكلاء` (`settings.json`), but `الموظفين` in `inboxMgmt.json:652` | **`وكيل الدعم`** for the role; `موظف` acceptable only in narrative examples | already workable |
+| **bot / agent bot** | `روبوت` / `الروبوتات` (58); `بوت` (3, at `set-up-an-inbox.md:24,47`) | `الروبوتات` (`settings.json:351`, `agentBots.json:3`) | **`روبوت`** / `الروبوتات` | exception: `بوت على Telegram` at `set-up-an-inbox.md:24` is Telegram's own term and may stay |
+| **troubleshooting** | `حل المشكلات` (`manifest.yml`), hub article titled `عندما لا يعمل شيء` | no UI equivalent | **`حل المشكلات`** for the category; article titles stay task-shaped | matches the English pattern; no change needed |
+| **API** | `الواجهة البرمجية` (8); `الـAPI` (4); `الـ API` (4) | `API` (Latin, throughout) | **`الواجهة البرمجية (API)`** on first use, `الواجهة البرمجية` thereafter | pick one; `webhooks.md` and `agent-bots.md` currently disagree |
+| **commerce / store** | `المتجر` (dominant); `التجارة` / `تجارة` (7, in `troubleshooting/` only) | `المتجر` (`settings.json:358`, `commerce.json:3`); `التجارة` is the **Reports** page (`settings.json:331`) | **`المتجر`** | `التجارة` under Settings is a wrong navigation path — §3.5 |
+
+### 7.1 Must stay untranslated
+
+These are product names, brand names, protocol tokens or machine-readable identifiers. The corpus is already
+right about most of them; the exceptions are named.
+
+**Brand and product names:** `WhatsApp` (alongside `واتساب` for the consumer-facing service — both are in use and
+both are legitimate), `WhatsApp Business`, `WhatsApp Cloud API`, `Meta`, `Facebook`, `Messenger`, `Instagram`,
+`Twilio`, `Bandwidth`, `Telegram`, `Line`, `TikTok`, `Slack`, `Dialogflow`, `Google Translate`, `OpenAI`,
+`Linear`, `Notion`, `LeadSquared`, `WooCommerce`, `Shopify`, `WordPress`, `Asia/Kuwait` and every other tz
+identifier, `Lynomia Commerce` (the literal webhook name in WooCommerce,
+`ar/commerce/connect-woocommerce.md:74`).
+
+**The two exceptions — and they are real:** `Salla` and `Zid` **are** localised by the product.
+`app/javascript/dashboard/i18n/locale/ar/commerce.json:6-7` gives `"SALLA": "سلة"` and `"ZID": "زد"`, and those
+are the companies' own Arabic brands. The corpus is split on this along the §3/§5 seam: `commerce/` uses Latin
+(`ar/commerce/connect-salla.md:2` `ربط Salla`, `connect-zid.md:2` `ربط Zid`) while `troubleshooting/` uses Arabic
+(`commerce-store-needs-reconnecting.md:3` `ووكومرس وسلة وزد وشوبيفاي`). **Recommend: `سلة` and `زد` in Arabic
+prose, to match the UI, with the Latin form in parentheses on first use** — because `زد` alone is also the Arabic
+imperative "increase", and `سلة` alone also means "basket" (and the product uses it that way at
+`commerce.json:160,163`). `ووكومرس` and `شوبيفاي` must go: those companies have no Arabic brand and the Arabic UI
+keeps them Latin.
+
+**Machine-readable identifiers, never translated:** every WhatsApp error code (`131042`, `131049`, `131053`,
+`131060`, `190`); every commerce error code (`INVALID_STORE_URL`, `AUTH_INVALID`, `STORE_UNAVAILABLE`, `TIMEOUT`,
+`ORDER_CHANGED`, `NOT_APPLIED`, `REFUND_DECLINED`, `needs_reauth`, `missing_scope`); OAuth scopes (`write_orders`,
+`whatsapp_business_messaging`, `whatsapp_business_management`); template categories and statuses (`UTILITY`,
+`MARKETING`, `AUTHENTICATION`, `APPROVED`, `PENDING`, `REJECTED`, `PAUSED`, `DISABLED`); every webhook event name
+(`conversation_created`, `message_created`, `contact_updated`, `inbox_updated`, `flow_webhook`,
+`macro.executed`, `automation_event.<trigger>`); every payload field (`id`, `content`, `message_type`,
+`changed_attributes`, `custom_attributes`, `source_id`); the three signature headers
+`X-Chatwoot-Signature`, `X-Chatwoot-Timestamp`, `X-Chatwoot-Delivery` — and `ar/integrations/webhooks.md:90`
+already says explicitly that these do not change with the installation's branding, which is exactly right;
+`sha256=`, `HMAC-SHA256`, `POST`, `JSON`, `REST API`, `/wp-json`, `/wp-admin`, `localhost`, `myshopify.com`,
+`https://`, HTTP status families `4xx` / `5xx`; language codes (`ar`, `en`); and the article slugs themselves.
+
+**Also must stay Latin, for a different reason:** any UI string the Arabic product shows in English.
+Today that includes `Account Health`, `Register Webhook`, `Webhook not configured`, `Custom Roles`,
+`Create Automation`, `Permanent access token`, `Paste access token`, `WhatsApp Embedded Signup`,
+`Connect with WhatsApp Business`, `Voice`, `Calls`, `Add SLA`, `WhatsApp campaigns`, `Create campaign`, and the
+five custom-role permission labels. An Arabic article that translates these makes the reader unable to find the
+control. **This list is a function of §3.7 and shrinks as the product is translated** — which is precisely why
+the glossary cannot be frozen before the localisation decision is.
+
+### 7.2 Mechanical conventions to freeze alongside the glossary
+
+1. **Western digits** (`0-9`) everywhere. Fix the 16 Arabic-Indic digits in five files (§5.2).
+2. **Arabic guillemets `«…»`** for all quoted UI strings and all quoted system messages; never Latin `"…"`.
+   Fix the 14 Latin-quote files (§5.2).
+3. **Arabic comma `،` and question mark `؟`** throughout — already the case.
+4. **`الـ ` + space + Latin token** when the Arabic definite article precedes a Latin word
+   (`الـ Webhook`, not `الـwebhook`). Fix 18 occurrences.
+5. **No bidi control characters in source.** Direction is the renderer's job (§5.3). Remove the stray U+200F at
+   `ar/commerce/connect-woocommerce.md:90`.
+6. **One grammatical gender for the brand** — masculine, matching the 30-to-3 majority and the masculine head
+   noun `تشات`. Fix the four feminine subject uses and `contact-lynomia-support.md:51` vs `:77,:110`.
+7. **Link text must equal the target article's `title`** unless the link is deliberately an inline phrase; and an
+   inline phrase must never introduce a second term for the same feature (§6.1).
+
+---
+
+## 8. What I did not check
+
+- **I did not run anything.** No `rails`, no `rspec`, no request. Every claim is a file read.
+- **I did not view a rendered Arabic page.** §5.3 is derived from the templates, the helper and the JavaScript;
+  the visual consequences I list follow from the absence of `dir`, but I did not see them. Someone should load one
+  Arabic article with JavaScript disabled and confirm.
+- **The double-yield in `base_controller.rb:38-43`** (§5.3) is flagged, not established. It needs a request spec.
+- **Five navigation-path segments are unverified** (§3.6) because the strings are not in the locale files.
+- **I did not assess Arabic reading level or dialect fit.** The corpus is Modern Standard Arabic throughout, with
+  Gulf-appropriate worked examples (Kuwait, Riyadh, Dubai, `Asia/Kuwait`, the Sunday-to-Thursday working week at
+  `ar/workspace/set-up-an-inbox.md:52-54`). Whether MSA is the right register for a Gulf SME support audience is a
+  product question I am not equipped to answer, and I am not raising it as a defect.
+- **I did not check the Arabic changelog** (`custom/db/changelog`), which is outside my scope but runs through the
+  same seeder and the same renderer, and therefore inherits §5.3.
+- **Portal search behaviour in Arabic** (stemming, the definite article `ال`, transliteration synonyms) is agents
+  077 and 078. §4.3 records the raw counts and claims nothing.

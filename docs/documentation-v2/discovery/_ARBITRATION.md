@@ -545,3 +545,32 @@ this shell's locale. Several earlier reports used it, which is why some EN/AR ra
 properly, agent 055 gives EN 4,090 / AR 3,438 words for the automation section, and agent 052 puts the real
 overall ratio near 0.84. **The Arabic corpus is not truncated.** Agent 094 is settling this with a per-pair
 verdict; until then, no "the Arabic is half the length" claim stands, including ones in earlier addenda here.
+
+---
+
+# Addendum 5 — two live defects outside documentation scope
+
+Agent 083 found these while establishing how a documentation image would be authorized. Neither is a
+documentation problem and neither is created by this program. Both are **live on the current baseline** and go
+to the owner.
+
+| # | Finding | Evidence |
+|---|---|---|
+| OWN-01 | **The entire contact database leaves the product as a permanent, unauthenticated public URL in an email.** `rails_blob_url(@account.contacts_export)` is emailed on export, and the same shape is used for import failures. Because `active_storage.urls_expire_in` is **never set** anywhere — it is an unassigned `mattr_accessor` that `load_defaults 7.0` does not populate — that URL never expires, and the blob routes authorize nothing (`ActiveStorage::BaseController` has no authentication, `blob_scope` is the bare class, and no override exists in `app/`, `custom/`, `lib/` or `config/`). Anyone who ever receives or forwards that email, or finds it in a mailbox later, can download the whole contact export. | `app/jobs/account/contacts_export_job.rb:96-98`, `app/mailers/.../account_notification_mailer.rb:29-31`, `activestorage-7.2.3.2/lib/active_storage.rb:357`, `engine.rb:120` |
+| OWN-02 | **`GET /slack_uploads?blob_key=…` is unauthenticated and resolves any blob key in the installation** into a signed, non-expiring URL. Its own existing spec signs in nobody, which is how it is proven unauthenticated rather than inferred. | `config/routes.rb:36`, `app/controllers/slack_uploads_controller.rb:1-26`, `spec/controllers/slack_uploads_controller_spec.rb:7-12` |
+
+I verified both by reading the files. I have changed nothing: they are outside this program's scope, and a
+security fix to the contacts export belongs to whoever owns that subsystem, not to a documentation programme
+making a drive-by edit.
+
+**They do, however, settle a design question for us.** Agent 083's analysis is that one storage service can serve
+both documentation media and private attachments, but **one URL scheme cannot** — because an ActiveStorage
+signature covers only the blob's integer primary key, with no record scope, no expiry, and no owner column on
+`active_storage_blobs` at all. The predicate "holds a signature over this blob id" is identical for a
+documentation screenshot and a contacts export. Publishing documentation media through that route would
+foreclose ever tightening it. So: **one service, two routes** — a documentation-owned public route scoped
+through `Documentation::Library.articles`, so that unpublishing an article actually revokes its images.
+
+And a decisive argument against signed IDs in article content: because `urls_expire_in` is nil, **rotating
+`SECRET_KEY_BASE` would break every embedded image URL at once**, and they would be unfindable inside free-text
+`articles.content`.

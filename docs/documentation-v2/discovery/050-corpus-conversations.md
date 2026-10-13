@@ -46,7 +46,7 @@ are Commerce, Platform Support and `MessageError.vue` (grep across `app/javascri
 | `labels` | **KEEP** (two sentence fixes) | The strongest article: conversation-vs-contact labels, naming rules, permissions, rename/delete and bulk limits all check out; only the opening "nothing ever adds a label" and the sidebar unread-count claim need changing. | L1-L12 |
 | `canned-responses` | **REWRITE** the Variables section | Picker, search, scope and permissions are right, but three statements about variables are contradicted by code (a pre-send warning exists; a misspelled variable renders empty, not literally; the composer does not always show the final text). | C8, C9, C10 |
 | `macros` | **KEEP** (one fix, add visuals) | All 15 actions, visibility, per-agent order, silent failure, Self and Mute semantics confirmed; the "label that does not exist" troubleshooting claim is wrong, and the starter gallery and `#` picker are visual features with no image. | M1-M18, M19 |
-| `macros-or-automation` | **EXPAND** (+3 corrections) | The "person vs event" distinction is right, but the trigger and action inventories are presented as complete and are not (WhatsApp-template action, cart-abandoned trigger, message-level delayed triggers) and one sentence about commerce rules is wrong. | MA5, MA7, MA8, MA11 |
+| `macros-or-automation` | **EXPAND** (+3 corrections) | The "person vs event" distinction is right, but the trigger and action inventories are presented as complete and are not (WhatsApp-template action, cart-abandoned trigger, message-level delayed triggers) and one sentence about commerce rules is wrong. | MA4, MA6, MA7, MA10 |
 
 Nothing proposed for MERGE, RETIRE or RELOCATE: I found no evidence for moving `macros-or-automation` into the automation
 section (charter section 8 item 5 needs evidence), and `work-in-the-inbox` must keep its key because `DOC_ARTICLES.conversations`
@@ -192,17 +192,16 @@ claim column are the English article's. The Arabic text makes the same claims at
 |---|---|---|---|---|
 | MA1 | 20-29 | Side-by-side table (who starts, conditions, preview, who creates, on/off) | confirmed | `macro_policy.rb`, `automation_rule_policy.rb:2-20`, `automation_rule.rb:49` (`active`), `Macros/List.vue` preview |
 | MA2 | 58-65 | Events: created, updated, opened, resolved, message created | confirmed | `settings/automation/constants.js:689-709`; `automation_rule.rb:55-57` |
-| MA3 | 65 | Commerce events: created / updated / paid / shipped / delivered / cancelled / refunded | confirmed, incomplete | (this is MA5) |
-| MA4 | 67 | Commerce rules act on the contact's most recent conversation | confirmed | `custom/app/services/automation/commerce_events.rb:8,60-62` |
-| MA5 | 65 | (same line) the list is complete | **wrong** | an eighth trigger exists: `commerce_cart_abandoned` (`lynomiaAutomation.js:13-22`; `commerce_events.rb:12-14`) |
-| MA6 | 43-50 | A rule can condition on text, country, language, channel, label, custom attribute, shared audience, store data | confirmed | `automation_rule.rb:59-62` (`conditions_attributes`), `lynomiaAutomation.js` groups |
-| MA7 | 67-69 | Commerce events "deliberately offer no customer-facing message action" | **wrong** | only `send_message` and `send_attachment` are withheld; **`send_whatsapp_template` stays available** because a template is the one thing WhatsApp allows outside the window (`lynomiaAutomation.js:21-28`) |
-| MA8 | 73-79 | "Automation only: email a team, reopen, mark pending. Macro only: Self. Everything else is in both" | **wrong** (incomplete) | automation also has `send_whatsapp_template` (`constants.js:789`) and `add_sla` (`:809`; SLA is premium and off) and a "last responding agent" assignee (`action_service.rb:46`) |
-| MA9 | 101-102 | A rule's actions do not trigger other rules | confirmed | `automation_rule_listener.rb:40` (`performed_by_automation?`) |
-| MA10 | 103-105 | Delayed automation must be enabled for the account and is off by default | confirmed | `features.yml:297-300` (`delayed_automations`, `enabled: false`); `automation_rule_listener.rb:72-80` |
-| MA11 | 103-107 | A delayed rule means "still in this status N minutes later" and can wait only on status and channel | **wrong** (incomplete) | that is only the conversation-level form (`automation_rule.rb:28,131-136`). Message-level delayed triggers exist - "customer unresponsive" / "agent unresponsive" - without that restriction (`constants.js:823-835`, `automation_rule.rb:132`); delay range 10 min to 30 days (`automation_rule.rb:25,41`) |
-| MA12 | 110 | Neither reports a failed action | confirmed | `automation_rules/action_service.rb:11-19` |
-| MA13 | 122-127 | "A macro never runs on its own" / rule troubleshooting | confirmed | trivial from MA1 |
+| MA3 | 67 | Commerce rules act on the contact's most recent conversation | confirmed | `custom/app/services/automation/commerce_events.rb:8,60-62` |
+| MA4 | 65 | Commerce events: created / updated / paid / shipped / delivered / cancelled / refunded (presented as the list) | **wrong** (incomplete) | an eighth trigger exists: `commerce_cart_abandoned` (`lynomiaAutomation.js:13-22`; `commerce_events.rb:12-14`) |
+| MA5 | 43-50 | A rule can condition on text, country, language, channel, label, custom attribute, shared audience, store data | confirmed | `automation_rule.rb:59-62` (`conditions_attributes`), `lynomiaAutomation.js` groups |
+| MA6 | 67-69 | Commerce events "deliberately offer no customer-facing message action" | **wrong** | only `send_message` and `send_attachment` are withheld; **`send_whatsapp_template` stays available** because a template is the one thing WhatsApp allows outside the window (`lynomiaAutomation.js:21-28`) |
+| MA7 | 73-79 | "Automation only: email a team, reopen, mark pending. Macro only: Self. Everything else is in both" | **wrong** (incomplete) | automation also has `send_whatsapp_template` (`constants.js:789`), `add_sla` (`:809`; SLA is premium and off, `features.yml:131-135`) and a "last responding agent" assignee (`action_service.rb:46`) |
+| MA8 | 101-102 | A rule's actions do not trigger other rules | confirmed | `automation_rule_listener.rb:40` (`performed_by_automation?`) |
+| MA9 | 103-105 | Delayed automation must be enabled for the account and is off by default | confirmed | `features.yml:297-300` (`delayed_automations`, `enabled: false`); `automation_rule_listener.rb:72-80` |
+| MA10 | 103-107 | A delayed rule means "still in this status N minutes later" and can wait only on status and channel | **wrong** (incomplete) | that is only the conversation-level form (`automation_rule.rb:28,131-136`). Message-level delayed triggers exist - "customer unresponsive" / "agent unresponsive" - without that restriction (`constants.js:823-835`, `automation_rule.rb:132`); delay range 10 min to 30 days (`automation_rule.rb:25,41`) |
+| MA11 | 110 | Neither reports a failed action | confirmed | `automation_rules/action_service.rb:11-19` |
+| MA12 | 122-127 | A macro never runs on its own; rule troubleshooting | confirmed | follows from MA1 |
 
 ### 3.7 Cross-article contradictions inside the corpus
 

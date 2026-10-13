@@ -42,26 +42,33 @@ RSpec.describe Integrations::AccountLinkCode do
     # named by progress -- so the displaced one could not be deleted by any later mint and stayed
     # redeemable for its full hour, while the merchant believed regenerating had killed it.
     it 'leaves exactly one live code when two mints interleave' do
-      first_digest = nil
-      second = nil
+      inner = nil
+      interleaved = false
 
-      # Interleave by hand at the point the race matters: both mints write their code key before
-      # either swaps progress.
+      # Interleave at the point the race matters: the outer mint has written its code key but has not yet
+      # swapped progress, and a second mint runs to completion inside that gap.
       allow(Redis::Alfred).to receive(:setex).and_wrap_original do |original, key, value, expiry|
         result = original.call(key, value, expiry)
-        if key.start_with?('INTEGRATIONS::ACCOUNT_LINK::CODE::') && first_digest.nil?
-          first_digest = key
-          second = described_class.create(account: account, user: user)
+        if key.start_with?('INTEGRATIONS::ACCOUNT_LINK::CODE::') && !interleaved
+          interleaved = true
+          inner = described_class.create(account: account, user: user)
         end
         result
       end
 
-      described_class.create(account: account, user: user)
+      outer = described_class.create(account: account, user: user)
 
+      expect(interleaved).to be(true)
+      # One key, not two. Before the GETSET swap this left both live, with progress naming only one -- so the
+      # other could never be deleted by a later mint and stayed redeemable for its full hour.
       expect(stored_code_keys.length).to eq(1)
-      expect(described_class.redeem(second[:code])).to be_nil.or(be_present)
-      # Whichever survived, progress names it and nothing else is redeemable.
-      expect(stored_code_keys.length).to be <= 1
+
+      # The survivor is the one progress names, and the displaced one is gone. The outer mint swapped progress
+      # last, so it is the survivor; naming which is the point, because "one of them survived" would pass even
+      # if the survivor were the one progress had forgotten.
+      expect(described_class.redeem(inner[:code])).to be_nil
+      expect(described_class.redeem(outer[:code])).to eq({ 'account_id' => account.id, 'user_id' => user.id })
+      expect(stored_code_keys).to be_empty
     end
 
     it 'records who issued it' do
@@ -108,13 +115,19 @@ RSpec.describe Integrations::AccountLinkCode do
       expect(described_class.redeem('AAAABBBBCCCCDDDD')).to be_nil
     end
 
+    # The earlier version of this minted for the other account, then minted mine, then redeemed MINE -- so
+    # with any last-write-wins storage bug mine was written second and still read back correctly. Proven
+    # vacuous by collapsing code_key to one shared constant: that version still passed while redeem(A)
+    # returned account B. Redeeming the OTHER account's code is the only form that observes the leak.
     it 'does not leak one account code to another account' do
       other_account = create(:account)
       other_user = create(:user, account: other_account, role: :administrator)
-      described_class.create(account: other_account, user: other_user)
+      other_code = described_class.create(account: other_account, user: other_user)[:code]
 
       mine = described_class.create(account: account, user: user)[:code]
 
+      expect(described_class.redeem(other_code))
+        .to eq({ 'account_id' => other_account.id, 'user_id' => other_user.id })
       expect(described_class.redeem(mine)).to eq({ 'account_id' => account.id, 'user_id' => user.id })
     end
   end

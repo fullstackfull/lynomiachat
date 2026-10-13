@@ -166,12 +166,31 @@ RSpec.describe 'Platform account links API', type: :request do
       expect(granted?(account)).to be(false)
     end
 
-    it 'is idempotent when the answer to a first redemption was lost' do
+    it 'refuses a code that has already been redeemed' do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
 
       expect do
         post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
       end.not_to change(PlatformAppPermissible, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    # THE ONE ABOVE DOES NOT TEST GRANTING, which is why this exists. Re-posting the same code is refused at
+    # redeem -- the code is burned -- so it never reaches grant at all, and naming it "idempotent" credited
+    # the grant path with a property nothing had exercised. A SECOND code for the SAME account does reach it.
+    it 'grants nothing new when the same account is linked a second time' do
+      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+
+      second_code = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
+
+      expect do
+        post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
+      end.not_to change(PlatformAppPermissible, :count)
+
+      expect(response).to have_http_status(:created)
+      expect(platform_app.platform_app_permissibles.where(permissible_type: 'Account').count).to eq(1)
+      expect(platform_app.platform_app_permissibles.where(permissible_type: 'User').count).to eq(1)
     end
 
     it 'records who authorized which app' do

@@ -355,3 +355,61 @@ no-`<script>`-template assertion both still hold, so adding any provider back mu
 strength of its vendor rendering media rather than author code — a weaker argument than a control. Tightening
 that is the deferred `frame-src`/`script-src` CSP item (R1.5) plus per-provider browser verification, and the
 config header now says so at the site rather than only here.
+
+---
+
+## R2 — media model: first verified finding corrects the ruling's own reasoning
+
+Inventory in progress. One load-bearing claim was tested before anything was designed on top of it, because
+the entire ownership decision rests on it.
+
+### R2-F1 — the seeder does NOT orphan an Article-owned attachment. Ruling R2's stated reason is false.
+
+R2 says media must attach to the platform **Portal** rather than the **Article** because the seeder "rewrites
+Articles wholesale and would orphan an Article-owned attachment on every run". Measured, rather than reasoned
+about — `Macro` stands in for `Article` because it already has `has_many_attached :files`:
+
+```
+ATTACHED_BEFORE=[[213, "MK7857a5PaQ2rOFLJml/qw=="]]
+NEW_RECORD=false SAME_ID=true          # find_or_initialize_by found the existing row
+ATTACHED_AFTER=[[213, "MK7857a5PaQ2rOFLJml/qw=="]]
+ORPHANED_BY_RESEED=false
+BLOB_STILL_EXISTS=true
+```
+
+The seeder's write pattern is `find_or_initialize_by(slug:, locale:)` → `assign_attributes(<fixed hash>)` →
+`save!` (`custom/app/services/documentation/content_seeder.rb:70-81`). `assign_attributes` touches only the
+keys in that hash, and no attachment is among them, so an attachment on the same record survives untouched.
+"Rewrites wholesale" describes the *content column*, not the record.
+
+**The decision does not change, but its justification has to.** Portal ownership is still correct, for four
+reasons that are actually true:
+
+| # | Reason |
+|---|---|
+| 1 | A media file belongs to the **corpus**, not to one article. The EN and AR translations of a page legitimately reference the same image, as do cross-referencing articles |
+| 2 | `media:` keys are a **portal-wide namespace** (`media:whatsapp/connect-number/step-2.png`). Resolution is key → blob and needs one owner to resolve against |
+| 3 | Article ownership would force the seeder to pick which article *owns* a shared image. "The first one to reference it" is not stable across runs or locales |
+| 4 | An article removed from the corpus must not purge an image another article still uses |
+
+Recorded this way rather than silently keeping the conclusion, because a decision resting on a false reason is
+a decision nobody can re-derive — the same failure as the false safety comment corrected in K18.
+
+### R2-F2 — `active_storage_blobs` has no checksum index, so "idempotent by checksum" is a sequential scan
+
+Measured on the same run:
+
+```
+BLOB_INDEXES=[["index_active_storage_blobs_on_key", ["key"]]]
+CHECKSUM_INDEXED=false
+FIND_BY_CHECKSUM=213      # works, but unindexed
+```
+
+R2's "uploaded idempotently by checksum" therefore costs one full scan of `active_storage_blobs` per media
+file per seed run, against a table that holds every attachment the whole product has ever stored.
+
+**The freeze takes the second option, not an index on a framework table:** resolve a `media:` key against the
+**portal's own attachments**, which `active_storage_attachments` already indexes by `(record_type, record_id,
+name, blob_id)`, and compare the checksum of the candidate rather than searching for it. That keeps the lookup
+indexed, keeps the seeder idempotent, adds no migration to a Rails-owned table, and avoids silently reusing
+another portal's blob because two files happen to share bytes.

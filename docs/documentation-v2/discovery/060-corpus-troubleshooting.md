@@ -112,7 +112,25 @@ Verdict tokens are the template's: `confirmed`, `wrong`, `unverifiable`. Where a
 wrong in another the verdict is `wrong` if a reader following the article would be misled, with the confirmed part
 named. `en/commerce.json` below means `app/javascript/dashboard/i18n/locale/en/commerce.json`.
 
-@@COUNTS@@
+### 3.1 Totals
+
+83 individual claims or omissions checked in §3.3 (the 19 on-screen strings of §3.2 are counted separately and are
+all `wrong`). **42 confirmed** (8 of them with a stated caveat), **28 wrong** (12 of those wrong only in part),
+**9 unverifiable**, **4 recorded omissions**. The ordering by how much a reader can trust the article:
+
+| article | rows | confirmed | wrong | unverifiable | omission |
+|---|---|---|---|---|---|
+| `contact-lynomia-support` (S) | 17 | 11 | 5 | 1 | 0 |
+| `troubleshooting` (H) | 11 | 7 | 1 | 3 | 0 |
+| `commerce-store-unreachable` (U) | 11 | 8 | 1 | 1 | 1 |
+| `commerce-order-action-did-not-apply` (O) | 15 | 6 | 6 | 2 | 1 |
+| `commerce-keys-cannot-do-that` (K) | 9 | 4 | 4 | 1 | 0 |
+| `commerce-store-address-refused` (A) | 8 | 4 | 3 | 0 | 1 |
+| `commerce-store-needs-reconnecting` (R) | 12 | 2 | 8 | 1 | 1 |
+
+Reading the table: the explanations of *what the product does* (timeouts, retry, never re-send, ticket
+lifecycle) are mostly right; the wrong rows are almost all in two places — the **cause** attributed to a provider's
+behaviour, and the **remedy** stated generally where it differs by platform.
 
 ### 3.2 The "what you see" strings: 0 of 19 exist
 
@@ -180,13 +198,13 @@ The shipped sentences appear nowhere in the corpus, so the article cannot be fou
 |---|---|---|---|---|
 | S1 | 8 vs 11-15 | "There are two different support desks in this product" above a table of **three** desks | wrong | the article contradicts itself; AR the same (`مكتبا دعم` above three rows). Reads as "your two vs Lynomia's one", but the table never says so |
 | S2 | 13-19 | Path is **Help & Support → My tickets / New ticket** | confirmed | `components-next/sidebar/Sidebar.vue:738-760`; `en/settings.json:405-409`; `en/platformSupport.json` SIDEBAR; never feature-gated (`Sidebar.vue:743`, `help.routes.js:21`) |
-| S3 | 21 | "Four things are asked, and a ticket needs all four" | wrong | only **subject** and **description** are required (`NewTicketForm.vue:86-88`; `tickets_controller.rb:62-66`); category defaults to "Something else" and priority to Medium (`help/constants.js` `PLATFORM_SUPPORT_DEFAULT_CATEGORY`/`_PRIORITY`). The form's labels are "What is this about?" and "How urgent is this?", not "Category" and "Priority" (`platformSupport.json` FORM.CATEGORY, FORM.PRIORITY) |
+| S3 | 21 | "Four things are asked, and a ticket needs all four" | wrong | only **subject** and **description** are required (`NewTicketForm.vue:86-88`; `tickets_controller.rb:62-66`); category defaults to "Something else" and priority to Medium (`help/constants.js:31,47`). The form's labels are "What is this about?" and "How urgent is this?", not "Category" and "Priority" (`platformSupport.json` FORM.CATEGORY, FORM.PRIORITY) |
 | S4 | 27-28 | "Urgent means the service is down for you. Everything else is High or below" | confirmed | `platformSupport.json` FORM.PRIORITY_HINT, ENUMS.PRIORITY.URGENT |
 | S5 | 30-32 | Up to 5 files of 10 MB; images, PDF, plain text, CSV; archives refused | confirmed | `custom/app/models/platform_support/message.rb:32-34` (png, jpeg, gif, webp, pdf, text/plain, text/csv; `MAX_FILES = 5`; `10.megabytes`); `base_controller.rb:62-89`. Note: a billing-locked customer cannot upload them — PD-34 |
-| S6 | 34-35 | Reference looks like `LYN-000123`; you land on the ticket; you get an email on a reply | confirmed | `ticket.rb:46-47,90-92`; `PlatformSupportNewPage.vue:46-50`; `message_creation.rb:135-145`, `ticket_mailer.rb` `operator_replied` (reporter and the account's administrators). Email failure is logged, not surfaced (`ticket_mailer.rb` header), and an in-app bell row is written too (`reply_notifier.rb:1-30`) |
+| S6 | 34-35 | Reference looks like `LYN-000123`; you land on the ticket; you get an email on a reply | confirmed | `ticket.rb:46-47,90-92`; `PlatformSupportNewPage.vue:46-50`; `message_creation.rb:135-149`, `ticket_mailer.rb:127` `customer_recipients` (reporter and the account's administrators). Email failure is logged, not surfaced (`ticket_mailer.rb` header), and an in-app bell row is written too (`reply_notifier.rb:1-30`) |
 | S7 | 51-58 | The six status names and meanings | confirmed | `ticket.rb:26`; `platformSupport.json` ENUMS.STATUS and STATUS_SENTENCE — the article is word-for-word the product's own sentences |
 | S8 | 62-63 | Replying to a resolved ticket reopens it; a closed ticket takes no replies | confirmed | `message_creation.rb:7-10,37,75-83`; `platformSupport.json` REPLY.REOPENS_HINT, DETAIL.CLOSED_HINT |
-| S9 | 65-66 | "You can change a ticket's priority at any time… we may re-triage it, and we will say so on the ticket when we do" | wrong | the API accepts `priority` (`tickets_controller.rb:9-10,72-78`) but the detail page renders priority as a read-only chip (`PlatformSupportDetailPage.vue:226-230`) and no other control exists. And a staff re-triage is **not shown to the customer**: `priority_changed` and `category_changed` are excluded from the customer-visible event list (`event.rb:9-11,26-27`; `ticket_transition.rb:12-15`) and re-triage writes no message |
+| S9 | 65-66 | "You can change a ticket's priority at any time… we may re-triage it, and we will say so on the ticket when we do" | wrong | the API accepts `priority` (`tickets_controller.rb:9-10,72-78`) but the detail page renders priority as a read-only chip (`PlatformSupportDetailPage.vue:226-228`) and no other control exists. And a staff re-triage is **not shown to the customer**: `priority_changed` and `category_changed` are excluded from the customer-visible event list (`event.rb:9-11,26-27`; `ticket_transition.rb:12-15`) and re-triage writes no message |
 | S10 | 87-88 | The hub "sorts most reports into one of four causes… and three of them you can fix yourself" | wrong | contradicts the hub: plan or installation switch — "nothing in your account changes those" (hub 25-26); Meta — "cannot appeal or override" (hub 67-68); a role — an administrator changes it, not you. Only "configuration" is self-fixable. AR repeats it (`وثلاثة منها تستطيع إصلاحها بنفسك`) |
 | S11 | 70-71 | The desk covers billing, access, channels, WhatsApp, store and orders, campaigns, automation, slowness, data export, "anything that looks broken" | confirmed | exactly the 11 categories (`ticket.rb:38-39`; ENUMS.CATEGORY). Note that only some have articles — §4 |
 | S12 | 76 | "we never read or answer [your customers' conversations]" | unverifiable | a vendor policy, not a mechanism the repo can show; staff surfaces read account snapshots (`operations/account_snapshot.rb`), message-body access by staff was not checked |
@@ -379,8 +397,8 @@ What the good moments do, and where they are:
    operator can check that you cannot".
 4. **Use the product's own sentences.** The support article is word-for-word the shipped statuses, hints and menu
    path (S2, S4, S7) and the Arabic matches the Arabic locale (`ar/platformSupport.json`). It is the only article in
-   the section a reader can match to their screen — and the only one of the seven that never needed a correction in
-   that respect.
+   the section a reader can match to their screen; its vocabulary is the product's almost everywhere (the one
+   exception is S3, the field labels).
 5. **Distinguish the neighbour.** The "What this is not" endings (`keys:48-51`, `address:47-51`,
    `reconnecting:50-54`) are the right move; they need real links.
 6. **Say how it ends.** `unreachable:42-45` "When it clears up" is the only "how you know it worked" in the section.
@@ -519,14 +537,13 @@ translations of the invented English ones rather than the Arabic locale.
 | P1 | quoted strings | invented (§3.2) | the AR quotes («متجرك لم يُجب», «لا نعرف إن طُبِّق ذلك», …) are absent from `ar/commerce.json`; shipped e.g. STORE_UNAVAILABLE «لا يمكن الوصول إلى المتجر حاليًا.», AUTH_INVALID «رفض المتجر بيانات اعتماد {installationName}. يجب على المسؤول إعادة ربط المتجر.» |
 | P2 | status term | "Needs re-authorization" | UI «يحتاج إعادة تفويض» (`ar/commerce.json` SETTINGS.STATUS.NEEDS_REAUTH); the AR article says «إعادة تصريح» in the reconnect title description, table and prose |
 | P3 | product names | WooCommerce, Shopify | UI keeps them in Latin (`ar/commerce.json` PROVIDERS: "WooCommerce", "Shopify"; Salla «سلة» and Zid «زد» are localised); the articles write «ووكومرس» and «شوبيفاي». `CLAUDE.md` protects product and brand names unless an official localised form exists, and a reader searching the UI name finds nothing |
-| P4 | button names | "Replace keys", "Reconnect", "Turn on order actions" | UI «استبدال المفاتيح», «إعادة الربط», «تفعيل إجراءات الطلبات»; the AR keys article says «شغّل إجراءات الطلبات» and never names «استبدال المفاتيح» (it is missing from the EN too, R2) |
+| P4 | button names | "Replace keys", "Reconnect", "Turn on order actions" | UI «استبدال المفاتيح», «إعادة الربط», «تفعيل إجراءات الطلبات» (`ar/commerce.json` SETTINGS.ACTIONS, CAPABILITIES). The AR keys article uses «استبدل المفاتيح» as a verb and «شغّل إجراءات الطلبات» for the toggle; the AR reconnect article names only «إعادة الربط», for all four platforms (R2) |
 | P5 | links | bare key → the EN article | every Arabic internal link renders to the **English** article: 38 links in this section (hub 27, support 11); 494 corpus-wide — blocker in `076-internal-linking.md` Defect 1, because `articles.slug` for Arabic is `<key>-ar` and the route has no locale (`config/routes.rb:519`, `articles_controller.rb:80-82`) |
 | P6 | numerals | "40 minutes" | AR `unreachable` uses Arabic-Indic «٤٠», while the rest of the section uses Western digits or words («10 ميغابايت», «ثلاث ثوانٍ», `LYN-000123`) |
 | P7 | status label | "Resolved" | AR «مُعالَجة» (processed) is the product's own label (`ar/platformSupport.json` ENUMS.STATUS.RESOLVED) and the article mirrors it, but the next sentence says «وإن لم تُحلّ» (solved) — two roots for one idea. Product decision for 061 |
 | P8 | desk count | "two… support desks" over three rows | AR «مكتبا دعم مختلفان» over three rows (S1) |
 | P9 | "three you can fix yourself" | S10 | AR repeats the self-contradiction |
 | P10 | bidi hazards | `` `read_only_key` ``, REST API, → arrows inside Arabic sentences | inline Latin tokens and arrows in RTL prose (`commerce-keys-cannot-do-that` AR 16, 22-24); route to 061/072 |
-| P11 | "inbox" | one word for the Inbox section and a channel | AR splits it («صندوق الوارد» / «قناة تواصل») correctly; flag for 061 that the support article's AR table uses the first for both rows it needs |
 
 ---
 

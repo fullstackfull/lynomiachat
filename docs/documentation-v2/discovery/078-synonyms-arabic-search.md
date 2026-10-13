@@ -38,9 +38,9 @@ Four things are **absent** from that declaration and each one is a language deci
 
 | Absent option | pg_search default | Consequence |
 |---|---|---|
-| `dictionary:` | `:simple` — `vendor/bundle/ruby/3.4.0/gems/pg_search-2.3.6/lib/pg_search/features/tsearch.rb:174-176` (`options[:dictionary] \|\| :simple`) | no stemming, no stopword list, no language awareness |
-| `ignoring: :accents` | off — `Normalizer#add_normalization` returns the expression unchanged unless `:accents` is in `ignoring` (`pg_search-2.3.6/lib/pg_search/normalizer.rb:9`) | `unaccent()` is never called; the `unaccent` extension is not even enabled (`db/schema.rb:15-19` lists `pg_stat_statements`, `pg_trgm`, `pgcrypto`, `plpgsql`, `vector`) |
-| `any_word:` | off — terms are joined with `' && '` (`tsearch.rb:131`) | every whitespace-separated word must match |
+| `dictionary:` | `:simple` — `vendor/bundle/ruby/3.4.0/gems/pg_search-2.3.6/lib/pg_search/features/tsearch.rb:179-181` (`options[:dictionary] \|\| :simple`) | no stemming, no stopword list, no language awareness |
+| `ignoring: :accents` | off — `Normalizer#add_normalization` returns the expression unchanged unless `:accents` is in `ignoring` (`pg_search-2.3.6/lib/pg_search/normalizer.rb:9-10`) | `unaccent()` is never called; the `unaccent` extension is not even enabled (`db/schema.rb:15-19` lists `pg_stat_statements`, `pg_trgm`, `pgcrypto`, `plpgsql`, `vector`) |
+| `any_word:` | off — terms are joined with `' && '` (`tsearch.rb:137`) | every whitespace-separated word must match |
 | `tsvector_column:` | unset | the document is recomputed with `to_tsvector` on every query; no stored tsvector, no GIN index (`db/schema.rb` `create_table "articles"` carries seven btree indexes and no expression index) |
 
 The configuration is therefore `simple` **uniformly**, not per-locale. Nothing anywhere selects a dictionary by
@@ -53,15 +53,15 @@ required path segment (`config/routes.rb:511`), so an Arabic reader only ever se
 ### 1.2 What the query is turned into
 
 `TSearch#tsquery` splits the query on whitespace and builds one `to_tsquery` call per term
-(`tsearch.rb:126-133`), each term wrapped by `tsquery_expression` as `' <term> '` with `:*` appended because
-`prefix: true` (`tsearch.rb:95-124`). Before that, `DISALLOWED_TSQUERY_CHARACTERS = /['?\\:‘’]/`
-(`tsearch.rb:93`) replaces apostrophes, straight and curly, question marks, backslashes and colons with spaces.
+(`tsearch.rb:132-138`), each term wrapped by `tsquery_expression` as `' <term> '` with `:*` appended because
+`prefix: true` (`tsearch.rb:100-130`). Before that, `DISALLOWED_TSQUERY_CHARACTERS = /['?\\:‘’]/`
+(`tsearch.rb:98`, applied at `:106`) replaces apostrophes, straight and curly, question marks, backslashes and colons with spaces.
 `#`, `+`, `.`, `_`, `-`, `،` and `؟` are **not** in that set and survive into the quoted lexeme.
 
 So `"قوالب واتساب"` becomes, in effect,
 `to_tsquery('simple', ''' قوالب '':*') && to_tsquery('simple', ''' واتساب '':*')`
 against `setweight(to_tsvector('simple', coalesce(title::text,'')), 'A') || …` — the document built by
-`TSearch#tsdocument` / `#column_to_tsvector` (`tsearch.rb:135-153,195-205`) from the three columns named in
+`TSearch#tsdocument` / `#column_to_tsvector` (`tsearch.rb:140-165,195-205`) from the three columns named in
 `against:`.
 
 ### 1.3 What is searchable, and what only looks searchable
@@ -181,7 +181,7 @@ actually reads — and paste its first sentence into the portal search for that 
 The English failures are dominated by one token. Six of the nine are a curly-apostrophe contraction:
 `ACTION_UNAVAILABLE` and `INVALID_AMOUNT` and `INVALID_REQUEST` and `INVALID_RECOVERY_URL` fail on `isn’t`,
 `NOT_APPLIED` on `wasn’t`, `UNKNOWN_OUTCOME` and `NOT_SENT` on `didn’t`. pg_search strips the `’`
-(`tsearch.rb:93`), leaving `isn` and `t` as an adjacency pair that the corpus — which writes "is not" — does not
+(`tsearch.rb:98,106`), leaving `isn` and `t` as an adjacency pair that the corpus — which writes "is not" — does not
 contain. `ENCRYPTION_NOT_CONFIGURED` fails on `encryption`, a word nowhere in the English corpus, and
 `ACTION_IN_PROGRESS` on `processed`.
 
@@ -222,7 +222,7 @@ text. The 380 Latin lexemes that are present do cover the product and vendor nam
 ### 2.6 `prefix: true` also manufactures false positives
 
 There is no score threshold: `ScopeOptions#subquery` filters on the tsearch condition and `#apply` orders by
-`rank DESC` with nothing removed (`pg_search-2.3.6/lib/pg_search/scope_options.rb:16-26,80-96`). A short query
+`rank DESC` with nothing removed (`pg_search-2.3.6/lib/pg_search/scope_options.rb:15-26,81-96`). A short query
 therefore returns confidently-ranked nonsense:
 
 | Query | What it matches | What the reader gets |
@@ -250,7 +250,7 @@ therefore returns confidently-ranked nonsense:
 | D8 | Curly and straight apostrophes are stripped into a two-lexeme adjacency requirement, so a contraction becomes a phrase query over its halves (§2.4). | **major** | Six of the nine English commerce-error failures are this one bug. |
 | D9 | `prefix: true` with no score threshold returns high-ranked irrelevant results for short tokens (§2.6). | **minor** | `sla` returns the Slack article. Erodes trust in the result list. |
 | D10 | `app/javascript/portal/api/article.js:8` interpolates the raw query into the URL. A `#` truncates it to a fragment, so `#131049` sends `query=` empty; `ArticlesController#index` then runs `Article.search` with a blank query and `search_articles` applies no text filter (`articles_controller.rb:60-62`, `article.rb:121`), returning the **whole locale's corpus** as typeahead results. `+` is decoded by Rack as a space, so `+965` becomes `965`. | **minor** | Pasting an error code with a `#`, which is how support tickets write them, shows every article. |
-| D11 | The Arabic search result strings are untranslated English: `results_for`, `no_results` and all six `found_results` plural forms (`config/locales/ar.yml:481-489`) ship the English source. The documentation search page uses them for the `<title>`, the `<h1>` and the empty state (`app/views/public/api/v1/portals/search/index.html+documentation.erb:3,23,32`). | **major** | An Arabic reader who searches sees "Search Results for 'واتساب'" and "No results found for 'واتساب'". The failure message about Arabic findability is itself not in Arabic. |
+| D11 | The Arabic search result strings are untranslated English: `results_for`, `no_results` and all six `found_results` plural forms (`config/locales/ar.yml:481-489`) ship the English source. The documentation search page uses them for the `<title>`, the `<h1>` and the empty state (`app/views/public/api/v1/portals/search/index.html+documentation.erb:2,22,32`). | **major** | An Arabic reader who searches sees "Search Results for 'واتساب'" and "No results found for 'واتساب'". The failure message about Arabic findability is itself not in Arabic. |
 | D12 | The Arabic search placeholder is a mistranslation: `البحث عن مقالة حسب العنوان أو الجسم...` (`config/locales/ar.yml:476`) renders "body" as `الجسم`, the human body, where the field means content. It also understates the search, which covers `description` as well (`article.rb:96-100`). | **minor** | The one instruction the reader gets about what to type is wrong in Arabic. |
 | D13 | No search query is ever recorded. `SearchController#index` holds `@query` for display only (`search_controller.rb:10`); no analytics event, no log, no counter, nothing for a zero-result query. | **blocker for maintenance** | A synonym list has to be prioritised by what people actually type. Today that evidence does not exist and cannot be recovered retroactively. |
 
@@ -345,7 +345,7 @@ PostgreSQL server-side artefact:
    migration backfill beyond one `documentation:content` run.
 4. **The query is normalised identically**, once, in `Article.search` before `text_search`
    (`article.rb:114-122`) — reachable through the extension point the model already declares,
-   `Article.include_mod_with('Concerns::Article')` (`article.rb:239`), with no edit to the OSS method. Normalising
+   `Article.include_mod_with('Concerns::Article')` (`article.rb:238`), with no edit to the OSS method. Normalising
    unconditionally is always correct, because `search_text` holds the normalised corpus; an already-normalised
    query normalises to itself.
 
@@ -368,13 +368,13 @@ Three tiers, because three different kinds of knowledge are involved and they ha
 Front matter is where the error codes belong. `whatsapp-error-131049.md` should list the codes, spellings and
 vendor words it answers for, in both locales, next to the content that answers them — which is the same principle
 `DOC_ARTICLES` already follows: *one article per class of failure, and the mapping lives in exactly one place*
-(`documentationLinks.js:144-152`). It also inherits the existing review path: an alias is a diff on a file an
+(`documentationLinks.js:139-146`). It also inherits the existing review path: an alias is a diff on a file an
 owner owns.
 
 Two guardrails, both extending things that already exist:
 
 - **Audit it.** `rake lynomia:docs:seo_audit` already walks every article through the real helpers and exits 1 on
-  an error (`lib/tasks/documentation_seo_audit.rake:1-11`, `:36-38`). Add checks in the same task: an alias that
+  an error (`lib/tasks/documentation_seo_audit.rake:1-11`, `:31-32`). Add checks in the same task: an alias that
   duplicates a word already in the article's own title or description is dead weight; the same alias claimed by two
   articles is an ambiguity someone must resolve; an alias that normalises to the same string as another is a
   no-op. These are data checks on data that only exists after seeding, which is exactly what that task is for.
@@ -390,7 +390,7 @@ Two guardrails, both extending things that already exist:
 
 - **Add the `trigram` feature** for misspellings (D7). `pg_trgm` is already enabled (`db/schema.rb:16`),
   `pg_search` ships `Features::Trigram` (`pg_search-2.3.6/lib/pg_search/features/trigram.rb`), and
-  `ScopeOptions#conditions` **ORs features together** (`scope_options.rb:91-96`) — so a trigram feature is a
+  `ScopeOptions#conditions` **ORs features together** (`scope_options.rb:92-96`) — so a trigram feature is a
   fallback by construction, not a replacement. It needs `word_similarity: true` and a `threshold`, because
   `similarity()` against a whole article body is near zero for a short query; and it needs the performance
   question answered, because without a GIN trgm index on the expression it is a full scan. Scope it to

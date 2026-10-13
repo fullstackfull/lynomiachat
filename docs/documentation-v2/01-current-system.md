@@ -234,8 +234,17 @@ exactly one place and a Vue file never carries a URL"*. It exports:
 
 Two design rules are already established here and should be preserved rather than relitigated:
 **one article per class of failure, not one per code**, and **no article invented for a code nobody has seen**.
-Only five WhatsApp codes have articles — `131049`, `131042`, `131053`, `131060`, `190` — because those are the
-codes `custom/app/services/whatsapp/delivery_failure.rb` classifies.
+Five WhatsApp codes have articles — `131049`, `131042`, `131053`, `131060`, `190`.
+
+**CORRECTED 2026-10-13.** I wrote that those are the five codes
+`custom/app/services/whatsapp/delivery_failure.rb` classifies. Agent 054 challenged it and is right: `CODES`
+holds exactly **two** entries, `131049` and `131042` (`delivery_failure.rb:28-31`), which I verified myself. The
+other three articles exist for codes the product only *names* elsewhere.
+
+That matters more than a miscount, because classification is what gates the in-product link: `MessageError.vue`
+needs a `deliveryFailure`, which the server sends only for a classified code. So **12 of the 14
+`whatsapp-errors` articles have no entry point from the product at all**, and any new Meta error article will be
+equally unreachable unless that gate changes. Agents 040 and 054 reached this independently.
 
 That rule is about to meet a much larger Meta error surface, and §8 of the charter asks whether article+metadata
 or structured metadata is the right carrier. The registry is the thing to extend.

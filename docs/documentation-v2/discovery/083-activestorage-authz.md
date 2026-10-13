@@ -420,7 +420,7 @@ whoever owns contact import/export (Agent 031).
 | message attachment | `url_for(file)` into `data_url` (`app/models/attachment.rb:57-59`), serialized at `app/views/api/v1/models/_attachment.json.jbuilder:6` and pushed over ActionCable via `push_event_data` (`attachment.rb:50-54,124-137`) | **nothing** — F2 |
 | message thumbnail | `url_for(file.representation(resize_to_fill: [250, nil]))` (`attachment.rb:67-76`) | **nothing** |
 | avatar | `url_for(avatar.representation(...))` (`app/models/concerns/avatarable.rb:15-19`) | **nothing** |
-| portal logo | `url_for(portal.logo)` into a public page (`_topbar.html.erb:12`) and `file_base_data` (`app/models/portal.rb:104-116`, which also emits `blob_id: logo.blob.signed_id`) | **nothing — and that is correct here**, it is meant to be public |
+| portal logo | `url_for(portal.logo)` into a public page (`_topbar.html.erb:12`) and `file_base_data` (`app/models/portal.rb:105-115`, which also emits `blob_id: logo.blob.signed_id` at `:112`) | **nothing — and that is correct here**, it is meant to be public |
 | import CSV | not emitted | nothing emits it; a blob with no URL in circulation is protected only by that |
 | import failed records | `rails_blob_url` in an email (F6) | **nothing** |
 | contacts export | `rails_blob_url` in an email (F6) | **nothing** |

@@ -155,3 +155,73 @@ every agent:
 | 5 | Orchestrator | the single combined gate, then the report |
 
 A wave does not start until the previous wave's contracts are published and read.
+
+---
+
+## E. Wave 1 integrator verification — one claim confirmed, one refuted by measurement
+
+Both wave-1 agents reported PostgreSQL down in their container, so neither could run a database probe. As
+integrator I restarted it and measured the two claims that Agents 2, 3 and 5 would otherwise code against.
+Results are binding on Wave 2.
+
+### E1 — CONFIRMED: a Super Admin save destroys `meta['doc_key']`
+
+```
+A5-1 meta_before={"tags"=>["x"], "title"=>"SEO", "doc_key"=>"probe-key"}
+A5-1 meta_after ={"tags"=>["x"], "title"=>"SEO edited"}
+A5-1 DOC_KEY_DROPPED=true
+A5-1 PERMITTED_INCLUDES_DOC_KEY=false
+```
+
+`ArticleMetaField.permitted_attribute` (`custom/app/fields/article_meta_field.rb:33-35`) permits
+`STRING_KEYS + [{tags: []}, :tags]` — `title`, `description`, `version`, `release_date`, `feature_image`,
+`tags`. **`doc_key` is not among them**, and `Super Admin::ArticlesController#resource_params`
+(`custom/app/controllers/super_admin/articles_controller.rb:39-43`) assigns `permitted[:meta]` as a **whole
+value**, so the jsonb column is replaced rather than merged.
+
+One operator save silently breaks every in-product contextual-help link for that article, because
+`Documentation::Library#article_for` resolves on `meta->>'doc_key'`
+(`custom/app/services/documentation/library.rb:55`).
+
+**Agent 5's second-order point is the important one and it is correct**: today a re-seed accidentally repairs
+this by overwriting `meta` wholesale. A three-way merge that refuses to write an operator-edited row **stops
+the accidental repair**, so the merge cannot ship before the `doc_key` fix. Frozen as a **hard prerequisite**:
+the `meta` merge and the model-level guarantee land in the same change as the merge, or neither lands.
+
+### E2 — REFUTED: a no-op re-seed does not oscillate `position`
+
+Agent 5 re-derived discovery 069/097's non-convergence finding from the callback chain and proposed a one-line
+fix (`return if platform_owned?` in `Article#category_id_changed_action`). Measured through the seeder's exact
+write shape, four consecutive runs:
+
+```
+A5-2 changed_before_save=[]   (x3)
+A5-2 positions=[20, 20, 20, 20]
+A5-2 OSCILLATES=false
+A5-2 callback fired: no
+```
+
+The callback is `after_save :category_id_changed_action, if: :saved_change_to_category_id?`
+(`app/models/article.rb:74`). On a stable corpus the category does not change, the predicate is false, and
+`update_column(:position, …)` is never reached. **The proposed fix guards a path that does not execute**, which
+CLAUDE.md forbids as a speculative guard.
+
+Two things this does **not** refute, and Agent 5 must address both rather than treating E2 as closing D8:
+
+1. **A section move.** When a file moves between manifest sections the category really does change, the
+   callback really does fire, and `position` jumps by `max + 10` once. That is a one-time move, not an
+   oscillation — but it is untested and it interacts with ordering, so it needs its own probe.
+2. **`changed == []` on every run** also means the seeder's `unchanged` count is reliable for this shape,
+   which narrows D7's concern rather than confirming it.
+
+**Instruction to Agent 5 for Wave 3:** re-derive D7 and D8 against this measurement. Do not ship the
+`platform_owned?` guard. If non-convergence is real it is in a path this probe did not exercise — find it and
+measure it, or withdraw the finding and say discovery 069/097 overstated it.
+
+### E3 — Three Agent 1 constraints confirmed, binding on Agent 2
+
+| Claim | Verified |
+|---|---|
+| `?cw_image_width=400px` cannot ride on a `media:` key | `URI.parse("media:a/b.png?cw_image_width=400px")` → `scheme="media"`, `opaque` holds the whole rest, **`query=nil`**. `custom_markdown_renderer.rb`'s width convention reads `.query`, so **the editor's existing drag-resize does not work on a `media:` key.** Agent 2 must not assume it does |
+| The bare direct-upload route 403s | `config/initializers/active_storage.rb:62` — `head :forbidden if instance_of?(ActiveStorage::DirectUploadsController)`. **Agent 2's editor cannot upload through it**; it inserts references to seeded keys |
+| `render_markdown_to_plain_text` cannot be affected by the sanitizer closure | `lib/chatwoot_markdown_renderer.rb:21-23` is `CommonMarker.render_doc(@content, :DEFAULT).to_plaintext` — **no Ruby renderer class at all**. Refines my contract §0.3: it is a third renderer, but not a sanitizer-bearing one |

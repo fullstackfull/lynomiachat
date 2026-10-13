@@ -594,3 +594,33 @@ PROBE show_renders=1  all=["show.html+documentation.erb"]
 **One render, one locale window.** ActiveSupport's callback chain does not re-run the action on a second yield.
 The trailing `yield` is the necessary path when neither `locale` nor `article_slug` is present, and it is inert
 otherwise. **Not a defect, and the spec was mine.**
+
+### G8.1 — Measured the safelist instead of asserting it, and my §G1 claim was wrong a second time
+
+§G1 said the database-driven icon classes meant *"no rule was ever generated and eight render sites emitted an
+empty span."* The second clause holds; **"no rule was ever generated" does not.** Measured by building the
+config twice, once with the safelist and once with it removed, and diffing the generated icon selectors:
+
+```
+only present WITH the safelist:
+  i-lucide-rocket
+  i-lucide-shield
+```
+
+**Eleven of the thirteen were already generated** — `messages-square`, `users`, `megaphone`,
+`message-circle`, `alert-triangle`, `workflow`, `shopping-bag`, `building`, `plug`, `life-buoy` and `sparkles`
+all appear in `.vue` or `.erb` files elsewhere in the product, so the content scan already emitted them.
+
+Three things this measurement settles:
+
+1. **The safelist mechanism works**, which I had not verified. It is Tailwind 3.4.19 and `safelist` is honoured.
+2. **All thirteen entries stay.** Needing only two today is incidental — it depends on an unrelated component
+   continuing to use the same icon. The manifest is the source of these class names, so they must not depend on
+   a coincidence in another file.
+3. **`i-lucide-*` icons land in the COMPONENTS layer**, not utilities (a build of `@tailwind utilities` alone
+   produced **zero** icon rules; adding `@tailwind components` produced **629**). The portal's own stylesheet
+   imports all three layers (`app/javascript/portal/application.scss:2-4`), so they do reach the public page.
+
+**§G8's conclusion is unchanged and is still the whole cause**: the rules exist, and the markup asks for
+`i-ri-rocket` — a set that contains none of these names. The manifest fix is what makes the existing rules
+reachable.

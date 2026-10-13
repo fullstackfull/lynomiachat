@@ -890,3 +890,67 @@ seed. Two items need an explicit glossary ruling rather than a lookup, because t
 at all: **"Customer 360"** (translated in all 10 Arabic occurrences including a title and an `seo_description`,
 but present only in code comments) and the **skeleton headings**, where "Who can do this" splits 22/21 across
 two different Arabic forms and so breaks portal search by section.
+
+---
+
+# Addendum 9 — agent 099 attacks the reader's journey, and corrects my ledger
+
+The only agent briefed to judge from the **reader's** loss rather than the implementation's. It found a
+reader-facing blocker nobody else did, and corrected three of my entries.
+
+## Verified myself: all 12 documentation category icons are invisible
+
+`manifest.yml` ships **Lucide** names — `rocket`, `messages-square`, `alert-triangle`, `life-buoy`, `workflow`,
+`plug` and the rest. `PortalHelper#render_emoji_or_icon` builds `"i-ri-#{value}"`, i.e. **Remix**
+(`app/helpers/portal_helper.rb:107`). I checked the built stylesheet:
+
+```
+.i-ri-rocket{       → 0 occurrences
+.i-ri-rocket-line{  → 1 occurrence
+```
+
+Remix names carry a `-line`/`-fill` suffix; Lucide names do not. So every class resolves to nothing, and the
+📁 fallback **never fires** because `icon.present?` is true — the value is there, it is simply not a Remix name.
+
+**Every category on the documentation home page renders an empty span.** Live, reader-facing, and invisible to
+every other agent because each was reading one layer. The owner decides the vocabulary once: Lucide in the
+manifest, or Remix `*-line`, which is what the portal's own category picker safelists.
+
+## Corrections to my ledger
+
+| Entry | Correction |
+|---|---|
+| "13 of 17 WhatsApp keys are registry-only" | **18 of 20.** And `whatsappTroubleshooting` — the *designated fallback* — is **unreachable dead code** (`MessageError.vue:71`), contradicting both its own comment and `documentationLinks.js:156-159`. Overall: **35 of 62 `DOC_ARTICLES` keys render nowhere**, including all five getting-started keys. |
+| B-02/B-03, and agent 069's claim that **"Arabic publishes and previews LTR"** | **Overstated — corrected.** `setDirectionAttribute` runs on `turbo:load` *before* the plain-layout branch (`portalHelpers.js:153-168`), so the Super Admin preview receives `dir` as well. The real defect is narrower and still real: **no `dir` in the server HTML**, so Arabic paints LTR and flips, and where JavaScript does not run `max-md:ltr:-translate-x-full` is inert, so the 288px phone drawer never closes. I am correcting this **before** any RTL-preview work is built on the stronger claim. |
+| Any citation of the `[dir="rtl"]` blockquote override as RTL support | It sits inside the `bubble` variant, **not** `DEFAULT` (`tailwind.config.js:183-192`) — dead for every article page. Do not cite it. |
+
+## New, and reader-facing
+
+- **The 24-hour-window banner — the most common refusal in the product — links to Meta's English policy page**
+  (`shared/constants/links.js:7`) instead of `whatsappWindow`, which exists in **both** locales. The one place a
+  stuck user is guaranteed to look sends them off-product, in the wrong language.
+- **`/docs/<retired-slug>` returns an empty body** — `head :not_found`, no chrome, no search, nothing
+  (`documentation_controller.rb:23`). And the portal's own 404 is rendered and then thrown away: `render_404 &&
+  return` does not stop `set_locale`'s second `yield`, `find_by!` raises, and the static `public/404.html` wins.
+- **`render_article` runs twice per request**, from that same double `yield` — which settles the suspicion
+  agents 061 and 072 both raised and could not confirm, and adds a performance dimension to agent 098's
+  page-weight finding.
+- **"Popular articles / What other people are reading right now" shows the *least-read* articles** once views
+  accrue, because `order_by_views` is NULLS-FIRST with no tiebreak. The heading also says "Popular" where my
+  earlier note said "Recommended". And `PortalSeeder` **wipes `popular_content` and `social_profiles` on every
+  re-run** (`portal_seeder.rb:55-57`).
+- **Accessibility blockers**: the search input has no accessible name and carries `role="search"`, which
+  overrides its textbox role; there are two nested `<main>` elements with `<header>`/`<footer>` inside, so the
+  page has no banner or contentinfo landmark; and there is **no skip link anywhere**. The mobile drawer is
+  keyboard-inoperable, arrow keys highlight a search result but Enter does nothing, and article links sit at
+  3.15:1 with a hover-only, colour-only cue.
+- **`#131049` searches for nothing** — the query is string-interpolated into the URL (`api/article.js:9`), and
+  the results box auto-submits a GET every 500ms pause, so the browser Back button walks partial queries.
+
+## A new source-of-truth collision for Phase 4
+
+`PortalSeeder` destroys operator curation in `portal.config` on every run — and because of the `order_by_views`
+defect, **curation is currently the only way to make the documentation home page honest**. Those two facts
+collide: the fix for one re-breaks the other. §8.1 must decide which writer owns `portal.config`, and it is a
+different answer from the one for `articles`, because the portal seeder was deliberately written to preserve
+operator edits while the content seeder was deliberately written to overwrite them.

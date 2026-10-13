@@ -23,6 +23,11 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
 
   let(:reference_sequence) { PlatformSupport::Ticket.maximum(:reference_number).to_i }
 
+  # A REAL policy row, because `platform_support_tickets.sla_policy_id` carries a foreign key: an invented id
+  # is refused by the database, not quietly stored. Its thresholds are irrelevant here -- every assertion
+  # below reads the TICKET's own due-time columns, which is what PlatformSupport::Sla::State answers from.
+  let(:policy) { create(:platform_support_sla_policy) }
+
   def ticket(**attributes)
     defaults = {
       reference_number: reference_sequence + 1,
@@ -219,7 +224,7 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
   end
 
   describe 'the ticket detail' do
-    let(:target) { ticket(sla_policy_id: 7, resolution_due_at: 3.hours.from_now, plan_name_at_creation: 'Starter') }
+    let(:target) { ticket(sla_policy: policy, resolution_due_at: 3.hours.from_now, plan_name_at_creation: 'Starter') }
 
     before do
       agent
@@ -305,7 +310,7 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
     # No SLA target values exist in this installation by instruction, so this is the state EVERY ticket is in
     # today: it has to look correct, not broken.
     it 'reads as ungoverned when a policy is attached but set no due time' do
-      attached = ticket(reference_number: 903, sla_policy_id: 7)
+      attached = ticket(reference_number: 903, sla_policy: policy)
 
       get "/super_admin/platform_support/tickets/#{attached.id}"
 
@@ -314,7 +319,7 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
 
     # A policy requires at least ONE threshold, so a resolution-only policy promises nothing on first response.
     it 'renders the two clocks independently and promises nothing the policy did not' do
-      resolution_only = ticket(reference_number: 904, sla_policy_id: 7,
+      resolution_only = ticket(reference_number: 904, sla_policy: policy,
                                resolution_due_at: 4.hours.from_now)
 
       get "/super_admin/platform_support/tickets/#{resolution_only.id}"
@@ -351,7 +356,7 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
 
     it 'keeps a breach visible after the ticket was resolved' do
       breached = ticket(reference_number: 901, status: :resolved, resolved_at: 1.hour.ago,
-                        sla_policy_id: 7, resolution_due_at: 3.hours.ago,
+                        sla_policy: policy, resolution_due_at: 3.hours.ago,
                         resolution_breached_at: 2.hours.ago)
 
       get "/super_admin/platform_support/tickets/#{breached.id}"
@@ -403,6 +408,33 @@ RSpec.describe 'Super Admin Platform Support Desk', type: :request do
       expect(entry.audited_changes.keys).to contain_exactly('ticket_id', 'reference', 'subject_account_id',
                                                             'status', 'priority', 'category', 'event',
                                                             'agent_id', 'message_id')
+    end
+
+    # The same write as the tenant endpoint, so the same consequences: one bell row for the customer and the
+    # one email. Neither is this surface's to decide.
+    it 'gives the customer the bell row a tenant-side reply would' do
+      bell = Notification.where(notification_type: 'platform_support_reply')
+      path = "/super_admin/platform_support/tickets/#{target.id}/reply"
+
+      expect { post path, params: { body: 'Fixed.' } }.to change(bell, :count).by(1)
+    end
+
+    it 'sends the customer the one email a tenant-side reply would' do
+      path = "/super_admin/platform_support/tickets/#{target.id}/reply"
+
+      expect { post path, params: { body: 'Fixed.' } }
+        .to have_enqueued_mail(PlatformSupport::TicketMailer, :operator_replied)
+    end
+
+    # Reopening is a decision with its own event, so the operator makes it deliberately rather than having a
+    # reply make it silently.
+    it 'refuses a reply to a closed ticket and says what to do instead' do
+      closed = ticket(reference_number: 906, status: :closed, closed_at: 1.hour.ago)
+
+      post "/super_admin/platform_support/tickets/#{closed.id}/reply", params: { body: 'One more thing.' }
+
+      expect(flash[:alert]).to include('Reopen it')
+      expect(closed.reload.messages.count).to eq(0)
     end
 
     it 'refuses an empty reply and writes nothing' do

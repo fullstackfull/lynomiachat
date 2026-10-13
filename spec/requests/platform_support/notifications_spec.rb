@@ -209,10 +209,13 @@ RSpec.describe 'Platform Support notifications', type: :request do
 
   # ---- PROOF 5: an internal note never produces a tenant-visible notification --------------------------
   describe 'an internal note' do
+    # A real agent row: `platform_support_internal_notes.agent_id` carries a foreign key, and the model
+    # snapshots the author's name from that row rather than from the caller.
+    let(:operator) { create(:platform_support_agent) }
+
     it 'writes no notification row of any kind' do
       expect do
-        PlatformSupport::InternalNote.create!(ticket: ticket, agent_id: 1, author_name: 'An operator',
-                                              body: 'ESCALATE-TO-INFRA')
+        PlatformSupport::InternalNote.create!(ticket: ticket, agent: operator, body: 'ESCALATE-TO-INFRA')
       end.not_to change(Notification, :count)
     end
 
@@ -225,8 +228,7 @@ RSpec.describe 'Platform Support notifications', type: :request do
     end
 
     it 'keeps the note body out of the notification feed' do
-      PlatformSupport::InternalNote.create!(ticket: ticket, agent_id: 1, author_name: 'An operator',
-                                            body: 'ESCALATE-TO-INFRA')
+      PlatformSupport::InternalNote.create!(ticket: ticket, agent: operator, body: 'ESCALATE-TO-INFRA')
       reply_row(reporter, ticket)
 
       expect(feed_for(reporter).to_json).not_to include('ESCALATE-TO-INFRA')

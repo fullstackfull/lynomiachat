@@ -13,7 +13,7 @@ RSpec.describe PlatformSupport::SlaSweepJob do
 
   it 'stamps the breaches the sweep decided' do
     record = create(:platform_support_ticket, account: account, sla_policy: policy,
-                                                 resolution_due_at: 1.hour.ago)
+                                              resolution_due_at: 1.hour.ago)
 
     described_class.perform_now
 

@@ -81,6 +81,70 @@ RSpec.describe PlatformSupport::TicketTransition do
     end
   end
 
+  # THE PAUSE RULE, applied on every status change by the one writer rather than by each caller. Thresholds
+  # are the factory's synthetic seconds; no production target lives in this repository (D-7).
+  describe 'the SLA clock' do
+    let(:policy) { create(:platform_support_sla_policy) }
+
+    before do
+      ticket.sla_policy = policy
+      PlatformSupport::Sla::Clock.new(ticket).apply(from: Time.current)
+      ticket.save!
+    end
+
+    it 'stops the clock when the ticket starts waiting on the customer' do
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_customer' }).perform
+
+      expect(ticket.reload.sla_paused_at).to be_present
+    end
+
+    # The non-obvious half, and it is deliberate: waiting on ourselves is our own delay.
+    it 'does not stop it when the ticket is waiting on Lynomia' do
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_lynomia' }).perform
+
+      expect(ticket.reload.sla_paused_at).to be_nil
+    end
+
+    it 'restarts it on the way out, having moved the outstanding targets on by the time it stood still' do
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_customer' }).perform
+      paused_due = ticket.reload.resolution_due_at
+
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'in_progress' }).perform
+
+      expect(ticket.reload.sla_paused_at).to be_nil
+      expect(ticket.sla_paused_seconds).to be >= 0
+      expect(ticket.resolution_due_at).to be >= paused_due
+    end
+
+    it 'writes no history row of its own: a pause is not something the customer was told' do
+      described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_customer' }).perform
+
+      expect(ticket.reload.events.pluck(:event_type)).to eq(['status_changed'])
+    end
+  end
+
+  # Two statuses ASK the customer something; every other transition is Lynomia's own bookkeeping, and a mail
+  # per status change would train the customer to ignore the two that matter.
+  describe 'the customer email' do
+    it 'mails on resolved' do
+      expect { described_class.new(ticket: ticket, actor: agent, attributes: { status: 'resolved' }).perform }
+        .to have_enqueued_mail(PlatformSupport::TicketMailer, :ticket_resolved)
+    end
+
+    it 'mails on waiting_on_customer' do
+      expect do
+        described_class.new(ticket: ticket, actor: agent, attributes: { status: 'waiting_on_customer' }).perform
+      end.to have_enqueued_mail(PlatformSupport::TicketMailer, :waiting_on_customer)
+    end
+
+    it 'says nothing on an ordinary move, or on a change that is not a status change at all' do
+      expect do
+        described_class.new(ticket: ticket, actor: agent, attributes: { status: 'in_progress' }).perform
+        described_class.new(ticket: ticket, actor: agent, attributes: { priority: 'urgent' }).perform
+      end.not_to have_enqueued_mail(PlatformSupport::TicketMailer)
+    end
+  end
+
   describe 'the audit trail' do
     it 'files one installation-wide row per staff change, with the agent\'s own user as the actor' do
       ticket

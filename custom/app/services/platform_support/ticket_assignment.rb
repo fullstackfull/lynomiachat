@@ -23,10 +23,14 @@ class PlatformSupport::TicketAssignment
   def perform
     return @ticket if @ticket.assignee_id == @assignee&.id
 
-    previous_id = @ticket.assignee_id
     event = @assignee.nil? ? 'unassigned' : 'assigned'
+    previous_id = nil
 
     ActiveRecord::Base.transaction do
+      # Locked first: an assignment is one operator taking responsibility, so two of them pressing Assign at
+      # the same instant must not both be told they won it.
+      @ticket.lock!
+      previous_id = @ticket.assignee_id
       @ticket.update!(assignee: @assignee, last_activity_at: Time.current)
       PlatformSupport::EventRecorder.new(ticket: @ticket, actor: @actor).record(
         event, metadata: { from: previous_id, to: @assignee&.id }

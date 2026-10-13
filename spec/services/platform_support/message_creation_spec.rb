@@ -82,6 +82,68 @@ RSpec.describe PlatformSupport::MessageCreation do
     end
   end
 
+  # THE THREE CONSEQUENCES OF A REPLY, which belong to this service because it is the only writer of one.
+  describe 'what a reply sets in motion' do
+    it 'gives the customer the one bell row and the one email, and the desk nothing of its own' do
+      ticket
+      agent
+
+      expect { described_class.new(ticket: ticket, author: agent, body: 'Escalated').perform }
+        .to change(Notification.where(notification_type: 'platform_support_reply'), :count).by(1)
+        .and have_enqueued_mail(PlatformSupport::TicketMailer, :operator_replied)
+    end
+
+    # A customer reply is already on the customer's own screen; it is the DESK that needs telling, by email,
+    # because a Lynomia operator has no tenant notification feed to write to.
+    it 'tells the desk by email when the customer replies, and writes no bell row' do
+      ticket
+
+      expect { described_class.new(ticket: ticket, author: reporter, body: 'Any news?').perform }
+        .to have_enqueued_mail(PlatformSupport::TicketMailer, :customer_replied)
+      expect(Notification.where(notification_type: 'platform_support_reply')).to be_empty
+    end
+  end
+
+  # The met/breached decision is made at reply time, against the due time and never against sweep time. The
+  # thresholds are the factory's synthetic seconds; no production target exists in this repository (D-7).
+  describe 'the first-response outcome' do
+    let(:policy) { create(:platform_support_sla_policy) }
+
+    before do
+      ticket.sla_policy = policy
+      PlatformSupport::Sla::Clock.new(ticket).apply(from: Time.current)
+      ticket.save!
+    end
+
+    it 'records it met when the reply landed inside the window, after the reply event itself' do
+      described_class.new(ticket: ticket, author: agent, body: 'Answered').perform
+
+      expect(ticket.reload.events.pluck(:event_type)).to eq(%w[operator_replied sla_first_response_met])
+      expect(ticket.first_response_breached_at).to be_nil
+    end
+
+    it 'records a breach at the reply time when the window had passed, and decides only once' do
+      ticket.update!(first_response_due_at: 1.hour.ago)
+
+      described_class.new(ticket: ticket, author: agent, body: 'Sorry for the delay').perform
+      described_class.new(ticket: ticket, author: agent, body: 'Still on it').perform
+
+      expect(ticket.reload.events.pluck(:event_type).grep(/\Asla_/)).to eq(['sla_first_response_breached'])
+      expect(ticket.first_response_breached_at).to be_present
+    end
+
+    # A ticket nobody promised anything about has no outcome to record: a `met` event against no promise would
+    # read as a target that existed and was hit.
+    it 'records no outcome at all when the policy set no first-response target' do
+      ticket.update!(first_response_due_at: nil)
+
+      described_class.new(ticket: ticket, author: agent, body: 'Answered').perform
+
+      expect(ticket.reload.events.pluck(:event_type)).to eq(['operator_replied'])
+      expect(ticket.first_responded_at).to be_present
+    end
+  end
+
   describe 'a resolved ticket' do
     before { ticket.update!(status: :resolved, resolved_at: Time.current) }
 

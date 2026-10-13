@@ -28,6 +28,10 @@ class PlatformSupport::TicketTransition
     previous = nil
 
     ActiveRecord::Base.transaction do
+      # The row is locked before its current values are read, because those values become the `from` half of
+      # every history row below. Two operators triaging one ticket at the same moment would otherwise both
+      # read the same `from`, and the second would file a history entry describing a state that never existed.
+      @ticket.lock!
       previous = @ticket.attributes.slice(*TRACKED.keys)
       @ticket.assign_attributes(@attributes)
       apply_lifecycle_timestamps(previous['status'])

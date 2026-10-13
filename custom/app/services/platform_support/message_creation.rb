@@ -32,6 +32,9 @@ class PlatformSupport::MessageCreation
 
     message = nil
     ActiveRecord::Base.transaction do
+      # Locked because a reply READS the status to decide whether it reopens the ticket, and an operator
+      # resolving it at the same instant would otherwise leave a reopened ticket marked resolved.
+      @ticket.lock!
       message = write_message
       reopen_if_resolved(message)
       stamp_ticket(message)
@@ -63,14 +66,15 @@ class PlatformSupport::MessageCreation
   # Only a customer reopens by replying. An operator replying to a ticket they have already resolved is
   # finishing a thought, not reopening the work.
   #
-  # The fresh resolution target, and the clearing of `resolution_breached_at`, are `Clock#restart_resolution`'s
-  # to decide: a reopened ticket is not a ticket that breached and finished, and a second implementation of
-  # that arithmetic here would be a second answer. Measured from the reply, which is the moment the ticket
-  # became open work again.
+  # TWO DIFFERENT THINGS, AND THEY BELONG TO DIFFERENT OWNERS. That a reopened ticket is not a ticket that
+  # breached and finished is a LIFECYCLE fact, so the breach is cleared here beside the other two timestamps
+  # and unconditionally -- a ticket whose policy row has since gone has no clock to ask, and a stale breach on
+  # a reopened ticket would still be a lie. The fresh due TIME is arithmetic, so it belongs to the clock, which
+  # measures it from the reply: the moment the ticket became open work again.
   def reopen_if_resolved(message)
     return unless @ticket.resolved? && customer_reply?
 
-    @ticket.assign_attributes(status: :open, resolved_at: nil, closed_at: nil)
+    @ticket.assign_attributes(status: :open, resolved_at: nil, closed_at: nil, resolution_breached_at: nil)
     clock.restart_resolution(from: message.created_at)
     PlatformSupport::EventRecorder.new(ticket: @ticket, actor: @author).record(
       'reopened', metadata: { from: 'resolved', to: 'open' }

@@ -65,7 +65,7 @@ const ticket = (overrides = {}) => ({
   priority: 'high',
   reporter_name: 'Dana',
   unread: true,
-  message_count: 2,
+  message_count: 3,
   attachment_count: 1,
   last_activity_at: NOW - 600,
   last_operator_message_at: NOW - 600,
@@ -76,8 +76,20 @@ const ticket = (overrides = {}) => ({
   ...overrides,
 });
 
-const customerMessage = {
+// The server writes the ticket's description as the FIRST MESSAGE of the thread
+// (PlatformSupport::TicketCreation#open_thread), so the API returns it like any other message and the page
+// renders no synthetic opening bubble of its own.
+const openingMessage = {
   id: 1,
+  author_role: 'customer',
+  author_name: 'Dana',
+  body: 'Two templates have been pending since Tuesday.',
+  attachments: [],
+  created_at: NOW - 86400 - 1,
+};
+
+const customerMessage = {
+  id: 2,
   author_role: 'customer',
   author_name: 'Dana',
   body: 'Meta has not answered either submission.',
@@ -86,7 +98,7 @@ const customerMessage = {
 };
 
 const operatorMessage = {
-  id: 2,
+  id: 3,
   author_role: 'lynomia',
   author_name: 'Lynomia Support',
   body: 'We have escalated both to Meta.',
@@ -109,7 +121,7 @@ const createdEvent = {
 
 const arrange = ({
   ticketPayload = ticket(),
-  messages = [customerMessage, operatorMessage],
+  messages = [openingMessage, customerMessage, operatorMessage],
   events = [createdEvent],
 } = {}) => {
   PlatformSupportAPI.getTicket.mockResolvedValue({ data: ticketPayload });

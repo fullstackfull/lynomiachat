@@ -17,9 +17,9 @@ RSpec.describe 'Platform Support internal note secrecy', type: :request do
 
   # The secret only ever lives in the note.
   let(:secret) { 'SUB-ETHA-SENS-O-MATIC' }
-  let!(:note) do
-    PlatformSupport::InternalNote.create!(ticket: ticket, agent_id: 1, author_name: 'An operator', body: secret)
-  end
+  # A real agent row, because `agent_id` carries a foreign key; the model snapshots the name from it.
+  let(:operator) { create(:platform_support_agent) }
+  let!(:note) { PlatformSupport::InternalNote.create!(ticket: ticket, agent: operator, body: secret) }
 
   let(:base) { "/api/v1/accounts/#{account.id}/platform_support" }
 

@@ -19,9 +19,10 @@ RSpec.describe 'Platform Support attachments', type: :request do
     ticket.messages.create!(author_type: 'User', author_id: reporter.id, author_name: 'A reporter',
                             body: 'Here is the invoice')
   end
+  # A real agent row, because `agent_id` carries a foreign key; the model snapshots the name from it.
+  let(:operator) { create(:platform_support_agent) }
   let(:note) do
-    PlatformSupport::InternalNote.create!(ticket: ticket, agent_id: 1, author_name: 'An operator',
-                                          body: 'ESCALATE-TO-INFRA')
+    PlatformSupport::InternalNote.create!(ticket: ticket, agent: operator, body: 'ESCALATE-TO-INFRA')
   end
 
   def attach_to(record, association, filename: 'invoice.png', content_type: 'image/png')

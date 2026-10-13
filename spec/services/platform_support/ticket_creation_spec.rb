@@ -62,7 +62,7 @@ RSpec.describe PlatformSupport::TicketCreation do
                                                    actor_name: reporter.available_name)
   end
 
-  it 'applies no SLA policy, because the engine owns that and no policy row exists' do
+  it 'promises nothing while no policy row exists, which is the state of this installation today' do
     expect(ticket).to have_attributes(sla_policy_id: nil, first_response_due_at: nil, resolution_due_at: nil)
   end
 
@@ -73,6 +73,41 @@ RSpec.describe PlatformSupport::TicketCreation do
 
   it 'writes no audit row: a customer opening a ticket is not operator activity' do
     expect { ticket }.not_to change(Custom::AuditLog.where(auditable_type: 'PlatformSupport::Ticket'), :count)
+  end
+
+  # THE SLA, ONCE A POLICY EXISTS. The thresholds below are the factory's obviously synthetic seconds; no
+  # production target value lives anywhere in this repository (D-7).
+  describe 'with a policy on the installation' do
+    let!(:default_policy) { create(:platform_support_sla_policy) }
+
+    it 'attaches it, sets both due times from the moment the ticket opened, and records that it did' do
+      expect(ticket.sla_policy_id).to eq(default_policy.id)
+      expect(ticket.first_response_due_at).to eq(ticket.created_at + 60.seconds)
+      expect(ticket.resolution_due_at).to eq(ticket.created_at + 180.seconds)
+    end
+
+    # The system, not the reporter: the customer asked for a ticket, not for a target.
+    it 'files the sla_policy_applied event as the system, and keeps it away from the customer' do
+      applied = ticket.events.find_by(event_type: 'sla_policy_applied')
+
+      expect(applied).to have_attributes(actor_type: 'System', actor_id: nil)
+      expect(applied.metadata['sla_policy_id']).to eq(default_policy.id)
+      expect(PlatformSupport::Event::CUSTOMER_VISIBLE_EVENT_TYPES).not_to include('sla_policy_applied')
+    end
+
+    it 'prefers the policy bought with the plan over the installation default' do
+      for_plan = create(:platform_support_sla_policy, billing_plan_id: plan.id, first_response_time_threshold: 30)
+
+      expect(ticket.sla_policy_id).to eq(for_plan.id)
+      expect(ticket.first_response_due_at).to eq(ticket.created_at + 30.seconds)
+    end
+  end
+
+  # Enqueued, not delivered: a mail job that ran before this transaction committed would be an email about a
+  # ticket the database does not have.
+  it 'tells the customer and the desk, each through its own message' do
+    expect { ticket }.to have_enqueued_mail(PlatformSupport::TicketMailer, :ticket_created)
+      .and have_enqueued_mail(PlatformSupport::TicketMailer, :new_ticket)
   end
 
   it 'rolls the whole thing back when the thread cannot be opened' do

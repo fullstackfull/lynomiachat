@@ -114,12 +114,12 @@ On that basis:
 
 | Verdict | Count | Files |
 |---|---|---|
-| **KEEP** — Arabic is correct and ships as-is | 43 | everything not listed below |
-| **REWRITE** (localised passages, not whole articles) | 14 | see table |
+| **KEEP** — Arabic is correct and ships as-is | 48 | everything not listed below |
+| **REWRITE** (localised passages, not whole articles) | 15 | see table |
 | **EXPAND** | 0 | Arabic is never thinner than English beyond the normal ratio |
 | **SPLIT / MERGE / RETIRE / RELOCATE** | 0 | not an Arabic-layer decision |
 
-The 14 REWRITE files, and what specifically must change:
+The 15 REWRITE files (14 rows; the last row covers two files), and what specifically must change:
 
 | AR file | What must be rewritten |
 |---|---|
@@ -642,7 +642,7 @@ recommendation then depends on a product decision (§3.7) that has not been made
 | **template** | `قالب` / `القوالب` (238) | `القوالب` (`whatsappTemplateMgmt.json:3`) | **`قالب`** | already consistent. Keep `UTILITY`, `MARKETING`, `APPROVED`, `PENDING` etc. **untranslated** — the corpus already does |
 | **webhook** | `Webhook` (53), `webhook` (33), `الـ Webhook` (22), `الـwebhook` (14); `ويب هوك` zero | `إعدادات الـ Webhook` (`webhooks.json:3` — the only Arabic string in the whole webhooks UI) | **`Webhook`**, Latin, capitalised, with `الـ Webhook` (kashida + space) when the article is needed | never transliterate; never lowercase; fix the 14 `الـwebhook` |
 | **access token** | `رمز وصول` (10), `رمز الوصول` (7), `الرمز` (38); `توكن` zero | **English**: `Permanent access token`, `Paste access token` (`inboxMgmt.json:361-362`); `رمز وصول` only at `commerce.json:240` | **`رمز الوصول`** for prose, **and quote the English field label verbatim** until `inboxMgmt.json` is translated | `الرمز` alone is ambiguous with Salla/Zid connection codes, which are a different thing |
-| **permission** | `صلاحية` / `الصلاحيات` (88); `إذن` (4); `تصريح` (12, authorization sense) | `Permissions` **English** (`customRole.json:49,65`); `الصلاحية` (`commerce.json:232`) | **`صلاحية`** for permission; **`تصريح`** reserved for *authorization* (OAuth); never `إذن` | the corpus already keeps the two senses apart — formalise it |
+| **permission** | `صلاحية` / `الصلاحيات` (88); `إذن` (4); `تصريح` (12, authorization sense) | `Permissions` **English** (`customRole.json:35,61`); `الصلاحية` (`commerce.json:232`) | **`صلاحية`** for permission; **`تصريح`** reserved for *authorization* (OAuth); never `إذن` | the corpus already keeps the two senses apart — formalise it |
 | **business portfolio** | `محفظة أعمال` / `محفظة الأعمال` (5); `Business Manager` / `Meta Business Manager` (3) | not present | **`محفظة الأعمال`** | Meta's own Arabic term; `Business Manager` is Meta's **retired** name and must go — see `ar/whatsapp-errors/whatsapp-error-131042.md:18,35,42` |
 | **WABA / WhatsApp Business account** | `حساب واتساب للأعمال` (10), `حساب الأعمال` (9), `حساب WhatsApp Business` (1), `WABA` (1) | `WhatsApp Business Account ID` **English** (`inboxMgmt.json:406`) | **`حساب واتساب للأعمال`** on first use per article, `حساب الأعمال` thereafter; **`WABA` only beside the Latin field label** | four variants for one entity, all inside `whatsapp/` |
 | **Embedded Signup** | `الإعداد السريع` (5), `التجهيز السريع` (4), `التسجيل الموجَّه` (5), `تسجيل واتساب الموجَّه` (1), `نافذة Meta` (10) | `WhatsApp Embedded Signup` **English** (`inboxMgmt.json:1079-1081`) | **`التسجيل المدمج (Embedded Signup)`** on first use, `التسجيل المدمج` thereafter; keep `نافذة Meta` only for the popup itself | five Arabic names for one flow; the Latin term must appear at least once per article so it is searchable |
@@ -650,7 +650,7 @@ recommendation then depends on a product decision (§3.7) that has not been made
 | **integration** | `خيارات الربط` (8); `تكامل` / `التكاملات` (4 + `manifest.yml:104`) | `خيارات الربط` (`settings.json:357`, `integrations.json:3`), but `التكاملات` at `integrations.json:5,6` | **`خيارات الربط`** | and change `manifest.yml:104` from `التكاملات` to `خيارات الربط`; see §6.3 |
 | **automation / automation rule** | `أتمتة` / `الأتمتة` / `قواعد الأتمتة` (177); `التشغيل الآلي` zero | `الأتمتة` (`settings.json`), `إضافة قاعدة أتمتة` (`automation.json:12`), but button is `Create Automation` **English** (`automation.json:7`) | **`قاعدة أتمتة`** / `قواعد الأتمتة` | already consistent in the corpus; the UI button is the problem |
 | **flow / flow builder** | `تدفق` / `التدفقات` / `منشئ التدفقات` (131); **`مسار` / `المسارات` / `منشئ المسارات` (10 in the product sense)** | `منشئ التدفقات`, `التدفق` (`flowBuilder.json:3,6`) | **`تدفق`** / `منشئ التدفقات`; **retire `مسار` in the product sense entirely** | `مسار` is also used in the corpus for *URL path* (`commerce-store-address-refused.md:41`) and *failure path* (`agent-bots.md:126`); the collision makes `whatsapp-template-lifecycle.md:68` genuinely ambiguous |
-| **SLA** | **absent from the corpus** | `اتفاقات مستوى الخدمة` (`sla.json:3`) **and** `اتفاقية الخدمة` (`supportTickets.json` TABLE.SLA) and `بلا سياسة اتفاقية خدمة`; rest of `sla.json` is English | **`اتفاقية مستوى الخدمة (SLA)`** on first use, `اتفاقية مستوى الخدمة` thereafter | the UI contradicts itself; no article exists to be consistent with yet |
+| **SLA** | **absent from the corpus** | `اتفاقات مستوى الخدمة` (`sla.json:3`) **and** `اتفاقية الخدمة` (`supportTickets.json:64`) **and** `بلا سياسة اتفاقية خدمة` (`supportTickets.json:46`); 48 of `sla.json`'s 72 strings are English | **`اتفاقية مستوى الخدمة (SLA)`** on first use, `اتفاقية مستوى الخدمة` thereafter | the UI contradicts itself; no article exists to be consistent with yet |
 | **support ticket** — two distinct features | Lynomia-facing: `تذكرة` / `تذاكري` (26, 2 files). Account's own cases: **absent** | Lynomia-facing: `تذكرة` / `تذاكري` (`platformSupport.json` SIDEBAR). Account's own: `حالات الدعم` / `حالة` (`supportTickets.json` HEADER) | **`تذكرة`** for a ticket raised with Lynomia; **`حالة دعم`** for the account's own case | the corpus is already right on the one it covers; §4.1 is the gap |
 | **assignment / assign** | `إسناد` / `الإسناد` (135); `تعيين` (10) | **split in the UI**: `إسناد لي` (`conversation.json:45`) but `تعيين وكيل` / `تعيين فريق` (`conversation.json:238,243`) | **`إسناد`** | the corpus is *more* consistent than the product; fix the product toward the corpus |
 | **label** | `وسم` / `الوسوم` (228); `تسمية` (10); `ملصق` (2, a deliberate metaphor at `labels-or-shared-audiences.md:3`) | **split in the UI**: `الوسوم` (`settings.json`, `labelsMgmt.json`, `bulkActions.json:29`) but `التسمية` / `التسميات` (`conversation.json:255`, `bulkActions.json:31`) | **`وسم`** / `الوسوم` | corpus is right; UI needs the fix |
@@ -698,7 +698,7 @@ already says explicitly that these do not change with the installation's brandin
 **Also must stay Latin, for a different reason:** any UI string the Arabic product shows in English.
 Today that includes `Account Health`, `Register Webhook`, `Webhook not configured`, `Custom Roles`,
 `Create Automation`, `Permanent access token`, `Paste access token`, `WhatsApp Embedded Signup`,
-`Connect with WhatsApp Business`, `Voice`, `Calls`, `Add SLA`, `WhatsApp campaigns`, `Create campaign`, and the
+`Connect with WhatsApp Business`, `Voice`, `Calls`, `Add SLA` (`sla.json:4`), `Create campaign` (`campaign.json:5,84`), and the
 five custom-role permission labels. An Arabic article that translates these makes the reader unable to find the
 control. **This list is a function of §3.7 and shrinks as the product is translated** — which is precisely why
 the glossary cannot be frozen before the localisation decision is.

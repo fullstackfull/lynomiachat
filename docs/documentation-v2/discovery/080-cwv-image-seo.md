@@ -73,7 +73,7 @@ system font.
 | `/vite/assets/*` (hashed) | `public, max-age=31536000` | `config/environments/production.rb:23-26` (`RAILS_SERVE_STATIC_FILES` defaults to true, so Puma serves it) |
 | Tracking pixel | `private, max-age=86400` | `articles_controller.rb:43` |
 | `/rails/active_storage/{blobs,representations}/redirect/...` | `max-age=300, private`, then a 302 | `activestorage-7.2.3.2/app/controllers/active_storage/blobs/redirect_controller.rb:13`, `.../representations/redirect_controller.rb:11` |
-| `/rails/active_storage/{blobs,representations}/proxy/...` | `max-age=3153600000, public` (100 years), strong 304 support, no session cookie | `.../proxy_controller.rb:18` and `.../representations/proxy_controller.rb:14` (`http_cache_forever public: true`; `ActionController::ConditionalGet#http_cache_forever`) |
+| `/rails/active_storage/{blobs,representations}/proxy/...` | `max-age=3155695200, public` (100 years), strong 304 support, no session cookie | `.../proxy_controller.rb:18` and `.../representations/proxy_controller.rb:14` (`http_cache_forever public: true`; `ActionController::ConditionalGet#http_cache_forever`) |
 | `/rails/active_storage/disk/...` (the final hop for the Disk service) | none from the app; headers come from `Rack::Files` | `.../concerns/active_storage/file_server.rb:7-18` |
 
 `deployment/nginx_chatwoot.conf:23-63` is a bare `proxy_pass` with `http2`, HSTS and TLS settings; it has **no `gzip`/`brotli`, no `proxy_cache`, no
@@ -177,25 +177,30 @@ emitted from the Ruby renderer would not be generated. The renderer must emit ba
 
 ### 2.3 Image encoding on real screenshots
 
-The repository holds 814 product screenshots under `docs/*/screenshots/` (engineering evidence, not yet corpus images; they are the best available proxy for
-what authors will upload). I sampled 16 spread evenly through the sorted list and re-encoded in memory with libvips 8.15.1 / ruby-vips 2.3.0 (nothing written
-to the repo; sandbox is Ubuntu 24.04, **not** production). Sizes are for the 1280 px-wide variant unless stated.
+The repository holds 814 product screenshots under `docs/**/screenshots/` (engineering evidence, not yet corpus images; the best available proxy for what
+authors will upload), 498 of them at least 1200 px wide. I re-encoded in memory with libvips 8.15.1 / ruby-vips 2.3.0 (nothing written to the repo; the sandbox is
+Ubuntu 24.04, **not** production). Main sample: 24 desktop-width PNGs spread evenly through the sorted list (8 at 1440 px, 16 at 1280 px, heights 900-1500),
+each resized with `thumbnail_image` to the recommended ladder and saved as WebP `Q: 85, smart_subsample: true, effort: 4`.
 
-| Format | Median | Mean | Max |
-|---|---|---|---|
-| Source PNG | 41.6 KB | 82.1 KB | 350.7 KB |
-| WebP lossy Q=80 | 17.0 KB | 20.3 KB | 50.6 KB |
-| **WebP lossy Q=85** | **19.4 KB** | **23.4 KB** | **58.2 KB** |
-| WebP lossy Q=85 at 640 px | 15.7 KB | 15.4 KB | 36.6 KB (the 390 px mobile captures are not downscaled, which inflates this row) |
-| WebP lossless (after resize) | 20.3 KB | 89.3 KB | 388.6 KB (larger than the source PNG on 2 of 16) |
+| Variant | Median | Mean | p90 | Max |
+|---|---|---|---|---|
+| Source PNG | 94.7 KB | 125.0 KB | 278.7 KB | 349.4 KB |
+| WebP 800 px | 14.9 KB | 16.9 KB | 33.3 KB | 36.7 KB |
+| **WebP 1200 px** | **30.1 KB** | **32.0 KB** | **64.3 KB** | **77.2 KB** |
+| WebP 1800 px (sources are <= 1440 px, so this is the unscaled size, not an upscale) | 32.8 KB | 39.7 KB | 84.4 KB | 106.2 KB |
 
-Three 1280 px detail comparisons (source PNG / WebP Q85 / WebP Q85 with `smart_subsample` / WebP Q90 + smart_subsample / near-lossless Q60 / JPEG Q85):
-278.7 / 33.4 / 35.1 / 42.3 / 179.8 / 71.5 KB; 350.7 / 56.9 / 61.8 / 73.9 / 244.9 / 96.9 KB; 151.0 / 47.0 / 49.9 / 65.2 / 266.8 / 99.3 KB. Reading: lossy WebP is
-4-10x smaller than the PNG and about half of JPEG; **lossless and near-lossless WebP are the wrong default for resized screenshots**. I compared one crop of
-`flow-06-test-handoff.png` (resized original against Q85 + smart_subsample) by eye: UI text and the pink-on-dark "Settings" label were indistinguishable at
-1x. That is one crop on one image; a human check of five representative screenshots (including Arabic RTL and a dense table) is still needed before the
-quality setting is frozen. Processing cost in the sandbox was 79-1,227 ms per source image for decode plus four encodes at `effort: 2`: not a production
-number, but enough to show it must not run on a visitor's request.
+Per file the 1200 px WebP is about 2-17x smaller than its source PNG (median about 2.6x), part of which is the downscale from 1280-1440 px. A true 1800 px variant of a
+2x retina capture will be heavier than the last row; I had no such source in the sample. An earlier 16-file sample, 11 of whose files were 390 px phone captures and
+which therefore understates desktop sizes, gave a Q85 1280 px median of 19.4 KB (max 58.2 KB) and showed that **lossless WebP after a resize was larger than the source PNG
+on 2 of 16 files** (388.6 KB against 151.0 KB at worst).
+
+Format comparison at 1280 px on three desktop files (source PNG / WebP Q85 / WebP Q85 with `smart_subsample` / WebP Q90 + `smart_subsample` / near-lossless Q60 / JPEG Q85):
+278.7 / 33.4 / 35.1 / 42.3 / 179.8 / 71.5 KB; 350.7 / 56.9 / 61.8 / 73.9 / 244.9 / 96.9 KB; 151.0 / 47.0 / 49.9 / 65.2 / 266.8 / 99.3 KB. Lossy WebP is about half the size of
+JPEG, `smart_subsample` costs 5-9%, and **lossless and near-lossless WebP are the wrong default for resized screenshots**. I compared one crop of
+`flow-06-test-handoff.png` (resized original against Q85 + `smart_subsample`) by eye: UI text and the pink-on-dark "Settings" label were indistinguishable at 1x. That is one
+crop on one image; a human check of five representative screenshots (including an Arabic RTL one and a dense table) is needed before the quality setting is frozen.
+Processing cost in the sandbox was 79-1,227 ms per source image for decode plus four encodes at `effort: 2`: not a production number, but enough to show it must not run on a
+visitor's request.
 
 ### 2.4 What this libvips build can and cannot encode
 
@@ -229,7 +234,7 @@ Severity is what it costs a reader or crawler once images exist, not what it cos
 | D10 | major | The libvips precondition checks the version, not encode capability, and the repo's variant code has never produced WebP | `deploy.sh:260-263`; section 1.6; measured 2.4 | A host can pass stage 4b and then 500 on every image URL after restart. AVIF in particular fails on a stock Ubuntu libvips. |
 | D11 | minor | `turbo:load` re-runs `initialize`, which adds a new `document` click listener each navigation (external-link handler, details click-away) and a `change` listener (locale switcher); none is removed | `portal.js:9`; `portalHelpers.js:44,71,131,166-179` | Listeners accumulate across Turbo navigations in one session; small per-click cost that grows with reading depth. INP not measured. |
 | D12 | minor | Amplitude loads as a synchronous `<script src>` in `<head>`; every other analytics tag is async/defer. Only if a portal configures it | `_portal_analytics.html.erb:44-48` | Render-blocking third party on that portal. |
-| D13 | minor | Heading `id`s are JS-only and, where headings repeat, not disambiguated (`slugifyWithCounter` is imported but called as a plain function); Arabic slugs unverified | `portalHelpers.js:7,14-37` | No server-side fragment anchors for crawlers; overlaps 073/076. |
+| D13 | minor | Heading `id`s are JS-only and repeated headings get the same id: the library's default export (plain `slugify`) is imported under the name `slugifyWithCounter` and called per heading, so there is no counter | `portalHelpers.js:7,14-37`; `node_modules/@sindresorhus/slugify/index.js:42,100` | No server-side fragment anchors for crawlers; duplicate ids on pages with repeated headings; Arabic slugs unverified. Overlaps 073/076. |
 | D14 | minor | Two nested `<main>` landmarks; two viewport meta tags (the first lacks `width=device-width`) | `portal.html+documentation.erb:9,16`; `_portal_head.html.erb:2,4` | Landmark and validity noise for assistive tech. |
 | D15 | minor | `show_markdown` returns raw `@article.content`; images will be relative or absolute-redirect URLs the consumer cannot always resolve | `articles_controller.rb:29-33` | The AI-assistant actions will see `![alt](/rails/...)` with an unresolvable relative path. Alt text is all they get. |
 | D16 | minor | SVG cannot be an `<img>` through Active Storage: it is served as binary, and libvips runs with untrusted loaders blocked | `engine.rb:56-65`; `vips.rb:41`; `Dockerfile:134` | Diagrams must be raster for now. Agent 084 owns the policy. |
@@ -248,8 +253,8 @@ Assume 5x the corpus (about 315 EN articles per locale) with a mean of three ima
   background job and an outage if it happens on request threads or in the deploy path.
 - **Crawl.** A new article published with N unprocessed variants gets its first Googlebot visit on the slowest possible path (D3). With the default redirect
   routes (D2) the same crawler follows N 302s to expiring URLs on every revisit.
-- **Image bytes.** At the measured Q85 median of 19 KB per 1280 px variant and roughly 12 images in a long procedure, an article's images are 230-700 KB.
-  Without width/height/lazy loading all of it competes with the 1.5 MB stylesheet and 345 KB font for the same connection.
+- **Image bytes.** At the measured 1200 px Q85 median of 30 KB and roughly 12 images in a long procedure, an article's images are about 360 KB; if every image were as heavy as the
+  heaviest sample (77 KB) about 925 KB. Without width/height/lazy loading all of it competes with the 1.5 MB stylesheet and 345 KB font for the same connection.
 - **Search page and categories** list articles with no images, so they are unaffected unless an excerpt starts to render Markdown.
 
 ## 5. Recommendations
@@ -303,7 +308,7 @@ from `render_article_content`, so tenant portals keep their current serving path
 
 | Decision | Recommendation | Evidence |
 |---|---|---|
-| Output format | **WebP only**, lossy, `Q: 85`, `smart_subsample: true`. No AVIF, no JPEG/PNG fallback `<picture>`. | Measured 2.3: 4-10x smaller than PNG, about half of JPEG, text legible; AVIF encode is absent on a stock Ubuntu libvips (2.4) and the gain on flat UI screenshots is not worth a codec-availability dependency. Lossless/near-lossless is larger than the PNG on some inputs. WebP browser coverage is from memory, not re-checked. |
+| Output format | **WebP only**, lossy, `Q: 85`, `smart_subsample: true`. No AVIF, no JPEG/PNG fallback `<picture>`. | Measured 2.3: about 2-17x smaller than the source PNG at 1200 px (median 2.6x), about half of JPEG Q85, text legible in the one crop I checked; AVIF encode is absent on a stock Ubuntu libvips (2.4) and the gain on flat UI screenshots is not worth a codec-availability dependency. Lossless/near-lossless is larger than the PNG on some inputs. WebP browser coverage is from memory, not re-checked. |
 | Width ladder | 800, 1200, 1800; `src` = 1200 | Column widths 327-904 CSS px (1.8) at DPR 1-3 need roughly 650-1,800 px; the ladder serves a phone at DPR 2 from 800, a laptop from 800-1800, and a 1536+ desktop at DPR 2 from 1800. Re-measure the 1800 size; I measured 640 and 1280. |
 | How | `blob.variant(resize_to_limit: [w, nil], format: :webp, saver: { Q: 85, smart_subsample: true })`, i.e. `resize_to_limit` never upscales | `variation.rb`; `image_processing` forwards `saver` options to the libvips saver (option names to be confirmed in a spec when implemented) |
 | Allowlist | Add `saver` to `config.active_storage.supported_image_processing_methods` in `config/initializers/active_storage.rb` | D3: absent from `active_storage.rb:66-` |
@@ -315,7 +320,7 @@ from `render_article_content`, so tenant portals keep their current serving path
 
 The proxy route streams through Puma (no `x_sendfile`, 5 threads by default, 1.4). That is no worse than the redirect route on the default `local`
 Disk service, where the final hop is also served by Puma, but it **is** worse on S3 or GCS, where redirect hands the bytes to the bucket. Because the response
-carries `public, max-age=3153600000` and no cookie, the fix for both is an `nginx` `proxy_cache` for `/rails/active_storage/representations/proxy/` (or any CDN in front),
+carries `public, max-age=3155695200` and no cookie, the fix for both is an `nginx` `proxy_cache` for `/rails/active_storage/representations/proxy/` (or any CDN in front),
 which is a deployment-stream change. Which storage service production uses and whether a cache sits in front are unverified, and decide whether proxy is
 acceptable (agents 066/083).
 
@@ -332,11 +337,11 @@ Budgets are my recommendations, derived from the measurements in 2.3 and the lay
 | Budget | Value | Basis |
 |---|---|---|
 | Layout shift from images | **0**: every `<img>` in rendered article HTML has non-empty `alt`, `width` and `height` | CLS "good" is <= 0.1; images should contribute nothing |
-| Delivered image, 1200 px variant (screenshot) | target <= 60 KB; warn above 100 KB | Measured Q85 median 19 KB, max 58 KB at 1280 px |
-| Delivered image, 1800 px variant | warn above 180 KB | Roughly 1.5-2x the 1200 px size |
+| Delivered image, 1200 px variant (screenshot) | warn above 100 KB | Measured Q85 median 30 KB, p90 64 KB, max 77 KB (n=24 desktop screenshots, 2.3) |
+| Delivered image, 1800 px variant | warn above 180 KB | Measured max 106 KB, but only for sources <= 1440 px; a 2x retina source will be heavier. Re-measure on real uploads. |
 | First (above-the-fold) image, delivered | <= 100 KB | About 0.5 s on a 1.6 Mbps link (arithmetic from Lighthouse's published slow-4G profile, quoted from memory) |
-| Images per article | warn above 12; at most 2 images in the first viewport | At the measured median that is about 230 KB, worst case about 700 KB |
-| Source upload | keep the editor's existing 4 MB cap (`FullEditor.vue:40` per 068); warn above 1 MB; longest edge <= 4,000 px; PNG/JPEG/WebP | Measured PNG screenshots: median 42 KB, max 351 KB, so 1 MB flags only photographs and mistakes |
+| Images per article | warn above 12; at most 2 images in the first viewport | About 360 KB at the measured median, about 925 KB if every image is as heavy as the heaviest sample |
+| Source upload | keep the editor's existing 4 MB cap (`FullEditor.vue:40` per 068); warn above 1 MB; longest edge <= 4,000 px; PNG/JPEG/WebP | Measured desktop PNG screenshots: median 95 KB, max 349 KB, so 1 MB flags only photographs and mistakes |
 | Alt text | required; <= 125 characters (a convention, not a rule); must not begin "image of"/"screenshot of"/"picture of", equal the filename, or repeat the caption | Writing guidance |
 | Page, text-only (targets to re-measure, not measured) | CSS <= 60 KB gzip (now 144), JS <= 150 KB gzip (now 209), no font > 150 KB (now 345) | Reachable by 5.7 steps 1-2; unmeasured |
 
@@ -414,7 +419,7 @@ The image work does not fix these; images add to them. Each is independent.
    lacks.
 5. Renderer spec table: the 11 inputs in 2.1 with the new expected output, plus a tight-list step with a screenshot, a linked image, an inline icon, a `cw_image_width` image, and an
    image whose alt contains `^`.
-6. Fetch one variant URL twice: `Cache-Control` must be `public, max-age=3153600000`, second request `304`, no `Set-Cookie`.
+6. Fetch one variant URL twice: `Cache-Control` must be `public, max-age=3155695200`, second request `304`, no `Set-Cookie`.
 
 ### 5.10 Dependencies on other agents' decisions
 

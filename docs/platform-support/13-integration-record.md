@@ -43,24 +43,24 @@ mutation, and consolidating onto the services would otherwise have dropped that 
    opening message the API returns.
 3. **Operations Account 360 key shape.** The view read a flat key; the snapshot ships it nested — and always
    ships it, so the view now reads it directly instead of falling back to a stub-era "not recorded".
-4. **The mailer's `%{account}` interpolation**, missing from two operator subjects. All 9 EN subject keys now
+3. **The mailer's `%{account}` interpolation**, missing from two operator subjects. All 9 EN subject keys now
    render with no `%{` left.
-5. **A contract disagreement about zero.** Agent 1's `SlaPolicy` refuses a non-positive threshold; Agent 3's
+4. **A contract disagreement about zero.** Agent 1's `SlaPolicy` refuses a non-positive threshold; Agent 3's
    clock spec built a policy holding `0`. Resolved in favour of the model: the refusal is the guarantee.
-6. **Both contract stubs deleted** (Agent 3's stub file, Agent 2's 233-line scaffold) in favour of one real
+5. **Both contract stubs deleted** (Agent 3's stub file, Agent 2's 233-line scaffold) in favour of one real
    `spec/factories/platform_support.rb`; 12 spec files rewired to it.
-7. **Eight dangling foreign keys in fixtures.** Agents 2 and 3 built against stub schemas with no foreign keys,
+6. **Eight dangling foreign keys in fixtures.** Agents 2 and 3 built against stub schemas with no foreign keys,
    so four tickets carried `sla_policy_id: 7` and four notes carried `agent_id: 1`. The real schema has
    `add_foreign_key` on both, so PostgreSQL refuses every one of those inserts.
-8. **A defect in integration's own wiring**, caught by reading Agent 1's spec rather than by running it:
+7. **A defect in integration's own wiring**, caught by reading Agent 1's spec rather than by running it:
    delegating the reopen's `resolution_breached_at = nil` to the clock stopped clearing it for a ticket with no
    policy — reachable, because `sla_policy_id` is `on_delete: :nullify`.
 
 ## 4. The adversarial review, and what it changed
 
 Six reviewers read the merged diff by dimension (wiring, authorization, secrecy, SLA, specs, product surface);
-every non-minor finding was then sent to a second agent whose instructions were to **refute** it. **23 findings
-raised, 19 survived refutation, 18 are fixed and 1 is recorded below as a limitation.** The ones that changed
+every non-minor finding was then sent to a second agent whose instructions were to **refute** it. **23 findings raised, 19 survived
+refutation, and all 19 are fixed** — the last of them, the unassigned index, in this final pre-merge pass. The ones that changed
 behaviour:
 
 | Severity | Finding | What it would have done | Fix |
@@ -76,6 +76,7 @@ behaviour:
 | minor | `MessageCreation` read `closed?` before taking the row lock | The 422 could be raced by a close landing in the same instant | Both status reads happen after the lock |
 | minor | Two `<label for=…>` pointed at a wrapper `div` | `Select` renders a div and the id lands there, so clicking the label did nothing | The label wraps the control, which associates it for real |
 | minor | The staff queue header described the opposite of its own `ORDER BY` | — | The sentence now matches the query |
+| minor | The `on_unassigned` partial index could not serve the view it was added for | Its predicate carried `status < 4` while `?assignee_id=unassigned` says nothing about status, so Postgres fell through to the queue-order index with a discard filter and an incremental sort — **767 buffers, 4.152 ms measured on 40k rows** — while still paying this index's write cost | Keyed on the queue's own `ORDER BY` and predicated only on `assignee_id IS NULL`: **7 buffers, 0.056 ms, no sort**. Asserted as a definition in the query-budget spec, because a planner test at fixture scale proves nothing |
 | majors ×4 | Spec fixtures that cannot exist: six messages with no author id, a memoized reference sequence giving two tickets one number, an agent row for a tenant user, a ticket created with no account | The suite could not have passed against the real schema | Real rows, real deletion path, real membership |
 | minors ×2 | A dead billing setup line naming a config nothing reads; an example titled 404 that asserted 401 | Vacuous setup and a misleading title | Removed and renamed, with the real mechanism named |
 
@@ -97,9 +98,10 @@ to do with the product.
 | Platform Support frontend specs within it | **51 examples, 0 failures** (49 + the 2 new create-page proofs) |
 | `bundle exec rubocop` (whole repository, 3022 files) | **0 offenses**. No cop disabled, no exclusion added |
 | `npx eslint` on every changed JS/Vue file | **0 errors**, 2 pre-existing dynamic-i18n-key warnings |
+| **The unassigned queue's index**, measured against the real planner on 40k tickets | 767 buffers / 4.152 ms before, **7 buffers / 0.056 ms** after, and the round trip re-proven on the corrected definition |
 | **Migration round trip** on a scratch database | committed schema loads 6 tables → **rollback of 6 leaves none** → migrate up → **dump byte-identical to `db/schema.rb`**, exit 0 |
 | **The agent bootstrap**, end to end | `grant_agent` creates one lead, `agents` lists it, a tenant email is refused loudly, `revoke_agent` deactivates and keeps the row |
-| App boot + `Rails.application.eager_load!` | OK — every constant in the wiring resolves |
+| `bundle exec rails zeitwerk:check` | **All is good!** — every constant in the wiring resolves |
 | The 8 staff route helpers | all present; 14 distinct Platform Support route paths |
 | 9 mailer subject keys + `shared.operator_context`, EN, with the real interpolations | all render; none leaves a `%{}` unresolved |
 | `config/schedule.yml` | 15 entries; every class constantizes and every cron parses; the new entry fires every 5 minutes |
@@ -113,19 +115,16 @@ to do with the product.
    it rather than adding a second upload path. The customer can still open the ticket and describe the problem;
    the picker shows a readable upload failure. Exempting the shared endpoint would turn a locked account into
    free file hosting with non-expiring blob URLs, so the fix is a product decision, not a patch.
-2. **The `assignee_id` partial index cannot serve the `unassigned` filter.** Its predicate excludes the NULLs
-   that filter looks for. The queue is correct and paginated; this is an index that does not help. Left alone
-   because inventing an index strategy mid-gate would also mean re-proving the schema round trip.
-3. **The 25 MB per-ticket aggregate** in doc 03 is not implemented; per-file (10 MB), per-message (5 files) and
+2. **The 25 MB per-ticket aggregate** in doc 03 is not implemented; per-file (10 MB), per-message (5 files) and
    the content-type allow-list are.
-4. **No 404-probe throttle** on the attachment route beyond the five existing throttles.
-5. **`swagger/swagger.json` is untouched**, so the tenant endpoints are undocumented there (doc 07 §9).
-6. **The unread marker is per account, not per user**: `customer_last_viewed_at` is one column on the ticket.
-7. **Arabic mailer subjects fall back to English.** Backend strings live in `en.yml` and Crowdin owns the rest
+3. **No 404-probe throttle** on the attachment route beyond the five existing throttles.
+4. **`swagger/swagger.json` is untouched**, so the tenant endpoints are undocumented there (doc 07 §9).
+5. **The unread marker is per account, not per user**: `customer_last_viewed_at` is one column on the ticket.
+6. **Arabic mailer subjects fall back to English.** Backend strings live in `en.yml` and Crowdin owns the rest
    (CLAUDE.md); `config.i18n.fallbacks` makes that a silent, correct fallback rather than a blank subject.
-8. **The staff queue orders by most recent movement** within each priority band, as the frozen contract says.
+7. **The staff queue orders by most recent movement** within each priority band, as the frozen contract says.
    If operators would rather see the longest-waiting first, that is one clause in `queue_scope`.
-9. **Still required as data, not code**: the SLA target values, the support email alias, and the first agent
+8. **Still required as data, not code**: the SLA target values, the support email alias, and the first agent
    rows. Until they exist the desk promises nothing, sends no operator mail, and refuses every staff action —
    each the intended fail-closed state, and the rake task in §2 is how the third is answered.
 

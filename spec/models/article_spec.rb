@@ -77,6 +77,39 @@ RSpec.describe Article do
     end
   end
 
+  # The operational check behind K17 in docs/documentation-v2/P0-PRODUCTION-HARDENING.md. It exists as a spec
+  # because the first version of this query was silently wrong -- `where.not(portal_id: Category.arel_table[
+  # :portal_id])` compiles to `portal_id != NULL` and so reports zero on any data -- and an operator was going
+  # to run it on production to decide whether the read-side guards matter.
+  describe '.cross_portal_category' do
+    let!(:other_portal) { create(:portal, account_id: account.id, config: { allowed_locales: ['en'] }) }
+    let!(:matched) do
+      create(:article, portal: portal_1, category: category_1, account_id: account.id, author_id: user.id,
+                       title: 'coherent', content: 'body')
+    end
+
+    it 'finds an article whose category belongs to a different portal' do
+      # `update_column` on purpose: this is exactly the state the validation now refuses, so the only way such
+      # a row exists is to predate it.
+      stray = create(:article, portal: other_portal, account_id: account.id, author_id: user.id,
+                               title: 'stray', content: 'body')
+      stray.update_column(:category_id, category_1.id) # rubocop:disable Rails/SkipsModelValidations
+
+      expect(described_class.cross_portal_category).to contain_exactly(stray)
+    end
+
+    it 'does not flag an article whose category belongs to its own portal' do
+      expect(described_class.cross_portal_category).not_to include(matched)
+    end
+
+    it 'does not flag an article with no category' do
+      uncategorised = create(:article, portal: portal_1, category: nil, account_id: account.id,
+                                       author_id: user.id, title: 'loose', content: 'body')
+
+      expect(described_class.cross_portal_category).not_to include(uncategorised)
+    end
+  end
+
   describe 'search' do
     let!(:portal_2) { create(:portal, account_id: account.id, config: { allowed_locales: %w[en es] }) }
     let!(:category_2) { create(:category, slug: 'category_2', locale: 'es', portal_id: portal_1.id) }

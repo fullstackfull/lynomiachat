@@ -29,6 +29,20 @@ const hasTiktokConfigured = computed(() => {
   return window.chatwootConfig?.tiktokAppId;
 });
 
+// WhatsApp is onboarded only through Meta embedded signup, which needs the app id and the signup
+// configuration id, and treats the 'none' sentinel as absent -- the same three conditions
+// onboarding/inbox-setup/useChannelConfig.js:22-29 already applies. Without this the tile was the one
+// OAuth/SDK provider offered unconditionally, so a workspace on an installation with no WhatsApp
+// configuration could click through to a signup that cannot complete.
+const hasWhatsappConfigured = computed(() => {
+  const config = window.chatwootConfig ?? {};
+  return (
+    Boolean(config.whatsappAppId) &&
+    config.whatsappAppId !== 'none' &&
+    Boolean(config.whatsappConfigurationId)
+  );
+});
+
 const isActive = computed(() => {
   const { key } = props.channel;
   if (Object.keys(props.enabledFeatures).length === 0) {
@@ -58,11 +72,16 @@ const isActive = computed(() => {
     return props.enabledFeatures.channel_voice;
   }
 
+  // Rendered disabled rather than hidden when unconfigured, which is what this component already does for
+  // facebook, instagram and tiktok -- the template binds `:disabled="!isActive && !canRequestTiktokAccess"`.
+  if (key === 'whatsapp') {
+    return hasWhatsappConfigured.value;
+  }
+
   return [
     'website',
     'twilio',
     'api',
-    'whatsapp',
     'sms',
     'telegram',
     'line',

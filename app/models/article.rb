@@ -87,6 +87,20 @@ class Article < ApplicationRecord
   scope :order_by_release_date, -> { reorder(Arel.sql("articles.meta->>'release_date' DESC NULLS LAST, articles.position ASC")) }
   scope :order_by_views, -> { reorder(views: :desc) }
 
+  # LEGACY ROWS THAT `category_in_same_portal` NOW REFUSES: an article whose category belongs to a different
+  # portal. There is no foreign key on `category_id` and nothing ever tied the two columns, so these were
+  # storable before that validation existed.
+  #
+  # A scope rather than an ad-hoc query because an operator runs this on production to decide whether the
+  # read-side guards are load-bearing, and the obvious first attempt is silently wrong:
+  # `where.not(portal_id: Category.arel_table[:portal_id])` compiles to `articles.portal_id != NULL`, which is
+  # never true in SQL, so it answers "none" on any data at all. (It was written into a report as the check to
+  # run before being caught here.) The Arel form below compiles to a real column-to-column comparison, and
+  # spec/models/article_spec.rb plants a mismatched row to prove the scope finds one.
+  scope :cross_portal_category, lambda {
+    joins(:category).where(arel_table[:portal_id].not_eq(Category.arel_table[:portal_id]))
+  }
+
   # TODO: if text search slows down https://www.postgresql.org/docs/current/textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS
   # - the A, B and C are for weightage. See: https://github.com/Casecommons/pg_search#weighting
   # - the normalization is for ensuring the long articles that mention the search term too many times are not ranked higher.

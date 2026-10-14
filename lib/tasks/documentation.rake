@@ -21,10 +21,16 @@ module DocumentationSeedReport
 
   # The orphan sweep is the LAST thing the media pass does, so on any earlier failure its two counters are not
   # zero -- they are unknown. Printing `0 purged, 0 unreferenced` there would claim the sweep ran and found
-  # nothing, which is the kind of true-looking zero this program keeps removing. `nil` prints as the sentence
-  # instead, and a run that reached the sweep prints the counts.
+  # nothing, which is the kind of true-looking zero this program keeps removing.
+  #
+  # GATED ON `unreferenced`, which is written AFTER the sweep, and not on `purged`, which is written just before
+  # it so the sweep has something to count into. Gating on `purged` was a defect for one commit: a sweep that
+  # raised partway -- `purge_later` cannot reach the queue, `unreferenced_files` cannot read the tree -- left
+  # `purged` at 0 and `unreferenced` at nil, and `%<unreferenced>d` on nil raises TypeError, so the report
+  # crashed with a bare backtrace instead of printing APPLY FAILED. `did not complete` rather than `did not run`,
+  # because both "never started" and "died partway" reach it.
   SWEEP = '; sweep: %<purged>d purged, %<unreferenced>d unreferenced in the repository'.freeze
-  UNSWEPT = '; sweep: did not run'.freeze
+  UNSWEPT = '; sweep: did not complete'.freeze
 
   # A row the corpus cannot write is the one thing an operator has to act on, so the task exits non-zero for it.
   # `operator_edited` is a state an operator may legitimately be living in: it prints and the task still succeeds,
@@ -81,7 +87,7 @@ module DocumentationSeedReport
   end
 
   def self.media_line(media)
-    sweep = media.purged.nil? ? UNSWEPT : format(SWEEP, purged: media.purged, unreferenced: media.unreferenced)
+    sweep = media.unreferenced.nil? ? UNSWEPT : format(SWEEP, purged: media.purged, unreferenced: media.unreferenced)
     format(MEDIA, **media.to_h) + sweep
   end
 

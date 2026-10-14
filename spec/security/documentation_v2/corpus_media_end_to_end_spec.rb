@@ -23,7 +23,9 @@ require 'rails_helper'
 RSpec.describe 'Corpus documentation media -- seed to delivered bytes', type: :request do
   let(:png) { Base64.strict_decode64('iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAAAAACRn/EaAAAAC0lEQVR4nGNgQAEAAA8AAbVWKT4AAAAASUVORK5CYII=') }
   let(:key) { 'getting-started/inbox.png' }
-  let!(:super_admin) { create(:super_admin) }
+  # Passed to the seeder explicitly rather than left for `SuperAdmin.first` to find: the author IS an input to a
+  # seed run, and naming it keeps the dependency visible instead of load-bearing-but-unreferenced.
+  let(:super_admin) { create(:super_admin) }
   let!(:docs_portal) do
     create(:portal, name: 'Lynomia Chat Documentation', slug: Documentation::Library::DOCS_SLUG,
                     platform_owned: true, account: nil,
@@ -71,7 +73,7 @@ RSpec.describe 'Corpus documentation media -- seed to delivered bytes', type: :r
   end
 
   def seed(portal: docs_portal, corpus: root)
-    Documentation::ContentSeeder.new(portal: portal, root: corpus).perform!
+    Documentation::ContentSeeder.new(portal: portal, root: corpus, author: super_admin).perform!
   end
 
   # OWNER TESTS D and H together, because they are the same chain read at two locales: the per-portal corpus
@@ -138,34 +140,44 @@ RSpec.describe 'Corpus documentation media -- seed to delivered bytes', type: :r
       FileUtils.mkdir_p(changelog_root.join('en', 'releases'))
       changelog_root.join('en', 'releases', 'release-1.md')
                     .write("---\ntitle: Release 1\ndescription: d\nposition: 10\n---\n\nShipped.\n\n![The inbox](media:#{key})\n")
+      # ITS OWN COPY OF THE SAME BYTES, which is what makes this a real test of requirement 8 and of
+      # requirement 4's prohibition on a global checksum scan. With no file here the changelog seed simply
+      # refuses, and the example would pass byte for byte even if `seed` resolved keys with
+      # `ActiveStorage::Blob.find_by(checksum:)` -- the thing the contract forbids outright.
+      FileUtils.mkdir_p(changelog_root.join('media', 'getting-started'))
+      changelog_root.join('media', 'getting-started', 'inbox.png').binwrite(png)
     end
 
     after { FileUtils.remove_entry(changelog_root) }
 
-    it 'cannot resolve or deliver a corpus key seeded into the documentation portal' do
+    it 'seeds its own blob for identical bytes, and cannot resolve the other portal\'s key' do
       seed
-      # Its own corpus has no media/ directory at all, so its reference has no file: the preflight refuses it
-      # rather than letting it adopt the documentation portal's attachment, which is the forbidden reuse stated
-      # as a seed-time refusal.
-      expect { seed(portal: changelog_portal, corpus: changelog_root) }
-        .to raise_error(Documentation::ContentSeeder::PreflightError, /has no file at/)
-      expect(changelog_portal.reload.documentation_media.count).to eq(0)
+      docs_blob_id = docs_portal.reload.documentation_media.first.blob_id
 
-      # And with the reference published by hand anyway -- the case a corpus refusal cannot prevent, because an
-      # operator can type it into the editor -- the renderer resolves against the portal being rendered.
-      note = create(:article, portal: changelog_portal, account_id: nil, author: super_admin, locale: 'en',
-                              slug: 'release-1', title: 'Release 1', status: :published,
-                              content: "![The inbox](media:#{key})")
+      # SAME KEY, SAME BYTES, DIFFERENT PORTAL. The seed attaches a blob of its own rather than adopting the one
+      # the documentation portal already holds -- which is both requirement 8 and the reason requirement 4
+      # forbids a global checksum scan. A scan would find the existing blob and reuse it, and the blob ids would
+      # match.
+      changelog_result = seed(portal: changelog_portal, corpus: changelog_root)
+      changelog_blob = changelog_portal.reload.documentation_media.first.blob
 
-      expect(rendered_image("/hc/#{changelog_portal.slug}/articles/#{note.slug}")).to be_nil
-      expect(response.body).to include("<!-- media: unresolved key #{key} -->")
+      expect(changelog_result.media.uploaded).to eq(1)
+      expect([changelog_portal.documentation_media.count, changelog_blob.id == docs_blob_id]).to eq([1, false])
+      # Identical bytes and identical checksums, so only the per-portal lookup can be what kept them apart.
+      expect([changelog_blob.download.b, changelog_blob.checksum])
+        .to eq([png, docs_portal.documentation_media.first.blob.checksum])
 
-      get_public "/hc/#{changelog_portal.slug}/articles/#{note.slug}/media/#{key}"
+      # And the ADDRESS still does not cross: the changelog article's own key resolves on its own portal, while
+      # the documentation portal's article-scoped URL for the same key is not reachable from the changelog one.
+      note = changelog_portal.articles.find_by!(locale: 'en')
+
+      expect(rendered_image("/hc/#{changelog_portal.slug}/articles/#{note.slug}")).to be_present
+      english = docs_portal.articles.find_by!(locale: 'en')
+      get_public "/hc/#{changelog_portal.slug}/articles/#{english.slug}/media/#{key}"
       refused = [response.status, response.body, response.headers['Location']]
 
-      # The control, without which the 404 could mean the key is simply broken: the portal it WAS seeded into
-      # serves it.
-      english = docs_portal.articles.find_by!(locale: 'en')
+      # The control, without which the 404 could mean the key is simply broken: the portal that article belongs
+      # to serves the very same key.
       get_public "/hc/#{docs_portal.slug}/articles/#{english.slug}/media/#{key}"
 
       expect(refused).to eq([404, '', nil])

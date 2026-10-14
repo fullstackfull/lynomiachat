@@ -13,7 +13,7 @@ class Documentation::MediaSeeder
   # Where it surfaces changed when the A5'-O1 wiring landed, and R2-MEDIA-INTERFACE.md section 3.6 still
   # describes the old path ("ContentSeeder#perform! does not rescue ... rake prints the message and backtrace").
   # It does now: `ContentSeeder#preflight!` converts an Error raised by the PREFLIGHT half into its own
-  # PreflightError (content_seeder.rb `refuse_media!`), so the operator reads the one refusal message every
+  # PreflightError, in that method's own `rescue`, so the operator reads the one refusal message every
   # other preflight refusal prints -- that nothing was written -- instead of a Ruby backtrace. An Error raised
   # by the APPLY half becomes an ApplyFailure naming `the corpus media pass`, with the counts that completed.
   # Either way: a clear message, a non-zero exit, and a run that is safe to repeat.

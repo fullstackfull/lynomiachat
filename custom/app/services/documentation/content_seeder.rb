@@ -377,7 +377,11 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
     media_seeder.preflight!
     plan
   rescue Documentation::MediaSeeder::Error => e
-    raise PreflightError, e.message
+    # PREFLIGHT_FAILED's heading is "Every file to fix:", which is true of the collected list and not of this
+    # one: the media seeder raises on the first defect it sees. Said in the message rather than left to mislead
+    # an operator who fixes one file, re-runs, and meets a second. Closing it properly is the non-raising
+    # `MediaSeeder#problems` R2-MEDIA-INTERFACE.md section 3.2 leaves open.
+    raise PreflightError, "#{e.message}\n(media defects are reported one at a time: fix this one and run again)"
   end
 
   def refuse(problems)

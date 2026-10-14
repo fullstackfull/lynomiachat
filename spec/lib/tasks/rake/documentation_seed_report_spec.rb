@@ -54,16 +54,29 @@ RSpec.describe DocumentationSeedReport do
     # THE SWEEP IS THE LAST THING THE MEDIA PASS DOES, so on any earlier failure its counters are unknown rather
     # than zero. `0 purged, 0 unreferenced` would read as "the sweep ran and found nothing", which is the kind of
     # true-looking zero this program keeps removing.
-    it 'says the sweep did not run rather than printing zeros for it' do
+    it 'says the sweep did not complete rather than printing zeros for it' do
       media.purged = nil
       media.unreferenced = nil
 
       expect { described_class.run('articles') { result } }
-        .to output(a_string_including('3 unchanged (0 without dimensions); sweep: did not run')).to_stdout
+        .to output(a_string_including('3 unchanged (0 without dimensions); sweep: did not complete')).to_stdout
     end
 
-    # A Result built before the media member existed, and every PreflightError, carry no media pass. The line is
-    # then absent rather than printed as zeros, because zeros would claim a pass ran and found nothing.
+    # THE SWEEP CAN DIE PARTWAY, and then `purged` holds a partial count while `unreferenced` is still nil --
+    # the shape `purge_later` failing to reach the queue produces. Gating the sentence on `purged` fed nil into
+    # a `%d` and the REPORT ITSELF raised TypeError, so an operator met a bare backtrace instead of the
+    # APPLY FAILED block. The sentence is gated on the counter written last.
+    it 'does not crash when the sweep raised after purging some of them' do
+      media.purged = 2
+      media.unreferenced = nil
+
+      expect { described_class.run('articles') { result } }
+        .to output(a_string_including('sweep: did not complete')).to_stdout
+    end
+
+    # A Result built by hand carries no media pass. A live run that refuses BEFORE the media preflight is reached
+    # leaves it nil too, but that path aborts through PREFLIGHT_FAILED without printing a summary -- so this
+    # branch is reached only by a hand-built Result, and the line is absent rather than printed as zeros.
     it 'prints no media line when the media pass did not run' do
       result.media = nil
 

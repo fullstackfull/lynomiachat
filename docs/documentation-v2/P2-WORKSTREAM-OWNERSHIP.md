@@ -1692,6 +1692,10 @@ Corrected, and the partial now names both halves of the contract and where each 
 | A6-O4 | §G10's `<title>` branch | **closed** by ruling 4 and §M7 — the asymmetry no longer exists |
 | A5-O1 | Section ownership | **closed** by ruling 1 and §M1 |
 | A6-O5 | `markdownSource.js` and `mediaUpload.js` untested | **closed** by ruling 5; both have left the gate's uncovered report |
+| **A5'-O7** | A corpus key referenced only by an **operator-authored** article is purged by the next sweep that finds the corpus no longer referencing it (§N12) | widen `referenced_keys` to this portal's article content, or state the limit in R2-MEDIA-INTERFACE.md §6.2 — **owner decision** |
+| A5'-O8 | The orphan sweep runs BEFORE the article loop, so an apply that purges an orphan and then fails in the rows leaves published articles referencing a purged key until the next successful run (§N9) | move the sweep after the loop, which needs a public `sweep!` and re-opens the public-surface finding §N11 closed |
+| A5'-O9 | `MediaUpload#attachment_for` takes the FIRST attachment for a key while both indexes take the LAST, over an association with no `ORDER BY` (§N11) | matters only if the transient two-attachments-one-key window became permanent, which needs a failure inside `purge_later`'s own transaction |
+| A5'-O10 | `seed` treats checksum identity as proof the storage object still exists, so a database restored without its storage reports `unchanged` forever (§N11) | one condition in `seed` — **owner decision**, since requirement 4 defines idempotency without it |
 | A5'-O2 … O6 | Carried unchanged from §L3.8 | as recorded there |
 
 ## N. A5'-O1 closed: the corpus media pass is wired, and wiring it found two defects
@@ -1821,16 +1825,37 @@ Plus the failure model: an attach that fails on a later key raises `ApplyFailure
 completed attachment committed — so the re-run is an upsert, not a repair.
 
 **PROVEN BOTH WAYS, and the split is recorded rather than rounded up.** With the two wiring lines removed and
-nothing else changed, the two spec files are `61 examples, 12 failures`; with them, 61/0. The twelve are A, B,
-C, D, E, F, G, H, the partial-failure example, and one each for the four preflight-only defects — every one a
-real discriminator. The two kinds that pass either way are stated as what they are:
+nothing else changed, the two spec files are **`64 examples, 15 failures`**; with them, 64/0. The fifteen, each
+one a real discriminator and each one a distinct example:
+
+| # | Example |
+|---|---|
+| 1–4 | the four preflight-only defects — empty alt, a key in a link position, a destination CommonMark does not read as an image, a corpus file in the reserved namespace |
+| 5 | A — attaches the corpus image under its stable key, marked corpus-owned |
+| 6 | B — writes no media on a second identical seed |
+| 7 | C — replaces the bytes of an existing key, keeping the key |
+| 8 | E — leaves an operator upload attached, with its bytes, across a seed |
+| 9 | F — purges the corpus orphan and never the operator upload, in one sweep |
+| 10 | refuses bytes that are not a permitted raster type, before writing anything |
+| 11 | refuses a file over the byte cap in the preflight too |
+| 12 | reports the media work that completed when a later key fails at the attach boundary |
+| 13 | reports the key that survived a failed run as `unchanged` on the next one |
+| 14 | D and H — one image resolves on the English and the Arabic page, and the src each mints delivers the bytes |
+| 15 | G — the other platform portal seeds its OWN blob for identical bytes and cannot resolve this one's key |
+
+An earlier draft of this table said "twelve … A, B, C, D, E, F, G, H, the partial-failure example, and the four
+preflight-only defects", which names thirteen things against a count of twelve: **D and H are one example**, and
+two more examples have been added since. A reviewer caught the arithmetic; the list above is the re-measured one.
+
+What passes either way is stated as what it is:
 
 - **I** (`refuses a key with no file in the corpus, before writing a row or an attachment`) passes without the
   wiring, because `Corpus#media_problems` already refused a missing file before this delta (D9 item 8). It is a
   **regression pin** on the half that was already there, not a pin on the new behaviour; its two added
-  assertions — zero articles and zero attachments afterwards — are what make it a preflight proof.
-- The three `documentation_seed_report_spec.rb` examples build a `Result` by hand, so they pin the REPORT and
-  not the wiring. Deliberate: §N2's four measured rake runs are what exercise the report from a live seed.
+  assertions — zero articles and zero attachments afterwards — are what make it a preflight proof. The four
+  preflight-only examples (1–4 above) are the media seeder's own guards.
+- The `documentation_seed_report_spec.rb` examples build a `Result` by hand, so they pin the REPORT and not the
+  wiring. Deliberate: §N2's four measured rake runs are what exercise the report from a live seed.
 
 
 `purge_later` deletes the attachment row **synchronously** and only enqueues the blob's own purge
@@ -1951,6 +1976,42 @@ FIRST attachment for a key and both indexes take the LAST, over an association w
 only if the transient two-attachments-one-key window `attach!` documents ever became permanent, which needs a
 failure inside `purge_later`'s own transaction. Pre-existing, unchanged by this delta, and the reader rates it
 low; recorded rather than fixed.
+
+### N12 — The third review lens found a defect in §N11's own fix, and four more things
+
+The failure-model lens returned `blocking_defect_found` with one **must**, and it was right: §N11's nil-sweep
+change introduced a crash.
+
+**MUST, closed.** `purged` is set to 0 just BEFORE the sweep (so the sweep has something to count into) and
+`unreferenced` just AFTER it, while the report chose the sweep sentence from `purged`. So a sweep that died
+partway — `purge_later` unable to reach the queue, `unreferenced_files` unable to read the tree — left `purged`
+at 0 and `unreferenced` at nil, and `%<unreferenced>d` on nil **raises TypeError**: the report itself crashed
+with a bare backtrace instead of printing `APPLY FAILED`. The sentence is now gated on `unreferenced`, the
+counter written last and the real "the sweep completed" marker, and reads `sweep: did not complete`, which is
+true of both "never started" and "died partway". **Measured both ways**: with the gate back on `purged` the new
+example fails with `TypeError`; with it on `unreferenced`, 12/0.
+
+**Requirement 8's SEED half had no discriminating coverage.** My cross-portal example asserted that the changelog
+seed REFUSES the documentation portal's key — but its corpus had no media file at all, so the example would have
+passed byte for byte even if `seed` resolved keys with the `ActiveStorage::Blob.find_by(checksum:)` global scan
+that requirements 4 and 8 forbid outright. The changelog corpus now carries **its own copy of the same bytes**,
+and the example asserts the changelog portal gets its own blob: same checksum, different `blob_id`. Only the
+per-portal lookup can produce that, so the example now fails if the prohibition is broken.
+
+**`PREFLIGHT_FAILED` promised more than the media half delivers.** Its heading is "Every file to fix:", which is
+true of the collected corpus list and not of the media seeder, which raises on the first defect it sees. The
+conversion now appends one line saying so, rather than leaving an operator to fix one file, re-run, and meet a
+second under a heading that said otherwise.
+
+**Two more stale citations**, both mine: a second `refuse_media!` in `media_seeder.rb`'s own header, and the
+report spec's comment still calling the nil case a PreflightError.
+
+**Recorded, not changed.** An operator-authored article may legally reference a CORPUS key — the key exists and
+resolves, and `MediaUpload#replace!` only tells an operator the corpus owns those bytes, not that they may not
+point at them. `purge_orphans` reads what the CORPUS references, never what an Article row references, so the
+first seed after the corpus stops referencing that key purges it and the operator's article loses its image.
+R2-MEDIA-INTERFACE.md §6.2 scopes this out by wording rather than by considering it. **A5'-O7**, below: either
+widen `referenced_keys` to include this portal's article content, or say in §6.2 that such a key is unprotected.
 
 ### N9 — What this does NOT change, recorded so nobody re-derives it
 

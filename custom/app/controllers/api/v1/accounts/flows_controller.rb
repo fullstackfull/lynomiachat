@@ -5,6 +5,7 @@
 #
 #   GET    /flows                   the account's flows
 #   GET    /flows/channels          every inbox: whether it can run a flow, and which one it is running
+#   GET    /flows/starters          ready-made graphs to start from, each one validated here
 #   POST   /flows                   create: name, description
 #   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors, and
 #                                  what a builder needs to edit it: the node catalogue, each node type's field
@@ -16,13 +17,15 @@
 #   POST   /flows/:id/publish       publish the draft (422 with the errors when it is not valid)
 #   POST   /flows/:id/disable       stop starting sessions; live ones go to humans
 #   GET    /flows/:id/sessions      the latest sessions (execution inspector): states and node ids, no message content
+#   GET    /flows/:id/insights     how it is running: counts by outcome, and why runs stopped
 #   POST   /flows/:id/simulate      Test Mode on the draft: inputs [{ text, reply_id } | { timer: true }]
 class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   SESSIONS_LIMIT = 50
+  INSIGHT_WINDOW = 30.days
   TEXT_MAX = 1024
 
   before_action :ensure_flow_builder_enabled
-  before_action :fetch_flow, except: [:index, :create, :channels]
+  before_action :fetch_flow, except: [:index, :create, :channels, :starters]
   before_action -> { authorize(@flow || AgentBot, :update?) }
 
   rescue_from Flows::Versions::Invalid do |error|
@@ -143,10 +146,42 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
     render json: flow_json(@flow.reload)
   end
 
+  # STARTING POINTS THE SERVER HAS CHECKED. A template is only worth offering if the graph it
+  # produces will publish, and whether it will is this application's answer -- so the graphs live
+  # here and a spec runs each one through the real validator. `available` says whether THIS
+  # account may use it; an unavailable one is still listed, because a merchant told "this needs
+  # Commerce" learns something and a merchant shown a shorter list learns nothing.
+  def starters
+    render json: { payload: Flows::Starters.for(Current.account) }
+  end
+
   def sessions
     scope = @flow.flow_sessions.includes(:conversation, :flow_version).order(id: :desc).limit(SESSIONS_LIMIT)
     scope = scope.where(status: params[:status]) if FlowSession.statuses.key?(params[:status])
     render json: { payload: scope.map { |session| session_json(session) } }
+  end
+
+  # HOW THIS FLOW IS ACTUALLY RUNNING, counted rather than listed.
+  #
+  # `sessions` answers "what happened in the last fifty runs"; this answers "is it working" --
+  # which is a different question and the one a merchant asks first. Counts by outcome, and the
+  # failure codes behind the failed ones, over a window.
+  #
+  # NO MESSAGE CONTENT AND NO CUSTOMER, for the same reason `sessions` carries none: a summary of
+  # how automation is behaving is an operational fact, and the moment it carries what somebody
+  # wrote it becomes a second place conversation content can be read.
+  def insights
+    since = INSIGHT_WINDOW.ago
+    scope = @flow.flow_sessions.where(created_at: since..)
+
+    render json: {
+      since: since, total: scope.count, live: scope.live.count,
+      by_status: scope.group(:status).count,
+      # Only the failed ones have a code; `end_reason` lives in context and is not grouped here
+      # because grouping a jsonb key is a sequential scan over every session of the account.
+      by_failure: scope.failed.where.not(failure_code: nil).group(:failure_code).count,
+      versions: scope.joins(:flow_version).group('flow_versions.version').count
+    }
   end
 
   def simulate

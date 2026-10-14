@@ -8,12 +8,15 @@ namespace :api, defaults: { format: 'json' } do
         resources :flows, only: [:index, :create, :show, :update, :destroy] do
           # Which of the account's channels can run an automation, and which one each is running.
           get :channels, on: :collection
+          # Ready-made graphs to start from, and how each flow is actually running.
+          get :starters, on: :collection
           member do
             put :draft
             post :duplicate
             post :publish
             post :disable
             get :sessions
+            get :insights
             post :simulate
           end
         end

@@ -429,6 +429,74 @@ RSpec.describe 'Flows API', type: :request do
     end
   end
 
+  it 'serves starting points the server has checked, saying which this account may use' do
+    get "#{base}/starters", headers: admin.create_new_auth_token, as: :json
+
+    starters = response.parsed_body['payload'].index_by { |starter| starter['id'] }
+    expect(starters.keys).to match_array(Flows::Starters::ALL.pluck(:id))
+    expect(starters['welcome_menu']).to include('available' => true)
+    # Listed and explained rather than hidden: a merchant told "this needs Commerce" learns
+    # something, and one shown a shorter list learns nothing.
+    expect(starters['order_status']).to include('available' => false, 'missing' => ['lynomia_commerce'])
+    expect(starters['welcome_menu']['graph']['nodes'].pluck('type')).to include('buttons', 'handoff')
+  end
+
+  # "What happened in the last fifty runs" and "is this working" are different questions, and the
+  # second is the one a merchant asks first.
+  describe 'insights' do
+    let(:version) do
+      Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
+    end
+    let(:session) do
+      lambda do |status, attributes = {}|
+        FlowSession.create!({ account: account, agent_bot: flow, flow_version: version, status: status,
+                              conversation: create(:conversation, account: account, inbox: whatsapp.inbox) }.merge(attributes))
+      end
+    end
+
+    it 'counts how the runs ended, and why the failed ones did' do
+      session.call(:completed)
+      session.call(:completed)
+      session.call(:handed_off)
+      session.call(:failed, failure_code: 'step_limit')
+      session.call(:failed, failure_code: 'step_limit')
+      session.call(:failed, failure_code: 'send_limit')
+      session.call(:waiting)
+
+      get "#{base}/#{flow.id}/insights", headers: admin.create_new_auth_token, as: :json
+
+      body = response.parsed_body
+      expect(body).to include('total' => 7, 'live' => 1)
+      expect(body['by_status']).to include('completed' => 2, 'handed_off' => 1, 'failed' => 3, 'waiting' => 1)
+      expect(body['by_failure']).to eq('step_limit' => 2, 'send_limit' => 1)
+      expect(body['versions']).to eq('1' => 7)
+    end
+
+    it 'never carries what a customer wrote' do
+      session.call(:handed_off, current_node_id: 'menu', context: { 'reply' => 'my secret address' })
+
+      get "#{base}/#{flow.id}/insights", headers: admin.create_new_auth_token, as: :json
+
+      expect(response.body).not_to include('my secret address')
+    end
+
+    it "counts only this flow's runs, and only for its own account" do
+      other_flow = create(:agent_bot, account: account, bot_type: :flow, outgoing_url: nil, name: 'Other')
+      session.call(:completed)
+      FlowSession.create!(account: account, agent_bot: other_flow, flow_version: version, status: :failed,
+                          conversation: create(:conversation, account: account, inbox: whatsapp.inbox),
+                          failure_code: 'step_limit')
+
+      get "#{base}/#{flow.id}/insights", headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body).to include('total' => 1)
+
+      foreign = create(:account).tap { |record| record.enable_features!('lynomia_flow_builder') }
+      foreign_flow = create(:agent_bot, account: foreign, bot_type: :flow, outgoing_url: nil)
+      get "#{base}/#{foreign_flow.id}/insights", headers: admin.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   it 'shows the latest sessions without what customers wrote' do
     AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)
     version = Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!

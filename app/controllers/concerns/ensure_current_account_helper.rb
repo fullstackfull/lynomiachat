@@ -21,9 +21,38 @@ module EnsureCurrentAccountHelper
   end
 
   def account_accessible_for_user?(account)
+    # THE SCOPE IS CHECKED BEFORE MEMBERSHIP, because it answers a different question and a narrower one.
+    # Membership asks "may this person reach this account at all"; the scope asks "may THIS SESSION". A
+    # session minted by an integration for one workspace must not reach another the person happens to also
+    # belong to -- and they usually do, which is the whole reason this exists.
+    return render_unauthorized(I18n.t('errors.account.not_authorized')) unless sso_scope_permits?(account)
+
     @current_account_user = account.account_users.find_by(user_id: current_user.id)
     Current.account_user = @current_account_user
     render_unauthorized(I18n.t('errors.account.not_authorized')) unless @current_account_user
+  end
+
+  # nil scope means unscoped, which is every ordinary sign-in: password, OAuth, SAML, super-admin
+  # impersonation. Those behave exactly as they did.
+  def sso_scope_permits?(account)
+    scope = sso_account_scope
+    scope.blank? || scope.to_i == account.id
+  end
+
+  # The scope of the session this request is authenticating with.
+  #
+  # READ FROM THE TOKEN RECORD, NOT FROM THE REQUEST. devise_token_auth sets @token from the
+  # access-token/client headers; the client id selects one entry in users.tokens, and the scope was written
+  # into that entry when the session was created. Nothing the caller sends can change it: the headers select
+  # WHICH session, and the server's own row says what that session may do.
+  def sso_account_scope
+    return @sso_account_scope if defined?(@sso_account_scope)
+
+    @sso_account_scope = begin
+      client = @token.try(:client)
+      entry = client.present? ? current_user&.tokens&.dig(client) : nil
+      entry.is_a?(Hash) ? (entry['account_scope_id'] || entry[:account_scope_id]) : nil
+    end
   end
 
   def account_accessible_for_bot?(account)

@@ -10,8 +10,11 @@ class AccountLinkAPI extends ApiClient {
     super('integrations/account_link_code', { accountScoped: true });
   }
 
-  createCode() {
-    return axios.post(this.url);
+  // platformAppId is REQUIRED, and the server refuses without it. A code with no audience is a bearer
+  // token for whoever presents it first; naming the integration is what makes pasting it into the wrong
+  // one a refusal rather than a working grant somewhere unintended.
+  createCode(platformAppId) {
+    return axios.post(this.url, { platform_app_id: platformAppId });
   }
 
   getStatus() {

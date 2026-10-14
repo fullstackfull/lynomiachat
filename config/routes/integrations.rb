@@ -25,6 +25,10 @@ namespace :api, defaults: { format: 'json' } do
       scope module: :accounts do
         namespace :integrations do
           resource :account_link_code, only: [:show, :create]
+          # The merchant's own view of what this workspace has given away, and the way to take it back.
+          # Until this existed a grant could only be revoked by the app holding it, which is the least
+          # likely party to volunteer.
+          resources :grants, only: [:index, :destroy]
         end
       end
     end

@@ -3,10 +3,16 @@
     "TITLE": "Connect an external platform",
     "DESCRIPTION": "Generate a one-time code so a platform you already use can connect to this {installationName} workspace. The code proves you control this workspace — nothing else is shared.",
     "LOADING": "Loading connection status",
+    "STEP_CHOOSE": "Choose the platform you are connecting. The code works only for that one.",
     "STEP_CODE": "Generate a connection code below. It is shown once and expires in one hour.",
     "STEP_PASTE": "Paste it into the platform you are connecting from.",
     "STEP_APPROVE": "That platform's support team completes the connection. You will see the status change here.",
+    "APP_LABEL": "Platform to connect",
+    "APP_PLACEHOLDER": "Select a platform",
+    "APP_HINT": "The code can only be used by the platform you choose. If it is pasted anywhere else it is refused, and your code is not used up.",
+    "CHOOSE_APP_FIRST": "Choose the platform this code is for.",
     "CODE_LABEL": "Connection code",
+    "ONLY_FOR": "Only {app} can use this code.",
     "SHOWN_ONCE": "This code is shown only once. Generate a new one if you lose it.",
     "COPY": "Copy",
     "COPIED": "Connection code copied",
@@ -16,11 +22,24 @@
     "ERROR": "Something went wrong. Please try again.",
     "STATUS": {
       "WAITING": "Waiting for the code to be used.",
+      "WAITING_FOR": "Waiting for {app} to use the code.",
       "CLAIMED": "The code has been used. The connection is being completed.",
       "CONNECTED": "Connected to {app}.",
       "CONNECTED_UNKNOWN": "Connected.",
       "EXPIRED": "That code expired before it was used. Generate a new one.",
       "REVOKED": "This connection was ended. Generate a new code to connect again."
+    },
+    "GRANTS": {
+      "TITLE": "Connected platforms",
+      "DESCRIPTION": "Platforms that can currently open this workspace, and the people they sign in as.",
+      "EMPTY": "No platform has access to this workspace.",
+      "SINCE": "Connected on {date}",
+      "SIGNS_IN_AS": "Signs in as: {people}",
+      "SIGNS_IN_AS_NOBODY": "No one has signed in through this platform yet.",
+      "REVOKE": "Disconnect",
+      "REVOKED": "{app} no longer has access to this workspace.",
+      "CONFIRM_TITLE": "Disconnect this platform?",
+      "CONFIRM": "Disconnect {app}? It will immediately lose access to this workspace, and anyone signed in through it will be signed out."
     }
   }
 }

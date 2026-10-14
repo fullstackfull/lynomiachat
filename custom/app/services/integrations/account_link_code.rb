@@ -31,7 +31,14 @@ class Integrations::AccountLinkCode
   class << self
     # Replaces the account's previous code, so a merchant who generated one by mistake has not left a second
     # live credential behind. Returns the plaintext ONCE; only its HMAC is kept.
-    def create(account:, user:)
+    #
+    # `platform_app` IS REQUIRED, AND THAT IS THE WHOLE POINT OF THE AUDIENCE. A code with no audience is a
+    # bearer token for whoever presents it first: on an installation carrying more than one app, a merchant
+    # pasting their code into the wrong integration's field handed that app a working grant, while the
+    # intended one was told only "Invalid or expired code" -- indistinguishable from a typo. Verified by
+    # execution before this existed. The merchant now names the integration when they mint, and redemption
+    # refuses anybody else.
+    def create(account:, user:, platform_app:)
       code = Array.new(LENGTH) { ALPHABET[SecureRandom.random_number(ALPHABET.length)] }.join
       expires_at = TTL.from_now.utc.iso8601
       code_digest = digest(code)
@@ -48,41 +55,58 @@ class Integrations::AccountLinkCode
       # than nothing. GETSET then swaps progress atomically and returns whatever was there, so each racer
       # deletes exactly the code it displaced: A displaces the old one, B displaces A's, and the one left live
       # is the one progress names. GETSET drops the key's TTL, so it is reapplied.
-      Redis::Alfred.setex(code_key(code_digest), { account_id: account.id, user_id: user.id }.to_json, TTL)
-      retire_displaced_code(account.id, code_digest, expires_at)
+      payload = { account_id: account.id, user_id: user.id, platform_app_id: platform_app.id }
+      Redis::Alfred.setex(code_key(code_digest), payload.to_json, TTL)
+      retire_displaced_code(account.id, code_digest, expires_at, platform_app)
 
-      record_audit('integrations.account_link.code_issued', account, user)
+      record_audit('integrations.account_link.code_issued', account, user,
+                   { platform_app_id: platform_app.id, platform_app_name: platform_app.name })
 
-      { code: code.scan(/.{4}/).join('-'), expires_at: expires_at }
+      { code: code.scan(/.{4}/).join('-'), expires_at: expires_at,
+        platform_app: { id: platform_app.id, name: platform_app.name } }
     end
 
-    # { 'account_id', 'user_id' } the code was created for, or nil.
+    # The payload the code was minted for, or a symbol saying why not:
+    #   :unknown    no such code, already used, or expired -- one answer for all three, deliberately
+    #   :wrong_app  a real, live code, but minted for a DIFFERENT integration
     #
-    # SINGLE USE IS THE GET AND THE DEL IN ONE ROUND TRIP. Reading and then deleting would let two redemptions
-    # racing on the same string both see it. The merchant types this, so case, spaces and dashes do not matter.
-    def redeem(raw_code)
-      return if raw_code.blank?
+    # THE AUDIENCE IS CHECKED BEFORE THE CODE IS CONSUMED, which is why this is no longer one MULTI.
+    # Burning a code on a mismatched redemption would let any app on the installation destroy a merchant's
+    # code by guessing at it -- the legitimate integration would then fail, and the merchant would be told
+    # their own code was invalid.
+    #
+    # SINGLE USE SURVIVES THE SPLIT, and not by luck: DEL returns how many keys it removed, so of two
+    # correctly-addressed redemptions racing on one string exactly one sees 1 and the other sees 0. The read
+    # before it can be stale; the delete cannot. (This is also why it is not WATCH/MULTI: MockRedis makes
+    # WATCH a no-op, so a CAS here would be untestable, while DEL's count is real in both.)
+    #
+    # The merchant types this, so case, spaces and dashes do not matter.
+    def redeem(raw_code, platform_app:)
+      return :unknown if raw_code.blank?
 
       key = code_key(digest(raw_code.to_s.upcase.delete('^A-Z0-9')))
-      value, = Redis::Alfred.with do |conn|
-        conn.multi do |transaction|
-          transaction.get(key)
-          transaction.del(key)
-        end
-      end
-      return if value.nil?
+      value = Redis::Alfred.get(key)
+      return :unknown if value.nil?
 
-      JSON.parse(value).tap { |attempt| finish(attempt['account_id'], 'claimed') }
+      attempt = JSON.parse(value)
+
+      # NO SILENT FALLBACK. A code with no audience cannot be matched by anybody -- it is either a code from
+      # before audiences existed (one TTL of overlap) or a forgery, and admitting it would reinstate exactly
+      # the bearer semantics the audience replaces.
+      return :wrong_app unless attempt['platform_app_id'] == platform_app.id
+
+      return :unknown unless Redis::Alfred.delete(key).to_i == 1
+
+      attempt.tap { finish(attempt['account_id'], 'claimed') }
     end
 
     # Swap progress to the new code atomically and delete whatever it displaced. GETSET is what makes two
     # racers each retire exactly the code they replaced -- A retires the old one, B retires A's -- instead of
     # both retiring the same one and leaving two live. It drops the key's TTL, so it is reapplied.
-    def retire_displaced_code(account_id, code_digest, expires_at)
-      displaced = Redis::Alfred.with do |conn|
-        conn.getset(progress_key(account_id),
-                    { 'status' => 'waiting', 'digest' => code_digest, 'expires_at' => expires_at }.to_json)
-      end
+    def retire_displaced_code(account_id, code_digest, expires_at, platform_app)
+      progress = { 'status' => 'waiting', 'digest' => code_digest, 'expires_at' => expires_at,
+                   'intended_app' => platform_app.name.presence || "App ##{platform_app.id}" }
+      displaced = Redis::Alfred.with { |conn| conn.getset(progress_key(account_id), progress.to_json) }
       Redis::Alfred.expire(progress_key(account_id), PROGRESS_TTL.to_i)
 
       displaced_digest = displaced.present? ? JSON.parse(displaced)['digest'] : nil
@@ -112,7 +136,8 @@ class Integrations::AccountLinkCode
       return { status: 'none' } if current.nil?
 
       status = current['status'] == 'waiting' && Time.iso8601(current['expires_at']).past? ? 'expired' : current['status']
-      { status: status, expires_at: current['expires_at'], connected_app: current['connected_app'] }.compact
+      { status: status, expires_at: current['expires_at'], connected_app: current['connected_app'],
+        intended_app: current['intended_app'] }.compact
     end
 
     # Exposed so the redeeming controller can audit under the same event vocabulary.

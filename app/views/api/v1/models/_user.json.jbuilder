@@ -1,6 +1,16 @@
 # loaded once here; per-row lookups below would otherwise cost a query per membership
 account_users = resource.account_users.includes(:account)
 account_users = account_users.includes(:custom_role)
+# A SESSION RESTRICTED TO ONE ACCOUNT IS TOLD ABOUT ONE ACCOUNT.
+#
+# This partial is the product's account LIST -- there is no /api/v1/accounts index -- and it is re-rendered
+# on every sign-in and every /auth/validate_token. Leaving it whole would mean a session that cannot reach a
+# workspace is still handed its name, status, the person's role in it and their permissions there. The scope
+# cannot be read from a view, so the controller passes it in; nil, which is every ordinary login, means no
+# filtering and the payload is byte-identical to before.
+if @sso_account_scope.present?
+  account_users = account_users.select { |account_user| account_user.account_id == @sso_account_scope.to_i }
+end
 # full-precision timestamps, nils last, matching ORDER BY active_at DESC NULLS LAST
 active_account_user = account_users.max_by { |account_user| [account_user.active_at ? 1 : 0, account_user.active_at || Time.at(0).utc] }
 

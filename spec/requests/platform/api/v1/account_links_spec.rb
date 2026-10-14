@@ -8,35 +8,34 @@ RSpec.describe 'Platform account links API', type: :request do
   let(:headers) { { api_access_token: token } }
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
-  let(:code) { Integrations::AccountLinkCode.create(account: account, user: admin)[:code] }
-
-  def service_user_email
-    digest = OpenSSL::HMAC.hexdigest(
-      'SHA256',
-      Rails.application.key_generator.generate_key('integrations_account_link_service_user'),
-      "#{platform_app.id}:#{account.id}"
-    )
-
-    "app-#{platform_app.id}-account-#{account.id}-#{digest[0, 16]}@platform-app.invalid"
-  end
+  let(:code) { Integrations::AccountLinkCode.create(account: account, user: admin, platform_app: platform_app)[:code] }
 
   def granted?(resource)
     platform_app.platform_app_permissibles.exists?(permissible: resource)
   end
 
   describe 'POST /platform/api/v1/account_links' do
-    it 'grants the account and a service user, never the authorizing human' do
+    it 'grants the account and nothing else' do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
 
       expect(response).to have_http_status(:created)
-      expect(response.parsed_body).to include('account_id' => account.id, 'account_name' => account.name)
-      expect(response.parsed_body['user_id']).not_to eq(admin.id)
-
-      service_user = User.find(response.parsed_body['user_id'])
+      expect(response.parsed_body).to include(
+        'account_id' => account.id, 'account_name' => account.name,
+        'authorized_by_user_id' => admin.id
+      )
       expect(granted?(account)).to be(true)
-      expect(granted?(service_user)).to be(true)
+      # Not the authorizing human -- their session would be unscoped -- and no shared service identity
+      # either. Who signs in is decided per person afterwards, with the role that person actually holds.
       expect(granted?(admin)).to be(false)
-      expect(service_user.custom_attributes['platform_app_id']).to eq(platform_app.id)
+      expect(platform_app.platform_app_permissibles.where(permissible_type: 'User')).to be_empty
+    end
+
+    it 'adds no member to the workspace, so nobody is a default administrator' do
+      minted = code # lazy: minting creates the administrator membership, which is not what is measured
+
+      expect do
+        post '/platform/api/v1/account_links', params: { code: minted }, headers: headers, as: :json
+      end.not_to(change { account.reload.account_users.count })
     end
 
     # THE REASON THE SERVICE USER EXISTS. generate_sso_link mints an UNSCOPED session for a human: granting
@@ -47,57 +46,11 @@ RSpec.describe 'Platform account links API', type: :request do
       elsewhere.account_users.create!(user: admin, role: :agent)
 
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
-      service_user = User.find(response.parsed_body['user_id'])
 
       expect(granted?(elsewhere)).to be(false)
-      # The service user is a member of the linked account and of nothing else.
-      expect(service_user.account_users.pluck(:account_id)).to eq([account.id])
-      # And the human whose session would have carried that reach is not grantable at all.
+      # The human whose unscoped session would have carried that reach is not grantable at all.
       get "/platform/api/v1/users/#{admin.id}/login", headers: headers, as: :json
       expect(response).to have_http_status(:unauthorized)
-    end
-
-    it 'makes SSO possible for the service user and for no other member' do
-      other_admin = create(:user, account: account, role: :administrator)
-
-      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
-      service_user = User.find(response.parsed_body['user_id'])
-
-      get "/platform/api/v1/users/#{service_user.id}/login", headers: headers, as: :json
-      expect(response).to have_http_status(:success)
-
-      get "/platform/api/v1/users/#{other_admin.id}/login", headers: headers, as: :json
-      expect(response).to have_http_status(:unauthorized)
-    end
-
-    it 'reuses one service user across re-links rather than accumulating members' do
-      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
-      first = response.parsed_body['user_id']
-
-      second_code = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
-      expect do
-        post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
-      end.not_to change(User, :count)
-
-      expect(response.parsed_body['user_id']).to eq(first)
-    end
-
-    # Resolving a user by address is the documented takeover primitive, so an address that already exists and
-    # is not ours must be refused rather than adopted. Unguessable in practice (HMAC under the installation
-    # secret); this proves the second line of defence rather than relying on that.
-    it 'refuses to adopt a pre-existing user at the service address' do
-      digest = OpenSSL::HMAC.hexdigest(
-        'SHA256',
-        Rails.application.key_generator.generate_key('integrations_account_link_service_user'),
-        "#{platform_app.id}:#{account.id}"
-      )
-      squatter = create(:user, email: "app-#{platform_app.id}-account-#{account.id}-#{digest[0, 16]}@platform-app.invalid")
-
-      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
-
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(granted?(account)).to be(false)
-      expect(granted?(squatter)).to be(false)
     end
 
     it 'refuses an unauthenticated caller before touching the code' do
@@ -106,7 +59,7 @@ RSpec.describe 'Platform account links API', type: :request do
       expect(response).to have_http_status(:unauthorized)
       expect(granted?(account)).to be(false)
       # The code must survive: an unauthenticated probe that burned it would be a denial-of-service primitive.
-      expect(Integrations::AccountLinkCode.redeem(code)).to be_present
+      expect(Integrations::AccountLinkCode.redeem(code, platform_app: platform_app)).to be_a(Hash)
     end
 
     it 'refuses an invalid token' do
@@ -122,12 +75,12 @@ RSpec.describe 'Platform account links API', type: :request do
       post '/platform/api/v1/account_links', params: { code: 'AAAA-BBBB-CCCC-DDDD' }, headers: headers, as: :json
       bodies << [response.status, response.parsed_body]
 
-      used = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
+      used = Integrations::AccountLinkCode.create(account: account, user: admin, platform_app: platform_app)[:code]
       post '/platform/api/v1/account_links', params: { code: used }, headers: headers, as: :json
       post '/platform/api/v1/account_links', params: { code: used }, headers: headers, as: :json
       bodies << [response.status, response.parsed_body]
 
-      expired = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
+      expired = Integrations::AccountLinkCode.create(account: account, user: admin, platform_app: platform_app)[:code]
       travel(Integrations::AccountLinkCode::TTL + 1.minute) do
         post '/platform/api/v1/account_links', params: { code: expired }, headers: headers, as: :json
       end
@@ -182,7 +135,7 @@ RSpec.describe 'Platform account links API', type: :request do
       post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
       expect(response).to have_http_status(:created)
 
-      second_code = Integrations::AccountLinkCode.create(account: account, user: admin)[:code]
+      second_code = Integrations::AccountLinkCode.create(account: account, user: admin, platform_app: platform_app)[:code]
 
       expect do
         post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
@@ -190,21 +143,20 @@ RSpec.describe 'Platform account links API', type: :request do
 
       expect(response).to have_http_status(:created)
       expect(platform_app.platform_app_permissibles.where(permissible_type: 'Account').count).to eq(1)
-      expect(platform_app.platform_app_permissibles.where(permissible_type: 'User').count).to eq(1)
     end
 
-    it 'names the app that took the code, so a misdirected grant is visible' do
-      other_app = create(:platform_app)
+    # The code now names its audience at mint time, so the merchant can see who it is FOR before they hand
+    # it over, and who actually took it afterwards. The two agreeing is the thing worth asserting: a
+    # mismatch is the shape a misdirection would have had, and it can no longer happen.
+    it 'names both the intended and the actual integration' do
+      minted = code # `code` is lazy; mint before reading the status it writes.
+      expect(Integrations::AccountLinkCode.status(account)).to include(intended_app: platform_app.name)
 
-      post '/platform/api/v1/account_links', params: { code: code },
-                                             headers: { api_access_token: other_app.access_token.token },
-                                             as: :json
+      post '/platform/api/v1/account_links', params: { code: minted }, headers: headers, as: :json
 
       expect(response).to have_http_status(:created)
-      # A code is not bound to an app at mint time, so the wrong integration CAN take it. The
-      # merchant's own status page is then the only place that can say so.
       expect(Integrations::AccountLinkCode.status(account))
-        .to include(status: 'connected', connected_app: other_app.name)
+        .to include(status: 'connected', connected_app: platform_app.name, intended_app: platform_app.name)
     end
 
     it 'records who authorized which app' do
@@ -227,6 +179,45 @@ RSpec.describe 'Platform account links API', type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(other_app.platform_app_permissibles).to be_empty
+    end
+
+    # THE AUDIENCE. Before it, whichever app presented the code first won -- verified by execution -- and a
+    # merchant pasting it into the wrong integration's field handed that app a working grant while the
+    # intended one was told only "Invalid or expired code".
+    it 'refuses an app the code was not minted for, and leaves the code live' do
+      other_app = create(:platform_app)
+
+      post '/platform/api/v1/account_links', params: { code: code },
+                                             headers: { api_access_token: other_app.access_token.token }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['error']).to eq('This code was issued for a different integration')
+      # THE CODE, NOT THE SENTENCE, IS THE CONTRACT. The integration on the other side has to tell its
+      # merchant which mistake they made, and matching on English prose would break the day somebody
+      # rewords it. Changing this string changes behaviour in another codebase.
+      expect(response.parsed_body['error_code']).to eq('wrong_platform_app')
+      expect(other_app.platform_app_permissibles).to be_empty
+      expect(granted?(account)).to be(false)
+
+      # And the legitimate integration can still use it -- a wrong redemption must not be a way to destroy
+      # somebody else's code.
+      post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'tells the two refusals apart only where the difference is actionable' do
+      other_app = create(:platform_app)
+
+      post '/platform/api/v1/account_links', params: { code: 'AAAA-BBBB-CCCC-DDDD' }, headers: headers, as: :json
+      unknown = response.parsed_body
+      expect(unknown['error_code']).to eq('invalid_code')
+
+      post '/platform/api/v1/account_links', params: { code: code },
+                                             headers: { api_access_token: other_app.access_token.token }, as: :json
+
+      # An unknown code and a code for somebody else are deliberately DIFFERENT answers: the app cannot act
+      # on either, but the merchant who misdirected their code is the one who needs to know they did.
+      expect(response.parsed_body).not_to eq(unknown)
     end
   end
 
@@ -289,7 +280,8 @@ RSpec.describe 'Platform account links API', type: :request do
     before { post '/platform/api/v1/account_links', params: { code: code }, headers: headers, as: :json }
 
     it 'hands back every grant on the account, so SSO stops working' do
-      service_user = User.find_by!(email: service_user_email)
+      service_user = create(:user, account: account, role: :agent)
+      create(:platform_app_permissible, platform_app: platform_app, permissible: service_user)
 
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
 
@@ -322,7 +314,8 @@ RSpec.describe 'Platform account links API', type: :request do
     end
 
     it 'kills an SSO link already minted but not yet redeemed' do
-      service_user = User.find_by!(email: service_user_email)
+      service_user = create(:user, account: account, role: :agent)
+      create(:platform_app_permissible, platform_app: platform_app, permissible: service_user)
 
       get "/platform/api/v1/users/#{service_user.id}/login", headers: headers, as: :json
       token = CGI.parse(URI.parse(response.parsed_body['url']).query)['sso_auth_token'].first
@@ -338,7 +331,8 @@ RSpec.describe 'Platform account links API', type: :request do
     # granted user who had been removed from the workspace keep their grant through a revocation that
     # answered 200.
     it 'hands back a grant even if its user was removed from the account first' do
-      service_user = User.find_by!(email: service_user_email)
+      service_user = create(:user, account: account, role: :agent)
+      create(:platform_app_permissible, platform_app: platform_app, permissible: service_user)
       account.account_users.where(user_id: service_user.id).destroy_all
 
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
@@ -377,15 +371,13 @@ RSpec.describe 'Platform account links API', type: :request do
     it 'leaves another linked account untouched' do
       second_account = create(:account)
       second_account.account_users.create!(user: admin, role: :administrator)
-      second_code = Integrations::AccountLinkCode.create(account: second_account, user: admin)[:code]
+      second_code = Integrations::AccountLinkCode.create(account: second_account, user: admin, platform_app: platform_app)[:code]
       post '/platform/api/v1/account_links', params: { code: second_code }, headers: headers, as: :json
-      second_service_user = User.find(response.parsed_body['user_id'])
 
       delete "/platform/api/v1/account_links/#{account.id}", headers: headers, as: :json
 
+      expect(granted?(account)).to be(false)
       expect(granted?(second_account)).to be(true)
-      get "/platform/api/v1/users/#{second_service_user.id}/login", headers: headers, as: :json
-      expect(response).to have_http_status(:success)
     end
   end
 end

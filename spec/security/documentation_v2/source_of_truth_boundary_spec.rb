@@ -97,9 +97,12 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     end
 
     # A SECTION's identity is `(slug, locale)` -- `ContentSeeder#upsert_category` is
-    # `find_or_initialize_by(slug:, locale:)`. Section I4 removed `slug` from the form and LEFT `locale`, which
-    # is the other half of the same key. These two examples measure how far that reaches.
-    it 'drops a posted slug but accepts a posted locale, which is the other half of the seeder\'s lookup' do
+    # `find_or_initialize_by(slug:, locale:)`. Section I4 removed `slug` from the form and LEFT `locale`, the
+    # other half of the same key; section J2 closed it. BOTH halves are now dropped.
+    #
+    # INVERTED: this example previously ended `expect(category.locale).to eq('ar')` -- the posted locale WAS
+    # applied. The old expectation is recorded here so the change is visible rather than silent.
+    it 'drops a posted slug AND a posted locale, both halves of the seeder\'s lookup' do
       put "/super_admin/categories/#{category.id}", params: {
         category: { name: 'Renamed', slug: 'forged', locale: 'ar' }
       }
@@ -107,27 +110,35 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
       category.reload
       expect(category.slug).to eq('administration')
       expect(category.name).to eq('Renamed')
-      expect(category.locale).to eq('ar')
+      expect(category.locale).to eq('en')
     end
 
-    # WHY TODAY'S CORPUS IS NOT EXPOSED, measured rather than assumed: every manifest section ships in both
-    # locales, and `validates :locale, uniqueness: { scope: [:slug, :portal_id] }` refuses the flip as soon as
-    # the sibling exists. So the hole needs a single-locale section to be reachable.
-    it 'is refused when the other locale\'s row of the same section already exists' do
+    # WHY TODAY'S CORPUS WAS NEVER EXPOSED while the hole was open, kept because it names what the only
+    # protection used to be: every manifest section ships in both locales, so
+    # `validates :locale, uniqueness: { scope: [:slug, :portal_id] }` refused the flip as soon as the sibling
+    # existed, and the hole needed a single-locale section to be reachable at all.
+    #
+    # INVERTED: it expected 422 from that validation. The locale never reaches the model now, so the save
+    # succeeds on the fields that ARE permitted and the validation is not consulted. That ordering is the point
+    # -- a model validation was the last line, and the permitted list is now the first.
+    it 'does not even reach the uniqueness validation that used to be the only thing refusing the flip' do
       create(:category, portal: portal, account_id: nil, locale: 'ar', slug: 'administration', name: 'الإدارة')
 
-      put "/super_admin/categories/#{category.id}", params: { category: { locale: 'ar' } }
+      put "/super_admin/categories/#{category.id}", params: { category: { name: 'Renamed', locale: 'ar' } }
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:found)
       expect(category.reload.locale).to eq('en')
+      expect(category.name).to eq('Renamed')
     end
   end
 
-  # THE SAME DEFECT I4 CLOSED FOR `slug`, ONE FIELD OVER, on a single-locale section. Measured end to end: the
-  # operator flips the locale, the next seed cannot find the section it authored, creates a SECOND row at the
-  # manifest locale, and every article stays on the renamed one -- with its own `locale` rewritten to match by
-  # `Article#ensure_locale_in_article` (app/models/article.rb:289-295).
-  describe 'a single-locale section whose locale an operator changes' do
+  # THE SAME DEFECT I4 CLOSED FOR `slug`, ONE FIELD OVER, on a single-locale section -- now closed, and this
+  # block is the end-to-end proof that it is. It previously measured the damage: the operator flipped the
+  # locale, the next seed could not find the section it had authored, created a SECOND row at the manifest
+  # locale, and left an empty English-named section published at the Arabic section URL that no manifest row
+  # authored and no run reported. The single-locale corpus is kept exactly as it was, because that is the only
+  # shape in which the hole was ever reachable.
+  describe 'a single-locale section an operator tries to re-locale' do
     let(:root) { Pathname.new(Dir.mktmpdir) }
 
     before do
@@ -151,48 +162,52 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
 
     after { FileUtils.remove_entry(root) }
 
-    it 'makes the next seed create a SECOND section at the manifest locale, leaving an orphan behind' do
+    # INVERTED. This example used to begin `expect(section.reload.locale).to eq('ar')` and then assert the two
+    # rows, the rebuilt section and the orphan. The locale is no longer settable, so the whole chain cannot
+    # start -- and the end-to-end assertion is now that it does not.
+    it 'cannot re-locale it, so the next seed finds the section it authored and no orphan appears' do
       section = portal.categories.find_by!(slug: 'administration', locale: 'en')
       put "/super_admin/categories/#{section.id}", params: { category: { locale: 'ar' } }
-      expect(section.reload.locale).to eq('ar')
+
+      expect(section.reload.locale).to eq('en')
 
       Documentation::ContentSeeder.new(portal: portal, root: root).perform!
 
       aggregate_failures do
-        # Two rows now share one section slug, and the manifest authored only one.
-        expect(portal.reload.categories.where(slug: 'administration').pluck(:locale).sort).to eq(%w[ar en])
-        rebuilt = portal.categories.find_by!(slug: 'administration', locale: 'en')
-        expect(rebuilt.id).not_to eq(section.id)
+        # ONE row for the section slug, and it is the same row the first seed created -- not a rebuilt one.
+        expect(portal.reload.categories.where(slug: 'administration').pluck(:locale)).to eq(%w[en])
+        expect(portal.categories.find_by!(slug: 'administration', locale: 'en').id).to eq(section.id)
 
-        # THE ARTICLE IS NOT LOST, which is the half I predicted wrong and measured instead: the lookup is
-        # `(slug, locale)` on the ARTICLE, the row is still English, so the seeder finds it and reattaches it to
-        # the rebuilt section. The residue is the orphan.
+        # No orphan at the other locale's URL. This is the assertion the fix exists for.
+        expect(portal.categories.find_by(slug: 'administration', locale: 'ar')).to be_nil
+
+        # And the article is where it was, on the section that still owns it.
         article_row = portal.articles.find_by!(slug: 'audit-logs')
-        expect(article_row.category_id).to eq(rebuilt.id)
+        expect(article_row.category_id).to eq(section.id)
         expect(article_row.locale).to eq('en')
-
-        # The orphan is what an operator and a reader see: an empty, English-named section published at the
-        # ARABIC section URL, which no manifest row authored and no seed run will ever clean up (A5-O2 is the
-        # rows direction of the same gap). The seeder reports nothing about it.
-        orphan = portal.categories.find_by!(slug: 'administration', locale: 'ar')
-        expect(orphan.id).to eq(section.id)
-        expect(orphan.name).to eq('Administration')
-        expect(orphan.portal_articles).to be_empty
       end
     end
   end
 
   # ADOPT_UNTRACKED is the one operator switch that makes the seeder overwrite a row it cannot tell apart from
-  # an operator's own writing. It is read as `ENV['ADOPT_UNTRACKED'].present?`
-  # (lib/tasks/documentation.rake:48,54), so every string is ON -- including the ones an operator types to mean
-  # off.
+  # an operator's own writing. It was read as `ENV['ADOPT_UNTRACKED'].present?`, so EVERY non-empty string was
+  # ON -- including `0`, `false` and `off`, which is what an operator types to mean the opposite. It is now
+  # `ENV['ADOPT_UNTRACKED'] == '1'` (lib/tasks/documentation.rake:47,53), and `1` is the value the task's own
+  # instructions already name.
   describe 'the ADOPT_UNTRACKED switch' do
-    it 'is ON for "0", "false", "no" and "off", which is how one is enabled by accident' do
-      %w[0 false no off n].each do |value|
-        expect(value.present?).to be(true), "ADOPT_UNTRACKED=#{value}"
+    # INVERTED: this asserted that `0`, `false`, `no`, `off` and `n` were all truthy, which was the defect.
+    # It mirrors the task's expression rather than invoking it, as it did before -- the task body is a Rake
+    # block, so the predicate has no seam of its own (that is A6-O1's neighbourhood, not this example's).
+    it 'is ON for "1" alone, so every value an operator types to mean off is off' do
+      enabled = ->(value) { value.to_s == '1' }
+
+      %w[0 false no off n true yes TRUE 2 1.0].each do |value|
+        expect(enabled.call(value)).to be(false), "ADOPT_UNTRACKED=#{value} should not enable adoption"
       end
-      expect(''.present?).to be(false)
-      expect(nil.present?).to be(false)
+
+      expect(enabled.call('1')).to be(true)
+      expect(enabled.call('')).to be(false)
+      expect(enabled.call(nil)).to be(false)
     end
 
     # The worst thing one accidental run does, measured end to end on a real untracked row: every class-A and

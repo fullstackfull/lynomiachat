@@ -530,6 +530,11 @@ Nothing pinned `<title>` anywhere, which is how the divergence survived. Three e
 fix — the other two assert the `og`/`twitter`/`meta` titles agree with it and that the on-page heading is
 deliberately left alone, which were already true. That is the honest split, not three regression pins.
 
+> **SUPERSEDED, in §M7.** Owner ruling 4 made the decision this section deferred: the shared template now reads
+> the SEO title too, so the asymmetry is gone and **A6-O4 is closed as a matter of fact** rather than decided.
+> The paragraph above about the tenant Help Center stands as the reason it was not taken unilaterally; §M2
+> records that it IS a tenant-visible change and now pins it in both directions.
+
 ### G11 — Agent 2's "strikethrough is silently dead in articles": measured, and correctly NOT a defect
 
 `render_article` passes `[:table]` only, while `render_message` passes `[:strikethrough, :autolink]`
@@ -1604,11 +1609,45 @@ clean run is an affirmative all-clear on the references — and a corpus image t
 never attached still publishes unresolved, because certifying a reference is not attaching a file. The gap is
 narrower and better reported, and it is unchanged in substance. **Still an owner decision.**
 
+### M7 — The gate found a seventh thing, and it is the same class as §K1
+
+The ONE combined gate on the delta came back **red**, at
+`spec/security/documentation_v2/search_and_meta_escaping_spec.rb:128` — `1420 examples, 1 failure`:
+
+```
+expected "SEOPwn\" onload=\"alert(1)\" x=\"</title><script>alert(1)</script></script>]]>&  | Lynomia Chat
+Documentation" to start with "Audit logs"
+```
+
+That example is named *"titles from `article.title` while the documentation variant titles from the SEO
+title"*, and it asserted the **§G10 asymmetry on purpose**, as a deliberate pin of the behaviour §G10 declined
+to change. Owner ruling 4 changed it. So this is the §K1 pattern again: a spec pinning the defect that the same
+change set fixes.
+
+Worth recording for three reasons.
+
+**It was not selected by the delta review.** Agent 6 ran 52 rspec files with `GATE_BASE_REF=4778d737`, and §L4's
+own proof ran `documentation_editor_spec` (21/0), then `articles_controller_spec` + `seo_spec` (59/0). None of
+those is this file. The combined gate reaches it because selector 1 picks the documentation subsystem **by
+subject**, not by what the branch touched — which is exactly the property §K4 counts, and the sixth time it has
+earned its place.
+
+**The expectation is inverted, not deleted.** Both variants now title from the SEO title, and the assertion the
+example is really worth keeping is that the payload reaches `<title>` as TEXT on **both** — Nokogiri reads it
+back whole and no `on*` attribute is created in either head. Neither variant had a pin for that. The old
+expectation is recorded in the comment above the example so the inversion is visible to the next reader rather
+than silent.
+
+**It closes A6-O4 by fact.** §G10 left the shared-template branch as an owner decision; ruling 4 took it. There
+is no asymmetry left to decide about, and §G10 now says so.
+
+After the fix: `search_and_meta_escaping_spec` is `17 examples, 0 failures`.
+
 ### M6 — Open items after the delta
 
 | # | Item | What closes it |
 |---|---|---|
 | **A5'-O1** | **Nothing seeds corpus media**, now with certified references (§M5) | **owner decision**, then a change of its own |
-| A6-O4 | §G10: the `<title>` branch for the shared template vs the documentation one | owner decision; §M2 closed the correctness half |
+| A6-O4 | §G10's `<title>` branch | **closed** by ruling 4 and §M7 — the asymmetry no longer exists |
 | A5-O1 | Section ownership | **closed** by ruling 1 and §M1 |
 | A5'-O2 … O6 | Carried unchanged from §L3.8 | as recorded there |

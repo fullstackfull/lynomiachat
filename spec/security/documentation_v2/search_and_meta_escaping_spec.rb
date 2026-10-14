@@ -121,23 +121,33 @@ RSpec.describe 'Documentation search and head -- adversarial', type: :request do
     end
   end
 
-  # THE `<title>` ASYMMETRY the Orchestrator left in place (section G10). It is not confined to tenant portals:
+  # THE `<title>` ASYMMETRY, now CLOSED, and this is where it was pinned open.
+  #
   # `set_view_variant` gives `:plain` priority over `:documentation`, and `show.html+plain.erb` renders the
-  # SHARED `articles/_meta_head`. So one DOCUMENTATION url shape carries the old behaviour.
+  # SHARED `articles/_meta_head` -- so one DOCUMENTATION url shape used to carry the old behaviour even on a
+  # platform portal. The example below asserted exactly that asymmetry (`start_with('Audit logs')` on the plain
+  # mirror against `start_with("SEO#{payload}")` on the documentation variant), which made it a spec pinning
+  # the defect that owner ruling 4 was issued to fix. Owner ruling 4 changed the shared partial, the combined
+  # gate caught this file, and the expectation is inverted here rather than deleted: what it is really worth is
+  # that the SEO title is ESCAPED in `<title>` on BOTH variants, which is a property neither had a pin for.
+  #
+  # This also closes A6-O4 / section G10 as a matter of fact: there is no asymmetry left to decide about.
   describe 'the plain mirror of a documentation article' do
-    it 'titles from article.title while the documentation variant titles from the SEO title' do
+    it 'titles from the SEO title, the same as the documentation variant, and escapes it on both' do
       plain = Nokogiri::HTML5(get_public("/hc/#{portal.slug}/articles/#{article.slug}?show_plain_layout=true"))
       documentation = Nokogiri::HTML5(get_public("/hc/#{portal.slug}/articles/#{article.slug}"))
 
-      expect(plain.at_css('title').text).to start_with('Audit logs')
+      expect(plain.at_css('title').text).to start_with("SEO#{payload}")
       expect(documentation.at_css('title').text).to start_with("SEO#{payload}")
-      # And it is still escaped there, which is what makes this an SEO inconsistency rather than an injection.
+      # The payload reaches `<title>` as TEXT on both: Nokogiri reads it back whole, and no `on*` attribute was
+      # created anywhere in either head. That is the injection property, and it is what this file is for.
       expect(plain.at_css('meta[name="title"]')['content']).to include(payload)
       expect(plain.css('head *').flat_map { |el| el.attribute_nodes.map(&:name) }.grep(/\Aon/)).to be_empty
+      expect(documentation.css('head *').flat_map { |el| el.attribute_nodes.map(&:name) }.grep(/\Aon/)).to be_empty
     end
 
-    # Why the inconsistency is not an indexability defect: the plain mirror publishes no canonical of its own
-    # and robots.txt disallows the parameter, so no crawler reads that `<title>`.
+    # The plain mirror publishes no canonical of its own and robots.txt disallows the parameter, which is why
+    # the `<title>` it renders is a presentation and preview concern rather than an indexability one.
     it 'publishes no canonical and is disallowed to crawlers' do
       plain = Nokogiri::HTML5(get_public("/hc/#{portal.slug}/articles/#{article.slug}?show_plain_layout=true"))
 

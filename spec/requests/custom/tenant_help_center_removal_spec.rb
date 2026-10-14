@@ -532,13 +532,17 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
        [:delete, "/super_admin/articles/#{docs_article.id}", nil],
        [:post, "/super_admin/articles/#{docs_article.id}/publish", nil],
        [:post, "/super_admin/articles/#{docs_article.id}/unpublish", nil],
-       [:put, "/super_admin/categories/#{docs_category.id}", { category: { name: 'Renamed by a tenant' } }],
        [:put, "/super_admin/portals/#{docs_portal.id}", { portal: { name: 'Renamed by a tenant' } }],
        [:post, '/super_admin/documentation_media', { portal_id: docs_portal.id, file: file, alt: 'Alt' }],
        [:patch, '/super_admin/documentation_media/uploads/0123456789abcdef-x.png',
         { portal_id: docs_portal.id, file: file }]]
     end
 
+    # The section UPDATE endpoint is deliberately absent from this table: it no longer exists for anyone.
+    # `resources :categories, except: [:edit, :update]` withholds it, because `manifest.yml` is the sole author
+    # of a section's presentation (owner ruling). Asserted below as route absence rather than as a tenant
+    # refusal, which is the stronger statement -- a route nobody has cannot be reached by a tenant either.
+    #
     # TWO REFUSAL SHAPES, both measured, both correct. Devise's failure app redirects a navigational request to
     # the Super Admin sign-in and answers 401 for a non-navigational one -- and the media REPLACE route is the
     # non-navigational one of this set, because its glob ends in `.png`. So the assertion is "refused", not one
@@ -572,6 +576,23 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     it 'is refused to an anonymous request' do
       expect { expect_all_refused('anonymous') }.not_to change(Article, :count)
       expect(docs_portal.reload.documentation_media).to be_empty
+    end
+
+    # The row that left the table above. Route absence, asserted for a tenant administrator and for a SUPER
+    # ADMIN, because "nobody has this endpoint" is the claim -- a tenant-only assertion would still pass if the
+    # route came back for operators.
+    it 'exposes no section edit or update endpoint, to a tenant or to a super admin' do
+      sign_in(admin, scope: :user)
+      put "/super_admin/categories/#{docs_category.id}", params: { category: { name: 'Renamed by a tenant' } }
+      expect(response).to have_http_status(:not_found)
+
+      sign_out(:user)
+      sign_in(create(:super_admin), scope: :super_admin)
+      put "/super_admin/categories/#{docs_category.id}", params: { category: { name: 'Renamed by an operator' } }
+      expect(response).to have_http_status(:not_found)
+
+      expect(docs_category.reload.name).not_to eq('Renamed by a tenant')
+      expect(docs_category.name).not_to eq('Renamed by an operator')
     end
 
     # A tenant session is not a Super Admin session even when the same email exists in both tables: the two

@@ -60,64 +60,107 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
     end
   end
 
-  # The same guarantee for a SECTION, which had the same hole. `upsert_category` looks a section up by
-  # `find_or_initialize_by(slug:, locale:)` (custom/app/services/documentation/content_seeder.rb:98), so a
-  # renamed slug makes the next seed create a second category at the manifest slug and leave every article on
-  # the renamed one.
-  describe "a documentation section's slug" do
+  # A SECTION IS NOT EDITABLE AT ALL. `manifest.yml` is the sole author of its `name`, `description`,
+  # `position` and `icon` (owner ruling), and `slug` and `locale` are the two halves of the key
+  # `Documentation::ContentSeeder#upsert_category` looks a section up by
+  # (custom/app/services/documentation/content_seeder.rb:98). So the edit surface is withheld at the ROUTE --
+  # `resources :categories, except: [:edit, :update]` -- rather than by emptying a form.
+  #
+  # These examples replace four that asserted which FIELDS the section form dropped. The property is stronger:
+  # there is no form and no PUT, so there is nothing to permit.
+  #
+  # Each request lives in its own example on purpose. Measured: a 404 earlier in an example drops the Devise
+  # session, so a page assertion after one reads 302 and would pass for the wrong reason.
+  describe 'a documentation section' do
     before { sign_in(super_admin, scope: :super_admin) }
 
-    it 'ignores a slug posted by hand' do
-      put "/super_admin/categories/#{category.id}", params: { category: { name: 'Renamed', slug: 'renamed-by-hand' } }
+    it 'has no update route, so a crafted PUT reaches no controller' do
+      put "/super_admin/categories/#{category.id}", params: { category: { name: 'Renamed' } }
 
-      expect(category.reload.slug).to eq('administration')
-      expect(category.name).to eq('Renamed')
+      expect(response).to have_http_status(:not_found)
+      expect(category.reload.name).to eq('Administration')
     end
 
-    it 'renders no slug input' do
+    it 'has no edit route' do
       get "/super_admin/categories/#{category.id}/edit"
 
-      expect(response.body).to include('name="category[name]"')
-      expect(response.body).not_to include('name="category[slug]"')
+      expect(response).to have_http_status(:not_found)
+    end
+
+    # The owner's requirement that the UI must not promise editability. Administrate decides from the real route
+    # table -- `existing_action?` is `routes.include?([resource, action])`
+    # (administrate-0.20.1/app/controllers/administrate/application_controller.rb:117-120) -- so withholding the
+    # route is what removes the button. Asserted on the page an operator sees, not on the helper.
+    it 'offers no Edit link on the section page, which still renders' do
+      get "/super_admin/categories/#{category.id}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Administration')
+      expect(response.body).not_to include("/super_admin/categories/#{category.id}/edit")
+    end
+
+    it 'offers no Edit link in the section list either' do
+      get '/super_admin/categories'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include("/super_admin/categories/#{category.id}/edit")
+    end
+
+    # Still creatable: a hand-made section has no manifest row, so nothing authors it but the operator. That is
+    # why FORM_ATTRIBUTES keeps every field for `new`.
+    it 'is still creatable, with every field offered on the new form' do
+      get '/super_admin/categories/new'
+
+      expect(response).to have_http_status(:success)
+      %w[name description locale position icon].each do |field|
+        expect(response.body).to include(%(name="category[#{field}]"))
+      end
     end
   end
 
-  # `locale` is the other half of `find_or_initialize_by(slug:, locale:)`. A section that exists in only one
-  # locale is the shape that exposes it: every shipped section exists in both, so the uniqueness validation
-  # refuses the flip with a 422 and hides the hole.
-  describe "a documentation section's locale" do
-    # BOTH locales allowed on the portal, deliberately. `Category` also runs `validate :allowed_locales`
-    # (app/models/category.rb:88,123-131), so on a single-locale portal a posted `ar` is refused by THAT
-    # validation and an example here would pass without the permitted list doing any work -- which is exactly
-    # how a guard gets credited for protection it is not providing.
-    let!(:lonely) do
-      portal.update!(config: portal.config.to_h.merge('allowed_locales' => %w[en ar], 'default_locale' => 'en'))
-      create(:category, portal: portal, locale: 'en', slug: 'single-locale', name: 'Single locale')
+  # THE PREVIEW TITLE. `#preview` redirects to the article's public URL with `show_plain_layout=true`, and
+  # `set_view_variant` gives `:plain` priority over `:documentation` (base_controller.rb:27-31), so the preview
+  # renders the SHARED `articles/_meta_head` rather than the documentation one. That template took `<title>`
+  # from `article.title` while taking every other title tag from the SEO title, so an operator previewing never
+  # saw the SEO title they had just set.
+  #
+  # Presentation and preview correctness, not indexability: this variant publishes no canonical and
+  # `robots.txt` disallows `/hc/*?show_plain_layout=`, so no crawler was reading either value.
+  describe 'the preview title' do
+    # `custom_domain` is what satisfies `ensure_custom_domain_request` for a test request, whose host is
+    # www.example.com (app/controllers/public_controller.rb:9-20): without it the public page answers 401 and an
+    # example here would be measuring the domain guard rather than the title. Same arrangement the existing
+    # public portal specs use.
+    before do
+      portal.update!(custom_domain: 'www.example.com')
+      sign_in(super_admin, scope: :super_admin)
     end
 
-    before { sign_in(super_admin, scope: :super_admin) }
+    it 'sends Preview to the plain variant of the real public page' do
+      get "/super_admin/articles/#{article.id}/preview"
 
-    # The save, not the form: Administrate reads the per-action constant for strong params too, so hiding the
-    # input without permitting-list parity would leave the write open.
-    it 'ignores a locale posted by hand' do
-      put "/super_admin/categories/#{lonely.id}", params: { category: { name: 'Renamed', locale: 'ar' } }
-
-      expect(lonely.reload.locale).to eq('en')
-      expect(lonely.name).to eq('Renamed')
+      expect(response).to redirect_to("/hc/#{portal.slug}/articles/#{article.slug}?show_plain_layout=true")
     end
 
-    it 'renders no locale input on the edit form' do
-      get "/super_admin/categories/#{lonely.id}/edit"
+    it 'shows the SEO title the operator set, on the page Preview lands on' do
+      article.update!(meta: article.meta.to_h.merge('title' => 'Audit logs, explained'))
 
-      expect(response.body).to include('name="category[name]"')
-      expect(response.body).not_to include('name="category[locale]"')
+      get "/hc/#{portal.slug}/articles/#{article.slug}?show_plain_layout=true"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('<title>Audit logs, explained | ')
+      # The discriminator: the article heading is still 'Audit logs', so this fails if <title> ignores the
+      # override, which is exactly what it used to do.
+      expect(response.body).not_to include('<title>Audit logs | ')
     end
 
-    # Creation still chooses a language, because a hand-made section has to.
-    it 'still offers locale on the new form' do
-      get '/super_admin/categories/new'
+    it 'falls back to the article heading when no SEO title is set' do
+      article.update!(meta: article.meta.to_h.except('title'))
 
-      expect(response.body).to include('name="category[locale]"')
+      get "/hc/#{portal.slug}/articles/#{article.slug}?show_plain_layout=true"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('<title>Audit logs | ')
     end
   end
 

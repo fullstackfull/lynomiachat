@@ -97,19 +97,25 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     end
 
     # A SECTION's identity is `(slug, locale)` -- `ContentSeeder#upsert_category` is
-    # `find_or_initialize_by(slug:, locale:)`. Section I4 removed `slug` from the form and LEFT `locale`, the
-    # other half of the same key; section J2 closed it. BOTH halves are now dropped.
+    # `find_or_initialize_by(slug:, locale:)`. This moved twice. Section I4 removed `slug` from the section form
+    # and left `locale`; section J2 removed `locale`; the owner then ruled that `manifest.yml` is the sole author
+    # of a section's `name`, `description`, `position` and `icon` too, which leaves nothing editable -- so the
+    # whole surface is withheld at the route (`resources :categories, except: [:edit, :update]`).
     #
-    # INVERTED: this example previously ended `expect(category.locale).to eq('ar')` -- the posted locale WAS
-    # applied. The old expectation is recorded here so the change is visible rather than silent.
-    it 'drops a posted slug AND a posted locale, both halves of the seeder\'s lookup' do
+    # INVERTED TWICE, and both previous expectations are recorded so neither change is silent. It first asserted
+    # that a posted `locale` WAS applied (the defect). It then asserted that slug and locale were dropped while
+    # `name` saved. Now there is no endpoint at all, which is why one example replaces two: there is no longer a
+    # distinction between "which fields does the form drop" and "what does a crafted PUT do".
+    it 'has no update endpoint at all, so a crafted PUT changes nothing' do
       put "/super_admin/categories/#{category.id}", params: {
         category: { name: 'Renamed', slug: 'forged', locale: 'ar' }
       }
 
+      expect(response).to have_http_status(:not_found)
+
       category.reload
       expect(category.slug).to eq('administration')
-      expect(category.name).to eq('Renamed')
+      expect(category.name).to eq('Administration')
       expect(category.locale).to eq('en')
     end
 
@@ -118,17 +124,17 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     # `validates :locale, uniqueness: { scope: [:slug, :portal_id] }` refused the flip as soon as the sibling
     # existed, and the hole needed a single-locale section to be reachable at all.
     #
-    # INVERTED: it expected 422 from that validation. The locale never reaches the model now, so the save
-    # succeeds on the fields that ARE permitted and the validation is not consulted. That ordering is the point
-    # -- a model validation was the last line, and the permitted list is now the first.
-    it 'does not even reach the uniqueness validation that used to be the only thing refusing the flip' do
+    # The model validation is now the third line of defence rather than the first: no route, no permitted
+    # param, and only then the validation. Asserted by showing the sibling's presence makes no difference --
+    # the request 404s either way, which is what "the earliest shared entry point" buys.
+    it 'refuses before the uniqueness validation that used to be the only thing refusing the flip' do
       create(:category, portal: portal, account_id: nil, locale: 'ar', slug: 'administration', name: 'الإدارة')
 
       put "/super_admin/categories/#{category.id}", params: { category: { name: 'Renamed', locale: 'ar' } }
 
-      expect(response).to have_http_status(:found)
+      expect(response).to have_http_status(:not_found)
       expect(category.reload.locale).to eq('en')
-      expect(category.name).to eq('Renamed')
+      expect(category.name).to eq('Administration')
     end
   end
 
@@ -163,12 +169,14 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     after { FileUtils.remove_entry(root) }
 
     # INVERTED. This example used to begin `expect(section.reload.locale).to eq('ar')` and then assert the two
-    # rows, the rebuilt section and the orphan. The locale is no longer settable, so the whole chain cannot
-    # start -- and the end-to-end assertion is now that it does not.
+    # rows, the rebuilt section and the orphan. There is no update endpoint now, so the chain cannot start --
+    # and the end-to-end assertion is that it does not. The 404 is asserted rather than assumed, so this stays
+    # a test of the route and not merely of the absence of damage.
     it 'cannot re-locale it, so the next seed finds the section it authored and no orphan appears' do
       section = portal.categories.find_by!(slug: 'administration', locale: 'en')
       put "/super_admin/categories/#{section.id}", params: { category: { locale: 'ar' } }
 
+      expect(response).to have_http_status(:not_found)
       expect(section.reload.locale).to eq('en')
 
       Documentation::ContentSeeder.new(portal: portal, root: root).perform!

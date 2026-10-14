@@ -124,6 +124,28 @@ jobs:
       - name: Seed database
         run: bundle exec rake db:schema:load
 
+      # Two checks rspec structurally cannot perform, closing a measured gap: a `.rake` file that fails to load
+      # raises out of `load_tasks` and breaks EVERY rake task -- `db:migrate` and `assets:precompile` among
+      # them, i.e. a failed deploy -- while every spec stays green, because rspec boots through
+      # `config/environment` and never reads a `.rake` file. And a constant that resolves lazily under rspec but
+      # raises when eager loaded breaks the production BOOT the same way, because `eager_load` is false in test
+      # and true in production. The spec step below is `find spec -name '*_spec.rb'`, which sees neither.
+      #
+      # `rake -T` is piped through grep because an empty task list would otherwise pass as exit 0, which is the
+      # same "green for the wrong reason" this step exists to stop. RAILS_ENV=test because `rake -T` in
+      # development also loads `lib/tasks/annotate_rb.rake`, whose gem is in the development group only.
+      #
+      # Node 0 only: these are properties of the revision, not of a shard.
+      - name: Check rake tasks load and the app eager loads
+        if: matrix.ci_node_index == 0
+        env:
+          RAILS_ENV: test
+        run: |
+          TASKS="$(bundle exec rake -T)"
+          echo "$TASKS"
+          echo "$TASKS" | grep -q 'documentation:content'
+          bundle exec rake zeitwerk:check
+
       - name: Run backend tests (parallelized)
         run: |
           # Get all spec files and split them using round-robin distribution

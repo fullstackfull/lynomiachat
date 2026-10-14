@@ -1,5 +1,12 @@
 <%# locals: (article:, portal:, locale:, og_image_url: nil) %>
-<title><%= article.title %> | <%= portal.display_title(locale) %></title>
+<%#
+  `<title>` reads the SEO title when there is one. It is the same value the tags below already use, so the
+  heading of the tab -- and of the Super Admin preview, which renders this plain variant -- stops disagreeing
+  with the rest of the head. A presentation and preview correctness fix: this variant publishes no canonical
+  and `robots.txt` disallows `/hc/*?show_plain_layout=`, so no crawler was reading either value.
+%>
+<% meta_title = article.meta["title"].presence || article.title %>
+<title><%= meta_title %> | <%= portal.display_title(locale) %></title>
 <% if article.meta["title"].present? %>
   <meta name="title" content="<%= article.meta["title"] %>">
   <meta property="og:title" content="<%= article.meta["title"] %>">

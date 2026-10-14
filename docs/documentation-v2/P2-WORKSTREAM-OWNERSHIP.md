@@ -1053,3 +1053,142 @@ tests live under another name reads as uncovered. Two are genuinely untested and
 
 Misses 1–3 were caught by accident. 4 and 5 were caught by a mechanism. That is the difference phases A–E were
 built for, and it is the one claim in this record that two runs of evidence actually support.
+
+## L. Pre-merge owner rulings
+
+The gate was accepted as green and **MERGE-GO was withheld** pending five rulings. This section records each as
+closed, with the evidence. Rulings 1, 2 and 4 are the Orchestrator's; 3 and 5 went to agents.
+
+### L1 — Ruling 1: sections are repository-authored, and the UI no longer says otherwise
+
+> Repository is the sole author of: name, description, position, icon. Do not build field-by-field
+> merge/digest protection for these fields now. Do not leave these fields appearing editable in Super Admin if
+> the seeder will overwrite them. … The UI must not promise editability that the source-of-truth contract
+> rejects.
+
+No digest protection built, as instructed. The question was therefore only *what remains editable on a
+section*, and the answer is **nothing**:
+
+| Field | Author |
+|---|---|
+| `name`, `description`, `position`, `icon` | the manifest, by this ruling |
+| `slug`, `locale` | identity — the two halves of `find_or_initialize_by(slug:, locale:)` (`content_seeder.rb:98`) |
+| `portal` | the same lookup is `portal.categories.…`, so moving a section between portals re-creates it in the original and orphans the moved row — the defect class §I4 and §J2 already closed twice |
+
+So **the edit surface is withheld at the route**: `resources :categories, except: [:edit, :update]`. Not by
+emptying a form, for two reasons. It is the earliest shared entry point, so there is no PUT whose params need
+permitting — CLAUDE.md's rule rather than a preference. And Administrate decides whether to render an Edit
+button from the **real route table** (`existing_action?` is `routes.include?([resource, action])`,
+`administrate-0.20.1/app/controllers/administrate/application_controller.rb:117-120`), so the button disappears
+on its own. An empty form behind a live route would still be a promise.
+
+`FORM_ATTRIBUTES_EDIT`, added one wave earlier, is now dead and removed. `FORM_ATTRIBUTES` stays and serves
+`new`/`create` only: a hand-made section has no manifest row, so the operator is its only author. `destroy`
+stays — `has_many :articles, dependent: :nullify` (`app/models/category.rb:49`), so a deleted section is
+re-created by the next seed and its articles reattach.
+
+**Article → category assignment is untouched**, as the ruling allows: that is a field on the *article*, governed
+by the article source-of-truth rules.
+
+Measured, not assumed — and one measurement changed the specs:
+
+```
+PUT  /super_admin/categories/:id        -> 404, name unchanged
+GET  /super_admin/categories/:id/edit   -> 404
+GET  /super_admin/categories/:id        -> 200, no /edit link in the body
+GET  /super_admin/categories            -> 200, no /edit link anywhere
+GET  /super_admin/categories/new        -> 200, all five fields offered
+```
+
+A first attempt asserted `raise_error(ActionController::RoutingError)` and failed: `show_exceptions` is `true`
+in this app's test environment, so the request is **rendered as 404** rather than raised. A second measurement
+found that a 404 earlier in an example **drops the Devise session**, so a page assertion placed after one reads
+302 and would have passed for the wrong reason — each request now lives in its own example.
+
+Three spec files were updated because the endpoint they exercised no longer exists. In each case the replacement
+is a stronger claim, and the previous expectation is recorded in the comment:
+
+| File | Was | Now |
+|---|---|---|
+| `documentation_editor_spec.rb` | four examples asserting which **fields** the section form dropped | five asserting there is no form, no PUT, and no Edit link on either page — 21/0 |
+| `tenant_help_center_removal_spec.rb` | a section-update row in the 10-endpoint refusal table | the row removed (the table lists endpoints that exist) plus one example asserting the route is absent **for a super admin as well as a tenant** — 64/0 |
+| `source_of_truth_boundary_spec.rb` | two examples on which fields the PUT dropped | one asserting there is no endpoint; the single-locale orphan example now asserts the 404 explicitly rather than only the absence of damage — 14/0 |
+
+**Not done, deliberately:** no explanatory note on the section page. Administrate's show template is a 65-line
+global override, so a per-resource copy for one sentence is more churn than the ruling asks for. An operator
+sees a read-only page, which is the honest UI; a note would be an improvement, not a correction.
+
+### L2 — Ruling 2: the CI gap, closed and proven both ways
+
+> Update the real CI so it executes the same rake/eager-load checks that caught the deploy-breaking .rake
+> defect. Add the minimum required invocations to run_foss_spec.yml. Do not broaden or redesign CI beyond what
+> is required to close this measured gap. Prove the CI commands locally before final integration.
+
+One step added to the existing `backend-tests` job in `.github/workflows/run_foss_spec.yml`, after the schema
+load and before the specs. No new job, no new service, nothing else changed.
+
+```yaml
+      - name: Check rake tasks load and the app eager loads
+        if: matrix.ci_node_index == 0
+        env:
+          RAILS_ENV: test
+        run: |
+          TASKS="$(bundle exec rake -T)"
+          echo "$TASKS"
+          echo "$TASKS" | grep -q 'documentation:content'
+          bundle exec rake zeitwerk:check
+```
+
+Three choices worth stating. **`if: matrix.ci_node_index == 0`** because these are properties of the revision,
+not of a shard — the job is a 16-node matrix and running them 16 times is 16 copies of one answer.
+**`grep -q`** because an empty task list would otherwise pass as exit 0, which is the same green-for-the-wrong-
+reason this step exists to stop. **`RAILS_ENV: test`** because `rake -T` in development also loads
+`lib/tasks/annotate_rb.rake`, whose gem is in the development group.
+
+**Proven both ways, locally, with the step's commands verbatim.** Passing on this revision:
+
+```
+rake -T lines: 126
+grep documentation:content -> FOUND
+Hold on, I am eager loading the application.
+All is good!
+STEP_EXIT=0
+```
+
+And failing on the defect it exists to catch — a throwaway `.rake` file whose class body dereferences an
+application constant at load time, the exact shape of §H3, created and deleted in one command:
+
+```
+=== exit code with the defect present: 1 ===
+rake aborted!
+NameError: uninitialized constant ZzCiGapProbe::Probe::DocumentationHelper (NameError)
+```
+
+That closes **A6-O6**: the §H3 regression would no longer reach the mainline through CI.
+
+### L4 — Ruling 4: the Help Center title
+
+> Fix the shared Help Center title / Super Admin preview title if it remains a small isolated patch. Do not
+> describe it as an SEO/indexability issue. It is a presentation/preview correctness issue.
+
+It remained a small isolated patch: **one line changed and one added** in
+`app/views/public/api/v1/portals/articles/_meta_head.html.erb`. `<title>` now reads
+`article.meta["title"].presence || article.title` — the same value the `meta`, `og:` and `twitter:` titles
+beside it already used. The conditional block that emits those tags is untouched.
+
+Framed as the owner directs: **presentation and preview correctness.** The operator-visible consequence is that
+`SuperAdmin::ArticlesController#preview` redirects to `?show_plain_layout=true`, `set_view_variant` gives
+`:plain` priority over `:documentation` (`base_controller.rb:27-31`), and this shared template renders there —
+so an operator previewing an article never saw the SEO title they had just set. No crawler was reading either
+value: that variant publishes no canonical and `robots.txt` disallows `/hc/*?show_plain_layout=`.
+
+Three examples added to `documentation_editor_spec.rb`: Preview lands on the plain variant of the real public
+page; the SEO title appears there; and the article heading is used when no SEO title is set. The first carries
+a **discriminator** — `expect(response.body).not_to include('<title>Audit logs | ')` — so it fails if `<title>`
+ignores the override, which is what it used to do.
+
+**Proven both ways**: with the one-line change reverted the file is `21 examples, 1 failure`; with it, 21/0.
+`articles_controller_spec` + `seo_spec` = **59 examples, 0 failures**, so the shared template's other consumers
+— every tenant Help Center — are unaffected. One measurement shaped the spec: without a `custom_domain` on the
+portal the public page answers **401** from `ensure_custom_domain_request` (`public_controller.rb:9-20`), and an
+example written without it would have been measuring the domain guard rather than the title.

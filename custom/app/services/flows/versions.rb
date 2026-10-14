@@ -1,13 +1,26 @@
 # Draft, validate, publish and disable a flow bot's graph (docs/flow-builder/03-data-model-and-versioning.md).
 #
 #   draft      the bot's draft; created on first edit from the published graph (or a Start → End starter)
-#   save!      replaces the draft's graph (shape checked; references are checked at publish)
+#   save!      replaces the draft's graph (shape checked; references are checked at publish), but only when the
+#              caller's `lock_version` still matches the draft -- see Stale
 #   validate   Flows::GraphValidator on the draft, against the bot's inboxes
 #   publish!   the valid draft becomes the published version; the previous one is archived. Sessions keep the version
 #              they started on; new sessions start on this one
 #   disable!   archives the published version: no new session starts; live sessions are handed to humans
 #   delete!    deletes a flow that is not published and has no live session (disable it first)
 class Flows::Versions
+  # SOMEBODY ELSE SAVED FIRST. Raised instead of overwriting their work: the caller edited a graph
+  # that has since moved, so the only safe answers are "reload and reapply" or "discard mine", and
+  # both of those are the editor's decision rather than this service's.
+  class Stale < StandardError
+    attr_reader :current
+
+    def initialize(current)
+      @current = current
+      super('flow draft changed since it was loaded')
+    end
+  end
+
   class Invalid < StandardError
     attr_reader :errors
 
@@ -34,13 +47,19 @@ class Flows::Versions
     @bot.flow_versions.draft.first || @bot.with_lock { @bot.flow_versions.draft.first || create_draft }
   end
 
-  def save!(graph)
+  # @param lock_version [Integer] the draft's lock_version as the caller loaded it. The comparison is the database's,
+  #   not ours: assigning it makes ActiveRecord issue `UPDATE ... WHERE lock_version = ?`, so two saves racing on the
+  #   same value cannot both win. A read-then-compare here would have a window between the read and the write.
+  def save!(graph, lock_version:)
     errors = Flows::GraphValidator.new(@bot.account, graph).shape_errors
     raise Invalid, errors if errors.any?
 
     draft.tap do |version|
+      version.lock_version = Integer(lock_version)
       version.update!(graph: graph)
       Flows::Audit.record('flow.updated', @bot, user: @user, changes: { version: version.version })
+    rescue ActiveRecord::StaleObjectError
+      raise Stale, version.reload
     end
   end
 

@@ -8,7 +8,7 @@
 #   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors
 #   PATCH  /flows/:id               name, description
 #   DELETE /flows/:id               delete (a flow that is not published and has no live session)
-#   PUT    /flows/:id/draft         save the draft: graph
+#   PUT    /flows/:id/draft         save the draft: graph, lock_version (409 when somebody else saved first)
 #   POST   /flows/:id/publish       publish the draft (422 with the errors when it is not valid)
 #   POST   /flows/:id/disable       stop starting sessions; live ones go to humans
 #   GET    /flows/:id/sessions      the latest sessions (execution inspector): states and node ids, no message content
@@ -23,6 +23,16 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
 
   rescue_from Flows::Versions::Invalid do |error|
     render json: { errors: error.errors }, status: :unprocessable_entity
+  end
+
+  # SOMEBODY ELSE SAVED FIRST. 409 rather than 422, because the request was not malformed -- it was
+  # built against a draft that has since moved. The current graph and lock_version travel with the
+  # refusal so the editor can show what changed and let the person reapply, rather than making them
+  # reload and lose what they were typing.
+  rescue_from Flows::Versions::Stale do |error|
+    render json: { error: 'flow_draft_stale', graph: error.current.graph, lock_version: error.current.lock_version,
+                   updated_at: error.current.updated_at },
+           status: :conflict
   end
 
   def index
@@ -49,9 +59,13 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
     head :ok
   end
 
+  # `lock_version` is REQUIRED rather than optional-when-absent. An optional precondition is not a
+  # precondition: any caller that omits it -- an old client, a script, anyone who noticed -- goes
+  # back to silently overwriting the other editor, which is the defect. It is a parameter error,
+  # not a conflict, when it is missing.
   def draft
     graph = params.require(:graph)
-    versions.save!(graph.respond_to?(:to_unsafe_h) ? graph.to_unsafe_h : graph)
+    versions.save!(graph.respond_to?(:to_unsafe_h) ? graph.to_unsafe_h : graph, lock_version: draft_lock_version)
     render json: show_json
   end
 
@@ -91,6 +105,15 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
 
   def flow_params = params.permit(:name, :description)
 
+  # JSON sends it as a number and a form sends it as a string, so it is normalised to a string
+  # before parsing -- `Integer(0, 10)` raises, which is how this was found.
+  def draft_lock_version
+    value = params[:lock_version].to_s
+    raise ActionController::ParameterMissing, :lock_version unless value.match?(/\A\d+\z/)
+
+    Integer(value, 10)
+  end
+
   def simulation_inputs
     inputs = params.require(:inputs)
     raise ActionController::ParameterMissing, :inputs unless inputs.is_a?(Array) && inputs.size <= Flows::Simulator::MAX_INPUTS
@@ -126,7 +149,7 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   end
 
   def version_json(version)
-    version&.slice(:id, :version, :status, :published_at, :updated_at)
+    version&.slice(:id, :version, :status, :published_at, :updated_at, :lock_version)
   end
 
   def session_json(session)

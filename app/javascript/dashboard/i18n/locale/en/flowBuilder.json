@@ -57,6 +57,7 @@
     },
     "API": {
       "SAVE_ERROR": "The draft could not be saved.",
+      "SAVE_CONFLICT": "Somebody else saved this flow while you were editing. Your changes are still here — reload to see theirs, then reapply yours.",
       "PUBLISHED": "Version {version} is published.",
       "PUBLISH_ERROR": "The flow could not be published. Fix the problems shown on the canvas.",
       "DISABLED": "The flow is disabled.",

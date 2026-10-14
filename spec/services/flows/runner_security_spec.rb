@@ -31,7 +31,7 @@ RSpec.describe Flows::Runner do
                           node.call('ask', 'question', 'text' => 'Your name?', 'store_as' => { 'scope' => 'context', 'key' => 'name' }),
                           node.call('echo', 'send_message', 'text' => 'Hello {{flow.name}}'), node.call('end', 'end')],
               'edges' => [edge.call('start', 'ask'), edge.call('ask', 'echo', 'reply'), edge.call('echo', 'end')] }
-    Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish!
+    Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish!
 
     say.call('hi')
     say.call('{{contact.email}} {% if true %}x{% endif %}')
@@ -63,7 +63,7 @@ RSpec.describe Flows::Runner do
     graph = { 'nodes' => [node.call('start', 'start'), node.call('ask', 'question', 'text' => 'Your order?', 'timeout_minutes' => 5),
                           node.call('done', 'send_message', 'text' => 'Thanks'), node.call('end', 'end')],
               'edges' => [edge.call('start', 'ask'), edge.call('ask', 'done', 'reply'), edge.call('done', 'end')] }
-    Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish!
+    Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish!
     say.call('hi')
     session = FlowSession.find_by!(conversation: conversation)
     other_contact = create(:contact, account: account)
@@ -94,7 +94,7 @@ RSpec.describe Flows::Runner do
     graph = { 'nodes' => [node.call('start', 'start'), node.call('hook', 'webhook', 'url' => 'https://hooks.example.com/flow'),
                           node.call('end', 'end')],
               'edges' => [edge.call('start', 'hook'), edge.call('hook', 'end')] }
-    Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish!
+    Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish!
 
     expect { say.call('hi') }.to have_enqueued_job(WebhookJob).with do |_url, payload, _type, **options|
       expect(payload.to_json).not_to include(bot.secret)

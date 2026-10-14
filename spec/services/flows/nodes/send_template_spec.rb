@@ -36,7 +36,7 @@ RSpec.describe Flows::Nodes::SendTemplate do
       'params' => { 'header' => { '1' => '{{flow.reply}}' }, 'body' => { '1' => '{{contact.name}}', '2' => '{{flow.reply}}', '3' => 'shipped' },
                     'buttons' => [{ 'type' => 'url', 'parameter' => '{{flow.reply}}' }] } }
   end
-  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish! } }
+  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish! } }
   let(:straight) do
     lambda do |data|
       publish.call('nodes' => [node.call('start', 'start'), node.call('tpl', 'send_template', data), node.call('end', 'end')],

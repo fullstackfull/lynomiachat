@@ -55,22 +55,93 @@ RSpec.describe 'Flows API', type: :request do
     expect(AgentBot.find(created['id'])).to have_attributes(bot_type: 'flow', account_id: account.id, outgoing_url: nil)
     expect(created['graph']['nodes'].pluck('type')).to eq(%w[start end])
 
-    put "#{base}/#{created['id']}/draft", params: { graph: { nodes: 'x' } }, headers: admin.create_new_auth_token, as: :json
+    put "#{base}/#{created['id']}/draft", params: { graph: { nodes: 'x' }, lock_version: 0 }, headers: admin.create_new_auth_token, as: :json
     expect(response.parsed_body['errors'].pluck('code')).to eq(['invalid_graph'])
 
     broken = menu_graph.merge(edges: menu_graph[:edges].first(2))
-    put "#{base}/#{created['id']}/draft", params: { graph: broken }, headers: admin.create_new_auth_token, as: :json
+    put "#{base}/#{created['id']}/draft", params: { graph: broken, lock_version: 0 }, headers: admin.create_new_auth_token, as: :json
     expect(response.parsed_body['errors'].pluck('code')).to include('unconnected_output')
     post "#{base}/#{created['id']}/publish", headers: admin.create_new_auth_token, as: :json
     expect(response).to have_http_status(:unprocessable_entity)
 
-    put "#{base}/#{created['id']}/draft", params: { graph: menu_graph }, headers: admin.create_new_auth_token, as: :json
+    # The save above moved the draft on, so the next one carries the lock_version it answered
+    # with. An editor that kept sending the value it first loaded is the lost update this
+    # precondition exists to refuse.
+    saved = response.parsed_body['draft'] || { 'lock_version' => 1 }
+    put "#{base}/#{created['id']}/draft", params: { graph: menu_graph, lock_version: saved['lock_version'] },
+                                          headers: admin.create_new_auth_token, as: :json
     post "#{base}/#{created['id']}/publish", headers: admin.create_new_auth_token, as: :json
     expect(response.parsed_body['published']).to include('version' => 1, 'status' => 'published')
   end
 
+  # TWO PEOPLE EDITING ONE FLOW.
+  #
+  # Before this precondition existed, the draft save was `version.update!(graph: graph)` with
+  # nothing in front of it: the second person to press Save overwrote the first with a graph
+  # built from a view of the flow that no longer existed, and neither of them was told. Lost
+  # work, silently, which is the worst way to lose it.
+  describe 'concurrent editing' do
+    let(:save_draft) do
+      lambda do |graph, lock_version, user = admin|
+        put "#{base}/#{flow.id}/draft", params: { graph: graph, lock_version: lock_version },
+                                        headers: user.create_new_auth_token, as: :json
+      end
+    end
+    let(:other_graph) { menu_graph.merge(nodes: menu_graph[:nodes].map { |n| n[:id] == 'track' ? n.merge(data: { text: 'theirs' }) : n }) }
+    let(:mine) { menu_graph.merge(nodes: menu_graph[:nodes].map { |n| n[:id] == 'track' ? n.merge(data: { text: 'mine' }) : n }) }
+
+    it 'refuses the second save and keeps the first editor\'s work' do
+      # Both editors loaded the flow at the same moment, so both hold the same lock_version.
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+      loaded = response.parsed_body['draft']&.fetch('lock_version', 0) || 0
+
+      save_draft.call(other_graph, loaded)
+      expect(response).to have_http_status(:success)
+
+      save_draft.call(mine, loaded)
+
+      expect(response).to have_http_status(:conflict)
+      expect(response.parsed_body['error']).to eq('flow_draft_stale')
+      # Theirs survived; mine did not land.
+      expect(flow.flow_versions.draft.sole.graph['nodes'].find { |n| n['id'] == 'track' }['data']['text']).to eq('theirs')
+    end
+
+    # The refusal carries what is actually stored, so the editor can show the other person's
+    # version and let someone reapply their own work, instead of making them reload and retype.
+    it 'answers the conflict with the current graph and the lock_version to retry with' do
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+      loaded = response.parsed_body['draft']&.fetch('lock_version', 0) || 0
+      save_draft.call(other_graph, loaded)
+
+      save_draft.call(mine, loaded)
+      conflict = response.parsed_body
+
+      expect(conflict['graph']['nodes'].find { |n| n['id'] == 'track' }['data']['text']).to eq('theirs')
+      save_draft.call(mine, conflict['lock_version'])
+      expect(response).to have_http_status(:success)
+      expect(flow.flow_versions.draft.sole.graph['nodes'].find { |n| n['id'] == 'track' }['data']['text']).to eq('mine')
+    end
+
+    # AN OPTIONAL PRECONDITION IS NOT A PRECONDITION. A caller that simply omits it -- an old
+    # client, a script, anyone who noticed -- would be back to overwriting the other editor.
+    it 'refuses a save that carries no lock_version at all' do
+      put "#{base}/#{flow.id}/draft", params: { graph: menu_graph }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(flow.flow_versions.draft).to be_empty
+    end
+
+    it 'refuses a lock_version that is not a number' do
+      ['abc', '-1', '1; DROP TABLE flow_versions', ''].each do |bad|
+        put "#{base}/#{flow.id}/draft", params: { graph: menu_graph, lock_version: bad },
+                                        headers: admin.create_new_auth_token, as: :json
+        expect(response).to have_http_status(:unprocessable_entity), bad
+      end
+    end
+  end
+
   it 'deletes only a flow that is not published' do
-    Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys) }.publish!
+    Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
 
     delete "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
     expect(response.parsed_body['errors'].pluck('code')).to eq(['flow_active'])
@@ -82,7 +153,7 @@ RSpec.describe 'Flows API', type: :request do
 
   it 'tests the draft on the real runtime and keeps nothing: no message, conversation, contact or job' do
     AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)
-    Flows::Versions.new(flow).save!(menu_graph.deep_stringify_keys)
+    Flows::Versions.new(flow).save!(menu_graph.deep_stringify_keys, lock_version: 0)
     counts = -> { [Message.count, Conversation.count, Contact.count, FlowSession.count] }
     before = counts.call
     inputs = [{ text: 'hi' }, { text: 'Track order', reply_id: 'lfb:menu:track' }]
@@ -102,7 +173,7 @@ RSpec.describe 'Flows API', type: :request do
 
   it 'shows the latest sessions without what customers wrote' do
     AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)
-    version = Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys) }.publish!
+    version = Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
     conversation = create(:conversation, account: account, inbox: whatsapp.inbox)
     FlowSession.create!(account: account, agent_bot: flow, flow_version: version, conversation: conversation, status: :handed_off,
                         current_node_id: 'menu', context: { 'reply' => 'my secret address', 'end_reason' => 'no_choice' })

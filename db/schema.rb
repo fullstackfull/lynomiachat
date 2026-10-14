@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1913,6 +1913,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_140000) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "notification_attempted_at"
+    t.string "notification_error"
+    t.index ["notification_attempted_at"], name: "index_site_quote_requests_on_notification_attempted_at"
     t.index ["status", "created_at"], name: "index_site_quote_requests_on_status_and_created_at"
   end
 

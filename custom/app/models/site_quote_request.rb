@@ -31,6 +31,21 @@ class SiteQuoteRequest < ApplicationRecord
 
   scope :newest_first, -> { order(created_at: :desc) }
 
+  # The delivery outcome of the operator notification, recorded by Marketing::QuoteNotificationJob. These are
+  # the quote settings screen's only honest source for a "delivery problem" state -- see the migration.
+  scope :notification_attempted, -> { where.not(notification_attempted_at: nil) }
+  scope :notification_failed, -> { notification_attempted.where.not(notification_error: nil) }
+  scope :notification_delivered, -> { notification_attempted.where(notification_error: nil) }
+  scope :latest_notification_first, -> { order(notification_attempted_at: :desc) }
+
+  def notification_delivered?
+    notification_attempted_at.present? && notification_error.blank?
+  end
+
+  def notification_failed?
+    notification_attempted_at.present? && notification_error.present?
+  end
+
   private
 
   # The slugs the form offered, and nothing else.

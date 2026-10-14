@@ -1,0 +1,124 @@
+<%#
+  Sales settings for the official website: the one editable address that quote requests are emailed to.
+
+  THREE STATES AND NO FOURTH. Marketing::QuoteSettings.status decides which of them is true, and the block
+  below only renders it. The distinction that matters is the owner's: a stored address is NOT a success state,
+  so "Configured" says the setting is in place and then reports separately whether anything has actually been
+  delivered. A green tick appears only against a real recorded delivery.
+
+  Bare English strings are the convention of this surface (every hand-written Super Admin page in this
+  repository is written the same way); the two labels the owner specified, English and Arabic, come from
+  en.yml so the Arabic one is a stored value rather than literal text in a template.
+%>
+<% content_for(:title) do %>Website Sales Settings<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Website Sales Settings</h1>
+</header>
+
+<section class="main-content__body">
+  <p class="text-sm text-slate-600 mb-6 max-w-3xl">
+    Where a quote request from the website's pricing page is emailed. Changing this address takes effect on the
+    next request &mdash; no restart and no deployment. Requests are stored and answered under
+    <%= link_to 'Site Quote Requests', super_admin_site_quote_requests_path, class: 'text-woot-600 underline' %>
+    whatever this is set to, so an address that is empty or wrong costs the alert and never the lead.
+  </p>
+
+  <%# ---------------------------------------------------------------- the state %>
+  <% case @status %>
+  <% when :unconfigured %>
+    <div class="border border-yellow-300 bg-yellow-50 rounded-md px-4 py-3 mb-6 text-sm text-yellow-900 max-w-3xl">
+      <strong>Not configured.</strong> No address is stored, so nobody is emailed when a visitor submits the
+      form. Every submission is still saved and listed under Site Quote Requests, which is the only place they
+      arrive while this is empty.
+    </div>
+  <% when :failing %>
+    <div class="border border-red-300 bg-red-50 rounded-md px-4 py-3 mb-6 text-sm text-red-900 max-w-3xl">
+      <strong>Delivery problem.</strong> The most recent notification this installation tried to send was
+      refused. The address below is stored and the requests are safe &mdash; what failed is the email.
+      <% if @last_failure %>
+        <div class="mt-2 font-mono text-xs break-all">
+          Request #<%= @last_failure.id %>,
+          <%= @last_failure.notification_attempted_at.to_fs(:long) %>:
+          <%= @last_failure.notification_error %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="border border-green-300 bg-green-50 rounded-md px-4 py-3 mb-6 text-sm text-green-900 max-w-3xl">
+      <strong>Configured.</strong> Quote requests are emailed to <code><%= @address %></code>.
+      <div class="mt-1">
+        <% if @last_delivery %>
+          Last delivered: request #<%= @last_delivery.id %>,
+          <%= @last_delivery.notification_attempted_at.to_fs(:long) %>.
+        <% else %>
+          No notification has been sent yet, so delivery to this address is unproven. Use
+          <strong>Send test email</strong> below to prove it.
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ---------------------------------------------------------------- the field %>
+  <div class="border border-slate-100 rounded-md p-4 max-w-3xl mb-6">
+    <%= form_with url: super_admin_marketing_settings_path, method: :patch, local: true, class: 'mb-0' do |form| %>
+      <label for="quote_notification_email" class="block text-sm font-semibold text-slate-800">
+        <%= t('super_admin.marketing_settings.label') %>
+      </label>
+      <%# The same field, named in Arabic. The Super Admin console has no locale switch, so both labels are
+          shown rather than one of them being chosen for the operator. %>
+      <div class="text-sm text-slate-600 mb-2" dir="rtl" lang="ar">
+        <%= t('super_admin.marketing_settings.label_ar') %>
+      </div>
+
+      <%# `dir: 'ltr'` because an address is always written left to right, even on a page an Arabic-speaking
+          operator is reading. `maxlength` mirrors the server's cap rather than replacing it. %>
+      <%= form.email_field :quote_notification_email, value: @address,
+                           autocomplete: 'off', dir: 'ltr', maxlength: Marketing::QuoteSettings::MAX_LENGTH,
+                           placeholder: 'nobody@example.com',
+                           class: 'border border-slate-200 p-2 rounded-md w-full font-mono text-sm' %>
+
+      <p class="text-xs text-slate-500 mt-2">
+        One address. Leave it empty to send no notification at all &mdash; requests are still stored.
+        Stored as <code><%= Marketing::QuoteSettings::KEY %></code> in
+        <%= link_to 'Installation Configs', super_admin_installation_configs_path, class: 'underline' %>,
+        which is the same value this field reads and writes. Every change is recorded in the audit trail with
+        the address it moved from and to.
+      </p>
+
+      <div class="mt-4">
+        <%= form.submit 'Save changes',
+                        class: 'border border-woot-500 bg-woot-500 text-white px-3 py-1.5 rounded-md cursor-pointer' %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ---------------------------------------------------------------- the two other actions %>
+  <div class="flex flex-wrap items-center gap-3 max-w-3xl">
+    <% if @address.present? %>
+      <%# Clearing is destructive in the sense that matters -- notifications stop -- so it confirms first. %>
+      <%= button_to 'Clear email', clear_super_admin_marketing_settings_path, method: :post,
+                    data: { confirm: 'Clear the address? No email is sent for new quote requests until one is set again.' },
+                    class: 'border border-slate-200 bg-slate-50 px-3 py-1.5 rounded-md cursor-pointer text-sm' %>
+
+      <%# Offered only when there is an address to send to: a test button that cannot send is a dead control. %>
+      <%= button_to 'Send test email', test_email_super_admin_marketing_settings_path, method: :post,
+                    class: 'border border-slate-200 bg-slate-50 px-3 py-1.5 rounded-md cursor-pointer text-sm' %>
+      <span class="text-xs text-slate-500">
+        Sends one message to <code><%= @address %></code> now and reports what the mail server said.
+      </span>
+    <% else %>
+      <span class="text-xs text-slate-500">
+        Save an address to enable the test email. There is nothing to clear while this is empty.
+      </span>
+    <% end %>
+  </div>
+
+  <% if @unanswered_count.positive? %>
+    <p class="text-sm text-slate-600 mt-8">
+      <%= link_to pluralize(@unanswered_count, 'quote request'), super_admin_site_quote_requests_path,
+                  class: 'text-woot-600 underline' %>
+      <%= @unanswered_count == 1 ? 'is' : 'are' %> waiting for an answer.
+    </p>
+  <% end %>
+</section>

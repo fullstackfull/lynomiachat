@@ -66,4 +66,21 @@ end
 namespace :super_admin do
   resources :site_quote_requests, only: [:index, :show, :edit, :update, :destroy],
                                   constraints: { id: /\d+/ }
+
+  # The one editable sales setting: where a quote request is emailed
+  # (custom/app/controllers/super_admin/marketing_settings_controller.rb).
+  #
+  # HAND-WRITTEN, SO IT NEEDS ITS NAME IN THE NAVIGATION EXCLUSION ARRAY at
+  # app/views/super_admin/application/_navigation.html.erb. Administrate enumerates every controller under
+  # super_admin/ from this route table and raises for one with no index route and no matching dashboard --
+  # inside a partial that renders on EVERY Super Admin page. The entry ships in the same commit as this route.
+  #
+  # `clear` and `test_email` are POSTs on a singular resource, not members of a collection: there is one
+  # setting, and neither turning notifications off nor sending mail may be reachable by a link somebody
+  # pastes. `controller:` is required -- without it a singular `resource :marketing_settings` routes to
+  # MarketingSettingController (singular) and 404s.
+  resource :marketing_settings, only: [:show, :update], controller: 'marketing_settings' do
+    post :clear, on: :collection
+    post :test_email, on: :collection
+  end
 end

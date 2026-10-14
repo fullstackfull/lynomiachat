@@ -132,25 +132,25 @@ describe 'Marketing pricing' do
       { site_quote_request: { name: 'Noura', email: 'noura@example.com' } }
     end
 
-    it 'emails the configured address' do
+    it 'queues the notification for the saved row' do
       InstallationConfig.find_or_initialize_by(name: 'MARKETING_QUOTE_NOTIFICATION_EMAIL')
                         .update!(value: 'sales@example.com')
       GlobalConfig.clear_cache
 
       expect { post '/en/pricing/request', params: valid_params }
-        .to have_enqueued_mail(Marketing::QuoteMailer, :new_request)
+        .to have_enqueued_job(Marketing::QuoteNotificationJob)
+
+      expect(Marketing::QuoteNotificationJob).to have_been_enqueued.with(SiteQuoteRequest.last.id)
     end
 
-    # The owner's requirement: a delivery problem must never cost the submission. `deliver_later` is already
+    # The owner's requirement: a delivery problem must never cost the submission. The job is already
     # asynchronous, but ENQUEUEING talks to Redis and can fail after the row is committed -- which would show
     # the visitor a 500 for a request that succeeded, and have them send it again.
     it 'still thanks the visitor when the notification cannot even be queued' do
       InstallationConfig.find_or_initialize_by(name: 'MARKETING_QUOTE_NOTIFICATION_EMAIL')
                         .update!(value: 'sales@example.com')
       GlobalConfig.clear_cache
-      delivery = instance_double(ActionMailer::MessageDelivery)
-      allow(delivery).to receive(:deliver_later).and_raise(Redis::CannotConnectError, 'down')
-      allow(Marketing::QuoteMailer).to receive(:new_request).and_return(delivery)
+      allow(Marketing::QuoteNotificationJob).to receive(:perform_later).and_raise(Redis::CannotConnectError, 'down')
 
       expect { post '/en/pricing/request', params: valid_params }
         .to change(SiteQuoteRequest, :count).by(1)

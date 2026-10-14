@@ -817,6 +817,21 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    # The website's one sales setting. The console has no locale switch, so the field carries both of the names
+    # the owner gave it -- `label` in English and `label_ar` in Arabic -- and shows them together rather than
+    # guessing which language the operator reads.
+    marketing_settings:
+      label: 'Sales Quote Notification Email'
+      label_ar: 'بريد استقبال طلبات عروض الأسعار'
+      flash:
+        saved: 'Saved. Quote requests are now emailed to %{detail}.'
+        cleared: 'Cleared. No email is sent for new quote requests; they are still stored and listed here.'
+        unchanged: 'That is already the stored address, so nothing changed.'
+        invalid: 'That is not a valid email address, so nothing was saved. Enter one address, or empty the field to send no notification.'
+        too_long: 'That address is too long, so nothing was saved.'
+        not_configured: 'There is no address to send a test to. Save one first.'
+        test_sent: 'A test email was accepted by the mail server for %{detail}. Check that it arrives.'
+        test_failed: 'The test email could not be sent: %{detail}'
     operations:
       case_title: "Operational issue: %{source} %{signal}"
       case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."

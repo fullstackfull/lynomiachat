@@ -45,7 +45,7 @@ as defined by the routes in the `admin/` namespace
           not just its own. So each such controller is excluded by name, and the exclusion ships in the same
           commit as the route and the nav item.
         %>
-        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions", "documentation_media"].include?  resource.resource %>
+        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions", "documentation_media", "marketing_settings"].include?  resource.resource %>
         <% next if resource.resource == "platform_banners" && !ChatwootApp.chatwoot_cloud? %>
         <%= render partial: "nav_item", locals: {
             icon: sidebar_icons[resource.resource.to_sym],

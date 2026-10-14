@@ -235,6 +235,15 @@ en:
         that than show a number we cannot stand behind. If plans are published later, this page will show them
         here.
     quote_mailer:
+      test_subject: Test — website quote notifications
+      test_heading: >-
+        This is a test of the website's quote notification email. It confirms that this installation can
+        deliver mail to %{address}. It is not a real quote request.
+      test_requested_by: 'Sent from Super Admin by %{actor}.'
+      test_requested: Sent from Super Admin.
+      test_footer: >-
+        Real quote requests arrive with the sender's details and can be answered by replying. They are also
+        listed in Super Admin under Site quote requests.
       heading: A quote request was submitted on the website (#%{id}).
       blank: '-'
       language: Language the request was written in

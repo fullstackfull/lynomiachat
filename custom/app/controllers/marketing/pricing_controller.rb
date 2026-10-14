@@ -40,11 +40,14 @@ class Marketing::PricingController < Marketing::BaseController
   private
 
   # THE ROW IS THE RECORD; THE EMAIL IS A CONVENIENCE ON TOP OF IT, and this method is what makes that
-  # ordering true rather than merely intended.
+  # ordering true rather than merely intended. It is called only after `@quote.save` returned true.
   #
-  # `deliver_later` is already asynchronous -- the SMTP conversation never happens inside the request, and
-  # ApplicationMailer's `rescue_from(*ExceptionList::SMTP_EXCEPTIONS)` handles a relay failure in the job. But
-  # ENQUEUEING can itself fail: the queue adapter talks to Redis, and a Redis that is down raises here, after
+  # ASYNCHRONOUS, THROUGH A JOB RATHER THAN `deliver_later`. The SMTP conversation never happens inside the
+  # request either way; what the job adds is a recorded outcome, which is what lets Super Admin report a
+  # delivery problem instead of guessing from the presence of an address
+  # (custom/app/jobs/marketing/quote_notification_job.rb).
+  #
+  # ENQUEUEING CAN ITSELF FAIL: the queue adapter talks to Redis, and a Redis that is down raises here, after
   # the row is committed. Without this rescue the visitor would be shown a 500 for a request that actually
   # succeeded, and would send it again.
   #
@@ -53,7 +56,7 @@ class Marketing::PricingController < Marketing::BaseController
   # their own), and the correct response to every one of them is the same. It is logged at error level with
   # the id, so an operator can find the lead in Super Admin and answer it by hand.
   def notify_operator(quote)
-    Marketing::QuoteMailer.new_request(quote).deliver_later
+    Marketing::QuoteNotificationJob.perform_later(quote.id)
   rescue StandardError => e
     Rails.logger.error("[Marketing] quote request ##{quote.id} saved but notification could not be queued: #{e.class}: #{e.message}")
   end

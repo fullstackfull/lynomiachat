@@ -23,4 +23,18 @@ class Marketing::QuoteMailer < ApplicationMailer
          subject: "New quote request ##{quote.id} from the website",
          reply_to: quote.email)
   end
+
+  # The "send test email" button on the quote settings screen.
+  #
+  # It goes to the configured address and nowhere else, so what it proves is the thing an operator actually
+  # wants proved: that THIS installation can deliver mail to THAT address. No `reply_to`, because there is no
+  # sender to reply to -- the operator who pressed the button is named in the body instead, so somebody
+  # receiving an unexpected test can see who ran it.
+  def test_notification(requested_by)
+    return unless Marketing::QuoteNotification.configured?
+
+    @requested_by = requested_by
+    @address = Marketing::QuoteNotification.address
+    mail(to: @address, subject: t('marketing.quote_mailer.test_subject'))
+  end
 end

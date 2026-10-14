@@ -993,3 +993,63 @@ printing the list rather than trusting the patterns.
 | A6-O5 | `markdownSource.js` and `mediaUpload.js` have **no test at all** — surfaced by the new uncovered report. `mediaUpload.js` is the editor's only route to the upload API | open |
 | A6-O6 | **Phases A–C are in this gate only, not in the repository's real CI.** `.github/workflows/run_foss_spec.yml` runs `find spec -name '*_spec.rb'`, so it is still blind to a broken `load_tasks` and to eager loading — **the §H3 deploy break would still reach the mainline through CI** | **owner decision**: adding two rake invocations to that workflow is cheap and would have caught a deploy-breaking regression, but CI configuration is shared infrastructure and outside this program's fence |
 | A6-O7 | **Not verified, in those words**: production data, Meta behaviour (none needed), browser rendering (no browser used — every markup claim is parser-based), and the gate's own vitest leg (phase E was never reached, because phase D failed on F1 first) |
+
+## K. Wave 5 — the single combined gate
+
+Run on a clean tree and a clean database, as the integrator, after the six streams integrated. **Two runs,
+because the first one failed and that is the point of having it.**
+
+### K1 — Run 1: red, on the specs that pinned the defect the same change set fixed
+
+`1377 examples, 3 failures`, all three in `spec/security/documentation_v2/source_of_truth_boundary_spec.rb`:
+the examples Agent 6 wrote to prove the section-`locale` hole (F3), which §J2 then closed. Agent 6 had flagged
+**two** of its examples as needing inversion when their fixes landed — the custom-domain pair and the NUL byte —
+and did not flag these three. So nobody caught the mismatch; the gate did.
+
+All three inverted, each kept rather than deleted, each carrying its previous expectation in the comment:
+
+| Was asserting | Now asserts |
+|---|---|
+| a posted locale **is** applied | both halves of the lookup key are dropped |
+| the model's uniqueness validation answers 422 | the locale never reaches the model, so that validation is not consulted — it was the last line, the permitted list is now the first |
+| the seed creates a second section and leaves an orphan at the Arabic URL | one row, same id, **no orphan**, article still attached |
+
+A fourth example was green and had to change anyway: it asserted that `0`, `false`, `no` and `off` are all
+truthy — true of Ruby, and exactly the `ADOPT_UNTRACKED` defect — while the task now accepts `1` alone. **A
+passing test that describes behaviour which no longer exists is worse than no test.**
+
+### K2 — Run 2: GREEN, all five phases
+
+```
+A: rake load_tasks        126 tasks load, the documentation ones among them
+B: eager load (production boot shape)
+C: clean test database    articles=0 categories=0 portals=0 super_admins=0 documentation_media=0
+D: rspec -- 51 files      1377 examples, 0 failures        (1m 44s, baseline origin/lynomia-custom)
+E: vitest -- 19 files     19 files, 230 tests, 0 failures   (8.9s)
+all phases passed         GATE_EXIT=0
+```
+
+Phases A and B are the first time anything in this program has executed a `.rake` file or an eager load. Both
+pass. Phase E is the first time the gate has run the editor's own tests rather than trusting a hand check.
+
+### K3 — What the gate still cannot see, printed every run
+
+**25 changed files are covered by neither selector** — the report that now prints them is the only defence
+against a fifth round of "the gate selected nothing for the thing that broke". Not all 25 are uncovered in
+substance: `media_controller.rb` is exercised by `media_delivery_spec` and `media_boundary_spec`, and
+`markdown_renderer_url_sanitizer.rb` by two renderer specs — the selector matches **basenames**, so a file whose
+tests live under another name reads as uncovered. Two are genuinely untested and are **A6-O5**:
+`markdownSource.js` and `mediaUpload.js`, the editor's only route to the upload API.
+
+### K4 — The program's own count: five selection misses, and where each was caught
+
+| # | What broke | Caught by |
+|---|---|---|
+| 1 | the public documentation home page 500'd; the gate's hand-written list named a directory, not the sibling file | production-shaped manual check |
+| 2 | `markdown_embeds_spec` went red on the mainline; no subject pattern matched `markdown_embeds` | the mainline |
+| 3 | a `.rake` class body broke **every** rake task including `db:migrate` | trying to apply a migration |
+| 4 | the sitemap rewrite left an upstream spec asserting 3 URLs | **the gate, phase D** |
+| 5 | the fixes for F3 invalidated the specs that proved F3 | **the gate, phase D** |
+
+Misses 1–3 were caught by accident. 4 and 5 were caught by a mechanism. That is the difference phases A–E were
+built for, and it is the one claim in this record that two runs of evidence actually support.

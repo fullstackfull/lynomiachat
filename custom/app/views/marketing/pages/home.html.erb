@@ -98,18 +98,4 @@
   </div>
 </section>
 
-<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-  <div class="rounded-3xl bg-woot-700 px-6 py-12 text-center sm:px-12">
-    <h2 class="text-2xl font-semibold text-white"><%= t('marketing.home.cta_title') %></h2>
-    <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-woot-75"><%= t('marketing.home.cta_lede') %></p>
-    <div class="mt-7 flex flex-wrap justify-center gap-3">
-      <a href="/app/register" class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-woot-700 hover:bg-woot-25">
-        <%= t('marketing.home.primary_cta') %>
-      </a>
-      <a href="<%= marketing_support_email_url %>"
-         class="rounded-xl border border-woot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-600">
-        <%= t('marketing.home.cta_email') %>
-      </a>
-    </div>
-  </div>
-</section>
+<%= render 'marketing/shared/cta' %>

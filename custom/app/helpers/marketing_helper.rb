@@ -27,8 +27,16 @@ module MarketingHelper
 
   # Arabic has no prefix, English is `/en`. `locale: nil` is how the route helpers express the unprefixed tree,
   # so an Arabic URL is built by passing nil rather than by string surgery on a path.
+  #
+  # `page` is either a Symbol naming a standing page (`:features`) or a Marketing::Page, which additionally
+  # carries the dynamic segment of a detail page. Both shapes go through here so there is one place that knows
+  # how a locale becomes a path -- the header's language switch, the canonical, the hreflang pair and the
+  # navigation all call it.
   def marketing_path(page, locale: marketing_locale)
-    public_send("marketing_#{page}_path", locale: locale == 'en' ? 'en' : nil)
+    route = page.is_a?(Marketing::Page) ? page.route : page
+    extra = page.is_a?(Marketing::Page) ? page.url_params : {}
+
+    public_send("marketing_#{route}_path", **extra, locale: locale == 'en' ? 'en' : nil)
   end
 
   def marketing_url(page, locale: marketing_locale)
@@ -56,6 +64,14 @@ module MarketingHelper
   # primary market. Built from the same helper the canonical uses, so the two cannot drift.
   def marketing_locale_alternates(page)
     LOCALES.index_with { |locale| marketing_url(page, locale: locale) }
+  end
+
+  # The route-helper name behind each catalogue scope, so a view asks for "this entry's page" rather than
+  # naming a route helper and a locale argument at every call site.
+  ENTRY_ROUTES = { features: :feature, channels: :channel }.freeze
+
+  def marketing_entry_path(scope, entry, locale: marketing_locale)
+    marketing_path(Marketing::Page.new(route: ENTRY_ROUTES.fetch(scope), slug: entry.slug), locale: locale)
   end
 
   # The navigation, built only from sections whose route actually exists.
@@ -92,8 +108,22 @@ module MarketingHelper
     LEGAL_LINKS.map { |key, href| { href: href, label: t("marketing.footer.#{key}") } }
   end
 
-  def marketing_page_title(key)
-    [t("marketing.pages.#{key}.title"), t('marketing.site_name')].compact_blank.join(' | ')
+  # The <title>: the page's own title, then the site name. The page supplies its title rather than the helper
+  # deriving it from an I18n key, because a detail page's title lives beside its catalogue entry and a
+  # standing page's lives under `marketing.pages` -- one convention in the helper would exclude the other.
+  def marketing_page_title(page = marketing_page)
+    [page.title, t('marketing.site_name')].compact_blank.join(' | ')
+  end
+
+  # The breadcrumb trail for a detail page: site home, the index it belongs to, then the page itself with no
+  # link. Built from the same route names the navigation uses, so a trail cannot point somewhere the nav does
+  # not go.
+  def marketing_breadcrumb(index_route, current_label)
+    [
+      { label: t('marketing.nav.home'), path: marketing_path(:home) },
+      { label: t("marketing.nav.#{index_route}"), path: marketing_path(index_route) },
+      { label: current_label, path: nil }
+    ]
   end
 
   def marketing_dir

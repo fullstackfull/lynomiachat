@@ -128,6 +128,79 @@ describe 'Marketing pages' do
     end
   end
 
+  describe 'the catalogue detail pages' do
+    let(:channel_paths) do
+      Marketing::Catalog.channels.select(&:detail?).map { |entry| "/channels/#{entry.slug}" }
+    end
+
+    it 'gives every channel with a page one, in both locales, with its own canonical' do
+      (channel_paths + channel_paths.map { |path| "/en#{path}" }).each do |path|
+        get path
+
+        expect(response).to have_http_status(:success), "#{path} did not render"
+        expect(response.body).to match(/<link rel="canonical" href="[^"]*#{Regexp.escape(path)}">/),
+                                 "#{path} canonical does not point at itself"
+      end
+    end
+
+    it 'states the prerequisite on every channel page, because every channel needs the customer provider' do
+      channel_paths.each do |path|
+        get "/en#{path}"
+
+        expect(response.body).to include('You supply:'), "/en#{path} does not say what the customer supplies"
+      end
+    end
+
+    it 'has no dead links on any detail page' do
+      (channel_paths + channel_paths.map { |path| "/en#{path}" }).each do |path|
+        get path
+        dead = response.body.scan(/href="(#|)"/)
+
+        expect(dead).to be_empty, "#{path} has #{dead.size} dead link(s)"
+      end
+    end
+
+    it 'puts a breadcrumb on a detail page that leads back to its index' do
+      get '/en/channels/whatsapp'
+
+      expect(response.body).to include('aria-label="Breadcrumb"')
+      expect(response.body).to include('href="/en/channels"')
+    end
+
+    it '404s an unknown slug rather than rendering a page with the slug in the title' do
+      get '/en/channels/whatsapp-calling'
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    # TikTok is the one entry the inventory says to mention and not to build a page for.
+    it 'gives the beta channel no page of its own, and does not link to one from the index' do
+      get '/en/channels/tiktok'
+      expect(response).to have_http_status(:not_found)
+
+      get '/en/channels'
+      expect(response.body).to include('TikTok')
+      expect(response.body).not_to include('/channels/tiktok')
+    end
+
+    # The scope travels as a route default, and a route default shares the params namespace with the query
+    # string. If a query parameter could win, `?scope=features` would read the wrong catalogue and the wrong
+    # I18n branch for the same URL.
+    it 'ignores a scope supplied in the query string' do
+      get '/en/channels/whatsapp?scope=features'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('href="/en/channels"')
+    end
+
+    it 'does not restore a struck-off claim on the WhatsApp page' do
+      get '/en/channels/whatsapp'
+
+      expect(response.body).to include('are not part of this product')
+      expect(response.body).not_to match(/360dialog is offered|voice calling is available/i)
+    end
+  end
+
   describe 'availability honesty' do
     it 'labels a conditional capability instead of presenting it as generally available' do
       get '/en/features'

@@ -9,6 +9,11 @@ en:
     site_name: Lynomia Chat
     skip_to_content: Skip to content
     read_docs: Read the documentation
+    breadcrumb: Breadcrumb
+    detail:
+      note_title: Worth knowing
+      works_with: Works with these channels
+      read_next: Read next
     brand:
       name: Lynomia
       suffix: Chat
@@ -27,6 +32,7 @@ en:
       docs: Docs
       sign_in: Sign in
       get_started: Create account
+      home: Home
       other_locale: عربي
     footer:
       product: Product
@@ -102,10 +108,12 @@ en:
         account.
       help_docs: Open the documentation
       help_support: How to get help
-      cta_title: Ready to bring your conversations together?
-      cta_lede: >-
+    cta:
+      title: Ready to bring your conversations together?
+      lede: >-
         Create an account and connect your first channel, or email us and we will walk you through it.
-      cta_email: Email us
+      primary: Create your account
+      email: Email us
     support:
       docs_title: Read the documentation
       docs_body: >-
@@ -189,6 +197,16 @@ en:
         requires: >-
           the AI assist setting enabled for your account and your own OpenAI key. Lynomia does not operate an
           autonomous AI agent.
+      agent_bots:
+        name: Agent bots
+        summary: >-
+          Connect your own bot to an inbox to handle the first message, then hand the conversation to a person
+          with the history intact.
+      translation:
+        name: Message translation
+        summary: >-
+          Translate an incoming message and detect the language it was written in, inside the conversation.
+        requires: a Google Cloud translation credential connected to your account.
       commerce:
         name: Commerce
         summary: >-
@@ -219,38 +237,258 @@ en:
           The official WhatsApp Business Cloud API: rich messages, approved templates and campaigns, all in the
           team inbox.
         requires: a WhatsApp Business account, connected through guided signup or your own API credentials.
+        detail:
+          lede: >-
+            WhatsApp is the channel most of our customers start with, and it is connected to the same inbox
+            your team already works in. Messages arrive with their delivery and read status, approved templates
+            are managed inside the product, and a conversation keeps its history whatever your agents do next.
+          points_title: What the WhatsApp channel carries
+          points:
+            - title: Three ways to connect
+              body: >-
+                Guided signup through Meta where this installation is configured for it, your own WhatsApp Cloud
+                API credentials, or WhatsApp through your Twilio account. Which routes appear depends on how
+                your installation is set up.
+            - title: Approved templates, managed in the product
+              body: >-
+                Create a template, submit it to Meta, follow its approval status and fill in its variables when
+                you send. One workspace can hold more than one WhatsApp Business account.
+            - title: Campaigns to a saved audience
+              body: >-
+                Send an approved template to a contact filter your team has saved, then read per-recipient
+                delivery reporting. Needs the WhatsApp campaigns setting enabled for your account.
+            - title: Guided conversations
+              body: >-
+                The flow builder lays out a step-by-step WhatsApp conversation visually and lets you inspect a
+                session afterwards. Available for WhatsApp Cloud inboxes when the setting is enabled for your
+                account.
+            - title: Status on every message
+              body: >-
+                Sent, delivered, read and failed are shown per message, and a failure carries the provider's own
+                error so your team knows whether to retry or to fix something.
+            - title: Everything the inbox already does
+              body: >-
+                Assignment, labels, private notes, mentions, canned responses, automation rules and reports all
+                work on WhatsApp conversations exactly as they do on the rest.
+          note: >-
+            Templates are approved by Meta, not by Lynomia: approval times and rejections are Meta's. Voice and
+            WhatsApp calling are not part of this product, and WhatsApp through 360dialog is not offered.
       live_chat:
         name: Website chat
         summary: A chat widget for your own site, with pre-chat forms and file attachments.
         requires: one line of JavaScript on your site.
+        detail:
+          lede: >-
+            The website widget puts a conversation on your own pages and drops it into the same inbox as every
+            other channel, with the same history, the same routing and the same reports.
+          points_title: What the website channel carries
+          points:
+            - title: One line of JavaScript
+              body: >-
+                Copy the snippet from the dashboard into your site, or use it from your own tag manager. There is
+                no plugin to install and no server-side component.
+            - title: Ask before the conversation starts
+              body: >-
+                A pre-chat form can collect a name, an email address, a phone number or your own custom fields,
+                so a conversation arrives already attached to a contact.
+            - title: Files and voice notes
+              body: >-
+                Visitors can attach files, and your agents can reply with attachments and voice notes from the
+                same reply box they use everywhere else.
+            - title: Campaigns on your own pages
+              body: >-
+                An ongoing live-chat campaign sends a message to visitors on the pages you choose, so a question
+                can be answered before it is asked.
+            - title: Control it from your own code
+              body: >-
+                The JavaScript SDK sets the visitor's identity and custom attributes, opens and closes the
+                widget, and lets your application decide when it appears.
+          note: >-
+            What a visitor sees about availability follows your inbox business hours and your agents' own
+            availability states. The widget does not claim that somebody is online when nobody is.
       email:
         name: Email
         summary: Turn a shared mailbox into conversations, through Gmail, Microsoft 365 or plain IMAP and SMTP.
         requires: the mailbox you want to connect.
+        detail:
+          lede: >-
+            A shared mailbox becomes a queue the whole team can see: one conversation per thread, assignment and
+            labels on each, and no more forwarding a message to a colleague to ask who is dealing with it.
+          points_title: What the email channel carries
+          points:
+            - title: Connect the mailbox you already use
+              body: >-
+                Gmail and Microsoft 365 connect with a sign-in where this installation has those apps configured.
+                Plain IMAP and SMTP work with any provider and need nothing but the mailbox credentials.
+            - title: Or forward to us
+              body: >-
+                Each email inbox gets its own address. Forward your existing mailbox to it and conversations
+                start arriving without touching your mail provider's settings.
+            - title: Replies stay on the thread
+              body: >-
+                Outgoing messages carry the reference headers mail clients use, so a customer's reply lands back
+                on the same conversation instead of opening a new one.
+            - title: Send the conversation as a transcript
+              body: >-
+                An agent can email a full transcript of a conversation to the customer or to a colleague, which
+                is what most handovers actually need.
+            - title: Attachments
+              body: >-
+                Attachments are supported in both directions, up to the size limit set on your installation
+                (40 MB by default).
+          note: >-
+            Gmail and Microsoft 365 appear only when the matching application is configured on this
+            installation. IMAP and SMTP are always available and need nothing from us.
       sms:
         name: SMS
         summary: Two-way SMS through Twilio or Bandwidth.
         requires: your Twilio or Bandwidth account.
+        detail:
+          lede: >-
+            SMS reaches a customer who has no app open and no data connection, and in the team inbox it behaves
+            like every other channel: assignment, labels, notes and reports all apply.
+          points_title: What the SMS channel carries
+          points:
+            - title: Your own provider account
+              body: >-
+                Connect Twilio or Bandwidth with your own credentials. You keep the commercial relationship with
+                the provider and the number stays yours.
+            - title: Two-way conversations, not just alerts
+              body: >-
+                A reply from a customer opens or continues a conversation in the inbox, so SMS is a channel your
+                team answers rather than a one-way notification pipe.
+            - title: One-off campaigns
+              body: >-
+                Once an SMS inbox exists you can send a one-off campaign to a chosen audience and read
+                per-recipient delivery reporting.
+            - title: Delivery status
+              body: >-
+                The provider's delivery state is shown on the message, and a failure carries the provider's own
+                error rather than a generic one.
+          note: >-
+            Message charges are billed to you by Twilio or Bandwidth, not by Lynomia. Bandwidth inbound
+            messages additionally need the callback credentials you set when connecting the inbox.
       telegram:
         name: Telegram
         summary: Connect a Telegram bot and answer from the same inbox.
         requires: a Telegram bot token.
+        detail:
+          lede: >-
+            Telegram connects in a minute with a bot token and needs nothing configured on our side, which makes
+            it the quickest way to see how the shared inbox behaves with a real channel.
+          points_title: What the Telegram channel carries
+          points:
+            - title: A bot token is all it takes
+              body: >-
+                Create a bot with Telegram's own BotFather, paste the token into the dashboard, and the channel
+                is live. No application review and no credentials from us.
+            - title: Text, media and files
+              body: >-
+                Messages, photos, documents and voice notes arrive in the conversation and can be answered from
+                the same reply box as every other channel.
+            - title: Automation and routing apply
+              body: >-
+                Automation rules, assignment, labels and canned responses treat a Telegram conversation like any
+                other, so a rule you wrote once covers it too.
       line:
         name: LINE
         summary: Connect a LINE official account.
         requires: your LINE channel credentials.
+        detail:
+          lede: >-
+            A LINE official account becomes a conversation queue your team answers from the shared inbox,
+            alongside WhatsApp, email and the rest.
+          points_title: What the LINE channel carries
+          points:
+            - title: Your own LINE channel
+              body: >-
+                Connect with the channel id, channel secret and access token from your LINE developer console.
+                The official account stays yours.
+            - title: Messages and media
+              body: >-
+                Incoming messages and attachments open a conversation; replies go back through the same channel
+                with delivery state on each message.
+            - title: The same inbox behaviour
+              body: >-
+                Assignment, labels, notes, mentions and reports work on LINE conversations without any separate
+                setup.
       facebook_messenger:
         name: Facebook Messenger
         summary: Answer Facebook page messages in the team inbox.
         requires: a Facebook app configured on this installation, and your page.
+        detail:
+          lede: >-
+            Page messages stop living in one person's Facebook login: they arrive in the shared inbox, get
+            assigned, labelled and reported on like every other conversation.
+          points_title: What the Messenger channel carries
+          points:
+            - title: Connect your page with a sign-in
+              body: >-
+                You authorise the page from the dashboard and choose which pages to connect. Your page
+                permissions stay with you and can be withdrawn from Facebook at any time.
+            - title: Messages, media and story replies
+              body: >-
+                Text, images, files and the message types Messenger supports arrive in the conversation and are
+                answered from the same reply box.
+            - title: Routing and reporting
+              body: >-
+                Assignment policies, labels, notes, automation rules and the conversation reports all apply, so
+                Messenger is not a separate workflow.
+          note: >-
+            This channel appears only on an installation where a Facebook application is configured and the
+            Messenger channel is enabled for your account. Meta's own messaging windows and policies apply to
+            when a page may message a person.
       instagram:
         name: Instagram DM
         summary: Answer Instagram direct messages beside every other channel.
         requires: an Instagram app configured on this installation, and your professional account.
+        detail:
+          lede: >-
+            Instagram direct messages arrive in the same inbox as the rest, so the person answering them is part
+            of the same team, working to the same routing and showing up in the same reports.
+          points_title: What the Instagram channel carries
+          points:
+            - title: A professional account connects with a sign-in
+              body: >-
+                Authorise your Instagram professional account from the dashboard. The connection is yours to
+                withdraw from Meta whenever you choose.
+            - title: Direct messages and media
+              body: >-
+                Messages, images and the attachment types Instagram supports open a conversation and are
+                answered from the standard reply box.
+            - title: One contact across channels
+              body: >-
+                A customer who writes on Instagram and later on WhatsApp can be kept as one contact, so an agent
+                sees the whole history rather than two halves of it.
+          note: >-
+            This channel appears only on an installation where an Instagram application is configured and the
+            Instagram channel is enabled for your account. Meta's own messaging windows and policies apply.
       api_channel:
         name: API channel
         summary: Build your own channel on top of the API when you need something custom.
         requires: your own integration code.
+        detail:
+          lede: >-
+            The API channel is the escape hatch: when a channel we do not support matters to your business, you
+            can push its messages in and read replies out, and everything else in the product treats it as a
+            normal conversation.
+          points_title: What the API channel carries
+          points:
+            - title: Messages in, replies out
+              body: >-
+                Your code creates contacts and conversations and posts incoming messages. Outgoing replies reach
+                you through a signed webhook, so no polling is required.
+            - title: It behaves like a real channel
+              body: >-
+                Assignment, labels, private notes, canned responses, automation rules and reports all work on an
+                API conversation, because it is the same conversation model as the rest.
+            - title: Documented and versioned
+              body: >-
+                The REST API ships an OpenAPI specification with three authentication schemes, and outbound
+                webhooks are signed so you can verify what reached you.
+          note: >-
+            This channel is a building block, not a finished integration: what the customer sees on the other
+            end is your code's responsibility.
       tiktok:
         name: TikTok
         summary: TikTok messaging, available on installations configured for it.

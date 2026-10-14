@@ -10,7 +10,7 @@ class Marketing::BaseController < PublicController
   before_action :reject_tenant_custom_domain
   before_action :set_marketing_locale
 
-  helper_method :marketing_locale
+  helper_method :marketing_locale, :marketing_page
 
   # The locale the request resolved to, exposed to the views. It lives here rather than in MarketingHelper
   # because it is request state, and a helper that reads controller instance variables can silently render a
@@ -19,7 +19,21 @@ class Marketing::BaseController < PublicController
     @marketing_locale.presence || MarketingHelper::DEFAULT_LOCALE
   end
 
+  # The page's identity, which every discovery tag is built from. Request state, so it lives here for the same
+  # reason the locale does. An action that renders without setting it is a bug, and `fetch`-like loudness is
+  # what surfaces it: the head partial would otherwise emit a blank title and a canonical pointing at `/`.
+  def marketing_page
+    @marketing_page || raise("#{self.class.name}##{action_name} rendered without a Marketing::Page")
+  end
+
   private
+
+  # The same 404 body the rest of the public site serves, and the reason a detail page needs one: a slug that
+  # is not in the catalogue must not render an empty template with the slug echoed into the title, which is
+  # how a thin-content page gets indexed for a term the product does not have.
+  def render_marketing_404
+    render file: Rails.public_path.join('404.html'), status: :not_found, layout: false
+  end
 
   # D3: the marketing site answers on the platform's own host, never on a tenant's.
   #
@@ -37,7 +51,7 @@ class Marketing::BaseController < PublicController
     return if request.host.blank?
     return unless Portal.where.not(custom_domain: [nil, '']).exists?(custom_domain: request.host)
 
-    render file: Rails.public_path.join('404.html'), status: :not_found, layout: false
+    render_marketing_404
   end
 
   # Arabic is the default and is unprefixed; English is `/en` (D5). The locale is a URL decision made here,

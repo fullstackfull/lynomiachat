@@ -22,7 +22,18 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'features', to: 'pages#features', as: 'features'
   get 'channels', to: 'pages#channels', as: 'channels'
   get 'support', to: 'pages#support', as: 'support'
-  # /solutions, /integrations, /pricing, /contact, /about and /faq are W3. A route with no page behind it is
-  # a dead link in the navigation, which is one of the defects this rebuild exists to remove, so each lands
-  # with its page rather than ahead of it.
+
+  # THE DETAIL PAGES. One controller serves every catalogue scope and the scope travels as a route default,
+  # which is also why Marketing::EntriesController allowlists it: a route default shares the `params`
+  # namespace with the query string, so `?scope=` must not be able to choose which catalogue is read.
+  #
+  # An unknown slug 404s in the controller rather than being constrained here. A regex of twenty slugs built
+  # from the catalogue would couple the route table to an autoloaded constant at boot, and the controller has
+  # to look the entry up regardless -- one lookup, one answer.
+  get 'features/:slug', to: 'entries#show', as: 'feature', defaults: { scope: 'features' }
+  get 'channels/:slug', to: 'entries#show', as: 'channel', defaults: { scope: 'channels' }
+
+  # /solutions, /integrations, /pricing, /contact, /about and /faq are later W3 slices. A route with no page
+  # behind it is a dead link in the navigation, which is one of the defects this rebuild exists to remove, so
+  # each lands with its page rather than ahead of it.
 end

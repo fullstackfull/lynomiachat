@@ -74,16 +74,9 @@ class Commerce::Providers::Storesyria < Commerce::Providers::Base
   def find_customers(email: nil, phone: nil)
     raise ArgumentError, 'pass exactly one of email or phone' unless [email, phone].compact.one?
 
-    # VERIFIED IDENTIFIERS ONLY. The contract has no name search on purpose: matching a shopper to
-    # a conversation by name is how one customer is shown another's orders. What the lookup returns
-    # is therefore kept only where it actually carries the identifier that was asked for.
-    param, field = email ? %i[email emails] : %i[phone phones]
-    identifier = email ? email.to_s.strip.downcase : phone.to_s
-    return [] if identifier.blank?
+    return by_email(email.to_s.strip.downcase) if email
 
-    list('/customers/lookup', param => identifier)
-      .map { |raw| normalize_customer(raw) }
-      .select { |customer| customer.public_send(field).include?(identifier) }
+    by_phone(phone)
   end
 
   def list_customer_orders(external_customer_id, limit:)
@@ -138,14 +131,40 @@ class Commerce::Providers::Storesyria < Commerce::Providers::Base
 
   def normalizer = @normalizer ||= Commerce::Providers::Storesyria::Normalizer.new(self, @store)
 
-  def list(path, params = {})
-    result = get(path, params)
+  # VERIFIED IDENTIFIERS ONLY, on both paths: what the lookup returns is kept only where it really
+  # carries the identifier that was asked for, so a loose match in the store cannot become a wrong
+  # match here. There is no name search in the contract -- matching a shopper to a conversation by
+  # name is how one customer is shown another's orders.
+  def by_email(email)
+    return [] if email.blank?
 
-    # The contract always wraps a collection, so a bare array means a different server answered.
-    rows = result.is_a?(Hash) ? result['data'] : nil
-    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless rows.is_a?(Array) && rows.all?(Hash)
+    lookup(email: email).select { |customer| customer.emails.include?(email) }
+  end
 
-    rows
+  # The national significant number, not the E.164. A store keeps "+963955111222", "0955111222"
+  # and "00963955111222" for the same person, so it matches a suffix of whatever it stored and the
+  # full number is what gets verified here.
+  def by_phone(phone)
+    term = Commerce::Phone.search_term(phone)
+    return [] if term.blank?
+
+    lookup(phone: term).select { |customer| customer.phones.include?(phone) }
+  end
+
+  # POSTED rather than put in the query: an identifier in a URL is an identifier in the store's
+  # access logs, and this one belongs to a customer.
+  def lookup(body)
+    rows(http.post_json("#{API_PATH}/customers/lookup", body)).map { |raw| normalize_customer(raw) }
+  end
+
+  def list(path, params = {}) = rows(get(path, params))
+
+  # The contract always wraps a collection, so a bare array means a different server answered.
+  def rows(result)
+    data = result.is_a?(Hash) ? result['data'] : nil
+    raise Commerce::Error.new('INVALID_RESPONSE', reason: 'unexpected_shape') unless data.is_a?(Array) && data.all?(Hash)
+
+    data
   end
 
   def get(path, params = {})

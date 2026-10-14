@@ -92,6 +92,112 @@ RSpec.describe Commerce::Providers::Storesyria do
     end
   end
 
+  describe 'reads' do
+    let(:api) { 'https://storesyria.test/api/lynomia/commerce/v1' }
+    let(:order_row) do
+      { 'id' => '55', 'number' => 'A-1', 'delivered_status' => 6, 'payment_status' => 'paid',
+        'currency' => 'SYP', 'total' => '1500.50', 'created_at' => '2026-01-01T12:00:00Z', 'items' => [], 'item_count' => 0 }
+    end
+
+    # THE IDENTIFIER IS POSTED, NOT PUT IN THE QUERY. An email in a URL is an email in the
+    # store's access logs. The term sent for a phone is the national significant number, because
+    # a store keeps the same person as "+963955111222", "0955111222" and "00963955111222".
+    it 'posts the lookup and sends the national number for a phone' do
+      stub_request(:post, "#{api}/customers/lookup")
+        .to_return(status: 200,
+                   body: { data: [{ 'id' => '4', 'name' => 'Omar', 'emails' => [], 'phones' => ['0955111222'], 'phone_region' => 'SY' }] }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.find_customers(phone: '+963955111222').map(&:external_id)).to eq(['4'])
+      expect(a_request(:post, "#{api}/customers/lookup").with(body: { phone: '955111222' }.to_json)).to have_been_made
+      expect(a_request(:get, %r{/customers/lookup})).not_to have_been_made
+    end
+
+    # A store may match loosely; the adapter must not. A candidate that does not actually carry
+    # the identifier that was asked for is dropped rather than shown against the conversation.
+    it 'drops a candidate that does not carry the identifier it asked for' do
+      stub_request(:post, "#{api}/customers/lookup")
+        .to_return(status: 200, body: { data: [{ 'id' => '4', 'name' => 'Someone Else', 'emails' => ['other@example.com'], 'phones' => [] }] }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.find_customers(email: 'omar@example.com')).to be_empty
+    end
+
+    # Lynomia refuses to guess a region, so a local number from a store that named none is
+    # dropped. A customer not found is the honest failure; the wrong customer found is not.
+    it 'drops a local number the store gave no region for, rather than guessing one' do
+      stub_request(:post, "#{api}/customers/lookup")
+        .to_return(status: 200, body: { data: [{ 'id' => '4', 'name' => 'Omar', 'emails' => [], 'phones' => ['0955111222'] }] }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.find_customers(phone: '+963955111222')).to be_empty
+    end
+
+    it 'refuses to take a bare array for a collection, which means a different server answered' do
+      stub_request(:post, "#{api}/customers/lookup").to_return(status: 200, body: '[]', headers: { 'Content-Type' => 'application/json' })
+
+      expect { provider.find_customers(email: 'omar@example.com') }
+        .to raise_error(Commerce::Error) { |e| expect(e.code).to eq('INVALID_RESPONSE') }
+    end
+
+    it 'reads a customer\'s orders within the limit the contract allows' do
+      stub_request(:get, "#{api}/customers/4/orders").with(query: { limit: '20' })
+        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.list_customer_orders('4', limit: 20).map(&:order_number)).to eq(['A-1'])
+    end
+
+    it 'escapes a guest reference rather than building a path out of it' do
+      stub_request(:get, "#{api}/customers/guest:91/orders").with(query: hash_including({}))
+        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.list_customer_orders('guest:91', limit: 5).length).to eq(1)
+    end
+
+    # Store Syria numbers an order separately from its id, so the default "look it up by id and
+    # keep it if the number matches" would never find one.
+    it 'searches orders by the number the store printed' do
+      stub_request(:get, "#{api}/orders").with(query: { number: 'A-1' })
+        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+
+      expect(provider.find_orders('A-1').map(&:external_order_id)).to eq(['55'])
+    end
+
+    it 'answers an unknown order number with nothing rather than an error' do
+      stub_request(:get, "#{api}/orders").with(query: { number: 'NOPE' }).to_return(status: 404, body: '{}')
+
+      expect(provider.find_orders('NOPE')).to eq([])
+    end
+
+    it 'refuses an order response that carries no id' do
+      stub_request(:get, "#{api}/orders/55").to_return(status: 200, body: '{"number":"A-1"}', headers: { 'Content-Type' => 'application/json' })
+
+      expect { provider.get_order('55') }.to raise_error(Commerce::Error) { |e| expect(e.code).to eq('NOT_FOUND') }
+    end
+
+    it 'reads abandoned carts and asks for one customer\'s when it has one' do
+      stub_request(:get, "#{api}/carts/abandoned").with(query: { limit: '5', customer: '4' })
+        .to_return(status: 200, body: { data: [{ 'id' => 'c:4', 'total' => '700.00', 'items' => [] }] }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+
+      carts = provider.abandoned_carts(customer_reference: '4', limit: 5)
+
+      expect(carts.map(&:external_cart_id)).to eq(['c:4'])
+      expect(carts.first.recovery_url).to be_nil
+    end
+
+    # Every read goes out with the credential and with no store identifier of any kind: the
+    # credential names the store, so there is nothing here for a caller to tamper with.
+    it 'never sends a store identifier on any read' do
+      stub_request(:get, "#{api}/orders/55")
+        .to_return(status: 200, body: order_row.to_json, headers: { 'Content-Type' => 'application/json' })
+      provider.get_order('55')
+
+      expect(a_request(:get, "#{api}/orders/55").with(headers: { 'Authorization' => 'Bearer lsc_4_1_deadbeef' })).to have_been_made
+      expect(a_request(:any, /storesyria\.test/).with(query: hash_including('store_id'))).not_to have_been_made
+    end
+  end
+
   describe 'order normalization' do
     let(:normalizer) { Commerce::Providers::Storesyria::Normalizer.new(provider, store) }
 

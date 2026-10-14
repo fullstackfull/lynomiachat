@@ -52,7 +52,11 @@ class Commerce::Providers::Storesyria::Normalizer
       external_id: raw.fetch('id').to_s,
       name: raw['name'].to_s,
       emails: Array(raw['emails']).filter_map { |e| e.to_s.strip.downcase.presence },
-      phones: Array(raw['phones']).filter_map { |p| Commerce::Phone.e164(p.to_s).presence },
+      # A locally-written number ("0955111222") is only a number once you know its country, and
+      # Lynomia refuses to guess one. Store Syria names the region it reads its numbers in,
+      # because it is the only side that knows; a number already in international form parses
+      # without it and one that is neither is dropped rather than guessed at.
+      phones: Array(raw['phones']).filter_map { |p| Commerce::Phone.e164(p.to_s, raw['phone_region']).presence },
       registered: !raw['guest']
     )
   rescue KeyError, TypeError, NoMethodError

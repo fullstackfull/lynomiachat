@@ -1643,6 +1643,45 @@ is no asymmetry left to decide about, and §G10 now says so.
 
 After the fix: `search_and_meta_escaping_spec` is `17 examples, 0 failures`.
 
+### M8 — The last genuinely uncovered changed file, and the seam it hid
+
+The gate's uncovered-file report (§K3) prints the files no spec basename matches. `markdownSource.js` and
+`mediaUpload.js` have left it — ruling 5 gave them specs with matching names, which closes **A6-O5**. One entry
+is new and one remained, so the count is still 25, and that coincidence is worth spelling out rather than
+reporting an unchanged number as an unchanged situation.
+
+Of the 25, **24 are uncovered by BASENAME only** and are exercised in substance; I checked each rather than
+asserting it. The two `.rake` files are executed by phase A and `lib/documentation_seo_audit.rb` by phase B;
+`lib/tasks/documentation.rake` is now additionally covered by `documentation_seed_report_spec.rb` (§M4), which
+no basename match can see. `config/routes/documentation.rb`, both dashboards and `article_meta_field.rb` are
+exercised by `documentation_editor_spec` and `source_of_truth_boundary_spec`; both `_meta_head` partials by
+`seo_spec`, `articles_controller_spec` and `search_and_meta_escaping_spec`; `sitemap.xml.erb` by
+`portals_controller_spec`; `robots_controller.rb` by `search_and_meta_escaping_spec`;
+`portal_article_visibility.rb`, `media_controller.rb` and `documentation_media_controller.rb` by the three media
+specs; the three `super_admin/articles/` partials by `documentation_editor_spec`; both `manifest.yml` files by
+`content_seeder_spec`; `markdown_renderer_url_sanitizer.rb` by two renderer specs. `db/schema.rb`,
+`config/locales/en.yml` and `.github/workflows/run_foss_spec.yml` are not code with a behaviour to pin — the CI
+file's own commands were proven by hand (§L2, §M3).
+
+The twenty-fifth was real: **`app/javascript/entrypoints/superadmin_pages.js`**, whose change is one
+`ComponentMapping` key. Looking at it found a seam rather than a missing unit test. The Rails partial emits
+`data-component-name="DocumentationArticleEditor"` (`_content_editor.html.erb:15`) and
+`documentation_editor_spec.rb:221` pins **that** string; the registry key is the matching half and nothing
+pinned it. A one-character divergence makes `ComponentMapping[componentName]` `undefined`, Vue logs
+`Invalid vnode type when creating vnode: undefined` and mounts nothing — **the operator sees a blank editor and
+both sides' own suites stay green.** `ArticleEditor.spec.js` mounts the component directly, so it cannot see the
+registry at all.
+
+`app/javascript/entrypoints/superadmin_pages.spec.js`, 2 examples, asserts the real path instead of comparing
+two strings: build the `#app` element exactly as `render_vue_component`
+(`super_admin/application_controller.rb:33-42`) does, dispatch `DOMContentLoaded`, and read back the textarea
+the Administrate form posts, carrying the content the props supplied. **Measured both ways**: with the key
+changed to `DocumentationArticleEditorX` the first example fails and the second — the negative case — still
+passes, so the pin is on the two names matching rather than on the editor merely existing.
+
+While checking that partial, its citation of `render_vue_component` read `:222-231`. The method is at `:33-42`.
+Corrected, and the partial now names both halves of the contract and where each is pinned.
+
 ### M6 — Open items after the delta
 
 | # | Item | What closes it |
@@ -1650,4 +1689,5 @@ After the fix: `search_and_meta_escaping_spec` is `17 examples, 0 failures`.
 | **A5'-O1** | **Nothing seeds corpus media**, now with certified references (§M5) | **owner decision**, then a change of its own |
 | A6-O4 | §G10's `<title>` branch | **closed** by ruling 4 and §M7 — the asymmetry no longer exists |
 | A5-O1 | Section ownership | **closed** by ruling 1 and §M1 |
+| A6-O5 | `markdownSource.js` and `mediaUpload.js` untested | **closed** by ruling 5; both have left the gate's uncovered report |
 | A5'-O2 … O6 | Carried unchanged from §L3.8 | as recorded there |

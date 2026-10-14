@@ -143,7 +143,7 @@ jobs:
         run: |
           TASKS="$(bundle exec rake -T)"
           echo "$TASKS"
-          echo "$TASKS" | grep -q 'documentation:content'
+          echo "$TASKS" | grep -q '^rake documentation:content'
           bundle exec rake zeitwerk:check
 
       - name: Run backend tests (parallelized)

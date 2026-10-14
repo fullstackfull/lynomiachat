@@ -29,7 +29,7 @@ in `custom/app/dashboards/`, controllers in `custom/app/controllers/super_admin/
 | Resource | Route | Dashboard | Controller | Label in the sidebar |
 |---|---|---|---|---|
 | Portal | `super_admin/portals` (index, show, edit, update) | `PortalDashboard` | `SuperAdmin::PortalsController` | **Documentation sites** |
-| Category | `super_admin/categories` (full CRUD) | `CategoryDashboard` | `SuperAdmin::CategoriesController` | **Documentation sections** |
+| Category | `super_admin/categories` (index, show, destroy) | `CategoryDashboard` | `SuperAdmin::CategoriesController` | **Documentation sections** |
 | Article | `super_admin/articles` (full CRUD + `publish`, `unpublish`, `preview`) | `ArticleDashboard` | `SuperAdmin::ArticlesController` | **Documentation articles** |
 
 The labels come from `self.resource_name` on each dashboard, which is what Administrate's `display_resource_name`
@@ -50,6 +50,14 @@ Portals are **not** creatable or destroyable here. They are seeded by `rails doc
 what `/docs`, `/changelog` and every contextual help link resolve; letting them be deleted from a form would break
 links for a cosmetic convenience. Their presentation — name, page title, header text, colour, custom domain — is
 editable.
+
+Sections are **read-only** here — index, show and destroy only. `manifest.yml` is the sole author of a section's
+`name`, `description`, `position` and `icon`, and its `slug` and `locale` are the two halves of the key the content
+seeder looks a section up by, so there is nothing left on a section for an operator to change. The surface is withheld
+at the route rather than by emptying a form, which is also what removes Administrate's Edit and New buttons: it reads
+the real route table. `destroy` stays, because `has_many :articles, dependent: :nullify` means the next seed re-creates
+a deleted section and its articles reattach. An article's *assignment* to a section is still editable on the article
+form.
 
 ## 3. The editor, and why it is a textarea
 

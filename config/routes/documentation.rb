@@ -6,20 +6,32 @@
 namespace :super_admin do
   resources :portals, only: [:index, :show, :edit, :update]
 
-  # No `edit` / `update`. `manifest.yml` is the sole author of a section's `name`, `description`, `position` and
-  # `icon` (owner ruling, docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md section 5.4), and `slug` and
+  # READ, VIEW, DELETE ONLY. `manifest.yml` is the sole author of a section's `name`, `description`, `position`
+  # and `icon` (owner ruling, docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md section 5.4), and `slug` and
   # `locale` are the two halves of the key `Documentation::ContentSeeder#upsert_category` looks a section up by.
-  # That leaves nothing on a section an operator may change: `portal` is unsafe for the same lookup reason, so
-  # an edit form would offer either nothing or something the next seed reverts.
+  # That leaves nothing on a section an operator may change, so there is no `edit` / `update`: an edit form
+  # would offer either nothing or something the next seed reverts.
   #
-  # Enforced by withholding the ROUTE rather than by emptying the form, for two reasons. It is the earliest
-  # shared entry point, so there is no PUT to permit params for. And Administrate reads the real route table --
+  # `new` / `create` are withheld too, and that removes no capability, because the create never worked.
+  # Administrate derives its strong params from `CategoryDashboard::FORM_ATTRIBUTES`
+  # (administrate-0.20.1/app/controllers/administrate/application_controller.rb:204-206), `slug` was
+  # deliberately absent from that list, and `Category` validates `slug` presence
+  # (app/models/category.rb:86) with no derivation from `name` -- so every POST answered 422
+  # "Slug can't be blank", for every input. The permitted list did carry `portal_id`, and Administrate's
+  # `create` is NOT scoped -- `new_resource(resource_params)` is `resource_class.new`
+  # (same file, :43 and :271-273), where `show` and `destroy` go through `scoped_resource` -- so making the
+  # create work would have opened a write into any portal, tenant portals included. Withholding the route
+  # closes the dead surface and that latent hole in one line.
+  #
+  # Enforced by withholding the ROUTE rather than by emptying forms, for two reasons. It is the earliest shared
+  # entry point, so there is no PUT or POST to permit params for. And Administrate reads the real route table --
   # `existing_action?` is `routes.include?([resource, action])`
-  # (administrate-0.20.1/app/controllers/administrate/application_controller.rb:117-120) -- so the Edit button
-  # disappears from the index and the show page on its own. `new`/`create` stay: a hand-made section is not
-  # manifest-authored, so nothing overwrites it. `destroy` stays: `has_many :articles, dependent: :nullify`
-  # (app/models/category.rb:49), so a deleted section is re-created by the next seed and its articles reattach.
-  resources :categories, except: [:edit, :update]
+  # (administrate-0.20.1/app/controllers/administrate/application_controller.rb:117-120) -- so the Edit and
+  # New buttons disappear from the index and the show page on their own.
+  #
+  # `destroy` stays: `has_many :articles, dependent: :nullify` (app/models/category.rb:49), so a deleted
+  # section is re-created by the next seed and its articles reattach.
+  resources :categories, only: [:index, :show, :destroy]
 
   resources :articles do
     collection do

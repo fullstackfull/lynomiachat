@@ -80,7 +80,7 @@ module DocumentationHelper
   # THE TRANSLATION FAMILY of one CATEGORY, as [locale, url] pairs including the category itself.
   #
   # A category's translations are found by SLUG, not by an association: `ContentSeeder#upsert_category` is
-  # `find_or_initialize_by(slug: section['slug'], locale: locale)`
+  # `portal.categories.find_or_initialize_by(slug: section.slug, locale: section.locale)`
   # (custom/app/services/documentation/content_seeder.rb:384-390), so every locale's row of one manifest section
   # carries the SAME slug and differs only by `locale`. `index_categories_on_slug_and_locale_and_portal_id`
   # (db/schema.rb:665, UNIQUE) makes that pair unique per portal, so the group is exact rather than a guess.

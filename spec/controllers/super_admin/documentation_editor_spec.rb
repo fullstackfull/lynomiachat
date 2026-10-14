@@ -60,14 +60,14 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
     end
   end
 
-  # A SECTION IS NOT EDITABLE AT ALL. `manifest.yml` is the sole author of its `name`, `description`,
+  # A SECTION IS NOT WRITABLE AT ALL. `manifest.yml` is the sole author of its `name`, `description`,
   # `position` and `icon` (owner ruling), and `slug` and `locale` are the two halves of the key
   # `Documentation::ContentSeeder#upsert_category` looks a section up by
-  # (custom/app/services/documentation/content_seeder.rb:384). So the edit surface is withheld at the ROUTE --
-  # `resources :categories, except: [:edit, :update]` -- rather than by emptying a form.
+  # (custom/app/services/documentation/content_seeder.rb:384). So the write surface is withheld at the ROUTE --
+  # `resources :categories, only: [:index, :show, :destroy]` -- rather than by emptying a form.
   #
   # These examples replace four that asserted which FIELDS the section form dropped. The property is stronger:
-  # there is no form and no PUT, so there is nothing to permit.
+  # there is no form, no POST and no PUT, so there is nothing to permit.
   #
   # Each request lives in its own example on purpose. Measured: a 404 earlier in an example drops the Devise
   # session, so a page assertion after one reads 302 and would pass for the wrong reason.
@@ -99,22 +99,47 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
       expect(response.body).not_to include("/super_admin/categories/#{category.id}/edit")
     end
 
+    # `section` is forced BEFORE the request on both list examples. Measured: `category` is a lazy `let`, so
+    # referencing it only inside the assertion creates the row after the page has been rendered -- the list is
+    # empty, and a `not_to include` over an empty list passes with the button still there.
     it 'offers no Edit link in the section list either' do
+      section = category
+
       get '/super_admin/categories'
 
       expect(response).to have_http_status(:success)
-      expect(response.body).not_to include("/super_admin/categories/#{category.id}/edit")
+      expect(response.body).to include(section.name)
+      expect(response.body).not_to include("/super_admin/categories/#{section.id}/edit")
     end
 
-    # Still creatable: a hand-made section has no manifest row, so nothing authors it but the operator. That is
-    # why FORM_ATTRIBUTES keeps every field for `new`.
-    it 'is still creatable, with every field offered on the new form' do
+    # `new` / `create` are withheld too. That removes no capability: measured before the route changed, every
+    # POST answered 422 "Slug can't be blank", because `slug` was deliberately absent from the permitted list
+    # and `Category` validates its presence (app/models/category.rb:86) with no derivation from `name`. The
+    # permitted list did carry `portal_id`, and Administrate's `create` is not scoped
+    # (administrate-0.20.1/app/controllers/administrate/application_controller.rb:43 and :271-273), so making
+    # the create work would have opened a write into any portal rather than restoring a working feature.
+    it 'has no new route' do
       get '/super_admin/categories/new'
 
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'has no create route, so a crafted POST reaches no controller' do
+      expect do
+        post '/super_admin/categories', params: { category: { portal_id: portal.id, name: 'Hand made', locale: 'en' } }
+      end.not_to change(Category, :count)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'offers no New link on the section list' do
+      section = category
+
+      get '/super_admin/categories'
+
       expect(response).to have_http_status(:success)
-      %w[name description locale position icon].each do |field|
-        expect(response.body).to include(%(name="category[#{field}]"))
-      end
+      expect(response.body).to include(section.name)
+      expect(response.body).not_to include('/super_admin/categories/new')
     end
   end
 

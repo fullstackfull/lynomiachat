@@ -121,10 +121,6 @@ class Documentation::MediaSeeder
                  'public search snippet as well as the accessible name.'
   end
 
-  # Idempotent by checksum against THIS PORTAL'S OWN attachments, never a global
-  # ActiveStorage::Blob.find_by(checksum:) -- `checksum` is unindexed (db/schema.rb:105), so a global lookup is a
-  # sequential scan of every attachment the product has ever stored, and it would also let one portal silently
-  # adopt another portal's blob because two files happen to share bytes.
   # Every corpus defect, with no write of any kind: the grammar checks `scan_corpus` already makes, plus the file
   # each referenced key names. Owner ruling 3 applied to this seeder for the same reason it applies to the
   # content one -- an upload is outside any database transaction, so the only honest atomicity is to decide
@@ -144,6 +140,10 @@ class Documentation::MediaSeeder
                  "#{file.relative_path_from(Rails.root)}."
   end
 
+  # Idempotent by checksum against THIS PORTAL'S OWN attachments, never a global
+  # ActiveStorage::Blob.find_by(checksum:) -- `checksum` is unindexed (db/schema.rb:105), so a global lookup is a
+  # sequential scan of every attachment the product has ever stored, and it would also let one portal silently
+  # adopt another portal's blob because two files happen to share bytes.
   def seed(key)
     file = media_dir.join(key)
     existing = index[key]

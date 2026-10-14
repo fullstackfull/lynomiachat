@@ -40,7 +40,8 @@ class ArticleDashboard < Administrate::BaseDashboard
   ].freeze
 
   # `slug` is deliberately absent: it is the article's public address, derived from the corpus file name by
-  # Documentation::ContentSeeder#slug_for (custom/app/services/documentation/content_seeder.rb:256-262). Editing it
+  # Documentation::ContentSeeder::Corpus#read_file -- the basename for the default locale, basename-<locale> for
+  # the others (custom/app/services/documentation/content_seeder.rb:256-261). Editing it
   # here 404s a previously indexed URL and leaves the next seed to create a duplicate row
   # (docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md D4). It stays on SHOW_PAGE_ATTRIBUTES and stays
   # searchable.

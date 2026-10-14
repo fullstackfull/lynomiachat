@@ -1,9 +1,18 @@
 <%# locals: (article:, portal:, locale:, og_image_url: nil) %>
 <%#
-  `<title>` reads the SEO title when there is one. It is the same value the tags below already use, so the
-  heading of the tab -- and of the Super Admin preview, which renders this plain variant -- stops disagreeing
-  with the rest of the head. A presentation and preview correctness fix: this variant publishes no canonical
-  and `robots.txt` disallows `/hc/*?show_plain_layout=`, so no crawler was reading either value.
+  `<title>` reads the SEO title when there is one. It is the same value the `title`, `og:title` and
+  `twitter:title` tags below already use, so the heading of the tab stops disagreeing with the rest of the head.
+  A presentation correctness fix.
+
+  THIS PARTIAL HAS TWO CONSUMERS, so the change is visible on both. `articles/show.html.erb` is the classic
+  tenant Help Center article page, which is crawlable; `articles/show.html+plain.erb` is what Super Admin
+  Preview lands on, and `robots.txt` disallows `/hc/*?show_plain_layout=`
+  (app/controllers/robots_controller.rb:55). The documentation portals render
+  `documentation_layout/articles/_meta_head` instead and are untouched by this.
+
+  Both directions are pinned: tenant pages in
+  spec/controllers/public/api/v1/portals/articles_controller_spec.rb, the preview in
+  spec/controllers/super_admin/documentation_editor_spec.rb.
 %>
 <% meta_title = article.meta["title"].presence || article.title %>
 <title><%= meta_title %> | <%= portal.display_title(locale) %></title>

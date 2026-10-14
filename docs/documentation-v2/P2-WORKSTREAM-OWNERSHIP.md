@@ -1188,10 +1188,21 @@ a **discriminator** — `expect(response.body).not_to include('<title>Audit logs
 ignores the override, which is what it used to do.
 
 **Proven both ways**: with the one-line change reverted the file is `21 examples, 1 failure`; with it, 21/0.
-`articles_controller_spec` + `seo_spec` = **59 examples, 0 failures**, so the shared template's other consumers
-— every tenant Help Center — are unaffected. One measurement shaped the spec: without a `custom_domain` on the
-portal the public page answers **401** from `ensure_custom_domain_request` (`public_controller.rb:9-20`), and an
-example written without it would have been measuring the domain guard rather than the title.
+One measurement shaped the spec: without a `custom_domain` on the portal the public page answers **401** from
+`ensure_custom_domain_request` (`public_controller.rb:9-20`), and an example written without it would have been
+measuring the domain guard rather than the title.
+
+> **CORRECTION, issued in §M2.** The paragraph that stood here read: "`articles_controller_spec` + `seo_spec` =
+> 59 examples, 0 failures, so the shared template's other consumers — every tenant Help Center — are
+> unaffected." That conclusion does not follow from that run, and the claim is false twice over.
+>
+> The partial has **two** consumers, not one: `articles/show.html.erb`, the classic tenant Help Center article
+> page, and `articles/show.html+plain.erb`, the preview variant. The change is therefore **tenant-visible and
+> crawler-visible** — only the preview variant is disallowed by `robots.txt`, and the sentence above about no
+> crawler reading either value is true of the preview variant alone. And at the time of that run no example
+> anywhere set `meta['title']` on a tenant article and asserted `<title>`: the 59/0 showed **no regression**,
+> which is not the same as showing tenants unaffected. A green suite that never exercises a property is silent
+> about it, not confirmatory. §M2 records the two examples that close the gap.
 
 ### L5 — Ruling 5: the two untested editor-path files, and the integration chain
 
@@ -1461,3 +1472,143 @@ outstanding and it is an owner decision**, not an open item to carry quietly.
 | A5'-O4 | A manifest section with no directory is now **refused** where it used to create an empty category, so adding a section before its articles is a red task | nothing, unless the owner wants it demoted to a warning; D9 asks for set equality |
 | A5'-O5 | The `:adopted` divergence lists `meta.tags` when the row's key is absent and the file's value is `[]`, because `digest(nil) != digest([])`. Accurate but noisy | a decision that `nil` and `[]` are one value, which changes the digest payload and so `DIGEST_VERSION` |
 | A5'-O6 | **Not verified, in those words**: production data, the `media:` grammar against a real image (the fixture is a non-PNG byte string; content type is `MediaUpload`'s job and specced there), and browser rendering |
+
+## M. Agent 6's delta-only review, and the two blocking items it found
+
+Agent 6 reviewed only `4778d737..727a4cfd` — the rulings 1/2/4/5/3 delta — and returned: *"The code is merge-ready.
+The record is not, and one spec asserts something false."* No security defect, no tenant-reachable authoring path,
+no regression against §J. Ruling 1's enforcement holds against the full 16-route category table. Ruling 3's
+preflight is write-free on 15 crafted corpora plus the adoption path. The preview resolver leaks no row's
+existence — 12 `id` shapes, all byte-identical. The gate still selects correctly: 52 rspec + 20 vitest with
+`GATE_BASE_REF=4778d737`.
+
+Two of its six requests were marked **must**. Both are closed below, and the four **should** items with them.
+
+### M1 — RC-6: a spec named "is still creatable" over an endpoint that 422s on every input
+
+Agent 6's charge was that this is *"the same class of defect ruling 1 was issued to fix"* — a surface the record
+and the suite described as working, which was not. I verified it myself before acting, with a throwaway probe
+spec:
+
+```
+PROBE full_form status=422 created=0
+PROBE body_error="Slug can&#39;t be blank"
+PROBE tenant_portal status=422 created=0
+PROBE permitted_create=["portal_id", :name, :description, :locale, :position, :icon]
+PROBE category_has_slug_derivation=[]
+```
+
+Confirmed, and the cause is two facts that meet: `slug` was deliberately held off `CategoryDashboard::FORM_ATTRIBUTES`
+(§L1, for the same reason it is off `ArticleDashboard`'s), and `Category` validates `slug` presence
+(`app/models/category.rb:86`) with **no** derivation from `name`. So `POST /super_admin/categories` could never
+succeed, for any input, and `documentation_editor_spec.rb` asserted only that the *form rendered*, never that a
+row was created.
+
+**Resolved by RC-6(a): withhold the route.** `config/routes/documentation.rb` is now
+`resources :categories, only: [:index, :show, :destroy]`.
+
+Why that over "just permit `slug`": the fourth probe line. The permitted list carried an unscoped `portal_id`,
+and Administrate's `create` is **not** scoped — `create` → `new_resource(resource_params)` → `resource_class.new`
+(`administrate-0.20.1/app/controllers/administrate/application_controller.rb:43` and `:271-273`), where `show`
+and `destroy` both go through `scoped_resource`. `Field::BelongsTo`'s `scope:` filters the select options and
+nothing else. Making the create work would therefore have opened a write into **any** portal, tenant portals
+included, rather than restoring a feature. Withholding the route closes a dead surface and that latent hole in
+one line.
+
+`CategoryDashboard::FORM_ATTRIBUTES` is **deleted**, not emptied. Traced before deleting: `form_attributes` is
+reached only from `Administrate::Page::Form` (`lib/administrate/page/form.rb:14`) and from `permitted_attributes`,
+which the controller calls only for `create`/`update` (`application_controller.rb:204-206`); `Field::HasOne` also
+calls `permitted_attributes` on another dashboard, and no dashboard in either tree declares a `HasOne` or
+`HasMany` pointing at `Category`. With all four form actions gone the constant has no reader. `index`, `show`
+and `destroy` read `COLLECTION_ATTRIBUTES` and `SHOW_PAGE_ATTRIBUTES`, so every field stays visible and
+searchable while none is writable.
+
+**Measured both ways.** The example formerly named *"is still creatable, with every field offered on the new
+form"* is replaced by three: no `new` route, no `create` route (`.not_to change(Category, :count)` **and** 404),
+and no New link on the list page. Against `HEAD` restored for both files — old routes **and** old dashboard —
+`4 examples, 3 failures`: all three new examples fail, and the fourth (no Edit link in the list) passes in both
+states, correctly, because `edit` was already withheld at `727a4cfd`. With the change: `26 examples, 0 failures`.
+
+**A defect of my own, caught by that measurement.** My first "offers no New link" example asserted
+`include('Administration')` as a string, and failed: `category` is a lazy `let`, so referencing it only inside
+the assertion creates the row **after** the page has been rendered. Changing the assertion to `category.name`
+did not fix it — same lazy evaluation, one step later. The row has to be forced before the request. That makes
+the sibling example written for ruling 1 — *"offers no Edit link in the section list either"* — **green for the
+wrong reason**: it asserted `not_to include(".../edit")` over an **empty** list, which would pass with the
+button still on the page. Both list examples now bind `section = category` before the `get` and assert
+`include(section.name)` first, so an empty list fails them.
+
+`docs/global-documentation/07-super-admin-management.md` said `super_admin/categories` was **"full CRUD"**. It is
+now `(index, show, destroy)`, with a paragraph stating the contract beside the one that already explained why
+portals are not creatable.
+
+### M2 — RC-5 and the §L4 correction: the tenant Help Center title was unpinned
+
+Agent 6's finding, verbatim: *"A tenant-visible, crawler-visible change is currently recorded as 'every tenant
+Help Center — unaffected', and nothing pins it."* Correct on both halves, and §L4 now carries the correction
+inline.
+
+The partial has **two** consumers, traced rather than assumed:
+`app/views/public/api/v1/portals/articles/show.html.erb` (the classic tenant article page) and
+`show.html+plain.erb` (what Preview lands on). `show.html+documentation.erb` renders
+`documentation_layout/articles/_meta_head` instead and is untouched. So the change reaches a **crawlable** tenant
+page — `RobotsController::DISALLOWED_PATTERNS` disallows `/hc/*?show_plain_layout=` and not the classic article
+URL — and the 59/0 run §L4 cited proved only that nothing regressed, because no example anywhere set
+`meta['title']` on a tenant article and read `<title>`.
+
+**Two examples added** to `spec/controllers/public/api/v1/portals/articles_controller_spec.rb`, both directions:
+the SEO title appears in `<title>` when a tenant sets one, with the discriminator
+`not_to include("<title>#{article.title} | ")`; and the article title is used when none is set. Measured against
+the pre-fix template: `2 examples, 1 failure` — the override example fails, the fallback example passes in both
+states, which is what makes it a regression pin rather than a restatement. With the fix, 2/0.
+
+The comment at the head of the partial has been rewritten to name both consumers and to confine the
+"no crawler was reading either value" statement to the preview variant, where it is true. **For the PR body:
+this is a tenant-visible product change**, not an internal one.
+
+### M3 — The four `should` items
+
+| # | Agent 6's request | Applied |
+|---|---|---|
+| RC-1 | Anchor the CI grep | `grep -q '^rake documentation:content'`, matching `scripts/documentation_gate.sh:273`. Measured: `rake something:else  # ... see documentation:content ...` passes the old pattern and is **rejected** by the anchored one. The real `rake -T` still matches, and `rake zeitwerk:check` is `All is good!` |
+| RC-2 | `article_dashboard.rb:42` cites `#slug_for`, which does not exist | now `Documentation::ContentSeeder::Corpus#read_file`, with what it actually does — basename for the default locale, `basename-<locale>` otherwise (`:256-261`) |
+| RC-3 | `article_meta_field.rb:34` cites `#meta_for`, which does not exist | now `#merged_meta`; the `library.rb` line number corrected from `:55` to `:63`, where the `doc_key` query really is |
+| RC-4 | The checksum rationale ended up heading `preflight!` after my `each_key` fix | moved back above `seed`, where the checksum comparison is. `preflight!` keeps the ruling-3 rationale |
+
+One citation Agent 6 did not flag, found while checking its three: `documentation_helper.rb:82-84` quoted
+`find_or_initialize_by(slug: section['slug'], locale: locale)`, which was the hash-based shape before Agent 5's
+rewrite made sections a `Struct`. Now `portal.categories.find_or_initialize_by(slug: section.slug, locale: section.locale)`.
+
+### M4 — One addition beyond the review: ruling 3's requirement C had no spec
+
+Ruling 3 asks that a failed apply *"report exactly what completed and what failed, leave the task safely
+rerunnable, do not silently continue."* `Documentation::ContentSeeder` was specced for that; `DocumentationSeedReport`,
+which is the half an operator actually reads, was not — and it is where the requirement is observable, because
+it owns the text **and the exit code**.
+
+`spec/lib/tasks/rake/documentation_seed_report_spec.rb`, 7 examples, covers all four outcomes, which differ in
+exit code as well as in text: a clean run is zero; a clean run holding untracked rows is **non-zero** and names
+`ADOPT_UNTRACKED=1`; a refused preflight is non-zero, says `NOTHING was written`, lists every offending file and
+prints **no** counts; a failed apply prints the counts of everything that completed, then names the file, the
+underlying cause, that the completed rows are committed and that a re-run is safe. `abort` writes to stderr and
+raises `SystemExit`, so each aborting example asserts both streams — which also keeps the suite's own output
+clean.
+
+### M5 — Sharpened: what A5'-O1's silence now means
+
+§L3.7 recorded that **nothing seeds corpus media** and that the live failure is an article publishing an
+unresolved-key comment. This delta changes what the *absence of a report* means, and the distinction matters for
+the owner decision. `Corpus#media_problems` (`content_seeder.rb:233`) now **certifies** every `media:` reference
+in the corpus during the preflight. Before, a clean run was silent about media because nothing looked. Now a
+clean run is an affirmative all-clear on the references — and a corpus image that exists, is referenced, and is
+never attached still publishes unresolved, because certifying a reference is not attaching a file. The gap is
+narrower and better reported, and it is unchanged in substance. **Still an owner decision.**
+
+### M6 — Open items after the delta
+
+| # | Item | What closes it |
+|---|---|---|
+| **A5'-O1** | **Nothing seeds corpus media**, now with certified references (§M5) | **owner decision**, then a change of its own |
+| A6-O4 | §G10: the `<title>` branch for the shared template vs the documentation one | owner decision; §M2 closed the correctness half |
+| A5-O1 | Section ownership | **closed** by ruling 1 and §M1 |
+| A5'-O2 … O6 | Carried unchanged from §L3.8 | as recorded there |

@@ -7,9 +7,16 @@
 # It does its own corpus walk rather than being handed keys by ContentSeeder, so Agent 5's integration is one
 # line and the two agents' files are not coupled per article -- and so this is independently runnable.
 class Documentation::MediaSeeder
-  # A corpus defect, raised rather than counted. ContentSeeder does not rescue it and the rake task does not
-  # either, so `rake` prints the message and exits 1, and no partial corpus is written because the media pass
-  # runs first. CLAUDE.md: a misconfigured state that indicates a setup bug fails loudly.
+  # A corpus defect, raised rather than counted. CLAUDE.md: a misconfigured state that indicates a setup bug
+  # fails loudly.
+  #
+  # Where it surfaces changed when the A5'-O1 wiring landed, and R2-MEDIA-INTERFACE.md section 3.6 still
+  # describes the old path ("ContentSeeder#perform! does not rescue ... rake prints the message and backtrace").
+  # It does now: `ContentSeeder#preflight!` converts an Error raised by the PREFLIGHT half into its own
+  # PreflightError (content_seeder.rb `refuse_media!`), so the operator reads the one refusal message every
+  # other preflight refusal prints -- that nothing was written -- instead of a Ruby backtrace. An Error raised
+  # by the APPLY half becomes an ApplyFailure naming `the corpus media pass`, with the counts that completed.
+  # Either way: a clear message, a non-zero exit, and a run that is safe to repeat.
   class Error < StandardError; end
 
   MEDIA_DIR = 'media'.freeze
@@ -42,13 +49,18 @@ class Documentation::MediaSeeder
     @portal = portal
     @root = root
     @locales = locales
-    @result = Result.new(uploaded: 0, replaced: 0, unchanged: 0, purged: 0, unmeasured: 0, unreferenced: 0)
+    # `purged` and `unreferenced` start NIL, not zero: the orphan sweep is the last thing the apply does, so on
+    # any earlier failure a zero there would claim the sweep ran and found nothing. The report prints them only
+    # once they are set (lib/tasks/documentation.rake).
+    @result = Result.new(uploaded: 0, replaced: 0, unchanged: 0, purged: nil, unmeasured: 0, unreferenced: nil)
   end
 
-  # The two phases are PUBLIC and separately callable, because `ContentSeeder` interleaves them with its own
-  # (R2-MEDIA-INTERFACE.md section 3.2 plus owner ruling 3): the preflight belongs in ContentSeeder's preflight,
-  # where nothing has been written yet, and the apply belongs first inside ContentSeeder's apply. `perform!`
-  # stays exactly what it was for every other caller -- both phases, in order.
+  # `perform!` is unchanged for every caller: both phases, in order. What the A5'-O1 wiring needed was the
+  # PREFLIGHT separately, so `ContentSeeder` can run it inside its own preflight where nothing has been written
+  # yet, and then call `perform!` first inside its apply (R2-MEDIA-INTERFACE.md section 3.2 plus owner ruling 3).
+  # `apply!` is deliberately NOT public: nothing outside calls it, and a public entry taking a caller-supplied
+  # reference hash would reach the attach boundary without `validate!`'s namespace guard -- the only place the
+  # `uploads/` invariant is enforced.
   def perform!
     apply!(preflight!)
   end
@@ -71,6 +83,7 @@ class Documentation::MediaSeeder
   # attachments a seed created.
   def apply!(references)
     references.each_key { |key| seed(key) }
+    @result.purged = 0
     purge_orphans(references.keys)
     @result.unreferenced = unreferenced_files(references.keys).count
     @result
@@ -106,16 +119,48 @@ class Documentation::MediaSeeder
     references = {}
     locale_trees.each do |locale|
       Dir.glob(root.join(locale, '*', '*.md')).each do |path|
-        body = File.read(path)
-        reject_spaced_reference(path, body)
-        collect_references(references, path, body)
+        body = body_of(path)
+        document = CommonMarker.render_doc(body, :DEFAULT, [:table])
+        reject_spaced_reference(path, body, code_block_lines(document))
+        collect_references(references, path, document)
       end
     end
     references
   end
 
-  def reject_spaced_reference(path, body)
+  # THE BODY, not the raw file. `ContentSeeder::Corpus` parses only what follows the front matter, so a `media:`
+  # image written inside a front-matter VALUE is an image node to this scanner and invisible to that one --
+  # seeded by one and unknown to the other, and able to refuse the whole run over a key no page renders. The
+  # front matter is replaced by as many blank lines as it occupied rather than removed, so every line number in
+  # an error message still points at the line an operator opens.
+  def body_of(path)
+    source = File.read(path)
+    front = source[Documentation::ContentSeeder::Corpus::FRONT_MATTER]
+    return source if front.nil?
+
+    ("\n" * front.count("\n")) + source.delete_prefix(front)
+  end
+
+  # The lines a fenced or indented code block occupies, which is where prose about this grammar lives: the
+  # corpus documents this product, so `![alt](media:step 2.png)` is exactly the example a troubleshooting
+  # article shows as the thing NOT to write. `Corpus#media_problems` is PARSED precisely so a key in a fence is
+  # not a reference, and the spaced-reference scan below has to be a raw regex because CommonMark builds no
+  # image node for a spaced destination -- so the parse is what tells the regex where the prose ends.
+  #
+  # Code blocks only. An example inside INLINE backticks on a prose line still refuses, because an inline span's
+  # sourcepos does not separate it from the prose around it on that line; a fence is the documented way to show
+  # the example, and the refusal names the file and line either way.
+  def code_block_lines(document)
+    document.walk.filter_map do |node|
+      next unless node.type == :code_block
+
+      (node.sourcepos[:start_line]..node.sourcepos[:end_line]).to_a
+    end.flatten
+  end
+
+  def reject_spaced_reference(path, body, fenced_lines)
     body.each_line.with_index do |line, index|
+      next if fenced_lines.include?(index + 1)
       next unless line.match?(SPACED_IMAGE_REFERENCE)
 
       raise Error, "#{where(path, index + 1)}: a media reference contains a space, so CommonMark does not read " \
@@ -123,8 +168,8 @@ class Documentation::MediaSeeder
     end
   end
 
-  def collect_references(references, path, body)
-    CommonMarker.render_doc(body, :DEFAULT, [:table]).walk do |node|
+  def collect_references(references, path, document)
+    document.walk do |node|
       next unless media_reference?(node)
 
       key = node.url.to_s.delete_prefix(Documentation::MediaResolver::SCHEME)
@@ -168,12 +213,27 @@ class Documentation::MediaSeeder
                  'public search snippet as well as the accessible name.'
   end
 
+  # EVERYTHING DECIDABLE ABOUT THE FILE, with no write: that it exists, that its BYTES are a permitted raster
+  # type, and that there are not too many of them. The last two used to be decided inside the write loop by
+  # `MediaUpload#attach!`, which is the same defect shape as the missing-file check that used to live there --
+  # measured consequence, a corpus whose second image was over the 2 MB cap attached the first and then raised.
+  # `MediaUpload#validate_bytes!` is the one implementation of both, which the attach boundary also calls, so
+  # this cannot drift from what the write will accept.
+  #
+  # The rescue is what gives the message its location: `MediaUpload` knows the key and the bytes, and only the
+  # reference index here knows which corpus FILE and LINE referred to them, which is the thing an operator has
+  # to open (contract section 3.2: never a storage path).
   def require_file!(key, reference)
     file = media_dir.join(key)
-    return if file.file?
+    unless file.file?
+      raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
+                   "#{file.relative_path_from(Rails.root)}."
+    end
 
-    raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
-                 "#{file.relative_path_from(Rails.root)}."
+    file.open('rb') { |io| upload.validate_bytes!(key: "media:#{key}", io: io) }
+  rescue Documentation::MediaUpload::Error => e
+    raise Error, "#{where(reference[:path], reference[:line])}: #{e.message} " \
+                 "(#{file.relative_path_from(Rails.root)})"
   end
 
   # Idempotent by checksum against THIS PORTAL'S OWN attachments, never a global

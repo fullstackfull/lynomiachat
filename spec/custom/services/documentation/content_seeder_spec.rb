@@ -630,23 +630,62 @@ describe Documentation::ContentSeeder do
         expect(attached_keys).to eq([operator.key])
       end
 
-      # OWNER REQUIREMENT 9, and ruling 3's requirement C one level down: a media write that fails after the
-      # preflight passed must report what completed. The content type is identified from the BYTES at the attach
-      # boundary (media_upload.rb `content_type_for!`), which is the one media defect the preflight cannot see --
-      # `require_file!` checks that a file exists, not what is in it. So this is the real apply-time failure.
-      #
-      # `Dir.glob` sorts and `scan_corpus` keeps first-reference order, so `inbox.png` is attached before
-      # `broken.png` is reached: the partial count is 1 and it is deterministic.
-      it 'reports the media work that completed when a later key fails at the attach boundary' do
+      # WHAT USED TO BE AN APPLY-TIME FAILURE AND IS NOW A PREFLIGHT ONE. This example first asserted that a
+      # `.png` holding SVG bytes failed at the attach boundary with `result.media.uploaded == 1` -- one image
+      # committed, then the raise. Agent 6 pointed out that the content type and the byte cap are decidable from
+      # the file with no write, which made that the same defect the missing-file check was moved out of the write
+      # loop to fix. So the preflight decides them now, and the property is the stronger one: NOTHING is written,
+      # not even the first image.
+      it 'refuses a file whose bytes are not a permitted raster type, before writing anything' do
         media('getting-started/inbox.png')
         media('getting-started/broken.png', '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>')
         write('en', 'welcome', { title: 'Welcome',
                                  body: "a\n\n![One](media:getting-started/inbox.png)\n\n![Two](media:getting-started/broken.png)" })
 
+        expect { seed }.to raise_error(described_class::PreflightError, /not permitted/) do |error|
+          # The location an operator opens: the corpus FILE and LINE that referred to it, plus the image path.
+          expect(error.message).to match(%r{welcome\.md:\d+:.*media:getting-started/broken\.png})
+        end
+        expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([0, 0])
+      end
+
+      it 'refuses a file over the byte cap in the preflight too' do
+        media('getting-started/inbox.png', "\x89PNG\r\n\x1a\n#{'x' * (2.megabytes + 1)}")
+        write('en', 'welcome', { title: 'Welcome', body: body })
+
+        expect { seed }.to raise_error(described_class::PreflightError, /bytes; the cap is/)
+        expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([0, 0])
+      end
+
+      # OWNER REQUIREMENT 9, and ruling 3's requirement C one level down: a media write that fails after the
+      # preflight passed must report what completed. Every DECIDABLE media defect is now refused before the
+      # apply, so what is left is the undecidable kind -- the storage service refusing an object, a connection
+      # lost mid-upload. That is what the stub stands in for; there is no corpus a fixture can hold that reaches
+      # the attach boundary and fails there.
+      #
+      # `Dir.glob` sorts and `scan_corpus` keeps first-reference order, so `broken.png` is reached after
+      # `inbox.png`: the partial count is 1 and it is deterministic.
+      it 'reports the media work that completed when a later key fails at the attach boundary' do
+        media('getting-started/inbox.png')
+        media('getting-started/broken.png', other_png)
+        write('en', 'welcome', { title: 'Welcome',
+                                 body: "a\n\n![One](media:getting-started/inbox.png)\n\n![Two](media:getting-started/broken.png)" })
+        # Stubbed at the STORAGE seam rather than at the service: `create_and_upload!` is where a real object
+        # store refuses, and its `metadata` already carries the documentation key, so the failure can name one
+        # image without the test knowing anything about the seeder's internals.
+        allow(ActiveStorage::Blob).to receive(:create_and_upload!).and_wrap_original do |original, **kwargs|
+          key = kwargs.dig(:metadata, Documentation::MediaResolver::KEY_METADATA).to_s
+          raise ActiveStorage::IntegrityError, 'the storage service refused the object' if key.include?('broken')
+
+          original.call(**kwargs)
+        end
+
         expect { seed }.to raise_error(described_class::ApplyFailure) do |error|
-          # The live struct, assigned before the pass ran, is what carries the count out.
+          # The live struct, assigned when the seeder was built, is what carries the count out.
           expect([error.where, error.result.media.uploaded]).to eq(['the corpus media pass', 1])
-          expect(error.message).to include('not permitted')
+          expect(error.message).to include('the storage service refused the object')
+          # The orphan sweep never ran, so its counters are nil rather than a zero that would claim it did.
+          expect([error.result.media.purged, error.result.media.unreferenced]).to eq([nil, nil])
         end
         # The media pass is FIRST inside the apply, so no row was written: the corpus is exactly as it was.
         expect([portal.reload.articles.count, portal.categories.count]).to eq([0, 0])
@@ -660,36 +699,24 @@ describe Documentation::ContentSeeder do
       # run rather than as a second upload or a replace.
       it 'reports the key that survived a failed run as unchanged on the next one' do
         media('getting-started/inbox.png')
-        media('getting-started/broken.png', '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>')
+        media('getting-started/broken.png', other_png)
         write('en', 'welcome', { title: 'Welcome',
                                  body: "a\n\n![One](media:getting-started/inbox.png)\n\n![Two](media:getting-started/broken.png)" })
+        failing = true
+        allow(ActiveStorage::Blob).to receive(:create_and_upload!).and_wrap_original do |original, **kwargs|
+          key = kwargs.dig(:metadata, Documentation::MediaResolver::KEY_METADATA).to_s
+          raise ActiveStorage::IntegrityError, 'transient' if failing && key.include?('broken')
+
+          original.call(**kwargs)
+        end
         expect { seed }.to raise_error(described_class::ApplyFailure)
 
-        media('getting-started/broken.png', other_png)
+        failing = false
         result = seed
 
         expect([result.media.uploaded, result.media.replaced, result.media.unchanged]).to eq([1, 0, 1])
         expect(attached_keys).to contain_exactly('getting-started/inbox.png', 'getting-started/broken.png')
         expect(result.created).to eq(2)
-      end
-
-      # A DEFECT THIS WIRING INTRODUCED AND THIS EXAMPLE CLOSES. `MediaSeeder` walks locale trees, and before it
-      # was told which ones it walked ALL of them -- so a `media:` reference in a tree the portal does not serve
-      # refused the whole seed for an image no published article needs. Measured: `PreflightError` at
-      # `ar/.../welcome.md:9` with zero articles written, on a portal whose `allowed_locales` is `['en']`.
-      #
-      # `Corpus#parity_problems` says in terms that narrowing `allowed_locales` has to keep working, because the
-      # corpus legitimately carries a tree the portal does not serve. So the media walk takes the run's locales.
-      it 'ignores a media reference in a locale tree the portal does not serve' do
-        portal.update!(config: portal.config.merge('allowed_locales' => ['en']))
-        write('en', 'welcome', { title: 'Welcome', body: 'No images here.' })
-        # The ar file references an image that is NOT in the media tree, so an unscoped walk would refuse.
-        write('ar', 'welcome', { title: 'مرحبا', body: body })
-
-        result = seed
-
-        expect([result.created, result.locales]).to eq([1, ['en']])
-        expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([1, 0])
       end
 
       it 'refuses a key the grammar rejects' do

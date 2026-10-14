@@ -161,6 +161,37 @@ describe Documentation::MediaSeeder do
       expect { seed }.to raise_error(described_class::Error, /contains a space/)
     end
 
+    # THE CORPUS DOCUMENTS THIS PRODUCT, so prose about the media grammar is ordinary corpus content -- and
+    # `![alt](media:step 2.png)` is exactly the example a troubleshooting article shows as the thing NOT to
+    # write. The spaced-reference check has to be a raw regex, because CommonMark builds no image node for a
+    # spaced destination; so the parse is what tells the regex where the prose ends. Without this, documenting
+    # the grammar exits `rake documentation:content` 1 on a file that publishes perfectly.
+    it 'does not read a spaced reference inside a fenced code block as a reference' do
+      article("Do not write this:\n\n```markdown\n![Alt](media:whatsapp/step 2.png)\n```\n")
+
+      expect { seed }.not_to raise_error
+      expect(keys_attached).to be_empty
+    end
+
+    it 'does not read a spaced reference in an indented code block either' do
+      article("Do not write this:\n\n    ![Alt](media:whatsapp/step 2.png)\n")
+
+      expect { seed }.not_to raise_error
+    end
+
+    # The other half of the same divergence: `ContentSeeder::Corpus` parses only what follows the front matter,
+    # so a `media:` image written inside a front-matter VALUE would be a reference to this scanner and invisible
+    # to that one -- seeded by one, unknown to the other, and able to refuse the whole run over a key no page
+    # renders. The front matter is replaced by blank lines rather than removed, so line numbers still point at
+    # the line an operator opens, which the next example asserts.
+    it 'does not read a media reference inside a front-matter value' do
+      root.join('en', 'whatsapp', 'connect-whatsapp.md')
+          .write("---\ntitle: T\nposition: 10\nseo_description: See ![diagram](media:whatsapp/absent.png)\n---\n\nBody.\n")
+
+      expect { seed }.not_to raise_error
+      expect(keys_attached).to be_empty
+    end
+
     it 'fails on a `media:` key used as a link destination' do
       article('See [the screenshot](media:whatsapp/connect-number/step-2.png).')
 

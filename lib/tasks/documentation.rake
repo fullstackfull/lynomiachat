@@ -16,8 +16,15 @@ module DocumentationSeedReport
   # FAILED is deliberately not a count. The media pass fails loudly on the first defect rather than tallying
   # defects, so a failure is reported by PREFLIGHT_FAILED (a corpus defect, nothing written) or by APPLY_FAILED
   # naming `the corpus media pass` (a write that failed, with these counts above it) -- never by a zero here.
-  MEDIA = '  media: %<uploaded>d attached, %<replaced>d replaced, %<unchanged>d unchanged, %<purged>d purged ' \
-          '(%<unmeasured>d without dimensions, %<unreferenced>d unreferenced in the repository)'.freeze
+  MEDIA = '  media: %<uploaded>d attached, %<replaced>d replaced, %<unchanged>d unchanged ' \
+          '(%<unmeasured>d without dimensions)'.freeze
+
+  # The orphan sweep is the LAST thing the media pass does, so on any earlier failure its two counters are not
+  # zero -- they are unknown. Printing `0 purged, 0 unreferenced` there would claim the sweep ran and found
+  # nothing, which is the kind of true-looking zero this program keeps removing. `nil` prints as the sentence
+  # instead, and a run that reached the sweep prints the counts.
+  SWEEP = '; sweep: %<purged>d purged, %<unreferenced>d unreferenced in the repository'.freeze
+  UNSWEPT = '; sweep: did not run'.freeze
 
   # A row the corpus cannot write is the one thing an operator has to act on, so the task exits non-zero for it.
   # `operator_edited` is a state an operator may legitimately be living in: it prints and the task still succeeds,
@@ -65,10 +72,16 @@ module DocumentationSeedReport
     puts format(SUMMARY, label: label, created: result.created, updated: result.updated,
                          unchanged: result.unchanged, adopted: result.adopted, untracked: result.untracked,
                          locales: result.locales.join(', '))
-    # Absent only when the media pass never ran, which is every PreflightError -- and a PreflightError prints no
-    # summary at all, so in practice this guards a Result built by hand in a spec rather than a live run.
-    puts format(MEDIA, **result.media.to_h) if result.media
+    # Absent when the media seeder was never built, which is a Result constructed by hand; a live run builds it
+    # in the preflight, so even a media-preflight refusal carries a zeroed struct rather than nil (and prints no
+    # summary at all, because PREFLIGHT_FAILED aborts first).
+    puts media_line(result.media) if result.media
     result.divergences.each { |divergence| puts "  #{line(divergence)}" }
+  end
+
+  def self.media_line(media)
+    sweep = media.purged.nil? ? UNSWEPT : format(SWEEP, purged: media.purged, unreferenced: media.unreferenced)
+    format(MEDIA, **media.to_h) + sweep
   end
 
   def self.line(divergence)

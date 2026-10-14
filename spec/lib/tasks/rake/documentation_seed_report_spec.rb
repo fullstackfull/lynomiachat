@@ -28,8 +28,8 @@ RSpec.describe DocumentationSeedReport do
     it 'prints one summary line and one media line, and does not abort' do
       expect { described_class.run('articles') { result } }
         .to output("articles: 2 created, 1 updated, 7 unchanged, 0 adopted, 0 untracked (en, ar)\n  " \
-                   'media: 1 attached, 0 replaced, 3 unchanged, 1 purged ' \
-                   "(0 without dimensions, 2 unreferenced in the repository)\n").to_stdout
+                   'media: 1 attached, 0 replaced, 3 unchanged (0 without dimensions); ' \
+                   "sweep: 1 purged, 2 unreferenced in the repository\n").to_stdout
     end
 
     # The owner's five reportable categories. Four are counters; the fifth, FAILED, is not -- the media pass
@@ -39,7 +39,19 @@ RSpec.describe DocumentationSeedReport do
     it 'names attached, replaced, unchanged and purged on the media line' do
       expect { described_class.run('articles') { result } }
         .to output(a_string_including('1 attached').and(a_string_including('0 replaced'))
-                                                   .and(a_string_including('3 unchanged, 1 purged'))).to_stdout
+                                                   .and(a_string_including('3 unchanged'))
+                                                   .and(a_string_including('1 purged'))).to_stdout
+    end
+
+    # THE SWEEP IS THE LAST THING THE MEDIA PASS DOES, so on any earlier failure its counters are unknown rather
+    # than zero. `0 purged, 0 unreferenced` would read as "the sweep ran and found nothing", which is the kind of
+    # true-looking zero this program keeps removing.
+    it 'says the sweep did not run rather than printing zeros for it' do
+      media.purged = nil
+      media.unreferenced = nil
+
+      expect { described_class.run('articles') { result } }
+        .to output(a_string_including('3 unchanged (0 without dimensions); sweep: did not run')).to_stdout
     end
 
     # A Result built before the media member existed, and every PreflightError, carry no media pass. The line is
@@ -131,7 +143,7 @@ RSpec.describe DocumentationSeedReport do
 
       expect do
         expect { expect { described_class.run('articles') { raise media_failure } }.to raise_error(SystemExit) }
-          .to output(/media: 1 attached, 0 replaced, 3 unchanged, 1 purged/).to_stdout
+          .to output(/media: 1 attached, 0 replaced, 3 unchanged/).to_stdout
       end.to output(/APPLY FAILED at the corpus media pass: Documentation::MediaSeeder::Error/).to_stderr
     end
 

@@ -1738,14 +1738,19 @@ suggests. **Measured, four real runs through the real report** (a temporary corp
 ```
 --- RUN 1: first seed, one image attached, one unreferenced file in the tree ---
 articles: 1 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
-  media: 1 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+  media: 1 attached, 0 replaced, 0 unchanged (0 without dimensions); sweep: 0 purged, 1 unreferenced in the repository
 --- RUN 2: identical re-seed, nothing written ---
-  media: 0 attached, 0 replaced, 1 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+  media: 0 attached, 0 replaced, 1 unchanged (0 without dimensions); sweep: 0 purged, 1 unreferenced in the repository
 --- RUN 3: the image bytes changed in the repository ---
-  media: 0 attached, 1 replaced, 0 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+  media: 0 attached, 1 replaced, 0 unchanged (0 without dimensions); sweep: 0 purged, 1 unreferenced in the repository
 --- RUN 4: the reference left the corpus, so the corpus-owned attachment is purged ---
-  media: 0 attached, 0 replaced, 0 unchanged, 1 purged (0 without dimensions, 2 unreferenced in the repository)
+  media: 0 attached, 0 replaced, 0 unchanged (0 without dimensions); sweep: 1 purged, 2 unreferenced in the repository
 ```
+
+The sweep is a clause of its own, and that is §N11's finding rather than cosmetics: the sweep is the LAST thing
+the media pass does, so on any earlier failure `purged` and `unreferenced` are not zero but UNKNOWN. They
+initialise to `nil` and the clause reads `sweep: did not run`, because `0 purged, 0 unreferenced` would claim the
+sweep ran and found nothing.
 
 Four of the owner's five categories are counters. The fifth, **failed, is deliberately not one**: the pass
 fails loudly on the first defect rather than tallying defects, so a failure is reported by `PREFLIGHT_FAILED`
@@ -1753,7 +1758,7 @@ fails loudly on the first defect rather than tallying defects, so a failure is r
 it. `APPLY_FAILED`'s own sentence was widened by one clause, because "every write is an upsert on
 (slug, locale)" is an article's vocabulary and an attachment's key is the `media:` key.
 
-### N3 — Defect 1: the pass reported `uploaded: 1` against zero attachment rows
+### N3 — Defect 1 of three: the pass reported `uploaded: 1` against zero attachment rows
 
 The first integration run was green on counts and **empty in the database**. Isolated with a throwaway probe
 rather than reasoned about:
@@ -1838,9 +1843,9 @@ Both rake tasks, against the real trees, then the test database reset:
 
 ```
 articles: 138 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
-  media: 0 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 0 unreferenced in the repository)
+  media: 0 attached, 0 replaced, 0 unchanged (0 without dimensions); sweep: 0 purged, 0 unreferenced in the repository
 releases: 2 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
-  media: 0 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 0 unreferenced in the repository)
+  media: 0 attached, 0 replaced, 0 unchanged (0 without dimensions); sweep: 0 purged, 0 unreferenced in the repository
 ```
 
 and the second run: `138 unchanged` / `2 unchanged`, all media zeros. Two things proven that only a real run
@@ -1858,16 +1863,106 @@ it is dead (every method and constant has a live caller, checked), so the only w
 object for the apply phase, which is the redesign the ruling forbids. Disabled inline with that reasoning rather
 than added to `.rubocop.yml`'s `Exclude`, which would switch the cop off for the file permanently.
 
+### N10 — Defect 3, found by attacking the one thing §N9 had waved through
+
+§N9 first recorded the glob difference as "a bounded difference" — the kind of sentence this program treats as a
+place to look rather than a conclusion. Attacked with a probe, it was real:
+
+```
+PROBE outcome=Documentation::ContentSeeder::PreflightError
+      message=.../ar/getting-started/welcome.md:9: media:getting-started/inbox.png has no file at ...
+PROBE articles=0 attachments=0
+```
+
+A portal whose `allowed_locales` is `['en']`, with an `ar` tree in the corpus referencing an image that is not
+in the media tree: **the whole seed is refused** and no article is written, for an image no published article
+needs. `Corpus` never reads that tree — `locales` is `LOCALES & portal.allowed_locale_codes` — but the media
+walk read every one. And `Corpus#parity_problems` states the intent in terms: *"Scoped to the locales the portal
+allows, so narrowing `allowed_locales` keeps working: the corpus legitimately carries a locale tree the portal
+does not serve."*
+
+Before this delta the difference was harmless, because the media seeder never ran. **The wiring is what made it
+a defect**, so it is this delta's to close. `MediaSeeder#initialize` takes `locales:`, `nil` means every tree —
+which is what a standalone run and every pre-wiring caller get, so no existing behaviour changes — and
+`ContentSeeder` passes the locales it is actually seeding. Re-probed: `outcome=OK created=1 locales=["en"]`,
+one article, zero attachments, no refusal. Pinned by an example that names the measurement.
+
+### N11 — What a six-reader adversarial pass found, and what I took from it
+
+Before offering the delta I ran six independent readers over the media subsystem — the frozen contract, an
+adversarial audit of the owner's nine requirements, a test inventory, the report surface, a "what breaks when
+this starts running" pass, and the fixture mechanics. Two of them independently found the same two defects I had
+not. Everything below is a change in this delta; the two I declined are named with the reason.
+
+**Taken — the content type and the byte cap were still inside the write loop.** My own `preflight!` comment said
+"every corpus defect, with no write of any kind", and R2-MEDIA-INTERFACE.md §3.6 freezes BOTH of these as
+seed-boundary checks — but they lived in `MediaUpload#attach!`, reached only from the apply. So the shape the
+missing-file check was moved out of the write loop to fix was still there for two conditions that are equally
+decidable from the file. The live consequence is likely rather than theoretical: **the cap is 2 MB and a
+full-page screenshot is often larger**, so the first corpus image batch could attach image one and raise on
+image two. `MediaUpload#validate_bytes!` is now public, `attach!` and the seed preflight both call it — one
+implementation, so the preflight cannot drift from what the write accepts — and `attach!` no longer takes a
+`content_type:` on trust, because a caller-supplied type is a claim and the bytes are the fact. The refusal
+message now also names the corpus FILE and LINE, which is what an operator opens; it named only the image path
+before.
+
+**Taken — a fenced example of the grammar refused the whole seed.** `reject_spaced_reference` is a raw-line
+regex, and it has to be: CommonMark builds no image node for a spaced destination, so no parse can see one.
+But the corpus **documents this product**, and `![alt](media:step 2.png)` is exactly the example a
+troubleshooting article shows as the thing not to write — `Corpus#media_problems` is parsed precisely so a key
+in a fence is not a reference. The parse now tells the regex where the prose ends: lines inside a fenced or
+indented code block are skipped. An example inside INLINE backticks still refuses, which is recorded in the
+code rather than hidden. The same scan also reads the BODY now, not the raw file, so a `media:` image written
+inside a front-matter value is no longer a reference to one scanner and invisible to the other — with the front
+matter replaced by as many blank lines as it occupied, so error line numbers still point where an operator
+looks. All three are pinned, and all three fail with the fix reverted: `19 examples, 3 failures`.
+
+**Taken — `purged` and `unreferenced` printed as zeros for a sweep that never ran.** The orphan sweep is the
+last thing the apply does, so on an earlier failure those two counters were not zero but unknown, and the report
+said `0 purged (… 0 unreferenced)` as though the sweep had run and found nothing. They start `nil` and the
+report prints `sweep: did not run`. §N2 carries the new output.
+
+**Taken — three claims of mine were false.** `MediaSeeder`'s header said "ContentSeeder does not rescue it and
+the rake task does not either, so rake prints the message and exits 1" — it does rescue it now, which is this
+delta's own change, and the comment now describes both surfaces plus the fact that R2-MEDIA-INTERFACE.md §3.6
+still documents the old path. `Result#media`'s comment said "assigned in `apply!`" when the assignment is in the
+memo whose first caller is the preflight, so a media-preflight refusal carries a ZEROED struct, not nil.
+`ATTACHMENT_NAME`'s justification said the association's name was not available: `ActiveStorage::Attached`
+declares `attr_reader :name` (`activestorage-7.2.3.2/lib/active_storage/attached.rb:11`), so the constant is
+gone and the query reads `portal.documentation_media.name`.
+
+**Taken — `apply!` was public with no external caller.** I made both phases public when only the preflight
+needed to be, and the comment described an integration that does not exist (`ContentSeeder` calls `preflight!`
+and `perform!`, never `apply!`). A public `apply!` taking a caller-supplied reference hash would also reach the
+attach boundary without `validate!`'s namespace guard, which is the only place the `uploads/` invariant is
+enforced. Private again.
+
+**Declined, with the reason — the storage-existence probe.** A reader proposed
+`&& existing.blob.service.exist?(existing.blob.key)` in `seed`, because checksum identity proves what the
+repository holds and not that the service still holds the object: after a database restore without its storage,
+the seed reports `unchanged` forever and the page serves a broken image. The finding is correct. I did not take
+it, because owner requirement 4 defines idempotency as "same key + same checksum => no write" with no further
+condition, requirement 9's "safely rerunnable" is about recovering the run rather than repairing externally lost
+storage, and the ruling says complete the existing design rather than extend it. **It is one condition in
+`seed` if the owner wants it**, at the cost of one `File.exist?` per key per run on Disk or one HEAD on S3.
+
+**Declined, with the reason — the `index_by` / `detect` disagreement.** `MediaUpload#attachment_for` takes the
+FIRST attachment for a key and both indexes take the LAST, over an association with no `ORDER BY`. It matters
+only if the transient two-attachments-one-key window `attach!` documents ever became permanent, which needs a
+failure inside `purge_later`'s own transaction. Pre-existing, unchanged by this delta, and the reader rates it
+low; recorded rather than fixed.
+
 ### N9 — What this does NOT change, recorded so nobody re-derives it
 
 - **`Corpus#media_problems` stays.** It collects every offending file where `MediaSeeder` raises on the first,
   and that collecting behaviour is the better report for the two checks they share. The frozen contract's
   deduplication (`MediaSeeder#problems`) remains open.
-- **`MediaSeeder#scan_corpus` still globs `*/*/*.md`**, which reaches locale trees the portal does not serve and
-  sections the manifest does not claim, while `Corpus` reads only what the manifest claims for allowed locales.
-  The two sets coincide today (`en`, `ar`, every section claimed). Left alone because §3.3 justifies the
-  independent walk and changing it is Agent 1's file and a redesign. **Recorded as a bounded difference**: a
-  reference in an unseeded file would attach media for an article that is never published.
+- **`MediaSeeder` still does its own walk** rather than being handed keys, because §3.3 justifies that and the
+  cost is one extra read of the corpus. What it walks is no longer "every locale tree": see §N10, which is the
+  defect this item originally recorded as merely bounded and then measured as real. A difference that remains:
+  `Corpus` reads only what `manifest.yml` CLAIMS, while the media walk reads every section directory inside the
+  locales being seeded. `parity_problems` already refuses an unclaimed section directory for a served locale, so
+  the two sets cannot diverge without the run failing first.
 - **No `documentation:media` rake task.** §3.3 permits one; nothing requires it. `documentation:content` is
   idempotent, so an operator who changed only an image re-runs that, and a second task would be a second
   entry point to the same pass.

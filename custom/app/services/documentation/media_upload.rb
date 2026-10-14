@@ -21,10 +21,6 @@ class Documentation::MediaUpload
   CONTENT_TYPES = { 'image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif', 'image/webp' => 'webp' }.freeze
   MAX_BYTES = 2.megabytes
 
-  # The `has_many_attached` name on Portal (app/models/portal.rb:60). Named here because `attach!` has to assert
-  # against the attachment row itself, where the association's own method name is not available.
-  ATTACHMENT_NAME = 'documentation_media'.freeze
-
   # 16 lowercase hex characters, which the key grammar accepts as-is. Collision inside the operator namespace is
   # a 2^-64 event and is NOT what makes the namespaces disjoint -- the reserved first segment is (section 9.1) --
   # so this needs no retry loop.
@@ -41,6 +37,21 @@ class Documentation::MediaUpload
     @portal = portal
   end
 
+  # EVERYTHING DECIDABLE FROM THE BYTES, in one public method, so a seed PREFLIGHT can decide it before any
+  # write. Owner ruling 3 asks for exactly that, and these two were the last decidable defects left inside the
+  # write loop: measured consequence, a corpus whose second image was a 2.5 MB screenshot (the cap is 2 MB) or a
+  # `.png` holding SVG uploaded the first image and then raised. `attach!` calls this too, so the preflight and
+  # the boundary cannot drift: there is one implementation, judged on the same bytes.
+  #
+  # `key` is only for the message. The seeder passes the `media:` key; `create!` passes the file name, because
+  # an operator uploading a too-large image has no key yet and the file name is what they recognise.
+  def validate_bytes!(key:, io:)
+    content_type = content_type_for!(io, key)
+    raise Error, "#{key} is #{io.size} bytes; the cap is #{MAX_BYTES}." if io.size > MAX_BYTES
+
+    content_type
+  end
+
   # The operator path. Allocates a key that cannot collide with a seeded one and returns the finished Markdown
   # for the editor to insert at the caret, so the grammar is never transcribed into JS and the alt requirement
   # cannot be skipped client-side.
@@ -48,9 +59,11 @@ class Documentation::MediaUpload
     alt = alt.to_s.strip
     raise Error, 'Alt text is required: it is the public search snippet as well as the accessible name.' if alt.blank?
 
-    content_type = content_type_for!(io)
+    # The key's extension comes from the verified content type, so the type has to be known before the key is
+    # allocated. `attach!` judges the same bytes again rather than being handed a type to trust.
+    content_type = validate_bytes!(key: File.basename(filename.to_s), io: io)
     key = allocate_key(filename, content_type)
-    blob = attach!(key: key, io: io, filename: filename, content_type: content_type)
+    blob = attach!(key: key, io: io, filename: filename)
 
     Result.new(key: key, markdown: markdown_for(key, alt),
                width: blob.metadata['width'], height: blob.metadata['height'], replaced: false)
@@ -71,12 +84,12 @@ class Documentation::MediaUpload
 
   # The shared attach boundary. content_source_path nil means no corpus file owns these bytes, which is exactly
   # an operator upload -- one vocabulary with Agent 5's row provenance (MediaResolver::SOURCE_PATH_METADATA).
-  def attach!(key:, io:, filename:, content_type: nil, content_source_path: nil)
+  def attach!(key:, io:, filename:, content_source_path: nil)
     raise Error, "#{key.inspect} is not a valid documentation media key." unless Documentation::MediaResolver.valid_key?(key)
 
-    content_type ||= content_type_for!(io)
-    raise Error, "#{key} is #{io.size} bytes; the cap is #{MAX_BYTES}." if io.size > MAX_BYTES
-
+    # No `content_type:` parameter: a type supplied by a caller is a claim, and the bytes are the fact. Both
+    # callers now go through the same check, which is also what the seed preflight calls.
+    content_type = validate_bytes!(key: key, io: io)
     previous = attachment_for(key)
     blob = upload(key, io, filename, content_type, content_source_path)
     # Only after the new attachment has succeeded (contract item 8). A row without bytes is a broken published
@@ -112,11 +125,11 @@ class Documentation::MediaUpload
     # ever recurs -- read from the database rather than from the in-memory proxy, which is what was lying.
     # `name:` as well as `record:`, because one blob can be attached to several records AND under several names:
     # without it, a blob that happened to be the portal's `logo` would satisfy the check while the
-    # documentation_media attach had failed. Read from the blob side rather than from
-    # `portal.documentation_media`, whose proxy returns the PENDING change's attachments when one exists
-    # (activestorage-7.2.3.2/lib/active_storage/attached/many.rb:32-34) -- which is the in-memory state that was
-    # lying in the first place.
-    unless blob.attachments.exists?(record: portal, name: ATTACHMENT_NAME)
+    # documentation_media attach had failed. The name comes from the association itself -- `Attached` declares
+    # `attr_reader :name` (activestorage-7.2.3.2/lib/active_storage/attached.rb:11) -- rather than from a third
+    # copy of the string. Read from the BLOB side, because `portal.documentation_media` returns the PENDING
+    # change's attachments when one exists (attached/many.rb:32-34), which is the in-memory state that lied.
+    unless blob.attachments.exists?(record: portal, name: portal.documentation_media.name)
       raise Error, "#{key} was not attached to #{portal.slug}: #{portal.errors.full_messages.to_sentence.presence || 'the record would not save'}."
     end
 
@@ -125,13 +138,15 @@ class Documentation::MediaUpload
 
   # The bytes are the fact and the extension is the author's claim, so the type is identified from the content
   # with ActiveStorage's own identifier -- used directly here so a bad type fails BEFORE anything is uploaded.
-  def content_type_for!(io)
+  # The message names what is being refused, because a seed run can refuse one file out of many and "image/svg+xml
+  # is not permitted" on its own does not say which.
+  def content_type_for!(io, key)
     io.rewind if io.respond_to?(:rewind)
     type = Marcel::MimeType.for(io)
     return type if CONTENT_TYPES.key?(type)
 
-    raise Error, "#{type} is not permitted; documentation media must be one of #{CONTENT_TYPES.keys.join(', ')} " \
-                 '(raster only, no SVG).'
+    raise Error, "#{key}: #{type} is not permitted; documentation media must be one of " \
+                 "#{CONTENT_TYPES.keys.join(', ')} (raster only, no SVG)."
   end
 
   # `uploads/<16 hex>-<slug>.<ext>`: two segments, so it matches the frozen key grammar with no change to it. The

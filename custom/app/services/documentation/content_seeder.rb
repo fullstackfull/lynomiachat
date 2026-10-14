@@ -84,9 +84,10 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
   # reconcile against the corpus. `divergences` is the per-field detail behind them.
   #
   # `media` is Documentation::MediaSeeder::Result for the same run -- R2-MEDIA-INTERFACE.md section 3.2 asks for
-  # exactly this member and no second reporting shape. It holds the LIVE struct rather than a copy (assigned in
-  # `apply!` before the pass runs), so an ApplyFailure reports what the media pass completed before it failed.
-  # `nil` means the media pass never ran, which is true of every PreflightError.
+  # exactly this member and no second reporting shape. It holds the LIVE struct rather than a copy, assigned when
+  # the media seeder is first BUILT, which is in the preflight -- so an ApplyFailure reports what the media pass
+  # completed before it failed, and a media-preflight refusal carries a zeroed struct rather than nil. `nil`
+  # means no seeder was ever built, which is a Result constructed by hand.
   Result = Struct.new(:created, :updated, :unchanged, :adopted, :untracked, :locales, :divergences, :media,
                       keyword_init: true)
   Divergence = Struct.new(:kind, :locale, :slug, :path, :fields, keyword_init: true)

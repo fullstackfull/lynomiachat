@@ -1,6 +1,6 @@
 # Lynomia's listeners on Chatwoot's asynchronous events, after the Community and Enterprise ones.
 module Custom::AsyncDispatcher
   def listeners
-    super + [Commerce::RecoveryListener.instance]
+    super + [Commerce::RecoveryListener.instance, Commerce::ConsentListener.instance]
   end
 end

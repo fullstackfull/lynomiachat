@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_110000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_19_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -950,6 +950,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_110000) do
     t.index ["commerce_store_id", "contact_id"], name: "index_commerce_customer_links_on_store_and_contact", unique: true
     t.index ["confirmed_by_id"], name: "index_commerce_customer_links_on_confirmed_by_id"
     t.index ["contact_id"], name: "index_commerce_customer_links_on_contact_id"
+  end
+
+  create_table "commerce_messaging_consents", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.integer "purpose", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.datetime "decided_at", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "state"], name: "index_commerce_messaging_consents_on_account_id_and_state"
+    t.index ["contact_id", "purpose"], name: "index_commerce_consents_on_contact_and_purpose", unique: true
   end
 
   create_table "commerce_store_health", force: :cascade do |t|

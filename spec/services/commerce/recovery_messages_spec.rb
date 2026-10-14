@@ -45,7 +45,35 @@ RSpec.describe Commerce::RecoveryMessages do
     GlobalConfig.clear_cache
     Redis::Alfred.scan_each(match: 'COMMERCE::RECOVERY_PREPARE::*') { |key| Redis::Alfred.delete(key) }
     create(:message, conversation: conversation, account: account, inbox: whatsapp.inbox, message_type: :incoming, created_at: 1.hour.ago)
+    # P3E. A recovery message is marketing whoever presses Send, so the shopper's agreement to
+    # receive it is now a precondition of preparing one at all; the case below covers its
+    # absence. Granted here so every other case is testing what it says it is testing.
+    Commerce::MessagingConsents.record(
+      account: account, contact: contact,
+      decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'test', purposes: ['promotional'])
+    )
     detail.call
+  end
+
+  # An open service window means the shopper wrote to the merchant. It is not an agreement to
+  # be pitched the basket they walked away from, and the cart is not even read without one.
+  it 'prepares nothing for a shopper who has not agreed to marketing' do
+    Commerce::MessagingConsent.delete_all
+
+    expect { prepare.call }.to raise_error(Commerce::Error) do |error|
+      expect(error.code).to eq('RECOVERY_DISABLED')
+      expect(error.reason).to eq('promotional_consent_missing')
+    end
+    expect(a_request(:get, /abandoned-carts/)).not_to have_been_made
+  end
+
+  it 'prepares nothing once the shopper has said stop, whatever they agreed to before' do
+    Commerce::MessagingConsents.record(
+      account: account, contact: contact,
+      decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+    )
+
+    expect { prepare.call }.to raise_error(Commerce::Error) { |error| expect(error.reason).to eq('consent_withdrawn') }
   end
 
   it 'reads the cart again and returns the message parts for the reply box, sending nothing' do

@@ -50,14 +50,25 @@ class Custom::AutomationRules::TemplateAction
   private
 
   # Every reason the send is refused, in the order an operator should read them: the rule's own configuration first,
-  # then the channel, then the template, then the contact.
+  # then the channel, then the template, then the contact -- and the contact's own decision last of all, because it
+  # is the only one of these that belongs to somebody other than the merchant.
   def refusal
     return 'inbox_not_in_account' if inbox.nil?
     return 'channel_not_whatsapp' unless inbox.channel.is_a?(Channel::Whatsapp)
     return 'conversation_inbox_mismatch' if @conversation.inbox_id != inbox.id
     return 'contact_unavailable' unless contact_available?
 
-    Flows::Template.problem(inbox, @config[:name], @config[:language])
+    Flows::Template.problem(inbox, @config[:name], @config[:language]) || consent_refusal
+  end
+
+  # WHAT THE SHOPPER AGREED TO, which is a different question from whether WhatsApp allows the send. The trigger
+  # decides the class: an order they placed is transactional and goes out unless they refused it, a cart they left
+  # is promotional and does not go out unless they agreed to it. Commerce::MessagingEligibility owns both readings
+  # so this is the only place that has to know there are two.
+  def consent_refusal
+    purpose = Commerce::MessagingEligibility.purpose_for(@rule.event_name)
+
+    Commerce::MessagingEligibility.refusal(@conversation.contact, purpose)&.to_s
   end
 
   # Scoped to the rule's own account, so a rule can never name another account's inbox — and because the template

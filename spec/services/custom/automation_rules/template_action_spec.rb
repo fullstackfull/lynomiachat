@@ -151,4 +151,72 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
       expect(run(config).reason).to eq('contact_unavailable')
     end
   end
+
+  # P3E. What the SHOPPER agreed to, which is a different question from what WhatsApp allows.
+  # The trigger decides the class, and the two classes have opposite defaults, so each one is
+  # asserted on its own rather than through a single "consent blocks a send" case that would
+  # pass against a model treating them identically.
+  describe 'consent' do
+    def consent(state, purposes:)
+      Commerce::MessagingConsents.record(
+        account: account, contact: contact,
+        decision: Commerce::MessagingConsents::Decision.new(state: state, source: 'test', purposes: purposes)
+      )
+    end
+
+    before { account.enable_features!('lynomia_commerce') }
+
+    def commerce_rule(event)
+      create(:automation_rule, account: account, event_name: event,
+                               actions: [{ 'action_name' => 'add_label', 'action_params' => ['x'] }])
+    end
+
+    def run_for(event, overrides = {})
+      described_class.new(rule: commerce_rule(event), account: account, conversation: conversation,
+                          config: config(overrides)).perform
+    end
+
+    # An abandoned basket is not a transaction the shopper completed and not a message they
+    # asked for. The absence of a decision is not a grant.
+    it 'refuses a cart message to a shopper who never agreed to marketing' do
+      expect(run_for('commerce_cart_abandoned').reason).to eq('promotional_consent_missing')
+    end
+
+    it 'sends a cart message once the shopper has agreed to marketing' do
+      consent(:granted, purposes: ['promotional'])
+
+      expect(run_for('commerce_cart_abandoned').reason).to be_nil
+    end
+
+    # The shopper placed the order; being told it shipped is the service they asked for, and
+    # withholding it for want of a marketing opt-in would be the worse outcome for them.
+    it 'sends an order update to a shopper who agreed to nothing' do
+      expect(run_for('commerce_order_shipped').reason).to be_nil
+    end
+
+    it 'refuses an order update once the shopper has said stop' do
+      consent(:withdrawn, purposes: Commerce::MessagingConsents::PURPOSES)
+
+      expect(run_for('commerce_order_shipped').reason).to eq('consent_withdrawn')
+    end
+
+    it 'refuses everything to a suppressed number, and says which it is' do
+      consent(:suppressed, purposes: Commerce::MessagingConsents::PURPOSES)
+
+      expect(run_for('commerce_order_shipped').reason).to eq('messaging_suppressed')
+      expect(run_for('commerce_cart_abandoned').reason).to eq('messaging_suppressed')
+    end
+
+    # An ordinary automation rule has no commerce class: demanding a marketing opt-in before
+    # answering a conversation the customer themselves started would be the worse outcome.
+    it 'does not demand a marketing opt-in for a rule that is not about commerce' do
+      expect(run(config).reason).to be_nil
+    end
+
+    it 'still refuses that rule once the shopper has said stop' do
+      consent(:withdrawn, purposes: Commerce::MessagingConsents::PURPOSES)
+
+      expect(run(config).reason).to eq('consent_withdrawn')
+    end
+  end
 end

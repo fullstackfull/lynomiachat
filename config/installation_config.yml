@@ -31,11 +31,11 @@
   display_title: 'Logo Dark Mode'
   description: 'The logo that would be used on the dashboard, login page etc. for dark mode'
 - name: BRAND_URL
-  value: 'https://www.chat.lynomia.com'
+  value: 'https://chat.lynomia.com'
   display_title: 'Brand URL'
   description: 'The URL that would be used in emails under the section “Powered By”'
 - name: WIDGET_BRAND_URL
-  value: 'https://www.chat.lynomia.com'
+  value: 'https://chat.lynomia.com'
   display_title: 'Widget Brand URL'
   description: 'The URL that would be used in the widget under the section “Powered By”'
 - name: BRAND_NAME
@@ -58,6 +58,10 @@
   value: ''
   display_title: 'Support URL'
   description: 'Where users should go for help. Leave blank to hide every support link in the dashboard.'
+- name: MARKETING_QUOTE_NOTIFICATION_EMAIL
+  value: ''
+  display_title: 'Quote Request Notification Email'
+  description: 'Where a quote request from the public pricing page is emailed. Leave blank to send no email; the requests are listed in Super Admin either way.'
 - name: CHANGELOG_URL
   value: '/changelog'
   display_title: 'Changelog URL'

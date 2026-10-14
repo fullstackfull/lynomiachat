@@ -1,0 +1,79 @@
+<%# Every discovery tag the old page lacked: it carried two <meta> and three <link> elements in total, with no
+  description, canonical, hreflang, Open Graph, Twitter card or icon (docs/official-website/01-current-state-audit.md
+  section 5).
+
+  Everything here is built from the one Marketing::Page the controller resolved, and every address through
+  MarketingHelper, which has one host-resolution point -- so the title, the canonical, the hreflang set and
+  og:url cannot disagree. That is the defect DocumentationHelper records having had in three copies
+  (custom/app/helpers/documentation_helper.rb:7-16).
+%>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title><%= marketing_page_title %></title>
+<meta name="description" content="<%= marketing_page.description %>">
+
+<%# The canonical the operator set, if they set one; otherwise this page's own address. An operator-set
+  canonical is how a deliberately duplicate page points at its original. %>
+<link rel="canonical" href="<%= @site_page&.meta&.dig('canonical_url').presence || marketing_url(marketing_page) %>">
+
+<%# A draft or archived sibling is not a destination, so it gets no alternate: an hreflang pointing at an
+  unpublished page tells a crawler to index a 404. `marketing_published_locales` reads the sibling once. %>
+<% alternates = marketing_locale_alternates(marketing_page, published_locales: marketing_published_locales) %>
+<% alternates.each do |locale, url| %>
+  <link rel="alternate" hreflang="<%= locale %>" href="<%= url %>">
+<% end %>
+<%# x-default points at Arabic -- the primary market and the unprefixed tree (D5) -- and only when Arabic is
+  actually published. %>
+<% if alternates.key?('ar') %>
+  <link rel="alternate" hreflang="x-default" href="<%= marketing_url(marketing_page, locale: 'ar') %>">
+<% end %>
+
+<%# A draft previewed in Super Admin, or a page an operator marked noindex, must not be indexed if the URL
+  leaks. Published-and-indexable pages emit nothing, which is the correct default. %>
+<% if @site_page && (!@site_page.status_published? || @site_page.noindex?) %>
+  <meta name="robots" content="noindex, nofollow">
+<% end %>
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= t('marketing.site_name') %>">
+<meta property="og:locale" content="<%= marketing_locale == 'ar' ? 'ar_AR' : 'en_US' %>">
+<meta property="og:url" content="<%= marketing_url(marketing_page) %>">
+<meta property="og:title" content="<%= @site_page&.meta&.dig('og_title').presence || marketing_page.title %>">
+<meta property="og:description" content="<%= @site_page&.meta&.dig('og_description').presence || marketing_page.description %>">
+
+<%# THE CARD TYPE FOLLOWS THE IMAGE. `summary_large_image` with no og:image is a card that promises a picture
+  and shows a blank -- the exact defect the documentation head records having fixed. So the image is emitted
+  when the operator has set one, and the card type is chosen from whether it exists. %>
+<% og_image = marketing_og_image_url(@site_page) %>
+<% if og_image.present? %>
+  <meta property="og:image" content="<%= og_image %>">
+  <meta name="twitter:card" content="summary_large_image">
+<% else %>
+  <meta name="twitter:card" content="summary">
+<% end %>
+
+<%# STRUCTURED DATA, AND WHERE EACH KIND IS EMITTED.
+
+  Organization and WebSite describe the publisher and the site, so they belong on the site's own front page
+  and nowhere else -- repeating them on all 48 pages per locale says nothing extra and is the kind of
+  duplication a crawler discounts. BreadcrumbList and FAQPage are emitted by the templates that RENDER the
+  trail and the questions (marketing/shared/_page.html.erb, marketing/sections/_faq.html.erb), from the same
+  objects, so the structured data cannot describe something the page does not show.
+
+  Nothing is emitted for a page that is not indexable: a draft previewed in Super Admin, or a page an
+  operator marked noindex, has nothing to tell a crawler.
+%>
+<% indexable = @site_page.nil? || (@site_page.status_published? && !@site_page.noindex?) %>
+<% if indexable && @site_page&.kind == 'standing' && @site_page.key == 'home' %>
+  <%= marketing_structured_data(marketing_organization_schema) %>
+  <%= marketing_structured_data(marketing_website_schema) %>
+<% end %>
+<% if indexable %>
+  <%= yield :structured_data %>
+<% end %>
+
+<link rel="icon" href="/favicon-32x32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-icon-180x180.png">
+
+<%= yield :head %>

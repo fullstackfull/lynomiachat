@@ -1,0 +1,9 @@
+<%# A heading and a paragraph. %>
+<section class="mt-10">
+  <% if section['heading'].present? %>
+    <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
+  <% end %>
+  <% if section['body'].present? %>
+    <p class="mt-2 leading-relaxed text-slate-600"><%= section['body'] %></p>
+  <% end %>
+</section>

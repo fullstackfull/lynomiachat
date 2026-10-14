@@ -1,0 +1,13 @@
+<%# An operator's sections, rendered.
+  
+  ONE DISPATCHER, AND IT CANNOT RENDER A PARTIAL THAT DOES NOT EXIST: `Marketing::SectionSchema.coerce` drops
+  any section whose type is not in TYPES before the row is saved, and TYPES is the list of partials in this
+  directory. So a malformed section is impossible here rather than guarded against.
+
+  Every string a section carries is rendered escaped. Bodies are plain text by design -- the schema module
+  gives the full reasoning, which comes down to this repository having already shipped a stored XSS through a
+  Markdown path.
+%>
+<% Array(sections).each do |section| %>
+  <%= render "marketing/sections/#{section['type']}", section: section, page: page %>
+<% end %>

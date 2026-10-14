@@ -1,0 +1,36 @@
+<%# The question list, from site_faq_entries in this locale.
+  
+  THE SAME ROWS THE STRUCTURED DATA IS BUILT FROM. W5's FAQPage JSON-LD reads these rows, not a copy, so the
+  markup and the structured data cannot disagree -- which is both Google's own requirement and the honest
+  arrangement.
+
+  A link whose page is unpublished resolves to nil and is not rendered, so an answer never points at a 404.
+%>
+<% entries = SiteFaqEntry.published_for(marketing_locale) %>
+<% if entries.any? %>
+  <%# The FAQPage node, from the SAME rows rendered below -- not a copy and not a summary. %>
+  <% content_for :structured_data do %>
+    <%= marketing_structured_data(marketing_faq_schema(entries)) %>
+  <% end %>
+  <section class="mt-10">
+    <% if section['heading'].present? %>
+      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
+    <% end %>
+    <dl class="mt-6 divide-y divide-slate-100">
+      <% entries.each do |entry| %>
+        <% href = entry.link? ? marketing_target_href(entry.target) : nil %>
+        <div class="py-6">
+          <dt class="text-lg font-semibold text-slate-900"><%= entry.question %></dt>
+          <dd class="mt-2 leading-relaxed text-slate-600">
+            <%= entry.answer %>
+            <% if href.present? %>
+              <a class="mt-2 block text-sm font-medium text-woot-700 hover:text-woot-800" href="<%= href %>">
+                <%= entry.link_label %>
+              </a>
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </section>
+<% end %>

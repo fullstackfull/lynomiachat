@@ -21,6 +21,11 @@ as defined by the routes in the `admin/` namespace
     portals: 'icon-book-line',
     categories: 'icon-folder-line',
     articles: 'icon-article-line',
+    site_quote_requests: 'icon-draft-line',
+    site_pages: 'icon-book-2-line',
+    site_nav_links: 'icon-folder-3-line',
+    site_faq_entries: 'icon-message-line',
+    site_redirects: 'icon-refresh-line',
   }
 %>
 
@@ -44,7 +49,7 @@ as defined by the routes in the `admin/` namespace
           not just its own. So each such controller is excluded by name, and the exclusion ships in the same
           commit as the route and the nav item.
         %>
-        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions", "documentation_media"].include?  resource.resource %>
+        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions", "documentation_media", "marketing_settings"].include?  resource.resource %>
         <% next if resource.resource == "platform_banners" && !ChatwootApp.chatwoot_cloud? %>
         <%= render partial: "nav_item", locals: {
             icon: sidebar_icons[resource.resource.to_sym],
@@ -69,7 +74,10 @@ as defined by the routes in the `admin/` namespace
       <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: sidekiq_web_url, label: 'Sidekiq Dashboard' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Instance Health' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-mail-send-fill', url: super_admin_push_diagnostics_url, label: 'Push Diagnostics' } %>
-      <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Agent Dashboard' } %>
+      <%# `/app`, NOT `/`. `/` is the marketing homepage on this installation's own host since the cutover
+        (config/routes.rb:17), so an operator clicking this landed on the public website instead of the
+        product. `/app` is the dashboard's own address and is what `/` used to bounce to anyway. %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/app', label: 'Agent Dashboard' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-logout-circle-r-line', url: super_admin_logout_url, label: 'Logout' } %>
     </ul>
   </div>

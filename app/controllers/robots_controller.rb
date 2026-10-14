@@ -48,9 +48,18 @@
 # line is worse than none, because a crawler reports it as an error and stops asking.
 class RobotsController < ActionController::Base # rubocop:disable Rails/ApplicationController
   include DocumentationHelper
+  # For `marketing_host` and `marketing_absolute_url` alone -- the one place the marketing site's host is
+  # resolved (MarketingHelper, D9). Including the module rather than copying two lines is what stopped the
+  # documentation's own `Sitemap:` line advertising `https://hc/hc/...`.
+  include MarketingHelper
 
   DISALLOWED = ['/widget', '/app/', '/super_admin/', '/api/', '/installation/', '/rails/'].freeze
-  DISALLOWED_PATTERNS = ['/hc/*?theme=', '/hc/*?show_plain_layout=', '/hc/*/search', '/hc/*/articles/*.png'].freeze
+  # `/*?preview=` is the marketing site's draft preview. The page it serves to a signed-in super admin carries
+  # `noindex`, but to an anonymous crawler the same URL is the PUBLISHED page with a canonical pointing at the
+  # clean address -- a duplicate with a correct canonical, which is crawl budget spent for nothing. The other
+  # four are the documentation portal's, and the comment above says why each.
+  DISALLOWED_PATTERNS = ['/hc/*?theme=', '/hc/*?show_plain_layout=', '/hc/*/search', '/hc/*/articles/*.png',
+                         '/*?preview='].freeze
 
   def show
     render plain: body, layout: false
@@ -62,8 +71,24 @@ class RobotsController < ActionController::Base # rubocop:disable Rails/Applicat
     lines = ['User-agent: *']
     lines += DISALLOWED.map { |path| "Disallow: #{path}" }
     lines += DISALLOWED_PATTERNS.map { |pattern| "Disallow: #{pattern}" }
+    lines += marketing_sitemap_line
     lines += sitemap_lines
     "#{lines.join("\n")}\n"
+  end
+
+  # The website's own sitemap, first, because it is the site this host primarily serves.
+  #
+  # NOT INSIDE `sitemap_lines`: that method reads the Portal table and is wrapped in a rescue so a cold boot
+  # with no database still answers robots.txt. This line needs no database at all, so putting it there would
+  # make it disappear in exactly the situation it still works in.
+  #
+  # Skipped when no host is configured, for the reason the portal lines record: a `Sitemap:` line must be
+  # absolute, a crawler reports a relative or wrong one as an error and stops asking, and a wrong line is
+  # worse than none.
+  def marketing_sitemap_line
+    return [] if marketing_host.blank?
+
+    ["Sitemap: #{marketing_absolute_url('/sitemap.xml')}"]
   end
 
   # The portals this installation actually serves, read once. A portal with a custom domain has its sitemap on

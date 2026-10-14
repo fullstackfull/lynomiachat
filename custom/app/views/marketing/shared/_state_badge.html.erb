@@ -1,0 +1,15 @@
+<%# Availability, shown rather than hidden.
+
+  The inventory classifies every capability as available, conditional or beta, and a conditional feature needs
+  a named prerequisite before a reader can use it. Rendering the state beside the name is what stops this site
+  repeating the old one's six over-claims; an available feature needs no badge, so only the exceptions carry one.
+%>
+<% if state == :conditional %>
+  <span class="rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-medium text-yellow-800">
+    <%= t('marketing.state.conditional') %>
+  </span>
+<% elsif state == :beta %>
+  <span class="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-800">
+    <%= t('marketing.state.beta') %>
+  </span>
+<% end %>

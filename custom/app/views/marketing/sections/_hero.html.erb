@@ -1,0 +1,26 @@
+<%# The home page's opening block. The headline and standfirst are the page's own heading and lede, rendered
+  by the page wrapper, so this section carries only the kicker and the two actions. %>
+<% primary = marketing_target_href(section['primary_target']) %>
+<% secondary = marketing_target_href(section['secondary_target']) %>
+
+<% if section['kicker'].present? %>
+  <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-woot-25 px-3 py-1 text-xs font-medium text-woot-700">
+    <%= section['kicker'] %>
+  </p>
+<% end %>
+
+<% if primary.present? || secondary.present? %>
+  <div class="mt-8 flex flex-wrap gap-3">
+    <% if primary.present? && section['primary_label'].present? %>
+      <a href="<%= primary %>" class="rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800">
+        <%= section['primary_label'] %>
+      </a>
+    <% end %>
+    <% if secondary.present? && section['secondary_label'].present? %>
+      <a href="<%= secondary %>"
+         class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <%= section['secondary_label'] %>
+      </a>
+    <% end %>
+  </div>
+<% end %>

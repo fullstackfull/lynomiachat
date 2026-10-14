@@ -1,0 +1,17 @@
+<%# One footer column, from the operator's navigation rows.
+  
+  A link whose target does not resolve -- an unpublished page, a deleted one -- is dropped by
+  `marketing_nav` rather than rendered as a dead anchor. That is the mechanism behind the rule this rebuild
+  started from: the old footer advertised four legal documents and a live chat and delivered four empty
+  anchors.
+%>
+<ul class="space-y-2 text-sm text-slate-600">
+  <% marketing_nav(placement).each do |item| %>
+    <li>
+      <a class="hover:text-slate-900" href="<%= item[:href] %>"
+         <%= 'target=_blank rel=noopener'.html_safe if item[:external] %>>
+        <%= item[:label] %>
+      </a>
+    </li>
+  <% end %>
+</ul>

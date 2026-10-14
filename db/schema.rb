@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -357,7 +357,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "channel_entitlements", default: [], null: false
+    t.boolean "listed_on_website", default: false, null: false
     t.index ["active"], name: "index_billing_plans_on_active"
+    t.index ["listed_on_website"], name: "index_billing_plans_on_listed_on_website", where: "listed_on_website"
     t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id", unique: true
   end
 
@@ -1848,6 +1850,83 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
     t.index ["account_id", "date", "dimension_type", "dimension_id", "metric"], name: "index_rollup_unique_key", unique: true
     t.index ["account_id", "dimension_type", "date"], name: "index_rollup_summary"
     t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
+  end
+
+  create_table "site_faq_entries", force: :cascade do |t|
+    t.string "locale", null: false
+    t.text "question", null: false
+    t.text "answer", null: false
+    t.string "link_label"
+    t.string "link_page_kind"
+    t.string "link_page_key"
+    t.integer "position", default: 0, null: false
+    t.boolean "visible", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["locale", "position"], name: "index_site_faq_entries_on_locale_and_position"
+  end
+
+  create_table "site_nav_links", force: :cascade do |t|
+    t.string "locale", null: false
+    t.string "placement", null: false
+    t.string "label", null: false
+    t.string "href"
+    t.string "page_kind"
+    t.string "page_key"
+    t.integer "position", default: 0, null: false
+    t.boolean "visible", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["locale", "placement", "position"], name: "index_site_nav_links_on_locale_and_placement_and_position"
+  end
+
+  create_table "site_pages", force: :cascade do |t|
+    t.string "locale", null: false
+    t.string "kind", null: false
+    t.string "key", null: false
+    t.string "slug", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "published_at"
+    t.string "title", null: false
+    t.text "description"
+    t.string "heading"
+    t.text "lede"
+    t.jsonb "sections", default: [], null: false
+    t.jsonb "meta", default: {}, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind", "status"], name: "index_site_pages_on_kind_and_status"
+    t.index ["locale", "kind", "key"], name: "index_site_pages_on_locale_and_kind_and_key", unique: true
+    t.index ["locale", "kind", "slug"], name: "index_site_pages_on_locale_and_kind_and_slug", unique: true
+  end
+
+  create_table "site_quote_requests", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "company"
+    t.string "phone"
+    t.string "team_size"
+    t.jsonb "channels", default: [], null: false
+    t.text "message"
+    t.string "locale", default: "ar", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "notification_attempted_at"
+    t.string "notification_error"
+    t.index ["notification_attempted_at"], name: "index_site_quote_requests_on_notification_attempted_at"
+    t.index ["status", "created_at"], name: "index_site_quote_requests_on_status_and_created_at"
+  end
+
+  create_table "site_redirects", force: :cascade do |t|
+    t.string "from_path", null: false
+    t.string "to_path", null: false
+    t.boolean "permanent", default: true, null: false
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["from_path"], name: "index_site_redirects_on_from_path", unique: true
   end
 
   create_table "sla_events", force: :cascade do |t|

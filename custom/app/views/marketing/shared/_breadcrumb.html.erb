@@ -1,0 +1,26 @@
+<%# The trail, as markup a reader can use and a crawler can read.
+
+  The JSON-LD BreadcrumbList that mirrors it is built from the SAME array, beside this render
+  (marketing/shared/_page.html.erb), so the structured data cannot describe a trail the page does not show.
+  This is the visible half, and it is the reason a detail page is not a dead end on a phone, where the
+  header navigation is one row of five links.
+
+  The last item carries aria-current and no href: a link to the page you are already on is noise for a screen
+  reader and a self-referential internal link for a crawler.
+%>
+<nav aria-label="<%= t('marketing.breadcrumb') %>" class="mb-6 text-xs text-slate-600">
+  <ol class="flex flex-wrap items-center gap-1.5">
+    <% trail.each_with_index do |crumb, index| %>
+      <li class="flex items-center gap-1.5">
+        <% if index.positive? %>
+          <span aria-hidden="true" class="text-slate-300">/</span>
+        <% end %>
+        <% if crumb[:path] %>
+          <a class="hover:text-slate-800" href="<%= crumb[:path] %>"><%= crumb[:label] %></a>
+        <% else %>
+          <span aria-current="page" class="text-slate-700"><%= crumb[:label] %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>

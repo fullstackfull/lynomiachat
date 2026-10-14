@@ -1,0 +1,23 @@
+<%# An operator-uploaded image, served from the marketing media route rather than /rails/active_storage/...
+  
+  WHY NOT `url_for(attachment)`. robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52),
+  so an ActiveStorage redirect URL is invisible to a crawler -- and its signed id never expires, so a URL a
+  crawler did index would stay fetchable forever. The documentation side froze an app-owned same-origin route
+  for exactly this reason; marketing uses its own.
+
+  A deleted attachment renders nothing: `image_for` returns nil and an operator's stale section reference
+  cannot break a public page.
+%>
+<% attachment = page&.image_for(section['attachment_id']) %>
+<% if attachment.present? %>
+  <figure class="mt-10">
+    <img src="<%= marketing_media_path(id: attachment.id) %>"
+         alt="<%= section['alt'].to_s %>"
+         <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
+         loading="lazy" decoding="async"
+         class="w-full rounded-2xl border border-slate-100">
+    <% if section['caption'].present? %>
+      <figcaption class="mt-2 text-xs text-slate-600"><%= section['caption'] %></figcaption>
+    <% end %>
+  </figure>
+<% end %>

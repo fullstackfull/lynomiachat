@@ -1,0 +1,22 @@
+<%# The closing call to action, shared by the home page and every detail page.
+
+  TWO DESTINATIONS, BOTH REAL. Account creation goes to the application's own registration path, and the
+  second action is the published address rendered as a mailto: -- the old page's equivalent band offered a
+  trial that cannot start (no plan row exists, and the trial plan id defaults to nil) beside a live-chat
+  button that opened nothing (docs/official-website/02-verified-feature-inventory.md section 6).
+%>
+<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+  <div class="rounded-3xl bg-woot-700 px-6 py-12 text-center sm:px-12">
+    <h2 class="text-2xl font-semibold text-white"><%= t('marketing.cta.title') %></h2>
+    <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-woot-50"><%= t('marketing.cta.lede') %></p>
+    <div class="mt-7 flex flex-wrap justify-center gap-3">
+      <a href="/app/register" class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-woot-700 hover:bg-woot-25">
+        <%= t('marketing.cta.primary') %>
+      </a>
+      <a href="<%= marketing_support_email_url %>"
+         class="rounded-xl border border-woot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800">
+        <%= t('marketing.cta.email') %>
+      </a>
+    </div>
+  </div>
+</section>

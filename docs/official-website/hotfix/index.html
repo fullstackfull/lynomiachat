@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lynomia Chat — كل محادثات عملائك بصندوق واحد</title>
+<meta name="description" content="لنوميا شات تجمع محادثات واتساب وإنستغرام وماسنجر وتيليجرام والبريد وشات موقعك في صندوق وارد واحد لفريقك، مع توزيع تلقائي وتقارير ومركز مساعدة بالعربي والإنجليزي.">
+<link rel="canonical" href="https://chat.lynomia.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lynomia Chat">
+<meta property="og:url" content="https://chat.lynomia.com/">
+<meta property="og:title" content="Lynomia Chat — كل محادثات عملائك بصندوق واحد">
+<meta property="og:description" content="صندوق وارد موحّد لقنوات محادثات عملائك، لفرق الدعم والمبيعات.">
+<meta property="og:image" content="https://lynomia.com/img/new/lynomia-icon.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="https://lynomia.com/img/new/lynomia-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0f1b30;
+    --ink-soft:#3d4961;
+    --ink-faint:#6c7891;
+    --paper:#f8fafd;
+    --card:#ffffff;
+    --line:#e3e8f1;
+    --module:#edf1f8;
+    --primary:#2f6fe4;
+    --primary-bright:#407af0;
+    --primary-deep:#194689;
+    --primary-navy:#122b5d;
+    --primary-tint:#e7eefc;
+    --grad:linear-gradient(135deg,#407af0 0%,#194689 60%,#122b5d 100%);
+    --ink-grad:linear-gradient(160deg,#16203a 0%,#0f1730 55%,#0a0f1f 100%);
+    --chat:#DB2777;
+    --chat-deep:#9d1c57;
+    --chat-tint:#fce7f1;
+    --chat-grad:linear-gradient(135deg,#ef5da0 0%,#DB2777 55%,#9d1c57 100%);
+    --wa:#25d366;
+    --wa-deep:#128C7E;
+    --wa-tint:#e8f9ee;
+    --ok:#16a34a;
+    --r-lg:22px;
+    --r-md:14px;
+    --r-sm:9px;
+    --shadow-card:0 6px 24px -10px rgba(18,43,93,.14);
+    --shadow-pop:0 24px 60px -18px rgba(18,43,93,.28);
+    --font:'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);background:var(--paper);color:var(--ink);line-height:1.7;overflow-x:hidden}
+  ::selection{background:var(--chat-tint);color:var(--chat-deep)}
+  a{color:inherit;text-decoration:none}
+  img,svg{display:block;max-width:100%}
+  .wrap{max-width:1180px;margin-inline:auto;padding-inline:clamp(18px,4vw,40px)}
+  .mono{font-family:var(--mono)}
+  :focus-visible{outline:3px solid var(--primary-bright);outline-offset:2px;border-radius:4px}
+  .flip{transform:scaleX(-1)}
+  html[dir="ltr"] .flip{transform:none}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* A static value chip. The panel it belongs to used to style hard-coded text as a live system
+     readout with pulsing dots; these values are statements of posture, so they must not animate. */
+  .host-card .val{color:#9fe7c0;font-weight:600}
+
+  /* ---------- reveal on scroll ---------- */
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  .rv.in{opacity:1;transform:none}
+
+  /* ---------- NAV ---------- */
+  nav{position:sticky;top:0;z-index:60;background:rgba(248,250,253,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;gap:22px;height:68px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.18rem;letter-spacing:.2px;white-space:nowrap}
+  .brand-mark{width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;place-items:center;position:relative;box-shadow:0 6px 14px -6px rgba(25,70,137,.55);flex-shrink:0}
+  .brand-mark svg{width:19px;height:19px}
+  .brand-mark::after{content:"";position:absolute;inset-inline-end:-3px;top:-3px;width:11px;height:11px;border-radius:50%;background:var(--chat);border:2px solid var(--paper);animation:pulseDot 2.2s infinite}
+  @keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(219,39,119,.45)}55%{box-shadow:0 0 0 7px rgba(219,39,119,0)}}
+  .brand b{color:var(--primary-deep)}
+  .brand .chat-word{color:var(--chat)}
+  .nav-links{display:flex;gap:22px;margin-inline-start:auto;font-size:.92rem;font-weight:500;color:var(--ink-soft)}
+  .nav-links a{transition:color .2s;white-space:nowrap}
+  .nav-links a:hover{color:var(--primary)}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--font);font-weight:600;font-size:.97rem;padding:.78em 1.55em;border-radius:999px;border:none;cursor:pointer;transition:transform .18s,box-shadow .18s,background .18s}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 10px 22px -8px rgba(64,122,240,.55)}
+  .btn-primary:hover{background:var(--primary-deep);transform:translateY(-2px)}
+  .btn-ghost{background:transparent;color:var(--primary-deep);border:1.5px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+  .btn-chat{background:var(--chat);color:#fff;box-shadow:0 12px 26px -10px rgba(219,39,119,.6)}
+  .btn-chat:hover{background:var(--chat-deep);transform:translateY(-2px)}
+  nav .btn{white-space:nowrap;font-size:.9rem;padding:.7em 1.3em}
+  .lang-btn{font-family:var(--mono);font-size:.8rem;font-weight:600;color:var(--primary-deep);background:var(--primary-tint);border:1px solid #d3e0fa;border-radius:999px;padding:.5em 1.1em;cursor:pointer;transition:background .2s;white-space:nowrap}
+  .lang-btn:hover{background:#d9e6fb}
+  .menu-btn{display:none;margin-inline-start:auto;background:none;border:1.5px solid var(--line);border-radius:10px;width:42px;height:42px;cursor:pointer;color:var(--ink);flex-shrink:0}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;padding-block:clamp(48px,8vw,96px) clamp(60px,8vw,100px)}
+  .hero::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(620px 360px at 85% 8%,rgba(64,122,240,.10),transparent 65%),
+    radial-gradient(480px 300px at 8% 88%,rgba(219,39,119,.07),transparent 65%);pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:clamp(34px,5vw,70px);align-items:center;position:relative}
+  .kicker{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:.8rem;font-weight:600;color:var(--primary-deep);background:var(--primary-tint);border:1px solid #d3e0fa;padding:.45em 1.05em;border-radius:999px;margin-bottom:22px}
+  .kicker .dot{width:8px;height:8px;border-radius:50%;background:var(--chat);animation:pulseDot 2.2s infinite}
+  h1{font-size:clamp(2rem,4.6vw,3.3rem);line-height:1.32;font-weight:700;letter-spacing:-.5px;margin-bottom:20px}
+  .hl{position:relative;display:inline-block;white-space:nowrap;color:#fff;padding-inline:.18em}
+  .hl::before{content:"";position:absolute;inset:.06em -.08em;background:var(--chat-grad);z-index:-1;border-radius:7px;transform:skewX(-5deg)}
+  .hero p.lead{font-size:1.1rem;color:var(--ink-soft);max-width:540px;margin-bottom:30px}
+  .hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:34px}
+  .hero-proof{display:flex;gap:26px;flex-wrap:wrap}
+  .proof{display:flex;flex-direction:column;gap:2px}
+  .proof b{font-family:var(--mono);font-size:1.25rem;color:var(--primary-deep)}
+  .proof span{font-size:.84rem;color:var(--ink-faint)}
+
+  /* ---------- HERO INBOX MOCK ---------- */
+  .inbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-pop);overflow:hidden;position:relative}
+  .inbox-top{display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fdfeff,#f6f9fe)}
+  .tl{width:11px;height:11px;border-radius:50%;background:#e6ebf4}
+  .inbox-top .ttl{margin-inline-start:auto;font-family:var(--mono);font-size:.72rem;color:var(--ink-faint)}
+  .inbox-body{display:grid;grid-template-columns:200px 1fr;min-height:430px}
+  .conv-list{border-inline-end:1px solid var(--line);background:#fbfcfe;padding:10px;display:flex;flex-direction:column;gap:6px}
+  .conv{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:var(--r-sm);cursor:default;border:1px solid transparent}
+  .conv.active{background:var(--primary-tint);border-color:#cfdefa}
+  .conv .av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;position:relative}
+  .conv .av .ch{position:absolute;inset-inline-end:-4px;bottom:-4px;width:16px;height:16px;border-radius:50%;border:2px solid #fbfcfe;display:grid;place-items:center}
+  .conv .av .ch svg{width:9px;height:9px}
+  .conv-meta{min-width:0;flex:1}
+  .conv-meta b{display:block;font-size:.78rem;line-height:1.35}
+  .conv-meta span{display:block;font-size:.68rem;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .unread{background:var(--chat);color:#fff;font-family:var(--mono);font-size:.62rem;font-weight:600;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding-inline:5px}
+  .conv-list .hdr{font-family:var(--mono);font-size:.66rem;color:var(--ink-faint);padding:4px 10px 2px;letter-spacing:.06em}
+  .thread{display:flex;flex-direction:column;background:
+    radial-gradient(420px 240px at 80% 0%,rgba(219,39,119,.045),transparent 70%),#fff}
+  .thread-top{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line)}
+  .thread-top .av{width:34px;height:34px;border-radius:50%;background:var(--chat-grad);display:grid;place-items:center;color:#fff;font-size:.78rem;font-weight:700;position:relative}
+  .thread-top .av::after{content:"";position:absolute;inset-inline-end:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:var(--ok);border:2px solid #fff}
+  .thread-top .who b{display:block;font-size:.86rem;line-height:1.3}
+  .thread-top .who span{font-size:.7rem;color:var(--ink-faint);display:flex;align-items:center;gap:5px}
+  .thread-top .who span i{font-style:normal;color:#25d366;font-weight:600}
+  .ttags{margin-inline-start:auto;display:flex;gap:6px}
+  .ttag{font-family:var(--mono);font-size:.64rem;padding:.3em .8em;border-radius:999px;background:var(--module);color:var(--ink-soft);border:1px solid var(--line)}
+  .ttag.pri{background:var(--chat-tint);color:var(--chat-deep);border-color:#f6c8dd}
+  .msgs{flex:1;padding:18px;display:flex;flex-direction:column;gap:11px;overflow:hidden}
+  .msg{max-width:78%;padding:.65em 1em;border-radius:14px;font-size:.82rem;line-height:1.6;opacity:0;transform:translateY(10px);animation:msgIn .5s ease forwards}
+  @keyframes msgIn{to{opacity:1;transform:none}}
+  .msg.cust{align-self:flex-start;background:var(--chat-tint);color:#7c1a48;border-end-start-radius:4px;border:1px solid #f8d3e4}
+  .msg.agent{align-self:flex-end;background:var(--primary);color:#fff;border-end-end-radius:4px;box-shadow:0 8px 18px -10px rgba(47,111,228,.55)}
+  .msg.note{align-self:flex-end;background:#fff8e6;border:1px dashed #ecd49a;color:#7a5a13;font-size:.74rem;border-radius:10px}
+  .msg .t{display:block;font-family:var(--mono);font-size:.6rem;opacity:.65;margin-top:4px}
+  .typing{align-self:flex-start;display:flex;gap:5px;padding:.7em 1em;background:var(--chat-tint);border:1px solid #f8d3e4;border-radius:14px;border-end-start-radius:4px;opacity:0;animation:msgIn .4s ease 4.4s forwards}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--chat);animation:tp 1.1s infinite}
+  .typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+  @keyframes tp{0%,100%{opacity:.3;transform:translateY(0)}45%{opacity:1;transform:translateY(-4px)}}
+  .ai-bar{margin:0 18px 14px;border:1px solid #d6e2fb;background:linear-gradient(135deg,#f3f7ff,#eef3fd);border-radius:var(--r-md);padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;opacity:0;animation:msgIn .5s ease 3.4s forwards}
+  .ai-bar .spark{width:28px;height:28px;border-radius:9px;background:var(--grad);display:grid;place-items:center;flex-shrink:0}
+  .ai-bar .spark svg{width:15px;height:15px}
+  .ai-bar p{font-size:.74rem;color:var(--ink-soft);line-height:1.5;flex:1;min-width:150px}
+  .ai-bar p b{color:var(--primary-deep)}
+  .ai-bar .use{font-family:var(--mono);font-size:.66rem;font-weight:600;color:#fff;background:var(--primary);border:none;border-radius:999px;padding:.5em 1.1em;cursor:pointer;margin-inline-start:auto;white-space:nowrap}
+
+  /* floating channel chips around inbox */
+  .hero-visual{position:relative}
+  .float-chip{position:absolute;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.5em 1em .5em .6em;font-size:.74rem;font-weight:600;box-shadow:var(--shadow-card);animation:floaty 5.5s ease-in-out infinite}
+  .float-chip .ic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+  .float-chip .ic svg{width:14px;height:14px}
+  .fc1{top:-18px;inset-inline-start:-14px}
+  .fc2{bottom:-22px;inset-inline-end:26px;animation-delay:1.4s}
+  .fc3{bottom:-22px;inset-inline-start:18px;animation-delay:2.6s}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+  /* ---------- CHANNELS MARQUEE ---------- */
+  .channels{border-block:1px solid var(--line);background:#fff;padding-block:26px;overflow:hidden}
+  .channels .lbl{text-align:center;font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);letter-spacing:.08em;margin-bottom:18px}
+  .marq{display:flex;gap:14px;width:max-content;animation:marq 30s linear infinite}
+  .channels:hover .marq{animation-play-state:paused}
+  @keyframes marq{to{transform:translateX(50%)}}
+  html[dir="ltr"] .marq{animation-name:marqL}
+  @keyframes marqL{to{transform:translateX(-50%)}}
+  .ch-pill{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:.6em 1.3em .6em .7em;font-size:.88rem;font-weight:600;white-space:nowrap}
+  .ch-pill .ic{width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+  .ch-pill .ic svg{width:16px;height:16px}
+  .ch-pill .soon{font-family:var(--mono);font-size:.6rem;background:var(--chat-tint);color:var(--chat-deep);border-radius:999px;padding:.25em .7em}
+
+  /* ---------- SECTION COMMONS ---------- */
+  section{padding-block:clamp(56px,8vw,96px)}
+  .sec-head{max-width:660px;margin-bottom:clamp(34px,5vw,54px)}
+  .sec-head.center{margin-inline:auto;text-align:center}
+  .sec-kick{font-family:var(--mono);font-size:.76rem;font-weight:600;color:var(--chat);letter-spacing:.1em;display:inline-flex;align-items:center;gap:8px;margin-bottom:14px}
+  .sec-kick::before{content:"";width:22px;height:2px;background:var(--chat);border-radius:2px}
+  h2{font-size:clamp(1.5rem,3.2vw,2.25rem);line-height:1.4;font-weight:700;letter-spacing:-.4px;margin-bottom:14px}
+  .sec-head p{color:var(--ink-soft);font-size:1.02rem}
+
+  /* ---------- WHATSAPP SECTION ---------- */
+  .wa-sec{background:linear-gradient(180deg,#f4fbf6,var(--paper))}
+  .wa-sec .sec-kick{color:var(--wa-deep)}
+  .wa-sec .sec-kick::before{background:var(--wa)}
+  .wa-sec .tick svg{color:var(--wa-deep)}
+  .wa-badge{display:inline-flex;align-items:center;gap:8px;background:var(--wa-tint);color:var(--wa-deep);border:1px solid #bfe9cf;border-radius:999px;padding:.4em 1em;font-size:.8rem;font-weight:600;margin-bottom:18px}
+  .wa-badge svg{width:16px;height:16px}
+  .phone{max-width:340px;margin-inline:auto;background:#0b141a;border-radius:34px;padding:11px;box-shadow:var(--shadow-pop)}
+  .phone-in{background:#e9e2d8;border-radius:25px;overflow:hidden;display:flex;flex-direction:column;min-height:430px;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.5) 0,transparent 40%)}
+  .wa-head{background:var(--wa-deep);color:#fff;display:flex;align-items:center;gap:10px;padding:13px 15px}
+  .wa-head .av{width:36px;height:36px;border-radius:50%;background:var(--grad);display:grid;place-items:center;flex-shrink:0}
+  .wa-head .av svg{width:18px;height:18px}
+  .wa-head b{display:flex;align-items:center;gap:5px;font-size:.88rem}
+  .wa-head b svg{width:14px;height:14px;flex-shrink:0}
+  .wa-head span{display:block;font-size:.68rem;color:#c9ece0}
+  .wa-body{flex:1;padding:16px 13px;display:flex;flex-direction:column;gap:10px}
+  .wa-msg{max-width:88%;background:#fff;border-radius:11px;padding:.6em .9em;font-size:.78rem;line-height:1.6;box-shadow:0 1px 2px rgba(0,0,0,.08);align-self:flex-start;border-end-start-radius:3px}
+  .wa-msg .img{height:84px;border-radius:8px;background:var(--grad);margin-bottom:8px;display:grid;place-items:center;color:#fff;font-family:var(--mono);font-size:.64rem;letter-spacing:.05em}
+  .wa-msg .t{display:block;font-family:var(--mono);font-size:.58rem;color:#8a9aa6;margin-top:5px;text-align:end}
+  .wa-msg.me{align-self:flex-end;background:#d9fdd3;border-end-start-radius:11px;border-end-end-radius:3px}
+  .wa-btns{display:flex;flex-direction:column;gap:6px;max-width:88%}
+  .wa-btn{background:#fff;border:none;border-radius:9px;padding:.55em;font-family:var(--font);font-size:.76rem;font-weight:600;color:#0a7ccc;box-shadow:0 1px 2px rgba(0,0,0,.08);cursor:pointer}
+
+  /* ---------- AI DARK BAND ---------- */
+  .ai-band{background:var(--ink-grad);color:#eef2fb;position:relative;overflow:hidden}
+  .ai-band::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(560px 320px at 12% 10%,rgba(64,122,240,.16),transparent 65%),
+    radial-gradient(460px 300px at 90% 90%,rgba(219,39,119,.13),transparent 65%)}
+  .ai-band .wrap{position:relative}
+  .ai-band .sec-kick{color:#f17fb4}
+  .ai-band .sec-kick::before{background:#f17fb4}
+  .ai-band h2{color:#fff}
+  .ai-band .sec-head p{color:#aab6cf}
+  .ai-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .ai-card{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:26px 24px;transition:transform .25s,border-color .25s,background .25s}
+  .ai-card:hover{transform:translateY(-5px);border-color:rgba(241,127,180,.45);background:rgba(255,255,255,.07)}
+  .ai-card .ico{width:46px;height:46px;border-radius:13px;background:var(--grad);display:grid;place-items:center;margin-bottom:18px;box-shadow:0 10px 22px -8px rgba(64,122,240,.5)}
+  .ai-card .ico svg{width:22px;height:22px}
+  .ai-card h3{font-size:1.06rem;margin-bottom:9px;color:#fff}
+  .ai-card p{font-size:.88rem;color:#aab6cf;margin-bottom:16px}
+  .mini{background:rgba(10,15,31,.55);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:13px;font-size:.74rem}
+  .mini .mrow{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+  .mini .mrow:last-child{margin-bottom:0}
+  .mini .bub{padding:.5em .9em;border-radius:10px;line-height:1.55}
+  .mini .bub.q{background:rgba(219,39,119,.16);color:#f8b8d4;border:1px solid rgba(219,39,119,.3);border-end-start-radius:3px}
+  .mini .bub.a{background:rgba(64,122,240,.18);color:#bcd2fa;border:1px solid rgba(64,122,240,.32);border-end-end-radius:3px;margin-inline-start:auto}
+  .mini .tag{font-family:var(--mono);font-size:.6rem;color:#8fa3c8;background:rgba(255,255,255,.06);border-radius:6px;padding:.3em .7em;display:inline-block}
+  .ai-stats{display:flex;gap:34px;flex-wrap:wrap;margin-top:46px;padding-top:34px;border-top:1px solid rgba(255,255,255,.1)}
+  .ai-stat b{font-family:var(--mono);font-size:1.7rem;color:#f17fb4;display:block;line-height:1.2}
+  .ai-stat span{font-size:.82rem;color:#aab6cf}
+
+  /* ---------- FEATURES GRID ---------- */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .feat{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px 22px;box-shadow:var(--shadow-card);transition:transform .25s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden}
+  .feat::after{content:"";position:absolute;inset-inline-start:0;top:0;width:3px;height:0;background:var(--chat);transition:height .3s;border-radius:3px}
+  .feat:hover{transform:translateY(-5px);box-shadow:var(--shadow-pop);border-color:#d8e3f6}
+  .feat:hover::after{height:100%}
+  .feat .ico{width:42px;height:42px;border-radius:12px;background:var(--primary-tint);color:var(--primary-deep);display:grid;place-items:center;margin-bottom:15px}
+  .feat .ico svg{width:20px;height:20px}
+  .feat h3{font-size:1rem;margin-bottom:7px}
+  .feat p{font-size:.86rem;color:var(--ink-soft)}
+
+  /* ---------- CRM / REPORTS SPLIT ---------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:center}
+  .split + .split{margin-top:clamp(56px,7vw,84px)}
+  .split .txt h2{margin-bottom:12px}
+  .split .txt p{color:var(--ink-soft);margin-bottom:18px}
+  .ticks{display:flex;flex-direction:column;gap:11px}
+  .tick{display:flex;gap:11px;align-items:flex-start;font-size:.93rem}
+  .tick svg{width:19px;height:19px;flex-shrink:0;margin-top:3px;color:var(--primary)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-pop);padding:22px;position:relative}
+  .panel .ph{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .panel .ph .pav{width:42px;height:42px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+  .panel .ph b{display:block;font-size:.94rem}
+  .panel .ph span{font-size:.74rem;color:var(--ink-faint);font-family:var(--mono)}
+  .attr{display:flex;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--line);font-size:.8rem}
+  .attr:last-of-type{border-bottom:none}
+  .attr span{color:var(--ink-faint)}
+  .attr b{font-weight:600}
+  .attr .lab{background:var(--chat-tint);color:var(--chat-deep);border-radius:999px;padding:.15em .8em;font-size:.7rem;font-weight:600}
+  .hist{margin-top:14px;border-top:1px solid var(--line);padding-top:13px;display:flex;flex-direction:column;gap:9px}
+  .hist .h-item{display:flex;gap:9px;align-items:center;font-size:.76rem;color:var(--ink-soft)}
+  .hist .h-item .hic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex-shrink:0}
+  .hist .h-item .hic svg{width:13px;height:13px}
+  .hist .h-item i{font-style:normal;font-family:var(--mono);font-size:.62rem;color:var(--ink-faint);margin-inline-start:auto}
+  /* report panel */
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:18px}
+  .kpi{background:var(--module);border:1px solid var(--line);border-radius:var(--r-md);padding:13px 14px}
+  .kpi b{font-family:var(--mono);font-size:1.2rem;display:block;color:var(--primary-deep)}
+  .kpi.hot b{color:var(--chat)}
+  .kpi span{font-size:.68rem;color:var(--ink-faint)}
+  .bars{display:flex;align-items:flex-end;gap:9px;height:120px;padding-inline:4px}
+  .bar{flex:1;background:linear-gradient(180deg,var(--primary-bright),var(--primary-deep));border-radius:6px 6px 3px 3px;position:relative;min-height:8%;transform-origin:bottom;animation:grow 1s ease both}
+  .bar.peak{background:var(--chat-grad)}
+  @keyframes grow{from{transform:scaleY(0)}}
+  .bar i{position:absolute;bottom:-22px;inset-inline:0;text-align:center;font-style:normal;font-family:var(--mono);font-size:.58rem;color:var(--ink-faint)}
+  .csat{display:flex;align-items:center;gap:12px;margin-top:38px;border-top:1px solid var(--line);padding-top:15px}
+  .csat .face{font-size:1.4rem}
+  .csat .track{flex:1;height:9px;background:var(--module);border-radius:999px;overflow:hidden}
+  .csat .fill{height:100%;width:94%;background:var(--chat-grad);border-radius:999px;animation:grow 1.2s ease both;transform-origin:right}
+  html[dir="ltr"] .csat .fill{transform-origin:left}
+  .csat b{font-family:var(--mono);color:var(--chat-deep)}
+
+  /* ---------- SECURITY BAND ---------- */
+  .sec-band{background:var(--ink-grad);color:#eef2fb;position:relative;overflow:hidden}
+  .sec-band::before{content:"";position:absolute;inset:0;background:radial-gradient(640px 340px at 88% 14%,rgba(64,122,240,.14),transparent 65%)}
+  .sec-band .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(30px,5vw,64px);align-items:center}
+  .sec-band .sec-kick{color:#7ea4f5}
+  .sec-band .sec-kick::before{background:#7ea4f5}
+  .sec-band h2{color:#fff}
+  .sec-band p.d{color:#aab6cf;margin-bottom:24px}
+  .shield-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .shield{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:17px 16px;display:flex;gap:12px;align-items:flex-start}
+  .shield .ico{width:34px;height:34px;border-radius:10px;background:rgba(64,122,240,.2);color:#9dbcf8;display:grid;place-items:center;flex-shrink:0}
+  .shield .ico svg{width:17px;height:17px}
+  .shield b{display:block;font-size:.88rem;color:#fff;margin-bottom:3px}
+  .shield span{font-size:.76rem;color:#aab6cf;line-height:1.55}
+  .host-card{background:rgba(10,15,31,.6);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:22px;font-family:var(--mono);font-size:.76rem}
+  .host-card .hrow{display:flex;align-items:center;gap:10px;padding-block:9px;border-bottom:1px dashed rgba(255,255,255,.09);color:#aab6cf}
+  .host-card .hrow:last-child{border:none}
+  .host-card .ok{margin-inline-start:auto;color:#4ade80;display:flex;align-items:center;gap:6px}
+  .host-card .ok::before{content:"";width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulseDot 2s infinite}
+  .host-card .hd{color:#fff;font-weight:600;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:11px;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+  .host-card .hd .pink{color:#f17fb4}
+
+  /* ---------- CTA ---------- */
+  .cta{padding-block:clamp(56px,8vw,90px)}
+  .cta-box{background:var(--grad);border-radius:28px;padding:clamp(36px,6vw,64px);text-align:center;color:#fff;position:relative;overflow:hidden;box-shadow:0 30px 70px -24px rgba(18,43,93,.55)}
+  .cta-box::before,.cta-box::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.07)}
+  .cta-box::before{width:300px;height:300px;top:-130px;inset-inline-start:-90px}
+  .cta-box::after{width:240px;height:240px;bottom:-110px;inset-inline-end:-70px;background:rgba(219,39,119,.22)}
+  .cta-box h2{color:#fff;position:relative}
+  .cta-box p{color:#d4e1fb;max-width:520px;margin:0 auto 28px;position:relative}
+  .cta-box .btn-chat{position:relative;font-size:1.05rem;padding:.85em 2em}
+  .cta-box .hint{display:block;margin-top:16px;font-size:.8rem;color:#bcd0f5;position:relative;font-family:var(--mono)}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--primary-navy);color:#c6d4ee;padding-block:54px 30px}
+  .f-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:34px;margin-bottom:38px}
+  footer .brand{color:#fff;margin-bottom:14px}
+  footer .brand b{color:#fff}
+  footer .f-about{font-size:.86rem;color:#94a7cc;max-width:280px}
+  footer h4{color:#fff;font-size:.92rem;margin-bottom:14px}
+  footer ul{list-style:none;display:flex;flex-direction:column;gap:9px;font-size:.86rem}
+  footer ul a{color:#94a7cc;transition:color .2s}
+  footer ul a:hover{color:#fff}
+  .f-contact li{display:flex;gap:9px;align-items:center;color:#94a7cc}
+  .f-contact svg{width:15px;height:15px;flex-shrink:0;color:#f17fb4}
+  .f-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:20px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:.78rem;color:#7e92bd}
+  .f-bottom .mono{direction:ltr}
+
+  /* ---------- FLOATING WIDGET (signature) ---------- */
+  .fab{position:fixed;inset-inline-end:22px;bottom:22px;z-index:90;width:60px;height:60px;border-radius:50%;border:none;background:var(--chat-grad);box-shadow:0 16px 36px -10px rgba(219,39,119,.6);cursor:pointer;display:grid;place-items:center;transition:transform .2s}
+  .fab:hover{transform:scale(1.07)}
+  .fab svg{width:27px;height:27px;transition:opacity .2s,transform .2s;grid-area:1/1}
+  .fab .x{opacity:0;transform:rotate(-90deg) scale(.6)}
+  .fab.open .x{opacity:1;transform:none}
+  .fab.open .bubble{opacity:0;transform:rotate(90deg) scale(.6)}
+  .fab .badge{position:absolute;top:-3px;inset-inline-start:-3px;background:#fff;color:var(--chat-deep);font-family:var(--mono);font-size:.66rem;font-weight:700;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--chat);transition:opacity .2s}
+  .fab.open .badge{opacity:0}
+  .widget{position:fixed;inset-inline-end:22px;bottom:96px;z-index:90;width:330px;max-width:calc(100vw - 44px);background:#fff;border-radius:20px;border:1px solid var(--line);box-shadow:0 30px 70px -20px rgba(18,43,93,.4);overflow:hidden;opacity:0;pointer-events:none;transform:translateY(16px) scale(.97);transition:opacity .25s,transform .25s}
+  .widget.open{opacity:1;pointer-events:auto;transform:none}
+  .w-head{background:var(--grad);color:#fff;padding:18px}
+  .w-head b{display:block;font-size:1rem}
+  .w-head span{font-size:.76rem;color:#cfe0fd;display:flex;align-items:center;gap:7px;margin-top:3px}
+  .w-head span::before{content:"";width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulseDot 2s infinite}
+  .w-body{padding:14px;display:flex;flex-direction:column;gap:9px;max-height:260px;overflow-y:auto;background:#fbfcfe}
+  .w-body .msg{animation:none;opacity:1;transform:none;font-size:.8rem}
+  .w-foot{display:flex;gap:8px;padding:11px;border-top:1px solid var(--line);background:#fff}
+  .w-foot input{flex:1;border:1.5px solid var(--line);border-radius:999px;padding:.6em 1.1em;font-family:var(--font);font-size:.82rem;outline:none;min-width:0}
+  .w-foot input:focus{border-color:var(--chat)}
+  .w-foot button{width:40px;height:40px;border-radius:50%;border:none;background:var(--chat);color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+  .w-foot button svg{width:17px;height:17px}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:1200px){
+    .feat-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media (max-width:1000px){
+    .nav-links{position:absolute;top:68px;inset-inline:0;background:#fff;border-bottom:1px solid var(--line);flex-direction:column;gap:0;padding:8px 0;box-shadow:0 18px 30px -18px rgba(18,43,93,.25);display:none}
+    .nav-links a{padding:12px clamp(18px,4vw,40px)}
+    .hero-grid{grid-template-columns:1fr;gap:46px}
+    .hero p.lead{max-width:100%}
+    .ai-cards{grid-template-columns:1fr;max-width:560px;margin-inline:auto}
+    .feat-grid{grid-template-columns:repeat(2,1fr)}
+    .split{grid-template-columns:1fr;gap:30px}
+    .sec-band .wrap{grid-template-columns:1fr}
+    .f-grid{grid-template-columns:1fr 1fr}
+    .menu-btn{display:grid;place-items:center}
+    .nav-cta{margin-inline-start:0}
+    nav .btn-ghost{display:none}
+  }
+  @media (min-width:1001px){.nav-links{display:flex!important}}
+  @media (max-width:720px){
+    .inbox-body{grid-template-columns:1fr;min-height:0}
+    .conv-list{display:none}
+    .feat-grid{grid-template-columns:1fr}
+    .shield-grid{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(3,1fr)}
+    .float-chip{display:none}
+    .hero-proof{gap:18px}
+  }
+  @media (max-width:640px){
+    .nav-in{gap:8px}
+    .brand{font-size:.95rem;gap:7px}
+    .brand-mark{width:29px;height:29px}
+    nav .btn-primary{font-size:.76rem;padding:.6em .9em;white-space:nowrap}
+    .lang-btn{font-size:.68rem;padding:.45em .7em}
+    .menu-btn{width:38px;height:38px}
+    .hero-ctas .btn{flex:1;justify-content:center}
+    .f-grid{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:400px){
+    .widget{inset-inline:12px;width:auto}
+    .fab{inset-inline-end:14px;bottom:14px}
+    .hero-proof{flex-direction:column;gap:10px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= NAV ======================= -->
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/" aria-label="Lynomia Chat">
+      <span class="">
+<img src="https://lynomia.com/img/navbar/chatlogo.png" style="width:8rem">      </span>
+     
+   
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="#channels" data-i="n1">القنوات</a>
+      <a href="#whatsapp" data-i="n2">واتساب API</a>
+      <a href="#ai" data-i="n3">الذكاء الاصطناعي</a>
+      <a href="#features" data-i="n4">الميزات</a>
+      <a href="#reports" data-i="n5">التقارير</a>
+      <a href="#security" data-i="n6">الأمان</a>
+      <a href="/docs" data-i="n7">الوثائق</a>
+    </div>
+    <button class="menu-btn" aria-label="القائمة" onclick="const n=document.getElementById('navLinks');n.style.display=n.style.display==='flex'?'none':'flex'">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <button class="lang-btn" id="langBtn" onclick="setLang(cur==='ar'?'en':'ar')">EN</button>
+    <a class="btn btn-ghost" href="#cta" data-i="nDemo">اطلب عرضًا</a>
+    <a class="btn btn-primary nav-cta" href="/app/login" data-i="nStart">تسجيل الدخول </a>
+  </div>
+</nav>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker"><span class="dot"></span> <span data-i="kick">منصة محادثات العملاء من لنوميا</span></span>
+      <h1 data-i="h1">كل محادثات عملائك <span class="hl">بصندوق واحد</span> — مهما كانت القناة</h1>
+      <p class="lead" data-i="lead">واتساب، إنستغرام، ماسنجر، تيليجرام، الإيميل وشات موقعك — كلها بلوحة واحدة لفريقك، مع توزيع تلقائي للمحادثات، وقوالب ردود جاهزة، وتقارير تتابع أداء الفريق.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="/app/register"><span data-i="cta1">أنشئ حسابك</span>
+          <svg class="flip" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#channels" data-i="cta2">شوف القنوات المدعومة</a>
+      </div>
+      <div class="hero-proof">
+        <div class="proof"><b>9</b><span data-i="pr1">قنوات تربطها بصندوق واحد</span></div>
+        <div class="proof"><b>50+</b><span data-i="pr2">لغة لواجهة الوكلاء</span></div>
+        <div class="proof"><b>API</b><span data-i="pr3">وويب هوكس للربط بأنظمتك</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual rv in">
+      <div class="inbox" aria-label="معاينة صندوق المحادثات الموحّد">
+        <div class="inbox-top">
+          <span class="tl"></span><span class="tl"></span><span class="tl"></span>
+          <span class="ttl">chat.lynomia.com</span>
+        </div>
+        <div class="inbox-body">
+          <aside class="conv-list">
+            <span class="hdr" data-i="ihdr">المحادثات المفتوحة</span>
+            <div class="conv active">
+              <span class="av" style="background:var(--chat-grad)"><span data-i="av1">سع</span>
+                <span class="ch" style="background:#25d366"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5 13.6c-.2.6-1.2 1.1-1.7 1.2-.4 0-.9.2-3.1-.7-2.6-1.1-4.3-3.8-4.4-4-.1-.2-1-1.4-1-2.7s.6-1.9.9-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.9c.2-.3.4-.2.7-.1l1.9.9c.3.2.5.2.6.4 0 .1 0 .7-.2 1.4Z"/></svg></span>
+              </span>
+              <div class="conv-meta"><b data-i="cn1">سعيد الحربي</b><span data-i="cp1">الطلب وصل ناقص قطعة…</span></div>
+              <span class="unread">2</span>
+            </div>
+            <div class="conv">
+              <span class="av" style="background:linear-gradient(135deg,#8a4ff0,#e1306c)"><span data-i="av2">نه</span>
+                <span class="ch" style="background:linear-gradient(45deg,#feda75,#d62976,#962fbf)"><svg viewBox="0 0 24 24" fill="#fff"><rect x="4" y="4" width="16" height="16" rx="5" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="12" cy="12" r="3.6" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="17" cy="7" r="1.4"/></svg></span>
+              </span>
+              <div class="conv-meta"><b data-i="cn2">نهى عبدالله</b><span data-i="cp2">كم سعر الباقة السنوية؟</span></div>
+              <span class="unread">1</span>
+            </div>
+            <div class="conv">
+              <span class="av" style="background:linear-gradient(135deg,#2f6fe4,#194689)"><span data-i="av3">مك</span>
+                <span class="ch" style="background:#ea4335"><svg viewBox="0 0 24 24" fill="#fff"><path d="M3 6.5 12 13l9-6.5V18a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6.5Z"/><path d="M21 5.6 12 12 3 5.6A1.5 1.5 0 0 1 4.5 4.5h15A1.5 1.5 0 0 1 21 5.6Z"/></svg></span>
+              </span>
+              <div class="conv-meta"><b data-i="cn3">مكتب المدى</b><span data-i="cp3">RE: عرض السعر المحدّث</span></div>
+            </div>
+            <div class="conv">
+              <span class="av" style="background:linear-gradient(135deg,#37a8e0,#1c6e9c)"><span data-i="av4">رو</span>
+                <span class="ch" style="background:#229ED9"><svg viewBox="0 0 24 24" fill="#fff"><path d="m21 4-18 7 5 2 2 6 3-4 5 4 3-15Z"/></svg></span>
+              </span>
+              <div class="conv-meta"><b data-i="cn4">روان قاسم</b><span data-i="cp4">وين أحصل الفاتورة؟</span></div>
+            </div>
+            <span class="hdr" style="margin-top:8px" data-i="ihdr2">تم حلّها اليوم · 34</span>
+          </aside>
+
+          <div class="thread">
+            <div class="thread-top">
+              <span class="av" data-i="av1b">سع</span>
+              <div class="who">
+                <b data-i="tn">سعيد الحربي</b>
+                <span data-i="tvia">عبر <i>واتساب</i> · متصل الآن</span>
+              </div>
+              <div class="ttags">
+                <span class="ttag pri" data-i="tag1">أولوية عالية</span>
+                <span class="ttag" data-i="tag2">شحن</span>
+              </div>
+            </div>
+            <div class="msgs">
+              <div class="msg cust" style="animation-delay:.6s" data-i="m1">السلام عليكم، الطلب #4382 وصلني اليوم بس ناقص قطعة 😕<span class="t">١٠:٤٢ ص</span></div>
+              <div class="msg agent" style="animation-delay:1.6s" data-i="m2">وعليكم السلام سعيد! آسفين على هالخطأ — تحققت من طلبك هلق، والقطعة الناقصة رح تنشحن اليوم مع شحن مجاني مستعجل.<span class="t">١٠:٤٣ ص · ليان من فريق الدعم</span></div>
+              <div class="msg note" style="animation-delay:2.5s" data-i="m3">📌 ملاحظة داخلية: أنشأت شحنة بديلة #4382-B — ما بيشوفها العميل</div>
+              <div class="typing" aria-hidden="true"><i></i><i></i><i></i></div>
+            </div>
+            <div class="ai-bar">
+              <span class="spark"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.4L12 16l-1.8-5.6L4.5 9l5.7-1.4L12 2Zm7 11 .9 2.8 2.9.7-2.9.7L19 20l-.9-2.8-2.9-.7 2.9-.7L19 13Z"/></svg></span>
+              <p data-i="aip"><b>اقتراح المساعد الذكي:</b> «رح يوصلك رقم تتبّع جديد خلال ساعة، وأضفنا خصم 10% على طلبك الجاي.»</p>
+              <button class="use" data-i="aiu">استخدم الرد</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="float-chip fc1"><span class="ic" style="background:#e8f9ee"><svg viewBox="0 0 24 24" fill="#25d366"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Z"/></svg></span><span data-i="fch1">رسالة واتساب جديدة</span></div>
+      <div class="float-chip fc2"><span class="ic" style="background:var(--chat-tint)"><svg viewBox="0 0 24 24" fill="var(--chat)"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"/></svg></span><span data-i="fch2">زائر فتح شات الموقع</span></div>
+      <div class="float-chip fc3"><span class="ic" style="background:#e9f0fd"><svg viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2c-3.7 0-7 1.9-7 4.3V20h14v-1.7c0-2.4-3.3-4.3-7-4.3Z"/></svg></span><span data-i="fch3">وُزّعت تلقائيًا على ليان</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= CHANNELS ======================= -->
+<div class="channels" id="channels">
+  <div class="lbl" data-i="chlbl">قناة واحدة؟ عشرة؟ كلها بتصبّ بنفس الصندوق</div>
+  <div class="marq" id="marq"></div>
+</div>
+
+<!-- ======================= WHATSAPP API ======================= -->
+<section class="wa-sec" id="whatsapp">
+  <div class="wrap">
+    <div class="split">
+      <div class="txt rv">
+        <span class="sec-kick">WHATSAPP BUSINESS API</span>
+        <h2 data-i="wah2">واتساب الرسمي للأعمال — مدعوم بالكامل</h2>
+        <span class="wa-badge">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5 13.6c-.2.6-1.2 1.1-1.7 1.2-.4 0-.9.2-3.1-.7-2.6-1.1-4.3-3.8-4.4-4-.1-.2-1-1.4-1-2.7s.6-1.9.9-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.9c.2-.3.4-.2.7-.1l1.9.9c.3.2.5.2.6.4 0 .1 0 .7-.2 1.4Z"/></svg>
+          <span data-i="wabadge">واجهة WhatsApp الرسمية — من خدمات لنوميا</span>
+        </span>
+        <p data-i="wap">اربط رقم شركتك على واجهة واتساب الرسمية للأعمال: رسائل غنية بالصور والأزرار، قوالب معتمدة، وردود آلية — وكل المحادثات تصبّ بنفس صندوق فريقك الموحّد.</p>
+        <div class="ticks">
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="wt1">واجهة WhatsApp Business API الرسمية المعتمدة</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="wt2">قوالب رسائل معتمدة وإشعارات للعملاء على نطاق واسع</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="wt3">رسائل تفاعلية: أزرار، قوائم، صور وملفات</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="wt4">قواعد أتمتة وردود جاهزة ترسلها بضغطة واحدة</span></div>
+        </div>
+      </div>
+      <div class="rv">
+        <div class="phone">
+          <div class="phone-in">
+            <div class="wa-head">
+              <span class="av"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z" fill="#fff"/></svg></span>
+              <div>
+                <b>Lynomia <svg viewBox="0 0 24 24" fill="#53bdeb"><path d="M12 2 9.6 4.1l-3.2-.4-.7 3.1L3 8.4 4.3 11 3 13.6l2.7 1.6.7 3.1 3.2-.4L12 20l2.4-2.1 3.2.4.7-3.1 2.7-1.6L19.7 11 21 8.4l-2.7-1.6-.7-3.1-3.2.4L12 2Zm-1.3 12.6-2.8-2.8 1.1-1.1 1.7 1.7 4.2-4.2 1.1 1.1-5.3 5.3Z"/></svg></b>
+                <span data-i="wast">حساب أعمال رسمي</span>
+              </div>
+            </div>
+            <div class="wa-body">
+              <div class="wa-msg">
+                <div class="img" data-i="waimg">LYNOMIA · ORDER #4382</div>
+                <span data-i="wam1">أهلًا سعيد 👋 طلبك #4382 خرج للتوصيل وبيوصلك اليوم قبل الساعة 6 مساءً.</span>
+                <span class="t">10:30</span>
+              </div>
+              <div class="wa-btns">
+                <button class="wa-btn" data-i="wab1">📦 تتبّع الطلب</button>
+                <button class="wa-btn" data-i="wab2">💬 كلّم خدمة العملاء</button>
+              </div>
+              <div class="wa-msg me"><span data-i="wam2">يعطيكم العافية، التتبع شغال 👌</span><span class="t">10:32 ✓✓</span></div>
+              <div class="wa-msg"><span data-i="wam3">بنخدمك دايمًا! إذا احتجت أي شي، فريقنا هون 24/7 🤝</span><span class="t">10:32</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= AI BAND ======================= -->
+<section class="ai-band" id="ai">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="sec-kick">AI ASSIST FOR AGENTS</span>
+      <h2 data-i="aih2">مساعدة ذكية لوكلائك — وهم من يضغط «إرسال»</h2>
+      <p data-i="aipp">خمس أدوات مساعدة داخل صندوق الوارد: إعادة صياغة الرد، تلخيص المحادثة، اقتراح رد، اقتراح تصنيفات، وصياغة رسالة متابعة. تُفعَّل لحسابك عند ربط مفتاح OpenAI الخاص بك، ولا ترسل أي رسالة تلقائيًا من دون موافقة وكيلك.</p>
+    </div>
+    <div class="ai-cards">
+      <article class="ai-card rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a7 7 0 0 1 7 7v1.3A3.7 3.7 0 0 1 22 14v1a3.7 3.7 0 0 1-3.4 3.7A7 7 0 0 1 12 22a7 7 0 0 1-6.6-3.3A3.7 3.7 0 0 1 2 15v-1a3.7 3.7 0 0 1 3-3.7V9a7 7 0 0 1 7-7Zm-3 9.5a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Zm6 0a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z"/></svg></span>
+        <h3 data-i="ac1h">إعادة صياغة وتلخيص</h3>
+        <p data-i="ac1p">حسّن صياغة ردّك قبل إرساله، أو لخّص محادثة طويلة في سطور قليلة قبل تحويلها لزميل — والنص النهائي يبقى بيد وكيلك.</p>
+        <div class="mini">
+          <div class="mrow"><span class="bub q" data-i="ac1q">المسودة: «ما نقدر نساعدك بهذا الطلب.»</span></div>
+          <div class="mrow"><span class="bub a" data-i="ac1a">بعد إعادة الصياغة: «هذا الطلب خارج ما نقدر ننفّذه حاليًا، وهذا البديل الذي نقترحه…»</span></div>
+          <div class="mrow"><span class="tag" data-i="ac1t">اقتراح للوكيل · الإرسال يدوي</span></div>
+        </div>
+      </article>
+      <article class="ai-card rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.4L12 16l-1.8-5.6L4.5 9l5.7-1.4L12 2Zm7 11 .9 2.8 2.9.7-2.9.7L19 20l-.9-2.8-2.9-.7 2.9-.7L19 13Z"/></svg></span>
+        <h3 data-i="ac2h">مساعد للوكلاء</h3>
+        <p data-i="ac2p">اقتراحات ردود جاهزة، تلخيص للمحادثات الطويلة، وبحث فوري بمقالات المساعدة — فريقك يحلّ أكثر بوقت أقل.</p>
+        <div class="mini">
+          <div class="mrow"><span class="tag" data-i="ac2t1">اقترح ردًا</span><span class="tag" data-i="ac2t2">لخّص المحادثة</span></div>
+          <div class="mrow"><span class="bub a" data-i="ac2a">العميل يسأل عن سياسة الإرجاع — هذا ردّ مقترح مبني على مقال «الإرجاع والاستبدال»…</span></div>
+        </div>
+      </article>
+      <article class="ai-card rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="#fff"><path d="M4 5h7M7.5 3v2m1.5 0s-1 5-5.5 8M5 13s-1.5-1.5-2.5-4M11 13l4-9 4 9m-1.3-3h-5.4M13 21l2-4.5M21 21l-2-4.5" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <h3 data-i="ac3h">ترجمة الرسائل · تتطلب إعدادًا</h3>
+        <p data-i="ac3p">ترجمة رسالة واحدة عند الطلب داخل المحادثة، بعد ربط حساب Google Translate الخاص بك. غير مُفعّلة تلقائيًا، ولا تُترجم المحادثات كلها بالخلفية. وواجهة الوكلاء نفسها متوفرة بأكثر من 50 لغة. <!--حسّ أي طرف.</p>
+        <div class="mini">
+          <div class="mrow"><span class="bub q">Bonjour, j'ai un souci avec ma commande</span></div>
+          <div class="mrow"><span class="bub a" data-i="ac3a">مرحبا، عندي مشكلة بطلبي ← <b style="color:#f8b8d4">تُرجمت تلقائيًا</b></span></div>
+        </div>
+      </article>
+    </div>
+    <div class="ai-stats rv">
+      <div class="ai-stat"><b>5</b><span data-i="as1">أدوات مساعدة داخل المحادثة</span></div>
+      <div class="ai-stat"><b>OpenAI</b><span data-i="as2">بمفتاحك الخاص، تتحكم به وتوقفه متى شئت</span></div>
+      <div class="ai-stat"><b>0</b><span data-i="as3">رسائل تُرسل للعميل تلقائيًا</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FEATURES ======================= -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head center rv">
+      <span class="sec-kick" style="justify-content:center">TEAM INBOX</span>
+      <h2 data-i="fh2">أدوات فريق دعم كاملة — مش بس شات</h2>
+      <p data-i="fp">كل اللي يحتاجه فريقك ليتعاون وينظّم ويحلّ المحادثات بكفاءة، من أول رسالة لحدّ تقييم العميل.</p>
+    </div>
+    <div class="feat-grid">
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span>
+        <h3 data-i="f1h">توزيع تلقائي ذكي</h3>
+        <p data-i="f1p">كل محادثة جديدة تروح للوكيل المناسب حسب الفريق والتخصص وسعة كل وكيل — بدون توزيع يدوي.</p>
+      </article>
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7-7V3.5h10l7 7a2 2 0 0 1 0 2.9Z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/></svg></span>
+        <h3 data-i="f2h">تسميات وأولويات</h3>
+        <p data-i="f2p">صنّف المحادثات بتسميات ملوّنة وحدّد العاجل منها — والفلاتر المتقدمة تطلعلك أي شريحة بثانية.</p>
+      </article>
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <h3 data-i="f3h">ملاحظات خاصة</h3>
+        <p data-i="f3p">ناقش الحالة مع زملائك داخل المحادثة نفسها بملاحظات داخلية — العميل ما يشوفها أبدًا.</p>
+      </article>
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l2.5 2.5"/><circle cx="12" cy="12" r="9"/></svg></span>
+        <h3 data-i="f4h">SLA وساعات العمل</h3>
+        <p data-i="f4p">حدّد زمن الرد المستهدف وراقب الالتزام فيه، مع ردود تلقائية خارج ساعات الدوام.</p>
+      </article>
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z"/></svg></span>
+        <h3 data-i="f5h">ردود جاهزة وماكروز</h3>
+        <p data-i="f5p">قوالب ردود محفوظة وسلاسل إجراءات بنقرة وحدة — اكتب «/» وخلّص الرد بثواني.</p>
+      </article>
+      <article class="feat rv">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 8h6M9 16h3"/><path d="M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg></span>
+        <h3 data-i="f6h">منع الردود المكررة</h3>
+        <p data-i="f6p">شوف مين من زملائك فاتح نفس المحادثة أو عم يكتب فيها هلق — فما يطلع للعميل ردّين متضاربين.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CRM + REPORTS ======================= -->
+<section id="reports" style="background:#fff;border-block:1px solid var(--line)">
+  <div class="wrap">
+
+    <div class="split">
+      <div class="txt rv">
+        <span class="sec-kick">CRM</span>
+        <h2 data-i="crh2">اعرف عميلك قبل ما تقرأ رسالته</h2>
+        <p data-i="crp">ملف موحّد لكل عميل: بياناته، حقول مخصصة على كيفك، وكل محادثاته السابقة من كل القنوات — جنب المحادثة مباشرة.</p>
+        <div class="ticks">
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="crt1">تاريخ كامل للتفاعلات عبر كل القنوات</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="crt2">حقول مخصصة وتصنيف العملاء لشرائح</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="crt3">استيراد جماعي CSV ومزامنة عبر API</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="crt4">نماذج ما قبل الشات لالتقاط البيانات تلقائيًا</span></div>
+        </div>
+      </div>
+      <div class="rv">
+        <div class="panel">
+          <div class="ph">
+            <span class="pav" data-i="av1c">سع</span>
+            <div><b data-i="pn">سعيد الحربي</b><span>saeed@*****.com</span></div>
+            <span class="ttag pri" style="margin-inline-start:auto">VIP</span>
+          </div>
+          <div class="attr"><span data-i="a1k">القناة المفضلة</span><b data-i="a1v">واتساب</b></div>
+          <div class="attr"><span data-i="a2k">إجمالي الطلبات</span><b class="mono">14</b></div>
+          <div class="attr"><span data-i="a3k">الخطة</span><b data-i="a3v">أعمال — سنوية</b></div>
+          <div class="attr"><span data-i="a4k">التصنيف</span><span class="lab" data-i="a4v">عميل دائم</span></div>
+          <div class="hist">
+            <div class="h-item"><span class="hic" style="background:#e8f9ee"><svg viewBox="0 0 24 24" fill="#25d366"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Z"/></svg></span><span data-i="hi1">استفسار شحن — حُلّت</span><i data-i="h1t">اليوم</i></div>
+            <div class="h-item"><span class="hic" style="background:#e9f0fd"><svg viewBox="0 0 24 24" fill="var(--primary)"><path d="M3 6.5 12 13l9-6.5V18a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6.5Z"/></svg></span><span data-i="hi2">تجديد الاشتراك — حُلّت</span><i data-i="h2t">قبل ٩ أيام</i></div>
+            <div class="h-item"><span class="hic" style="background:var(--chat-tint)"><svg viewBox="0 0 24 24" fill="var(--chat)"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"/></svg></span><span data-i="hi3">سؤال عن الأسعار — شات الموقع</span><i data-i="h3t">قبل شهر</i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="rv">
+        <div class="panel">
+          <div class="ph" style="margin-bottom:14px">
+            <div><b data-i="rpt">لوحة الأداء</b><span data-i="rps">آخر ٧ أيام · مباشر</span></div>
+            <span class="ttag" style="margin-inline-start:auto;display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block"></span>LIVE</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><b>1,248</b><span data-i="k1">محادثة هالأسبوع</span></div>
+            <div class="kpi"><b>4:12</b><span data-i="k2">متوسط زمن أول رد</span></div>
+            <div class="kpi hot"><b>94%</b><span data-i="k3">رضا العملاء CSAT</span></div>
+          </div>
+          <div class="bars" aria-hidden="true">
+            <span class="bar" style="height:42%;animation-delay:.1s"><i data-i="d1">سبت</i></span>
+            <span class="bar" style="height:58%;animation-delay:.2s"><i data-i="d2">أحد</i></span>
+            <span class="bar" style="height:50%;animation-delay:.3s"><i data-i="d3">اثنين</i></span>
+            <span class="bar peak" style="height:88%;animation-delay:.4s"><i data-i="d4">ثلاثاء</i></span>
+            <span class="bar" style="height:64%;animation-delay:.5s"><i data-i="d5">أربعاء</i></span>
+            <span class="bar" style="height:71%;animation-delay:.6s"><i data-i="d6">خميس</i></span>
+            <span class="bar" style="height:35%;animation-delay:.7s"><i data-i="d7">جمعة</i></span>
+          </div>
+          <div class="csat">
+            <span class="face">😍</span>
+            <div class="track"><div class="fill"></div></div>
+            <b>94%</b>
+          </div>
+        </div>
+      </div>
+      <div class="txt rv">
+        <span class="sec-kick">ANALYTICS</span>
+        <h2 data-i="anh2">قِس اللي يهمّك… لحظة بلحظة</h2>
+        <p data-i="anp">لوحة حيّة تشوف فيها مين متصل ومين عم يرد هلق، وتقارير مفصّلة على مستوى الوكيل والفريق والقناة والتسمية.</p>
+        <div class="ticks">
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="ant1">تقارير أداء الوكلاء والفرق وأوقات الذروة</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="ant2">قياس رضا العملاء CSAT بعد كل محادثة</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="ant3">تتبّع الالتزام بزمن الرد المستهدف SLA</span></div>
+          <div class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span data-i="ant4">تصدير كل التقارير CSV للتحليل الخارجي</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ======================= SECURITY ======================= -->
+<section class="sec-band" id="security">
+  <div class="wrap">
+    <div class="rv">
+      <span class="sec-kick">SECURITY &amp; ACCESS CONTROL</span>
+      <h2 data-i="sh2">عزل كامل بين الحسابات — وبيانات عملائك ملكك</h2>
+      <p class="d" data-i="sp">اتصال مشفّر عبر HTTPS مع HSTS، بيانات اعتماد القنوات مشفّرة في التخزين، صلاحيات دقيقة لكل عضو، وسجلّ تدقيق لتغييرات الإعدادات وتسجيلات الدخول لا يستطيع صاحب الإجراء تعطيله.</p>
+      <div class="shield-grid">
+        <div class="shield"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z"/></svg></span><div><b data-i="s1h">تشفير أثناء النقل</b><span data-i="s1p">HTTPS مع HSTS، وبيانات اعتماد القنوات والمتاجر مشفّرة في التخزين.</span></div></div>
+        <div class="shield"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5"/></svg></span><div><b data-i="s2h">أدوار وصلاحيات</b><span data-i="s2p">تحكّم دقيق بمين يشوف ويعدّل إيش داخل الفريق.</span></div></div>
+        <div class="shield"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><div><b data-i="s3h">سجلّ تدقيق</b><span data-i="s3p">تغييرات الإعدادات وتسجيلات الدخول مسجّلة، ويُحفظ السجلّ 365 يومًا بشكل افتراضي.</span></div></div>
+        <div class="shield"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M6 14h.01M10 10h8M10 14h5"/></svg></span><div><b data-i="s4h">API وويب هوكس</b><span data-i="s4p">اربط المنصة بأنظمتك وأتمت أي سيناريو مخصص.</span></div></div>
+      </div>
+    </div>
+    <div class="rv">
+      <div class="host-card" dir="ltr">
+        <div class="hd"><span class="pink">●</span> lynomia-chat / security posture</div>
+        <div class="hrow">transport <span class="val">HTTPS + HSTS</span></div>
+        <div class="hrow">channel credentials <span class="val">encrypted at rest</span></div>
+        <div class="hrow">tenant isolation <span class="val">enforced server-side</span></div>
+        <div class="hrow">database backup <span class="val">verified before each deploy</span></div>
+        <div class="hrow">audit trail <span class="val">config changes &amp; sign-ins</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CTA ======================= -->
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="cta-box rv">
+      <h2 data-i="ctah">جاهز توحّد محادثات عملائك؟</h2>
+      <p data-i="ctap">اربط قنواتك في صندوق وارد واحد، ووزّع المحادثات على فريقك، وتابع الأداء بالتقارير. الوثائق بالعربي والإنجليزي جاهزة، وفريقنا يساعدك في الإعداد.</p>
+      <a class="btn btn-chat" href="/app/register"><span data-i="ctab">أنشئ حسابك</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"/></svg>
+      </a>
+      <span class="hint" data-i="ctahint">عندك سؤال قبل ما تبدأ؟ <a href="mailto:info@lynomia.com" style="text-decoration:underline">راسلنا</a> أو اقرأ <a href="/docs" style="text-decoration:underline">الوثائق</a>.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FOOTER ======================= -->
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <a class="brand" href="/">
+          <span class="">            <img src="https://lynomia.com/img/new/lynomia-icon.png" style="width:4rem"> 
+</span>
+          <span><b>Lynomia</b> <span class="chat-word">Chat</span></span>
+        </a>
+        <p class="f-about" data-i="fab">منصة محادثات العملاء الموحّدة من لنوميا — شركة برمجيات وذكاء اصطناعي.</p>
+      </div>
+      <div>
+        <h4 data-i="fc1h">المنتج</h4>
+        <ul>
+          <li><a href="#channels" data-i="fl1">القنوات المدعومة</a></li>
+          <li><a href="#whatsapp" data-i="fl2">واتساب API</a></li>
+          <li><a href="#ai" data-i="fl3">الذكاء الاصطناعي</a></li>
+          <li><a href="#reports" data-i="fl4">التقارير</a></li>
+          <li><a href="/docs" data-i="fl9">الوثائق ومركز المساعدة</a></li>
+          <li><a href="/changelog" data-i="fl10">سجل التحديثات</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i="fc2h">لنوميا</h4>
+        <ul>
+
+
+
+
+          
+       <ul>
+ 
+       
+ <div class="footer-links">
+   <li><a href="https://lynomia.com/about_us" target="_blank" rel="noopener" data-i="pb1">من نحن</a></li>
+   <li><a href="https://lynomia.com/privacy" target="_blank" rel="noopener" data-i="pb2">سياسة الخصوصية</a></li>
+   <li><a href="https://lynomia.com/user-data-deletion" target="_blank" rel="noopener" data-i="pb3">حذف البيانات</a></li>
+   <li><a href="https://lynomia.com/terms" target="_blank" rel="noopener" data-i="pb4">شروط الاستخدام</a></li>
+  </div>
+
+ </ul>
+
+
+<script>
+  /* The page is served in Arabic; `cur` tracks the language the visitor is currently reading.
+     The legal documents that used to live here as JavaScript string literals, rendered into a
+     modal, now have real URLs: see the footer. */
+  let cur = 'ar';
+</script>
+
+
+        </ul>
+      </div>
+      <div>
+        <h4 data-i="fc3h">تواصل معنا</h4>
+        <ul class="f-contact">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg><a class="mono" dir="ltr" href="mailto:info@lynomia.com">info@lynomia.com</a></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z"/></svg><a href="/app/login" data-i="flchat">سجّل الدخول لفتح تذكرة دعم</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <span data-i="fcr">© 2026 Lynomia. جميع الحقوق محفوظة.</span>
+      <span class="mono">Lynomia Chat · chat.lynomia.com</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ======================= FLOATING WIDGET ======================= -->
+<div class="widget" id="widget" role="dialog" aria-label="تواصل مع لنوميا">
+  <div class="w-head">
+    <b data-i="wh1">تواصل معنا 👋</b>
+    <span data-i="wh2">اختر الطريقة الأنسب لك</span>
+  </div>
+  <div class="w-body" id="wBody">
+    <div class="msg agent" data-i="wm1">للأسئلة قبل الاشتراك: راسلنا على البريد ونرد عليك.</div>
+    <div class="msg cust" data-i="wm2">عميل حالي؟ سجّل الدخول وافتح تذكرة دعم من «المساعدة والدعم».</div>
+  </div>
+  <div class="w-foot" style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn btn-primary" style="flex:1 1 auto;justify-content:center" href="mailto:info@lynomia.com" data-i="wb1">راسلنا بالبريد</a>
+    <a class="btn btn-ghost" style="flex:1 1 auto;justify-content:center" href="/docs" data-i="wb2">الوثائق</a>
+  </div>
+</div>
+<button class="fab" id="fab" onclick="toggleWidget()" aria-label="تواصل مع لنوميا">
+  <svg class="bubble" viewBox="0 0 24 24" fill="#fff"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"/></svg>
+  <svg class="x" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+</button>
+
+<script>
+  /* ============ i18n ============ */
+
+  let AR = null;
+  const EN = {
+    
+    pb1:'About Us', pb2:'Privacy', pb3:'Data Deletion', pb4:'Terms',
+    n1:'Channels', n2:'WhatsApp API', n3:'AI assist', n4:'Features', n5:'Reports', n6:'Security',
+    n7:'Docs',
+    nDemo:'Request a demo', nStart:'log in',
+    kick:'Customer conversations platform by Lynomia',
+    h1:'All your customer conversations in <span class="hl">one inbox</span> — whatever the channel',
+    lead:'WhatsApp, Instagram, Messenger, Telegram, email and your website chat — all in one dashboard for your team, with automatic routing, ready-made reply templates and reports that track how your team is doing.',
+    cta1:'Create your account', cta2:'See supported channels',
+    pr1:'channels in one inbox', pr2:'languages in the agent interface', pr3:'and webhooks to connect your systems',
+    ihdr:'OPEN CONVERSATIONS', ihdr2:'RESOLVED TODAY · 34',
+    av1:'SA', av2:'NA', av3:'AM', av4:'RQ', av1b:'SA', av1c:'SA',
+    cn1:'Saeed Alharbi', cp1:'My order arrived missing a part…',
+    cn2:'Noha Abdullah', cp2:'How much is the annual plan?',
+    cn3:'Almada Office', cp3:'RE: updated price quote',
+    cn4:'Rawan Qasem', cp4:'Where do I find my invoice?',
+    tn:'Saeed Alharbi', tvia:'via <i>WhatsApp</i> · online now',
+    tag1:'High priority', tag2:'Shipping',
+    m1:'Hi, order #4382 arrived today but a part is missing 😕<span class="t">10:42 AM</span>',
+    m2:'Hi Saeed! So sorry about that — I checked your order, and the missing part ships today with free express shipping.<span class="t">10:43 AM · Layan, Support team</span>',
+    m3:'📌 Private note: created replacement shipment #4382-B — customer can\u2019t see this',
+    aip:'<b>AI assistant suggestion:</b> \u201cYou\u2019ll get a new tracking number within the hour, and we added a 10% discount to your next order.\u201d',
+    aiu:'Use reply',
+    fch1:'New WhatsApp message', fch2:'Visitor opened website chat', fch3:'Auto-assigned to Layan',
+    chlbl:'ONE CHANNEL? TEN? THEY ALL LAND IN THE SAME INBOX',
+    wah2:'Official WhatsApp Business API — fully supported',
+    wabadge:'Official WhatsApp API — a Lynomia service',
+    wap:'Connect your business number to the official WhatsApp Business API: rich messages with images and buttons, approved templates, and automated replies — and every conversation lands in your team\u2019s unified inbox.',
+    wt1:'Official, approved WhatsApp Business API',
+    wt2:'Approved message templates and customer notifications at scale',
+    wt3:'Interactive messages: buttons, lists, images and files',
+    wt4:'Automation rules and canned responses, sent in one click',
+    wast:'Official business account',
+    waimg:'LYNOMIA · ORDER #4382',
+    wam1:'Hi Saeed 👋 Your order #4382 is out for delivery and arrives today before 6 PM.',
+    wab1:'📦 Track order', wab2:'💬 Talk to support',
+    wam2:'Thanks, tracking works 👌',
+    wam3:'Anytime! If you need anything, our team is here 24/7 🤝',
+    aih2:'Smart help for your agents — and they are the ones who press send',
+    aipp:'Five assist tools inside the inbox: rewrite a reply, summarise a conversation, suggest a reply, suggest labels, and draft a follow-up. They switch on for your account when you connect your own OpenAI key, and nothing is ever sent to a customer without your agent approving it.',
+    ac1h:'Rewrite and summarise',
+    ac1p:'Improve the wording of a reply before you send it, or condense a long conversation into a few lines before handing it over — the final text stays with your agent.',
+    ac1q:'Draft: “We cannot help you with this request.”',
+    ac1a:'After rewriting: “This request is outside what we can do today, and here is the alternative we suggest…”',
+    ac1t:'Suggested to the agent · sent by hand',
+    ac2h:'Agent copilot',
+    ac2p:'Ready reply suggestions, long-conversation summaries, and instant help-article lookups — your team resolves more in less time.',
+    ac2t1:'Suggest a reply', ac2t2:'Summarize chat',
+    ac2a:'Customer is asking about the return policy — here\u2019s a suggested reply based on the \u201cReturns & exchanges\u201d article…',
+    ac3h:'Message translation · needs setup',
+    ac3p:'Translate a single message on demand inside the conversation, once you connect your own Google Translate account. It is not on by default and does not translate whole conversations in the background. The agent interface itself is available in more than 50 languages.',
+    ac3a:'Hello, I have an issue with my order ← <b style="color:#f8b8d4">translated automatically</b>',
+    as1:'assist actions inside the conversation', as2:'with your own key, under your control',
+    as3:'messages sent to a customer automatically',
+    fh2:'A complete support-team toolkit — not just chat',
+    fp:'Everything your team needs to collaborate, organize and resolve conversations efficiently, from first message to customer rating.',
+    f1h:'Smart auto-assignment', f1p:'Every new conversation goes to the right agent based on team, skill and each agent\u2019s capacity — no manual routing.',
+    f2h:'Labels & priorities', f2p:'Tag conversations with colored labels and flag the urgent ones — advanced filters surface any segment in a second.',
+    f3h:'Private notes', f3p:'Discuss the case with teammates inside the conversation itself with internal notes — the customer never sees them.',
+    f4h:'SLA & business hours', f4p:'Set target response times and track compliance, with automatic replies outside working hours.',
+    f5h:'Canned replies & macros', f5p:'Saved reply templates and one-click action sequences — type \u201c/\u201d and finish the reply in seconds.',
+    f6h:'Collision detection', f6p:'See which teammate has the same conversation open or is typing right now — so the customer never gets two conflicting replies.',
+    crh2:'Know your customer before you read their message',
+    crp:'A unified profile for every customer: their data, custom fields of your choosing, and their full conversation history from every channel — right next to the chat.',
+    crt1:'Full interaction history across all channels',
+    crt2:'Custom fields and customer segmentation',
+    crt3:'Bulk CSV import and API sync',
+    crt4:'Pre-chat forms that capture data automatically',
+    pn:'Saeed Alharbi',
+    a1k:'Preferred channel', a1v:'WhatsApp',
+    a2k:'Total orders',
+    a3k:'Plan', a3v:'Business — annual',
+    a4k:'Segment', a4v:'Loyal customer',
+    hi1:'Shipping inquiry — resolved', h1t:'today',
+    hi2:'Subscription renewal — resolved', h2t:'9 days ago',
+    hi3:'Pricing question — website chat', h3t:'a month ago',
+    rpt:'Performance dashboard', rps:'Last 7 days · live',
+    k1:'conversations this week', k2:'avg. first response', k3:'customer satisfaction',
+    d1:'Sat', d2:'Sun', d3:'Mon', d4:'Tue', d5:'Wed', d6:'Thu', d7:'Fri',
+    anh2:'Measure what matters… in real time',
+    anp:'A live dashboard showing who\u2019s online and who\u2019s replying right now, plus detailed reports by agent, team, channel and label.',
+    ant1:'Agent & team performance and peak-hour reports',
+    ant2:'CSAT customer satisfaction after every conversation',
+    ant3:'SLA target response-time tracking',
+    ant4:'Export every report as CSV for external analysis',
+    sh2:'Complete isolation between accounts — and your customer data stays yours',
+    sp:'Encrypted transport over HTTPS with HSTS, channel credentials encrypted at rest, fine-grained permissions for every member, and an audit trail of configuration changes and sign-ins that the person being audited cannot switch off.',
+    s1h:'Encrypted in transit', s1p:'HTTPS with HSTS, and channel and store credentials encrypted at rest.',
+    s2h:'Roles & permissions', s2p:'Fine-grained control over who sees and edits what inside the team.',
+    s3h:'Audit trail', s3p:'Configuration changes and sign-ins are recorded, and kept for 365 days by default.',
+    s4h:'API & webhooks', s4p:'Connect the platform to your systems and automate any custom scenario.',
+    ctah:'Ready to unify your customer conversations?',
+    ctap:'Connect your channels into one inbox, route conversations to your team, and follow performance in the reports. The documentation is ready in Arabic and English, and our team helps you set up.',
+    ctab:'Create your account',
+    ctahint:'A question before you start? <a href="mailto:info@lynomia.com" style="text-decoration:underline">Email us</a> or read the <a href="/docs" style="text-decoration:underline">documentation</a>.',
+    fab:'The unified customer conversations platform by Lynomia — a software & AI company.',
+    fc1h:'Product', fl1:'Supported channels', fl2:'WhatsApp API', fl3:'AI assist', fl4:'Reports',
+    fc2h:'Lynomia', fl5:'About us', fl6:'Other services', fl7:'Blog', fl8:'Join our team',
+    fl9:'Documentation &amp; help centre', fl10:'Changelog',
+    fc3h:'Get in touch', flchat:'Sign in to open a support ticket',
+    fcr:'© 2026 Lynomia. All rights reserved.',
+    wh1:'Get in touch 👋', wh2:'Pick whichever suits you',
+    wb1:'Email us', wb2:'Documentation',
+    wm1:'Pre-sales questions: email us and we will reply.',
+    wm2:'Already a customer? Sign in and open a ticket from Help &amp; Support.',
+  };
+  const T = {
+    ar:{ title:'Lynomia Chat — كل محادثات عملائك بصندوق واحد', ph:'اكتب رسالتك…',
+         soon:'تجريبي',
+         chNames:['شات الموقع','واتساب API','إنستغرام DM','فيسبوك ماسنجر','تيليجرام','تيك توك','الإيميل','رسائل SMS','LINE'],
+         replies:['سؤال حلو! أحد فريقنا برد عليك فورًا — أو اطلب عرضًا تجريبيًا ونجهزلك حساب كامل.','تمام 👌 بالنسخة الفعلية هون يجاوبك الوكيل الذكي مباشرة من قاعدة المعرفة.','وصلتنا! بالمنصة الحقيقية توصل هالرسالة لصندوق فريقك الموحّد وتتوزع تلقائيًا.'] },
+    en:{ title:'Lynomia Chat — all your customer conversations in one inbox', ph:'Type your message…',
+         soon:'beta',
+         chNames:['Website chat','WhatsApp API','Instagram DM','Facebook Messenger','Telegram','TikTok','Email','SMS','LINE'],
+         replies:['Great question! Someone from our team will reply right away — or request a demo and we\u2019ll set up a full account.','Got it 👌 In the real product, the AI agent answers this directly from your knowledge base.','Received! In the live platform this message lands in your team\u2019s unified inbox and gets auto-assigned.'] },
+  };
+
+  const chIcons = [
+    ['var(--chat-tint)','<path fill="var(--chat)" d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3c-1.5 0-2.9-.36-4.1-1L3 20l1.3-4.9A8.1 8.1 0 0 1 3.5 11.5 8.4 8.4 0 0 1 12 3.2a8.4 8.4 0 0 1 9 8.3Z"/>',0],
+    ['#e8f9ee','<path fill="#25d366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5 13.6c-.2.6-1.2 1.1-1.7 1.2-.4 0-.9.2-3.1-.7-2.6-1.1-4.3-3.8-4.4-4-.1-.2-1-1.4-1-2.7s.6-1.9.9-2.1c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .6l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.7-.9c.2-.3.4-.2.7-.1l1.9.9c.3.2.5.2.6.4 0 .1 0 .7-.2 1.4Z"/>',0],
+    ['#fdeef5','<rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="#d62976" stroke-width="2.2"/><circle cx="12" cy="12" r="4" fill="none" stroke="#d62976" stroke-width="2.2"/><circle cx="17.2" cy="6.8" r="1.4" fill="#d62976"/>',0],
+    ['#e9f0fd','<path fill="#0084ff" d="M12 2C6.5 2 2 6.1 2 11.3c0 2.9 1.4 5.5 3.6 7.2V22l3.4-1.9c.9.3 1.9.4 3 .4 5.5 0 10-4.1 10-9.3S17.5 2 12 2Zm1.1 12.5-2.6-2.7-5 2.7 5.5-5.8 2.6 2.7 4.9-2.7-5.4 5.8Z"/>',0],
+    ['#e7f4fb','<path fill="#229ED9" d="m21 4-18 7 5 2 2 6 3-4 5 4 3-15Z"/>',0],
+    ['#f0f0f3','<path fill="#161823" d="M16.6 3c.4 2.1 1.8 3.6 3.9 3.9v3c-1.5 0-2.8-.5-3.9-1.3v5.9a5.9 5.9 0 1 1-5.9-5.9c.3 0 .7 0 1 .1v3.1a2.8 2.8 0 1 0 1.9 2.7V3h3Z"/>',0],
+    ['#fdeaea','<path fill="#ea4335" d="M3 6.5 12 13l9-6.5V18a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V6.5Z"/><path fill="#ea4335" d="M21 5.6 12 12 3 5.6A1.5 1.5 0 0 1 4.5 4.5h15A1.5 1.5 0 0 1 21 5.6Z"/>',0],
+    ['#e9f0fd','<rect x="3" y="4" width="18" height="14" rx="2" fill="var(--primary)"/><circle cx="8" cy="11" r="1.3" fill="#fff"/><circle cx="12" cy="11" r="1.3" fill="#fff"/><circle cx="16" cy="11" r="1.3" fill="#fff"/>',0],
+    ['#e8f9ee','<path fill="#06C755" d="M12 3C6.5 3 2 6.7 2 11.2c0 4 3.6 7.4 8.4 8.1.3.1.8.2.9.5.1.3 0 .7 0 1l-.2 1c0 .3-.2 1.1 1 .6 1.2-.5 6.4-3.8 8.7-6.4A7.3 7.3 0 0 0 22 11.2C22 6.7 17.5 3 12 3Z"/>',0],
+  ];
+  function renderMarq(l){
+    const names = T[l].chNames, soon = T[l].soon;
+    const pills = chIcons.map(([bg,svg,isSoon],i) =>
+      `<span class="ch-pill"><span class="ic" style="background:${bg}"><svg viewBox="0 0 24 24">${svg}</svg></span>${names[i]}${isSoon?`<span class="soon">${soon}</span>`:''}</span>`
+    ).join('');
+    document.getElementById('marq').innerHTML = pills + pills;
+  }
+
+  function setLang(l){
+    if(!AR){ AR = {}; document.querySelectorAll('[data-i]').forEach(el => AR[el.dataset.i] = el.innerHTML); }
+    const d = l === 'en' ? EN : AR;
+    document.querySelectorAll('[data-i]').forEach(el => {
+      const k = el.dataset.i;
+      if(d[k] !== undefined) el.innerHTML = d[k];
+    });
+    document.documentElement.lang = l === 'en' ? 'en' : 'ar';
+    document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl';
+    document.title = T[l].title;
+    document.getElementById('langBtn').textContent = l === 'en' ? 'عربي' : 'EN';
+    renderMarq(l);
+    cur = l;
+    try { localStorage.setItem('lang', cur); } catch (e) { /* storage unavailable */ }
+  }
+  renderMarq('ar');
+
+  /* scroll reveal */
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}
+  }),{threshold:.12});
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+  /* floating widget */
+  const fab = document.getElementById('fab'), widget = document.getElementById('widget');
+  function toggleWidget(force){
+    const open = force === true ? true : !widget.classList.contains('open');
+    widget.classList.toggle('open', open);
+    fab.classList.toggle('open', open);
+    if(open) setTimeout(()=>widget.querySelector('.w-foot a').focus(), 250);
+  }
+  /* LANGUAGE IS THE VISITOR'S CHOICE, read once here.
+     The previous build clicked the language button unconditionally on DOMContentLoaded, so every visitor to
+     an Arabic-first page was flipped to English on every load, with lang and dir changing under them. The
+     document is served in Arabic; only a stored English preference changes it. */
+  try { if (localStorage.getItem('lang') === 'en') setLang('en'); } catch (e) { /* storage unavailable */ }
+</script>
+</body>
+</html>

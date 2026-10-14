@@ -1688,8 +1688,173 @@ Corrected, and the partial now names both halves of the contract and where each 
 
 | # | Item | What closes it |
 |---|---|---|
-| **A5'-O1** | **Nothing seeds corpus media**, now with certified references (§M5) | **owner decision**, then a change of its own |
+| A5'-O1 | Nothing seeds corpus media | **closed** by the owner's final ruling and §N — the pass is wired, with the owner's A-I tests and a real run of both rake tasks |
 | A6-O4 | §G10's `<title>` branch | **closed** by ruling 4 and §M7 — the asymmetry no longer exists |
 | A5-O1 | Section ownership | **closed** by ruling 1 and §M1 |
 | A6-O5 | `markdownSource.js` and `mediaUpload.js` untested | **closed** by ruling 5; both have left the gate's uncovered report |
 | A5'-O2 … O6 | Carried unchanged from §L3.8 | as recorded there |
+
+## N. A5'-O1 closed: the corpus media pass is wired, and wiring it found two defects
+
+> Owner ruling: *"preflight can certify a repository `media:` reference while apply never attaches that corpus
+> file to the Portal. Today the corpus contains zero images, so the defect is latent. The first future corpus
+> image could pass validation and publish unresolved. Complete the existing design; do not redesign it."*
+
+### N1 — What was actually missing, and what already held
+
+`Documentation::MediaSeeder` was implemented, specced and documented, and **nine of the owner's nine
+requirements were already satisfied by its code** — per-portal namespace, stable key, ActiveStorage only,
+checksum idempotency with no global scan, scoped lookup, provenance by `content_source_path`, an orphan sweep
+restricted to corpus-owned attachments, no cross-portal reuse, and a loud rerunnable failure. What was missing
+was the **caller**. R2-MEDIA-INTERFACE.md §3.2 assigns one line to `ContentSeeder` and it was never written, so
+every requirement held only because nothing ran.
+
+So this delta is a wiring change, not a mechanism. The frozen contract already said where the line goes, and
+owner ruling 3 had since given **both** services a write-free preflight and an idempotent apply — which is what
+made the completion obvious: **interleave the phases rather than call `perform!` from one place.**
+
+| Phase | What runs | Why there |
+|---|---|---|
+| `ContentSeeder#preflight!` | `media_seeder.preflight!`, last | Write-free. It decides the four defects `Corpus#media_problems` cannot see — empty alt, a key in a **link** position, a destination CommonMark does not read as an image at all, a corpus file in the reserved `uploads/` namespace. All four are decidable without a write, so ruling 3 puts them before the apply |
+| `ContentSeeder#apply!` | `media_seeder.perform!`, **first** | §3.2's ordering: every validated reference becomes an attachment before any row is written, so a media failure leaves the corpus untouched |
+
+`MediaSeeder#preflight!` is **memoized**, so the preflight call and the apply call scan the 138 corpus files
+once between them. Its `Error` is re-raised as `PreflightError`, which is how the operator gets the message
+every other refusal prints — that NOTHING was written — instead of a Ruby backtrace. The cost is recorded in
+the code rather than hidden: `MediaSeeder` raises on the **first** media defect where `refuse` lists all of
+them, so a corpus with two of those four defects takes two runs to clear. Closing that is the non-raising
+`MediaSeeder#problems` the frozen contract leaves open as Agent 1's decision.
+
+### N2 — The Result and the report: one member, one line, the contract's own wording
+
+`ContentSeeder::Result` gains the `media` member §3.2 names. It holds the **live** `MediaSeeder::Result`, not a
+copy, published the moment the seeder is memoized — because an upload is outside any transaction, so an attach
+that fails on the tenth key must still report the nine that landed. That is owner ruling 3's "report exactly
+what completed" one level down, and it needed one new line of API: `attr_reader :result` on `MediaSeeder`.
+
+`DocumentationSeedReport` gains one constant and one `puts`, worded as R2-MEDIA-INTERFACE.md §3.7 itself
+suggests. **Measured, four real runs through the real report** (a temporary corpus, one image, one spare file):
+
+```
+--- RUN 1: first seed, one image attached, one unreferenced file in the tree ---
+articles: 1 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+  media: 1 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+--- RUN 2: identical re-seed, nothing written ---
+  media: 0 attached, 0 replaced, 1 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+--- RUN 3: the image bytes changed in the repository ---
+  media: 0 attached, 1 replaced, 0 unchanged, 0 purged (0 without dimensions, 1 unreferenced in the repository)
+--- RUN 4: the reference left the corpus, so the corpus-owned attachment is purged ---
+  media: 0 attached, 0 replaced, 0 unchanged, 1 purged (0 without dimensions, 2 unreferenced in the repository)
+```
+
+Four of the owner's five categories are counters. The fifth, **failed, is deliberately not one**: the pass
+fails loudly on the first defect rather than tallying defects, so a failure is reported by `PREFLIGHT_FAILED`
+(a corpus defect, nothing written) or by `APPLY_FAILED` naming `the corpus media pass` with these counts above
+it. `APPLY_FAILED`'s own sentence was widened by one clause, because "every write is an upsert on
+(slug, locale)" is an article's vocabulary and an attachment's key is the `media:` key.
+
+### N3 — Defect 1: the pass reported `uploaded: 1` against zero attachment rows
+
+The first integration run was green on counts and **empty in the database**. Isolated with a throwaway probe
+rather than reasoned about:
+
+```
+PROBE built_new=true target_size=1
+PROBE portal_changed=false valid=false
+PROBE save_result=false errors=["Articles is invalid"]
+PROBE attach_returned_nil=true
+PROBE row_exists=false
+PROBE control_row_exists=true        # the same attach with portal.articles.reset
+```
+
+`plan_file` built its planned rows through `portal.articles.find_or_initialize_by`, which leaves an unsaved,
+invalid `Article` in the portal's **association target**. `has_many` autosave then makes `portal.valid?` false
+while `portal.changed?` — which is about attributes — stays false. `Attached::Many#attach` saves only
+`if record.persisted? && !record.changed?` and abandons the attachment on `return if !record.save`
+(`activestorage-7.2.3.2/lib/active_storage/attached/many.rb:51-57`). So the attachment stayed pending in memory
+and was never written.
+
+Fixed where it was created: `Article.find_or_initialize_by(portal: portal, …)`. Same query, same assignment, and
+the plan stops mutating the portal's in-memory graph — which it never should have, since a plan is an
+inspection. This is why `media_seeder_spec` never saw it: it passes `portal.reload`, which clears the target.
+
+### N4 — Defect 2: that abandonment was silent, which is the shape this program keeps refusing
+
+`MediaUpload#upload` returned the blob whatever `attach` did, so an upload that attached nothing reported
+success. The attach boundary now reads the attachment back **from the database** — `blob.attachments.exists?`
+— and raises `Error` naming the portal and its validation errors. Not a speculative guard: the failure was
+measured above, and the cop against "report success when it failed" is the same one P5c-1 was issued for.
+
+### N5 — A third thing, found the way the other six were
+
+`content_seeder_spec.rb`'s *"accepts it once the file is there"* wrote the five bytes `'bytes'` to the media
+path and asserted `created == 2`. That satisfied the preflight, which checks that a file **exists**. Nothing
+read it, because nothing attached it — so a placeholder passed for as long as the defect existed. With the pass
+wired in, the attach boundary identifies the content type from the bytes and refuses `application/octet-stream`.
+It is a real 4x3 PNG now, and the example asserts the attachment, its key and its provenance rather than only
+a row count. **Seventh time a spec has been found pinning the absence of a feature.**
+
+### N6 — Tests: the owner's A–I, at the integration level
+
+The distinction that shaped every one of them: *"the service can do it"* was already proven by
+`media_seeder_spec`, and is not what was broken. Each example below runs the real **`ContentSeeder`**.
+
+| # | Requirement | Where | What makes it a proof rather than a count |
+|---|---|---|---|
+| A | first seed attaches a corpus image | `content_seeder_spec.rb` | the key, the owning portal, `content_source_path`, and the 4x3 dimensions |
+| B | second identical seed performs no media write | same | the **blob id** is unchanged, which a re-upload-then-purge would also have counted as `unchanged` |
+| C | changed bytes update the same logical key | same | same key, different blob id, new width, new bytes downloaded back |
+| D | EN and AR resolve the same per-portal media | `corpus_media_end_to_end_spec.rb` | both pages render an `<img>`; one attachment; each locale's own alt |
+| E | operator media survives a seed | `content_seeder_spec.rb` | the bytes are downloaded back, and `content_source_path` is absent |
+| F | orphan cleanup cannot purge operator media | same | the corpus orphan **is** purged in the same run, so the sweep provably ran |
+| G | cross-portal media cannot resolve | `corpus_media_end_to_end_spec.rb` | the changelog seed **refuses** the key rather than adopting it, then the renderer emits the inert comment and the route 404s, with a control proving the owning portal serves it |
+| H | a validated reference renders after seed | same | `GET` the src each page minted returns the committed bytes |
+| I | missing media fails in preflight | `content_seeder_spec.rb` | zero articles **and** zero attachments afterwards, plus one example per each of the four preflight-only defects |
+
+Plus the failure model: an attach that fails on a later key raises `ApplyFailure` whose `where` is
+`the corpus media pass`, whose `result.media.uploaded` is 1, with **no** article or category row written and the
+completed attachment committed — so the re-run is an upsert, not a repair.
+
+`purge_later` deletes the attachment row **synchronously** and only enqueues the blob's own purge
+(`activestorage-7.2.3.2/app/models/active_storage/attachment.rb:60-66`), so attachment presence is assertable
+under the `:test` queue adapter (`config/environments/test.rb:46`). Checked before relying on it.
+
+### N7 — The shipped corpus and the changelog, run for real
+
+Both rake tasks, against the real trees, then the test database reset:
+
+```
+articles: 138 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+  media: 0 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 0 unreferenced in the repository)
+releases: 2 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+  media: 0 attached, 0 replaced, 0 unchanged, 0 purged (0 without dimensions, 0 unreferenced in the repository)
+```
+
+and the second run: `138 unchanged` / `2 unchanged`, all media zeros. Two things proven that only a real run
+proves. The shipped corpus still holds zero images, so the pass is a no-op on it today — the latency the owner
+described, now closed rather than waiting. And **`documentation:changelog` is safe**: `custom/db/changelog` has
+no `media/` directory at all, and the pass neither crashes nor purges, because `unreferenced_files` returns
+`[]` for a missing directory and the sweep only ever considers attachments carrying a `content_source_path`.
+
+### N8 — One deliberate four-line overrun, measured before it was accepted
+
+`Metrics/ClassLength` on `ContentSeeder` reads 179 against a limit of 175. Measured rather than assumed before
+disabling it: ten throwaway methods inside the nested `Corpus` left the count at **179**, and ten in the outer
+class took it to **189** — so the cop excludes the nested class and the 179 is the seeder's own code. Nothing in
+it is dead (every method and constant has a live caller, checked), so the only way under the limit is a second
+object for the apply phase, which is the redesign the ruling forbids. Disabled inline with that reasoning rather
+than added to `.rubocop.yml`'s `Exclude`, which would switch the cop off for the file permanently.
+
+### N9 — What this does NOT change, recorded so nobody re-derives it
+
+- **`Corpus#media_problems` stays.** It collects every offending file where `MediaSeeder` raises on the first,
+  and that collecting behaviour is the better report for the two checks they share. The frozen contract's
+  deduplication (`MediaSeeder#problems`) remains open.
+- **`MediaSeeder#scan_corpus` still globs `*/*/*.md`**, which reaches locale trees the portal does not serve and
+  sections the manifest does not claim, while `Corpus` reads only what the manifest claims for allowed locales.
+  The two sets coincide today (`en`, `ar`, every section claimed). Left alone because §3.3 justifies the
+  independent walk and changing it is Agent 1's file and a redesign. **Recorded as a bounded difference**: a
+  reference in an unseeded file would attach media for an article that is never published.
+- **No `documentation:media` rake task.** §3.3 permits one; nothing requires it. `documentation:content` is
+  idempotent, so an operator who changed only an image re-runs that, and a second task would be a second
+  entry point to the same pass.

@@ -1599,6 +1599,15 @@ this file belongs to Agent 6). The three are:
 >    §3.2 specifies — and adding it alongside the failure-model change would land two unmeasured mechanisms in one
 >    pass, which is the mistake wave 3 avoided by deferring D9. *What would close it:* the Orchestrator's decision
 >    to wire it, or a `documentation:media` task, in a change of its own.
+>
+>    **CLOSED** by the owner's final pre-merge ruling, in a change of its own, as this item asked for.
+>    `ContentSeeder#preflight!` now runs the media seeder's write-free phase and `ContentSeeder#apply!` runs its
+>    write phase first, `Result` carries the `media` member §3.2 names, and the report prints one media line.
+>    Wiring it found two defects — a plan that polluted the portal's association target so
+>    `Attached::Many#attach` abandoned the attachment, and an attach boundary that reported success anyway. Full
+>    record, with the measured probes and the owner's A–I tests: P2-WORKSTREAM-OWNERSHIP.md §N. No
+>    `documentation:media` task was added: §3.3 permits one and nothing requires it, and
+>    `documentation:content` is idempotent.
 
 1. **Should a deliberate URL change be possible at all, and therefore do we need redirects?** D4 makes a file rename
    safe — no 404, one `created` plus one reported `orphan` — and that is why I ruled redirects out of P2 rather than

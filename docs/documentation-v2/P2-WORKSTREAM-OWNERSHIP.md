@@ -2031,6 +2031,34 @@ first seed after the corpus stops referencing that key purges it and the operato
 R2-MEDIA-INTERFACE.md §6.2 scopes this out by wording rather than by considering it. **A5'-O7**, below: either
 widen `referenced_keys` to include this portal's article content, or say in §6.2 that such a key is unprotected.
 
+### N13 — The owner's two confirmations, taken from a live run rather than from a test name
+
+The ruling asks for confirmation that operator uploads survive a reseed and that a real fixture `media:`
+reference resolves after seed. Both are pinned by examples (§N6 E, F, D, H), and both were also run live against
+the test database — a temporary corpus, a real 4x3 PNG, an operator upload made through
+`Documentation::MediaUpload`, two seeds, then the REAL renderer and the REAL per-portal resolver:
+
+```
+--- SEED 1 ---
+articles: 2 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+  media: 1 attached, 0 replaced, 0 unchanged (0 without dimensions); sweep: 0 purged, 0 unreferenced ...
+OPERATOR UPLOAD key=uploads/64365fb26ba8034f-operator-note.png
+--- SEED 2 (re-seed, with the operator upload in place) ---
+articles: 0 created, 0 updated, 2 unchanged, 0 adopted, 0 untracked (en, ar)
+  media: 0 attached, 0 replaced, 1 unchanged (0 without dimensions); sweep: 0 purged, 0 unreferenced ...
+
+CONFIRM operator_survives=true bytes_intact=true corpus_owned=false
+CONFIRM corpus_attached=true corpus_owned=.../media/getting-started/inbox.png
+CONFIRM render locale=en slug=welcome     src=/hc/lynomia-docs/articles/welcome/media/getting-started/inbox.png     alt=The inbox       dims=4x3
+CONFIRM render locale=ar slug=welcome-ar  src=/hc/lynomia-docs/articles/welcome-ar/media/getting-started/inbox.png  alt=صندوق الوارد  dims=4x3
+```
+
+`bytes_intact=true` is the operator's own bytes downloaded back, not merely a row still present.
+`corpus_owned=false` on the operator attachment and a path on the corpus one are the provenance the sweep reads.
+The two `src` values are the article-scoped, application-owned addresses the renderer minted for ONE attachment
+from two locales, with the dimensions the analyzer measured. Test database only, Disk storage under
+`tmp/storage`, reset to zero rows afterwards; no production, no Meta, no real credentials.
+
 ### N9 — What this does NOT change, recorded so nobody re-derives it
 
 - **`Corpus#media_problems` stays.** It collects every offending file where `MediaSeeder` raises on the first,

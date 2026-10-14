@@ -4,6 +4,7 @@
 # administrators), on `lynomia_flow_builder` accounts.
 #
 #   GET    /flows                   the account's flows
+#   GET    /flows/channels          every inbox: whether it can run a flow, and which one it is running
 #   POST   /flows                   create: name, description
 #   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors, and
 #                                  what a builder needs to edit it: the node catalogue, each node type's field
@@ -21,7 +22,7 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   TEXT_MAX = 1024
 
   before_action :ensure_flow_builder_enabled
-  before_action :fetch_flow, except: [:index, :create]
+  before_action :fetch_flow, except: [:index, :create, :channels]
   before_action -> { authorize(@flow || AgentBot, :update?) }
 
   rescue_from Flows::Versions::Invalid do |error|
@@ -44,6 +45,41 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
 
   def show
     render json: show_json
+  end
+
+  # WHICH CHANNELS CAN RUN AN AUTOMATION, AND WHAT EACH ONE IS RUNNING.
+  #
+  # A flow is connected to an inbox with Chatwoot's own POST /inboxes/:id/set_agent_bot, which
+  # neither says whether the inbox can run flows nor what is already attached -- and a client
+  # that worked it out itself would be a second copy of Flows::ChannelCapabilities, drifting the
+  # day a channel gains support. This is the question a "connect this flow" picker asks, answered
+  # once, by the code that decides it.
+  #
+  # IT REPORTS, IT DOES NOT REFUSE, which is the same stance channel_eligibility takes and for the
+  # same reason. Attaching a flow to an inbox that cannot run it is already harmless and already
+  # caught: GraphValidator#check_channels refuses the PUBLISH with `unsupported_channel`, naming
+  # the inbox, so nothing can go live on a channel that cannot run it. Forbidding the attachment
+  # as well would duplicate that gate and make honest reporting unreachable -- and would mean a
+  # flow attached before a channel gains support has to be re-attached afterwards rather than
+  # simply starting to work.
+  #
+  # ONLY THE ACCOUNT'S OWN FLOW BOTS ARE NAMED. An inbox can carry any bot Chatwoot considers
+  # accessible, which includes installation-wide ones with no account; those are an operator's
+  # concern and a merchant has no business being shown or offered them, so an inbox running one
+  # reports `flow: null` and `occupied_by_other: true` -- enough to warn that connecting would
+  # replace something, without naming a bot from outside this account.
+  def channels
+    attached = flows.includes(:inboxes).flat_map { |flow| flow.inboxes.map { |inbox| [inbox.id, flow] } }.to_h
+    inboxes = Current.account.inboxes.includes(:channel, :agent_bot).order(:name)
+
+    render json: { payload: inboxes.map { |inbox| channel_json(inbox, attached[inbox.id]) } }
+  end
+
+  def channel_json(inbox, flow)
+    { id: inbox.id, name: inbox.name, channel_type: inbox.channel_type,
+      runs_flows: Flows::ChannelCapabilities.for(inbox).present?,
+      flow: flow && { id: flow.id, name: flow.name, state: lifecycle_of(flow) },
+      occupied_by_other: flow.nil? && inbox.agent_bot.present? }
   end
 
   def create

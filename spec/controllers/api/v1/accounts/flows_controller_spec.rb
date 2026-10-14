@@ -191,6 +191,53 @@ RSpec.describe 'Flows API', type: :request do
     end
   end
 
+  # CONNECTING A FLOW TO A CHANNEL.
+  #
+  # A flow is attached with Chatwoot's own set_agent_bot, which says nothing about whether the
+  # inbox can run flows or what is already on it. This is the question a connect picker asks.
+  describe 'the channel list' do
+    let(:email) { create(:channel_email, account: account).inbox }
+
+    it 'reports every inbox, whether it can run a flow, and which flow it is running' do
+      create(:agent_bot_inbox, inbox: whatsapp.inbox, agent_bot: flow, account: account)
+      Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
+      email
+
+      get "#{base}/channels", headers: admin.create_new_auth_token, as: :json
+
+      rows = response.parsed_body['payload'].index_by { |row| row['channel_type'] }
+      expect(rows['Channel::Whatsapp']).to include('runs_flows' => true, 'occupied_by_other' => false)
+      expect(rows['Channel::Whatsapp']['flow']).to include('id' => flow.id, 'name' => 'Welcome', 'state' => 'published')
+      # Honest rather than hidden: an email inbox is listed and said to be unable to run a flow.
+      expect(rows['Channel::Email']).to include('runs_flows' => false, 'flow' => nil, 'occupied_by_other' => false)
+    end
+
+    # An installation-wide bot has no account and is an operator's concern. A merchant is warned
+    # that the channel is taken without being shown or offered a bot from outside their account.
+    it 'warns that a channel is taken by a bot of another kind without naming it' do
+      system_bot = create(:agent_bot, account: nil, name: 'Installation hook')
+      create(:agent_bot_inbox, inbox: whatsapp.inbox, agent_bot: system_bot, account: account)
+
+      get "#{base}/channels", headers: admin.create_new_auth_token, as: :json
+
+      row = response.parsed_body['payload'].find { |entry| entry['channel_type'] == 'Channel::Whatsapp' }
+      expect(row).to include('flow' => nil, 'occupied_by_other' => true)
+      expect(response.body).not_to include('Installation hook')
+    end
+
+    it "never reports another account's inbox, and is administrators only" do
+      other = create(:account).tap { |record| record.enable_features!('lynomia_flow_builder') }
+      create(:channel_whatsapp, provider: 'whatsapp_cloud', account: other, validate_provider_config: false, sync_templates: false)
+      whatsapp
+
+      get "#{base}/channels", headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['payload'].pluck('id')).to eq([whatsapp.inbox.id])
+
+      get "#{base}/channels", headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   # WHY A CLIENT CAN SAY "UNAVAILABLE, BECAUSE". `capabilities` is what the editor authors
   # against and is deliberately unconditional -- a flow is written before it is connected, and a
   # new flow with no inbox still needs those limits. `channel_eligibility` is the other half:

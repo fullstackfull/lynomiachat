@@ -1647,8 +1647,10 @@ After the fix: `search_and_meta_escaping_spec` is `17 examples, 0 failures`.
 
 The gate's uncovered-file report (§K3) prints the files no spec basename matches. `markdownSource.js` and
 `mediaUpload.js` have left it — ruling 5 gave them specs with matching names, which closes **A6-O5**. One entry
-is new and one remained, so the count is still 25, and that coincidence is worth spelling out rather than
-reporting an unchanged number as an unchanged situation.
+is new and one remained, so the count read 25 again before this section's own fix, and that coincidence is worth
+spelling out rather than reporting an unchanged number as an unchanged situation. After the fix below the gate
+reports **24**, and `app/javascript/entrypoints/superadmin_pages.js` has left the list — which is the report
+confirming its own closure rather than my word for it.
 
 Of the 25, **24 are uncovered by BASENAME only** and are exercised in substance; I checked each rather than
 asserting it. The two `.rake` files are executed by phase A and `lib/documentation_seo_audit.rb` by phase B;

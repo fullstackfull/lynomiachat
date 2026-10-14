@@ -171,16 +171,27 @@ module Marketing::SectionSchema
 
     # A link an operator typed reaches a public `href`. `javascript:` and `data:` in an href are script
     # execution, so the scheme is allowlisted here rather than hoped about in the view.
+    #
+    # EVERY FIELD WHOSE NAME ENDS IN `_target` IS A LINK TARGET, on the section itself as well as on its
+    # items -- which is how `hero.primary_target` and `hero.secondary_target` are covered. They were not
+    # while nothing could edit a section; W4's page editor is what makes an operator-typed hero target
+    # reachable, so the rule is matched on the field name rather than on a list somebody has to remember to
+    # extend when a type gains a link.
     def link_errors(section, type, label)
-      return [] unless itemised?(type)
+      targets = target_fields(fields_for(type)).map { |field| section[field] }
+      targets += Array(section['items']).flat_map do |item|
+        target_fields(item_fields_for(type)).map { |field| item_value(item, field) }
+      end
 
-      Array(section['items']).filter_map do |item|
-        target = item_value(item, 'link_target')
-        next if target.blank? || Marketing::LinkTarget.valid?(target)
+      targets.filter_map do |target|
+        text = target.to_s
+        next if text.blank? || Marketing::LinkTarget.valid?(text)
 
-        "#{label} has a link target that is not allowed: #{target}"
+        "#{label} has a link target that is not allowed: #{text}"
       end
     end
+
+    def target_fields(names) = names.grep(/_target\z/)
 
     # An item arrives as a Hash from jsonb or as ActionController::Parameters from the form, and the two
     # disagree about string and symbol keys. One reader, so neither caller has to care.

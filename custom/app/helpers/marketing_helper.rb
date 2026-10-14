@@ -159,6 +159,12 @@ module MarketingHelper
   # not published resolves to nil, and every caller renders nothing rather than a dead link -- which is the
   # rule the old footer broke four times.
   def marketing_target_href(target)
+    # REFUSED AT THE SINK AS WELL AS ON SAVE. Marketing::SectionSchema refuses a disallowed target when an
+    # operator submits one, and this is the second half of the same rule: a target stored before that check
+    # existed, or reached by any path that is not the form, still never becomes an href. Every caller already
+    # treats a blank href as "no link" and renders the text without one.
+    return nil unless Marketing::LinkTarget.valid?(target)
+
     reference = Marketing::LinkTarget.page_reference(target)
     return target.to_s if reference.nil?
 

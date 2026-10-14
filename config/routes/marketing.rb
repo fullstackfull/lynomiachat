@@ -83,4 +83,14 @@ namespace :super_admin do
     post :clear, on: :collection
     post :test_email, on: :collection
   end
+
+  # The rest of the website CMS. Full Administrate resources, so -- unlike `marketing_settings` above -- none
+  # of them needs an entry in the navigation exclusion array: each has an index route and a matching
+  # `<Singular>Dashboard`, which is exactly what Administrate enumerates the route table looking for.
+  #
+  # The id constraint keeps a non-numeric segment out of `show`; `new` is matched by its own route first and
+  # is unaffected, which is why these three have a create form and site_quote_requests does not.
+  resources :site_nav_links, constraints: { id: /\d+/ }
+  resources :site_faq_entries, constraints: { id: /\d+/ }
+  resources :site_redirects, constraints: { id: /\d+/ }
 end

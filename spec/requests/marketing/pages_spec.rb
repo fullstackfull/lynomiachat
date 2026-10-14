@@ -466,4 +466,27 @@ describe 'Marketing pages' do
       expect(names.join(' | ')).not_to match(/Twitter|Voice|360dialog/i)
     end
   end
+
+  # The second half of the link-target rule, proved on the rendered page rather than on the validator.
+  #
+  # Marketing::SectionSchema refuses a disallowed target when an operator submits one, so the only way a row
+  # can hold one is to have been written around the model -- which is what `update_columns` does here, and
+  # what a row stored before that check existed would look like. Nothing in the HTML may carry it.
+  describe 'a stored link target the allowlist would refuse' do
+    it 'renders the hero without the link rather than with a script href' do
+      page = SitePage.find_by!(locale: 'en', kind: 'standing', key: 'home')
+      sections = page.sections.map do |section|
+        next section unless section['type'] == 'hero'
+
+        section.merge('primary_label' => 'Start', 'primary_target' => 'javascript:alert(1)')
+      end
+      page.update_columns(sections: sections) # rubocop:disable Rails/SkipsModelValidations
+
+      get '/en/home'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).not_to include('javascript:')
+      expect(response.body).not_to include('alert(1)')
+    end
+  end
 end

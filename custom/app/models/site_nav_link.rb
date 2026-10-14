@@ -37,6 +37,24 @@ class SiteNavLink < ApplicationRecord
     page_kind.present? && page_key.present?
   end
 
+  # The page this link points at, in this link's own locale. Nil for an external link, and nil when the
+  # reference names a page that does not exist in this locale.
+  def target_page
+    return nil unless internal?
+
+    SitePage.find_by(locale: locale, kind: page_kind, key: page_key)
+  end
+
+  # WHETHER THIS LINK WILL ACTUALLY APPEAR. `MarketingHelper#marketing_nav` drops a link whose target does not
+  # resolve, so a row that is saved, visible and pointing at an unpublished page renders nothing -- and
+  # without this the operator has no way to tell that from a working one. Shown on the Super Admin record,
+  # not in the list, because it is a query per row.
+  def resolves
+    return true unless internal?
+
+    target_page&.visible?.present?
+  end
+
   private
 
   def validate_exactly_one_target

@@ -73,6 +73,28 @@ en:
         description: >-
           WhatsApp Cloud API, website chat, email, SMS, Telegram, LINE, Messenger, Instagram and the API
           channel — what each one carries and what you need to connect it.
+      solutions:
+        title: Solutions
+        heading: What teams use Lynomia Chat for
+        lede: >-
+          Four set-ups, each built only from capabilities that exist today. Every page names what has to be
+          switched on or connected before the set-up works, so you can tell what you are signing up to.
+        description: >-
+          How online stores, support teams, WhatsApp-first businesses and sales teams put Lynomia Chat
+          together — with the setup each one needs.
+      integrations:
+        title: Integrations
+        heading: What you can connect
+        lede: >-
+          The services below connect to a Lynomia Chat workspace. Where a connection needs a credential you
+          issue, or a setting switched on for your account, that is stated on the card.
+        description: >-
+          Connect WooCommerce, Salla, Zid, Shopify, Slack, OpenAI, Google Translate, Dialogflow, Linear and
+          more to Lynomia Chat — with the prerequisite for each.
+        elsewhere_html: >-
+          Connecting a channel provider — WhatsApp, Twilio, Bandwidth, Meta, LINE, Telegram — is described on
+          %{channels}. Building your own connection with webhooks, the REST API, a dashboard app or the widget
+          SDK is on %{api}.
       support:
         title: Getting help
         heading: Getting help
@@ -993,3 +1015,295 @@ en:
         name: TikTok
         summary: TikTok messaging, available on installations configured for it.
         requires: a TikTok app configured on this installation.
+    solutions:
+      ecommerce:
+        name: Online stores
+        summary: >-
+          WhatsApp, Instagram and website chat in one inbox, with the customer's recent orders from
+          WooCommerce, Salla, Zid or Shopify beside the conversation.
+        detail:
+          lede: >-
+            Most of what an online store's support team is asked is about an order. This is the set-up that
+            puts the order on the same screen as the question, and lets you follow up afterwards on the channel
+            the customer already uses.
+          points_title: What an online store puts together
+          points:
+            - title: The channels customers buy on
+              body: >-
+                WhatsApp, Instagram direct messages and the chat widget on your own storefront, all in one
+                inbox with one history per customer.
+            - title: Orders beside the conversation
+              body: >-
+                Connect your store and an agent sees the customer's recent orders and their status without
+                leaving the conversation. Needs the commerce module enabled for your account.
+            - title: Follow up with an approved template
+              body: >-
+                A WhatsApp campaign to a saved audience — this month's buyers, a particular city, a label your
+                team applies — sent as a template Meta approved.
+            - title: Automate the repeated part
+              body: >-
+                Automation rules label, route and reply on the conditions you choose, so order enquiries reach
+                the right person without anybody sorting the queue.
+          note: >-
+            Order history in the conversation is read-only: refunds, cancellations and edits happen in your
+            store platform. The commerce connection needs the module enabled for your account plus your store
+            credentials, and what each platform reports differs by platform.
+      customer_support:
+        name: Support teams
+        summary: >-
+          A shared inbox with assignment policies, business hours, satisfaction surveys and reports — for a
+          team answering on more than one channel.
+        detail:
+          lede: >-
+            A support team's problem is rarely the messages; it is who answers which, how quickly, and how
+            anybody knows afterwards. This is the set-up for that.
+          points_title: What a support team puts together
+          points:
+            - title: One queue, every channel
+              body: >-
+                Email, website chat and WhatsApp in a single list with statuses and priorities, so nothing is
+                worked on twice and nothing is missed because it arrived somewhere else.
+            - title: Assignment that respects the rota
+              body: >-
+                Round robin or fair distribution with a limit and a window, routing to teams, availability
+                states and per-inbox business hours with an out-of-office message.
+            - title: Ask the customer how it went
+              body: >-
+                A satisfaction survey on resolution, reported by agent, team and inbox, and exportable.
+            - title: Numbers a manager can act on
+              body: >-
+                Volume, first response and resolution times across the date range and breakdown you choose, in
+                your own timezone.
+          note: >-
+            Conversation-level SLA timers are not part of this product. The SLA engine in Lynomia applies to
+            support tickets you raise with us, not to your own conversations, and per-agent capacity limits do
+            not exist here either.
+      whatsapp_first:
+        name: Businesses that run on WhatsApp
+        summary: >-
+          The official Cloud API, a template manager, campaigns to saved audiences and guided flows — for a
+          business whose main channel is WhatsApp.
+        detail:
+          lede: >-
+            If WhatsApp is where your business actually happens, the number stops being one person's phone: it
+            becomes a team inbox with templates, campaigns, reporting and a conversation history nobody loses
+            when somebody leaves.
+          points_title: What a WhatsApp-first business puts together
+          points:
+            - title: The official Cloud API, in a team inbox
+              body: >-
+                One number, several agents, assignment and labels, with delivery and read status on every
+                message — not a phone being passed around.
+            - title: Templates managed where you work
+              body: >-
+                Write templates, submit them to Meta, follow approval status and map variables to contact
+                fields, across more than one WhatsApp Business account if you have them.
+            - title: Campaigns to a saved audience
+              body: >-
+                Send an approved template to a contact filter your team maintains, and read delivery reporting
+                per recipient. Needs the WhatsApp campaigns setting enabled for your account.
+            - title: Guided conversations where they help
+              body: >-
+                A flow can collect what you need before a person joins — an order number, a branch, a
+                language — and hand over with everything it gathered. Needs the flow builder setting enabled.
+          note: >-
+            Templates are approved by Meta and its timings are Meta's. Voice and WhatsApp calling are not part
+            of this product. The campaigns and flow capabilities each need their setting enabled for your
+            account, and both need a WhatsApp Cloud inbox.
+      sales_enquiries:
+        name: Sales and enquiries
+        summary: >-
+          Catch an enquiry on the channel it arrives on, route it to the right person, and keep the history on
+          the contact rather than in somebody's inbox.
+        detail:
+          lede: >-
+            An enquiry that waits is an enquiry somebody else answered. This is the set-up for responding
+            quickly on whichever channel it arrived on, and for keeping what was said attached to the person
+            rather than to the agent who happened to take it.
+          points_title: What a sales or enquiries team puts together
+          points:
+            - title: Answer where the enquiry arrived
+              body: >-
+                Website chat, WhatsApp and SMS in one inbox, so an enquiry does not have to be moved into
+                email to be worked on.
+            - title: Route it to the right person
+              body: >-
+                Assignment policies and teams put an enquiry with whoever handles that product, region or
+                language, within business hours.
+            - title: Keep the context on the contact
+              body: >-
+                Custom attributes, notes and the activity timeline mean the next conversation starts from what
+                was already said, by whoever is on shift.
+            - title: Reach back out deliberately
+              body: >-
+                Build an audience from the fields you keep and send a one-off campaign to it — on WhatsApp with
+                an approved template, or by SMS.
+          note: >-
+            This is not a CRM: there is no deal pipeline, no forecast and no quote in this product. The
+            LeadSquared connection exists for pushing contacts into a CRM you already run, and it is off until
+            enabled for your account.
+    integrations:
+      woocommerce:
+        name: WooCommerce
+        summary: >-
+          Bring a WooCommerce customer's recent orders into the conversation, updated as your store changes
+          them.
+        requires: the commerce module enabled for your account, and your WooCommerce store keys.
+        detail:
+          lede: >-
+            WooCommerce runs on your own WordPress site, and this connection reads from it with keys you issue,
+            so an agent answering "where is my order" has the answer on the screen in front of them.
+          points_title: What the WooCommerce connection does
+          points:
+            - title: Orders matched to the customer
+              body: >-
+                Recent orders, their status and their contents appear in the conversation panel, matched to the
+                contact by the identities already on their record.
+            - title: Keys you issue and can revoke
+              body: >-
+                The connection uses WooCommerce REST keys generated in your own store, so access stays
+                yours to withdraw.
+            - title: Updates from the store
+              body: >-
+                Order and cart changes arrive from WooCommerce rather than being polled, so what the agent
+                reads is current.
+          note: >-
+            Read-only in the conversation: refunds, cancellations and edits happen in WooCommerce. The commerce
+            module is off until enabled for your account.
+      salla:
+        name: Salla
+        summary: Bring a Salla customer's recent orders into the conversation, updated as your store changes them.
+        requires: the commerce module enabled for your account, and a connected Salla app.
+        detail:
+          lede: >-
+            Salla is one of the platforms most used by stores in the Gulf, and this connection puts a Salla
+            customer's order history beside the conversation they are having with your team.
+          points_title: What the Salla connection does
+          points:
+            - title: Orders matched to the customer
+              body: >-
+                Recent orders and their status appear in the conversation panel, matched to the contact by the
+                phone number or email already on their record.
+            - title: Connected through Salla's own authorisation
+              body: >-
+                You authorise the connection from Salla, and you can withdraw it there, so the store
+                relationship stays with you.
+            - title: Updates from the store
+              body: >-
+                Changes arrive from Salla as they happen rather than on a schedule.
+          note: >-
+            Read-only in the conversation: acting on an order happens in Salla. The commerce module is off
+            until enabled for your account, and what Salla reports differs from what other platforms report.
+      zid:
+        name: Zid
+        summary: Bring a Zid customer's recent orders into the conversation, updated as your store changes them.
+        requires: the commerce module enabled for your account, and a connected Zid app.
+        detail:
+          lede: >-
+            Zid is the other platform a large share of Gulf stores run on, and the connection behaves the same
+            way: the customer's orders sit beside the conversation instead of in another tab.
+          points_title: What the Zid connection does
+          points:
+            - title: Orders matched to the customer
+              body: >-
+                Recent orders and their status appear in the conversation panel, matched by the identities on
+                the contact record.
+            - title: Connected through Zid's own authorisation
+              body: >-
+                You authorise it from Zid and can withdraw it there.
+            - title: Verified incoming updates
+              body: >-
+                Store updates are verified against the authentication Zid's own documentation specifies before
+                they are accepted.
+          note: >-
+            Read-only in the conversation: acting on an order happens in Zid. The commerce module is off until
+            enabled for your account.
+      shopify:
+        name: Shopify
+        summary: >-
+          Bring a Shopify customer's recent orders into the conversation, updated as your store changes them.
+        requires: the commerce module enabled for your account, and a connected Shopify store.
+        detail:
+          lede: >-
+            The Shopify connection reads your store's orders so the agent in the conversation does not have to
+            open the Shopify admin to answer a question about one.
+          points_title: What the Shopify connection does
+          points:
+            - title: Orders matched to the customer
+              body: >-
+                Recent orders, status and contents in the conversation panel, matched by the contact's
+                identities.
+            - title: One Shopify connection, not two
+              body: >-
+                This is the Lynomia Commerce connection. The older separate Shopify integration was retired so
+                there is one place a Shopify store is connected and one place it is read from.
+            - title: Updates from the store
+              body: >-
+                Order and cart changes arrive from Shopify as they happen.
+          note: >-
+            Read-only in the conversation: refunds, cancellations and edits happen in Shopify. The commerce
+            module is off until enabled for your account.
+      slack:
+        name: Slack
+        summary: >-
+          Mirror conversations into a Slack channel, and choose whether a reply in the thread reaches the
+          customer or stays internal.
+        requires: your Slack workspace, and permission to add an app to it.
+        detail:
+          lede: >-
+            Some teams live in Slack. This connection posts incoming conversations into a channel you choose,
+            and lets you decide — explicitly — whether what your team types there is visible to the customer.
+          points_title: What the Slack connection does
+          points:
+            - title: Conversations in a channel you pick
+              body: >-
+                Incoming conversations are posted to one Slack channel, as threads, so a team already watching
+                Slack sees them without opening another tool.
+            - title: Two-way, or alert only
+              body: >-
+                In two-way mode a reply in the Slack thread is sent to the customer, and a message beginning
+                with `note:` stays internal. In alert mode nothing in the thread ever reaches the customer.
+            - title: The conversation is still the record
+              body: >-
+                Whatever happens in Slack, the conversation in Lynomia keeps the history, the assignment and
+                the labels — so reporting does not depend on Slack.
+          note: >-
+            The mode is a setting, and it is worth being deliberate about: in two-way mode a Slack message
+            without the `note:` prefix goes to your customer.
+      openai:
+        name: OpenAI
+        summary: >-
+          Connect your own OpenAI key to turn on the five agent-assist actions — rewrite, summarise, suggest a
+          reply, suggest labels and draft a follow-up.
+        requires: >-
+          your own OpenAI API key, and the AI assist setting enabled for your account. Lynomia does not operate
+          an autonomous AI agent.
+      google_translate:
+        name: Google Translate
+        summary: Translate an incoming message and detect the language it was written in, inside the conversation.
+        requires: a Google Cloud translation credential connected to your account.
+      dialogflow:
+        name: Dialogflow
+        summary: >-
+          Connect a Dialogflow agent to one inbox so it answers first, then hands the conversation to a person
+          with everything it collected.
+        requires: your Google Cloud project id and service-account credentials.
+      video_calls:
+        name: Video calls
+        summary: >-
+          Start a video call from inside a conversation, using your own Cloudflare RealtimeKit account; the
+          link appears in the conversation for the customer to join.
+        requires: your Cloudflare account id, app id and API token.
+      linear:
+        name: Linear
+        summary: >-
+          Create a Linear issue from a conversation, or link an existing one, so a bug a customer reported is
+          tracked where your engineers work.
+        requires: >-
+          the Linear integration enabled for your account — it is off by default — and Linear credentials
+          configured on this installation.
+      leadsquared:
+        name: LeadSquared
+        summary: >-
+          Push contacts and conversation activity into a LeadSquared CRM you already run.
+        requires: the CRM integration enabled for your account; it is off by default.

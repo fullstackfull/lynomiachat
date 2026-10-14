@@ -68,7 +68,8 @@ module MarketingHelper
 
   # The route-helper name behind each catalogue scope, so a view asks for "this entry's page" rather than
   # naming a route helper and a locale argument at every call site.
-  ENTRY_ROUTES = { features: :feature, channels: :channel }.freeze
+  ENTRY_ROUTES = { features: :feature, channels: :channel, solutions: :solution,
+                   integrations: :integration }.freeze
 
   def marketing_entry_path(scope, entry, locale: marketing_locale)
     marketing_path(Marketing::Page.new(route: ENTRY_ROUTES.fetch(scope), slug: entry.slug), locale: locale)

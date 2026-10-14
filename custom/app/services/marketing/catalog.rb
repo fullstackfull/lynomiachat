@@ -109,10 +109,68 @@ module Marketing::Catalog
     Entry.new(id: :tiktok, state: :beta, docs: nil, detail: false)
   ].freeze
 
-  COLLECTIONS = { features: FEATURES, channels: CHANNELS }.freeze
+  # Third-party services a customer connects, other than the channel providers.
+  #
+  # THE CHANNEL PROVIDERS ARE DELIBERATELY ABSENT. Twilio, Bandwidth, Meta, LINE and Telegram are how a
+  # channel is connected and they are described on the channel's own page; repeating them here would be two
+  # pages competing for the same search with the same sentences.
+  #
+  # WEBHOOKS AND DASHBOARD APPS ARE ABSENT for the same reason: they are the api_webhooks feature, and the
+  # index links there rather than restating it.
+  #
+  # The upstream Shopify integration is not listed either. It was retired in favour of the Lynomia Commerce
+  # Shopify connection (docs/pr/ PR.A), and `shopify_integration` is off; the Shopify entry below is the
+  # commerce one.
+  #
+  # NOTION IS NOT LISTED, and the reason is the inventory's standard of proof rather than its feature flag.
+  # A Notion workspace can be connected and disconnected (app/controllers/api/v1/accounts/integrations/
+  # notion_controller.rb has exactly a `destroy`, and NotionConcern has exactly an OAuth client) and nothing
+  # in the product then reads that hook. A connection with no consumer is an incomplete flow, so it is not a
+  # feature this site may advertise -- a gate stated on the card would not make it one.
+  INTEGRATIONS = [
+    Entry.new(id: :woocommerce, state: :conditional, docs: 'commerce-overview', related: %i[commerce contact_management]),
+    Entry.new(id: :salla, state: :conditional, docs: 'commerce-overview', related: %i[commerce contact_management]),
+    Entry.new(id: :zid, state: :conditional, docs: 'commerce-overview', related: %i[commerce contact_management]),
+    Entry.new(id: :shopify, state: :conditional, docs: 'commerce-overview', related: %i[commerce contact_management]),
+    Entry.new(id: :slack, state: :available, docs: nil, related: %i[team_collaboration unified_inbox]),
+    # Connections with no page of their own: each is a credential field and a switch, so a page for it would
+    # be a heading over one sentence. They keep their card, their state and their prerequisite on the index.
+    Entry.new(id: :openai, state: :available, docs: nil, detail: false),
+    Entry.new(id: :google_translate, state: :available, docs: nil, detail: false),
+    Entry.new(id: :dialogflow, state: :available, docs: nil, detail: false),
+    Entry.new(id: :video_calls, state: :available, docs: nil, detail: false),
+    Entry.new(id: :linear, state: :conditional, docs: nil, detail: false),
+    Entry.new(id: :leadsquared, state: :conditional, docs: nil, detail: false)
+  ].freeze
+
+  # Who the product is for, expressed as compositions of the entries above rather than as claims of its own.
+  #
+  # A solution page says nothing new about the product: it says which verified capabilities serve a particular
+  # job and what has to be set up for them. That constraint is deliberate -- it is how a page for an audience
+  # avoids becoming the one place on the site where an unverified promise appears.
+  SOLUTIONS = [
+    Entry.new(id: :ecommerce, state: :available, docs: 'commerce-overview',
+              related: %i[commerce whatsapp_campaigns contact_management automation],
+              channels: %i[whatsapp live_chat instagram]),
+    Entry.new(id: :customer_support, state: :available, docs: 'connect-your-first-channel',
+              related: %i[unified_inbox auto_assignment csat analytics],
+              channels: %i[email live_chat whatsapp]),
+    Entry.new(id: :whatsapp_first, state: :available, docs: 'connect-whatsapp',
+              related: %i[whatsapp_templates whatsapp_campaigns flow_builder analytics],
+              channels: %i[whatsapp]),
+    Entry.new(id: :sales_enquiries, state: :available, docs: 'shared-audiences',
+              related: %i[audiences campaigns contact_management auto_assignment],
+              channels: %i[live_chat whatsapp sms])
+  ].freeze
+
+  COLLECTIONS = {
+    features: FEATURES, channels: CHANNELS, integrations: INTEGRATIONS, solutions: SOLUTIONS
+  }.freeze
 
   def self.features = FEATURES
   def self.channels = CHANNELS
+  def self.integrations = INTEGRATIONS
+  def self.solutions = SOLUTIONS
   def self.channel_count = CHANNELS.count { |entry| entry.state != :beta }
 
   # `fetch`, not a lookup with a fallback: the only caller allowlists the scope before asking

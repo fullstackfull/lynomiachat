@@ -4,7 +4,7 @@
 # operator-edited SitePage rows (docs/official-website/04-information-architecture.md D10) without changing
 # these addresses, which is why the routes and the page keys are fixed now and the storage is not.
 class Marketing::PagesController < Marketing::BaseController
-  PAGES = %i[home features channels support].freeze
+  PAGES = %i[home features channels solutions integrations support].freeze
 
   PAGES.each do |page|
     define_method(page) do

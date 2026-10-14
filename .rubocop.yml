@@ -96,6 +96,10 @@ Metrics/ModuleLength:
   Exclude:
     - lib/seeders/message_seeder.rb
     - spec/support/slack_stubs.rb
+    # The verified website catalogue: four data tables plus the comments recording why an entry is absent.
+    # Splitting them into four files would separate COLLECTIONS from its members and move each "not listed
+    # because" note away from the table it explains, which is the part of the file worth reading.
+    - custom/app/services/marketing/catalog.rb
 
 Rails/ApplicationController:
   Exclude:

@@ -15,7 +15,9 @@
 class Marketing::EntriesController < Marketing::BaseController
   SCOPES = {
     'features' => { collection: :features, route: :feature },
-    'channels' => { collection: :channels, route: :channel }
+    'channels' => { collection: :channels, route: :channel },
+    'solutions' => { collection: :solutions, route: :solution },
+    'integrations' => { collection: :integrations, route: :integration }
   }.freeze
 
   def show

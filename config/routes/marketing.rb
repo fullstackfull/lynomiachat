@@ -21,6 +21,8 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
 
   get 'features', to: 'pages#features', as: 'features'
   get 'channels', to: 'pages#channels', as: 'channels'
+  get 'solutions', to: 'pages#solutions', as: 'solutions'
+  get 'integrations', to: 'pages#integrations', as: 'integrations'
   get 'support', to: 'pages#support', as: 'support'
 
   # THE DETAIL PAGES. One controller serves every catalogue scope and the scope travels as a route default,
@@ -32,8 +34,10 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   # to look the entry up regardless -- one lookup, one answer.
   get 'features/:slug', to: 'entries#show', as: 'feature', defaults: { scope: 'features' }
   get 'channels/:slug', to: 'entries#show', as: 'channel', defaults: { scope: 'channels' }
+  get 'solutions/:slug', to: 'entries#show', as: 'solution', defaults: { scope: 'solutions' }
+  get 'integrations/:slug', to: 'entries#show', as: 'integration', defaults: { scope: 'integrations' }
 
-  # /solutions, /integrations, /pricing, /contact, /about and /faq are later W3 slices. A route with no page
-  # behind it is a dead link in the navigation, which is one of the defects this rebuild exists to remove, so
-  # each lands with its page rather than ahead of it.
+  # /pricing, /contact, /about and /faq are later W3 slices. A route with no page behind it is a dead link in
+  # the navigation, which is one of the defects this rebuild exists to remove, so each lands with its page
+  # rather than ahead of it.
 end

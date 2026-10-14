@@ -7,7 +7,10 @@ require 'rails_helper'
 # at their own URLs, every page carries the discovery tags the old one lacked entirely, no link is dead, and
 # the site never answers on a tenant's custom domain.
 describe 'Marketing pages' do
-  let(:pages) { { home: '/home', features: '/features', channels: '/channels', support: '/support' } }
+  let(:pages) do
+    { home: '/home', features: '/features', channels: '/channels', solutions: '/solutions',
+      integrations: '/integrations', support: '/support' }
+  end
 
   describe 'the Arabic tree' do
     it 'serves every page in Arabic, right to left, without any client-side switch' do
@@ -166,6 +169,23 @@ describe 'Marketing pages' do
     let(:feature_paths) do
       Marketing::Catalog.features.select(&:detail?).map { |entry| "/features/#{entry.slug}" }
     end
+    let(:all_paths) do
+      Marketing::Catalog::COLLECTIONS.flat_map do |scope, entries|
+        prefix = scope == :features ? 'features' : scope.to_s
+        entries.select(&:detail?).map { |entry| "/#{prefix}/#{entry.slug}" }
+      end
+    end
+
+    it 'renders every entry page in both locales with its own canonical and no dead link' do
+      (all_paths + all_paths.map { |path| "/en#{path}" }).each do |path|
+        get path
+
+        expect(response).to have_http_status(:success), "#{path} did not render"
+        expect(response.body).to match(/<link rel="canonical" href="[^"]*#{Regexp.escape(path)}">/),
+                                 "#{path} canonical does not point at itself"
+        expect(response.body.scan(/href="(#|)"/)).to be_empty, "#{path} has a dead link"
+      end
+    end
 
     it 'gives every feature a page, in both locales, with its own canonical' do
       (feature_paths + feature_paths.map { |path| "/en#{path}" }).each do |path|
@@ -277,6 +297,61 @@ describe 'Marketing pages' do
 
       expect(response.body).to include('are not part of this product')
       expect(response.body).not_to match(/360dialog is offered|voice calling is available/i)
+    end
+  end
+
+  describe 'the solutions and integrations directories' do
+    it 'composes a solution only from capabilities that have their own page' do
+      get '/en/solutions/ecommerce'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('/en/features/commerce')
+      expect(response.body).to include('/en/channels/whatsapp')
+      expect(response.body).to include('read-only')
+    end
+
+    it 'says plainly on the sales page that this is not a CRM' do
+      get '/en/solutions/sales-enquiries'
+
+      expect(response.body).to include('not a CRM')
+    end
+
+    # The connection has an OAuth client and a destroy action and nothing in the product reads the hook, so
+    # by the inventory's standard of proof it is an incomplete flow and may not be advertised at all.
+    it 'does not list a connection that nothing consumes' do
+      get '/en/integrations'
+
+      expect(response.body).not_to match(/Notion/i)
+      get '/en/integrations/notion'
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'does not repeat the channel providers in the integrations directory' do
+      get '/en/integrations'
+      names = response.body.scan(/<h2[^>]*>\s*(?:<a[^>]*>)?\s*([^<]+?)\s*</).flatten
+
+      # Word boundaries on purpose: an unanchored /LINE/i matches "Linear", which is a listed integration.
+      expect(names.join(' | ')).not_to match(/\b(twilio|bandwidth|telegram|line)\b/i)
+      expect(response.body).to include('href="/en/channels"')
+    end
+
+    it 'states the gate on every integration that has one' do
+      %w[woocommerce salla zid shopify].each do |slug|
+        get "/en/integrations/#{slug}"
+
+        expect(response.body).to include('commerce module enabled for your account'),
+                                 "#{slug} does not state the module gate"
+      end
+    end
+  end
+
+  describe 'navigation' do
+    it 'shows a section in the header only once its page exists' do
+      get '/en/home'
+
+      expect(response.body).to include('href="/en/solutions"')
+      expect(response.body).to include('href="/en/integrations"')
+      expect(response.body).not_to include('href="/en/pricing"')
     end
   end
 

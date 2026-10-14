@@ -1,0 +1,55 @@
+<%# The footer.
+
+  The old footer promised four legal documents and a live chat, and delivered four empty anchors plus a widget
+  that sent nothing (docs/official-website/01-current-state-audit.md sections 2 and 3.2). Here every entry is
+  either a route that exists, a documentation address that is live, or a mailto: that works -- and the legal
+  column links the operator's own published documents rather than text invented inside this application.
+%>
+<footer class="border-t border-slate-100 bg-slate-25">
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.product') %></h2>
+        <ul class="space-y-2 text-sm text-slate-600">
+          <% marketing_nav_items.each do |item| %>
+            <li><a class="hover:text-slate-900" href="<%= item[:path] %>"><%= item[:label] %></a></li>
+          <% end %>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.resources') %></h2>
+        <ul class="space-y-2 text-sm text-slate-600">
+          <li><a class="hover:text-slate-900" href="<%= lynomia_docs_path %>"><%= t('marketing.footer.docs') %></a></li>
+          <li><a class="hover:text-slate-900" href="<%= lynomia_changelog_path %>"><%= t('marketing.footer.changelog') %></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.support') %></h2>
+        <ul class="space-y-2 text-sm text-slate-600">
+          <li><a class="hover:text-slate-900" href="<%= marketing_path(:support) %>"><%= t('marketing.footer.support_page') %></a></li>
+          <li><a class="hover:text-slate-900" href="<%= marketing_support_email_url %>"><%= t('marketing.footer.email_us') %></a></li>
+          <li><a class="hover:text-slate-900" href="/app/login"><%= t('marketing.footer.sign_in_ticket') %></a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.company') %></h2>
+        <ul class="space-y-2 text-sm text-slate-600">
+          <% marketing_legal_links.each do |link| %>
+            <li>
+              <a class="hover:text-slate-900" href="<%= link[:href] %>" target="_blank" rel="noopener">
+                <%= link[:label] %>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <p class="mt-10 border-t border-slate-100 pt-6 text-xs text-slate-500">
+      <%= t('marketing.footer.rights', year: Time.current.year) %>
+    </p>
+  </div>
+</footer>

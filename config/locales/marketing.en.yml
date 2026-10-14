@@ -1,0 +1,257 @@
+# Marketing website copy, English.
+#
+# Every claim here traces to docs/official-website/02-verified-feature-inventory.md. The rules that govern this
+# file: no price, no uptime or performance figure, no certification, no trial promise, and no AI capability
+# beyond the five agent-assist actions with their prerequisite named. A `requires` line is not a disclaimer to
+# be softened -- it is what makes the sentence above it true.
+en:
+  marketing:
+    site_name: Lynomia Chat
+    skip_to_content: Skip to content
+    read_docs: Read the documentation
+    brand:
+      name: Lynomia
+      suffix: Chat
+    state:
+      conditional: setup needed
+      beta: beta
+      requires: 'Needs:'
+      you_supply: 'You supply:'
+    nav:
+      label: Main
+      features: Features
+      channels: Channels
+      solutions: Solutions
+      integrations: Integrations
+      pricing: Pricing
+      docs: Docs
+      sign_in: Sign in
+      get_started: Create account
+      other_locale: عربي
+    footer:
+      product: Product
+      resources: Resources
+      support: Support
+      company: Company
+      docs: Documentation
+      changelog: Changelog
+      support_page: Getting help
+      email_us: Email us
+      sign_in_ticket: Sign in to open a ticket
+      about: About us
+      privacy: Privacy policy
+      terms: Terms of use
+      data_deletion: Data deletion
+      rights: © %{year} Lynomia. All rights reserved.
+    pages:
+      home:
+        title: Every customer conversation in one inbox
+        description: >-
+          Lynomia Chat brings WhatsApp, Instagram, Messenger, Telegram, email and your website chat into one
+          inbox for your team, with automatic routing, reply templates and reports.
+      features:
+        title: Features
+        heading: What your team gets
+        lede: >-
+          Everything below is in the product today. Where a capability needs a setting, a credential or a plan
+          entitlement before you can use it, that prerequisite is named on the card rather than left out.
+        description: >-
+          The full list of Lynomia Chat capabilities, each with the setup it needs — shared inbox, routing,
+          automation, campaigns, reporting, commerce and the developer API.
+      channels:
+        title: Supported channels
+        heading: Nine channels, one inbox
+        lede: >-
+          Each channel below can be connected from the dashboard once you have the provider account it needs.
+          Channels still in beta are marked, and we do not list channels we cannot connect.
+        description: >-
+          WhatsApp Cloud API, website chat, email, SMS, Telegram, LINE, Messenger, Instagram and the API
+          channel — what each one carries and what you need to connect it.
+      support:
+        title: Getting help
+        heading: Getting help
+        lede: >-
+          Documentation first, a support ticket when you need a person, and email if you are not a customer
+          yet.
+        description: >-
+          How to get help with Lynomia Chat: documentation in Arabic and English, support tickets from inside
+          your account, and how to reach us before you sign up.
+    home:
+      kicker: Customer conversations platform by Lynomia
+      headline: Every customer conversation in one inbox — whatever the channel
+      lede: >-
+        WhatsApp, Instagram, Messenger, Telegram, email and your website chat arrive in one place for your
+        team, with automatic routing, ready-made replies and reports that show how the team is doing.
+      primary_cta: Create your account
+      secondary_cta: See the channels
+      stat_channels: channels you can connect
+      stat_locales_value: 50+
+      stat_locales: languages in the agent interface
+      stat_api: and webhooks to connect your own systems
+      channels_title: The channels your customers already use
+      channels_lede: >-
+        Connect the ones you need; every conversation lands in the same inbox with the same history.
+      channels_link: See what each channel needs →
+      features_title: Built for a support team, not just a chat box
+      features_lede: >-
+        Routing, collaboration, automation and reporting — with the setup requirements stated where they apply.
+      features_link: See all features →
+      help_title: Documentation and support, in Arabic and English
+      help_lede: >-
+        The help centre is public and searchable, and customers can open a support ticket from inside their
+        account.
+      help_docs: Open the documentation
+      help_support: How to get help
+      cta_title: Ready to bring your conversations together?
+      cta_lede: >-
+        Create an account and connect your first channel, or email us and we will walk you through it.
+      cta_email: Email us
+    support:
+      docs_title: Read the documentation
+      docs_body: >-
+        Setup guides, channel connection steps and troubleshooting, in Arabic and English, free to read without
+        an account.
+      docs_cta: Open the documentation
+      ticket_title: Open a support ticket
+      ticket_body: >-
+        Support tickets are opened from inside your account, under Help & Support, so your request arrives with
+        your workspace attached. Sign in first, then choose Help & Support → New ticket.
+      ticket_cta: Sign in to your account
+      email_title: Not a customer yet?
+      email_body: Email us with your question and we will reply.
+      changelog_title: What changed recently
+      changelog_body: Every release that affects what you see in the product is listed in the changelog.
+      changelog_cta: Open the changelog
+    features:
+      unified_inbox:
+        name: Unified inbox
+        summary: >-
+          Every channel in one list, with statuses, priorities, labels, private notes, mentions and search
+          across conversations, contacts and articles.
+      team_collaboration:
+        name: Teams and permissions
+        summary: >-
+          Teams, administrator and agent roles, optional custom permission sets, private notes and mentions
+          that notify the right colleague.
+      auto_assignment:
+        name: Automatic assignment
+        summary: >-
+          Round robin and fair distribution with a limit and a time window, team routing, availability states
+          and per-inbox business hours.
+      contact_management:
+        name: Contacts
+        summary: >-
+          Custom attributes, notes, import and export, segments, merge, and multi-channel identity so one
+          person is one contact across channels.
+      canned_responses:
+        name: Canned responses and macros
+        summary: >-
+          Saved replies for the questions that repeat, and macros that run several steps on a conversation at
+          once.
+      automation:
+        name: Automation rules
+        summary: >-
+          Trigger on conversation and contact events, check conditions, then assign, label, reply or notify —
+          without writing code.
+      campaigns:
+        name: Campaigns
+        summary: Ongoing live-chat campaigns on your website, and one-off campaigns to a chosen audience.
+      whatsapp_campaigns:
+        name: WhatsApp campaigns
+        summary: Send an approved template to an audience, with per-recipient delivery reporting.
+        requires: the WhatsApp campaigns setting enabled, a WhatsApp Cloud inbox, and a template Meta approved.
+      audiences:
+        name: Audiences
+        summary: >-
+          Build a contact filter once, share it with the team, and reuse it across campaigns and automation.
+      whatsapp_templates:
+        name: WhatsApp template manager
+        summary: >-
+          Create templates, submit them to Meta, follow approval status, and manage variables and multiple
+          WhatsApp business accounts.
+      analytics:
+        name: Reports
+        summary: >-
+          Conversation, WhatsApp, campaign, automation and flow reporting over a date range in your own
+          timezone, plus a per-contact activity timeline.
+      csat:
+        name: Customer satisfaction
+        summary: Ask for a rating after a conversation is resolved, and export the responses.
+      flow_builder:
+        name: Flow builder
+        summary: Build a guided WhatsApp conversation visually, test it, and inspect a session step by step.
+        requires: the flow builder setting enabled for your account, and a WhatsApp Cloud inbox.
+      ai_assist:
+        name: AI assist for agents
+        summary: >-
+          Five assist actions inside the conversation — rewrite, summarise, suggest a reply, suggest labels and
+          draft a follow-up. Nothing is sent to a customer without your agent approving it.
+        requires: >-
+          the AI assist setting enabled for your account and your own OpenAI key. Lynomia does not operate an
+          autonomous AI agent.
+      commerce:
+        name: Commerce
+        summary: >-
+          See a customer's orders beside the conversation for WooCommerce, Salla, Zid and Shopify, with live
+          updates.
+        requires: >-
+          the commerce module enabled for your account, plus the credentials for your store platform. Order
+          actions are limited by provider.
+      api_webhooks:
+        name: API and webhooks
+        summary: >-
+          A documented REST API, three authentication schemes, signed outbound webhooks, dashboard apps and a
+          JavaScript widget SDK.
+      support_desk:
+        name: Support desk
+        summary: >-
+          Open a ticket with Lynomia from inside your account and follow the replies, with your workspace
+          already attached.
+      security:
+        name: Security and access control
+        summary: >-
+          Per-account isolation enforced on the server, role-based access, encrypted channel credentials, and
+          an audit trail of configuration changes and sign-ins.
+    channels:
+      whatsapp:
+        name: WhatsApp
+        summary: >-
+          The official WhatsApp Business Cloud API: rich messages, approved templates and campaigns, all in the
+          team inbox.
+        requires: a WhatsApp Business account, connected through guided signup or your own API credentials.
+      live_chat:
+        name: Website chat
+        summary: A chat widget for your own site, with pre-chat forms and file attachments.
+        requires: one line of JavaScript on your site.
+      email:
+        name: Email
+        summary: Turn a shared mailbox into conversations, through Gmail, Microsoft 365 or plain IMAP and SMTP.
+        requires: the mailbox you want to connect.
+      sms:
+        name: SMS
+        summary: Two-way SMS through Twilio or Bandwidth.
+        requires: your Twilio or Bandwidth account.
+      telegram:
+        name: Telegram
+        summary: Connect a Telegram bot and answer from the same inbox.
+        requires: a Telegram bot token.
+      line:
+        name: LINE
+        summary: Connect a LINE official account.
+        requires: your LINE channel credentials.
+      facebook_messenger:
+        name: Facebook Messenger
+        summary: Answer Facebook page messages in the team inbox.
+        requires: a Facebook app configured on this installation, and your page.
+      instagram:
+        name: Instagram DM
+        summary: Answer Instagram direct messages beside every other channel.
+        requires: an Instagram app configured on this installation, and your professional account.
+      api_channel:
+        name: API channel
+        summary: Build your own channel on top of the API when you need something custom.
+        requires: your own integration code.
+      tiktok:
+        name: TikTok
+        summary: TikTok messaging, available on installations configured for it.
+        requires: a TikTok app configured on this installation.

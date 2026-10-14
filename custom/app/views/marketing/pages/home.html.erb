@@ -1,0 +1,115 @@
+<%# The home page.
+
+  Every number on this page is checkable: the channel count comes from Marketing::Catalog, which carries the
+  verified inventory, and there is no uptime figure, no performance percentage and no trial promise -- the
+  three classes of claim docs/official-website/02-verified-feature-inventory.md section 6 struck off.
+%>
+<section class="mx-auto max-w-6xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20">
+  <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-woot-25 px-3 py-1 text-xs font-medium text-woot-700">
+    <%= t('marketing.home.kicker') %>
+  </p>
+  <h1 class="max-w-3xl text-3xl font-bold leading-tight text-slate-900 sm:text-5xl">
+    <%= t('marketing.home.headline') %>
+  </h1>
+  <p class="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+    <%= t('marketing.home.lede') %>
+  </p>
+
+  <div class="mt-8 flex flex-wrap gap-3">
+    <a href="/app/register"
+       class="rounded-xl bg-woot-600 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-700">
+      <%= t('marketing.home.primary_cta') %>
+    </a>
+    <a href="<%= marketing_path(:channels) %>"
+       class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+      <%= t('marketing.home.secondary_cta') %>
+    </a>
+  </div>
+
+  <dl class="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
+    <div>
+      <dt class="text-2xl font-bold text-slate-900"><%= Marketing::Catalog.channel_count %></dt>
+      <dd class="text-sm text-slate-600"><%= t('marketing.home.stat_channels') %></dd>
+    </div>
+    <div>
+      <dt class="text-2xl font-bold text-slate-900"><%= t('marketing.home.stat_locales_value') %></dt>
+      <dd class="text-sm text-slate-600"><%= t('marketing.home.stat_locales') %></dd>
+    </div>
+    <div>
+      <dt class="text-2xl font-bold text-slate-900">API</dt>
+      <dd class="text-sm text-slate-600"><%= t('marketing.home.stat_api') %></dd>
+    </div>
+  </dl>
+</section>
+
+<section class="border-y border-slate-100 bg-slate-25">
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <h2 class="text-xl font-semibold text-slate-900"><%= t('marketing.home.channels_title') %></h2>
+    <p class="mt-2 max-w-2xl text-sm text-slate-600"><%= t('marketing.home.channels_lede') %></p>
+    <ul class="mt-6 flex flex-wrap gap-2">
+      <% Marketing::Catalog.channels.each do |channel| %>
+        <li class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">
+          <%= t("marketing.channels.#{channel.id}.name") %>
+          <%= render 'marketing/shared/state_badge', state: channel.state %>
+        </li>
+      <% end %>
+    </ul>
+    <a href="<%= marketing_path(:channels) %>" class="mt-6 inline-block text-sm font-medium text-woot-600 hover:text-woot-700">
+      <%= t('marketing.home.channels_link') %>
+    </a>
+  </div>
+</section>
+
+<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+  <h2 class="text-2xl font-semibold text-slate-900"><%= t('marketing.home.features_title') %></h2>
+  <p class="mt-2 max-w-2xl text-sm text-slate-600"><%= t('marketing.home.features_lede') %></p>
+
+  <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <% Marketing::Catalog.features.first(9).each do |feature| %>
+      <article class="rounded-2xl border border-slate-100 bg-white p-5">
+        <h3 class="flex items-center gap-2 text-base font-semibold text-slate-900">
+          <%= t("marketing.features.#{feature.id}.name") %>
+          <%= render 'marketing/shared/state_badge', state: feature.state %>
+        </h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t("marketing.features.#{feature.id}.summary") %></p>
+      </article>
+    <% end %>
+  </div>
+
+  <a href="<%= marketing_path(:features) %>" class="mt-8 inline-block text-sm font-medium text-woot-600 hover:text-woot-700">
+    <%= t('marketing.home.features_link') %>
+  </a>
+</section>
+
+<section class="border-t border-slate-100 bg-slate-25">
+  <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+    <h2 class="text-2xl font-semibold text-slate-900"><%= t('marketing.home.help_title') %></h2>
+    <p class="mt-2 max-w-2xl text-sm text-slate-600"><%= t('marketing.home.help_lede') %></p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="<%= lynomia_docs_path %>"
+         class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <%= t('marketing.home.help_docs') %>
+      </a>
+      <a href="<%= marketing_path(:support) %>"
+         class="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <%= t('marketing.home.help_support') %>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+  <div class="rounded-3xl bg-woot-700 px-6 py-12 text-center sm:px-12">
+    <h2 class="text-2xl font-semibold text-white"><%= t('marketing.home.cta_title') %></h2>
+    <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-woot-75"><%= t('marketing.home.cta_lede') %></p>
+    <div class="mt-7 flex flex-wrap justify-center gap-3">
+      <a href="/app/register" class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-woot-700 hover:bg-woot-25">
+        <%= t('marketing.home.primary_cta') %>
+      </a>
+      <a href="<%= marketing_support_email_url %>"
+         class="rounded-xl border border-woot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-600">
+        <%= t('marketing.home.cta_email') %>
+      </a>
+    </div>
+  </div>
+</section>

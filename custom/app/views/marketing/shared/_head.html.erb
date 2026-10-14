@@ -1,0 +1,33 @@
+<%# Every discovery tag the old page lacked: it carried two <meta> and three <link> elements in total, with no
+  description, canonical, hreflang, Open Graph, Twitter card or icon (docs/official-website/01-current-state-audit.md
+  section 5).
+
+  Each address is built by MarketingHelper, which has one host-resolution point, so the canonical, the
+  hreflang set, og:url and the sitemap cannot disagree -- the defect DocumentationHelper records having had in
+  three copies (custom/app/helpers/documentation_helper.rb:7-16).
+%>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title><%= marketing_page_title(@page) %></title>
+<meta name="description" content="<%= t("marketing.pages.#{@page}.description") %>">
+
+<link rel="canonical" href="<%= marketing_url(@page) %>">
+<% marketing_locale_alternates(@page).each do |locale, url| %>
+  <link rel="alternate" hreflang="<%= locale %>" href="<%= url %>">
+<% end %>
+<%# x-default points at Arabic: it is the primary market and the unprefixed tree (D5). %>
+<link rel="alternate" hreflang="x-default" href="<%= marketing_url(@page, locale: 'ar') %>">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= t('marketing.site_name') %>">
+<meta property="og:locale" content="<%= marketing_locale == 'ar' ? 'ar_AR' : 'en_US' %>">
+<meta property="og:url" content="<%= marketing_url(@page) %>">
+<meta property="og:title" content="<%= t("marketing.pages.#{@page}.title") %>">
+<meta property="og:description" content="<%= t("marketing.pages.#{@page}.description") %>">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="/favicon-32x32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-icon-180x180.png">
+
+<%= yield :head %>

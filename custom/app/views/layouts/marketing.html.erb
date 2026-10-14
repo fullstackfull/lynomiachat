@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<%# The marketing layout.
+
+  lang and dir come from the locale the controller resolved from the URL, not from JavaScript. The old page
+  set them in a click handler that fired on every load, so an Arabic visitor was flipped to English before
+  they read a word (docs/official-website/01-current-state-audit.md section 3.3).
+
+  The marketing entrypoint is its own: the dashboard bundle emits a 15.9 MB icon chunk and has no business on
+  a marketing page (docs/official-website/05-design-and-content-spec.md section 5).
+%>
+<html lang="<%= marketing_locale %>" dir="<%= marketing_dir %>">
+  <head>
+    <%= render 'marketing/shared/head' %>
+    <%= vite_client_tag %>
+    <%= vite_javascript_tag 'marketing' %>
+  </head>
+  <body class="bg-white text-slate-900 antialiased">
+    <a href="#main"
+       class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:rounded-lg focus:bg-woot-600 focus:px-4 focus:py-2 focus:text-white">
+      <%= t('marketing.skip_to_content') %>
+    </a>
+
+    <%= render 'marketing/shared/header' %>
+
+    <main id="main">
+      <%= yield %>
+    </main>
+
+    <%= render 'marketing/shared/footer' %>
+  </body>
+</html>

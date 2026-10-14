@@ -1,0 +1,5 @@
+// Tailwind only, per the repository's styling rule: the marketing views carry their classes inline and
+// tailwind.config.js already scans custom/app/views/**/*.erb, so no bespoke CSS belongs here.
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';

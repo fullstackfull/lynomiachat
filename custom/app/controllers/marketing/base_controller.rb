@@ -1,0 +1,50 @@
+# The base for every public marketing page.
+#
+# It inherits PublicController for the same reason the Help Center does: ActionController::Base with no
+# session requirement, no Pundit, and the shared request-exception handling
+# (app/controllers/public_controller.rb:3-5). It does NOT inherit Public::Api::V1::Portals::BaseController,
+# which is portal-specific -- every one of its filters wants an @portal.
+class Marketing::BaseController < PublicController
+  layout 'marketing'
+
+  before_action :reject_tenant_custom_domain
+  before_action :set_marketing_locale
+
+  helper_method :marketing_locale
+
+  # The locale the request resolved to, exposed to the views. It lives here rather than in MarketingHelper
+  # because it is request state, and a helper that reads controller instance variables can silently render a
+  # locale nobody set.
+  def marketing_locale
+    @marketing_locale.presence || MarketingHelper::DEFAULT_LOCALE
+  end
+
+  private
+
+  # D3: the marketing site answers on the platform's own host, never on a tenant's.
+  #
+  # A registered portal custom domain resolves through this same route table -- only `/` is special-cased, by
+  # DashboardController#render_hc_if_custom_domain (app/controllers/dashboard_controller.rb:64-75). Without
+  # this filter, `/pricing` would also answer on docs.customer.example, putting Lynomia's marketing inside a
+  # customer's own Help Center domain.
+  #
+  # The check is a positive lookup for a portal holding this host, rather than a comparison against
+  # FRONTEND_URL. DomainHelper.chatwoot_domain? reads two environment variables
+  # (app/controllers/concerns/domain_helper.rb:2-4) that are unset in several environments, so requiring a
+  # match there would make the whole site 404 wherever they are blank -- failing in the direction that hides
+  # the site rather than the direction that protects a tenant.
+  def reject_tenant_custom_domain
+    return if request.host.blank?
+    return unless Portal.where.not(custom_domain: [nil, '']).exists?(custom_domain: request.host)
+
+    render file: Rails.public_path.join('404.html'), status: :not_found, layout: false
+  end
+
+  # Arabic is the default and is unprefixed; English is `/en` (D5). The locale is a URL decision made here,
+  # server-side -- never a client-side swap, which is the defect that flipped every Arabic visitor to English
+  # on the old page (docs/official-website/01-current-state-audit.md section 3.3).
+  def set_marketing_locale
+    @marketing_locale = params[:locale] == 'en' ? 'en' : 'ar'
+    I18n.locale = @marketing_locale
+  end
+end

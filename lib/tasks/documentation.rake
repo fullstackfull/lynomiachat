@@ -1,9 +1,10 @@
 # Lynomia global documentation: one-time setup and content seeding, run by an operator rather than by a web request.
 #
 # The report both seeding tasks print is here rather than in the seeder because the seeder returns data and a rake
-# task is where an operator reads it. It touches NO application constant on purpose: a .rake file is loaded by
-# `Rails.application.load_tasks`, which runs before the application is initialized, so an autoloadable constant does
-# not resolve at this point (measured: `Rails.application.initialized?` is false and the constant is undefined).
+# task is where an operator reads it. It touches NO application constant at load time on purpose: a .rake file is
+# loaded by `Rails.application.load_tasks`, which runs before the application is initialized, so an autoloadable
+# constant does not resolve at this point (measured: `Rails.application.initialized?` is false and the constant is
+# undefined). Every constant below is therefore named inside a method body, which runs under `:environment`.
 module DocumentationSeedReport
   SUMMARY = '%<label>s: %<created>d created, %<updated>d updated, %<unchanged>d unchanged, ' \
             '%<adopted>d adopted, %<untracked>d untracked (%<locales>s)'.freeze
@@ -17,12 +18,44 @@ module DocumentationSeedReport
     run once with ADOPT_UNTRACKED=1 to apply the corpus to them and record what it wrote.
   TEXT
 
+  # The preflight refused: the corpus is not applicable, and the database is exactly as the run found it. The whole
+  # list is printed because an operator fixing a corpus wants every file at once.
+  PREFLIGHT_FAILED = <<~TEXT.freeze
+    %<label>s: the corpus will not apply cleanly, so NOTHING was written. Every file to fix:
+    %<problems>s
+  TEXT
+
+  # A write failed after the preflight passed. There is no transaction to roll back -- deliberately, because media
+  # attachments and their files are outside any database transaction (owner ruling 3) -- so what an operator needs
+  # instead is exactly this: what completed, what failed, and that a re-run is safe.
+  APPLY_FAILED = <<~TEXT.freeze
+    %<label>s: APPLY FAILED at %<message>s
+    The counts above are everything that completed, and they are committed: nothing was rolled back and no file
+    after this one was applied. Fix the cause and run the task again -- every write is an upsert on
+    (slug, locale), so a re-run reapplies the completed rows as `unchanged` and carries on from the file that
+    failed.
+  TEXT
+
+  # Both seed tasks run through here, so both report the same way in all three outcomes.
+  def self.run(label)
+    print(yield, label)
+  rescue Documentation::ContentSeeder::PreflightError => e
+    abort(format(PREFLIGHT_FAILED, label: label, problems: e.message))
+  rescue Documentation::ContentSeeder::ApplyFailure => e
+    summary(e.result, label)
+    abort(format(APPLY_FAILED, label: label, message: e.message))
+  end
+
   def self.print(result, label)
+    summary(result, label)
+    abort(ADOPT_INSTRUCTIONS) if result.untracked.positive?
+  end
+
+  def self.summary(result, label)
     puts format(SUMMARY, label: label, created: result.created, updated: result.updated,
                          unchanged: result.unchanged, adopted: result.adopted, untracked: result.untracked,
                          locales: result.locales.join(', '))
     result.divergences.each { |divergence| puts "  #{line(divergence)}" }
-    abort(ADOPT_INSTRUCTIONS) if result.untracked.positive?
   end
 
   def self.line(divergence)
@@ -44,13 +77,15 @@ namespace :documentation do
     # `== '1'` and not `.present?`: every non-empty value was truthy, so `ADOPT_UNTRACKED=0` -- which an operator
     # types to mean OFF -- silently applied the corpus over untracked rows. `1` is the value the instructions
     # already name, so accepting only it IS the documented interface and every off-looking value is off.
-    result = Documentation::ContentSeeder.changelog(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
-    DocumentationSeedReport.print(result, 'releases')
+    DocumentationSeedReport.run('releases') do
+      Documentation::ContentSeeder.changelog(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
+    end
   end
 
   desc 'Seed the Lynomia documentation corpus from custom/db/documentation'
   task content: :environment do
-    result = Documentation::ContentSeeder.new(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
-    DocumentationSeedReport.print(result, 'articles')
+    DocumentationSeedReport.run('articles') do
+      Documentation::ContentSeeder.new(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
+    end
   end
 end

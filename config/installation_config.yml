@@ -526,6 +526,18 @@
   type: secret
 # ------- End of Lynomia Commerce: Shopify app ------- #
 
+# ------- Lynomia Commerce: Store Syria ------- #
+# Store Syria is the commerce platform this installation's integration is built for. Unlike the three app-authorized
+# providers there is no OAuth client to register: a merchant pastes the integration token their Store Syria admin
+# issues for one store, and that token is what names the store on every read and signs every event it delivers.
+- name: STORESYRIA_ENABLED
+  display_title: 'Enable Store Syria'
+  value: false
+  description: 'Offer "Store Syria" to Lynomia Commerce accounts and accept its commerce events. When off, connected Store Syria stores are kept but not read.'
+  locked: false
+  type: boolean
+# ------- End of Lynomia Commerce: Store Syria ------- #
+
 # ------- Lynomia Commerce: order actions and sales recovery ------- #
 - name: COMMERCE_ACTIONS_ENABLED
   display_title: 'Enable order actions'
@@ -579,6 +591,12 @@
   display_title: 'Enable Shopify abandoned checkouts'
   value: false
   description: 'Abandoned checkouts of Shopify stores. Has no effect while Shopify Commerce is off, or before Shopify passes its real UAT.'
+  locked: false
+  type: boolean
+- name: STORESYRIA_RECOVERY_ENABLED
+  display_title: 'Enable Store Syria abandoned carts'
+  value: false
+  description: 'Abandoned carts of Store Syria stores. Has no effect while Store Syria is off, or before Store Syria passes its real UAT. Store Syria has no durable cart link, so a cart is reported but no recovery URL is ever produced for it.'
   locked: false
   type: boolean
 - name: COMMERCE_RECOVERY_COOLDOWN_HOURS

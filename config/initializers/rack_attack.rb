@@ -344,7 +344,13 @@ class Rack::Attack
   # throttle that bites during a normal burst would cost events. It exists to stop a loop, not to shape traffic.
   COMMERCE_WEBHOOK_LIMIT = ENV.fetch('RATE_LIMIT_COMMERCE_WEBHOOK', '600').to_i
   COMMERCE_WEBHOOK_STORE_PATHS = %r{\A/webhooks/(?<provider>zid|woocommerce)/(?<store_id>\d+)\z}
-  COMMERCE_WEBHOOK_APP_PATHS = %r{\A/webhooks/(?<provider>salla|shopify_commerce)\z}
+  COMMERCE_WEBHOOK_APP_PATHS = %r{\A/webhooks/(?<provider>salla|shopify_commerce|storesyria)\z}
+  # Store Syria is the one provider whose path carries no store id -- it never learns Lynomia's -- so it names the
+  # store in a header instead. Keyed on that header as well as the IP, because Store Syria sends every store's
+  # events from one address and an IP-only bucket would be one bucket for every merchant on that installation.
+  # The header is unauthenticated at this point, so the per-IP ceiling above still applies and is what bounds a
+  # caller inventing store names; this split only stops one honest store starving the others.
+  STORESYRIA_WEBHOOK_PATH = %r{\A/webhooks/storesyria\z}
 
   throttle('commerce webhook per store', limit: COMMERCE_WEBHOOK_LIMIT, period: 1.minute) do |req|
     next unless req.post?
@@ -358,6 +364,14 @@ class Rack::Attack
 
     match_data = COMMERCE_WEBHOOK_APP_PATHS.match(req.path_without_extensions)
     "#{match_data[:provider]}:#{req.ip}" if match_data.present?
+  end
+
+  throttle('commerce webhook per storesyria store', limit: COMMERCE_WEBHOOK_LIMIT, period: 1.minute) do |req|
+    next unless req.post? && STORESYRIA_WEBHOOK_PATH.match?(req.path_without_extensions)
+
+    # Truncated, so a caller cannot mint unbounded cache keys out of a header nobody has verified yet.
+    store = req.get_header('HTTP_X_STORESYRIA_STORE').to_s[0, 64]
+    "storesyria:#{store}" if store.present?
   end
 
   # Analytics and support-case reads. Both answer a request with several aggregates or counts over the account's

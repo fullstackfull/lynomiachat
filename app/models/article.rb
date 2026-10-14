@@ -186,7 +186,7 @@ class Article < ApplicationRecord
   #
   # `author_id` is required on every article and stays required: Super Admin needs to know who wrote a page, and
   # Documentation::ContentSeeder stamps `SuperAdmin.first` on the whole platform corpus
-  # (custom/app/services/documentation/content_seeder.rb:22,79). But SuperAdmin is a User
+  # (custom/app/services/documentation/content_seeder.rb:298,423). But SuperAdmin is a User
   # (app/models/super_admin.rb:47), so every public documentation page and category page was publishing a named
   # operator's display name and avatar. The product's author is Lynomia.
   #

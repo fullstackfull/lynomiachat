@@ -63,7 +63,7 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
   # A SECTION IS NOT EDITABLE AT ALL. `manifest.yml` is the sole author of its `name`, `description`,
   # `position` and `icon` (owner ruling), and `slug` and `locale` are the two halves of the key
   # `Documentation::ContentSeeder#upsert_category` looks a section up by
-  # (custom/app/services/documentation/content_seeder.rb:98). So the edit surface is withheld at the ROUTE --
+  # (custom/app/services/documentation/content_seeder.rb:384). So the edit surface is withheld at the ROUTE --
   # `resources :categories, except: [:edit, :update]` -- rather than by emptying a form.
   #
   # These examples replace four that asserted which FIELDS the section form dropped. The property is stronger:

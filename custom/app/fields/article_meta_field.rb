@@ -32,7 +32,7 @@ class ArticleMetaField < Administrate::Field::Base
 
   # Every key this field's form posts. `meta` is one jsonb column shared by two writers, and the other writer's
   # keys are not on this form: Documentation::ContentSeeder#meta_for also writes `doc_key`
-  # (custom/app/services/documentation/content_seeder.rb:107), which is the key every contextual-help link
+  # (custom/app/services/documentation/content_seeder.rb:437), which is the key every contextual-help link
   # resolves through (custom/app/services/documentation/library.rb:55).
   MANAGED_KEYS = (STRING_KEYS + %w[tags]).freeze
 

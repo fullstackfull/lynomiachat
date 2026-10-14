@@ -878,7 +878,8 @@ integration rather than landing it quietly.
 
 ### D9 — The seed becomes plan-then-apply. That is what makes the four abort modes unreachable.
 
-**Today.** `perform!` (`:28-31`) writes as it walks. There is no transaction — the codebase knows the idiom, since
+**Before this ruling** — every line number in this paragraph and in the table below is the **pre-wave-5** file,
+kept because it is the record of what the modes were. `perform!` (`:28-31`) wrote as it walked. There is no transaction — the codebase knows the idiom, since
 `Article.update_positions` wraps its writes in `transaction do` (`article.rb:218`) — and there is no `rescue`
 anywhere in the file. The write order is fully determined: `manifest['sections']` in file order (`:29`), locales
 outer with the default locale first (`:42-45,48`), `Dir.glob` inner and sorted (`:52`), and `upsert_category` before
@@ -943,27 +944,84 @@ seed stays an operator step in the post-deploy checklist. Both are files I do no
 anything is written, so a bad file costs you a red task and not a half-published corpus. Agent 2: the editor is never
 the thing that runs a seed.
 
-> **NOT IMPLEMENTED IN WAVE 3, and this paragraph is the honest statement of that rather than a plan.**
->
-> Wave 3's mandate is the field-by-field source of truth, the §F2.2 re-derivation, the D7/D8 re-measurement and the
-> deployment-sync report. Plan-then-apply is none of those: it is a second, larger change to the same file, and
-> shipping it alongside the merge would mean two unmeasured mechanisms landing in one pass. **The five abort modes
-> are therefore still reachable**, exactly as described above, and still abort mid-corpus with earlier sections
-> written. Nothing in the merge model makes them worse — a raise still happens where it happened before — and
-> nothing in it makes them better.
->
-> Two things did change in their favour and are worth recording:
->
-> - **Mode 3 (a docs key equal to a changelog key) now has a second detector.** `content_source_path` is uniquely
->   indexed, so two corpus files claiming one row surface as a constraint violation rather than as one file
->   silently overwriting the other. It is still a raise, not a plan-time check.
-> - **The counts reconcile.** `created + updated + unchanged + adopted + untracked` is one outcome per file
->   processed (measured: 138 against a 69/69 corpus), so the "38 + 19 + 67 = 124 against a 126-file corpus" class of
->   silent shortfall is now visible in the summary line without a plan phase.
->
-> `documentation:content` still does **not** run in `deployment/deploy.sh` and that part of D9 stands unchanged and
-> unmodified: I touched no deployment file. The §5.5 drift print is still a requested change, still not applied,
-> and now depends on the deferred `documentation:drift` task.
+**IMPLEMENTED IN WAVE 5, on owner ruling 3.** The two phases are in the tree
+(`content_seeder.rb` — `preflight!`, then `apply!`), there is **no transaction around either**, and the five abort
+modes above are no longer reachable: each one is a refusal with the database exactly as the run found it. What the
+owner's ruling added to the wave-1 plan is phase C — what an operator sees when a write fails *anyway*.
+
+**The checks, as implemented.** Every one collects its message rather than raising on sight, so one run reports
+every offending file; the manifest is the single exception, because nothing derived from an unsound manifest
+(a glob, a category) means anything.
+
+| # | Check | Refusal | Mode it closes |
+|---|---|---|---|
+| 1 | `manifest.yml` section shape: `slug` present, `position` an Integer, a `name` for every locale the section claims | `PreflightError` | the category write failing on a malformed manifest |
+| 2 | manifest section set **==** directory set, per seeded locale, both directions | `PreflightError` | **mode 5** (a directory the manifest omits was silently never seeded) and its inverse (an empty category) |
+| 3 | every file parses: front matter present, `YAML.safe_load` accepts it | `PreflightError`, with the file and the exception class | **mode 4** (`Psych::DisallowedClass` on a `Time`, `Psych::SyntaxError`) |
+| 4 | required fields: `title` present, `position` an Integer, body non-empty | `PreflightError` | **mode 1** (a front-matter-only stub, which `validates :content, if: :published?` refuses) |
+| 5 | every intended slug passes `Article::RESERVED_SLUGS` | `PreflightError` | **mode 2**, including its locale asymmetry — `search.md` is refused for `en` and legal as `search-ar` |
+| 6 | the intended slug set is unique **within the corpus** | `PreflightError` naming both files | **F7** (two locales deriving one slug) and **F8** (one basename in two sections) |
+| 7 | no row outside this run holds an intended slug | `PreflightError` naming the row, its portal and its locale | **mode 3** (a docs key equal to a changelog key) and D4's transient collision |
+| 8 | every `media:` image reference is a valid key with a file under `media/` | `PreflightError` | R2-MEDIA-INTERFACE.md §1.4: the resolver answers `nil` and the page publishes the fallback, silently |
+| 9 | the class of every tracked row (D1/D7): `kept` per field, and `untracked` or `adopting` | reported, not refused — an untracked row is a state an operator lives in | D1 |
+
+**Three deliberate differences from the wave-1 plan above**, each because the measurement said so:
+
+- Item 2's body check is "non-empty", not "non-empty when the row would be published". An article with no prose is
+  a corpus defect at any status, and the state-dependent version would be a branch on a condition no corpus file
+  expresses.
+- Item 4's cross-corpus half is checked **against the rows**, not against the other corpus on disk. Either way
+  nothing partial is written: whichever task runs second refuses before its first write. Reading the other corpus
+  would mean reading the other portal's `allowed_locales` to derive its slugs, which is a second seeder's worth of
+  logic for a message that names the same collision.
+- `content_source_path` is **not** pre-checked. Two corpus files cannot claim one path — the path *is* the file —
+  and the only shape that collides is two files swapping basenames inside one run, where both rows are this run's
+  own. That is the rows-direction query A5-O2 is open for, and widening into it here was not wanted.
+
+**The no-write property is measured, not asserted.** On a corpus carrying F7, with every `INSERT`/`UPDATE`/`DELETE`
+on the connection recorded through `sql.active_record`:
+
+```
+statements == []
+[Article.count, Category.count, ActiveStorage::Attachment.count, ActiveStorage::Blob.count] == [0, 0, 0, 0]
+```
+
+The same corpus on the shipped seeder left **3 articles and 2 categories** committed behind an
+`ActiveRecord::RecordNotUnique`.
+
+**Phase C — what an operator sees when the apply fails anyway.** The preflight is not omniscient: `position:
+2147483648` is an Integer and out of range for an `int4` column, so it passes the preflight and fails the write.
+There is no rollback, by the ruling, so the report is the thing that has to be complete:
+
+```
+articles: 1 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+articles: APPLY FAILED at custom/db/documentation/en/getting-started/zebra.md: ActiveModel::RangeError: 2147483648 is out of range …
+The counts above are everything that completed, and they are committed: nothing was rolled back and no file
+after this one was applied. Fix the cause and run the task again -- every write is an upsert on
+(slug, locale), so a re-run reapplies the completed rows as `unchanged` and carries on from the file that
+failed.
+```
+
+`ApplyFailure` carries `where` (the corpus file) and `result` (the counts so far); the task prints both and exits
+non-zero, so nothing continues silently. **Rerunnability is measured**: after the failed apply above, fixing the
+file and re-running gives `2 created, 0 updated, 1 unchanged` and the three rows the corpus describes.
+
+**Unchanged by this ruling.** The merge model is exactly as §2A shipped — classes A/B/C/D, the digests, the
+position convergence — because the ruling is about *when* writes happen and *what is reported*, not about which
+side wins a field. `documentation:content` still does **not** run in `deployment/deploy.sh`; the §5.5 drift print
+is still a requested change and still depends on the deferred `documentation:drift` task.
+
+**One reporting gap closed with it.** An `ADOPT_UNTRACKED` run printed `N adopted` and no divergence line
+(P2-WORKSTREAM-OWNERSHIP.md A6-O1), so an operator never learned which fields the corpus took back. There is now
+an `:adopted` divergence carrying the class-C fields whose stored value the corpus replaced:
+
+```
+articles: 0 created, 0 updated, 2 unchanged, 1 adopted, 0 untracked (en, ar)
+  adopted  en  welcome  custom/db/documentation/en/getting-started/welcome.md  title
+```
+
+Class A is deliberately absent from that list: the corpus owns prose and placement on every run for every row, so
+reporting it under `adopted` would report the design rather than the consequence of adopting.
 
 ---
 
@@ -1315,6 +1373,194 @@ condition that produced the original defect. Add, after the existing checks:
 
 ---
 
+### 5.9 — `custom/app/services/documentation/media_seeder.rb` (Agent 1). Make its own run plan-then-apply.
+
+**Why**: the owner's ruling applies to that file for the same reason it applies to this one. `perform!` raises
+every *grammar* defect from `scan_corpus` before it writes anything, which is right — but the **missing-file**
+check sits inside the write loop (`:131-135`), so a corpus whose tenth key has no file uploads nine blobs first
+and then raises. It is the same partial-apply shape F7 had, one file over, and it is six lines to close.
+
+```diff
+   def perform!
+-    references = scan_corpus
++    references = preflight!
+     references.each { |key, reference| seed(key, reference) }
+     purge_orphans(references.keys)
+     @result.unreferenced = unreferenced_files(references.keys).count
+     @result
+   end
++
++  # Every corpus defect, with no write of any kind: the grammar checks `scan_corpus` already makes, plus the file
++  # each referenced key names. Owner ruling 3 -- an upload is outside any database transaction, so the only
++  # honest atomicity is to decide everything that can be decided before the first one.
++  def preflight!
++    references = (@references ||= scan_corpus)
++    references.each { |key, reference| require_file!(key, reference) }
++    references
++  end
+ 
+   def seed(key, reference)
+     file = media_dir.join(key)
+-    unless file.file?
+-      raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
+-                   "#{file.relative_path_from(Rails.root)}."
+-    end
+-
+     existing = index[key]
+     candidate = checksum_of(file)
+     return @result.unchanged += 1 if existing && existing.blob.checksum == candidate
+ 
+     attach(key, file, existing)
+   end
++
++  def require_file!(key, reference)
++    file = media_dir.join(key)
++    return if file.file?
++
++    raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
++                 "#{file.relative_path_from(Rails.root)}."
++  end
+```
+
+`seed`'s `reference` argument becomes unused and can go with it (two call sites, both in this file).
+
+**What this does NOT change, deliberately.** `ContentSeeder`'s preflight keeps its own media check (D9 item 8)
+rather than calling `preflight!`, because `MediaSeeder` raises on the first defect while the preflight's contract
+is to name *every* offending file. The deduplication exists and is Agent 1's to decide: a non-raising
+`MediaSeeder#problems` returning one message per defect, which `perform!` then raises the first of. If that lands,
+`ContentSeeder::Corpus#media_problems` deletes itself and delegates. The overlap until then is two checks — the
+grammar predicate (read from `MediaResolver`, not copied) and file existence.
+
+---
+
+### 5.10 — `spec/security/documentation_v2/source_of_truth_boundary_spec.rb` (Agent 6). Three examples that pin
+the defects this ruling closes.
+
+**Why**: measured on this change — `14 examples, 3 failures`, and all three are examples asserting the *old*
+behaviour, which is the §J3 pattern. They are inverted rather than deleted, each keeping its previous expectation
+in the comment. With the diff below applied the file is **14 examples, 0 failures** (measured on a copy, since
+this file belongs to Agent 6). The three are:
+
+| Line | Pinned | Now |
+|---|---|---|
+| `:224` | `expect(adopted.divergences).to be_empty` — A6-O1's silent adoption | the `:adopted` divergence, with the six fields the corpus took back |
+| `:311` | F8 collapsing two files into one row (`1 created, 1 updated`) | `PreflightError` naming both files, and zero rows |
+| `:342` | F7 aborting with `RecordNotUnique` and two rows committed | `PreflightError` naming both files, and zero rows. Its `before` block also leaves an `en/automation` directory the rewritten manifest no longer claims, so without that line removed the example measures the parity refusal instead of the slug one |
+
+```diff
+--- a/spec/security/documentation_v2/source_of_truth_boundary_spec.rb
++++ b/spec/security/documentation_v2/source_of_truth_boundary_spec.rb
+@@ -219,9 +219,13 @@
+     end
+ 
+     # The worst thing one accidental run does, measured end to end on a real untracked row: every class-A and
+-    # class-C field is taken from the corpus and NOTHING reports what was overwritten -- `record_untracked` is
+-    # skipped and `kept` is empty, so the run prints `1 adopted` and no divergence line.
+-    it 'overwrites an untracked row\'s title, description, position and body with no divergence reported' do
++    # class-C field is taken from the corpus.
++    #
++    # INVERTED: this asserted `adopted.divergences` was EMPTY, which was A6-O1 -- the run printed `1 adopted` and
++    # no divergence line, so an operator never learned which fields the corpus took back. Owner ruling 3's "do not
++    # silently continue" closed it: there is now an `:adopted` divergence carrying the class-C fields whose stored
++    # value was replaced. Class A stays out of it by design -- the corpus owns prose on every run for every row.
++    it 'overwrites an untracked row\'s title, description, position and body, and reports every field it took' do
+       root = Pathname.new(Dir.mktmpdir)
+       begin
+         root.join('manifest.yml').write(<<~YAML)
+@@ -251,7 +255,9 @@
+         article.reload
+         aggregate_failures do
+           expect(adopted.adopted).to eq(1)
+-          expect(adopted.divergences).to be_empty
++          expect(adopted.divergences.sole.kind).to eq(:adopted)
++          expect(adopted.divergences.sole.fields)
++            .to eq(%w[title description position meta.title meta.description meta.tags])
+           expect(article.title).to eq('Corpus title')
+           expect(article.description).to eq('Corpus description')
+           expect(article.position).to eq(70)
+@@ -306,20 +312,19 @@
+     end
+ 
+     # The shape that DOES lose content, and it is not an index violation: two files with the SAME basename in
+-    # two sections both derive the same `(slug, locale)`, so the second silently updates the row the first
+-    # created. One row for two files, the later section wins, and the run reports `1 created, 1 updated`.
+-    it 'silently collapses two sections\' same-named files into one row, rather than aborting' do
++    # two sections both derive the same `(slug, locale)`, so there is only ever one row for them.
++    #
++    # INVERTED: this asserted the collapse -- `1 created, 1 updated` for two files, one row, the later section
++    # winning and the first file's prose never published, with nothing raised. Owner ruling 3's preflight refuses
++    # the pair as a corpus defect before the first write (P2-SOURCE-OF-TRUTH-CONTRACT.md D9 item 6, F8).
++    it 'refuses two sections\' same-named files, rather than collapsing them into one row' do
+       write('administration', 'overview', 'Administration overview')
+       write('automation', 'overview', 'Automation overview')
+ 
+-      result = seed
+-
+-      expect(portal.reload.articles.count).to eq(1)
+-      expect([result.created, result.updated]).to eq([1, 1])
+-      row = portal.articles.first
+-      expect(row.title).to eq('Automation overview')
+-      expect(row.content_source_path).to eq('custom/db/documentation/en/automation/overview.md'.sub('custom/db/documentation',
+-                                                                                                    root.relative_path_from(Rails.root).to_s))
++      expect { seed }.to raise_error(Documentation::ContentSeeder::PreflightError) do |error|
++        expect(error.message).to include('en/administration/overview.md', 'en/automation/overview.md')
++      end
++      expect(portal.reload.articles).to be_empty
+     end
+ 
+     # A moved file keeps its basename, so the row is found and its path is reassigned. No second row, no
+@@ -335,11 +340,15 @@
+       expect(portal.articles.first.content_source_path).to end_with('en/automation/auto-resolve.md')
+     end
+ 
+-    # THE ONE REACHABLE ABORT, and it is on `slug` rather than on `content_source_path`: `articles.slug` is
++    # THE ABORT THAT WAS REACHABLE, and it is on `slug` rather than on `content_source_path`: `articles.slug` is
+     # GLOBALLY unique while the seeder's lookup is `(slug, locale)`, so a non-default-locale article whose slug
+-    # collides with another locale's row is not found and is INSERTED. The run raises mid-way and leaves
+-    # everything already written in place -- there is no transaction around `perform!`.
+-    it 'aborts mid-run, with the earlier rows committed, when a locale suffix collides with another row\'s slug' do
++    # collides with another locale's row is not found and would be INSERTED.
++    #
++    # INVERTED: this asserted `ActiveRecord::RecordNotUnique` mid-run with `audit-logs` and `audit-logs-ar`
++    # already committed -- F7, and the measured instance of A6-O3's "every abort mode leaves partial state".
++    # Owner ruling 3 answered A6-O3 with a preflight rather than a transaction, so the pair is refused with
++    # nothing written (P2-SOURCE-OF-TRUTH-CONTRACT.md D9 item 6).
++    it 'refuses a locale suffix that collides with another row\'s slug, with nothing written' do
+       root.join('manifest.yml').write(<<~YAML)
+         sections:
+           - slug: administration
+@@ -353,17 +362,23 @@
+               description: إدارة مساحة العمل.
+       YAML
+       FileUtils.mkdir_p(root.join('ar', 'administration'))
++      # This manifest claims only `administration`, and the preflight refuses a corpus directory no section
++      # claims, so the `automation` directory the outer before block made has to go or it is what gets reported.
++      FileUtils.rm_rf(root.join('en', 'automation'))
+       write('administration', 'audit-logs', 'Audit logs')
+       # `slug_for('audit-logs-ar', 'en')` is `audit-logs-ar`; `slug_for('audit-logs', 'ar')` is the same string.
+       write('administration', 'audit-logs-ar', 'A page whose name ends in the locale suffix')
+       root.join('ar', 'administration', 'audit-logs.md')
+           .write("---\ntitle: سجلات\ndescription: وصف\nposition: 10\n---\n\nمحتوى\n")
+ 
+-      expect { seed }.to raise_error(ActiveRecord::RecordNotUnique, /slug/)
++      expect { seed }.to raise_error(Documentation::ContentSeeder::PreflightError) do |error|
++        expect(error.message).to include('en/administration/audit-logs-ar.md', 'ar/administration/audit-logs.md')
++      end
+ 
+-      # Everything the run got to before the raise is committed. That is the state an operator is left in.
+-      expect(portal.reload.articles.pluck(:slug)).to contain_exactly('audit-logs', 'audit-logs-ar')
+-      expect(portal.articles.find_by(slug: 'audit-logs-ar').locale).to eq('en')
++      # The state an operator is left in: the one the run started from. The category is the group's own
++      # fixture, not the run's -- `upsert_category` never executed.
++      expect(portal.reload.articles).to be_empty
++      expect(portal.categories.pluck(:slug)).to eq([category.slug])
+     end
+   end
+ end
+```
+
+---
+
 ## 6. OPEN — needs the owner
 
 > **Added by wave 3**, in the order I would ask them:
@@ -1326,12 +1572,33 @@ condition that produced the original defect. Add, after the existing checks:
 >    already unique per portal — and those reasons still hold, so this is a decision about whether a section's
 >    *presentation* is operator-owned, not a defect to patch. §5.4 (drop `slug` from that form) is the urgent half
 >    and does not need this answer.
+>
+>    **CLOSED while wave 5 was running, by another agent and the owner, the other way than D2 feared**: a
+>    section's edit surface is withheld at the ROUTE — `resources :categories, except: [:edit, :update]`
+>    (`config/routes/documentation.rb:22`, commit `3c1324be`) — so `manifest.yml` is the only author of a
+>    section's `name`, `description`, `position` and `icon` and `upsert_category` has no second writer to
+>    overwrite. No digest column on `categories`, which is what D2 argued against. Nothing in this contract
+>    changes: §2A was always about rows.
 > 6. **Is there a corpus-side way to withdraw an article, and should there be?** D6's `retired:` key is withdrawn
 >    because no file uses it. Withdrawal is now an operator action only. What would close it: a corpus that needs
 >    to retire an article.
 > 7. **When does the orphan half of the drift detector land?** R12 ordered a drift detector before any scheduler;
 >    wave 3 ships the files-versus-counts half and not the rows-with-no-file half (D5). The deferral is safe only
 >    while nobody deletes a corpus file, which is exactly the thing nobody announces.
+
+> **Added by wave 5**, while implementing owner ruling 3:
+>
+> 8. **Nothing seeds media.** `Documentation::MediaSeeder` has no production caller: a no-exclusion search for
+>    `MediaSeeder` returns 20 hits — its own definition, three code comments, the two interface documents, and
+>    **two specs** — and no rake task, job, controller or `ContentSeeder` line among them. R2-MEDIA-INTERFACE.md
+>    §3.2 assigns that one line to this file, and it was never written. It is latent today because the corpus
+>    holds zero images (interface §0.1), and it becomes a defect the moment Agent 3 adds one: the article seeds,
+>    the reference resolves to nothing, and the page publishes the fallback. The preflight now refuses a reference
+>    with no file (D9 item 8), which is the half that belongs here; the wiring is a behaviour change to
+>    `documentation:content` — a second `Result` member, a second report line, and an upload pass whose ordering
+>    §3.2 specifies — and adding it alongside the failure-model change would land two unmeasured mechanisms in one
+>    pass, which is the mistake wave 3 avoided by deferring D9. *What would close it:* the Orchestrator's decision
+>    to wire it, or a `documentation:media` task, in a change of its own.
 
 1. **Should a deliberate URL change be possible at all, and therefore do we need redirects?** D4 makes a file rename
    safe — no 404, one `created` plus one reported `orphan` — and that is why I ruled redirects out of P2 rather than
@@ -1434,6 +1701,10 @@ depend on which is true.
 **Wave 1: frozen. Wave 3: revised per owner correction §F2, implemented, and measured.** §2A is the authoritative
 model and the code in the tree does what it says.
 
+**Wave 5 adds owner ruling 3**: `preflight!` then `apply!` in `content_seeder.rb`, with no transaction around
+either, the `ApplyFailure` report, the `:adopted` divergence, and the three report shapes in
+`lib/tasks/documentation.rake`. D9 carries the check list, the no-write measurement and the operator output.
+
 **Implemented** — `db/migrate/20261013230000_add_content_provenance_to_articles.rb` (additive),
 `custom/app/services/documentation/content_seeder.rb` (the field-by-field merge, the `doc_key` reassertion, the
 position convergence, the per-field divergence report), `lib/tasks/documentation.rake` (the report, the
@@ -1448,12 +1719,11 @@ see the open item below.
 reassertion and §F2.2's provenance lookup (D4), the `doc_key` model validation D3a and its `en.yml` string (D3,
 §5.7), the `published:`/`retired:` front-matter keys (D6), `ACCEPT_FILE` and the per-row `conflict` class (D5).
 
-**Deferred, not silently dropped:** plan-then-apply and the five abort modes (D9), the orphan report and
-`documentation:drift` (D5, D11), the `deploy.sh` drift print (§5.5), and the source-of-truth question for
-**categories** — `upsert_category` still overwrites `name`, `description`, `position` and `icon` from the manifest
-on every run, while `CategoryDashboard::FORM_ATTRIBUTES` (`:25`) lets a super admin edit all four. D2 ruled out a
-provenance column on `categories` for reasons that still hold, so applying §2A there needs a decision, not just
-code. It is the one place where "deployment never silently overwrites operator-authored content" is still false.
+**Deferred, not silently dropped:** the orphan report and
+`documentation:drift` (D5, D11) and the `deploy.sh` drift print (§5.5). The source-of-truth question for
+**categories** is no longer among them: the section edit route was withdrawn while wave 5 was running
+(`config/routes/documentation.rb:22`, commit `3c1324be`), so the manifest is the only writer and
+`upsert_category` overwrites nobody. §6 item 5 records it.
 
 **What is measured, and what is not.** Measured in this container, against PostgreSQL 16, on the real 138-file
 corpus and on fixtures: both seed tasks twice over (138 created → 138 unchanged; 2 → 2), an operator edit surviving

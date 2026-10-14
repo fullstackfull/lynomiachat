@@ -219,9 +219,13 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     end
 
     # The worst thing one accidental run does, measured end to end on a real untracked row: every class-A and
-    # class-C field is taken from the corpus and NOTHING reports what was overwritten -- `record_untracked` is
-    # skipped and `kept` is empty, so the run prints `1 adopted` and no divergence line.
-    it 'overwrites an untracked row\'s title, description, position and body with no divergence reported' do
+    # class-C field is taken from the corpus.
+    #
+    # INVERTED: this asserted `adopted.divergences` was EMPTY, which was A6-O1 -- the run printed `1 adopted` and
+    # no divergence line, so an operator never learned which fields the corpus took back. Owner ruling 3's "do not
+    # silently continue" closed it: there is now an `:adopted` divergence carrying the class-C fields whose stored
+    # value was replaced. Class A stays out of it by design -- the corpus owns prose on every run for every row.
+    it 'overwrites an untracked row\'s title, description, position and body, and reports every field it took' do
       root = Pathname.new(Dir.mktmpdir)
       begin
         root.join('manifest.yml').write(<<~YAML)
@@ -251,7 +255,9 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
         article.reload
         aggregate_failures do
           expect(adopted.adopted).to eq(1)
-          expect(adopted.divergences).to be_empty
+          expect(adopted.divergences.sole.kind).to eq(:adopted)
+          expect(adopted.divergences.sole.fields)
+            .to eq(%w[title description position meta.title meta.description meta.tags])
           expect(article.title).to eq('Corpus title')
           expect(article.description).to eq('Corpus description')
           expect(article.position).to eq(70)
@@ -306,20 +312,19 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
     end
 
     # The shape that DOES lose content, and it is not an index violation: two files with the SAME basename in
-    # two sections both derive the same `(slug, locale)`, so the second silently updates the row the first
-    # created. One row for two files, the later section wins, and the run reports `1 created, 1 updated`.
-    it 'silently collapses two sections\' same-named files into one row, rather than aborting' do
+    # two sections both derive the same `(slug, locale)`, so there is only ever one row for them.
+    #
+    # INVERTED: this asserted the collapse -- `1 created, 1 updated` for two files, one row, the later section
+    # winning and the first file's prose never published, with nothing raised. Owner ruling 3's preflight refuses
+    # the pair as a corpus defect before the first write (P2-SOURCE-OF-TRUTH-CONTRACT.md D9 item 6, F8).
+    it 'refuses two sections\' same-named files, rather than collapsing them into one row' do
       write('administration', 'overview', 'Administration overview')
       write('automation', 'overview', 'Automation overview')
 
-      result = seed
-
-      expect(portal.reload.articles.count).to eq(1)
-      expect([result.created, result.updated]).to eq([1, 1])
-      row = portal.articles.first
-      expect(row.title).to eq('Automation overview')
-      expect(row.content_source_path).to eq('custom/db/documentation/en/automation/overview.md'.sub('custom/db/documentation',
-                                                                                                    root.relative_path_from(Rails.root).to_s))
+      expect { seed }.to raise_error(Documentation::ContentSeeder::PreflightError) do |error|
+        expect(error.message).to include('en/administration/overview.md', 'en/automation/overview.md')
+      end
+      expect(portal.reload.articles).to be_empty
     end
 
     # A moved file keeps its basename, so the row is found and its path is reassigned. No second row, no
@@ -335,11 +340,15 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
       expect(portal.articles.first.content_source_path).to end_with('en/automation/auto-resolve.md')
     end
 
-    # THE ONE REACHABLE ABORT, and it is on `slug` rather than on `content_source_path`: `articles.slug` is
+    # THE ABORT THAT WAS REACHABLE, and it is on `slug` rather than on `content_source_path`: `articles.slug` is
     # GLOBALLY unique while the seeder's lookup is `(slug, locale)`, so a non-default-locale article whose slug
-    # collides with another locale's row is not found and is INSERTED. The run raises mid-way and leaves
-    # everything already written in place -- there is no transaction around `perform!`.
-    it 'aborts mid-run, with the earlier rows committed, when a locale suffix collides with another row\'s slug' do
+    # collides with another locale's row is not found and would be INSERTED.
+    #
+    # INVERTED: this asserted `ActiveRecord::RecordNotUnique` mid-run with `audit-logs` and `audit-logs-ar`
+    # already committed -- F7, and the measured instance of A6-O3's "every abort mode leaves partial state".
+    # Owner ruling 3 answered A6-O3 with a preflight rather than a transaction, so the pair is refused with
+    # nothing written (P2-SOURCE-OF-TRUTH-CONTRACT.md D9 item 6).
+    it 'refuses a locale suffix that collides with another row\'s slug, with nothing written' do
       root.join('manifest.yml').write(<<~YAML)
         sections:
           - slug: administration
@@ -353,17 +362,23 @@ RSpec.describe 'Documentation source of truth -- adversarial write boundary', ty
               description: إدارة مساحة العمل.
       YAML
       FileUtils.mkdir_p(root.join('ar', 'administration'))
+      # This manifest claims only `administration`, and the preflight refuses a corpus directory no section
+      # claims, so the `automation` directory the outer before block made has to go or it is what gets reported.
+      FileUtils.rm_rf(root.join('en', 'automation'))
       write('administration', 'audit-logs', 'Audit logs')
       # `slug_for('audit-logs-ar', 'en')` is `audit-logs-ar`; `slug_for('audit-logs', 'ar')` is the same string.
       write('administration', 'audit-logs-ar', 'A page whose name ends in the locale suffix')
       root.join('ar', 'administration', 'audit-logs.md')
           .write("---\ntitle: سجلات\ndescription: وصف\nposition: 10\n---\n\nمحتوى\n")
 
-      expect { seed }.to raise_error(ActiveRecord::RecordNotUnique, /slug/)
+      expect { seed }.to raise_error(Documentation::ContentSeeder::PreflightError) do |error|
+        expect(error.message).to include('en/administration/audit-logs-ar.md', 'ar/administration/audit-logs.md')
+      end
 
-      # Everything the run got to before the raise is committed. That is the state an operator is left in.
-      expect(portal.reload.articles.pluck(:slug)).to contain_exactly('audit-logs', 'audit-logs-ar')
-      expect(portal.articles.find_by(slug: 'audit-logs-ar').locale).to eq('en')
+      # The state an operator is left in: the one the run started from. The category is the group's own
+      # fixture, not the run's -- `upsert_category` never executed.
+      expect(portal.reload.articles).to be_empty
+      expect(portal.categories.pluck(:slug)).to eq([category.slug])
     end
   end
 end

@@ -22,7 +22,7 @@ const CORPUS = path.resolve(process.cwd(), 'custom/db/documentation');
 const FRONT_MATTER = /^---\s*\n[\s\S]*?\n---\s*\n/;
 
 // The body as Documentation::ContentSeeder stores it: front matter removed, then stripped
-// (custom/app/services/documentation/content_seeder.rb:126-131).
+// (custom/app/services/documentation/content_seeder.rb:256-279).
 const bodyOf = file =>
   fs.readFileSync(file, 'utf-8').replace(FRONT_MATTER, '').trim();
 

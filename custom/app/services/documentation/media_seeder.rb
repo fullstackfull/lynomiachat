@@ -31,8 +31,8 @@ class Documentation::MediaSeeder
   end
 
   def perform!
-    references = scan_corpus
-    references.each { |key, reference| seed(key, reference) }
+    references = preflight!
+    references.each_key { |key| seed(key) }
     purge_orphans(references.keys)
     @result.unreferenced = unreferenced_files(references.keys).count
     @result
@@ -125,13 +125,27 @@ class Documentation::MediaSeeder
   # ActiveStorage::Blob.find_by(checksum:) -- `checksum` is unindexed (db/schema.rb:105), so a global lookup is a
   # sequential scan of every attachment the product has ever stored, and it would also let one portal silently
   # adopt another portal's blob because two files happen to share bytes.
-  def seed(key, reference)
-    file = media_dir.join(key)
-    unless file.file?
-      raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
-                   "#{file.relative_path_from(Rails.root)}."
-    end
+  # Every corpus defect, with no write of any kind: the grammar checks `scan_corpus` already makes, plus the file
+  # each referenced key names. Owner ruling 3 applied to this seeder for the same reason it applies to the
+  # content one -- an upload is outside any database transaction, so the only honest atomicity is to decide
+  # everything decidable before the first write. The missing-file check used to live inside the write loop, so a
+  # corpus whose tenth key had no file uploaded nine blobs and then raised.
+  def preflight!
+    references = scan_corpus
+    references.each { |key, reference| require_file!(key, reference) }
+    references
+  end
 
+  def require_file!(key, reference)
+    file = media_dir.join(key)
+    return if file.file?
+
+    raise Error, "#{where(reference[:path], reference[:line])}: media:#{key} has no file at " \
+                 "#{file.relative_path_from(Rails.root)}."
+  end
+
+  def seed(key)
+    file = media_dir.join(key)
     existing = index[key]
     candidate = checksum_of(file)
     return @result.unchanged += 1 if existing && existing.blob.checksum == candidate

@@ -1306,3 +1306,158 @@ judgement rather than left implicit, since a future reader will otherwise read i
 | A2'-O5 | Not covered in `markdownSource.spec.js`: Arabic/RTL round-tripping (`corpusRoundTrip.spec.js` samples it; duplicating it would re-measure another spec's subject) and non-string input (raises from the tokenizer; no caller can pass it) | nothing, unless the module gains such a caller |
 | A2'-O6 | The two halves meet at the **documented wire shape**, not in one process: the JS spec mocks `fetch`, the Ruby spec drives the real route with the same params. The one real cross-language assertion is the `ACCEPTED_TYPES` ↔ `CONTENT_TYPES` mirror, which goes red on drift from either side | a browser-driven test, which this program has none of |
 | A2'-O7 | **Not verified, in those words**: production data, and browser rendering — every markup claim is parser-based, Nokogiri server-side and jsdom client-side | a real browser |
+
+### L3 — Ruling 3: the seeder failure model
+
+> Do NOT wrap the entire seeder in one large transaction. ActiveStorage/filesystem/object-storage work makes
+> that a misleading atomicity boundary. Instead implement: A. full no-write preflight … B. deterministic
+> idempotent apply … C. if apply fails: report exactly what completed and what failed, leave the task safely
+> rerunnable, do not silently continue. No speculative global transaction.
+
+**No transaction anywhere**, as ruled. `perform!` is now `preflight!` then `apply!`, with a nested `Corpus`
+holding the files-and-manifest side that touches no database. 274 → 536 lines.
+
+Nine checks, all collected into **one** `PreflightError` naming every offending file rather than the first:
+manifest shape; manifest sections **==** directories, both directions, per seeded locale; every file parses;
+required fields including a non-empty body; reserved slugs; slug uniqueness within the corpus; no row outside
+this run already holding an intended slug; every `media:` reference's key grammar **and** its file; and the
+provenance class of every row decided before any write.
+
+#### L3.1 — The no-write requirement, proven rather than asserted
+
+Every `sql.active_record` payload matching `INSERT|UPDATE|DELETE` recorded across a `perform!` on a corpus that
+cannot apply:
+
+```
+statements == []
+[Article.count, Category.count, ActiveStorage::Attachment.count, ActiveStorage::Blob.count] == [0, 0, 0, 0]
+```
+
+The measurement that makes this worth having is the **baseline on the shipped seeder, taken before the file
+changed**, on the same corpora:
+
+```
+F7     RAISED ActiveRecord::RecordNotUnique   left rows=3 cats=2
+F8     OK created=1 updated=1 rows=1          # two files, ONE row, the later section won, nothing reported
+MODE1  RAISED RecordInvalid (Content blank)   left rows=1 cats=1
+MODE2  RAISED RecordInvalid (Slug reserved)   left rows=1 cats=1
+MODE4  RAISED Psych::DisallowedClass          left rows=1 cats=1
+MODE5  OK rows=1 for 2 files                  # no error, no count
+MODE3b RAISED RecordNotUnique                 left rows=1 cats=2
+MEDIA  OK rows=1, published_with_broken_ref=1 # nothing checked
+```
+
+Every one of those now refuses with zero rows and zero categories.
+
+#### L3.2 — Phase C: what an operator actually sees
+
+```
+========== APPLY FAILURE ==========
+articles: 1 created, 0 updated, 0 unchanged, 0 adopted, 0 untracked (en, ar)
+articles: APPLY FAILED at …/en/getting-started/zebra.md: ActiveModel::RangeError: 2147483648 is out of range
+The counts above are everything that completed, and they are committed: nothing was rolled back and no file
+after this one was applied. Fix the cause and run the task again -- every write is an upsert on
+(slug, locale), so a re-run reapplies the completed rows as `unchanged` and carries on from the file that
+failed.
+```
+
+The failure used is one the preflight **genuinely cannot see**: `position: 2147483648` is an Integer, so the
+check passes, and it overflows `int4`, so the write fails. That is the case phase C exists for, rather than a
+contrived one. Rerunnability measured: `2 created, 0 updated, 1 unchanged` on the next run.
+
+Real-corpus idempotency unchanged: `138 created` → `0/0/138 unchanged` → `0/0/138 unchanged`; 5.6s then 4.9s.
+
+#### L3.3 — Three deliberate deviations from D9 as written, each recorded
+
+The body check is **unconditional** rather than "when published", so there is no branch on a condition no
+corpus file expresses. The cross-corpus half of item 4 is checked against the **rows** rather than the other
+corpus on disk, since either way whichever task runs second refuses before its first write. And
+`content_source_path` is **not** pre-checked: two files cannot claim one path, because the path *is* the file,
+and the only colliding shape is two files swapping basenames inside one run — which is the rows-direction query
+A5-O2 is open for and which the brief ruled out widening into.
+
+#### L3.4 — F7, F8, A6-O1 closed; A6-O3 answered as the owner ruled
+
+| Item | Was | Now |
+|---|---|---|
+| **F7** cross-locale slug collision | `RecordNotUnique` mid-run, **3 rows and 2 categories committed** | refused, naming both files, zero rows |
+| **F8** one basename in two sections | `1 created, 1 updated`, one row, later section wins, **silent** | refused, naming both files, zero rows |
+| **A6-O1** adoption reported nothing | `N adopted` and no divergence line | an `:adopted` divergence carrying the class-C fields the corpus took back |
+| **A6-O3** `perform!` not transactional | the five abort modes all left partial state | **no transaction**, as ruled: four are preflight refusals and a post-preflight failure is reported and rerunnable |
+
+Class A is deliberately excluded from the `:adopted` divergence: the corpus owns prose on every run for every
+row, so listing it would report the design rather than the adoption.
+
+#### L3.5 — The three requested changes, applied — and one bug I introduced applying them
+
+**8.1 — `MediaSeeder` gets the same treatment** (`media_seeder.rb`, Agent 1's file). Its grammar checks already
+ran before any write, but the **missing-file** check sat inside the write loop, so a corpus whose tenth key had
+no file uploaded nine blobs and then raised — F7's shape, one file over. Now `preflight!` + `require_file!`.
+The ruling applies to that seeder for the same reason it applies to the other one.
+
+**I broke it while applying it.** The submitted diff kept `references.each { |key, reference| seed(key, reference) }`;
+I "tidied" it to `references.each { |key| seed(key) }`, and `Hash#each` with one block parameter passes the
+`[key, value]` **array**, so `seed` would have received an array and `media_dir.join` would have failed.
+**RuboCop passed on the broken version** — 1 file, no offenses — which is the whole point: a linter cannot see
+this and only a test can. Corrected to `each_key`. `media_seeder_spec` + `media_delivery_spec`: **31 examples,
+0 failures**.
+
+**8.2 — three examples in `source_of_truth_boundary_spec.rb` pinned the defects this ruling closes**: measured
+`14 examples, 3 failures` at HEAD. Applied the submitted patch, which inverts rather than deletes and keeps each
+previous expectation in the comment. **14/0.** This is the **fourth** time in this program that fixing a defect
+invalidated the specs proving it, and the third time a mechanism rather than a person caught it.
+
+**8.3 — seven stale `content_seeder.rb:<line>` citations** across five files, all comments. This program grades
+`file:line`, so a wrong replacement is worse than a stale one: **I read each proposed target line before
+replacing it** — `256` `def read_file`, `261` the slug derivation, `298` the author guard, `384`
+`def upsert_category`, `423` `article.author ||=`, `437` `meta['doc_key'] =`. All seven confirmed, all replaced,
+and a sweep for the old numbers across `config app custom spec lib` returns nothing. Historical records under
+`discovery/**` are left as they were.
+
+#### L3.6 — One RuboCop suppression, and why it stays
+
+A targeted `# rubocop:disable Style/OneClassPerFile` on the nested `Corpus`, with the reason above it. The
+repo's own cop allowlists name **suffixes** (`Builder`, `Validator`, `Result`, …) rather than nesting, so the
+alternatives were a class named to satisfy a linter or a new file. Without the extraction the class is
+`279/175` on `Metrics/ClassLength`.
+
+**Kept as submitted.** Extracting to `content_seeder/corpus.rb` is the other clean answer and is cheap to do
+later; taking a late file move for a one-line suppression, immediately after a measured change and immediately
+before a merge gate, buys nothing. Recorded so the choice is visible rather than inherited.
+
+#### L3.7 — A5'-O1: NOTHING SEEDS CORPUS MEDIA. Verified independently, and it needs an owner decision
+
+`Documentation::MediaSeeder` is implemented, specced and documented — and **no production path calls it.**
+I ran the no-exclusion search myself rather than taking the claim, and classified all 26 hits:
+
+| Where | Hits | Kind |
+|---|---|---|
+| `R2-MEDIA-INTERFACE.md` | 13 | documentation |
+| `P2-SOURCE-OF-TRUTH-CONTRACT.md`, `P2-WORKSTREAM-OWNERSHIP.md` | 6 | documentation |
+| `content_seeder.rb:57`, `media_upload.rb:14`, `custom_markdown_renderer.rb:113` | 3 | **comments** |
+| `content_seeder.rb:239` | 1 | reads `MEDIA_DIR`, the constant — **not** a call |
+| `media_seeder_spec.rb`, `media_delivery_spec.rb:200` | 2 | **specs** |
+| `media_seeder.rb` | 1 | its own definition |
+
+**No rake task, no job, no controller, no seeder call.** `R2-MEDIA-INTERFACE.md` §3.2 assigns that one line to
+`content_seeder.rb` and it was never written.
+
+Latent today, for one reason only: the corpus has **zero images**. The live failure mode is precise — the moment
+a corpus image and a reference to it are both added, the preflight passes (the file is there), nothing attaches
+it, and the article publishes the unresolved-key comment.
+
+**Deliberately not wired here.** It needs a `Result` member, a report line and §3.2's ordering, so it is a
+mechanism rather than a line, and landing an unmeasured one in the same pass as a measured failure-model change
+is the thing this program's discipline exists to prevent. **This is the single most consequential item
+outstanding and it is an owner decision**, not an open item to carry quietly.
+
+#### L3.8 — Open items from ruling 3
+
+| # | Item | What closes it |
+|---|---|---|
+| **A5'-O1** | **Nothing seeds corpus media** (§L3.7) | **owner decision**, then a change of its own |
+| A5'-O2 | A **basename swap inside one run** still fails mid-apply on the `content_source_path` index, now as a reported `ApplyFailure`, and fails identically on every re-run | the rows-direction query A5-O2 is already open for |
+| A5'-O3 | The preflight cannot see a value the **database** rejects; `int4` overflow is the measured instance | nothing — phase C is the ruling's answer |
+| A5'-O4 | A manifest section with no directory is now **refused** where it used to create an empty category, so adding a section before its articles is a red task | nothing, unless the owner wants it demoted to a warning; D9 asks for set equality |
+| A5'-O5 | The `:adopted` divergence lists `meta.tags` when the row's key is absent and the file's value is `[]`, because `digest(nil) != digest([])`. Accurate but noisy | a decision that `nil` and `[]` are one value, which changes the digest payload and so `DIGEST_VERSION` |
+| A5'-O6 | **Not verified, in those words**: production data, the `media:` grammar against a real image (the fixture is a non-PNG byte string; content type is `MediaUpload`'s job and specced there), and browser rendering |

@@ -25,7 +25,7 @@ class CategoryDashboard < Administrate::BaseDashboard
   # `slug` is deliberately absent, for the same reason it is absent from ArticleDashboard: it is the section's
   # public address and it is the key the seeder looks a section up by --
   # Documentation::ContentSeeder#upsert_category does `find_or_initialize_by(slug:, locale:)`
-  # (custom/app/services/documentation/content_seeder.rb:98). Renaming it here makes the next seed create a
+  # (custom/app/services/documentation/content_seeder.rb:384). Renaming it here makes the next seed create a
   # SECOND category at the manifest slug while every article stays on the renamed one, and 404s a previously
   # indexed URL (docs/documentation-v2/P2-SOURCE-OF-TRUTH-CONTRACT.md D4). It stays on SHOW_PAGE_ATTRIBUTES and
   # stays searchable.

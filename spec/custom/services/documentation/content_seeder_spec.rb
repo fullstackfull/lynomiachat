@@ -654,6 +654,25 @@ describe Documentation::ContentSeeder do
         expect(attached_keys).to eq(['getting-started/inbox.png'])
       end
 
+      # The other half of requirement 9, and the one the report makes a SPECIFIC promise about: APPLY_FAILED
+      # tells the operator that "a re-run reapplies what completed as `unchanged`". That is a word, not a
+      # sentiment, so it is pinned -- the key attached before the failure comes back as `unchanged` on the next
+      # run rather than as a second upload or a replace.
+      it 'reports the key that survived a failed run as unchanged on the next one' do
+        media('getting-started/inbox.png')
+        media('getting-started/broken.png', '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>')
+        write('en', 'welcome', { title: 'Welcome',
+                                 body: "a\n\n![One](media:getting-started/inbox.png)\n\n![Two](media:getting-started/broken.png)" })
+        expect { seed }.to raise_error(described_class::ApplyFailure)
+
+        media('getting-started/broken.png', other_png)
+        result = seed
+
+        expect([result.media.uploaded, result.media.replaced, result.media.unchanged]).to eq([1, 0, 1])
+        expect(attached_keys).to contain_exactly('getting-started/inbox.png', 'getting-started/broken.png')
+        expect(result.created).to eq(2)
+      end
+
       it 'refuses a key the grammar rejects' do
         write('en', 'welcome', { title: 'Welcome', body: '![Passwords](media:../../etc/passwd)' })
 

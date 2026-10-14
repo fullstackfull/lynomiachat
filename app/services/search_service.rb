@@ -27,7 +27,10 @@ class SearchService
   end
 
   def search_query
-    @search_query ||= params[:q].to_s.strip
+    # See the note in Public::Api::V1::Portals::SearchController#index: a NUL byte survives `strip` and raises
+    # out of PostgreSQL's escaping. Same normalisation here, because this is the authenticated search's own
+    # boundary and it reaches the same escape.
+    @search_query ||= params[:q].to_s.delete("\0").strip
   end
 
   def filter_conversations

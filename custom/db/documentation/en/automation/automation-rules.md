@@ -105,6 +105,8 @@ permissions a custom role can be granted, so a custom role cannot be given this 
 - [Automation or flow builder?](automation-or-flow-builder)
 - [Macros or automation?](macros-or-automation)
 - [Flow builder](flow-builder)
+- [Campaigns or automation?](campaigns-or-automation)
+- [Auto-resolve conversations](auto-resolve)
 - [Shared audiences](shared-audiences)
 
 ## If it does not work

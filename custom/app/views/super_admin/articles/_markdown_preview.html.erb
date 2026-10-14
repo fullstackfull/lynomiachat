@@ -1,0 +1,9 @@
+<%# locals: (parsed_content:) %>
+<%#
+  The editor's preview of unsaved source, rendered by SuperAdmin::ArticlesController#preview_markdown.
+
+  It renders the PUBLIC article partial rather than a copy of it, so the preview cannot drift from the published
+  page: same wrapper element, same prose classes, same `parsed_content`. `link_class` is the classic/plain
+  default, which is what the Preview action's `show_plain_layout=true` page also uses.
+%>
+<%= render 'public/api/v1/portals/articles/content', parsed_content: parsed_content %>

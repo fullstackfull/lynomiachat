@@ -84,7 +84,7 @@ seo_description: "قائمة خيارات الربط الحقيقية في لي�
 
 ## مواضيع ذات صلة
 
-- [Webhook](webhooks)
+- [Webhook](webhooks) · [Slack](slack) · [تطبيقات لوحة التحكم](dashboard-apps)
 - [ما يمنحك ربط المتجر](commerce-overview) · [ربط Shopify](connect-shopify)
 - [روبوتات وكلاء الدعم](agent-bots) · [قواعد الأتمتة](automation-rules)
 - [الأدوار والصلاحيات](roles-and-permissions)

@@ -208,11 +208,19 @@ RSpec.describe Public::Api::V1::PortalsController, type: :request do
         expect(doc.xpath('//sitemapindex')).to be_empty
 
         links = doc.xpath('//url/loc').map(&:text)
-        expect(links.length).to eq(3)
+        article_links = links.grep(%r{/articles/})
 
-        expect(links).to all(
+        # The sitemap lists the portal home once per allowed locale and every category page as well as the
+        # articles (app/views/public/api/v1/portals/sitemap.xml.erb). This portal has one allowed locale and no
+        # categories, so the one extra entry is its home. Asserted on the ARTICLE entries, which is what this
+        # example is about, plus exactly what else is published -- so a future addition to the sitemap is a
+        # visible change here rather than a silent one.
+        expect(article_links.length).to eq(3)
+        expect(article_links).to all(
           match(%r{\Ahttps://www\.example\.com/hc/#{Regexp.escape(portal.slug)}/articles/\d+})
         )
+        expect(links - article_links)
+          .to eq(["https://www.example.com/hc/#{portal.slug}/#{portal.default_locale}"])
       end
     end
   end

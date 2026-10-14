@@ -4,12 +4,14 @@
 #
 #  id                    :bigint           not null, primary key
 #  content               :text
+#  content_source_path   :string
 #  description           :text
 #  draft_content         :text
 #  draft_title           :string
 #  locale                :string           default("en"), not null
 #  meta                  :jsonb
 #  position              :integer
+#  seeded_digests        :jsonb            default({}), not null
 #  slug                  :string           not null
 #  status                :integer
 #  title                 :string
@@ -28,6 +30,7 @@
 #  index_articles_on_account_id             (account_id)
 #  index_articles_on_associated_article_id  (associated_article_id)
 #  index_articles_on_author_id              (author_id)
+#  index_articles_on_content_source_path    (content_source_path) UNIQUE
 #  index_articles_on_portal_id              (portal_id)
 #  index_articles_on_slug                   (slug) UNIQUE
 #  index_articles_on_status                 (status)
@@ -115,6 +118,29 @@ class Article < ApplicationRecord
     },
     using: {
       tsearch: {
+        # THE CORPUS IS ENGLISH AND ARABIC, and pg_search's default dictionary is `simple`, which lowercases a
+        # token and does nothing else. For Arabic that means the index holds exactly one orthography of every
+        # word and a reader has to reproduce it character for character, diacritics included.
+        #
+        # Measured through this exact scope against the seeded corpus, `simple` returns ZERO results for
+        # `وَاتساب` (harakat), `واــتساب` (tatweel), `رساله` (heh for teh marbuta), `الواتساب` and `التصنيفات`
+        # (definite article), and `١٣١٠٤٩` (Arabic-Indic digits for 131049), while their canonical spellings
+        # return five each. Under `arabic` all of those resolve, and the Arabic-Indic digits fold to ASCII so a
+        # reader on an Arabic keyboard finds the error-code article.
+        #
+        # SAFE ON A SHARED SCOPE, which is what makes this acceptable for every tenant's Help Center and not
+        # only the documentation portals: `to_tsvector` output is byte-identical under both configurations for
+        # 23 Latin probes, and 25 English queries return the same rows in the same order. The Arabic snowball
+        # stemmer leaves Latin tokens alone and its stop-word list is Arabic. 65 A/B cases: 9 fixed, 0 broken.
+        #
+        # NO REINDEX AND NOTHING TO DRIFT: `articles` has no tsvector column and no full-text index
+        # (db/schema.rb:202-228), so `to_tsvector` is computed per query. The configuration is bundled with
+        # PostgreSQL (`pg_ts_config` carries `arabic` on the 16.x this product runs).
+        #
+        # NOT fixed by this, and open: alef variants `أ إ آ` do not fold to `ا`, so `الخطا` still finds
+        # nothing. Closing it needs character folding before tokenization, which `unaccent` cannot do and
+        # which pg_search cannot inject into `against:`. Recorded as A4-O1.
+        dictionary: 'arabic',
         prefix: true,
         normalization: 2
       }
@@ -160,7 +186,7 @@ class Article < ApplicationRecord
   #
   # `author_id` is required on every article and stays required: Super Admin needs to know who wrote a page, and
   # Documentation::ContentSeeder stamps `SuperAdmin.first` on the whole platform corpus
-  # (custom/app/services/documentation/content_seeder.rb:22,79). But SuperAdmin is a User
+  # (custom/app/services/documentation/content_seeder.rb:298,423). But SuperAdmin is a User
   # (app/models/super_admin.rb:47), so every public documentation page and category page was publishing a named
   # operator's display name and avatar. The product's author is Lynomia.
   #

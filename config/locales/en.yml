@@ -78,6 +78,40 @@ en:
     super_admin:
       published: Article published. It is now public.
       unpublished: Article unpublished. It is no longer public.
+      editor:
+        heading_2: Heading
+        heading_3: Subheading
+        bold: Bold
+        italic: Italic
+        inline_code: Code
+        bullet_list: Bulleted list
+        ordered_list: Numbered list
+        blockquote: Quote
+        code_block: Code block
+        table: Table
+        link: Link
+        insert_image: Insert image
+        replace_image: Replace image
+        uploading: Uploading…
+        show_preview: Show preview
+        hide_preview: Hide preview
+        preview_title: Preview
+        preview_updating: Updating preview…
+        alt_required: Describe this image. Alt text is required.
+        alt_hint: It is read aloud to anyone who cannot see the image, and it is the text that appears in public
+          search results, so describe what the image shows rather than naming the file.
+        alt_confirm: Insert
+        alt_cancel: Cancel
+        missing_alt: 'An image has no alt text. Add one before saving — lines:'
+        data_image_found: 'An image is pasted in as data, which cannot be published. Replace it with an uploaded
+          image — lines:'
+        blocked_submit: This article cannot be saved yet. Fix the problems listed above the editor.
+        unsupported_type: That file type cannot be published. Use a PNG, JPEG, GIF or WebP image.
+        choose_portal_first: Choose the portal first. Images belong to one portal's media library.
+        data_image_refused: That image was pasted in as data. Use the Insert image button so it is stored as
+          documentation media.
+        no_image_at_caret: Put the cursor on the image you want to replace first.
+        replaced_image: 'Replaced the image behind this key, and every article using it:'
   errors:
     account:
       not_authorized: You are not authorized to access this account

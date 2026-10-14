@@ -90,7 +90,7 @@ delegated — see [roles and permissions](roles-and-permissions).
 
 ## Related
 
-- [Webhooks](webhooks)
+- [Webhooks](webhooks) · [Slack](slack) · [Dashboard apps](dashboard-apps)
 - [What connecting a store gives you](commerce-overview) · [Connect Shopify](connect-shopify)
 - [Agent bots](agent-bots) · [Automation rules](automation-rules)
 - [Roles and permissions](roles-and-permissions)

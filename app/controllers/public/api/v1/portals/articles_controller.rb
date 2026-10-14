@@ -1,4 +1,6 @@
 class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::BaseController
+  include Public::PortalArticleVisibility
+
   before_action :ensure_custom_domain_request, only: [:show, :index, :show_markdown]
   before_action :portal
   before_action :set_portal_layout
@@ -81,14 +83,8 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
   # The one exception is a signed-in super admin previewing before publication, which is the whole point of a preview
   # and is why the draft banner below it says what is being looked at.
   def set_article
-    scope = previewing_as_super_admin? ? @portal.articles : @portal.articles.published
-    @article = scope.find_by!(slug: permitted_params[:article_slug])
+    @article = visible_articles.find_by!(slug: permitted_params[:article_slug])
   end
-
-  def previewing_as_super_admin?
-    respond_to?(:current_super_admin) && current_super_admin.present?
-  end
-  helper_method :previewing_as_super_admin?
 
   def set_category
     return if permitted_params[:category_slug].blank?
@@ -101,7 +97,7 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
 
   def list_params
     @list_params ||= params.permit(:query, :locale, :sort, :status, :page, :per_page).tap do |permitted|
-      permitted[:query] = permitted[:query].to_s.strip.presence
+      permitted[:query] = permitted[:query].to_s.delete("\0").strip.presence
     end
   end
 
@@ -109,8 +105,12 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
     params.permit(:slug, :category_slug, :locale, :id, :article_slug)
   end
 
+  # The resolver is per request and per portal: a `media:` key resolves only against the portal being
+  # rendered, which is what keeps one portal's key from reaching another's attachment.
   def render_article_content(content)
-    ChatwootMarkdownRenderer.new(content).render_article
+    ChatwootMarkdownRenderer.new(content).render_article(
+      media: Documentation::MediaResolver.new(portal: @portal, article: @article)
+    )
   end
 end
 

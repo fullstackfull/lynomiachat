@@ -37,7 +37,10 @@ a saved set of conditions that is re-answered every time it is used, rather than
 
 ### Campaigns
 
-One approved WhatsApp template, sent at a time you choose, to everyone in a set of labels and shared audiences.
+Three kinds, in one place. A **WhatsApp campaign** sends one approved WhatsApp template, at a time you choose,
+to everyone in a set of labels and shared audiences. An **SMS campaign** does the same over a connected SMS
+number. A **live chat campaign** is the other shape: the website widget offers a message by itself once a
+visitor has been on a page you chose for as long as you chose.
 
 ### Automation
 

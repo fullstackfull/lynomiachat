@@ -93,6 +93,35 @@ RSpec.describe 'Documentation SEO', type: :request do
     it 'emits no hreflang when the article has no translation' do
       expect(body).not_to include('rel="alternate" hreflang=')
     end
+
+    # The result heading a search engine shows is <title>, and nothing pinned it, which is how it came to be the
+    # one title tag on the page that ignored the operator's SEO title.
+    it 'titles the page from the article when no SEO title overrides it' do
+      expect(body).to include('<title>Connect WooCommerce | Lynomia Chat Documentation</title>')
+    end
+  end
+
+  describe 'an article whose SEO title overrides its heading' do
+    before do
+      article.update!(meta: article.meta.merge('title' => 'WooCommerce integration setup guide'))
+      get_article
+    end
+
+    it 'uses the SEO title in the one tag a search result heading comes from' do
+      expect(body).to include('<title>WooCommerce integration setup guide | Lynomia Chat Documentation</title>')
+    end
+
+    it 'agrees with the social and meta titles rather than carrying two different headings' do
+      expect(body).to include('<meta name="title" content="WooCommerce integration setup guide">')
+      expect(body).to include('<meta property="og:title" content="WooCommerce integration setup guide">')
+      expect(body).to include('<meta name="twitter:title" content="WooCommerce integration setup guide">')
+    end
+
+    # The on-page <h1> is the article's own heading and is deliberately NOT the SEO title: the override exists to
+    # say something different to a crawler than to a reader who is already on the page.
+    it 'leaves the article heading itself alone' do
+      expect(body).to include('Connect WooCommerce')
+    end
   end
 
   describe 'an article with a published translation' do
@@ -127,6 +156,18 @@ RSpec.describe 'Documentation SEO', type: :request do
 
       expect(body).not_to include('hreflang="ar"')
     end
+
+    # `dir`, paired with `lang`. Half the documentation corpus is Arabic and the portal's own `rtl:` Tailwind
+    # utilities compile to an `[dir="rtl"]` ancestor selector, so without this the Arabic pages rendered
+    # left-to-right with every one of those rules inert.
+    # `response.body`, not the memoized `body` let, because this example makes two requests.
+    it 'declares the writing direction of each language on the page itself' do
+      get_article(translation)
+      expect(response.body).to include('<html lang="ar" dir="rtl">')
+
+      get_article
+      expect(response.body).to include('<html lang="en" dir="ltr">')
+    end
   end
 
   describe 'a category page' do
@@ -156,7 +197,6 @@ RSpec.describe 'Documentation SEO', type: :request do
 
     it 'lists every published article once, with its own canonical and its locale alternates' do
       expect(response).to have_http_status(:success)
-      expect(body.scan('<loc>').length).to eq(2)
       expect(body).to include("/articles/#{article.slug}</loc>")
       expect(body).to include("/articles/#{translation.slug}</loc>")
       expect(body).to include('xmlns:xhtml="http://www.w3.org/1999/xhtml"')
@@ -164,12 +204,34 @@ RSpec.describe 'Documentation SEO', type: :request do
       expect(body).to include('hreflang="x-default"')
     end
 
+    # Two homes, two categories, two articles. A sitemap that names the articles and not the sections they are
+    # reached through tells a crawler the sections matter less than the pages inside them.
+    it 'lists the portal home once per allowed locale and every category page' do
+      expect(body.scan('<loc>').length).to eq(6)
+      expect(body).to include("<loc>https://www.example.com/hc/#{portal.slug}/en</loc>")
+      expect(body).to include("<loc>https://www.example.com/hc/#{portal.slug}/ar</loc>")
+      expect(body).to include("/en/categories/#{category.slug}</loc>")
+      expect(body).to include("/ar/categories/#{arabic_category.slug}</loc>")
+    end
+
+    # The page itself has no canonical and no hreflang, so inventing a set for it here would be exactly the
+    # disagreement between sitemap and page the helper exists to prevent.
+    it 'claims no locale alternates for the portal home, because the home publishes none' do
+      home = body[%r{<url>\s*<loc>[^<]*/hc/#{portal.slug}/en</loc>.*?</url>}m]
+
+      expect(home).to be_present
+      expect(home).not_to include('xhtml:link')
+    end
+
     it 'leaves a draft out' do
       expect(body).not_to include(draft.slug)
     end
 
-    it 'states a last-modified date, which is the only one this product records' do
+    # A category and the portal home have no modification date of their own, and inventing one from the newest
+    # article inside them would be a number nobody stated.
+    it 'states a last-modified date for an article and for nothing else' do
       expect(body).to include("<lastmod>#{article.updated_at.to_date.iso8601}</lastmod>")
+      expect(body.scan('<lastmod>').length).to eq(2)
     end
   end
 
@@ -190,9 +252,62 @@ RSpec.describe 'Documentation SEO', type: :request do
       expect(body).to include('Disallow: /hc/*?theme=')
     end
 
+    # `?show_plain_layout=true` is not a styled duplicate -- the plain variant's head carries no canonical, no
+    # hreflang and no structured data, and the page's own JavaScript rewrites every in-page /hc/ link to carry
+    # the parameter, so one crawlable plain URL yields a complete canonical-less copy of the portal in one hop.
+    it 'keeps the canonical-less plain mirror of the portal out' do
+      expect(body).to include('Disallow: /hc/*?show_plain_layout=')
+    end
+
+    # A search results page has no canonical, its content is another page's content, and `?query=` is
+    # unbounded. The best outcome of crawling it is an indexed "No results found for ...".
+    it 'keeps the search results page out' do
+      expect(body).to include('Disallow: /hc/*/search')
+    end
+
+    # The tracking pixel calls Article#increment_view_count before it answers, so crawling it manufactures
+    # view counts for the same reason crawling the widget manufactures contacts.
+    it 'keeps the view-count tracking pixel out' do
+      expect(body).to include('Disallow: /hc/*/articles/*.png')
+    end
+
+    # Framework internals, none of them a page. Documentation media is not served from here -- the media route
+    # is app-owned and same-origin -- so excluding it costs the documentation nothing and keeps permanently
+    # signed blob URLs out of an index.
+    it 'keeps the ActiveStorage blob routes out' do
+      expect(body).to include('Disallow: /rails/')
+    end
+
+    # It is the one machine-readable surface on these pages, and robots.txt cannot exclude a search crawler
+    # without excluding those too.
+    it 'leaves the markdown form of an article crawlable' do
+      expect(body).not_to include('.md')
+    end
+
     it 'points at the sitemap of every portal it serves' do
       expect(body).to include('Sitemap: http')
       expect(body).to include("/hc/#{portal.slug}/sitemap.xml")
+    end
+  end
+
+  # A `Sitemap:` line must be absolute. The arithmetic used to turn a blank host into `https://hc/hc/...` --
+  # a hostname that does not exist -- and advertise it to every crawler; a wrong Sitemap line is worse than
+  # none, because a crawler reports it as an error and stops asking.
+  describe 'robots.txt with no host configured anywhere' do
+    before do
+      portal.update!(custom_domain: nil)
+      allow(ChatwootApp).to receive(:help_center_root).and_return(nil)
+      get '/robots.txt'
+    end
+
+    it 'still serves the rules' do
+      expect(response).to have_http_status(:success)
+      expect(body).to include('Disallow: /widget')
+    end
+
+    it 'names no sitemap rather than one on a hostname it invented' do
+      expect(body).not_to include('Sitemap:')
+      expect(body).not_to include('https://hc/')
     end
   end
 end

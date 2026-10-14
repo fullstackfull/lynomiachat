@@ -24,10 +24,21 @@ class SitePage < ApplicationRecord
   # The kinds whose route segment is dynamic, and whose slug an operator may therefore change.
   RENAMEABLE_KINDS = (KINDS - %w[standing]).freeze
 
+  # THE TEN STANDING PAGES THE ROUTE TABLE DEFINES, declared here because a standing page's path is a fixed
+  # word in config/routes/marketing.rb: a row with any other key would describe a page at an address that does
+  # not exist, and the editor would offer a preview link that raises. Validated rather than hoped about, since
+  # W4 lets an operator type a key. `spec/models/site_page_spec.rb` proves this list and the route table agree
+  # in both directions, so adding a route without adding it here fails a test rather than shipping.
+  STANDING_KEYS = %w[home features channels solutions integrations pricing support about contact faq].freeze
+
   # The SEO fields `meta` may carry. An allowlist, because `meta` is jsonb written from a form and read into
   # the document head: an unknown key would be stored forever and never rendered, which is how a jsonb column
   # becomes a junk drawer nobody can safely clear.
-  META_KEYS = %w[canonical_url og_title og_description og_image_key noindex].freeze
+  # `og_image_id` holds the id of one of this page's own `marketing_images` attachments -- an id rather than a
+  # URL, for the reason the `image` section gives: a signed ActiveStorage id is a bearer token that changes and
+  # a filename is not unique. It is optional; with nothing set, the social card falls back to the first
+  # `image` section on the page (MarketingHelper#marketing_og_image_url).
+  META_KEYS = %w[canonical_url og_title og_description og_image_id noindex].freeze
 
   enum :status, { draft: 0, published: 1, archived: 2 }, prefix: :status
 
@@ -50,6 +61,7 @@ class SitePage < ApplicationRecord
   validates :kind, inclusion: { in: KINDS }
   validates :key, presence: true, format: { with: /\A[a-z0-9]+(_[a-z0-9]+)*\z/ },
                   uniqueness: { scope: [:locale, :kind] }
+  validate :validate_standing_key
   validates :slug, presence: true, format: { with: /\A[a-z0-9]+(-[a-z0-9]+)*\z/ },
                    uniqueness: { scope: [:locale, :kind] }
   validates :title, presence: true, length: { maximum: 160 }
@@ -94,6 +106,28 @@ class SitePage < ApplicationRecord
     marketing_images.find { |attachment| attachment.id.to_s == attachment_id.to_s }
   end
 
+  # The route-helper suffix this page's address is built from: a standing page's is its key
+  # (`marketing_features_path`), a detail page's is its kind, which is already singular
+  # (`marketing_feature_path`).
+  def route_name
+    kind == 'standing' ? key : kind
+  end
+
+  # WHERE THIS PAGE IS SERVED, built from the route table rather than from string surgery, so a route rename
+  # cannot leave the editor linking at a path that no longer exists. `preview: true` adds the parameter that
+  # lets a signed-in super admin see a page that is not published
+  # (Marketing::BaseController#find_site_page).
+  #
+  # The locale argument is how the route helpers express the two trees: Arabic is unprefixed, so it is `nil`.
+  def public_path(preview: false)
+    helpers = Rails.application.routes.url_helpers
+    route = "marketing_#{route_name}_path"
+    return nil unless helpers.respond_to?(route)
+
+    helpers.public_send(route, **(kind == 'standing' ? {} : { slug: slug }),
+                        locale: locale == 'en' ? 'en' : nil, **(preview ? { preview: 1 } : {}))
+  end
+
   private
 
   def default_slug_from_key
@@ -104,6 +138,14 @@ class SitePage < ApplicationRecord
   # changes `updated_at`, and overwriting this would claim the page is newer than it is.
   def stamp_published_at
     self.published_at ||= Time.current if status_published?
+  end
+
+  # A standing page is one of the ten the route table defines, and nothing else.
+  def validate_standing_key
+    return unless kind == 'standing'
+    return if STANDING_KEYS.include?(key)
+
+    errors.add(:key, "is not a standing page: the route table defines #{STANDING_KEYS.join(', ')}")
   end
 
   def validate_standing_slug

@@ -832,6 +832,13 @@ en:
         not_configured: 'There is no address to send a test to. Save one first.'
         test_sent: 'A test email was accepted by the mail server for %{detail}. Check that it arrives.'
         test_failed: 'The test email could not be sent: %{detail}'
+    site_pages:
+      published: 'This page is now published.'
+      unpublished: 'This page is now unpublished. Visitors get a 404 until it is published again.'
+      no_public_address: 'This page has no public address, so there is nothing to preview.'
+      image_uploaded: 'Uploaded. Its image id is %{id} — choose it in an image section or on the SEO panel.'
+      image_missing: 'That image is not on this page.'
+      image_removed: 'The image was removed. Any section still naming it renders nothing.'
     operations:
       case_title: "Operational issue: %{source} %{signal}"
       case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."

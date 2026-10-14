@@ -90,6 +90,19 @@ namespace :super_admin do
   #
   # The id constraint keeps a non-numeric segment out of `show`; `new` is matched by its own route first and
   # is unaffected, which is why these three have a create form and site_quote_requests does not.
+  # The page editor. The four member actions are all POST or DELETE: publishing, unpublishing, uploading and
+  # deleting are decisions, and none of them may be reachable by a link somebody pastes. `preview` is the one
+  # GET, because it only redirects to the public page.
+  resources :site_pages, constraints: { id: /\d+/ } do
+    member do
+      get :preview
+      post :publish
+      post :unpublish
+      post :upload_image
+      delete :destroy_image
+    end
+  end
+
   resources :site_nav_links, constraints: { id: /\d+/ }
   resources :site_faq_entries, constraints: { id: /\d+/ }
   resources :site_redirects, constraints: { id: /\d+/ }

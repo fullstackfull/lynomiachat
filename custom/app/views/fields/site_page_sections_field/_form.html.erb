@@ -1,0 +1,106 @@
+<%#
+  The ordered sections editor.
+
+  HOW ORDERING, REMOVING AND ADDING WORK, with no JavaScript at all: every section carries a position number
+  an operator can change and a remove box they can tick, and the last block on the form is an empty row whose
+  only control is a type select. Save, and Marketing::SectionsInput reorders, drops the removed rows and turns
+  the chosen type into a new section -- whose own fields then appear on the next render. Two saves to add a
+  section, one to reorder or remove any number of them.
+
+  WHY NOT A DRAG HANDLE. Super Admin renders one Vue island per page and the rest of this form has to share
+  the screen (SitePageSectionsField says more). A number input is less elegant and cannot break the save.
+
+  `kind` CARRIES THE SECTION TYPE, not `type`: Administrate's parameter reader raises on any nested hash with
+  a `type` key, so a form posting one would 500 on every save.
+%>
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'Sections' %>
+</div>
+<div class="field-unit__field">
+  <p class="text-xs text-n-slate-11 mb-4">
+    The blocks this page is built from, in the order they appear. Change a <strong>position</strong> number to
+    reorder, tick <strong>remove</strong> to delete, or choose a type in the last block and save to add one.
+    Bodies are plain text — a link is its own field, with the shapes it may take listed beside it.
+    Up to <%= field.max_sections %> sections.
+  </p>
+
+  <% field.sections.each_with_index do |section, index| %>
+    <% type = section['type'].to_s %>
+    <% prefix = "#{f.object_name}[#{field.attribute}][#{index}]" %>
+    <fieldset class="border border-slate-100 rounded-md p-3 mb-4">
+      <legend class="text-sm font-semibold px-1"><%= "#{index + 1}. #{type}" %></legend>
+
+      <input type="hidden" name="<%= prefix %>[kind]" value="<%= type %>">
+
+      <div class="flex items-center gap-4 mb-3">
+        <label class="text-xs">
+          Position
+          <input type="number" step="1" min="0" class="w-16 ml-1"
+                 name="<%= prefix %>[position]" value="<%= index %>">
+        </label>
+        <label class="text-xs">
+          <input type="checkbox" name="<%= prefix %>[remove]" value="1">
+          Remove this section
+        </label>
+      </div>
+
+      <% field.fields_for(type).each do |name| %>
+        <%= render 'fields/site_page_sections_field/input',
+                   field: field, name: name, value: section[name], prefix: prefix %>
+      <% end %>
+
+      <% if field.itemised?(type) %>
+        <%# Existing items plus one blank row, so an item can be added in the same save as an edit. A row left
+            entirely blank is dropped by Marketing::SectionSchema. %>
+        <% items = Array(section['items']) %>
+        <div class="mt-3 border-t border-slate-100 pt-3">
+          <p class="text-xs font-semibold mb-2">Items</p>
+          <% (items + [{}]).each_with_index do |item, item_index| %>
+            <% item_prefix = "#{prefix}[items][#{item_index}]" %>
+            <div class="border border-slate-50 rounded p-2 mb-2">
+              <div class="flex items-center gap-4 mb-2">
+                <label class="text-xs">
+                  Position
+                  <input type="number" step="1" min="0" class="w-16 ml-1"
+                         name="<%= item_prefix %>[position]" value="<%= item_index %>">
+                </label>
+                <% if item_index < items.size %>
+                  <label class="text-xs">
+                    <input type="checkbox" name="<%= item_prefix %>[remove]" value="1">
+                    Remove
+                  </label>
+                <% else %>
+                  <span class="text-xs text-n-slate-11">New item — leave blank to add nothing.</span>
+                <% end %>
+              </div>
+              <% field.item_fields_for(type).each do |name| %>
+                <%= render 'fields/site_page_sections_field/input',
+                           field: field, name: name, value: item[name], prefix: item_prefix %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
+
+  <% if field.sections.size < field.max_sections %>
+    <% new_prefix = "#{f.object_name}[#{field.attribute}][#{field.sections.size}]" %>
+    <fieldset class="border border-dashed border-slate-200 rounded-md p-3">
+      <legend class="text-sm font-semibold px-1">Add a section</legend>
+      <select name="<%= new_prefix %>[kind]">
+        <option value="">— choose a type —</option>
+        <% field.types.each do |type| %>
+          <option value="<%= type %>"><%= type %></option>
+        <% end %>
+      </select>
+      <p class="text-xs text-n-slate-11 mt-2">
+        Choose a type and save. The section is added at the end of the page and its own fields appear here.
+      </p>
+    </fieldset>
+  <% else %>
+    <p class="text-xs text-y-800">
+      This page has the maximum of <%= field.max_sections %> sections. Remove one to add another.
+    </p>
+  <% end %>
+</div>

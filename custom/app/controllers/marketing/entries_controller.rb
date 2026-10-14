@@ -25,8 +25,10 @@ class Marketing::EntriesController < Marketing::BaseController
     return render_marketing_404 if scope.nil?
 
     @collection = scope[:collection]
-    @site_page = SitePage.live.find_by(locale: marketing_locale, kind: @collection.to_s.singularize,
-                                       slug: params[:slug])
+    # `page_scope` rather than `SitePage.live`, so the Super Admin draft preview reaches a detail page too.
+    # It is the published scope for every other request (Marketing::BaseController#preview?).
+    @site_page = page_scope.find_by(locale: marketing_locale, kind: @collection.to_s.singularize,
+                                    slug: params[:slug])
     return redirect_or_404 if @site_page.nil?
 
     # The catalogue entry is OPTIONAL. A seeded page has one, and it contributes the availability badge, the

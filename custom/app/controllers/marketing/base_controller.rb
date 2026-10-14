@@ -48,7 +48,7 @@ class Marketing::BaseController < PublicController
   # The log line exists for the one case the verify step cannot catch: a row an operator unpublished after
   # the deploy. An operator reading the log sees the kind, the key and the locale rather than a bare 404.
   def find_site_page(kind, key)
-    page = SitePage.live.find_by(locale: marketing_locale, kind: kind.to_s, key: key.to_s)
+    page = page_scope.find_by(locale: marketing_locale, kind: kind.to_s, key: key.to_s)
     return page if page
 
     Rails.logger.error(
@@ -56,6 +56,27 @@ class Marketing::BaseController < PublicController
       'run `rake marketing:content` to seed it, or publish it in Super Admin'
     )
     nil
+  end
+
+  # THE DRAFT PREVIEW, and the whole of it.
+  #
+  # An operator editing a page needs to see the real page, in the real layout, with the real navigation,
+  # before it is published -- a second renderer in Super Admin would show something the published page does
+  # not, which is the class of defect this repository has already paid for in the documentation editor. So
+  # the preview is the public action with the published-only scope lifted, for a signed-in super admin only.
+  #
+  # `super_admin_signed_in?` is evaluated ONLY when the parameter is present, so an ordinary public request
+  # never touches the Warden session for that scope. A previewed page is not indexable either way: the head
+  # partial emits `noindex` for any row that is not published, and the sitemap is built from
+  # `SitePage.live`, so a preview URL that leaks is not a draft in search results.
+  def preview?
+    params[:preview].present? && super_admin_signed_in?
+  end
+
+  # The published scope, or every row when a super admin is previewing. Protected rather than private because
+  # Marketing::EntriesController looks a page up by slug and uses it too.
+  def page_scope
+    preview? ? SitePage.all : SitePage.live
   end
 
   private

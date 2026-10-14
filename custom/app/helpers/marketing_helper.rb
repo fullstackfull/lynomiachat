@@ -19,9 +19,7 @@ module MarketingHelper
   # controller resolved from the URL, and reading a controller instance variable from a helper module is both a
   # RuboCop offence and a way for a view to render a locale nobody set.
 
-  def marketing_other_locale
-    marketing_locale == 'en' ? 'ar' : 'en'
-  end
+  def marketing_other_locale = marketing_locale == 'en' ? 'ar' : 'en'
 
   # Arabic has no prefix, English is `/en`. `locale: nil` is how the route helpers express the unprefixed tree,
   # so an Arabic URL is built by passing nil rather than by string surgery on a path.
@@ -37,9 +35,7 @@ module MarketingHelper
     public_send("marketing_#{route}_path", **extra, locale: locale == 'en' ? 'en' : nil)
   end
 
-  def marketing_url(page, locale: marketing_locale)
-    marketing_absolute_url(marketing_path(page, locale: locale))
-  end
+  def marketing_url(page, locale: marketing_locale) = marketing_absolute_url(marketing_path(page, locale: locale))
 
   # Returns a root-relative path when no host is configured, rather than fabricating one. The alternative --
   # interpolating a blank host -- is exactly how `https://hc/hc/...` reached production canonicals.
@@ -148,9 +144,7 @@ module MarketingHelper
     ]
   end
 
-  def marketing_dir
-    marketing_locale == 'ar' ? 'rtl' : 'ltr'
-  end
+  def marketing_dir = marketing_locale == 'ar' ? 'rtl' : 'ltr'
 
   # An operator-entered link target becomes an href here, and only here.
   #
@@ -199,11 +193,15 @@ module MarketingHelper
   # be absolute; and it is served from the marketing media route rather than `/rails/active_storage/...`
   # because robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52) and an ActiveStorage
   # signed id never expires.
+  # THE OPERATOR'S CHOICE FIRST. `meta['og_image_id']` is the SEO field on the page, set on the Super Admin
+  # editor's SEO panel; with nothing set it falls back to the first `image` section, which is what every
+  # seeded page has and what an operator who has not thought about social cards would expect.
   def marketing_og_image_url(page)
     return nil if page.nil?
 
-    section = Array(page.sections).find { |candidate| candidate['type'] == 'image' }
-    attachment = page.image_for(section && section['attachment_id'])
+    chosen = page.meta['og_image_id'].presence ||
+             Array(page.sections).find { |candidate| candidate['type'] == 'image' }&.fetch('attachment_id', nil)
+    attachment = page.image_for(chosen)
     return nil if attachment.nil?
 
     marketing_absolute_url(marketing_media_path(id: attachment.id))

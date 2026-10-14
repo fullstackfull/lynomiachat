@@ -93,6 +93,8 @@ Rails.application.routes.draw do
           resources :canned_responses, only: [:index, :create, :update, :destroy]
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
+            # What a rule or a flow condition MAY say, so a client does not carry its own copy.
+            get :vocabulary, on: :collection
           end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member

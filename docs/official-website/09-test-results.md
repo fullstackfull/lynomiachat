@@ -33,6 +33,33 @@ Of those, 250 are this project's own:
 
 RuboCop: clean on every file this project touches.
 
+### The wider regression gate
+
+The targeted run above proves this project's own behaviour. It does not prove that the rest of the
+installation still works, so the closeout gate was the wider one:
+
+```
+bundle exec rspec spec/requests/search_indexing_spec.rb spec/requests/marketing spec/requests/super_admin \
+                  spec/requests/platform_support spec/mailers spec/jobs spec/custom \
+                  spec/models/site_page_spec.rb spec/helpers
+→ 1682 examples, 0 failures
+```
+
+`spec/requests/platform_support` is included deliberately: the brief required that the Documentation V2 and
+Platform Support boundaries not be weakened, and those are the specs that hold them.
+
+Two things had to be corrected in the test environment before this number was true, and neither was a code
+defect — recording them because both will recur on a fresh container:
+
+- **`spec/jobs/lynomia/queue_health_job_spec.rb` (2 examples) needs a running Redis.** `Sidekiq::Queue`
+  connects to `redis://127.0.0.1:6379`; with nothing listening the job raises
+  `RedisClient::CannotConnectError`. `service redis-server start` fixes it. It is unrelated to this project
+  — the job and its spec predate it (commit `b443cff0`).
+- **`spec/jobs/audit_trail/retention_job_spec.rb` (4 examples) is sensitive to rows left behind by the
+  browser pass.** The crawl in §2 runs against the test database outside a transaction, so the audit rows its
+  CMS and settings edits wrote survived into the suite, and the retention job's "deletes nothing the second
+  time" examples saw 15 extra rows. The cleanup in §7 now removes them.
+
 ---
 
 ## 2. The browser pass
@@ -263,6 +290,7 @@ watched.
 
 ```bash
 service postgresql start
+service redis-server start   # Sidekiq and the GlobalConfig cache both want 127.0.0.1:6379
 
 # Seed the test database and the documentation corpus (a super admin must exist first).
 RAILS_ENV=test bundle exec rails runner 'Marketing::ContentSeeder.apply!'
@@ -274,7 +302,25 @@ RAILS_ENV=test FRONTEND_URL=http://localhost:3001 bundle exec rails server -p 30
 node crawl.mjs        # the script used for this pass is in the session record, not the repository
 
 # Afterwards, remove what the crawl wrote: it ran OUTSIDE a transaction, so anything left behind
-# leaks into later examples. This was measured during this work -- three stray quote requests made
-# two security examples fail for the wrong reason.
-RAILS_ENV=test bundle exec rails runner '[SiteQuoteRequest, SiteNavLink, SiteFaqEntry, SiteRedirect, SitePage].each(&:delete_all)'
+# leaks into later examples. Both halves of this were measured during this work -- three stray quote
+# requests made two security examples fail for the wrong reason, and fifteen stray audit rows made four
+# audit-retention examples fail for the wrong reason.
+RAILS_ENV=test bundle exec rails runner '
+  [SiteQuoteRequest, SiteNavLink, SiteFaqEntry, SiteRedirect, SitePage].each(&:delete_all)
+  Article.delete_all; Category.delete_all; Portal.delete_all
+  Account.where(name: "W6 Tenant").destroy_all
+  SuperAdmin.where(email: "w6-operator@example.com").destroy_all
+  InstallationConfig.where(name: "MARKETING_QUOTE_NOTIFICATION_EMAIL").delete_all
+  GlobalConfig.clear_cache
+  Custom::AuditLog.where(comment: %w[marketing.quote_notification_email_changed marketing.site_page_changed]).delete_all
+'
 ```
+
+Two of those lines are the easy ones to forget:
+
+- **`GlobalConfig.clear_cache`.** The notification address is cached in Redis with a one-day TTL, and Redis is
+  not inside the suite's transaction — deleting the `InstallationConfig` row without evicting the cache leaves
+  the crawl's address being served to later examples.
+- **The audit rows.** Nothing on the public site writes them, but every CMS save and every settings change in
+  the crawl does, and `AuditTrail::RetentionJob`'s idempotence examples assert on the exact set of surviving
+  ids. The event name is in `comment`, not `action` (`audits.action` holds create/update/destroy).

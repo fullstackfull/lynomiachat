@@ -72,9 +72,10 @@ module DocumentationSeedReport
     puts format(SUMMARY, label: label, created: result.created, updated: result.updated,
                          unchanged: result.unchanged, adopted: result.adopted, untracked: result.untracked,
                          locales: result.locales.join(', '))
-    # Absent when the media seeder was never built, which is a Result constructed by hand; a live run builds it
-    # in the preflight, so even a media-preflight refusal carries a zeroed struct rather than nil (and prints no
-    # summary at all, because PREFLIGHT_FAILED aborts first).
+    # A live run CAN produce a nil `media` -- a refusal before the media preflight is reached leaves it unset --
+    # but that path aborts through PREFLIGHT_FAILED without printing a summary, so this guard is reached only by
+    # a Result built by hand. Kept, and said plainly, rather than left as something a later reader might take as
+    # evidence that a live summary can be media-less.
     puts media_line(result.media) if result.media
     result.divergences.each { |divergence| puts "  #{line(divergence)}" }
   end

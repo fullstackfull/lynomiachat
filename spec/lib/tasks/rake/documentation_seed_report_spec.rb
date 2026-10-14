@@ -37,10 +37,18 @@ RSpec.describe DocumentationSeedReport do
     # APPLY_FAILED naming the pass, both covered below. This asserts the four by name so a renamed or dropped
     # counter cannot pass silently.
     it 'names attached, replaced, unchanged and purged on the media line' do
+      # PAIRWISE DISTINCT counters, which is what makes this example able to fail on its own: the exact-string
+      # example above would also catch a renamed counter, but neither it nor an all-distinct-from-zero assertion
+      # catches two format arguments swapped while both read 0. With 1/2/3/4/5/6 a swap moves a number.
+      media.replaced = 2
+      media.unchanged = 3
+      media.purged = 4
+      media.unmeasured = 5
+      media.unreferenced = 6
+
       expect { described_class.run('articles') { result } }
-        .to output(a_string_including('1 attached').and(a_string_including('0 replaced'))
-                                                   .and(a_string_including('3 unchanged'))
-                                                   .and(a_string_including('1 purged'))).to_stdout
+        .to output(a_string_including('media: 1 attached, 2 replaced, 3 unchanged (5 without dimensions); ' \
+                                      'sweep: 4 purged, 6 unreferenced in the repository')).to_stdout
     end
 
     # THE SWEEP IS THE LAST THING THE MEDIA PASS DOES, so on any earlier failure its counters are unknown rather

@@ -518,8 +518,11 @@ describe Documentation::ContentSeeder do
       end
 
       # The four defects `Corpus#media_problems` cannot see, which is why the media seeder's own write-free phase
-      # runs in the preflight too (content_seeder.rb `refuse_media!`). Each one is decidable with no write, so
-      # each must refuse as a PreflightError and leave the database as the run found it.
+      # runs in the preflight too -- `media_seeder.preflight!` at the end of `ContentSeeder#preflight!`, whose
+      # method-level rescue re-raises its Error as a PreflightError. Each one is decidable with no write, so each
+      # must refuse as a PreflightError and leave the database as the run found it. These four ARE the media
+      # seeder's own guards: owner test I above is held by `Corpus#media_problems`, which predates this delta.
+
       {
         'empty alt text' => ['![](media:getting-started/inbox.png)', /has empty alt text/],
         'a key in a link position' => ['See [it](media:getting-started/inbox.png).', /used as a link destination/],

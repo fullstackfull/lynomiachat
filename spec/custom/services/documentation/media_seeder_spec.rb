@@ -192,6 +192,19 @@ describe Documentation::MediaSeeder do
       expect(keys_attached).to be_empty
     end
 
+    # The last divergence between the two scanners, and the one that re-opens A5'-O1 for a single shape if it is
+    # left: `Corpus#split` ends in `.strip`, so a body whose first line is indented four spaces publishes as a
+    # PARAGRAPH -- the preflight sees an image node and requires the file -- while text that keeps the
+    # indentation parses as an indented CODE BLOCK, so the media pass would collect no key and attach nothing.
+    it 'reads an indented first body line the way the published article will' do
+      root.join('en', 'whatsapp', 'connect-whatsapp.md')
+          .write("---\ntitle: T\nposition: 10\n---\n\n    ![Alt](media:whatsapp/connect-number/step-2.png)\n")
+      media('whatsapp/connect-number/step-2.png')
+
+      expect(seed.uploaded).to eq(1)
+      expect(keys_attached).to eq(['whatsapp/connect-number/step-2.png'])
+    end
+
     it 'fails on a `media:` key used as a link destination' do
       article('See [the screenshot](media:whatsapp/connect-number/step-2.png).')
 

@@ -575,6 +575,30 @@ service — `custom/app/services/billing/plan_change.rb:16`, `override_grant.rb:
 puts the media pass first. CLAUDE.md: a misconfigured state that indicates a setup bug fails loudly rather
 than silently skipping.
 
+> **AMENDED when A5'-O1 was closed** (P2-WORKSTREAM-OWNERSHIP.md §N). The paragraph above describes the
+> operator experience as it was while `MediaSeeder` had no caller. It now has one, and the two phases surface
+> differently:
+>
+> - A defect found by the **preflight** half — a bad key, a missing file, bytes that are not a permitted raster
+>   type, bytes over the cap, empty alt, a key in a link position, a spaced destination, a corpus file in the
+>   `uploads/` namespace — is re-raised by `ContentSeeder#preflight!` as its own `PreflightError`, so the
+>   operator reads the `PREFLIGHT_FAILED` block every other refusal prints: *"the corpus will not apply
+>   cleanly, so NOTHING was written. Every file to fix:"*. Exit 1, nothing written, and no backtrace.
+> - A failure in the **apply** half — which after that preflight is only the undecidable kind, a storage service
+>   refusing an object — surfaces as `ApplyFailure` whose `where` is `the corpus media pass`, printed by
+>   `APPLY_FAILED` above the counts of what completed. Exit 1, and the run is safe to repeat.
+>
+> §3.2's code block is likewise historical: owner ruling 3 split `ContentSeeder#perform!` into a write-free
+> preflight and an idempotent apply after this document was frozen, so the integration is the media preflight
+> inside the content preflight and `perform!` first inside the apply, rather than one line in `perform!`. The
+> ordering REASON §3.2 gives is unchanged and is honoured more strictly: nothing at all is written for any
+> decidable defect.
+>
+> Two checks this section freezes — the content type from the bytes, and the 2 MB cap — are made by the
+> PREFLIGHT now, not only at the attach boundary. `Documentation::MediaUpload#validate_bytes!` is the single
+> implementation both call, so they cannot drift.
+
+
 ### 3.7 What `Result` reports, so the rake task can print counts
 
 | Member | Meaning |

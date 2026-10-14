@@ -136,9 +136,14 @@ class Documentation::MediaSeeder
   def body_of(path)
     source = File.read(path)
     front = source[Documentation::ContentSeeder::Corpus::FRONT_MATTER]
-    return source if front.nil?
-
-    ("\n" * front.count("\n")) + source.delete_prefix(front)
+    body = front.nil? ? source : ("\n" * front.count("\n")) + source.delete_prefix(front)
+    # `Corpus#split` ends in `.strip`, and that is not cosmetic: it decides the BLOCK TYPE of the first content
+    # line. A body whose first line is indented four spaces is a paragraph to the stripped text the article will
+    # publish, and an indented CODE BLOCK to text that keeps the indentation -- so one scanner would see an image
+    # reference where the other saw prose, which is the A5'-O1 shape over again. The leading indentation goes and
+    # the newlines before it stay, so the two scanners agree on structure and the line numbers still point at the
+    # line an operator opens.
+    body.sub(/\A(\n*)[ \t]+/) { Regexp.last_match(1) }
   end
 
   # The lines a fenced or indented code block occupies, which is where prose about this grammar lives: the

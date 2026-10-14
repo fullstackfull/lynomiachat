@@ -130,6 +130,10 @@ class Documentation::MediaUpload
     # copy of the string. Read from the BLOB side, because `portal.documentation_media` returns the PENDING
     # change's attachments when one exists (attached/many.rb:32-34), which is the in-memory state that lied.
     unless blob.attachments.exists?(record: portal, name: portal.documentation_media.name)
+      # The blob row and its stored object already exist by here, and nothing in this application reclaims an
+      # unattached blob (app/models/portal.rb says so of the media namespace). Purged before raising, so a
+      # failure that recurs does not leave one orphan row and one orphan object per attempt per key.
+      blob.purge
       raise Error, "#{key} was not attached to #{portal.slug}: #{portal.errors.full_messages.to_sentence.presence || 'the record would not save'}."
     end
 

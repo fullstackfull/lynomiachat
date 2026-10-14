@@ -84,10 +84,11 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
   # reconcile against the corpus. `divergences` is the per-field detail behind them.
   #
   # `media` is Documentation::MediaSeeder::Result for the same run -- R2-MEDIA-INTERFACE.md section 3.2 asks for
-  # exactly this member and no second reporting shape. It holds the LIVE struct rather than a copy, assigned when
-  # the media seeder is first BUILT, which is in the preflight -- so an ApplyFailure reports what the media pass
-  # completed before it failed, and a media-preflight refusal carries a zeroed struct rather than nil. `nil`
-  # means no seeder was ever built, which is a Result constructed by hand.
+  # exactly this member and no second reporting shape. It holds the LIVE struct rather than a copy, assigned on
+  # the first `media_seeder` call, which is in `preflight!` -- so an ApplyFailure reports what the media pass
+  # completed before it failed, and a refusal raised by the media preflight itself carries a ZEROED struct rather
+  # than nil. `nil` means the run refused before the media preflight was reached: an unsound manifest, or a
+  # collected corpus or row problem.
   Result = Struct.new(:created, :updated, :unchanged, :adopted, :untracked, :locales, :divergences, :media,
                       keyword_init: true)
   Divergence = Struct.new(:kind, :locale, :slug, :path, :fields, keyword_init: true)
@@ -395,7 +396,12 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
   # (activestorage-7.2.3.2/lib/active_storage/attached/many.rb:51-57). So the media pass reported `uploaded: 1`
   # with no attachment row. The plan is an inspection, not a mutation, and this is what makes that true.
   def plan_file(file)
+    # `.portal = portal` after the lookup is not redundant: the association form used to set the inverse for free
+    # on a FOUND row, and `Article.find_or_initialize_by` does not -- so without it every one of the 276 found
+    # rows on a steady-state run re-SELECTs its portal during `save!`. Writing the same `portal_id` leaves the
+    # record clean, so the attach-boundary property this change exists for is untouched.
     article = Article.find_or_initialize_by(portal: portal, slug: file.slug, locale: file.locale)
+    article.portal = portal
     adopting = article.persisted? && article.seeded_digests.blank?
     PlannedFile.new(file: file, article: article, adopting: adopting,
                     kept: article.new_record? || adopting ? [] : operator_fields(article, file),

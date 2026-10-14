@@ -109,9 +109,85 @@ RSpec.describe 'Flows API', type: :request do
       expect(response.parsed_body['variables']).to eq(Flows::Variables::SUGGESTED.as_json)
     end
 
+    # THE TRIPWIRE THAT KEEPS THE FORM AND THE VALIDATOR IN STEP. The Studio renders a node's
+    # configuration form from `node_fields`; a key the validator checks but the schema omits is a
+    # setting no merchant can reach, and a key the schema offers but the validator does not know
+    # is a field whose value is rejected with `unknown_field` the moment it is saved. Both are
+    # silent, and both are caught here.
+    it 'describes every data key of every node type, and no others' do
+      fields = response.parsed_body['node_fields']
+
+      expect(fields.keys).to match_array(Flows::NodeTypes::TYPES.keys)
+      Flows::NodeTypes::TYPES.each_key do |type|
+        expect(fields[type].pluck('key')).to eq(Flows::NodeTypes.data_keys(type)), "node_fields disagrees for #{type}"
+      end
+    end
+
+    it 'carries the validator\'s own limits, so a form cannot accept what publish will refuse' do
+      fields = response.parsed_body['node_fields']
+      field = ->(type, key) { fields[type].find { |entry| entry['key'] == key } }
+
+      expect(field.call('question', 'reply_type')).to include('values' => Flows::NodeValidator::REPLY_TYPES,
+                                                              'default' => 'any')
+      expect(field.call('question', 'max_attempts')).to include('min' => 1, 'max' => 5, 'default' => 3)
+      expect(field.call('buttons', 'options')).to include('max_items' => Flows::ChannelCapabilities::WHATSAPP[:buttons][:max],
+                                                          'title_max' => Flows::ChannelCapabilities::WHATSAPP[:buttons][:title],
+                                                          # Buttons have no description on WhatsApp: 0 means do not offer it.
+                                                          'description_max' => 0)
+      expect([field.call('list', 'options')['description_max'], field.call('delay', 'seconds')['max']])
+        .to eq([Flows::ChannelCapabilities::WHATSAPP[:list][:description], Flows::NodeValidator::MAX_DELAY_SECONDS])
+      # The two conditional rules the validator really applies, named rather than guessed at.
+      expect([field.call('question', 'keywords')['required_when'], field.call('commerce_lookup', 'number')['shown_when']])
+        .to eq([{ 'key' => 'reply_type', 'value' => 'keywords' }, { 'key' => 'mode', 'value' => 'order_number' }])
+      expect(response.parsed_body['store_scopes']).to match_array(%w[contact conversation context])
+    end
+
+    it 'serves no templates when the account has no WhatsApp inbox to send one from' do
+      expect(response.parsed_body['templates']).to eq([])
+    end
+
     it 'serves a starter graph for a flow that has never been edited' do
       expect(response.parsed_body['graph']['nodes'].pluck('type')).to eq(%w[start end])
       expect(response.parsed_body['errors']).to eq([])
+    end
+  end
+
+  # WHAT A SEND TEMPLATE NODE MAY ACTUALLY NAME, and what each one needs filling in. Served so the
+  # builder cannot offer a template the validator will refuse, nor miss a value it demands --
+  # both of which only show up at publish.
+  describe 'the template catalogue' do
+    let(:approved) do
+      { 'name' => 'spring_offer', 'language' => 'en_US', 'status' => 'APPROVED', 'category' => 'MARKETING',
+        'components' => [{ 'type' => 'HEADER', 'format' => 'IMAGE' },
+                         { 'type' => 'BODY', 'text' => 'Hi {{1}}, {{2}} off today.' }] }
+    end
+    let(:unapproved) { approved.merge('name' => 'pending_offer', 'status' => 'PENDING') }
+    # Excluded by the dashboard composer's own rule, not by Meta: an authentication template.
+    let(:authentication) { approved.merge('name' => 'otp_code', 'category' => 'AUTHENTICATION') }
+
+    before do
+      create(:channel_whatsapp, provider: 'whatsapp_cloud', account: account, validate_provider_config: false,
+                                sync_templates: false, message_templates: [approved, unapproved, authentication])
+    end
+
+    it 'offers only what the validator would accept, with the values it takes' do
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+
+      templates = response.parsed_body['templates']
+      expect(templates.pluck('name')).to eq(['spring_offer'])
+      expect(templates.first).to include('language' => 'en_US', 'category' => 'MARKETING')
+      expect(templates.first['slots']).to eq([{ 'section' => 'body', 'key' => '1', 'kind' => 'text' },
+                                              { 'section' => 'body', 'key' => '2', 'kind' => 'text' },
+                                              { 'section' => 'header', 'key' => 'media_url', 'kind' => 'media_url' }])
+    end
+
+    it "never offers another account's template" do
+      create(:channel_whatsapp, provider: 'whatsapp_cloud', account: create(:account), validate_provider_config: false,
+                                sync_templates: false, message_templates: [approved.merge('name' => 'foreign_offer')])
+
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['templates'].pluck('name')).to eq(['spring_offer'])
     end
   end
 

@@ -5,7 +5,9 @@
 #
 #   GET    /flows                   the account's flows
 #   POST   /flows                   create: name, description
-#   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors
+#   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors, and
+#                                  what a builder needs to edit it: the node catalogue, each node type's field
+#                                  shapes, the variable allow-list and the templates it may send
 #   PATCH  /flows/:id               name, description
 #   POST   /flows/:id/duplicate    copy the flow and its graph into a new, unpublished flow
 #   DELETE /flows/:id               delete (a flow that is not published and has no live session)
@@ -202,8 +204,23 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
     current = @flow.flow_versions.draft.first || @flow.published_flow_version
     flow_json(@flow).merge(graph: current&.graph || Flows::Versions::STARTER,
                            errors: current ? versions.validate(current) : [], capabilities: Flows::ChannelCapabilities::WHATSAPP,
-                           node_types: Flows::NodeTypes::TYPES, variables: Flows::Variables::SUGGESTED,
-                           channel_eligibility: channel_eligibility)
+                           node_types: Flows::NodeTypes::TYPES, node_fields: Flows::NodeFields::FOR,
+                           store_scopes: Flows::NodeFields::STORE_SCOPES, variables: Flows::Variables::SUGGESTED,
+                           templates: sendable_templates, channel_eligibility: channel_eligibility)
+  end
+
+  # THE TEMPLATES A SEND TEMPLATE NODE IN THIS FLOW MAY ACTUALLY SEND, with the parameters each one takes.
+  #
+  # Served rather than derived by the builder, because the derivation is not simple and getting it wrong is
+  # silent: which templates are sendable is Meta's approval plus the dashboard composer's own exclusions
+  # (Flows::Template.sendable?), and which values one needs is parsed out of its components
+  # (Flows::Template.slots). A builder that computed either itself would be a second implementation of a rule
+  # that changes whenever Meta's component types do -- and the merchant would find out at publish.
+  #
+  # THE CANDIDATE INBOXES ARE THE VALIDATOR'S OWN -- literally its own method, not a copy of it -- so the set
+  # offered here is the set that will be accepted at publish.
+  def sendable_templates
+    Flows::Template.sendable(Flows::TemplateValidator.candidates(Current.account, @flow.inboxes.to_a))
   end
 
   # WHAT THIS FLOW'S OWN INBOXES CAN ACTUALLY RUN, which is a different question from the one

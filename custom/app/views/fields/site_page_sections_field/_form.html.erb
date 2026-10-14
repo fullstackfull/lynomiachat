@@ -88,7 +88,9 @@
     <% new_prefix = "#{f.object_name}[#{field.attribute}][#{field.sections.size}]" %>
     <fieldset class="border border-dashed border-slate-200 rounded-md p-3">
       <legend class="text-sm font-semibold px-1">Add a section</legend>
-      <select name="<%= new_prefix %>[kind]">
+      <%# `aria-label` rather than a visible label: the legend above says what this is for a sighted operator
+          but is not an accessible name for the control, which axe measured on this form. %>
+      <select name="<%= new_prefix %>[kind]" aria-label="Type of section to add">
         <option value="">— choose a type —</option>
         <% field.types.each do |type| %>
           <option value="<%= type %>"><%= type %></option>

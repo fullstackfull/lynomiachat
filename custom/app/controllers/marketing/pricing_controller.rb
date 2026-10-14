@@ -13,6 +13,20 @@
 # (custom/app/models/billing_plan.rb:9), bill monthly or annually, flat or per agent (:4-5), and can sell
 # channels per plan (:87-93). The page says what a quote will be based on without saying what it will cost.
 class Marketing::PricingController < Marketing::BaseController
+  # CSRF PROTECTION, PUT BACK FOR THE ONE WRITE ON THIS SURFACE.
+  #
+  # `PublicController` does `skip_before_action :verify_authenticity_token` for everything beneath it
+  # (app/controllers/public_controller.rb:5), which is correct for what used to live there: the Help Center
+  # is a read-only surface and a token on a GET protects nothing. This form is the first public WRITE under
+  # that skip, and it inherited it -- measured, a token-less cross-site POST stored a quote request.
+  #
+  # So the callback is restored for `create` alone, with `:exception` rather than `:null_session`: there is
+  # no session for this form to fall back on, so nullifying one would let the write through, which is exactly
+  # the behaviour being fixed. A forged submission now answers 422 and stores nothing. The rest of the public
+  # surface is untouched.
+  protect_from_forgery with: :exception, only: :create
+  before_action :verify_authenticity_token, only: :create
+
   before_action :set_marketing_page
 
   def show

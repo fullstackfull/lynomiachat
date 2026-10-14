@@ -131,11 +131,11 @@
 
         <div class="flex flex-wrap items-center gap-4">
           <%= form.submit t('marketing.pricing.submit'),
-                          class: 'rounded-xl bg-woot-600 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-700' %>
-          <p class="text-xs text-slate-500">
+                          class: 'rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800' %>
+          <p class="text-xs text-slate-600">
             <%= t('marketing.pricing.privacy_html',
                   privacy: link_to(t('marketing.footer.privacy'), MarketingHelper::LEGAL_LINKS[:privacy],
-                                   class: 'underline hover:text-slate-700')) %>
+                                   class: 'underline hover:text-slate-800')) %>
           </p>
         </div>
       <% end %>

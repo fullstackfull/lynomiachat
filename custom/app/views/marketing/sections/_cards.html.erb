@@ -4,6 +4,11 @@
   is unpublished or gone, and a card then shows its text without a link rather than an href="#" -- which is
   the defect the old footer had four of.
 %>
+<%# THE ITEM HEADING LEVEL FOLLOWS THE SECTION'S OWN. With a section heading the cards sit under an <h2> and
+  are <h3>s; without one they are the first headings after the page's <h1> and must be <h2>s, or the document
+  skips a level -- which is what the crawl measured on /contact, /support and /integrations in both locales.
+%>
+<% item_heading = section['heading'].present? ? 'h3' : 'h2' %>
 <% columns = section['columns'].to_i.clamp(1, 3) %>
 <% columns = 2 if columns.zero? %>
 <section class="mt-10">
@@ -19,13 +24,13 @@
       <% href = marketing_target_href(item['link_target']) %>
       <article class="rounded-2xl border border-slate-100 bg-white p-5">
         <% if item['title'].present? %>
-          <h3 class="text-base font-semibold text-slate-900"><%= item['title'] %></h3>
+          <%= content_tag(item_heading, item['title'], class: 'text-base font-semibold text-slate-900') %>
         <% end %>
         <% if item['body'].present? %>
           <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= item['body'] %></p>
         <% end %>
         <% if href.present? && item['link_label'].present? %>
-          <a class="mt-4 inline-block text-sm font-medium text-woot-600 hover:text-woot-700"
+          <a class="mt-4 inline-block text-sm font-medium text-woot-700 hover:text-woot-800"
              href="<%= href %>"
              <%= 'target=_blank rel=noopener'.html_safe if marketing_target_external?(item['link_target']) %>>
             <%= item['link_label'] %>

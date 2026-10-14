@@ -1,7 +1,7 @@
 {
   "all": {
     "sourceCodeDir": "app/javascript",
-    "watchAdditionalPaths": []
+    "watchAdditionalPaths": ["app/views", "custom/app/views"]
   },
   "development": {
     "autoBuild": true,

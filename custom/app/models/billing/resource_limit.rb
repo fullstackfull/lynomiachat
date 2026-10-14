@@ -54,8 +54,15 @@ module Billing::ResourceLimit
     !limit.nil? && current_count(account, resource) >= limit
   end
 
-  def message(resource, limit)
-    I18n.t("errors.billing.limit_reached.#{resource}", limit: limit,
-                                                       default: I18n.t('errors.billing.limit_reached.generic', limit: limit))
+  # THE SENTENCE FOLLOWS THE SOURCE OF THE CEILING. "Upgrade your plan" is the right advice when
+  # the limit came from a plan bought here, and the wrong advice when it came from a platform that
+  # bundles this product -- that merchant has no Lynomia plan to upgrade, and the number they need
+  # changed lives in their package on the other side. Sending them to a billing page that cannot
+  # help them is how a clear refusal becomes a support ticket.
+  def message(resource, limit, source = nil)
+    scope = source == :integration ? 'limit_reached_included' : 'limit_reached'
+
+    I18n.t("errors.billing.#{scope}.#{resource}", limit: limit,
+                                                  default: I18n.t("errors.billing.#{scope}.generic", limit: limit))
   end
 end

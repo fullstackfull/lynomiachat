@@ -479,6 +479,12 @@ Rails.application.routes.draw do
           end
         end
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
+          # Ceilings an integration includes with its own product -- seats a merchant has already
+          # paid for once, on the other platform. Singular: a grant is addressed by its resource
+          # name, not by an id. See Platform::Api::V1::EntitlementGrantsController.
+          get 'entitlement_grants', to: 'entitlement_grants#index'
+          put 'entitlement_grants', to: 'entitlement_grants#update'
+          delete 'entitlement_grants', to: 'entitlement_grants#destroy'
           resources :account_users, only: [:index, :create] do
             collection do
               delete :destroy

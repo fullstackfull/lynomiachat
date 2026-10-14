@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_100000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_110000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1665,6 +1665,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_100000) do
     t.index ["resolved_at"], name: "index_operations_signals_on_recovered", order: :desc, where: "(resolved_at IS NOT NULL)"
     t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
     t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
+  end
+
+  create_table "platform_app_entitlement_grants", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.string "resource", limit: 32, null: false
+    t.integer "limit_value", null: false
+    t.string "external_ref", limit: 128
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "resource"], name: "idx_on_account_id_resource_39c49d0602"
+    t.index ["platform_app_id", "account_id", "resource"], name: "index_platform_app_grants_unique", unique: true
   end
 
   create_table "platform_app_permissibles", force: :cascade do |t|

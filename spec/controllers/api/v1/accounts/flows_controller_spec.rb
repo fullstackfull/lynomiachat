@@ -74,6 +74,43 @@ RSpec.describe 'Flows API', type: :request do
     expect(response.parsed_body['published']).to include('version' => 1, 'status' => 'published')
   end
 
+  # WHY A CLIENT CAN SAY "UNAVAILABLE, BECAUSE". `capabilities` is what the editor authors
+  # against and is deliberately unconditional -- a flow is written before it is connected, and a
+  # new flow with no inbox still needs those limits. `channel_eligibility` is the other half:
+  # what this flow's OWN inboxes can really run.
+  describe 'channel eligibility' do
+    let(:email) { create(:channel_email, account: account).inbox }
+
+    it 'is empty while the flow is connected to nothing, and capabilities are still offered' do
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['channel_eligibility']).to eq([])
+      expect(response.parsed_body['capabilities']).to include('text' => { 'body' => 4096 })
+    end
+
+    it 'reports a WhatsApp Cloud inbox as able to run flows' do
+      create(:agent_bot_inbox, inbox: whatsapp.inbox, agent_bot: flow, account: account)
+
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+
+      expect(response.parsed_body['channel_eligibility'].sole)
+        .to include('id' => whatsapp.inbox.id, 'runs_flows' => true, 'unsupported_nodes' => [])
+    end
+
+    # Flows run on WhatsApp Cloud and nowhere else today. A client that offered a flow on an
+    # email inbox would be offering something publish refuses, so the answer says so here.
+    it 'reports an inbox that cannot run flows at all, rather than implying it can' do
+      create(:agent_bot_inbox, inbox: email, agent_bot: flow, account: account)
+      Flows::Versions.new(flow).save!(menu_graph.deep_stringify_keys, lock_version: 0)
+
+      get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json
+      row = response.parsed_body['channel_eligibility'].sole
+
+      expect(row).to include('channel_type' => 'Channel::Email', 'runs_flows' => false)
+      expect(row['unsupported_nodes']).to include('buttons')
+    end
+  end
+
   # TWO PEOPLE EDITING ONE FLOW.
   #
   # Before this precondition existed, the draft save was `version.update!(graph: graph)` with

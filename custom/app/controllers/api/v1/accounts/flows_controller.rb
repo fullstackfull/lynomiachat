@@ -145,7 +145,32 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
     current = @flow.flow_versions.draft.first || @flow.published_flow_version
     flow_json(@flow).merge(graph: current&.graph || Flows::Versions::STARTER,
                            errors: current ? versions.validate(current) : [], capabilities: Flows::ChannelCapabilities::WHATSAPP,
-                           node_types: Flows::NodeTypes::TYPES, variables: Flows::Variables::SUGGESTED)
+                           node_types: Flows::NodeTypes::TYPES, variables: Flows::Variables::SUGGESTED,
+                           channel_eligibility: channel_eligibility)
+  end
+
+  # WHAT THIS FLOW'S OWN INBOXES CAN ACTUALLY RUN, which is a different question from the one
+  # `capabilities` answers.
+  #
+  # `capabilities` is the limit set the editor authors AGAINST -- how long a body may be, how many
+  # buttons a list may hold -- and it stays WhatsApp's unconditionally on purpose: a flow is
+  # written before it is connected to anything, and a new flow with no inbox still needs those
+  # numbers to validate input against. Making it depend on the inboxes would leave every new flow
+  # without them.
+  #
+  # This is the other half, and it is additive rather than a replacement: for each inbox the flow
+  # is connected to, whether a flow can run there at all and which of the node types it uses that
+  # inbox cannot do. It is what lets a client say "this action is unavailable, and here is why"
+  # instead of offering something that will be refused at publish. The same answer the validator
+  # already produces as `unsupported_channel`, read from the same place so the two cannot drift.
+  def channel_eligibility
+    types = Array(@flow.flow_versions.draft.first&.nodes || @flow.published_flow_version&.nodes).pluck('type').compact.uniq
+
+    @flow.inboxes.map do |inbox|
+      unsupported = Flows::ChannelCapabilities.unsupported(inbox, types)
+      { id: inbox.id, name: inbox.name, channel_type: inbox.channel_type,
+        runs_flows: Flows::ChannelCapabilities.for(inbox).present?, unsupported_nodes: unsupported }
+    end
   end
 
   def version_json(version)

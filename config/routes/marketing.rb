@@ -23,6 +23,12 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'channels', to: 'pages#channels', as: 'channels'
   get 'solutions', to: 'pages#solutions', as: 'solutions'
   get 'integrations', to: 'pages#integrations', as: 'integrations'
+
+  # Pricing is its own controller because it has a write action. The quote request posts to its own path
+  # rather than to `/pricing` so the Rack::Attack throttle, and anyone reading an access log, can tell a page
+  # view from a submission.
+  get 'pricing', to: 'pricing#show', as: 'pricing'
+  post 'pricing/request', to: 'pricing#create', as: 'pricing_request'
   get 'support', to: 'pages#support', as: 'support'
 
   # THE DETAIL PAGES. One controller serves every catalogue scope and the scope travels as a route default,
@@ -37,7 +43,21 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'solutions/:slug', to: 'entries#show', as: 'solution', defaults: { scope: 'solutions' }
   get 'integrations/:slug', to: 'entries#show', as: 'integration', defaults: { scope: 'integrations' }
 
-  # /pricing, /contact, /about and /faq are later W3 slices. A route with no page behind it is a dead link in
+  # /contact, /about and /faq are later W3 slices. A route with no page behind it is a dead link in
   # the navigation, which is one of the defects this rebuild exists to remove, so each lands with its page
   # rather than ahead of it.
+end
+
+# The operator's side of the pricing page. A full Administrate resource, so unlike the hand-written Super
+# Admin pages in this repository it needs NO entry in the navigation exclusion array at
+# app/views/super_admin/application/_navigation.html.erb -- it has an index route and a dashboard, which is
+# exactly what Administrate enumerates the route table looking for.
+#
+# No `new` and no `create`: these rows are written by visitors on the public page, and an operator-created one
+# would be a request nobody sent. The id constraint is what makes that true of the URL as well -- without it
+# `/site_quote_requests/new` matches `show` with `id: "new"`, which answers a confusing 404 from the record
+# lookup instead of a clean one from the router.
+namespace :super_admin do
+  resources :site_quote_requests, only: [:index, :show, :edit, :update, :destroy],
+                                  constraints: { id: /\d+/ }
 end

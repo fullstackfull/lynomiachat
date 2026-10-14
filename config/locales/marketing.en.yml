@@ -95,7 +95,23 @@ en:
           Connecting a channel provider — WhatsApp, Twilio, Bandwidth, Meta, LINE, Telegram — is described on
           %{channels}. Building your own connection with webhooks, the REST API, a dashboard app or the widget
           SDK is on %{api}.
-      support:
+      pricing:
+        title: Pricing
+        heading: Pricing built around how you use it
+        lede: >-
+          We do not publish a price list, and we are not going to invent one. Tell us what you need and we
+          will quote it — or, if plans are published, you will see them on this page.
+        description: >-
+          Request a quote for Lynomia Chat. What a quote is based on — channels, agents, inboxes, connected
+          stores and modules — and how to get one.
+      quote_mailer:
+      heading: A quote request was submitted on the website (#%{id}).
+      blank: '-'
+      language: Language the request was written in
+      footer: >-
+        Reply to this email to answer the sender directly. The request is also listed in Super Admin under
+        Site quote requests.
+    support:
         title: Getting help
         heading: Getting help
         lede: >-
@@ -136,6 +152,63 @@ en:
         Create an account and connect your first channel, or email us and we will walk you through it.
       primary: Create your account
       email: Email us
+    pricing:
+      dimensions_title: What a quote is based on
+      dimensions_lede: >-
+        We do not publish a price list, because what a workspace costs depends on how you use it. These are
+        the things a quote is built from — all of them are settings on a plan, not negotiating positions.
+      dimensions:
+        channels:
+          title: Which channels you need
+          body: >-
+            A plan can include a specific set of channels, so a team that only needs WhatsApp and email is not
+            paying for the ones it will not connect.
+        agents:
+          title: How many agents
+          body: A plan can set a ceiling on the number of agents in the workspace.
+        inboxes:
+          title: How many inboxes
+          body: >-
+            A ceiling on connected inboxes — one per WhatsApp number, mailbox, website or bot you connect.
+        stores:
+          title: How many connected stores
+          body: A ceiling on the store platforms connected to the commerce module, where you use it.
+        modules:
+          title: Which modules
+          body: >-
+            Commerce, WhatsApp campaigns, the flow builder, AI assist and custom permission sets are switched
+            on per account, so a quote states which of them are included.
+        billing:
+          title: Monthly or annual, flat or per agent
+          body: >-
+            Both billing intervals and both pricing models are supported, and card payment with an invoice
+            portal is available once it is configured for this installation.
+      interval:
+        month: per month
+        year: per year
+      per_agent: per agent
+      limits:
+        agents: Up to %{count} agents
+        inboxes: Up to %{count} inboxes
+        stores: Up to %{count} connected stores
+      form_title: Request a quote
+      form_lede: >-
+        Tell us which channels you need and roughly how many people will be answering, and we will come back
+        with a price. A person reads this; nothing is automated.
+      form_errors: Please check the following before sending
+      channels_label: Which channels do you need? (optional)
+      not_sure: Not sure yet
+      submit: Request a quote
+      privacy_html: We use these details to answer your request. See our %{privacy}.
+      sent_title: Thank you — your request has been received
+      sent_body: >-
+        We have it, and somebody will reply to the email address you gave us. If your question is urgent,
+        email us directly at info@lynomia.com.
+      sent_docs: Read the documentation while you wait
+      note: >-
+        There is no published price list and no self-service trial on this site today. We would rather say
+        that than show a number we cannot stand behind. If plans are published later, this page will show them
+        here.
     support:
       docs_title: Read the documentation
       docs_body: >-
@@ -1307,3 +1380,13 @@ en:
         summary: >-
           Push contacts and conversation activity into a LeadSquared CRM you already run.
         requires: the CRM integration enabled for your account; it is off by default.
+  activerecord:
+    attributes:
+      site_quote_request:
+        name: Your name
+        email: Email address
+        company: Company
+        phone: Phone number
+        team_size: How many people will answer
+        channels: Channels
+        message: What do you need?

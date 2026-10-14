@@ -1,0 +1,28 @@
+<%# The operator notification for a website quote request.
+
+  Plain paragraphs inside the shared mailer layout, which supplies the branding -- the same shape as
+  app/views/platform_support_mailer/*. Nothing here is a link into the public site: the operator's next step
+  is to reply to the sender, and `reply_to` is already set to their address.
+%>
+<p><%= t('marketing.quote_mailer.heading', id: @quote.id) %></p>
+
+<p>
+  <strong><%= t('activerecord.attributes.site_quote_request.name') %>:</strong> <%= @quote.name %><br>
+  <strong><%= t('activerecord.attributes.site_quote_request.email') %>:</strong> <%= @quote.email %><br>
+  <strong><%= t('activerecord.attributes.site_quote_request.company') %>:</strong>
+  <%= @quote.company.presence || t('marketing.quote_mailer.blank') %><br>
+  <strong><%= t('activerecord.attributes.site_quote_request.phone') %>:</strong>
+  <%= @quote.phone.presence || t('marketing.quote_mailer.blank') %><br>
+  <strong><%= t('activerecord.attributes.site_quote_request.team_size') %>:</strong>
+  <%= @quote.team_size.presence || t('marketing.quote_mailer.blank') %><br>
+  <strong><%= t('activerecord.attributes.site_quote_request.channels') %>:</strong>
+  <%= @quote.channels.presence&.join(', ') || t('marketing.quote_mailer.blank') %><br>
+  <strong><%= t('marketing.quote_mailer.language') %>:</strong> <%= @quote.locale %>
+</p>
+
+<p>
+  <strong><%= t('activerecord.attributes.site_quote_request.message') %>:</strong><br>
+  <%= @quote.message.presence || t('marketing.quote_mailer.blank') %>
+</p>
+
+<p><%= t('marketing.quote_mailer.footer') %></p>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_130100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -357,7 +357,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "channel_entitlements", default: [], null: false
+    t.boolean "listed_on_website", default: false, null: false
     t.index ["active"], name: "index_billing_plans_on_active"
+    t.index ["listed_on_website"], name: "index_billing_plans_on_listed_on_website", where: "listed_on_website"
     t.index ["stripe_price_id"], name: "index_billing_plans_on_stripe_price_id", unique: true
   end
 
@@ -1848,6 +1850,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_13_230000) do
     t.index ["account_id", "date", "dimension_type", "dimension_id", "metric"], name: "index_rollup_unique_key", unique: true
     t.index ["account_id", "dimension_type", "date"], name: "index_rollup_summary"
     t.index ["account_id", "metric", "date"], name: "index_rollup_timeseries"
+  end
+
+  create_table "site_quote_requests", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", null: false
+    t.string "company"
+    t.string "phone"
+    t.string "team_size"
+    t.jsonb "channels", default: [], null: false
+    t.text "message"
+    t.string "locale", default: "ar", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status", "created_at"], name: "index_site_quote_requests_on_status_and_created_at"
   end
 
   create_table "sla_events", force: :cascade do |t|

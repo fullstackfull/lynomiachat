@@ -360,6 +360,23 @@ class Rack::Attack
     "#{match_data[:provider]}:#{req.ip}" if match_data.present?
   end
 
+  # THE PUBLIC QUOTE FORM on the marketing website. The only unauthenticated write in this application that
+  # an anonymous visitor reaches, so this throttle is the primary control on it -- the model's caps and
+  # allowlists bound what one row can hold, and this bounds how many rows one source can create.
+  #
+  # Keyed on IP alone, because there is nothing else: there is no account, no session and no token behind the
+  # form, and keying on the submitted email would let a spammer vary it freely.
+  #
+  # The limit is low because the legitimate rate is: a visitor sends one quote request, occasionally two if
+  # they mistyped an address. Both locale paths are covered by the one rule so `/en/pricing/request` cannot be
+  # used to double the budget.
+  MARKETING_QUOTE_PATH = %r{\A/(?:en/)?pricing/request\z}
+
+  throttle('marketing quote request per ip',
+           limit: ENV.fetch('RATE_LIMIT_MARKETING_QUOTE', '5').to_i, period: 1.hour) do |req|
+    req.ip if req.post? && MARKETING_QUOTE_PATH.match?(req.path_without_extensions)
+  end
+
   # Analytics and support-case reads. Both answer a request with several aggregates or counts over the account's
   # own rows rather than one indexed lookup, so a client in a refresh loop costs more here than on an ordinary
   # list. Keyed per USER within the account, the same way the reports API already is

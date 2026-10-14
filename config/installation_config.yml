@@ -58,6 +58,10 @@
   value: ''
   display_title: 'Support URL'
   description: 'Where users should go for help. Leave blank to hide every support link in the dashboard.'
+- name: MARKETING_QUOTE_NOTIFICATION_EMAIL
+  value: ''
+  display_title: 'Quote Request Notification Email'
+  description: 'Where a quote request from the public pricing page is emailed. Leave blank to send no email; the requests are listed in Super Admin either way.'
 - name: CHANGELOG_URL
   value: '/changelog'
   display_title: 'Changelog URL'

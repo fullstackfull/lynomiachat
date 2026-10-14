@@ -346,12 +346,17 @@ describe 'Marketing pages' do
   end
 
   describe 'navigation' do
-    it 'shows a section in the header only once its page exists' do
+    # marketing_nav_items filters NAV_SECTIONS to the sections whose route helper exists, which is what makes
+    # a dead nav link unrepresentable. Every section that has shipped is here; a section still to come has no
+    # link, and this example is how a route added without its page would be caught.
+    it 'links every shipped section and nothing that has not shipped' do
       get '/en/home'
 
-      expect(response.body).to include('href="/en/solutions"')
-      expect(response.body).to include('href="/en/integrations"')
-      expect(response.body).not_to include('href="/en/pricing"')
+      %w[features channels solutions integrations pricing].each do |section|
+        expect(response.body).to include(%(href="/en/#{section}")), "#{section} is missing from the header"
+      end
+
+      expect(MarketingHelper::NAV_SECTIONS.map(&:to_s)).to eq(%w[features channels solutions integrations pricing])
     end
   end
 

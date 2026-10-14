@@ -60,7 +60,7 @@ describe 'Marketing pricing' do
     end
 
     it 'appears in the header navigation now that it exists' do
-      get '/en/home'
+      get '/en'
 
       expect(response.body).to include('href="/en/pricing"')
     end

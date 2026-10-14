@@ -3,15 +3,20 @@
 # WHY THESE ROUTES EXIST. The marketing site used to be a hand-edited static file on the server, shadowing
 # Rails at `/` through an nginx `index` directive that lives in no repository
 # (docs/official-website/01-current-state-audit.md section 1). It could not be reviewed, tested, translated or
-# rolled back. These routes are the first half of moving it into the application; the second half is the nginx
-# cutover, which is a separate, explicitly approved operation
-# (docs/official-website/04-information-architecture.md D2).
+# rolled back. These routes moved it into the application under its own names first; THE HOMEPAGE IS NOW AT
+# `/`, which was the second, separately approved half (docs/official-website/04-information-architecture.md
+# D2, D3).
 #
-# THE HOME PAGE IS AT `/home` UNTIL THAT CUTOVER, on purpose. The Rails root is still `dashboard#index`
-# (config/routes.rb:17) because changing it has effects beyond production -- custom-domain Help Centers render
-# their home through that action (app/controllers/dashboard_controller.rb:64-75) and four specs assert on it.
-# The cutover commit moves the home to `/` with the delegation D3 requires, and leaves `/home` as a permanent
-# redirect so nothing that linked the preview address breaks.
+# THE HOST IS WHAT DECIDES `/`. On the platform's own host -- `FRONTEND_URL`, resolved once in
+# Marketing::OfficialHost -- `/` is the Arabic homepage, served by the `get '/'` below. On a tenant's
+# registered Help Center custom domain, and on any other host, the Rails root still answers it
+# (config/routes.rb:17) and still renders that portal's home through
+# DashboardController#render_hc_if_custom_domain. That controller was not touched by the cutover.
+#
+# nginx IS THE OTHER HALF, AND IT IS STILL THE OPERATOR'S. In production `/` is answered from disk by an
+# exact-match `location = /` block, so these routes do not take effect at `/` until that block forwards to the
+# application. The patch that does it, with its backup and rollback, is
+# `deployment/nginx/cutover-root-to-rails.md`; it is prepared and not applied.
 #
 # LOCALES. Arabic is unprefixed and English lives under `/en`, which is D5: Arabic is the primary market and
 # gets the clean URLs. The optional `(:locale)` segment is constrained to `en` alone, so `/ar/features` is a
@@ -28,7 +33,38 @@ get 'site-media/:id', to: 'marketing/media#show', as: 'marketing_media', constra
 get 'sitemap.xml', to: 'marketing/sitemap#show', as: 'marketing_sitemap', defaults: { format: 'xml' }
 
 scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
-  get 'home', to: 'pages#home', as: 'home'
+  # THE HOMEPAGE, AT THE ROOT OF ITS LOCALE TREE: `/` in Arabic, `/en` in English.
+  #
+  # `get '/'` inside `scope '(:locale)'` is one route with one name, which is what the rest of the site needs:
+  # every canonical, hreflang pair, `og:url`, breadcrumb, JSON-LD node, sitemap `<loc>` and operator-entered
+  # CMS link resolves through `marketing_home_path(locale:)` (MarketingHelper#marketing_path,
+  # SitePage#public_path), so they all moved with this line and none of them can disagree with it.
+  #
+  # `/` IS ALSO MATCHED BY THE RAILS ROOT, which is drawn first (config/routes.rb:17) and declines by request
+  # constraint on the platform's own host. So this route answers `/` there, and the root answers it on a
+  # tenant's Help Center domain and on any other host. `/en` is not special-cased anywhere and is reached on
+  # every host the rest of the marketing tree is -- `reject_tenant_custom_domain` is what keeps it off a
+  # tenant's domain, exactly as it does for `/features`.
+  get '/', to: 'pages#home', as: 'home'
+
+  # `/home` AND `/en/home` WERE THE HOMEPAGE'S ADDRESS until the cutover, and they stay permanent redirects
+  # rather than being deleted: they were live, they are in the deploy runbook, and an operator's `?preview=1`
+  # link to a draft homepage is one of them. 301 because the move is permanent -- a crawler that holds `/home`
+  # should replace it with `/`, not keep asking.
+  #
+  # The query string is carried across by hand. A Rails block redirect returns a path, and nothing appends the
+  # original query to it, so `/home?preview=1` would otherwise land on the published page instead of the draft
+  # the operator was looking at.
+  #
+  # DELIBERATELY UNNAMED. A named route here would be `marketing_legacy_home_path`, and
+  # spec/models/site_page_spec.rb reads every `marketing_<word>_path` as a standing page's address to prove
+  # the route table and SitePage::STANDING_KEYS agree in both directions. A redirect is not a page, so it gets
+  # no helper -- and that invariant keeps working.
+  legacy_home = redirect(status: 301) do |path_params, request|
+    target = path_params[:locale] == 'en' ? '/en' : '/'
+    request.query_string.present? ? "#{target}?#{request.query_string}" : target
+  end
+  get 'home', to: legacy_home
 
   get 'features', to: 'pages#features', as: 'features'
   get 'channels', to: 'pages#channels', as: 'channels'

@@ -7,16 +7,33 @@ require 'rails_helper'
 # at their own URLs, every page carries the discovery tags the old one lacked entirely, no link is dead, and
 # the site never answers on a tenant's custom domain.
 describe 'Marketing pages' do
-  # The pages are rows now, not templates, so the suite seeds the website the repository ships before each
-  # example. It runs inside the example's transaction and rolls back, which is why the seeder is NOT hooked to
-  # `db:migrate` -- lib/tasks/marketing.rake records that reasoning.
-  before { Marketing::ContentSeeder.apply! }
+  # THE SUITE RUNS ON THE PLATFORM'S OWN HOST, because that is the arrangement the site is served in. Since
+  # the homepage cutover `/` is the Arabic homepage only where the request host matches FRONTEND_URL
+  # (Marketing::OfficialHost); everywhere else `/` is still DashboardController, which is what keeps a
+  # tenant's Help Center root working. A request spec's default host is `www.example.com` and the variable is
+  # unset in the test environment, so without this the Arabic homepage would not be reachable here at all.
+  around do |example|
+    with_modified_env(FRONTEND_URL: 'https://chat.lynomia.test') { example.run }
+  end
 
+  before do
+    host! 'chat.lynomia.test'
+    # The pages are rows now, not templates, so the suite seeds the website the repository ships before each
+    # example. It runs inside the example's transaction and rolls back, which is why the seeder is NOT hooked
+    # to `db:migrate` -- lib/tasks/marketing.rake records that reasoning.
+    Marketing::ContentSeeder.apply!
+  end
+
+  # `/` AND `/en`, not `/home` and `/en/home`. The homepage is the root of its locale tree.
   let(:pages) do
-    { home: '/home', features: '/features', channels: '/channels', solutions: '/solutions',
+    { home: '/', features: '/features', channels: '/channels', solutions: '/solutions',
       integrations: '/integrations', support: '/support', about: '/about', contact: '/contact',
       faq: '/faq' }
   end
+
+  # The same pages in the English tree. `chomp('/')` is what turns the home entry into `/en` rather than the
+  # trailing-slash `/en/`, which is the same page at a second address.
+  let(:en_pages) { pages.values.map { |path| "/en#{path}".chomp('/') } }
 
   describe 'the Arabic tree' do
     it 'serves every page in Arabic, right to left, without any client-side switch' do
@@ -29,7 +46,7 @@ describe 'Marketing pages' do
     end
 
     it 'renders Arabic content rather than an English page waiting to be translated' do
-      get '/home'
+      get '/'
 
       expect(response.body).to include('كل محادثات عملائك')
     end
@@ -37,10 +54,10 @@ describe 'Marketing pages' do
 
   describe 'the English tree' do
     it 'serves every page at its own /en URL, left to right' do
-      pages.each_value do |path|
-        get "/en#{path}"
+      en_pages.each do |path|
+        get path
 
-        expect(response).to have_http_status(:success), "/en#{path} did not render"
+        expect(response).to have_http_status(:success), "#{path} did not render"
         expect(response.body).to include('<html lang="en" dir="ltr">')
       end
     end
@@ -62,7 +79,7 @@ describe 'Marketing pages' do
   # silently moved an entire page's copy out of its block, and nothing here failed. This would have.
   describe 'translations' do
     it 'renders no missing translation on any page, in either locale' do
-      paths = pages.values + pages.values.map { |path| "/en#{path}" } + ['/pricing', '/en/pricing']
+      paths = pages.values + en_pages + ['/pricing', '/en/pricing']
       paths += Marketing::Catalog::COLLECTIONS.flat_map do |scope, entries|
         entries.select(&:detail?).flat_map { |entry| ["/#{scope}/#{entry.slug}", "/en/#{scope}/#{entry.slug}"] }
       end
@@ -96,7 +113,7 @@ describe 'Marketing pages' do
     end
 
     it 'carries Open Graph tags so a shared link renders as a card' do
-      get '/home'
+      get '/'
 
       expect(response.body).to include('property="og:title"').and(include('property="og:url"'))
     end
@@ -106,7 +123,7 @@ describe 'Marketing pages' do
     # The old footer promised four legal documents and a live chat and delivered four empty anchors; the whole
     # page contained no mailto:, tel: or wa.me at all. Nothing here may be a placeholder.
     it 'has no dead links on any page, in either locale' do
-      (pages.values + pages.values.map { |path| "/en#{path}" }).each do |path|
+      (pages.values + en_pages).each do |path|
         get path
         dead = response.body.scan(/href="(#|)"/)
 
@@ -115,7 +132,7 @@ describe 'Marketing pages' do
     end
 
     it 'links the live documentation and changelog rather than restating them' do
-      get '/home'
+      get '/'
 
       expect(response.body).to include('href="/docs"')
       get '/support'
@@ -415,7 +432,7 @@ describe 'Marketing pages' do
     # The header is site_nav_links rows now, and `marketing_nav` drops any link whose target does not
     # resolve -- so an unpublished page cannot leave a dead entry behind.
     it 'links every shipped section from the operator rows' do
-      get '/en/home'
+      get '/en'
 
       %w[features channels solutions integrations pricing].each do |section|
         expect(response.body).to include(%(href="/en/#{section}")), "#{section} is missing from the header"
@@ -425,7 +442,7 @@ describe 'Marketing pages' do
     it 'drops a header link whose page has been unpublished rather than rendering a dead one' do
       SitePage.find_by(locale: 'en', kind: 'standing', key: 'solutions').update!(status: :draft)
 
-      get '/en/home'
+      get '/en'
 
       expect(response.body).not_to include('href="/en/solutions"')
       expect(response.body.scan(/href="(#|)"/)).to be_empty
@@ -482,7 +499,7 @@ describe 'Marketing pages' do
       end
       page.update_columns(sections: sections) # rubocop:disable Rails/SkipsModelValidations
 
-      get '/en/home'
+      get '/en'
 
       expect(response).to have_http_status(:success)
       expect(response.body).not_to include('javascript:')

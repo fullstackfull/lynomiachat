@@ -53,10 +53,13 @@ describe SitePage do
       expect(page.public_path).to eq('/en/features/unified-inbox')
     end
 
+    # The homepage, whose address is the site root since the cutover -- and the one page an operator cannot
+    # check any other way while it is a draft.
     it 'adds the preview parameter when asked' do
       page = described_class.new(locale: 'ar', kind: 'standing', key: 'home', title: 'X')
 
-      expect(page.public_path(preview: true)).to eq('/home?preview=1')
+      expect(page.public_path).to eq('/')
+      expect(page.public_path(preview: true)).to eq('/?preview=1')
     end
   end
 

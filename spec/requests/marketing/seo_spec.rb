@@ -115,7 +115,7 @@ describe 'Marketing SEO' do
     end
 
     it 'describes the publisher and the site on the home page, once each' do
-      get '/en/home'
+      get '/en'
 
       types = json_ld(response.body).map { |node| node['@type'] }
       expect(types).to contain_exactly('Organization', 'WebSite')
@@ -123,7 +123,7 @@ describe 'Marketing SEO' do
 
     # Every value is a fact this repository can point at. None of these exists, so none is claimed.
     it 'claims no rating, no social profile and no price' do
-      get '/en/home'
+      get '/en'
 
       payload = json_ld(response.body)
       expect(payload.to_json).not_to match(/aggregateRating|sameAs|priceRange|offers|SearchAction/)

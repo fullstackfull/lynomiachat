@@ -118,3 +118,14 @@ decision: either the existing approved pages on the corporate domain
 (`https://lynomia.com/terms`, `https://lynomia.com/privacy` — both live, 18,266 B and 16,886 B), or the Rails
 marketing site's own `/terms` and `/privacy` once it ships. The P0 hotfix page already links the corporate
 pages from its footer; pointing these two configs at the same place is a one-line change whenever you decide.
+
+**The homepage cutover does not change this, and did not fix it.** It was considered and left alone on
+purpose. The anchors are dead today — those ids do not exist on the static landing page either — so moving `/`
+from the static page to the marketing homepage only changes which page the dead anchor lands on. It is not a
+regression the cutover introduced, and the destination is still a decision rather than a correction.
+
+Whenever it is decided, it needs a migration as well as the YAML: `ConfigLoader` runs with
+`reconcile_only_new: true`, so editing `config/installation_config.yml` alone changes nothing on an
+installation that already holds a value. `custom/db/migrate/20261014120000_correct_brand_url_host.rb` is the
+pattern to copy — conditional on the current value, written through the model so the Redis copy is evicted,
+and reversible.

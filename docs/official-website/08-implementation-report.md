@@ -85,12 +85,15 @@ live server; 23 security examples. Four defects found and fixed. `09-test-result
 
 ### Routing and configuration
 ```
-config/routes/marketing.rb                               the whole marketing route table
+config/routes/marketing.rb                               the whole marketing route table, incl. `/` and the `/home` 301
+config/routes.rb                                         the root, host-constrained so `/` is the homepage on the platform host
 config/locales/marketing.en.yml, marketing.ar.yml        483 leaf keys each
 config/vite.json                                         watchAdditionalPaths, so Tailwind's ERB sources invalidate the build
 app/controllers/robots_controller.rb                     + the marketing Sitemap line and the preview disallow
 app/views/super_admin/application/_navigation.html.erb   + 4 icons and 1 exclusion entry
-deployment/nginx/chat.lynomia.com.conf                   the production vhost, version-controlled
+deployment/nginx/chat.lynomia.com.conf                   a reference model of the vhost -- NOT the live file, not a drop-in
+deployment/nginx/cutover-root-to-rails.md                the three-line patch to the live vhost: prepared, not applied
+app/controllers/super_admin/application_controller.rb    the invalid-action fallback, `/` -> Super Admin's own root
 ```
 
 ### Models and migrations
@@ -115,6 +118,7 @@ marketing/sections_input.rb     the editor's submission → the ordered array
 marketing/image_upload.rb       bytes → a marketing image, type read from content
 marketing/page_audit.rb         who changed what on the website
 marketing/quote_settings.rb     the one editable sales setting
+marketing/official_host.rb      is this request on the platform's own host -- the one answer `/` is decided by
 ```
 
 ### Controllers
@@ -195,7 +199,7 @@ problem" is something that happened rather than something guessed from the prese
 
 | | Why |
 |---|---|
-| the `/` cutover | an nginx change the owner has not approved; prepared and documented, not executed |
+| applying the `/` cutover to nginx | the Rails half is done — `/` is the homepage on the platform's own host, `/home` is a 301. The nginx half is a three-line patch to the live vhost, prepared with its backup, pre-flight checks and rollback in `deployment/nginx/cutover-root-to-rails.md`, and **not applied** |
 | merging into `lynomia-custom` | the owner's instruction |
 | a sales email address | the owner enters it; the default is empty and nothing is invented |
 | prices on `/pricing` | no plan row, price or tier exists anywhere in this repository (doc 02 §4) |

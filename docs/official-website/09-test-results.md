@@ -21,6 +21,7 @@ Of those, 250 are this project's own:
 | `spec/requests/marketing/pricing_spec.rb` | — | no price is published while no plan is listed, no trial is promised, the form stores and answers, the notification is queued for the saved row |
 | `spec/requests/marketing/seo_spec.rb` | 18 | the sitemap's contents and exclusions, the robots lines with and without a host, the four structured-data nodes, and that a JSON-LD block cannot be broken out of |
 | `spec/requests/marketing/redirects_spec.rb` | 16 | 301 vs 302, chains three deep, loops refused, open redirects refused, protected routes unshadowable |
+| `spec/requests/marketing/homepage_cutover_spec.rb` | 24 | the homepage at `/` and `/en` on the platform host only; `/home` and `/en/home` as 301s that keep their locale and query; the canonical, hreflang, sitemap and CMS links that moved with it; a tenant Help Center still owning its own `/`; the dashboard still owning every other host's; `/app`, `/docs`, `/changelog` and the onboarding latch untouched |
 | `spec/requests/marketing/security/marketing_security_spec.rb` | 23 | the seven surfaces in §4 below |
 | `spec/requests/super_admin/site_pages_spec.rb` | 30 | the editor, and that an edit reaches the public page |
 | `spec/requests/super_admin/site_cms_spec.rb` | 17 | the nav, FAQ and redirect screens |
@@ -135,9 +136,9 @@ A portal registered at `docs.w6-tenant.example`, requested with that Host:
 |---|---|---|
 | `/` | 200 | the tenant's Help Center still answers — existing behaviour preserved |
 | `/hc/w6-tenant-portal` | 302 | the Help Center's own redirect |
-| `/en/home`, `/features`, `/pricing`, `/sitemap.xml` | **404** | no marketing content inside a customer's domain |
+| `/en`, `/features`, `/pricing`, `/sitemap.xml` | **404** | no marketing content inside a customer's domain |
 
-and the platform host unaffected: `/en/home`, `/features`, `/sitemap.xml` all 200.
+and the platform host unaffected: `/en`, `/features`, `/sitemap.xml` all 200.
 
 ---
 

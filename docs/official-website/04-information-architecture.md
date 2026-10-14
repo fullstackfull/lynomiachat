@@ -18,16 +18,27 @@ unauthenticated, crawlable HTML for the Help Center, so this is reuse, not new g
 
 ## D2 — Named routes first; `/` is a separate, approved cutover
 
-The marketing site ships under its own paths and **does not take `/` in the same change**. Reason: in
+> **Status: both steps are now done in source.** The homepage is at `/` (`/en` in English) and `/home` and
+> `/en/home` are permanent redirects to them. The nginx half is a prepared, unapplied patch:
+> `deployment/nginx/cutover-root-to-rails.md`.
+
+The marketing site shipped under its own paths and **did not take `/` in the same change**. Reason: in
 production nginx answers `/` from disk (`01-current-state-audit.md` §1), so a Rails root change has no effect
 there until the vhost changes — and it *does* change behaviour in development, CI and any other deployment.
 Shipping them together would mix a reversible application change with an irreversible-looking infrastructure one.
 
 **Order of operations:**
 
-1. W2–W5: everything under named paths. `/` keeps `root to: 'dashboard#index'` (`config/routes.rb:17`).
-2. W6: the cutover commit — Rails root becomes the marketing home, with the custom-domain delegation of D3
-   and the four spec changes of D4 — plus a version-controlled nginx vhost, applied only on explicit approval.
+1. W2–W5: everything under named paths. `/` kept `root to: 'dashboard#index'` (`config/routes.rb:17`). ✔
+2. The cutover commit: the marketing homepage takes `/` on the platform's own host, with the host scoping of
+   D3 and the dependent changes of D4, and `/home` stays as a 301. ✔
+3. The owner applies the nginx patch, having deployed Rails first and checked it on port 3000. **Pending.**
+
+**How `/` is decided, in one place.** `Marketing::OfficialHost.matches?` compares the request host with the
+host in `FRONTEND_URL`. The Rails root declines by request constraint when it matches, and the marketing
+`get '/'` answers instead; on every other host the root still reaches `DashboardController`, so a tenant's
+Help Center keeps its own root and `DashboardController` itself was not modified. With `FRONTEND_URL` unset
+nothing matches, which is why the test suite's existing `/` examples still mean what they meant.
 
 ## D3 — Custom-domain Help Centers must keep working, and the marketing root is host-scoped
 
@@ -46,9 +57,10 @@ def render_hc_if_custom_domain
 end
 ```
 
-**Rule:** the marketing root action runs that same host check **first** and delegates when it matches. A
-tenant's custom domain never sees a Lynomia marketing page, and the marketing pages answer **only** on the
-official host.
+**Rule, as built:** the decision is made by the router, not inside an action — the Rails root keeps `/` for
+every host that is not `FRONTEND_URL`'s, so a tenant's custom domain reaches this method exactly as before and
+never sees a Lynomia marketing page. This is a stronger form of the delegation originally specified here: no
+marketing controller runs at all on a tenant's root, and `dashboard_controller.rb` is untouched.
 
 **Rule (host scoping), which also closes a finding the audit raised:** every marketing route refuses a request
 whose host is a registered portal custom domain. Without it, `/pricing` would also answer on
@@ -61,11 +73,11 @@ The full dependency trace is in the working notes; the result:
 | Thing | Effect | Handling |
 |---|---|---|
 | Custom-domain Help Center home | **breaks without D3** | D3 delegation |
-| `spec/controllers/dashboard_custom_domain_spec.rb:28,44` | 2 examples | pass once D3 is in place |
-| `spec/requests/search_indexing_spec.rb:74` | installation-onboarding redirect at `/` | marketing root keeps `ensure_installation_onboarding` (`dashboard_controller.rb:39,60-62`) |
+| `spec/controllers/dashboard_custom_domain_spec.rb:28,44` | 2 examples | pass unchanged: both set a portal custom domain as the host |
+| `spec/requests/search_indexing_spec.rb:74` | installation-onboarding redirect at `/` | kept: `Marketing::PagesController` reads the same latch on the `home` action, proved on the official host in `spec/requests/marketing/homepage_cutover_spec.rb` |
 | `spec/requests/search_indexing_spec.rb:94` | custom-domain `/` indexable | passes with D3 |
-| Super Admin "Agent Dashboard" nav item, hardcoded `url: '/'` (`app/views/super_admin/application/_navigation.html.erb:72`) | would land an operator on marketing | change to `/app` |
-| `TERMS_URL` / `PRIVACY_URL` anchors on the old page | login/signup links | re-point to the new `/terms` and `/privacy` in the same release |
+| Super Admin "Agent Dashboard" nav item, hardcoded `url: '/'` | would land an operator on marketing | **done**: `/app`. The same applied to `redirect_back(fallback_location: root_path)` in `super_admin/application_controller.rb`, now `super_admin_root_path` |
+| `TERMS_URL` / `PRIVACY_URL` anchors on the old page | login/signup links | **still the owner's call, and NOT changed by the cutover.** `https://chat.lynomia.com/#terms` and `#privacy` are dead anchors today — those ids never existed on the static page either (finding D3 in doc 01), so the cutover changes only which page the dead anchor lands on. `CONFIG-CHANGES.md` records the decision and the one-line change |
 | Mailer links, `FRONTEND_URL`'s 56 call sites, the Vue router, OAuth callbacks, webhooks, widget, survey, logout | **no effect** | `root_url` still returns `/`; every one of them appends a path, and the SPA declares no route at `/` |
 
 `/` today is a bounce page: the SPA boots the whole dashboard bundle only to redirect to `/app/login` or the

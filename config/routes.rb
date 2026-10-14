@@ -14,7 +14,24 @@ Rails.application.routes.draw do
   if ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false))
     root to: 'api#index'
   else
-    root to: 'dashboard#index'
+    # `/` ON EVERY HOST BUT THE PLATFORM'S OWN.
+    #
+    # This is the homepage cutover (docs/official-website/04-information-architecture.md D2, D3). On the
+    # platform's own host `/` is the Arabic marketing homepage, which is the route drawn at the bottom of
+    # `config/routes/marketing.rb`; this route keeps `/` for every other host, so a tenant's Help Center
+    # custom domain still reaches DashboardController#render_hc_if_custom_domain and renders that portal's
+    # home exactly as before. The dashboard controller itself is untouched.
+    #
+    # A REQUEST CONSTRAINT, SO IT IS ONE DECISION MADE ONCE. Routing falls through to the next matching
+    # route when a constraint declines, and generation ignores request constraints -- so `root_url` still
+    # returns `/` for its one caller, which appends to it (app/helpers/frontend_urls_helper.rb:4 builds
+    # `<root>app/...`). Nothing in the application links a bare `/` expecting the dashboard any more: the
+    # two places that did are now `/app` and `super_admin_root_path`.
+    #
+    # The lambda defers the constant lookup to request time on purpose: a reloadable constant referenced
+    # while the route table is being drawn is held across a Zeitwerk reload, and the next request raises
+    # "a copy of Marketing::OfficialHost has been removed from the module tree".
+    root to: 'dashboard#index', constraints: ->(request) { !Marketing::OfficialHost.matches?(request) }
 
     get '/app', to: 'dashboard#index'
     get '/app/*params', to: 'dashboard#index'

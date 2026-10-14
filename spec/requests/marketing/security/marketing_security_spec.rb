@@ -144,7 +144,7 @@ RSpec.describe 'Marketing security', type: :request do
       create(:portal, account: create(:account), custom_domain: 'docs.customer.example', slug: 'tenant-hc')
 
       host! 'docs.customer.example'
-      %w[/en/home /features /pricing /sitemap.xml].each do |path|
+      %w[/en /features /pricing /sitemap.xml].each do |path|
         get path
         expect(response).to have_http_status(:not_found)
       end

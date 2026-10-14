@@ -4,7 +4,9 @@
 
 Two things in it are deliberately **not** done by this project and need the owner's word:
 
-1. the **`/` cutover** — the nginx change that makes Rails serve the home page;
+1. the **`/` cutover** — the nginx change that makes Rails serve the home page. The Rails half is now in
+   source and inert in production until that change; the nginx half is a three-line patch to the live vhost,
+   written out with its backup and rollback in `deployment/nginx/cutover-root-to-rails.md`;
 2. the **sales notification address** — entered in Super Admin, never in code.
 
 This builds on the existing procedures rather than replacing them: `deployment/deploy.sh` is the deploy,
@@ -13,25 +15,33 @@ this server — a rollback is a deploy of the previous revision, by hand).
 
 ---
 
-## 0. Before anything: the nginx reconciliation
+## 0. Before anything: the live vhost is the authority
 
-`deployment/nginx/chat.lynomia.com.conf` is now in version control, and it is **not a copy of the live file** —
-this repository has never had one. Audit finding F1 is exactly that gap: the configuration that makes the
-website work exists only on the server, so a deploy that rewrote the vhost would delete the website.
+**The live file stays.** `/etc/nginx/sites-available/nginx_chatwoot.conf` is the production configuration and
+it is not replaced by anything in this repository. `deployment/nginx/chat.lynomia.com.conf` is a **reference
+model** written from audited response headers when nobody here could read the live file; its own header now
+says so, and it must not be installed. Audit finding F1 — that the configuration making the website work
+exists only on the server — is answered by patching that file in place, not by overwriting it.
 
-Reconcile before you apply anything:
+Read it before you change it:
 
 ```bash
 ssh <production> 'nginx -T' > /tmp/live-nginx.txt          # every file nginx loads, resolved
 ssh <production> 'ls -la /etc/nginx/sites-enabled/'
-ssh <production> 'cat /etc/nginx/sites-enabled/*' > /tmp/live-vhost.conf
-
-diff /tmp/live-vhost.conf deployment/nginx/chat.lynomia.com.conf
+ssh <production> 'cat /etc/nginx/sites-available/nginx_chatwoot.conf' > /tmp/live-vhost.conf
 ```
 
-Carry across anything the live file has and the repository's does not: a rate-limit zone, a geo block, a
-monitoring endpoint, an ACME location, a second certificate, a second server block. Then commit the
-reconciled file, so the next person diffs against something true.
+The homepage is served there by an exact-match block with its own docroot:
+
+```nginx
+location = / {
+    root /var/www/landing;
+    try_files /lynomia-chat-landing.html =404;
+}
+```
+
+Everything else already reaches the application through `location / { try_files $uri @chatwoot_backend; }`
+and a `@chatwoot_backend` named location. §5 changes those three lines and nothing else.
 
 **Also record, from the live server, the two facts the audit could only infer:**
 
@@ -126,11 +136,24 @@ If it is 0, the build did not run and every marketing page will raise on `vite_j
 Run from **outside** the server, against the real hostname. The documentation links only work on the
 installation's configured host (`09-test-results.md` §2), so a loopback check proves less than it looks.
 
+**The homepage is the one page whose address depends on the nginx half.** Until §5 is applied, nginx answers
+`/` from disk, so `https://chat.lynomia.com/` is still the old static page and `/home` is a 301 to it. Check
+the Arabic homepage against the application directly in that window — with a `Host` header, because `/` serves
+the website only for the host in `FRONTEND_URL`:
+
+```bash
+# Before §5 only: the Arabic homepage, straight from the app.
+ssh <production> "curl -s -H 'Host: chat.lynomia.com' http://127.0.0.1:3000/ | grep -o '<html[^>]*>'"
+# expect lang="ar" dir="rtl"
+```
+
+Everything below runs against the real hostname either way.
+
 ```bash
 HOST=https://chat.lynomia.com
 
-# The Arabic tree (unprefixed) and the English tree.
-for p in /home /features /channels /solutions /integrations /pricing /support /about /contact /faq; do
+# The Arabic tree (unprefixed) and the English tree. `/` is in this list only after §5.
+for p in /features /channels /solutions /integrations /pricing /support /about /contact /faq; do
   printf '%-16s %s  %s\n' "$p" \
     "$(curl -s -o /dev/null -w '%{http_code}' $HOST$p)" \
     "$(curl -s -o /dev/null -w '%{http_code}' $HOST/en$p)"
@@ -145,11 +168,11 @@ done
 # Discovery.
 curl -s $HOST/sitemap.xml | grep -c '<loc>'            # expect 96
 curl -s $HOST/robots.txt  | grep 'Sitemap:'            # expect an absolute chat.lynomia.com URL
-curl -s $HOST/en/home     | grep -c 'rel="canonical"'  # expect 1
-curl -s $HOST/en/home     | grep -c 'application/ld+json'   # expect 2 (Organization + WebSite)
+curl -s $HOST/en          | grep -c 'rel="canonical"'  # expect 1
+curl -s $HOST/en          | grep -c 'application/ld+json'   # expect 2 (Organization + WebSite)
 
-# The Arabic page really is Arabic, from the server.
-curl -s $HOST/home | grep -o '<html[^>]*>'             # expect lang="ar" dir="rtl"
+# The English homepage is at /en and needs no cutover: it is reachable as soon as Rails is deployed.
+curl -s $HOST/en | grep -o '<html[^>]*>'               # expect lang="en" dir="ltr"
 
 # Nothing else broke.
 curl -s -o /dev/null -w 'docs %{http_code}\n' -L $HOST/docs
@@ -189,54 +212,74 @@ emailed.
 
 ## 5. The `/` cutover — PREPARED, NOT EXECUTED
 
-The marketing home is at `/home`. `/` is still `dashboard#index`, which custom-domain Help Centers depend on.
+The Rails half is **in source**: on the platform's own host `/` is the Arabic marketing homepage and `/en` is
+the English one, `/home` and `/en/home` are 301s to them, and a tenant Help Center custom domain still reaches
+`DashboardController` at `/` (decision D3). It has no effect in production while nginx answers `/` from disk.
 
-**Do this only when the owner says so, and only after §3 passes.**
+The nginx half is a **three-line patch to the live vhost**, written out in full with its pre-flight checks,
+backup, verification and rollback:
 
-### What it takes
+> **`deployment/nginx/cutover-root-to-rails.md`**
 
-1. **nginx** — remove the `root`/`index` pair that makes `/` a static file. The repository's vhost already
-   has no such pair, so applying the reconciled file *is* this step.
-2. **Rails** — one commit: `/` serves the marketing home for the platform host and keeps delegating to the
-   Help Center for a tenant custom domain (decision D3), and `/home` becomes a permanent redirect to `/` so
-   every preview address keeps working. **Not in this release.**
+**Do this only when the owner says so, and only after §3 passes.** Do not copy
+`deployment/nginx/chat.lynomia.com.conf` over the live file — see §0.
 
-### The order that matters
+### The order, and the window between the halves
 
-Apply the Rails change **first**, then nginx. If nginx stops serving the static file while Rails still routes
-`/` to the dashboard, `/` becomes the agent sign-in page for every visitor — a worse outcome than the static
-page it replaced.
+Rails **first**, nginx **second**. The reverse order would leave `/` routed to the dashboard with no static
+file in front of it, which is the agent sign-in page for every visitor.
 
-```bash
-# After the Rails change is deployed and §3 still passes:
-sudo cp deployment/nginx/chat.lynomia.com.conf /etc/nginx/sites-available/chat.lynomia.com
-sudo nginx -t                      # never reload a config that does not parse
-sudo systemctl reload nginx        # reload, not restart: open connections survive
-```
+Between the two, the site is in a state worth knowing about rather than discovering:
+
+| | `/` | `/home` | the Arabic homepage |
+|---|---|---|---|
+| Today | static landing page | the homepage | at `/home` |
+| **Rails deployed, nginx not** | static landing page | **301 to `/`, the static page** | **only via port 3000** |
+| Both applied | the homepage | 301 to `/` | at `/` |
+
+In the middle row the application's canonical tags and `sitemap.xml` already say `/`, which nginx is still
+answering from disk. Keep that window to **minutes, not days**: it is there for the pre-flight checks, and if
+it has to stay open longer, roll the Rails half back instead.
+
+### The three ways it fails silently
+
+All three are checked in §2 of the patch document, and all three produce the same symptom — `/` serving the
+dashboard and looking like a broken deploy:
+
+1. `FRONTEND_URL` does not name `chat.lynomia.com` (a `www.` prefix is a different host).
+2. nginx does not forward the visitor's `Host` (`proxy_set_header Host $host;`), so the application sees the
+   upstream name instead.
+3. The check was run against `127.0.0.1` with no `Host` header, which is a correct answer to the wrong
+   question.
 
 ### Then, immediately
 
 ```bash
 curl -s -o /dev/null -w '/           %{http_code}\n' https://chat.lynomia.com/
 curl -s https://chat.lynomia.com/ | grep -o '<html[^>]*>'          # expect lang="ar" dir="rtl"
+curl -s https://chat.lynomia.com/en | grep -o '<html[^>]*>'        # expect lang="en" dir="ltr"
 curl -s -o /dev/null -w '/index.html %{http_code}\n' https://chat.lynomia.com/index.html   # expect 404, not the nginx welcome page
-curl -s -o /dev/null -w '/home       %{http_code}\n' https://chat.lynomia.com/home          # expect 301 to /
+curl -sI https://chat.lynomia.com/home    | grep -iE '^(HTTP|location)'   # 301, Location: https://chat.lynomia.com/
+curl -sI https://chat.lynomia.com/en/home | grep -iE '^(HTTP|location)'   # 301, Location: https://chat.lynomia.com/en
 curl -s -o /dev/null -w 'tenant /    %{http_code}\n' https://<a tenant domain>/              # expect 200, still the Help Center
 curl -s -o /dev/null -w '/app        %{http_code}\n' https://chat.lynomia.com/app
+curl -s https://chat.lynomia.com/sitemap.xml | grep -o '<loc>[^<]*</loc>' | head -3           # expect / and /en, no /home
 ```
 
 The `/index.html` check is its own finding (F17): the stock "Welcome to nginx!" page is publicly reachable
-there today, and the cutover is what removes it.
+there today. Note that this patch does **not** remove it — it changes only the `location = /` block, and
+`/index.html` is served by `location /`. Closing F17 is a separate change.
 
 ### Reversing the cutover
 
 ```bash
-sudo tar xzf /var/backups/lynomia/nginx-<stamp>.tgz -C /
+sudo cp -a /etc/nginx/sites-available/nginx_chatwoot.conf.<TIMESTAMP>.pre-root-cutover \
+           /etc/nginx/sites-available/nginx_chatwoot.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
 The static file has to still be on disk for that to help, which is why §1b backs up the docroot before
-anything else.
+anything else and why neither the patch nor this runbook deletes it.
 
 ---
 
@@ -296,7 +339,7 @@ Tools. Before the cutover there is no point: the home page a crawler would start
 ## 8. The checklist
 
 ```
-[ ] 0  nginx reconciled against the live vhost and the docroot path recorded
+[ ] 0  the live vhost read, and the docroot path and homepage block confirmed against §0
 [ ] 1a database dumped, and the dump listed to prove it is readable
 [ ] 1b docroot archived
 [ ] 1c /etc/nginx archived
@@ -308,11 +351,14 @@ Tools. Before the cutover there is no point: the home page a crawler would start
 [ ] 3  all 20 standing URLs answer 200 in both locales
 [ ] 3  4 detail pages answer 200
 [ ] 3  /sitemap.xml lists 96 URLs; robots.txt names it absolutely
-[ ] 3  / (Arabic) is lang="ar" dir="rtl" from the server
+[ ] 3  the Arabic homepage is lang="ar" dir="rtl" from the server (via port 3000 before §5, via / after)
 [ ] 3  /docs, /app, /hc and a tenant custom domain all unchanged
 [ ] 3  a tenant custom domain answers 404 for /features
 [ ] 3  Super Admin: 96 published rows, preview works, an edit reaches the public page
 [ ] 4  OWNER: the sales notification address entered, tested, and arriving
-[ ] 5  OWNER: approve the cutover — Rails change first, then nginx, then the six checks
+[ ] 5  FRONTEND_URL names chat.lynomia.com; nginx forwards Host $host (the two silent failures)
+[ ] 5  OWNER: approve the cutover — Rails deployed first, then the nginx patch, minutes apart
+[ ] 5  cutover applied per deployment/nginx/cutover-root-to-rails.md, with its backup taken
+[ ] 5  after it: /, /en, /home 301, /en/home 301, a tenant root, /app, the sitemap
 [ ] 7  the sitemap submitted to Search Console (after the cutover)
 ```

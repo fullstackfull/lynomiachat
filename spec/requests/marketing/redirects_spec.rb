@@ -147,11 +147,11 @@ describe 'Marketing redirects' do
     end
 
     it 'is unaffected for the dashboard root' do
-      SiteRedirect.create!(from_path: '/app/login', to_path: '/en/home')
+      SiteRedirect.create!(from_path: '/app/login', to_path: '/en')
 
       get '/app/login'
 
-      expect(response.location.to_s).not_to include('/en/home')
+      expect(response.location.to_s).not_to include('/en')
     end
   end
 end

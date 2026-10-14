@@ -45,6 +45,9 @@ class SuperAdmin::ApplicationController < Administrate::ApplicationController
     # rubocop:disable Rails/I18nLocaleTexts
     flash[:error] = 'Invalid action performed'
     # rubocop:enable Rails/I18nLocaleTexts
-    redirect_back(fallback_location: root_path)
+    # `super_admin_root_path` rather than `root_path`: since the homepage cutover `/` is the public marketing
+    # site on this installation's own host, and an operator whose referer was dropped belongs back in Super
+    # Admin, not on the website.
+    redirect_back(fallback_location: super_admin_root_path)
   end
 end

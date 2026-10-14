@@ -470,6 +470,14 @@ Rails.application.routes.draw do
         resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
           delete :avatar, on: :member
         end
+        # One channel identity, one holder -- see Platform::Api::V1::ChannelClaimsController.
+        # Collection-only: a claim is addressed by what it IS (provider + identity), not by an id
+        # the caller would otherwise have to store and keep in step.
+        resources :channel_claims, only: [:index, :create] do
+          collection do
+            delete :destroy
+          end
+        end
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
           resources :account_users, only: [:index, :create] do
             collection do

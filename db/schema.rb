@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_090000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_14_100000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -723,6 +723,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_090000) do
     t.string "provider_name"
     t.index ["page_id", "account_id"], name: "index_channel_facebook_pages_on_page_id_and_account_id", unique: true
     t.index ["page_id"], name: "index_channel_facebook_pages_on_page_id"
+  end
+
+  create_table "channel_identity_claims", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.string "provider", limit: 32, null: false
+    t.string "identity", limit: 255, null: false
+    t.string "state", limit: 32, default: "active", null: false
+    t.string "external_owner_ref", limit: 128
+    t.datetime "released_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "state"], name: "index_channel_identity_claims_on_account_id_and_state"
+    t.index ["platform_app_id", "external_owner_ref"], name: "idx_on_platform_app_id_external_owner_ref_c66d755cf3"
+    t.index ["platform_app_id", "provider", "identity"], name: "index_channel_identity_claims_active_unique", unique: true, where: "((state)::text = 'active'::text)"
   end
 
   create_table "channel_instagram", force: :cascade do |t|

@@ -1706,16 +1706,27 @@ Corrected, and the partial now names both halves of the contract and where each 
 
 ### N1 — What was actually missing, and what already held
 
-`Documentation::MediaSeeder` was implemented, specced and documented, and **nine of the owner's nine
-requirements were already satisfied by its code** — per-portal namespace, stable key, ActiveStorage only,
-checksum idempotency with no global scan, scoped lookup, provenance by `content_source_path`, an orphan sweep
-restricted to corpus-owned attachments, no cross-portal reuse, and a loud rerunnable failure. What was missing
-was the **caller**. R2-MEDIA-INTERFACE.md §3.2 assigns one line to `ContentSeeder` and it was never written, so
-every requirement held only because nothing ran.
+`Documentation::MediaSeeder` was implemented, specced and documented, and **seven of the owner's nine
+requirements were already satisfied by its code**: the per-portal namespace and stable key (2), ActiveStorage
+only (3), checksum idempotency with no global scan (4), scoped lookup (5), provenance by `content_source_path`
+(6), an orphan sweep restricted to corpus-owned attachments (7), and no cross-portal reuse (8). Each of those
+held only because nothing ran, which is why §N11 and §N12 then found defects in two of them.
 
-So this delta is a wiring change, not a mechanism. The frozen contract already said where the line goes, and
-owner ruling 3 had since given **both** services a write-free preflight and an idempotent apply — which is what
-made the completion obvious: **interleave the phases rather than call `perform!` from one place.**
+The other two were not satisfied, and saying so matters more than the tally:
+
+- **Requirement 1 had no caller at all.** R2-MEDIA-INTERFACE.md §3.2 assigns one line to `ContentSeeder` and it
+  was never written, so the preflight certified `media:` references the apply never attached.
+- **Requirement 9 was half there.** The service failed loudly and a re-run converged, but two decidable defects
+  — bytes that are not a permitted raster type, and bytes over the cap — were still inside the write loop, so a
+  failure could leave a partial write (§N11); and nothing REPORTED media at all: no `Result` member, no report
+  line, so "reported clearly" had nothing to report with.
+
+An earlier draft of this paragraph claimed nine of nine. That was the tally of what the service's own code
+looked like rather than what the owner asked for, and it is corrected here rather than left standing.
+
+So this delta is mostly a wiring change. The frozen contract already said where the line goes, and owner ruling
+3 had since given **both** services a write-free preflight and an idempotent apply — which is what made the
+completion obvious: **interleave the phases rather than call `perform!` from one place.**
 
 | Phase | What runs | Why there |
 |---|---|---|

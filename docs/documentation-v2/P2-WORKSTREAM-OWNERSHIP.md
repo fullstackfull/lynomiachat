@@ -1443,6 +1443,14 @@ before a merge gate, buys nothing. Recorded so the choice is visible rather than
 
 #### L3.7 — A5'-O1: NOTHING SEEDS CORPUS MEDIA. Verified independently, and it needs an owner decision
 
+> **SUPERSEDED by §N1–§N13. A5'-O1 is CLOSED.** The owner ruled, and the wiring landed:
+> `ContentSeeder#preflight!` calls `media_seeder.preflight!` (`content_seeder.rb:377`) and `ContentSeeder#apply!`
+> calls `media_seeder.perform!` first (`content_seeder.rb:436`). Everything below is left exactly as it was
+> written, including the sentences that say nothing calls the seeder and that the decision is outstanding: they
+> were true when measured and are not true now. The table's line numbers are that pass's positions. In the
+> current tree the comments naming `MediaSeeder` are at `content_seeder.rb:65` and `:86` — the second is new in
+> this delta — and the `MEDIA_DIR` read is at `:254`.
+
 `Documentation::MediaSeeder` is implemented, specced and documented — and **no production path calls it.**
 I ran the no-exclusion search myself rather than taking the claim, and classified all 26 hits:
 
@@ -1471,7 +1479,7 @@ outstanding and it is an owner decision**, not an open item to carry quietly.
 
 | # | Item | What closes it |
 |---|---|---|
-| **A5'-O1** | **Nothing seeds corpus media** (§L3.7) | **owner decision**, then a change of its own |
+| **A5'-O1** | **Nothing seeds corpus media** (§L3.7) | an **owner decision**, then a change of its own — since **CLOSED** both ways: the owner ruled and the change landed (§N, and the table at §N's head) |
 | A5'-O2 | A **basename swap inside one run** still fails mid-apply on the `content_source_path` index, now as a reported `ApplyFailure`, and fails identically on every re-run | the rows-direction query A5-O2 is already open for |
 | A5'-O3 | The preflight cannot see a value the **database** rejects; `int4` overflow is the measured instance | nothing — phase C is the ruling's answer |
 | A5'-O4 | A manifest section with no directory is now **refused** where it used to create an empty category, so adding a section before its articles is a red task | nothing, unless the owner wants it demoted to a warning; D9 asks for set equality |
@@ -1603,11 +1611,16 @@ clean.
 
 §L3.7 recorded that **nothing seeds corpus media** and that the live failure is an article publishing an
 unresolved-key comment. This delta changes what the *absence of a report* means, and the distinction matters for
-the owner decision. `Corpus#media_problems` (`content_seeder.rb:233`) now **certifies** every `media:` reference
+the owner decision. `Corpus#media_problems` (`content_seeder.rb:248`) now **certifies** every `media:` reference
 in the corpus during the preflight. Before, a clean run was silent about media because nothing looked. Now a
 clean run is an affirmative all-clear on the references — and a corpus image that exists, is referenced, and is
 never attached still publishes unresolved, because certifying a reference is not attaching a file. The gap is
 narrower and better reported, and it is unchanged in substance. **Still an owner decision.**
+
+> **SUPERSEDED by §N1–§N13.** The owner decided, and the gap this section describes is closed: a corpus image
+> that exists and is referenced is now attached by `media_seeder.perform!` before any row is written, so a clean
+> run is an all-clear on the attachments as well as on the references. The paragraph above is kept as the record
+> of what the absence of a report meant while it still meant something.
 
 ### M7 — The gate found a seventh thing, and it is the same class as §K1
 
@@ -1747,8 +1760,10 @@ copy, published the moment the seeder is memoized — because an upload is outsi
 that fails on the tenth key must still report the nine that landed. That is owner ruling 3's "report exactly
 what completed" one level down, and it needed one new line of API: `attr_reader :result` on `MediaSeeder`.
 
-`DocumentationSeedReport` gains one constant and one `puts`, worded as R2-MEDIA-INTERFACE.md §3.7 itself
-suggests. **Measured, four real runs through the real report** (a temporary corpus, one image, one spare file):
+`DocumentationSeedReport` gains one constant and one `puts`, worded as R2-MEDIA-INTERFACE.md §3.7 suggests
+with two departures, both deliberate: `uploaded` prints as **attached**, because an attachment is the thing that
+exists afterwards, and `unreferenced` is qualified **in the repository**, because what it counts are files in the
+tree and not blobs in storage. **Measured, four real runs through the real report** (a temporary corpus, one image, one spare file):
 
 ```
 --- RUN 1: first seed, one image attached, one unreferenced file in the tree ---
@@ -1802,8 +1817,17 @@ while `portal.changed?` — which is about attributes — stays false. `Attached
 and was never written.
 
 Fixed where it was created: `Article.find_or_initialize_by(portal: portal, …)`. Same query, same assignment, and
-the plan stops mutating the portal's in-memory graph — which it never should have, since a plan is an
-inspection. This is why `media_seeder_spec` never saw it: it passes `portal.reload`, which clears the target.
+the **article** plan stops mutating the portal's in-memory graph — which it never should have, since a plan is an
+inspection.
+
+Two things the first draft of this paragraph got wrong, corrected rather than left standing. `media_seeder_spec`
+never saw this defect because it **builds no Article at all** — the association target is never polluted, so
+there is nothing for `attach` to trip over; its `portal.reload` is incidental and would clear the target if there
+were one. And "a plan is an inspection" is true of the article plan only: `upsert_category` still builds through
+`portal.categories.find_or_initialize_by` (`content_seeder.rb:450`), so the same unsaved-child shape exists on
+the apply side. It is harmless for exactly one reason — `media_seeder.perform!` runs **first**, before any
+category is built — which is §3.2's ordering doing a second job it was not chosen for, and is recorded here so
+nobody reorders the two calls believing the order is only about failure atomicity.
 
 ### N4 — Defect 2: that abandonment was silent, which is the shape this program keeps refusing
 
@@ -1812,14 +1836,17 @@ success. The attach boundary now reads the attachment back **from the database**
 — and raises `Error` naming the portal and its validation errors. Not a speculative guard: the failure was
 measured above, and the cop against "report success when it failed" is the same one P5c-1 was issued for.
 
-### N5 — A third thing, found the way the other six were
+### N5 — A third thing, found the way every other defect in this delta was: by attacking a claim
 
 `content_seeder_spec.rb`'s *"accepts it once the file is there"* wrote the five bytes `'bytes'` to the media
 path and asserted `created == 2`. That satisfied the preflight, which checks that a file **exists**. Nothing
 read it, because nothing attached it — so a placeholder passed for as long as the defect existed. With the pass
 wired in, the attach boundary identifies the content type from the bytes and refuses `application/octet-stream`.
 It is a real 4x3 PNG now, and the example asserts the attachment, its key and its provenance rather than only
-a row count. **Seventh time a spec has been found pinning the absence of a feature.**
+a row count. **The same class as §K1 and §M7: a spec that pinned the world as it was, so the gate stayed green
+over a missing feature.** An earlier draft called this the seventh instance; the ordinal is dropped rather than
+re-numbered, because §M7 four commits earlier had already claimed a seventh and the ledger is spread across
+sections where a running count cannot be checked.
 
 ### N6 — Tests: the owner's A–I, at the integration level
 
@@ -2073,3 +2100,32 @@ from two locales, with the dimensions the analyzer measured. Test database only,
 - **No `documentation:media` rake task.** §3.3 permits one; nothing requires it. `documentation:content` is
   idempotent, so an operator who changed only an image re-runs that, and a second task would be a second
   entry point to the same pass.
+
+### N14 — The fifth review lens read the record itself, and what it cost
+
+The owner asked Agent 6 to review this delta. Five lenses ran: correctness, idempotency and provenance, the
+tests, the operator's view, and one whose only job was to check every claim written above against the code. The
+first four are recorded at §N11 and §N12. The fifth returned **no must-level finding** and twelve items, which
+split in two.
+
+**Six were already fixed by commits that landed while it ran**, which is the honest reading rather than a
+coincidence worth hiding: the "nine of nine requirements" claim §N1 now corrects, §N11's "cannot see" wording
+about the content-type and byte-cap checks, the missing note that requirement 8 has an example of its own, a
+`Result` comment that had gone stale, a rake example that was subsumed by the exact-string one (now independent,
+with pairwise-distinct counters), and a second stale `refuse_media!` citation.
+
+**Six were record-only, and are applied here.** They change no code, and `docs/` is outside the gate's
+changed-file selector, so they cannot move a gate result:
+
+| # | What was wrong | Fix |
+|---|---|---|
+| R-2 | §L3.7, §M5 and the frozen contract still asserted that nothing calls the seeder and that A5'-O1 is an open owner decision | **SUPERSEDED/AMENDED** markers at all three, with the historical text left as written |
+| R-3 | Three line citations had shifted under this delta | `content_seeder.rb:65`/`:86`/`:254` stated once at §L3.7 as current positions; §M5's `media_problems` citation updated to `:248` |
+| R-4 | §N5's "seventh instance" double-counted — §M7, four commits earlier, had already claimed a seventh | the ordinal is dropped rather than re-numbered, and the class (§K1, §M7) named instead |
+| R-8 | §N3 gave the wrong reason `media_seeder_spec` never saw defect 1 | it builds **no Article at all**, so the association target is never polluted; the `portal.reload` is incidental |
+| R-9 | §N2 claimed the report line is worded "as §3.7 itself suggests" | two departures named: `uploaded` prints as `attached`, and `unreferenced` is qualified "in the repository" |
+| R-12 | §N3's "a plan is an inspection" covers the **article** plan only | `upsert_category` still builds through `portal.categories`, and is safe solely because the media pass runs first — recorded so the ordering is not read as being about failure atomicity alone |
+
+R-12 is the one with teeth: the ordering `R2-MEDIA-INTERFACE.md` §3.2 chose so that a media failure leaves the
+corpus untouched is also what keeps the apply's own unsaved-category child out of `attach`'s way. Two reasons,
+one line, and now both written down.

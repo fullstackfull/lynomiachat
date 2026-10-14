@@ -1431,6 +1431,15 @@ is to name *every* offending file. The deduplication exists and is Agent 1's to 
 `ContentSeeder::Corpus#media_problems` deletes itself and delegates. The overlap until then is two checks — the
 grammar predicate (read from `MediaResolver`, not copied) and file existence.
 
+**AMENDED — A5'-O1 closed, and the paragraph above is now half true.** `ContentSeeder#preflight!` DOES call
+`media_seeder.preflight!`, as its last step (`content_seeder.rb:377`), and `ContentSeeder#apply!` calls
+`media_seeder.perform!` first (`content_seeder.rb:436`). What survives is the *reason*: `Corpus#media_problems`
+is kept, not replaced, because it collects every offending file where `MediaSeeder` raises on the first — so the
+collected list is still what reports a missing media file, and the media preflight runs after it to decide the
+four defects a collector cannot see (empty alt text, a `media:` key in a link position, a destination CommonMark
+reads as no image at all, a corpus file in the reserved `uploads/` namespace). The overlap is unchanged and still
+deliberate; the non-raising `MediaSeeder#problems` is still open. See P2-WORKSTREAM-OWNERSHIP.md §N1.
+
 ---
 
 ### 5.10 — `spec/security/documentation_v2/source_of_truth_boundary_spec.rb` (Agent 6). Three examples that pin

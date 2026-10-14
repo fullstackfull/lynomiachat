@@ -249,6 +249,48 @@ RSpec.describe 'Flows API', type: :request do
     expect(counts.call).to eq(before)
   end
 
+  describe 'duplicate' do
+    it 'copies the graph into a new unpublished flow of this account, attached to nothing' do
+      AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)
+      Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
+
+      post "#{base}/#{flow.id}/duplicate", params: { name: 'Welcome (نسخة)' }, headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:created)
+      body = response.parsed_body
+      copy = AgentBot.find(body['id'])
+      expect(copy).to have_attributes(name: 'Welcome (نسخة)', bot_type: 'flow', account_id: account.id)
+      # The graph travels; the published state and the inbox attachment deliberately do not.
+      expect(body['graph']['nodes'].pluck('id')).to eq(menu_graph[:nodes].pluck(:id))
+      expect(body['published']).to be_nil
+      expect([copy.id == flow.id, copy.inboxes.any?, copy.flow_versions.draft.count]).to eq([false, false, 1])
+      expect(flow.reload.published_flow_version).to be_present
+    end
+
+    it 'defaults the name, and refuses another account\'s flow' do
+      post "#{base}/#{flow.id}/duplicate", headers: admin.create_new_auth_token, as: :json
+      expect(response.parsed_body['name']).to eq('Welcome (copy)')
+
+      other = create(:account).tap { |record| record.enable_features!('lynomia_flow_builder') }
+      foreign = create(:agent_bot, account: other, bot_type: :flow, outgoing_url: nil)
+      expect { post "#{base}/#{foreign.id}/duplicate", headers: admin.create_new_auth_token, as: :json }
+        .not_to change(AgentBot, :count)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'leaves nothing behind when the copy cannot be created' do
+      # An operator's ceiling rather than a plan's: it is the same number through the same
+      # resolver, and it does not also rewrite the account's features the way a plan sync does.
+      create(:billing_entitlement_override, account: account, kind: :limit, name: 'flows', limit_value: 1, enabled: nil)
+      flow
+
+      expect { post "#{base}/#{flow.id}/duplicate", headers: admin.create_new_auth_token, as: :json }
+        .not_to change(FlowVersion, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(account.agent_bots.flow.count).to eq(1)
+    end
+  end
+
   it 'shows the latest sessions without what customers wrote' do
     AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)
     version = Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!

@@ -7,7 +7,7 @@ class BillingPlanLimitsField < Administrate::Field::Base
     { attr => BillingPlan::LIMIT_KEYS }
   end
 
-  LABELS = { 'agents' => 'Agents', 'inboxes' => 'Inboxes', 'stores' => 'Commerce stores' }.freeze
+  LABELS = { 'agents' => 'Agents', 'inboxes' => 'Inboxes', 'stores' => 'Commerce stores', 'flows' => 'Flows' }.freeze
 
   def limits
     (data || {}).to_h

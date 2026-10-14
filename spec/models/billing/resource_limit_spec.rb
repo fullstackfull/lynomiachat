@@ -106,6 +106,48 @@ RSpec.describe Billing::ResourceLimit do
     end
   end
 
+  # Phase 4 adds the Automation Studio, which creates flows from four places -- the builder, a duplicate, a
+  # template and the console. The ceiling is on AgentBot creation so that all four pass it.
+  describe 'the flow ceiling' do
+    def add_flow(name)
+      account.agent_bots.create!(name: name, bot_type: :flow, outgoing_url: nil)
+    end
+
+    before { subscribe(create(:billing_plan, limits: { 'flows' => 2 })) }
+
+    it 'counts drafts too, and refuses the one past the ceiling' do
+      add_flow('one')
+      add_flow('two')
+      expect(account.agent_bots.flow.none?(&:published_flow_version)).to be(true)
+
+      expect { add_flow('three') }.to raise_error(ActiveRecord::RecordInvalid, /allows up to 2 flows/)
+      expect(described_class.current_count(account, :flows)).to eq(2)
+    end
+
+    it 'does not count a webhook bot, and does not refuse one at the ceiling' do
+      add_flow('one')
+      add_flow('two')
+
+      expect { account.agent_bots.create!(name: 'hook', bot_type: :webhook, outgoing_url: 'https://example.com/hook') }
+        .to change(AgentBot, :count).by(1)
+      expect(described_class.current_count(account, :flows)).to eq(2)
+    end
+
+    it 'imposes nothing when no ceiling is set' do
+      account.billing_subscription.update!(plan: create(:billing_plan, limits: {}))
+
+      expect { 3.times { |i| add_flow("free-#{i}") } }.to change(AgentBot, :count).by(3)
+    end
+
+    it 'reports used against limit for the Studio, through the same resolver that enforces it' do
+      add_flow('one')
+      create(:billing_entitlement_override, account: account, kind: :limit, name: 'flows', limit_value: 5)
+
+      usage = Billing::ApiSerializer.usage(account.reload)
+      expect(usage[:flows]).to eq(used: 1, limit: 5)
+    end
+  end
+
   # The guard is on create only. An existing inbox must keep working when a plan is downgraded beneath it --
   # never silently deleted, and not frozen either (docs/p11/06-rollout-compatibility.md).
   describe 'an account already over a newly lowered ceiling' do

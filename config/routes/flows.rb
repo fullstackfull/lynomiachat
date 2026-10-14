@@ -8,6 +8,7 @@ namespace :api, defaults: { format: 'json' } do
         resources :flows, only: [:index, :create, :show, :update, :destroy] do
           member do
             put :draft
+            post :duplicate
             post :publish
             post :disable
             get :sessions

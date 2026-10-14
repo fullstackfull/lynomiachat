@@ -11,6 +11,7 @@ Rails.application.config.to_prepare do
     [Api::V1::Accounts::BaseController, Billing::AccessGuard],
     [Inbox, Billing::InboxLimit],
     [AccountUser, Billing::AgentLimit],
+    [AgentBot, Billing::FlowLimit],
     # Channel exclusivity rides here for the same reason the limits do: inbox creation has nine
     # production call sites in this fork and Inbox validation is the only point downstream of all
     # of them. See Channels::ExclusivityGuard.

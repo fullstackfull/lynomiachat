@@ -302,6 +302,7 @@ en:
         agents: Your plan allows up to %{limit} team members. Upgrade your plan to invite more.
         inboxes: Your plan allows up to %{limit} inboxes. Upgrade your plan to add more.
         stores: Your plan allows up to %{limit} connected stores. Upgrade your plan to connect more.
+        flows: Your plan allows up to %{limit} flows. Upgrade your plan to build more.
       # The same ceilings, when they came from a platform that BUNDLES this product rather than
       # from a plan bought here. "Upgrade your plan" sends such a merchant to a page that cannot
       # help them -- the seats are part of their package on the other platform, and that is where
@@ -311,6 +312,7 @@ en:
         agents: Your package includes up to %{limit} team members. Ask your provider to include more.
         inboxes: Your package includes up to %{limit} inboxes. Ask your provider to include more.
         stores: Your package includes up to %{limit} connected stores. Ask your provider to include more.
+        flows: Your package includes up to %{limit} flows. Ask your provider to include more.
       channel_not_included: Your plan does not include the %{channel} channel. Upgrade your plan to connect it.
       subscription_inactive: This account does not have an active subscription.
       entitlement_required: Your plan does not include this feature.

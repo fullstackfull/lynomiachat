@@ -28,7 +28,11 @@ module Billing::ResourceLimit
   COUNTS = {
     agents: ->(account) { account.account_users.count },
     inboxes: ->(account) { account.inboxes.count },
-    stores: ->(account) { account.commerce_stores.connected.count }
+    stores: ->(account) { account.commerce_stores.connected.count },
+    # Every flow bot, not only the published ones. A draft nobody has published is still a flow the
+    # account owns, edits and sees in its list -- counting only published flows would let an account
+    # keep any number of them and hit the ceiling only at the moment it tried to turn one on.
+    flows: ->(account) { account.agent_bots.flow.count }
   }.freeze
 
   # @param resource [Symbol, String] one of BillingPlan::LIMIT_KEYS

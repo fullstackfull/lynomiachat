@@ -7,6 +7,7 @@
 #   POST   /flows                   create: name, description
 #   GET    /flows/:id               the flow, its draft graph (else the published one), validation errors
 #   PATCH  /flows/:id               name, description
+#   POST   /flows/:id/duplicate    copy the flow and its graph into a new, unpublished flow
 #   DELETE /flows/:id               delete (a flow that is not published and has no live session)
 #   PUT    /flows/:id/draft         save the draft: graph, lock_version (409 when somebody else saved first)
 #   POST   /flows/:id/publish       publish the draft (422 with the errors when it is not valid)
@@ -59,6 +60,31 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
     head :ok
   end
 
+  # A COPY MADE ON THE SERVER, IN ONE TRANSACTION. The composition it replaces -- show, then
+  # create, then save the draft -- is three round trips with no atomicity, and a failure between
+  # the second and the third leaves behind an empty flow whose name says it is a copy of
+  # something. It also counts against the flow ceiling at the same point every other create does,
+  # because it goes through the same AgentBot validation.
+  #
+  # THE COPY IS ALWAYS A DRAFT, whatever the source was. A duplicate that published itself would
+  # start sessions nobody asked for, on inboxes the copy is not attached to yet; the merchant
+  # publishes it when they mean to. The source's inboxes are deliberately not copied either --
+  # a flow and its copy on the same inbox is an ambiguity the merchant has to resolve, not one
+  # this endpoint should guess at.
+  def duplicate
+    copy = nil
+
+    ActiveRecord::Base.transaction do
+      copy = Current.account.agent_bots.create!(name: duplicate_name, description: @flow.description, bot_type: :flow)
+      Flows::Versions.new(copy, user: Current.user).save!(duplicate_graph, lock_version: 0)
+      Flows::Audit.record('flow.duplicated', copy, user: Current.user, changes: { source_id: @flow.id, name: copy.name })
+    end
+
+    @flow = copy
+    @versions = Flows::Versions.new(copy, user: Current.user)
+    render json: show_json, status: :created
+  end
+
   # `lock_version` is REQUIRED rather than optional-when-absent. An optional precondition is not a
   # precondition: any caller that omits it -- an old client, a script, anyone who noticed -- goes
   # back to silently overwriting the other editor, which is the defect. It is a parameter error,
@@ -104,6 +130,19 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   def versions = @versions ||= Flows::Versions.new(@flow, user: Current.user)
 
   def flow_params = params.permit(:name, :description)
+
+  # The client names the copy -- it is the one that knows the merchant's language. The fallback is
+  # for a caller that does not, and is truncated because `name` has no length limit of its own and
+  # a chain of duplicates would otherwise grow without bound.
+  def duplicate_name
+    params[:name].presence&.to_s&.strip.presence || "#{@flow.name} (copy)".first(255)
+  end
+
+  # The draft if there is one, else the published graph: what the merchant currently sees in the
+  # editor. An archived version is history and is never what "duplicate this flow" means.
+  def duplicate_graph
+    (@flow.flow_versions.draft.first || @flow.published_flow_version)&.graph || Flows::Versions::STARTER
+  end
 
   # JSON sends it as a number and a form sends it as a string, so it is normalised to a string
   # before parsing -- `Integer(0, 10)` raises, which is how this was found.

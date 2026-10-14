@@ -81,7 +81,14 @@ module Automation::Vocabulary
     'recovery_unavailable' unless collected
   end
 
-  def actions(account) = AutomationRule.new(account: account).actions_attributes
+  # Each action with the shape of what it takes; see Automation::ActionFields for why an action with no
+  # `fields` entry is one a client must not offer.
+  def actions(account)
+    AutomationRule.new(account: account).actions_attributes.map do |name|
+      { name: name, fields: Automation::ActionFields::FOR[name],
+        commerce_safe: Custom::AutomationRule::CUSTOMER_MESSAGE_ACTIONS.exclude?(name) }.compact
+    end
+  end
 
   def standard
     SCOPES.flat_map do |group, scope|

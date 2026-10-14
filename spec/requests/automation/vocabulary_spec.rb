@@ -32,9 +32,34 @@ RSpec.describe 'Automation vocabulary', type: :request do
       rule = AutomationRule.new(account: account)
 
       expect(body['events'].pluck('name')).to eq(rule.event_names)
-      expect(body['actions']).to eq(rule.actions_attributes)
+      expect(body['actions'].pluck('name')).to eq(rule.actions_attributes)
       # The Commerce triggers this fork adds ride along, because the rule's own list carries them.
       expect(body['events'].pluck('name')).to include('commerce_order_paid', 'commerce_cart_abandoned')
+    end
+
+    # An action with no described shape is one a client must not offer: a form that happens to
+    # post the right-shaped JSON for a file upload or a webhook is how a half-built action ships.
+    it 'describes the shape of each action it describes at all, and marks the rest' do
+      actions = body['actions'].index_by { |action| action['name'] }
+
+      expect(actions['change_priority']['fields'].sole)
+        .to include('key' => 'priority', 'kind' => 'select', 'wrapped' => true,
+                    'values' => %w[low medium high urgent nil])
+      expect(actions['resolve_conversation']['fields']).to eq([])
+      # Described by nothing, so offered by nothing.
+      expect(actions.values_at('send_attachment', 'send_email_to_team').map(&:keys))
+        .to eq([%w[name commerce_safe], %w[name commerce_safe]])
+      expect(actions['send_whatsapp_template']['fields'].pluck('key')).to eq(%w[inbox_id name language params])
+    end
+
+    # The rule Custom::AutomationRule already enforces, reported rather than restated: a Commerce
+    # trigger refuses a free-form customer message, so offering one is offering an unsavable rule.
+    it 'marks the actions a Commerce trigger would refuse' do
+      actions = body['actions'].index_by { |action| action['name'] }
+      refused = Custom::AutomationRule::CUSTOMER_MESSAGE_ACTIONS
+
+      expect(actions.values.reject { |action| action['commerce_safe'] }.pluck('name')).to match_array(refused)
+      expect(actions['send_whatsapp_template']['commerce_safe']).to be(true)
     end
 
     it 'serves every standard condition key with the operators the validator checks' do

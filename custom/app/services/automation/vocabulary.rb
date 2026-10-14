@@ -40,9 +40,46 @@ module Automation::Vocabulary
     standard + custom(account) + lynomia(account)
   end
 
-  # The triggers this installation can actually run and the actions it can actually take, from the rule's own
-  # allow-lists -- the same ones that refuse a rule naming anything else.
-  def events(account) = AutomationRule.new(account: account).event_names
+  # The triggers this installation can run and the actions it can take, from the rule's own allow-lists -- the
+  # same ones that refuse a rule naming anything else.
+  #
+  # EACH TRIGGER SAYS WHETHER IT CAN ACTUALLY FIRE FOR THIS ACCOUNT, and that is not decoration. A Commerce
+  # trigger is a valid name for every account -- AutomationRule#event_names lists them unconditionally and a
+  # rule naming one SAVES -- but it only ever fires where Commerce is on, a store is connected, and, for the
+  # cart trigger, that store's provider has cleared UAT and has recovery switched on. A client offering the
+  # cart trigger to a merchant whose provider is still PRE_UAT offers a rule that looks created and does
+  # nothing, which is the failure mode this whole vocabulary exists to prevent.
+  #
+  # `reason` IS A CODE, NOT A SENTENCE, like everything else here: the client writes the words.
+  def events(account)
+    AutomationRule.new(account: account).event_names.map do |name|
+      reason = event_blocker(account, name)
+      { name: name, available: reason.nil?, reason: reason }.compact
+    end
+  end
+
+  # Why a trigger cannot fire for this account, or nil when it can.
+  def event_blocker(account, name)
+    return nil unless Automation::CommerceEvents.event?(name)
+
+    commerce_blocker(account) || cart_blocker(account, name)
+  end
+
+  def commerce_blocker(account)
+    return 'extensions_disabled' unless Automation::Extensions.enabled?
+    return 'commerce_disabled' unless account.feature_enabled?('lynomia_commerce')
+
+    'no_store' if account.commerce_stores.connected.empty?
+  end
+
+  # The cart trigger needs a provider whose abandoned carts are actually collected: a provider still in PRE_UAT
+  # never produces one, whatever the switch says.
+  def cart_blocker(account, name)
+    return nil unless Automation::CommerceEvents::CART_EVENTS.include?(name)
+
+    collected = account.commerce_stores.connected.any? { |store| Commerce::Switches.provider_recovery_enabled?(store.provider) }
+    'recovery_unavailable' unless collected
+  end
 
   def actions(account) = AutomationRule.new(account: account).actions_attributes
 

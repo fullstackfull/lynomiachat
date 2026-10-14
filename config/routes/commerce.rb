@@ -9,6 +9,10 @@ namespace :api, defaults: { format: 'json' } do
           resources :stores, only: [:index, :create, :update, :destroy]
           resources :carts, only: [:index]
           resource :audience_fields, only: [:show]
+          # What a shopper agreed to receive. `:id` is a CONTACT id: the decision belongs to the
+          # person, not to a store, because a shopper who says stop means every store of this
+          # workspace rather than the one that happened to message them.
+          resources :consents, only: [:index, :show, :update, :destroy]
           resource :salla_connection, only: [:show, :create]
           resource :zid_connection, only: [:create]
           resource :shopify_connection, only: [:create]

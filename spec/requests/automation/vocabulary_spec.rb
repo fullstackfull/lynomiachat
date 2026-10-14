@@ -8,6 +8,8 @@ require 'rails_helper'
 # that the served vocabulary IS the one the server validates against, by comparing it to the same sources the
 # validators read rather than to a list written out here.
 RSpec.describe 'Automation vocabulary', type: :request do
+  include_context 'with commerce encryption'
+
   let(:account) { create(:account) }
   let(:admin) { create(:user, account: account, role: :administrator) }
   let(:agent) { create(:user, account: account, role: :agent) }
@@ -29,10 +31,10 @@ RSpec.describe 'Automation vocabulary', type: :request do
     it 'serves the triggers and actions the rule itself will accept, and no others' do
       rule = AutomationRule.new(account: account)
 
-      expect(body['events']).to eq(rule.event_names)
+      expect(body['events'].pluck('name')).to eq(rule.event_names)
       expect(body['actions']).to eq(rule.actions_attributes)
       # The Commerce triggers this fork adds ride along, because the rule's own list carries them.
-      expect(body['events']).to include('commerce_order_paid', 'commerce_cart_abandoned')
+      expect(body['events'].pluck('name')).to include('commerce_order_paid', 'commerce_cart_abandoned')
     end
 
     it 'serves every standard condition key with the operators the validator checks' do
@@ -68,6 +70,30 @@ RSpec.describe 'Automation vocabulary', type: :request do
       expect(body['condition_patterns'].first).to include('prefix' => 'commerce_spend_', 'suffix' => 'currency',
                                                           'operators' => %w[is_greater_than is_less_than])
     end
+  end
+
+  # The cart trigger is the one the Phase 4A review named: Store Syria's abandoned carts are
+  # PRE_UAT, so the trigger is a real name that can never fire for them. Order triggers can.
+  it 'separates a trigger whose provider cannot produce the event from one that can' do
+    account.enable_features!('lynomia_commerce')
+    allow(Automation::Extensions).to receive(:enabled?).and_return(true)
+    create(:commerce_store, account: account, provider: 'storesyria', status: :active)
+
+    get url, headers: admin.create_new_auth_token, as: :json
+    events = body['events'].index_by { |event| event['name'] }
+
+    expect(events['commerce_order_paid']).to include('available' => true)
+    expect(events['commerce_cart_abandoned']).to include('available' => false, 'reason' => 'recovery_unavailable')
+  end
+
+  it 'reports a Commerce trigger as unavailable while no store is connected' do
+    account.enable_features!('lynomia_commerce')
+    allow(Automation::Extensions).to receive(:enabled?).and_return(true)
+
+    get url, headers: admin.create_new_auth_token, as: :json
+
+    expect(body['events'].index_by { |event| event['name'] }['commerce_order_paid'])
+      .to include('available' => false, 'reason' => 'no_store')
   end
 
   it 'offers a Commerce key as available once the account is entitled' do

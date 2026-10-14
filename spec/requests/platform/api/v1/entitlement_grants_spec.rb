@@ -182,6 +182,24 @@ RSpec.describe 'Integration entitlement grants', type: :request do
       expect(account_user.errors.full_messages.join).to include('Upgrade your plan')
     end
 
+    # THE PATH A MERCHANT ACTUALLY TAKES. Billing::AccessGuard runs a pre-flight on agents#create
+    # BEFORE the AccountUser validation that holds the lock, so it, not the validator, is what
+    # answers a merchant inviting a colleague from the dashboard. It was passing no source, so the
+    # "Ask your provider" wording existed only on the path the UI reaches second.
+    it 'tells an integration-funded merchant to ask their provider on the invite path too' do
+      account.account_users.create!(user: create(:user), role: :administrator)
+      grant(member_count)
+      admin = account.account_users.administrator.first.user
+
+      post "/api/v1/accounts/#{account.id}/agents",
+           params: { name: 'New Colleague', email: 'colleague@example.com', role: 'agent' },
+           headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['message']).to include('Ask your provider')
+      expect(response.parsed_body['message']).not_to include('Upgrade your plan')
+    end
+
     # "Do not allow staff to bypass seat limits through direct Lynomia APIs."
     it 'refuses a member added through the platform API too' do
       grant(member_count)

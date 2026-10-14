@@ -22,6 +22,11 @@
 # disallows `/rails/` and a signed blob id never expires (Marketing::MediaController explains both).
 get 'site-media/:id', to: 'marketing/media#show', as: 'marketing_media', constraints: { id: /\d+/ }
 
+# THE SITEMAP, at the one address crawlers look for and robots.txt advertises. Outside the locale scope
+# because one sitemap lists both trees, which is what the protocol asks for -- `/en/sitemap.xml` would be a
+# second, partial answer to the same question. `/sitemap.xml` was genuinely unrouted before this.
+get 'sitemap.xml', to: 'marketing/sitemap#show', as: 'marketing_sitemap', defaults: { format: 'xml' }
+
 scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'home', to: 'pages#home', as: 'home'
 

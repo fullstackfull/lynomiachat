@@ -14,8 +14,14 @@
 
 <article class="mx-auto <%= entry ? 'max-w-4xl' : 'max-w-6xl' %> px-4 py-12 sm:px-6">
   <% if entry && scope %>
-    <%= render 'marketing/shared/breadcrumb',
-               trail: marketing_breadcrumb(scope, t("marketing.#{scope}.#{entry.id}.name")) %>
+    <% trail = marketing_breadcrumb(scope, t("marketing.#{scope}.#{entry.id}.name")) %>
+    <%= render 'marketing/shared/breadcrumb', trail: trail %>
+    <%# The machine-readable half of the SAME trail, built from the same array, so a search result's
+        breadcrumb shows what the page shows. `content_for` because it belongs in the head, and the template
+        renders before the layout. %>
+    <% content_for :structured_data do %>
+      <%= marketing_structured_data(marketing_breadcrumb_schema(trail, marketing_url(marketing_page))) %>
+    <% end %>
   <% end %>
 
   <header>

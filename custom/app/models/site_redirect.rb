@@ -17,6 +17,11 @@ class SiteRedirect < ApplicationRecord
   # Root-relative, no protocol-relative second slash, no scheme, no fragment games.
   PATH = %r{\A/(?!/)[A-Za-z0-9\-._~/]*\z}
 
+  # How far the chain is walked before a save is refused. A redirect is consulted on a 404, so a chain costs
+  # the visitor one request per hop and a crawler reports anything past a handful as a problem; ten is already
+  # pathological, and refusing it on save is how an operator finds out at the moment they can still fix it.
+  MAX_CHAIN = 10
+
   normalizes :from_path, :to_path, with: ->(value) { value.to_s.strip == '/' ? '/' : value.to_s.strip.chomp('/') }
 
   validates :from_path, presence: true, uniqueness: true
@@ -24,6 +29,7 @@ class SiteRedirect < ApplicationRecord
   validates :reason, length: { maximum: 200 }
   validate :validate_paths
   validate :refuse_self_redirect
+  validate :refuse_redirect_loop
 
   # The one lookup the request path makes. `find_by` on a unique index.
   def self.for_path(path)
@@ -52,5 +58,40 @@ class SiteRedirect < ApplicationRecord
     return if from_path.blank? || from_path != to_path
 
     errors.add(:to_path, 'cannot be the same as the path it redirects from')
+  end
+
+  # A→B and B→A is an infinite redirect the visitor's browser gives up on, and neither row is wrong on its
+  # own -- the pair is. So the chain is walked from this row's destination, following the redirects that
+  # already exist, and the save is refused if it comes back to somewhere it has been.
+  #
+  # `where.not(id: id)` ONLY WHEN PERSISTED. On a new record `id` is nil and `where.not(id: nil)` excludes
+  # every row that has an id, which is all of them -- the walk would find no hops at all and every loop would
+  # save. Measured as a bug while writing this, hence the explicit branch rather than a clever one-liner.
+  def refuse_redirect_loop
+    return if from_path.blank? || to_path.blank? || from_path == to_path
+
+    visited = [from_path]
+    path = to_path
+
+    MAX_CHAIN.times do
+      return errors.add(:to_path, loop_message(visited, path)) if visited.include?(path)
+
+      visited << path
+      hop = others.find_by(from_path: path)
+      return if hop.nil?
+
+      path = hop.to_path
+    end
+
+    errors.add(:to_path, "would create a redirect chain longer than #{MAX_CHAIN} hops")
+  end
+
+  # The chain as the operator would have to follow it, so a refusal names the rows rather than just the rule.
+  def loop_message(visited, path)
+    "would create a redirect loop: #{(visited + [path]).join(' -> ')}"
+  end
+
+  def others
+    persisted? ? self.class.where.not(id: id) : self.class.all
   end
 end

@@ -53,6 +53,26 @@
   <meta name="twitter:card" content="summary">
 <% end %>
 
+<%# STRUCTURED DATA, AND WHERE EACH KIND IS EMITTED.
+
+  Organization and WebSite describe the publisher and the site, so they belong on the site's own front page
+  and nowhere else -- repeating them on all 48 pages per locale says nothing extra and is the kind of
+  duplication a crawler discounts. BreadcrumbList and FAQPage are emitted by the templates that RENDER the
+  trail and the questions (marketing/shared/_page.html.erb, marketing/sections/_faq.html.erb), from the same
+  objects, so the structured data cannot describe something the page does not show.
+
+  Nothing is emitted for a page that is not indexable: a draft previewed in Super Admin, or a page an
+  operator marked noindex, has nothing to tell a crawler.
+%>
+<% indexable = @site_page.nil? || (@site_page.status_published? && !@site_page.noindex?) %>
+<% if indexable && @site_page&.kind == 'standing' && @site_page.key == 'home' %>
+  <%= marketing_structured_data(marketing_organization_schema) %>
+  <%= marketing_structured_data(marketing_website_schema) %>
+<% end %>
+<% if indexable %>
+  <%= yield :structured_data %>
+<% end %>
+
 <link rel="icon" href="/favicon-32x32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-icon-180x180.png">
 

@@ -8,6 +8,10 @@
 %>
 <% entries = SiteFaqEntry.published_for(marketing_locale) %>
 <% if entries.any? %>
+  <%# The FAQPage node, from the SAME rows rendered below -- not a copy and not a summary. %>
+  <% content_for :structured_data do %>
+    <%= marketing_structured_data(marketing_faq_schema(entries)) %>
+  <% end %>
   <section class="mt-10">
     <% if section['heading'].present? %>
       <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>

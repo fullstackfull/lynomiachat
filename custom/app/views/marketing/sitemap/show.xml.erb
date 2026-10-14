@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<%#
+  Every published, indexable marketing page, in both locales.
+
+  `lastmod` IS `updated_at`, which is the only modification date this product actually records for a page --
+  `published_at` is when it first went live, which is a different fact and would be wrong here. A page edited
+  this morning and first published last year must report this morning. `lastmod` is optional in the protocol
+  and a wrong one is worse than none.
+
+  The alternates are the published siblings of the same [kind, key], which is the same pairing the page's own
+  `<link rel="alternate">` tags are built from -- so the sitemap and the page cannot disagree. x-default
+  points at Arabic, the primary market and the unprefixed tree (D5), and only when Arabic is published.
+%>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <% @pages.each do |page| %>
+    <% path = page.public_path %>
+    <% next if path.blank? %>
+    <url>
+      <loc><%= marketing_absolute_url(path) %></loc>
+      <lastmod><%= page.updated_at.to_date.iso8601 %></lastmod>
+      <% locales = @published_locales.fetch([page.kind, page.key], []) %>
+      <% if locales.size > 1 %>
+        <% locales.each do |locale| %>
+          <% sibling = @pages.find { |candidate| candidate.locale == locale && candidate.kind == page.kind && candidate.key == page.key } %>
+          <% next if sibling.nil? || sibling.public_path.blank? %>
+          <xhtml:link rel="alternate" hreflang="<%= locale %>" href="<%= marketing_absolute_url(sibling.public_path) %>"/>
+        <% end %>
+        <% arabic = @pages.find { |candidate| candidate.locale == 'ar' && candidate.kind == page.kind && candidate.key == page.key } %>
+        <% if arabic && arabic.public_path.present? %>
+          <xhtml:link rel="alternate" hreflang="x-default" href="<%= marketing_absolute_url(arabic.public_path) %>"/>
+        <% end %>
+      <% end %>
+    </url>
+  <% end %>
+</urlset>

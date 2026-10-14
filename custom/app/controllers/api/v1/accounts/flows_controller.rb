@@ -72,7 +72,12 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   # reports `flow: null` and `occupied_by_other: true` -- enough to warn that connecting would
   # replace something, without naming a bot from outside this account.
   def channels
-    attached = flows.includes(:inboxes).flat_map { |flow| flow.inboxes.map { |inbox| [inbox.id, flow] } }.to_h
+    # The state is resolved ONCE PER FLOW, not once per inbox: a flow attached to ten inboxes
+    # was costing ten lifecycle lookups of the same answer.
+    attached = flows.includes(:inboxes).flat_map do |flow|
+      summary = { id: flow.id, name: flow.name, state: lifecycle_of(flow) }
+      flow.inboxes.map { |inbox| [inbox.id, summary] }
+    end.to_h
     inboxes = Current.account.inboxes.includes(:channel, :agent_bot).order(:name)
 
     render json: { payload: inboxes.map { |inbox| channel_json(inbox, attached[inbox.id]) } }
@@ -80,8 +85,7 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
 
   def channel_json(inbox, flow)
     { id: inbox.id, name: inbox.name, channel_type: inbox.channel_type,
-      runs_flows: Flows::ChannelCapabilities.for(inbox).present?,
-      flow: flow && { id: flow.id, name: flow.name, state: lifecycle_of(flow) },
+      runs_flows: Flows::ChannelCapabilities.for(inbox).present?, flow: flow,
       occupied_by_other: flow.nil? && inbox.agent_bot.present? }
   end
 
@@ -205,10 +209,15 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   def flow_params = params.permit(:name, :description)
 
   # The client names the copy -- it is the one that knows the merchant's language. The fallback is
-  # for a caller that does not, and is truncated because `name` has no length limit of its own and
+  # for a caller that does not.
+  #
+  # THROUGH `flow_params`, NOT `params[:name]`. Reading the raw parameter accepted a non-scalar:
+  # `name[]=x` arrived as an array and `to_s` turned it into the literal `["x"]`, which became
+  # the flow's name. `permit` drops a non-scalar, which is the behaviour `create` and `update`
+  # already have. Both branches are truncated, because `name` has no length limit of its own and
   # a chain of duplicates would otherwise grow without bound.
   def duplicate_name
-    params[:name].presence&.to_s&.strip.presence || "#{@flow.name} (copy)".first(255)
+    (flow_params[:name].presence&.strip.presence || "#{@flow.name} (copy)").first(255)
   end
 
   # The draft if there is one, else the published graph: what the merchant currently sees in the
@@ -245,11 +254,14 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   end
 
   def flow_json(flow)
+    published = flow.published_flow_version
+    draft = flow.flow_versions.draft.first
+
     {
       id: flow.id, name: flow.name, description: flow.description,
       inboxes: flow.inboxes.map { |inbox| { id: inbox.id, name: inbox.name, channel_type: inbox.channel_type } },
-      published: version_json(flow.published_flow_version), draft: version_json(flow.flow_versions.draft.first),
-      state: lifecycle_of(flow), live_sessions: flow.flow_sessions.live.count
+      published: version_json(published), draft: version_json(draft),
+      state: lifecycle_of(flow, published, draft), live_sessions: flow.flow_sessions.live.count
     }
   end
 
@@ -263,9 +275,14 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
   #
   # The archived check only runs for a flow that is in neither of the first two states, so it costs
   # nothing for a live or an in-progress flow.
-  def lifecycle_of(flow)
-    return 'published' if flow.published_flow_version
-    return 'draft' if flow.flow_versions.draft.first
+  #
+  # THE PUBLISHED AND DRAFT VERSIONS ARE PASSED IN rather than re-read. `published_flow_version`
+  # and `flow_versions.draft.first` are un-memoized relations, so calling them again here doubled
+  # the per-flow query count of the listing, and `channels` -- which calls this once per INBOX a
+  # flow is attached to -- paid it ten times for a flow on ten inboxes.
+  def lifecycle_of(flow, published = flow.published_flow_version, draft = flow.flow_versions.draft.first)
+    return 'published' if published
+    return 'draft' if draft
     return 'disabled' if flow.flow_versions.archived.exists?
 
     'draft'

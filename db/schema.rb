@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_20_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1375,6 +1375,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_20_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "agent_bot_id", "status"], name: "index_flow_sessions_on_account_id_and_agent_bot_id_and_status"
+    t.index ["agent_bot_id", "created_at"], name: "index_flow_sessions_on_agent_bot_id_and_created_at"
     t.index ["conversation_id", "created_at"], name: "index_flow_sessions_on_conversation_id_and_created_at"
     t.index ["conversation_id"], name: "index_flow_sessions_one_live", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
     t.index ["flow_version_id"], name: "index_flow_sessions_on_flow_version_id"

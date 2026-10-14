@@ -38,15 +38,22 @@ module Flows::Starters
         node('start', 'start', 0, 0),
         node('menu', 'buttons', 0, 1,
              { 'text' => 'Hello! How can we help you today?',
+               # NOT `other`: a Buttons node's outputs are its option ids PLUS the reserved
+               # extras `other` and `timeout` (Flows::NodeTypes.outputs), so an option called
+               # `other` collides with the no-match handle. The runtime copes, but a builder
+               # drawing handles from `outputs` draws two identical ones, required_outputs
+               # subtracts both occurrences so the no-match branch stops being required, and a
+               # merchant who then routes it somewhere else is refused at publish with
+               # `duplicate_output`. Caught by an adversarial review of this file.
                'options' => [{ 'id' => 'order', 'title' => 'My order' },
                              { 'id' => 'product', 'title' => 'A product' },
-                             { 'id' => 'other', 'title' => 'Something else' }] }),
+                             { 'id' => 'something_else', 'title' => 'Something else' }] }),
         node('order', 'handoff', -1, 2, { 'reason' => 'Asked about an order' }),
         node('product', 'handoff', 0, 2, { 'reason' => 'Asked about a product' }),
-        node('other', 'handoff', 1, 2, { 'reason' => 'Asked about something else' })
+        node('anything_else', 'handoff', 1, 2, { 'reason' => 'Asked about something else' })
       ],
       'edges' => [edge('start', 'next', 'menu'), edge('menu', 'order', 'order'),
-                  edge('menu', 'product', 'product'), edge('menu', 'other', 'other')]
+                  edge('menu', 'product', 'product'), edge('menu', 'something_else', 'anything_else')]
     }
   end
 
@@ -93,10 +100,14 @@ module Flows::Starters
     { id: 'acknowledge_and_hand_over', requires: [], nodes: 3, graph: acknowledge_and_hand_over }
   ].freeze
 
+  # A COPY OF THE GRAPH, NOT THE CONSTANT. Only the outer array is frozen, so handing out the
+  # same hash every caller then renders -- or, one day, normalises or stamps -- would let one
+  # request corrupt the starter for the whole process.
   def self.for(account)
     ALL.map do |starter|
       missing = starter[:requires].reject { |feature| account.feature_enabled?(feature) }
-      starter.slice(:id, :requires, :nodes, :graph).merge(available: missing.empty?, missing: missing)
+      starter.slice(:id, :requires, :nodes)
+             .merge(graph: starter[:graph].deep_dup, available: missing.empty?, missing: missing)
     end
   end
 end

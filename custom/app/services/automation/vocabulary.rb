@@ -31,8 +31,36 @@ module Automation::Vocabulary
   # Keys whose values are this account's own records, named rather than listed.
   OPTIONS_FROM = {
     'assignee_id' => 'agents', 'team_id' => 'teams', 'inbox_id' => 'inboxes', 'labels' => 'labels',
-    'contact_audience' => 'audiences', 'commerce_store' => 'stores'
+    'contact_audience' => 'audiences', 'commerce_store' => 'stores',
+    # The EVENT's store, which is a different key from the contact's but takes the same values.
+    # LynomiaCondition#event_errors runs them through own_stores?, which wants integer ids of this
+    # account's own stores -- so without this binding a client renders a free-text box and every
+    # value a merchant could type into it comes back `invalid_store`.
+    'commerce_event_store' => 'stores'
   }.freeze
+
+  # WHAT A CUSTOM ATTRIBUTE'S DISPLAY TYPE MEANS FOR ITS OPERATORS.
+  #
+  # Unlike every other entry here this one cannot be read off the server, because the server does not
+  # decide it: AutomationRules::ConditionValidationService takes the custom-attribute branch, checks only
+  # that the attribute EXISTS, and accepts whatever operator it was given. The set that is really offered
+  # is the dashboard's, in app/javascript/dashboard/helper/automationHelper.js (getOperatorTypes) reading
+  # the sets in .../settings/automation/operators.js -- and a second client serving fewer than those is
+  # the capability reduction this vocabulary exists to prevent, not a safe conservative default.
+  #
+  # So it is mirrored here rather than derived, and spec/services/automation/vocabulary_spec.rb reads
+  # those two JavaScript files and fails if they ever stop agreeing. A mirror with no check is the drift.
+  OPERATOR_TYPES_1 = %w[equal_to not_equal_to].freeze
+  OPERATOR_TYPES_3 = (OPERATOR_TYPES_1 + %w[is_present is_not_present]).freeze
+  OPERATOR_TYPES_4 = (OPERATOR_TYPES_3 + %w[is_greater_than is_less_than]).freeze
+  CUSTOM_OPERATORS = Hash.new(OPERATOR_TYPES_1).merge('text' => OPERATOR_TYPES_3, 'date' => OPERATOR_TYPES_4).freeze
+
+  # C: the Lynomia keys' own types, which are not all text. An operator set is only half of what a client
+  # needs to draw an input: `commerce_orders_count` compared with is_greater_than wants a number field,
+  # `commerce_last_purchase_at` a date one, and `commerce_active_order` a yes/no rather than a text box a
+  # merchant can type "maybe" into. Declaring them all text made three of them unusable in practice.
+  DATA_TYPES = { 'commerce_orders_count' => 'number', 'commerce_last_purchase_at' => 'date',
+                 'commerce_active_order' => 'boolean' }.freeze
 
   module_function
 
@@ -51,9 +79,16 @@ module Automation::Vocabulary
   # nothing, which is the failure mode this whole vocabulary exists to prevent.
   #
   # `reason` IS A CODE, NOT A SENTENCE, like everything else here: the client writes the words.
+  # BOTH BLOCKER LOOKUPS ARE RESOLVED ONCE FOR THE WHOLE LIST, not once per event name. Each is remote --
+  # `Automation::Extensions.enabled?` is a Redis read and both store checks are queries -- and neither can
+  # answer differently for two names in the same response, so asking per name was eight identical round
+  # trips on an endpoint the Studio calls on every page load.
   def events(account)
+    commerce = commerce_blocker(account)
+    cart = commerce || recovery_blocker(account)
+
     AutomationRule.new(account: account).event_names.map do |name|
-      reason = event_blocker(account, name)
+      reason = event_reason(name, commerce, cart)
       { name: name, available: reason.nil?, reason: reason }.compact
     end
   end
@@ -62,7 +97,13 @@ module Automation::Vocabulary
   def event_blocker(account, name)
     return nil unless Automation::CommerceEvents.event?(name)
 
-    commerce_blocker(account) || cart_blocker(account, name)
+    event_reason(name, commerce_blocker(account), cart_blocker(account, name))
+  end
+
+  def event_reason(name, commerce, cart)
+    return nil unless Automation::CommerceEvents.event?(name)
+
+    Automation::CommerceEvents::CART_EVENTS.include?(name) ? cart : commerce
   end
 
   def commerce_blocker(account)
@@ -72,11 +113,15 @@ module Automation::Vocabulary
     'no_store' if account.commerce_stores.connected.empty?
   end
 
-  # The cart trigger needs a provider whose abandoned carts are actually collected: a provider still in PRE_UAT
-  # never produces one, whatever the switch says.
   def cart_blocker(account, name)
     return nil unless Automation::CommerceEvents::CART_EVENTS.include?(name)
 
+    commerce_blocker(account) || recovery_blocker(account)
+  end
+
+  # The cart trigger needs a provider whose abandoned carts are actually collected: a provider still in PRE_UAT
+  # never produces one, whatever the switch says.
+  def recovery_blocker(account)
     collected = account.commerce_stores.connected.any? { |store| Commerce::Switches.provider_recovery_enabled?(store.provider) }
     'recovery_unavailable' unless collected
   end
@@ -90,18 +135,27 @@ module Automation::Vocabulary
     end
   end
 
+  # ONE ENTRY PER KEY, RESOLVED THE WAY THE VALIDATOR RESOLVES IT.
+  #
+  # `labels`, `created_at` and `last_activity_at` are each defined under BOTH conversations and contacts,
+  # with the same data type and the same operators and only the scope differing. Served twice, a client is
+  # told there is a contact `created_at` it can filter on separately -- and there is not:
+  # ConditionValidationService looks up `@conversation_filters[key] || @contact_filters[key] || ...`, so a
+  # condition on any of the three is ALWAYS evaluated as the conversation one. Offering the contact copy
+  # is offering a capability that silently becomes a different one. First definition wins, in SCOPES order,
+  # which is that same conversation-first order.
   def standard
-    SCOPES.flat_map do |group, scope|
-      FILTER_KEYS.fetch(group).map do |key, filter|
-        entry(key, scope, filter['data_type'], filter['filter_operators'])
-      end
+    entries = SCOPES.flat_map do |group, scope|
+      FILTER_KEYS.fetch(group).map { |key, filter| entry(key, scope, filter['data_type'], filter['filter_operators']) }
     end
+
+    entries.uniq { |condition| condition[:key] }
   end
 
   def custom(account)
     account.custom_attribute_definitions.map do |definition|
       entry(definition.attribute_key, definition.attribute_model, definition.attribute_display_type,
-            FILTER_KEYS.dig('conversations', 'status', 'filter_operators'))
+            CUSTOM_OPERATORS[definition.attribute_display_type])
         .merge(custom_attribute: true)
     end
   end
@@ -114,7 +168,8 @@ module Automation::Vocabulary
       condition = Automation::LynomiaCondition.new(key, account: account)
       # `available` per key, never once for the group: an audience condition needs only the extensions switch
       # while a Commerce one also needs Commerce, and reporting them together marks one of the two wrongly.
-      entry(key, lynomia_scope(key), 'text', condition.operators).merge(available: condition.available?)
+      entry(key, lynomia_scope(key), DATA_TYPES.fetch(key, 'text'), condition.operators)
+        .merge(available: condition.available?)
     end
   end
 

@@ -119,6 +119,21 @@ RSpec.describe 'Commerce consents API', type: :request do
     expect(response.body).not_to include('Elsewhere')
   end
 
+  # A FILTER THE SERVER DOES NOT UNDERSTAND IS A PARAMETER ERROR. Dropping it answered a narrower
+  # question with the whole list, and the question that matters is "who has opted out": a merchant
+  # shown every decision instead reads the opt-ins as opt-outs.
+  it 'refuses a filter it does not recognise rather than answering a different question' do
+    get base, params: { state: 'opted_out' }, headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+
+    get base, params: { purpose: 'marketing' }, headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:unprocessable_entity)
+
+    # An absent filter is still "no filter", not a bad one.
+    get base, params: { state: '' }, headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:ok)
+  end
+
   it 'audits every decision with its author' do
     put "#{base}/#{contact.id}", params: { purpose: 'promotional', state: 'granted', note: 'Told us in store' },
                                  headers: admin.create_new_auth_token, as: :json

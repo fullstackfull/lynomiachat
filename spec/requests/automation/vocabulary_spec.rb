@@ -81,6 +81,36 @@ RSpec.describe 'Automation vocabulary', type: :request do
       expect(conditions['status']).not_to have_key('options_from')
     end
 
+    # Three keys -- labels, created_at, last_activity_at -- are defined under BOTH conversations and
+    # contacts, identically but for the scope. ConditionValidationService resolves conversation-first,
+    # so the contact copy can never be the one evaluated; serving it says there is a separate contact
+    # filter, and there is not.
+    it 'serves one entry per key, scoped the way the validator will resolve it' do
+      yaml = YAML.safe_load(Rails.root.join('lib/filters/filter_keys.yml').read)
+      both = yaml['conversations'].keys & yaml['contacts'].keys
+      expect(both).to include('labels', 'created_at', 'last_activity_at')
+
+      expect(body['conditions'].pluck('key')).to eq(body['conditions'].pluck('key').uniq)
+      expect(conditions.values_at(*both).pluck('scope').uniq).to eq(['conversation'])
+    end
+
+    # The Lynomia keys are not all text, and a client cannot draw a number or a date input for one it
+    # is told is text. commerce_orders_count is compared with is_greater_than and commerce_active_order
+    # is a yes/no; typing into a text box is how a merchant gets a condition that never matches.
+    it 'declares the type each Lynomia condition is actually compared as' do
+      expect(conditions['commerce_orders_count']).to include('data_type' => 'number')
+      expect(conditions['commerce_last_purchase_at']).to include('data_type' => 'date')
+      expect(conditions['commerce_active_order']).to include('data_type' => 'boolean')
+      expect(conditions['commerce_order_status']).to include('data_type' => 'text')
+    end
+
+    # LynomiaCondition#event_errors runs this key's values through own_stores?, which wants integer ids
+    # of this account's own stores -- so a free-text box can only ever produce `invalid_store`.
+    it 'names the store picker for the event store, not only for the contact one' do
+      expect(conditions.values_at('commerce_store', 'commerce_event_store').pluck('options_from'))
+        .to eq(%w[stores stores])
+    end
+
     it 'reports a Commerce key as present but unavailable rather than hiding it' do
       # A merchant who cannot use Commerce conditions should see why, not wonder where they went.
       expect(conditions['commerce_order_status']).to include('scope' => 'commerce', 'available' => false)
@@ -94,6 +124,45 @@ RSpec.describe 'Automation vocabulary', type: :request do
     it 'describes the one condition family whose key is not fixed' do
       expect(body['condition_patterns'].first).to include('prefix' => 'commerce_spend_', 'suffix' => 'currency',
                                                           'operators' => %w[is_greater_than is_less_than])
+    end
+  end
+
+  # A CUSTOM ATTRIBUTE'S OPERATORS ARE THE DASHBOARD'S, because the server does not decide them:
+  # ConditionValidationService takes the custom-attribute branch and checks only that the attribute
+  # exists, accepting whatever operator it is given. Serving the same two operators for every display
+  # type withheld is_present from text attributes and is_greater_than from dates -- capabilities
+  # Lynomia's own dashboard offers, so withholding them is the reduction this vocabulary exists to stop.
+  it 'gives a custom attribute the operators its display type supports' do
+    create(:custom_attribute_definition, account: account, attribute_key: 'plan_tier',
+                                         attribute_model: 'contact_attribute', attribute_display_type: 'text')
+    create(:custom_attribute_definition, account: account, attribute_key: 'renews_on',
+                                         attribute_model: 'contact_attribute', attribute_display_type: 'date')
+    create(:custom_attribute_definition, account: account, attribute_key: 'seats',
+                                         attribute_model: 'contact_attribute', attribute_display_type: 'number')
+
+    get url, headers: admin.create_new_auth_token, as: :json
+
+    expect(conditions['plan_tier']['operators']).to eq(%w[equal_to not_equal_to is_present is_not_present])
+    expect(conditions['renews_on']['operators'])
+      .to eq(%w[equal_to not_equal_to is_present is_not_present is_greater_than is_less_than])
+    expect(conditions['seats']['operators']).to eq(%w[equal_to not_equal_to])
+    expect(conditions['plan_tier']['custom_attribute']).to be(true)
+  end
+
+  # THE MIRROR IS CHECKED AGAINST WHAT IT MIRRORS. These sets are the only thing here that is not read
+  # from the server, because the server has no opinion -- they come from the dashboard's own JavaScript.
+  # A copy with no check is the drift; this reads both files and fails the day they disagree.
+  it 'mirrors the operator sets the dashboard itself offers per display type' do
+    operators = Rails.root.join('app/javascript/dashboard/routes/dashboard/settings/automation/operators.js').read
+    helper = Rails.root.join('app/javascript/dashboard/helper/automationHelper.js').read
+
+    sets = operators.scan(/export const (OPERATOR_TYPES_\d+) = \[(.*?)\n\];/m).to_h
+                    .transform_values { |body| body.scan(/value: '([a-z_]+)'/).flatten }
+    map = helper[/const operatorMap = \{(.*?)\};/m, 1].scan(/(\w+): (OPERATOR_TYPES_\d+)/).to_h
+
+    CustomAttributeDefinition.attribute_display_types.each_key do |display_type|
+      dashboard = sets.fetch(map.fetch(display_type, 'OPERATOR_TYPES_1'))
+      expect(Automation::Vocabulary::CUSTOM_OPERATORS[display_type]).to eq(dashboard), display_type
     end
   end
 

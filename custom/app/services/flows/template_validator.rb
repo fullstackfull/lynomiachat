@@ -19,8 +19,12 @@ class Flows::TemplateValidator
   # A CLASS METHOD BECAUSE THE BUILDER ASKS THE SAME QUESTION. The flows API serves the templates a flow may
   # send, and the set it offers must be the set this validator will accept -- two expressions of that rule
   # would differ the first time one of them changed, and the merchant would find out at publish.
+  # `includes(:channel)` BECAUSE EVERY CALLER IMMEDIATELY READS THE CHANNEL. Flows::Template.sendable
+  # asks each one for its message_templates and ChannelCapabilities.for reads it to answer at all, so
+  # without this each candidate costs its own query -- paid on every draft save, because the builder's
+  # save response carries the sendable-template catalogue.
   def self.candidates(account, inboxes)
-    inboxes = inboxes.any? ? inboxes : account.inboxes.where(channel_type: 'Channel::Whatsapp').order(:id).to_a
+    inboxes = inboxes.any? ? inboxes : account.inboxes.includes(:channel).where(channel_type: 'Channel::Whatsapp').order(:id).to_a
     inboxes.select { |inbox| Flows::ChannelCapabilities.for(inbox)&.dig(:template) }
   end
 

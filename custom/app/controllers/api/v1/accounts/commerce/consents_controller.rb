@@ -70,11 +70,24 @@ class Api::V1::Accounts::Commerce::ConsentsController < Api::V1::Accounts::BaseC
     @contact = Current.account.contacts.find(params[:id])
   end
 
+  # A FILTER THE SERVER DOES NOT RECOGNISE IS REFUSED, NOT DROPPED. Silently ignoring it answers a
+  # narrower question with the whole list, and the one place that matters is this one: a merchant who
+  # asked to see who has OPTED OUT, and is shown everybody, reads the opt-ins as opt-outs.
   def decisions
-    scope = Commerce::MessagingConsent.where(account_id: Current.account.id).includes(:contact)
-    scope = scope.where(purpose: params[:purpose]) if Commerce::MessagingConsent.purposes.key?(params[:purpose])
-    scope = scope.where(state: params[:state]) if Commerce::MessagingConsent.states.key?(params[:state])
+    filters = decision_filters
+    scope = Commerce::MessagingConsent.where(account_id: Current.account.id).includes(:contact).where(filters)
     scope.order(decided_at: :desc).limit(LIMIT)
+  end
+
+  def decision_filters
+    { purpose: Commerce::MessagingConsent.purposes, state: Commerce::MessagingConsent.states }.filter_map do |filter, known|
+      value = params[filter].presence
+      next if value.nil?
+
+      raise ActionController::ParameterMissing, filter unless known.key?(value)
+
+      [filter, value]
+    end.to_h
   end
 
   def consent_params

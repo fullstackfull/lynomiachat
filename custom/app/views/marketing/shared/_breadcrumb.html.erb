@@ -8,17 +8,17 @@
   The last item carries aria-current and no href: a link to the page you are already on is noise for a screen
   reader and a self-referential internal link for a crawler.
 %>
-<nav aria-label="<%= t('marketing.breadcrumb') %>" class="mb-6 text-xs text-slate-600">
+<nav aria-label="<%= t('marketing.breadcrumb') %>" class="mb-6 text-xs text-lyn-ink-soft">
   <ol class="flex flex-wrap items-center gap-1.5">
     <% trail.each_with_index do |crumb, index| %>
       <li class="flex items-center gap-1.5">
         <% if index.positive? %>
-          <span aria-hidden="true" class="text-slate-300">/</span>
+          <span aria-hidden="true" class="text-lyn-line">/</span>
         <% end %>
         <% if crumb[:path] %>
-          <a class="hover:text-slate-800" href="<%= crumb[:path] %>"><%= crumb[:label] %></a>
+          <a class="hover:text-lyn-ink" href="<%= crumb[:path] %>"><%= crumb[:label] %></a>
         <% else %>
-          <span aria-current="page" class="text-slate-700"><%= crumb[:label] %></span>
+          <span aria-current="page" class="text-lyn-ink-soft"><%= crumb[:label] %></span>
         <% end %>
       </li>
     <% end %>

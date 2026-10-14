@@ -11,27 +11,27 @@
   action here is a quote request, which is a thing the site can actually do.
 %>
 <section class="mx-auto max-w-4xl px-4 py-14 sm:px-6">
-  <h1 class="text-3xl font-bold text-slate-900 sm:text-4xl"><%= @site_page.heading.presence || @site_page.title %></h1>
+  <h1 class="text-3xl font-bold text-lyn-ink sm:text-4xl"><%= @site_page.heading.presence || @site_page.title %></h1>
   <% if @site_page.lede.present? %>
-    <p class="mt-4 text-base leading-relaxed text-slate-600"><%= @site_page.lede %></p>
+    <p class="mt-4 text-base leading-[1.8] text-lyn-ink-soft"><%= @site_page.lede %></p>
   <% end %>
 
   <% if @plans.any? %>
     <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <% @plans.each do |plan| %>
-        <article class="flex flex-col rounded-2xl border border-slate-100 bg-white p-6">
-          <h2 class="text-lg font-semibold text-slate-900"><%= plan.name %></h2>
-          <p class="mt-2 text-2xl font-bold text-slate-900">
+        <article class="flex flex-col rounded-2xl border border-lyn-line bg-white p-6">
+          <h2 class="text-lg font-semibold text-lyn-ink"><%= plan.name %></h2>
+          <p class="mt-2 text-2xl font-bold text-lyn-ink">
             <%= number_to_currency(plan.price, unit: plan.currency.upcase + ' ', precision: 2) %>
-            <span class="text-sm font-normal text-slate-600">
+            <span class="text-sm font-normal text-lyn-ink-soft">
               <%= t("marketing.pricing.interval.#{plan.interval}") %><%= " · #{t('marketing.pricing.per_agent')}" if plan.pricing_type == 'per_agent' %>
             </span>
           </p>
           <% if plan.description.present? %>
-            <p class="mt-3 grow text-sm leading-relaxed text-slate-600"><%= plan.description %></p>
+            <p class="mt-3 grow text-sm leading-[1.8] text-lyn-ink-soft"><%= plan.description %></p>
           <% end %>
           <% if plan.limits.any? %>
-            <ul class="mt-4 space-y-1 text-sm text-slate-600">
+            <ul class="mt-4 space-y-1 text-sm text-lyn-ink-soft">
               <% plan.limits.each do |key, value| %>
                 <li><%= t("marketing.pricing.limits.#{key}", count: value) %></li>
               <% end %>
@@ -51,16 +51,16 @@
     <% if params[:sent].present? %>
       <div class="rounded-2xl border border-green-200 bg-green-50 p-6">
         <h2 class="text-lg font-semibold text-green-900"><%= t('marketing.pricing.sent_title') %></h2>
-        <p class="mt-2 text-sm leading-relaxed text-green-900"><%= t('marketing.pricing.sent_body') %></p>
+        <p class="mt-2 text-sm leading-[1.8] text-green-900"><%= t('marketing.pricing.sent_body') %></p>
         <p class="mt-4 text-sm">
-          <a class="font-medium text-woot-700 underline" href="<%= lynomia_docs_path %>">
+          <a class="font-medium text-lyn-royal underline" href="<%= lynomia_docs_path %>">
             <%= t('marketing.pricing.sent_docs') %>
           </a>
         </p>
       </div>
     <% else %>
-      <h2 class="text-xl font-semibold text-slate-900"><%= t('marketing.pricing.form_title') %></h2>
-      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.pricing.form_lede') %></p>
+      <h2 class="text-xl font-semibold text-lyn-ink"><%= t('marketing.pricing.form_title') %></h2>
+      <p class="mt-2 text-sm leading-[1.8] text-lyn-ink-soft"><%= t('marketing.pricing.form_lede') %></p>
 
       <%= form_with model: @quote, url: marketing_pricing_request_path(locale: params[:locale]),
                     method: :post, class: 'mt-6 space-y-5' do |form| %>
@@ -77,43 +77,43 @@
 
         <div class="grid gap-5 sm:grid-cols-2">
           <div>
-            <%= form.label :name, class: 'block text-sm font-medium text-slate-800' %>
+            <%= form.label :name, class: 'block text-sm font-medium text-lyn-ink' %>
             <%= form.text_field :name, required: true, maxlength: 120, autocomplete: 'name',
-                                class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                                class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
           </div>
           <div>
-            <%= form.label :email, class: 'block text-sm font-medium text-slate-800' %>
+            <%= form.label :email, class: 'block text-sm font-medium text-lyn-ink' %>
             <%= form.email_field :email, required: true, maxlength: 180, autocomplete: 'email',
-                                 class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                                 class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
           </div>
           <div>
-            <%= form.label :company, class: 'block text-sm font-medium text-slate-800' %>
+            <%= form.label :company, class: 'block text-sm font-medium text-lyn-ink' %>
             <%= form.text_field :company, maxlength: 160, autocomplete: 'organization',
-                                class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                                class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
           </div>
           <div>
-            <%= form.label :phone, class: 'block text-sm font-medium text-slate-800' %>
+            <%= form.label :phone, class: 'block text-sm font-medium text-lyn-ink' %>
             <%= form.telephone_field :phone, maxlength: 40, autocomplete: 'tel',
-                                     class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                                     class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
           </div>
         </div>
 
         <div>
-          <%= form.label :team_size, class: 'block text-sm font-medium text-slate-800' %>
+          <%= form.label :team_size, class: 'block text-sm font-medium text-lyn-ink' %>
           <%= form.select :team_size,
                           SiteQuoteRequest::TEAM_SIZES.map { |size| [size, size] },
                           { include_blank: t('marketing.pricing.not_sure') },
-                          class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                          class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
         </div>
 
         <fieldset>
-          <legend class="block text-sm font-medium text-slate-800"><%= t('marketing.pricing.channels_label') %></legend>
+          <legend class="block text-sm font-medium text-lyn-ink"><%= t('marketing.pricing.channels_label') %></legend>
           <div class="mt-2 grid gap-2 sm:grid-cols-3">
             <%# The options are the catalogue's own channel slugs, which is also what the model validates
               against -- so the form cannot offer a value the model would reject, and the model cannot accept
               a value the form never offered. %>
             <% Marketing::Catalog.channels.each do |channel| %>
-              <label class="flex items-center gap-2 text-sm text-slate-700">
+              <label class="flex items-center gap-2 text-sm text-lyn-ink-soft">
                 <%= check_box_tag 'site_quote_request[channels][]', channel.slug,
                                   @quote.channels.include?(channel.slug),
                                   id: "channel_#{channel.slug}", class: 'rounded border-slate-300' %>
@@ -124,18 +124,18 @@
         </fieldset>
 
         <div>
-          <%= form.label :message, class: 'block text-sm font-medium text-slate-800' %>
+          <%= form.label :message, class: 'block text-sm font-medium text-lyn-ink' %>
           <%= form.text_area :message, rows: 5, maxlength: 4000,
-                             class: 'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900' %>
+                             class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
           <%= form.submit t('marketing.pricing.submit'),
                           class: 'rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800' %>
-          <p class="text-xs text-slate-600">
+          <p class="text-xs text-lyn-ink-soft">
             <%= t('marketing.pricing.privacy_html',
                   privacy: link_to(t('marketing.footer.privacy'), MarketingHelper::LEGAL_LINKS[:privacy],
-                                   class: 'underline hover:text-slate-800')) %>
+                                   class: 'underline hover:text-lyn-ink')) %>
           </p>
         </div>
       <% end %>

@@ -5,10 +5,10 @@
   started from: the old footer advertised four legal documents and a live chat and delivered four empty
   anchors.
 %>
-<ul class="space-y-2 text-sm text-slate-600">
+<ul class="space-y-2 text-sm text-lyn-ink-soft">
   <% marketing_nav(placement).each do |item| %>
     <li>
-      <a class="hover:text-slate-900" href="<%= item[:href] %>"
+      <a class="hover:text-lyn-ink" href="<%= item[:href] %>"
          <%= 'target=_blank rel=noopener'.html_safe if item[:external] %>>
         <%= item[:label] %>
       </a>

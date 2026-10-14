@@ -15,9 +15,9 @@
          alt="<%= section['alt'].to_s %>"
          <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
          loading="lazy" decoding="async"
-         class="w-full rounded-2xl border border-slate-100">
+         class="w-full rounded-2xl border border-lyn-line">
     <% if section['caption'].present? %>
-      <figcaption class="mt-2 text-xs text-slate-600"><%= section['caption'] %></figcaption>
+      <figcaption class="mt-2 text-xs text-lyn-ink-soft"><%= section['caption'] %></figcaption>
     <% end %>
   </figure>
 <% end %>

@@ -1,5 +1,16 @@
-// Tailwind only, per the repository's styling rule: the marketing views carry their classes inline and
-// tailwind.config.js already scans custom/app/views/**/*.erb, so no bespoke CSS belongs here.
+// The marketing site's stylesheet: two font families and Tailwind.
+//
+// Tailwind only, per the repository's styling rule -- the marketing views carry their classes inline and
+// tailwind.config.js already scans custom/app/views/**/*.erb, so no bespoke CSS belongs here. The two
+// imports below declare fonts rather than style anything, which is the same thing inter.scss does for the
+// dashboard.
+//
+// ONE STACK, BOTH SCRIPTS. `font-lyn` in tailwind.config.js is
+// `'IBM Plex Sans Arabic', 'Inter', <system>`, and the Arabic face carries a `unicode-range`, so the browser
+// picks the right family per codepoint with no locale branch in any template.
+@import '../marketing/fonts/plex-arabic';
+@import '../shared/assets/fonts/inter';
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';

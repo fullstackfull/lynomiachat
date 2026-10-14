@@ -12,19 +12,17 @@
   <% content_for :structured_data do %>
     <%= marketing_structured_data(marketing_faq_schema(entries)) %>
   <% end %>
-  <section class="mt-10">
-    <% if section['heading'].present? %>
-      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
-    <% end %>
-    <dl class="mt-6 divide-y divide-slate-100">
+  <section class="mt-16">
+    <%= render 'marketing/shared/section_head', heading: section['heading'], lede: nil %>
+    <dl class="mt-7 divide-y divide-lyn-line">
       <% entries.each do |entry| %>
         <% href = entry.link? ? marketing_target_href(entry.target) : nil %>
         <div class="py-6">
-          <dt class="text-lg font-semibold text-slate-900"><%= entry.question %></dt>
-          <dd class="mt-2 leading-relaxed text-slate-600">
+          <dt class="text-lg font-semibold text-lyn-ink"><%= entry.question %></dt>
+          <dd class="mt-2 leading-[1.8] text-lyn-ink-soft">
             <%= entry.answer %>
             <% if href.present? %>
-              <a class="mt-2 block text-sm font-medium text-woot-700 hover:text-woot-800" href="<%= href %>">
+              <a class="mt-2 block text-sm font-medium text-lyn-royal hover:text-lyn-ink" href="<%= href %>">
                 <%= entry.link_label %>
               </a>
             <% end %>

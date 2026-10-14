@@ -5,11 +5,11 @@
   repeating the old one's six over-claims; an available feature needs no badge, so only the exceptions carry one.
 %>
 <% if state == :conditional %>
-  <span class="rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-medium text-yellow-800">
+  <span class="rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-[11px] font-medium text-yellow-800">
     <%= t('marketing.state.conditional') %>
   </span>
 <% elsif state == :beta %>
-  <span class="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-800">
+  <span class="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-800">
     <%= t('marketing.state.beta') %>
   </span>
 <% end %>

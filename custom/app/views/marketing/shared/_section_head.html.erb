@@ -1,0 +1,19 @@
+<%# A section's heading and standfirst, set the same way everywhere.
+
+  WHY THIS EXISTS. `cards`, `catalogue` and `faq` each printed their own `h2` and `p` with their own classes,
+  so the page's section rhythm depended on three partials agreeing by coincidence. They did not: the home
+  page's three sections opened at the same size with the same gap, and nothing told a reader where one ended
+  and the next began. One partial, one rule above the heading, one measure for the standfirst.
+%>
+<% if heading.present? || lede.present? %>
+  <div class="border-t border-lyn-line pt-8">
+    <% if heading.present? %>
+      <h2 class="text-balance text-2xl font-semibold leading-[1.4] tracking-tight text-lyn-ink sm:text-3xl">
+        <%= heading %>
+      </h2>
+    <% end %>
+    <% if lede.present? %>
+      <p class="mt-3 max-w-2xl text-base leading-[1.85] text-lyn-ink-soft"><%= lede %></p>
+    <% end %>
+  </div>
+<% end %>

@@ -24,7 +24,16 @@ module Marketing::SectionSchema
     # The home page's opening block. The headline and standfirst are the page's own `heading` and `lede`
     # columns, so they are not repeated here -- one page, one H1, stored once. `secondary_target` is a link
     # target and is validated like any other.
-    'hero' => { fields: %w[kicker primary_label primary_target secondary_label secondary_target] },
+    # The home page's opening block, which OWNS the page's heading and standfirst rather than repeating
+    # them: `custom/app/views/marketing/shared/_page.html.erb` hands `page.heading` and `page.lede` to a
+    # leading hero instead of printing them above it, so there is still one H1 stored in one place.
+    #
+    # `highlight` is a phrase OUT OF THAT HEADING. The renderer finds its first literal occurrence and sets
+    # it on the one coloured block the page is allowed, which is how the headline gets a focal point without
+    # the operator writing markup -- and the heading stays one plain, escaped string.
+    'hero' => {
+      fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target]
+    },
     # A heading and a paragraph. The About page is four of these.
     'prose' => { fields: %w[heading body] },
     # The workhorse: a grid of title/body cards, each optionally linking somewhere. Detail-page points,
@@ -59,9 +68,11 @@ module Marketing::SectionSchema
   # The only values `catalogue.source` may take: the catalogue's own collections.
   SOURCES = %w[features channels solutions integrations].freeze
 
-  # How a catalogue block is drawn. `cards` is the index grid; `chips` is the home page's inline strip. Both
-  # read the same entries, so an operator choosing between them changes presentation and never content.
-  STYLES = %w[cards chips].freeze
+  # How a catalogue block is drawn. `cards` is the index grid, `chips` an inline strip, `list` a
+  # rule-separated two-column list. All three read the same entries, so an operator choosing between them
+  # changes presentation and never content -- which is what lets the home page's two consecutive catalogue
+  # blocks look like two sections rather than one long field of identical cards.
+  STYLES = %w[cards chips list].freeze
 
   # The only metrics a stat may read. A metric nobody implemented would render blank.
   METRICS = %w[channel_count feature_count locale_count].freeze

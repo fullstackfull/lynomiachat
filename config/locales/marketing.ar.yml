@@ -8,6 +8,25 @@ ar:
   marketing:
     site_name: لنوميا شات
     skip_to_content: تخطَّ إلى المحتوى
+    hero_panel:
+      title: صندوق الوارد المشترك
+      live: مباشر
+      composer: اكتب ردّك…
+      badges:
+        assigned: أُسندت تلقائيًا
+      rows:
+        one:
+          name: نورة
+          channel: واتساب
+          message: هل وصل طلبي رقم ٤٨٢١؟
+        two:
+          name: فهد
+          channel: إنستغرام
+          message: عندكم المقاس الكبير متوفر؟
+        three:
+          name: لطيفة
+          channel: شات الموقع
+          message: أحتاج فاتورة ضريبية للطلب السابق
     read_docs: اقرأ الوثائق
     breadcrumb: مسار التنقّل
     detail:
@@ -141,6 +160,7 @@ ar:
           طرق الحصول على المساعدة في لنوميا شات: وثائق بالعربية والإنجليزية، وتذاكر دعم من داخل حسابك، وكيف
           تصل إلينا قبل الاشتراك.
     home:
+      headline_highlight: في صندوق واحد
       kicker: منصة محادثات العملاء من لنوميا
       headline: كل محادثات عملائك في صندوق واحد — مهما كانت القناة
       lede: >-

@@ -1,8 +1,13 @@
 <%# Figures.
-  
+
   A `metric` IS READ AT RENDER TIME, a `value` is a literal the operator typed. That is what keeps "nine
   channels" correct on the day a tenth is connected -- the number is not stored anywhere an edit could make
   it stale. A metric nobody implemented renders nothing rather than a blank figure with a label.
+
+  SET AS A SPECIFICATION ROW, not as three big numbers. On the home page this section follows the hero, and
+  three large figures there would compete with the headline for the same glance -- the reading these deserve
+  is "what this product supports", which is a spec line, so they get a rule above them, a quiet size, and
+  equal weight with their labels.
 %>
 <% items = Array(section['items']).filter_map do |item|
      figure = item['metric'].present? ? marketing_metric(item['metric']) : item['value']
@@ -12,11 +17,11 @@
    end %>
 
 <% if items.any? %>
-  <dl class="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
+  <dl class="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-lyn-line pt-6 sm:grid-cols-3">
     <% items.each do |item| %>
-      <div>
-        <dt class="text-2xl font-bold text-slate-900"><%= item[:figure] %></dt>
-        <dd class="text-sm text-slate-600"><%= item[:label] %></dd>
+      <div class="flex flex-col gap-1">
+        <dt class="text-xl font-semibold tracking-tight text-lyn-ink"><%= item[:figure] %></dt>
+        <dd class="text-sm leading-relaxed text-lyn-ink-soft"><%= item[:label] %></dd>
       </div>
     <% end %>
   </dl>

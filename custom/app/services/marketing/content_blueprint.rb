@@ -79,6 +79,11 @@ module Marketing::ContentBlueprint
     def home_hero
       { 'type' => 'hero',
         'kicker' => t('marketing.home.kicker'),
+        # A phrase OUT OF `marketing.home.headline`, which the hero sets on the one coloured block the page
+        # is allowed. It is a separate string so a translator can move the emphasis to wherever the sentence
+        # actually turns in their language -- and a phrase that stops matching after a headline edit simply
+        # renders the headline whole rather than breaking it.
+        'highlight' => t('marketing.home.headline_highlight'),
         'primary_label' => t('marketing.cta.primary'),
         'primary_target' => REGISTER_PATH,
         'secondary_label' => t('marketing.home.secondary_cta'),
@@ -97,7 +102,7 @@ module Marketing::ContentBlueprint
     end
 
     def home_channels
-      { 'type' => 'catalogue', 'source' => 'channels',
+      { 'type' => 'catalogue', 'source' => 'channels', 'style' => 'list',
         'heading' => t('marketing.home.channels_title'),
         'lede' => t('marketing.home.channels_lede'),
         'link_label' => t('marketing.home.channels_link') }

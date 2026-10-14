@@ -1,6 +1,7 @@
 <%# The honesty paragraph: what the page is NOT claiming. Its own quiet box, because on this site it is
-  content rather than a disclaimer to be hidden. %>
-<section class="mt-10 rounded-2xl bg-slate-25 p-5">
-  <h2 class="text-sm font-semibold text-slate-900"><%= t('marketing.detail.note_title') %></h2>
-  <p class="mt-1 text-sm leading-relaxed text-slate-600"><%= section['body'] %></p>
+  content rather than a disclaimer to be hidden -- so it gets a rule on the start edge rather than a tinted
+  slab, which is how an aside is marked in a document rather than in an admin screen. %>
+<section class="mt-16 border-s-2 border-lyn-royal/30 ps-5">
+  <h2 class="text-sm font-semibold text-lyn-ink"><%= t('marketing.detail.note_title') %></h2>
+  <p class="mt-1.5 max-w-2xl text-sm leading-[1.8] text-lyn-ink-soft"><%= section['body'] %></p>
 </section>

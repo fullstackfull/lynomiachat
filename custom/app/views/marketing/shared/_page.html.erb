@@ -12,7 +12,22 @@
 <% entry = local_assigns[:entry] %>
 <% scope = local_assigns[:scope] %>
 
-<article class="mx-auto <%= entry ? 'max-w-4xl' : 'max-w-6xl' %> px-4 py-12 sm:px-6">
+<%# A PAGE THAT OPENS WITH A HERO LETS THE HERO CARRY ITS HEADING.
+    
+    The heading and the standfirst are still the row's own columns and there is still exactly one H1 -- the
+    only question is which template prints it. When the first section is a `hero`, printing it here would put
+    the eyebrow below the standfirst and leave the actions floating away from the sentence they belong to,
+    which is what the old homepage did. So a leading hero is rendered first, full-bleed, and it prints the
+    heading itself; every other page keeps the header below and renders every section inside the article. %>
+<% sections = Array(page.sections) %>
+<% lead_hero = sections.first if sections.first&.fetch('type', nil) == 'hero' %>
+<% body_sections = lead_hero ? sections.drop(1) : sections %>
+
+<% if lead_hero %>
+  <%= render 'marketing/sections/hero', section: lead_hero, page: page %>
+<% end %>
+
+<article class="mx-auto <%= entry ? 'max-w-4xl' : 'max-w-6xl' %> px-4 pb-12 sm:px-6 <%= lead_hero ? 'pt-2' : 'pt-12' %>">
   <% if entry && scope %>
     <% trail = marketing_breadcrumb(scope, t("marketing.#{scope}.#{entry.id}.name")) %>
     <%= render 'marketing/shared/breadcrumb', trail: trail %>
@@ -24,17 +39,19 @@
     <% end %>
   <% end %>
 
-  <header>
-    <h1 class="flex flex-wrap items-center gap-3 text-3xl font-bold text-slate-900 sm:text-4xl">
-      <%= page.heading.presence || page.title %>
-      <% if entry %>
-        <%= render 'marketing/shared/state_badge', state: entry.state %>
+  <% unless lead_hero %>
+    <header>
+      <h1 class="flex flex-wrap items-center gap-3 text-3xl font-bold leading-[1.3] tracking-tight text-lyn-ink sm:text-4xl">
+        <%= page.heading.presence || page.title %>
+        <% if entry %>
+          <%= render 'marketing/shared/state_badge', state: entry.state %>
+        <% end %>
+      </h1>
+      <% if page.lede.present? %>
+        <p class="mt-4 max-w-3xl text-lg leading-[1.85] text-lyn-ink-soft"><%= page.lede %></p>
       <% end %>
-    </h1>
-    <% if page.lede.present? %>
-      <p class="mt-4 max-w-3xl text-lg leading-relaxed text-slate-600"><%= page.lede %></p>
-    <% end %>
-  </header>
+    </header>
+  <% end %>
 
   <%# The prerequisite, which is what makes the sentences above it true. From the catalogue, never the row. %>
   <% if entry && t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
@@ -42,17 +59,17 @@
       <h2 class="text-sm font-semibold text-yellow-900">
         <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
       </h2>
-      <p class="mt-1 text-sm leading-relaxed text-yellow-900">
+      <p class="mt-1 text-sm leading-[1.8] text-yellow-900">
         <%= t("marketing.#{scope}.#{entry.id}.requires") %>
       </p>
     </div>
   <% end %>
 
-  <%= render 'marketing/shared/sections', sections: page.sections, page: page %>
+  <%= render 'marketing/shared/sections', sections: body_sections, page: page %>
 
   <% if entry&.docs %>
     <p class="mt-10">
-      <a class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+      <a class="inline-flex items-center gap-2 rounded-xl border border-lyn-line px-4 py-2.5 text-sm font-medium text-lyn-ink hover:bg-lyn-mist"
          href="<%= lynomia_docs_article_path(entry.docs) %>">
         <%= t('marketing.read_docs') %>
       </a>
@@ -60,13 +77,13 @@
   <% end %>
 
   <% if entry&.channel_ids&.any? %>
-    <section class="mt-12 border-t border-slate-100 pt-8">
-      <h2 class="text-sm font-semibold text-slate-900"><%= t('marketing.detail.works_with') %></h2>
+    <section class="mt-12 border-t border-lyn-line pt-8">
+      <h2 class="text-sm font-semibold text-lyn-ink"><%= t('marketing.detail.works_with') %></h2>
       <ul class="mt-3 flex flex-wrap gap-2">
         <% entry.channel_ids.each do |channel_id| %>
           <% channel = Marketing::Catalog.channel(channel_id) %>
           <li>
-            <a class="inline-block rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
+            <a class="inline-block rounded-full border border-lyn-line px-3 py-1 text-sm text-lyn-ink-soft hover:bg-lyn-mist"
                href="<%= marketing_entry_path(:channels, channel) %>">
               <%= t("marketing.channels.#{channel.id}.name") %>
             </a>
@@ -77,15 +94,15 @@
   <% end %>
 
   <% if entry&.related_ids&.any? %>
-    <section class="mt-10 border-t border-slate-100 pt-8">
-      <h2 class="text-sm font-semibold text-slate-900"><%= t('marketing.detail.read_next') %></h2>
+    <section class="mt-10 border-t border-lyn-line pt-8">
+      <h2 class="text-sm font-semibold text-lyn-ink"><%= t('marketing.detail.read_next') %></h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-3">
         <% entry.related_ids.each do |feature_id| %>
           <% feature = Marketing::Catalog.feature(feature_id) %>
-          <a class="rounded-2xl border border-slate-100 p-4 hover:border-slate-200 hover:bg-slate-25"
+          <a class="rounded-2xl border border-lyn-line p-4 hover:border-lyn-line hover:bg-lyn-mist"
              href="<%= marketing_entry_path(:features, feature) %>">
-            <span class="block text-sm font-semibold text-slate-900"><%= t("marketing.features.#{feature.id}.name") %></span>
-            <span class="mt-1 block text-xs leading-relaxed text-slate-600"><%= t("marketing.features.#{feature.id}.summary") %></span>
+            <span class="block text-sm font-semibold text-lyn-ink"><%= t("marketing.features.#{feature.id}.name") %></span>
+            <span class="mt-1 block text-xs leading-[1.8] text-lyn-ink-soft"><%= t("marketing.features.#{feature.id}.summary") %></span>
           </a>
         <% end %>
       </div>

@@ -4,17 +4,28 @@
   second action is the published address rendered as a mailto: -- the old page's equivalent band offered a
   trial that cannot start (no plan row exists, and the trial plan id defaults to nil) beside a live-chat
   button that opened nothing (docs/official-website/02-verified-feature-inventory.md section 6).
+
+  THE ONE DARK FIELD ON THE PAGE, and it is full width rather than a rounded slab floating in the margin:
+  the band is the page's last word, so it gets the whole measure and the type is set to the same start edge
+  as everything above it instead of being centred. Electric blue is readable here and nowhere else -- on
+  paper it is 3.3:1 and would fail, on this field it carries the eye to the one live accent.
 %>
-<section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-  <div class="rounded-3xl bg-woot-700 px-6 py-12 text-center sm:px-12">
-    <h2 class="text-2xl font-semibold text-white"><%= t('marketing.cta.title') %></h2>
-    <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-woot-50"><%= t('marketing.cta.lede') %></p>
-    <div class="mt-7 flex flex-wrap justify-center gap-3">
-      <a href="/app/register" class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-woot-700 hover:bg-woot-25">
+<section class="mt-20 bg-lyn-ink">
+  <div class="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:py-20">
+    <div>
+      <h2 class="max-w-xl text-balance text-2xl font-semibold leading-[1.4] tracking-tight text-lyn-paper sm:text-3xl">
+        <%= t('marketing.cta.title') %>
+      </h2>
+      <p class="mt-3 max-w-xl text-base leading-[1.85] text-lyn-paper/70"><%= t('marketing.cta.lede') %></p>
+    </div>
+
+    <div class="flex shrink-0 flex-wrap gap-3">
+      <a href="/app/register"
+         class="rounded-xl bg-lyn-indigo px-6 py-3.5 text-base font-semibold text-lyn-paper transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
         <%= t('marketing.cta.primary') %>
       </a>
       <a href="<%= marketing_support_email_url %>"
-         class="rounded-xl border border-woot-500 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800">
+         class="rounded-xl border border-lyn-line-dark px-6 py-3.5 text-base font-semibold text-lyn-paper transition-colors hover:border-lyn-blue hover:text-lyn-blue">
         <%= t('marketing.cta.email') %>
       </a>
     </div>

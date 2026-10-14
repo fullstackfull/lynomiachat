@@ -14,9 +14,14 @@
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'marketing' %>
   </head>
-  <body class="bg-white text-slate-900 antialiased">
+    <%# `font-lyn` is the one type decision the whole site inherits: Arabic resolves to IBM Plex Sans Arabic
+    and everything else to Inter, decided per codepoint by `unicode-range` rather than by a locale branch
+    (app/javascript/marketing/fonts/plex-arabic.scss). Before this the Arabic pages fell through to the
+    system stack -- `Tahoma, Arial` -- so the primary market's language was set in whatever the visitor's
+    operating system happened to ship. %>
+  <body class="bg-lyn-paper font-lyn text-lyn-ink antialiased">
     <a href="#main"
-       class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:rounded-lg focus:bg-woot-600 focus:px-4 focus:py-2 focus:text-white">
+       class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:rounded-lg focus:bg-lyn-indigo focus:px-4 focus:py-2 focus:text-white">
       <%= t('marketing.skip_to_content') %>
     </a>
 

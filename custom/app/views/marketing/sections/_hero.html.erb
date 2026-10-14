@@ -1,26 +1,121 @@
-<%# The home page's opening block. The headline and standfirst are the page's own heading and lede, rendered
-  by the page wrapper, so this section carries only the kicker and the two actions. %>
+<%# THE HERO, and it is now a hero: the page's heading, standfirst, actions and a picture of the product,
+  composed as one block.
+
+  WHAT CHANGED AND WHY. This partial used to render a kicker and two buttons, while `_page.html.erb` printed
+  the H1 and the lede above it -- so the eyebrow appeared BELOW the standfirst, the actions floated away from
+  the sentence they belonged to, and the page opened with nothing to look at. The heading and lede still live
+  in the row and there is still exactly one H1; the wrapper now hands them here instead of printing them
+  itself (`_page.html.erb`), so the whole opening is one composition.
+
+  THE PANEL IS THE PRODUCT, drawn in HTML rather than shipped as an image: it is a shared inbox with messages
+  arriving from three channels, in the page's own language, which is the one thing that distinguishes this
+  product from a chat widget. It is `aria-hidden` -- the names in it are illustrative, the heading and lede
+  already carry the meaning, and a screen reader gains nothing from reading a drawing of a UI aloud.
+
+  CHANNEL MARKS ARE NEUTRAL GLYPHS, not the channels' own logos. The channel is named in text beside each
+  one, which is clearer, needs no trademark, and keeps the panel to one colour.
+%>
 <% primary = marketing_target_href(section['primary_target']) %>
 <% secondary = marketing_target_href(section['secondary_target']) %>
+<% heading = (page.heading.presence || page.title).to_s %>
+<% highlight = section['highlight'].to_s %>
 
-<% if section['kicker'].present? %>
-  <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-woot-25 px-3 py-1 text-xs font-medium text-woot-700">
-    <%= section['kicker'] %>
-  </p>
-<% end %>
+<section class="relative border-b border-lyn-line bg-lyn-paper">
+  <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_30rem] lg:gap-20 lg:py-24">
+    <div class="motion-safe:animate-fade-in-up">
+      <% if section['kicker'].present? %>
+        <p class="flex items-center gap-2 text-sm font-medium text-lyn-ink-soft">
+          <span class="size-2 rounded-full bg-lyn-blue" aria-hidden="true"></span>
+          <%= section['kicker'] %>
+        </p>
+      <% end %>
 
-<% if primary.present? || secondary.present? %>
-  <div class="mt-8 flex flex-wrap gap-3">
-    <% if primary.present? && section['primary_label'].present? %>
-      <a href="<%= primary %>" class="rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800">
-        <%= section['primary_label'] %>
-      </a>
-    <% end %>
-    <% if secondary.present? && section['secondary_label'].present? %>
-      <a href="<%= secondary %>"
-         class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        <%= section['secondary_label'] %>
-      </a>
-    <% end %>
+      <%# ONE H1, built from the row's own heading. The highlight is a literal phrase out of that string, so
+          the two cannot disagree; a phrase that is not in the heading simply does not match and the heading
+          renders whole. `split` on a literal needs no escaping of the needle, and every part is escaped by
+          ERB on the way out. %>
+      <h1 class="mt-5 max-w-2xl text-balance text-4xl font-bold leading-[1.3] tracking-tight text-lyn-ink sm:text-5xl lg:text-[3.5rem]">
+        <% if highlight.present? && heading.include?(highlight) %>
+          <% before, after = heading.split(highlight, 2) %>
+          <%= before %><span class="-mx-1 inline-block rotate-[-1.2deg] rounded-md bg-lyn-magenta px-2 py-0.5 text-lyn-paper"><%= highlight %></span><%= after %>
+        <% else %>
+          <%= heading %>
+        <% end %>
+      </h1>
+
+      <% if page.lede.present? %>
+        <p class="mt-6 max-w-xl text-lg leading-[1.85] text-lyn-ink-soft"><%= page.lede %></p>
+      <% end %>
+
+      <% if primary.present? || secondary.present? %>
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+          <% if primary.present? && section['primary_label'].present? %>
+            <a href="<%= primary %>"
+               class="rounded-xl bg-lyn-indigo px-6 py-3.5 text-base font-semibold text-lyn-paper transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['primary_label'] %>
+            </a>
+          <% end %>
+          <% if secondary.present? && section['secondary_label'].present? %>
+            <a href="<%= secondary %>"
+               class="rounded-xl border border-lyn-line px-6 py-3.5 text-base font-semibold text-lyn-ink transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['secondary_label'] %>
+            </a>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# The shared inbox. Tilted a degree and a half so it reads as an object on the page rather than a
+        rectangle in the layout, with two labels overlapping its edge for the same reason. %>
+    <div class="relative mx-auto w-full max-w-md pb-7 lg:max-w-none" aria-hidden="true">
+        <%# A second plate behind the panel, offset the other way. Depth without anything sitting on top of
+            the messages -- which is what the two floating pills did, and why there is now one, below. %>
+        <span class="absolute inset-x-3 inset-y-5 -z-10 rotate-[2deg] rounded-2xl border border-lyn-line bg-lyn-mist"></span>
+      <div class="rotate-[-1.5deg] rounded-2xl border border-lyn-line bg-lyn-paper shadow-[0_24px_60px_-28px_rgba(10,23,51,0.45)]">
+        <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-5 py-3.5">
+          <span class="text-sm font-semibold text-lyn-ink"><%= t('marketing.hero_panel.title') %></span>
+          <span class="flex items-center gap-1.5 text-xs font-medium text-lyn-ink-soft">
+            <span class="size-1.5 rounded-full bg-lyn-blue"></span>
+            <%= t('marketing.hero_panel.live') %>
+          </span>
+        </div>
+
+        <ul class="divide-y divide-lyn-line">
+          <%# The glyph is WRITTEN HERE rather than read from the locale file, because Tailwind's icon plugin
+              generates a rule only for a class it can see in a scanned file -- an icon name that lived in a
+              YAML string would be purged and render as an empty square. %>
+          <% [['one', 'i-lucide-message-circle'], ['two', 'i-lucide-instagram'], ['three', 'i-lucide-globe']]
+               .each_with_index do |(row, icon), index| %>
+            <li class="flex items-start gap-3 px-5 py-4 <%= 'bg-lyn-mist' if index.zero? %>">
+              <span class="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-lyn-royal/10 text-lyn-royal">
+                <span class="<%= icon %> size-[1.1rem]"></span>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-baseline gap-2">
+                  <span class="truncate text-sm font-semibold text-lyn-ink"><%= t("marketing.hero_panel.rows.#{row}.name") %></span>
+                  <span class="shrink-0 text-xs text-lyn-ink-soft"><%= t("marketing.hero_panel.rows.#{row}.channel") %></span>
+                </span>
+                <span class="mt-1 block truncate text-sm leading-relaxed text-lyn-ink-soft">
+                  <%= t("marketing.hero_panel.rows.#{row}.message") %>
+                </span>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+
+        <div class="flex items-center gap-3 border-t border-lyn-line px-5 py-3.5">
+          <span class="flex-1 rounded-xl bg-lyn-mist px-3.5 py-2.5 text-sm text-lyn-ink-soft">
+            <%= t('marketing.hero_panel.composer') %>
+          </span>
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-lyn-indigo text-lyn-paper">
+            <span class="i-lucide-send size-[1.05rem]"></span>
+          </span>
+        </div>
+      </div>
+
+      <span class="absolute bottom-0 start-4 rounded-full border border-lyn-line bg-lyn-paper px-3.5 py-2 text-xs font-medium text-lyn-ink shadow-[0_12px_32px_-14px_rgba(10,23,51,0.5)]">
+        <%= t('marketing.hero_panel.badges.assigned') %>
+      </span>
+    </div>
   </div>
-<% end %>
+</section>

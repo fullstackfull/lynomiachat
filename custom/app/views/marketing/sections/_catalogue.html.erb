@@ -1,10 +1,16 @@
 <%# A block the CODE fills from the verified catalogue.
-  
+
   THE OPERATOR OWNS THE COPY AND NOTHING ELSE. The heading, the standfirst and the link label come from the
   row; the entries, their availability state and their prerequisites come from Marketing::Catalog, which
   carries the evidence in docs/official-website/02-verified-feature-inventory.md. That split is the line this
   programme exists to hold: a conditional feature cannot be edited into an available one, because its state
   was never in the editor.
+
+  THREE SHAPES, AND THE OPERATOR PICKS. `cards` is the index grid, `chips` is an inline strip, and `list` is
+  a two-column rule-separated list. `list` exists because the home page carries TWO catalogue blocks in a
+  row -- channels, then features -- and when both drew the same grid of bordered white cards the page became
+  one undifferentiated field with no way to tell where a section began. Same entries, same honesty, different
+  form.
 %>
 <% source = section['source'].to_s %>
 <% if Marketing::SectionSchema::SOURCES.include?(source) %>
@@ -14,25 +20,53 @@
   <% entries = entries.first(limit) if limit.positive? %>
   <% index_href = marketing_target_href("page:standing:#{source}") %>
 
-  <section class="mt-10">
-    <% if section['heading'].present? %>
-      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
-    <% end %>
-    <% if section['lede'].present? %>
-      <p class="mt-2 max-w-2xl leading-relaxed text-slate-600"><%= section['lede'] %></p>
-    <% end %>
+  <section class="mt-16">
+    <%= render 'marketing/shared/section_head', heading: section['heading'], lede: section['lede'] %>
 
-    <% if section['style'].to_s == 'chips' %>
-      <ul class="mt-6 flex flex-wrap gap-2">
+    <% case section['style'].to_s %>
+    <% when 'chips' %>
+      <ul class="mt-7 flex flex-wrap gap-2">
         <% entries.each do |entry| %>
-          <li class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">
+          <li class="inline-flex items-center gap-2 rounded-full border border-lyn-line bg-lyn-paper px-3.5 py-2 text-sm text-lyn-ink">
             <%= t("marketing.#{scope}.#{entry.id}.name") %>
             <%= render 'marketing/shared/state_badge', state: entry.state %>
           </li>
         <% end %>
       </ul>
+
+    <% when 'list' %>
+      <ul class="mt-7 border-t border-lyn-line">
+        <% entries.each do |entry| %>
+          <li class="grid gap-x-10 gap-y-2 border-b border-lyn-line py-5 sm:grid-cols-[13rem_minmax(0,1fr)]">
+            <h3 class="flex flex-wrap items-start gap-2 text-base font-semibold text-lyn-ink">
+              <% if entry.detail? %>
+                <a class="transition-colors hover:text-lyn-royal" href="<%= marketing_entry_path(scope, entry) %>">
+                  <%= t("marketing.#{scope}.#{entry.id}.name") %>
+                </a>
+              <% else %>
+                <%= t("marketing.#{scope}.#{entry.id}.name") %>
+              <% end %>
+              <%= render 'marketing/shared/state_badge', state: entry.state %>
+            </h3>
+            <div>
+              <p class="text-sm leading-[1.8] text-lyn-ink-soft">
+                <%= t("marketing.#{scope}.#{entry.id}.summary") %>
+              </p>
+              <% if t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
+                <p class="mt-1.5 text-xs leading-[1.75] text-lyn-ink-soft">
+                  <span class="font-semibold text-lyn-ink">
+                    <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
+                  </span>
+                  <%= t("marketing.#{scope}.#{entry.id}.requires") %>
+                </p>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+
     <% else %>
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <% entries.each do |entry| %>
           <%= render 'marketing/shared/entry_card', entry: entry, scope: scope %>
         <% end %>
@@ -40,7 +74,8 @@
     <% end %>
 
     <% if section['link_label'].present? && index_href.present? %>
-      <a href="<%= index_href %>" class="mt-6 inline-block text-sm font-medium text-woot-700 hover:text-woot-800">
+      <a href="<%= index_href %>"
+         class="mt-7 inline-block text-sm font-semibold text-lyn-royal transition-colors hover:text-lyn-ink">
         <%= section['link_label'] %>
       </a>
     <% end %>

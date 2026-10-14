@@ -74,6 +74,47 @@ RSpec.describe 'Flows API', type: :request do
     expect(response.parsed_body['published']).to include('version' => 1, 'status' => 'published')
   end
 
+  # THE CONTRACT A SECOND EDITOR IS BUILT AGAINST.
+  #
+  # GET /flows/:id serves the node catalogue, the channel limits and the variable suggestions, and
+  # Phase 4's native Store Syria Automation Studio renders its palette and config panel FROM them
+  # rather than hardcoding node schemas. No backend spec asserted any of those keys, so renaming
+  # one broke nothing here and everything there. This is that assertion.
+  describe 'the builder contract' do
+    before { get "#{base}/#{flow.id}", headers: admin.create_new_auth_token, as: :json }
+
+    it 'serves the node catalogue a client builds its palette from' do
+      types = response.parsed_body['node_types']
+
+      # Every type the runtime knows, and no others: a client offering a node the runner cannot
+      # execute is a client offering a flow that fails at publish.
+      expect(types.keys).to match_array(Flows::NodeTypes::TYPES.keys)
+      expect(types['send_message']).to eq('outputs' => ['next'], 'data' => ['text'])
+      # The facets the editor needs to draw a node: its handles, which may be left unconnected,
+      # and whether it waits.
+      expect(types['question']).to include('outputs' => %w[reply invalid timeout],
+                                           'optional' => %w[invalid timeout], 'wait' => true)
+      # A node whose handles come from its own config rather than a fixed list.
+      expect(types['buttons']).to include('outputs' => 'options', 'extra' => %w[other timeout])
+    end
+
+    it 'serves the channel limits the config panel validates input against' do
+      expect(response.parsed_body['capabilities']).to include(
+        'text' => { 'body' => 4096 },
+        'buttons' => { 'max' => 3, 'title' => 20, 'body' => 1024 }
+      )
+    end
+
+    it 'serves the variables a client offers for interpolation' do
+      expect(response.parsed_body['variables']).to eq(Flows::Variables::SUGGESTED.as_json)
+    end
+
+    it 'serves a starter graph for a flow that has never been edited' do
+      expect(response.parsed_body['graph']['nodes'].pluck('type')).to eq(%w[start end])
+      expect(response.parsed_body['errors']).to eq([])
+    end
+  end
+
   # WHY A CLIENT CAN SAY "UNAVAILABLE, BECAUSE". `capabilities` is what the editor authors
   # against and is deliberately unconditional -- a flow is written before it is connected, and a
   # new flow with no inbox still needs those limits. `channel_eligibility` is the other half:

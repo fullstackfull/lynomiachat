@@ -673,6 +673,25 @@ describe Documentation::ContentSeeder do
         expect(result.created).to eq(2)
       end
 
+      # A DEFECT THIS WIRING INTRODUCED AND THIS EXAMPLE CLOSES. `MediaSeeder` walks locale trees, and before it
+      # was told which ones it walked ALL of them -- so a `media:` reference in a tree the portal does not serve
+      # refused the whole seed for an image no published article needs. Measured: `PreflightError` at
+      # `ar/.../welcome.md:9` with zero articles written, on a portal whose `allowed_locales` is `['en']`.
+      #
+      # `Corpus#parity_problems` says in terms that narrowing `allowed_locales` has to keep working, because the
+      # corpus legitimately carries a tree the portal does not serve. So the media walk takes the run's locales.
+      it 'ignores a media reference in a locale tree the portal does not serve' do
+        portal.update!(config: portal.config.merge('allowed_locales' => ['en']))
+        write('en', 'welcome', { title: 'Welcome', body: 'No images here.' })
+        # The ar file references an image that is NOT in the media tree, so an unscoped walk would refuse.
+        write('ar', 'welcome', { title: 'مرحبا', body: body })
+
+        result = seed
+
+        expect([result.created, result.locales]).to eq([1, ['en']])
+        expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([1, 0])
+      end
+
       it 'refuses a key the grammar rejects' do
         write('en', 'welcome', { title: 'Welcome', body: '![Passwords](media:../../etc/passwd)' })
 

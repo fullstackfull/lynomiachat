@@ -340,8 +340,12 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
   # so the preflight phase and the apply phase are two calls on the same object and the corpus is read and parsed
   # once. `root` is this run's root, so `rake documentation:changelog` seeds the changelog portal's media from
   # custom/db/changelog/media and never the documentation portal's.
+  #
+  # `locales:` is load-bearing too: without it the media walk reaches locale trees this portal does not serve,
+  # and a `media:` reference in one of those refuses the WHOLE seed for an image no published article needs.
+  # Measured on the first cut of this wiring, which is why the keyword exists.
   def media_seeder
-    @media_seeder ||= Documentation::MediaSeeder.new(portal: portal, root: root)
+    @media_seeder ||= Documentation::MediaSeeder.new(portal: portal, root: root, locales: locales)
                                                 .tap { |seeder| @result.media = seeder.result }
   end
 

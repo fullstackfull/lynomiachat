@@ -30,9 +30,18 @@ class Documentation::MediaSeeder
 
   # Deliberately the same keyword shape as ContentSeeder#initialize(portal:, author:, publish:, root:), so the
   # one line Agent 5 writes reads like the code around it.
-  def initialize(portal:, root: Documentation::ContentSeeder::DOCS_ROOT)
+  #
+  # `locales` is the set of locale trees to walk, and `nil` means ALL of them -- which is what a standalone run
+  # wants and what every caller before the A5'-O1 wiring got. `ContentSeeder` passes the locales it is actually
+  # seeding, and that is a correctness requirement rather than an optimisation: a corpus legitimately carries a
+  # locale tree the portal does not serve (content_seeder.rb `parity_problems` says so in terms, because
+  # narrowing `allowed_locales` has to keep working), and MEASURED on the first cut of the wiring, a `media:`
+  # reference in such a tree refused the whole seed -- `PreflightError` at `ar/getting-started/welcome.md:9`,
+  # zero articles written, for an image only an unseeded locale needed.
+  def initialize(portal:, root: Documentation::ContentSeeder::DOCS_ROOT, locales: nil)
     @portal = portal
     @root = root
+    @locales = locales
     @result = Result.new(uploaded: 0, replaced: 0, unchanged: 0, purged: 0, unmeasured: 0, unreferenced: 0)
   end
 
@@ -71,6 +80,13 @@ class Documentation::MediaSeeder
 
   attr_reader :portal, :root
 
+  # One entry per tree to walk. `['*']` is the glob that matches every locale directory, so a standalone run
+  # behaves exactly as it did before `locales:` existed; an explicit empty list walks nothing, which is the right
+  # answer for a portal that allows no locale this product ships.
+  def locale_trees
+    @locales || ['*']
+  end
+
   def media_dir
     @media_dir ||= root.join(MEDIA_DIR)
   end
@@ -88,10 +104,12 @@ class Documentation::MediaSeeder
   # included, so the seed boundary and the render path cannot disagree about what an image reference is.
   def scan_corpus
     references = {}
-    Dir.glob(root.join('*', '*', '*.md')).each do |path|
-      body = File.read(path)
-      reject_spaced_reference(path, body)
-      collect_references(references, path, body)
+    locale_trees.each do |locale|
+      Dir.glob(root.join(locale, '*', '*.md')).each do |path|
+        body = File.read(path)
+        reject_spaced_reference(path, body)
+        collect_references(references, path, body)
+      end
     end
     references
   end

@@ -49,6 +49,11 @@ post 'webhooks/salla', to: 'webhooks/salla#create'
 # The delivery URL of the webhooks Lynomia creates in a connected WooCommerce store
 post 'webhooks/woocommerce/:store_id', to: 'webhooks/woocommerce#create', constraints: { store_id: /\d+/ }
 
+# Store Syria commerce events. No store id in the path: Store Syria registers no webhook here
+# and so never learns Lynomia's row id, so a delivery names the store by the external id it
+# issues itself, in a header the signature covers.
+post 'webhooks/storesyria', to: 'webhooks/storesyria#create'
+
 # The OAuth callback URL of the Lynomia Zid app, and the target URL of each connected Zid store's webhooks
 get 'commerce/zid/callback', to: 'commerce/zid/callbacks#show'
 post 'webhooks/zid/:store_id', to: 'webhooks/zid#create', constraints: { store_id: /\d+/ }

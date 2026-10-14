@@ -26,9 +26,11 @@ class Commerce::Providers::Storesyria < Commerce::Providers::Base
 
   def self.enabled? = Commerce::Storesyria::Config.enabled?
 
-  # Store Syria pushes conversation events over the Phase 2 webhook ingress, not commerce ones,
-  # and it registers nothing in the store. Both stay false until Phase 3D wires the outbox.
-  def self.supports_realtime? = false
+  # Store Syria pushes commerce events from its own transactional outbox to POST
+  # /webhooks/storesyria, so realtime is real. It registers NOTHING in the store, because there
+  # is nothing to register: Lynomia never learns an endpoint to hand over, and the store already
+  # knows where to deliver from its own configuration.
+  def self.supports_realtime? = true
 
   def self.registers_webhooks? = false
 
@@ -122,6 +124,18 @@ class Commerce::Providers::Storesyria < Commerce::Providers::Base
     abandoned_carts.find { |cart| cart.external_cart_id == external_cart_id.to_s } ||
       raise(Commerce::Error, 'NOT_FOUND')
   end
+
+  # The customer a delivered event names, as Commerce::Realtime asks for it: Store Syria sends
+  # the same reference this contract uses everywhere else -- a customers.id, or `guest:{order}`.
+  # An event that names none (an order with no customer at all) invalidates the whole store's
+  # cache rather than guessing, which is Realtime's documented behaviour for an empty list.
+  def event_customer_ids(payload)
+    return [] unless payload.is_a?(Hash)
+
+    [payload['customer_reference'].to_s.presence].compact
+  end
+
+  def event_order_id(payload) = payload.is_a?(Hash) ? payload['order_id'].to_s.presence : nil
 
   def normalize_customer(raw) = normalizer.customer(raw)
 

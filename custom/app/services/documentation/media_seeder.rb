@@ -22,6 +22,12 @@ class Documentation::MediaSeeder
 
   Result = Struct.new(:uploaded, :replaced, :unchanged, :purged, :unmeasured, :unreferenced, keyword_init: true)
 
+  # THE LIVE COUNTER, readable before `perform!` returns. `ContentSeeder` holds this exact object, so an
+  # ApplyFailure carries what the media pass completed before it failed: `Result` is a mutable Struct and this
+  # service counts into it as it goes. That is owner ruling 3's "report exactly what completed and what failed"
+  # one level down, and it is why the reader exists rather than only the return value.
+  attr_reader :result
+
   # Deliberately the same keyword shape as ContentSeeder#initialize(portal:, author:, publish:, root:), so the
   # one line Agent 5 writes reads like the code around it.
   def initialize(portal:, root: Documentation::ContentSeeder::DOCS_ROOT)
@@ -30,8 +36,31 @@ class Documentation::MediaSeeder
     @result = Result.new(uploaded: 0, replaced: 0, unchanged: 0, purged: 0, unmeasured: 0, unreferenced: 0)
   end
 
+  # The two phases are PUBLIC and separately callable, because `ContentSeeder` interleaves them with its own
+  # (R2-MEDIA-INTERFACE.md section 3.2 plus owner ruling 3): the preflight belongs in ContentSeeder's preflight,
+  # where nothing has been written yet, and the apply belongs first inside ContentSeeder's apply. `perform!`
+  # stays exactly what it was for every other caller -- both phases, in order.
   def perform!
-    references = preflight!
+    apply!(preflight!)
+  end
+
+  # PHASE 1 -- every corpus defect, with no write of any kind: the grammar checks `scan_corpus` already makes,
+  # plus the file each referenced key names. Owner ruling 3 applied to this seeder for the same reason it applies
+  # to the content one -- an upload is outside any database transaction, so the only honest atomicity is to decide
+  # everything decidable before the first write. The missing-file check used to live inside the write loop, so a
+  # corpus whose tenth key had no file uploaded nine blobs and then raised.
+  #
+  # MEMOIZED, because `ContentSeeder` calls this from its own preflight and then `perform!` calls it again from
+  # the apply. One scan of the corpus per run either way. `Hash#each` returns the hash, so the memo is the
+  # reference index and not the block's value.
+  def preflight!
+    @preflight ||= scan_corpus.each { |key, reference| require_file!(key, reference) }
+  end
+
+  # PHASE 2 -- the writes, all of them idempotent: a key whose checksum already matches is counted and skipped, a
+  # key whose bytes changed is replaced through the one attach boundary, and the orphan sweep only ever considers
+  # attachments a seed created.
+  def apply!(references)
     references.each_key { |key| seed(key) }
     purge_orphans(references.keys)
     @result.unreferenced = unreferenced_files(references.keys).count
@@ -119,17 +148,6 @@ class Documentation::MediaSeeder
 
     raise Error, "#{where(path, line_number)}: media:#{key} has empty alt text. Alt is required: it is the " \
                  'public search snippet as well as the accessible name.'
-  end
-
-  # Every corpus defect, with no write of any kind: the grammar checks `scan_corpus` already makes, plus the file
-  # each referenced key names. Owner ruling 3 applied to this seeder for the same reason it applies to the
-  # content one -- an upload is outside any database transaction, so the only honest atomicity is to decide
-  # everything decidable before the first write. The missing-file check used to live inside the write loop, so a
-  # corpus whose tenth key had no file uploaded nine blobs and then raised.
-  def preflight!
-    references = scan_corpus
-    references.each { |key, reference| require_file!(key, reference) }
-    references
   end
 
   def require_file!(key, reference)

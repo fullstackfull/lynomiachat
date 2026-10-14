@@ -9,6 +9,16 @@ module DocumentationSeedReport
   SUMMARY = '%<label>s: %<created>d created, %<updated>d updated, %<unchanged>d unchanged, ' \
             '%<adopted>d adopted, %<untracked>d untracked (%<locales>s)'.freeze
 
+  # THE CORPUS MEDIA LINE, indented under the summary the way a divergence is. The wording is
+  # R2-MEDIA-INTERFACE.md section 3.7's own suggested line, which is also the owner's report vocabulary:
+  # `uploaded` prints as "attached", because an attachment is the thing that exists afterwards.
+  #
+  # FAILED is deliberately not a count. The media pass fails loudly on the first defect rather than tallying
+  # defects, so a failure is reported by PREFLIGHT_FAILED (a corpus defect, nothing written) or by APPLY_FAILED
+  # naming `the corpus media pass` (a write that failed, with these counts above it) -- never by a zero here.
+  MEDIA = '  media: %<uploaded>d attached, %<replaced>d replaced, %<unchanged>d unchanged, %<purged>d purged ' \
+          '(%<unmeasured>d without dimensions, %<unreferenced>d unreferenced in the repository)'.freeze
+
   # A row the corpus cannot write is the one thing an operator has to act on, so the task exits non-zero for it.
   # `operator_edited` is a state an operator may legitimately be living in: it prints and the task still succeeds,
   # because a red exit on a routine run trains people to ignore the exit code.
@@ -31,9 +41,9 @@ module DocumentationSeedReport
   APPLY_FAILED = <<~TEXT.freeze
     %<label>s: APPLY FAILED at %<message>s
     The counts above are everything that completed, and they are committed: nothing was rolled back and no file
-    after this one was applied. Fix the cause and run the task again -- every write is an upsert on
-    (slug, locale), so a re-run reapplies the completed rows as `unchanged` and carries on from the file that
-    failed.
+    after this one was applied. Fix the cause and run the task again -- every write is an upsert, on
+    (slug, locale) for an article and on the `media:` key for an attachment, so a re-run reapplies what
+    completed as `unchanged` and carries on from the file that failed.
   TEXT
 
   # Both seed tasks run through here, so both report the same way in all three outcomes.
@@ -55,6 +65,9 @@ module DocumentationSeedReport
     puts format(SUMMARY, label: label, created: result.created, updated: result.updated,
                          unchanged: result.unchanged, adopted: result.adopted, untracked: result.untracked,
                          locales: result.locales.join(', '))
+    # Absent only when the media pass never ran, which is every PreflightError -- and a PreflightError prints no
+    # summary at all, so in practice this guards a Result built by hand in a spec rather than a live run.
+    puts format(MEDIA, **result.media.to_h) if result.media
     result.divergences.each { |divergence| puts "  #{line(divergence)}" }
   end
 

@@ -14,6 +14,11 @@ describe Documentation::ContentSeeder do
                     config: { 'allowed_locales' => %w[en ar], 'default_locale' => 'en', 'layout' => 'documentation' })
   end
   let(:root) { Pathname.new(Dir.mktmpdir) }
+  # Real PNG bytes with real dimensions, the same two fixtures media_seeder_spec.rb uses: 4x3 and 6x2. They have
+  # to be real, because `MediaUpload#attach!` identifies the content type FROM THE BYTES -- a placeholder string
+  # satisfies the preflight's file-existence check and is then refused by the attach boundary.
+  let(:png) { Base64.strict_decode64('iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAAAAACRn/EaAAAAC0lEQVR4nGNgQAEAAA8AAbVWKT4AAAAASUVORK5CYII=') }
+  let(:other_png) { Base64.strict_decode64('iVBORw0KGgoAAAANSUhEUgAAAAYAAAACCAAAAABeNvKCAAAAC0lEQVR4nGNgQAYAAA4AAamRc7EAAAAASUVORK5CYII=') }
 
   before do
     root.join('manifest.yml').write(<<~YAML)
@@ -43,6 +48,18 @@ describe Documentation::ContentSeeder do
   end
 
   def seed(**overrides) = described_class.new(portal: portal, root: root, **overrides).perform!
+
+  # The second half of what a corpus is: bytes at a path under media/, which is a sibling of the locale trees and
+  # locale-independent, so the EN and AR translations of a page reference one file.
+  def media(key, bytes = png)
+    path = root.join('media', key)
+    FileUtils.mkdir_p(path.dirname)
+    path.binwrite(bytes)
+  end
+
+  def attached_keys
+    portal.reload.documentation_media.map { |attachment| attachment.blob.metadata['documentation_key'] }
+  end
 
   it 'creates one article per locale on the first run' do
     result = seed
@@ -489,19 +506,152 @@ describe Documentation::ContentSeeder do
     describe 'media references' do
       let(:body) { "Start here.\n\n![The inbox](media:getting-started/inbox.png)" }
 
-      it 'refuses a key with no file in the corpus' do
+      # OWNER TEST I: missing media fails in the PREFLIGHT, before the apply. The two extra assertions are what
+      # make it a preflight proof rather than a message proof: no row and no attachment exists afterwards, so
+      # nothing was written before the refusal.
+      it 'refuses a key with no file in the corpus, before writing a row or an attachment' do
         write('en', 'welcome', { title: 'Welcome', body: body })
 
         expect { seed }.to raise_error(described_class::PreflightError,
                                        %r{media:getting-started/inbox\.png has no file at .*media/getting-started/inbox\.png})
+        expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([0, 0])
       end
 
-      it 'accepts it once the file is there' do
-        FileUtils.mkdir_p(root.join('media', 'getting-started'))
-        root.join('media', 'getting-started', 'inbox.png').write('bytes')
+      # The four defects `Corpus#media_problems` cannot see, which is why the media seeder's own write-free phase
+      # runs in the preflight too (content_seeder.rb `refuse_media!`). Each one is decidable with no write, so
+      # each must refuse as a PreflightError and leave the database as the run found it.
+      {
+        'empty alt text' => ['![](media:getting-started/inbox.png)', /has empty alt text/],
+        'a key in a link position' => ['See [it](media:getting-started/inbox.png).', /used as a link destination/],
+        'a destination CommonMark does not read as an image' => ['![Alt](media:getting-started/the inbox.png)',
+                                                                 /contains a space/],
+        'a corpus file in the reserved operator namespace' => ['![Alt](media:uploads/8f3a1c2b5d7e9a04-i.png)',
+                                                               %r{reserved `uploads/` namespace}]
+      }.each do |description, (reference, message)|
+        it "refuses #{description} in the preflight, writing nothing" do
+          media('getting-started/inbox.png')
+          media('uploads/8f3a1c2b5d7e9a04-i.png')
+          write('en', 'welcome', { title: 'Welcome', body: reference })
+
+          expect { seed }.to raise_error(described_class::PreflightError, message)
+          expect([portal.reload.articles.count, portal.documentation_media.count]).to eq([0, 0])
+        end
+      end
+
+      # OWNER TEST A: the first seed ATTACHES the corpus image, as part of the same run that writes the rows.
+      #
+      # This example used to write the five bytes `'bytes'` to that path and assert `created == 2`, which was all
+      # the preflight needed: it checks that a file EXISTS. Nothing read it, because nothing called the media
+      # seeder (A5'-O1), so a placeholder passed. It is a real PNG now, and the assertions are about the
+      # attachment rather than only the row count -- the key, the portal that owns it, and the provenance that
+      # marks it corpus-owned.
+      it 'attaches the corpus image to the portal, under its stable key and marked corpus-owned' do
+        media('getting-started/inbox.png')
         write('en', 'welcome', { title: 'Welcome', body: body })
 
-        expect(seed.created).to eq(2)
+        result = seed
+
+        expect([result.created, result.media.uploaded, result.media.replaced, result.media.unchanged]).to eq([2, 1, 0, 0])
+        expect(attached_keys).to eq(['getting-started/inbox.png'])
+        blob = portal.documentation_media.first.blob
+        expect(blob.metadata['content_source_path'])
+          .to eq(root.join('media/getting-started/inbox.png').relative_path_from(Rails.root).to_s)
+        # Dimensions, so the renderer can emit width/height: a non-zero `unmeasured` would mean libvips is absent.
+        expect([blob.metadata['width'], blob.metadata['height'], result.media.unmeasured]).to eq([4, 3, 0])
+      end
+
+      # OWNER TEST B: no media write on an identical re-seed. The blob id is the discriminator -- a count of
+      # `unchanged` would also be printed by a run that re-uploaded identical bytes and then purged the old one.
+      it 'writes no media on a second identical seed' do
+        media('getting-started/inbox.png')
+        write('en', 'welcome', { title: 'Welcome', body: body })
+        seed
+        first_blob_id = portal.reload.documentation_media.first.blob_id
+
+        result = seed
+
+        expect([result.media.uploaded, result.media.replaced, result.media.unchanged]).to eq([0, 0, 1])
+        expect([portal.reload.documentation_media.count, portal.documentation_media.first.blob_id])
+          .to eq([1, first_blob_id])
+      end
+
+      # OWNER TEST C: changed bytes update the SAME logical key. The key and the article's `media:` reference are
+      # untouched, so a published page keeps working across the change -- that is the whole point of the key.
+      it 'replaces the bytes of an existing key when the corpus file changes, keeping the key' do
+        media('getting-started/inbox.png')
+        write('en', 'welcome', { title: 'Welcome', body: body })
+        seed
+        first_blob_id = portal.reload.documentation_media.first.blob_id
+
+        media('getting-started/inbox.png', other_png)
+        result = seed
+
+        expect([result.media.uploaded, result.media.replaced, result.media.unchanged]).to eq([0, 1, 0])
+        expect(attached_keys).to eq(['getting-started/inbox.png'])
+        expect(portal.reload.documentation_media.count).to eq(1)
+        blob = portal.documentation_media.first.blob
+        expect([blob.id == first_blob_id, blob.metadata['width'], blob.download.b]).to eq([false, 6, other_png])
+      end
+
+      # OWNER TEST E: an operator's upload survives a seed. It is in the reserved `uploads/` namespace and no
+      # corpus file owns it, which is what the sweep reads -- but "survives" means the bytes are still served,
+      # not merely that a row is still there.
+      it 'leaves an operator upload attached, with its bytes, across a seed' do
+        operator = Documentation::MediaUpload.new(portal: portal)
+                                             .create!(io: StringIO.new(png), filename: 'pasted.png', alt: 'Alt')
+        media('getting-started/inbox.png')
+        write('en', 'welcome', { title: 'Welcome', body: body })
+
+        result = seed
+
+        expect(result.media.purged).to eq(0)
+        expect(attached_keys).to contain_exactly(operator.key, 'getting-started/inbox.png')
+        operator_blob = portal.documentation_media.find { |a| a.blob.metadata['documentation_key'] == operator.key }.blob
+        expect([operator_blob.download.b, operator_blob.metadata.key?('content_source_path')]).to eq([png, false])
+      end
+
+      # OWNER TEST F: the orphan sweep purges corpus-owned media whose key has left the corpus, and CANNOT purge
+      # operator media -- in the same run, so the example proves the sweep ran rather than that it did nothing.
+      # `purge_later` deletes the attachment row synchronously and only enqueues the blob's own purge
+      # (activestorage-7.2.3.2/app/models/active_storage/attachment.rb:60-66), so attachment presence is the
+      # assertion even under the `:test` queue adapter.
+      it 'purges the corpus orphan and never the operator upload, in one sweep' do
+        operator = Documentation::MediaUpload.new(portal: portal)
+                                             .create!(io: StringIO.new(png), filename: 'pasted.png', alt: 'Alt')
+        media('getting-started/inbox.png')
+        write('en', 'welcome', { title: 'Welcome', body: body })
+        seed
+        expect(attached_keys).to contain_exactly(operator.key, 'getting-started/inbox.png')
+
+        write('en', 'welcome', { title: 'Welcome', body: 'No images any more.' })
+        result = seed
+
+        expect(result.media.purged).to eq(1)
+        expect(attached_keys).to eq([operator.key])
+      end
+
+      # OWNER REQUIREMENT 9, and ruling 3's requirement C one level down: a media write that fails after the
+      # preflight passed must report what completed. The content type is identified from the BYTES at the attach
+      # boundary (media_upload.rb `content_type_for!`), which is the one media defect the preflight cannot see --
+      # `require_file!` checks that a file exists, not what is in it. So this is the real apply-time failure.
+      #
+      # `Dir.glob` sorts and `scan_corpus` keeps first-reference order, so `inbox.png` is attached before
+      # `broken.png` is reached: the partial count is 1 and it is deterministic.
+      it 'reports the media work that completed when a later key fails at the attach boundary' do
+        media('getting-started/inbox.png')
+        media('getting-started/broken.png', '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>')
+        write('en', 'welcome', { title: 'Welcome',
+                                 body: "a\n\n![One](media:getting-started/inbox.png)\n\n![Two](media:getting-started/broken.png)" })
+
+        expect { seed }.to raise_error(described_class::ApplyFailure) do |error|
+          # The live struct, assigned before the pass ran, is what carries the count out.
+          expect([error.where, error.result.media.uploaded]).to eq(['the corpus media pass', 1])
+          expect(error.message).to include('not permitted')
+        end
+        # The media pass is FIRST inside the apply, so no row was written: the corpus is exactly as it was.
+        expect([portal.reload.articles.count, portal.categories.count]).to eq([0, 0])
+        # And what completed really is committed, which is what makes the re-run an upsert rather than a repair.
+        expect(attached_keys).to eq(['getting-started/inbox.png'])
       end
 
       it 'refuses a key the grammar rejects' do

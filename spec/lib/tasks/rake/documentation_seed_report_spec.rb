@@ -15,13 +15,38 @@ require 'rails_helper'
 # `rails_helper` has already called `Rails.application.load_tasks` (spec/rails_helper.rb:12), which is what
 # defines this module: it is declared in lib/tasks/documentation.rake, not under an autoload path.
 RSpec.describe DocumentationSeedReport do
+  let(:media) do
+    Documentation::MediaSeeder::Result.new(uploaded: 1, replaced: 0, unchanged: 3, purged: 1, unmeasured: 0,
+                                           unreferenced: 2)
+  end
   let(:result) do
     Documentation::ContentSeeder::Result.new(created: 2, updated: 1, unchanged: 7, adopted: 0, untracked: 0,
-                                             locales: %w[en ar], divergences: [])
+                                             locales: %w[en ar], divergences: [], media: media)
   end
 
   describe 'a clean seed' do
-    it 'prints one summary line and does not abort' do
+    it 'prints one summary line and one media line, and does not abort' do
+      expect { described_class.run('articles') { result } }
+        .to output("articles: 2 created, 1 updated, 7 unchanged, 0 adopted, 0 untracked (en, ar)\n  " \
+                   'media: 1 attached, 0 replaced, 3 unchanged, 1 purged ' \
+                   "(0 without dimensions, 2 unreferenced in the repository)\n").to_stdout
+    end
+
+    # The owner's five reportable categories. Four are counters; the fifth, FAILED, is not -- the media pass
+    # fails loudly on the first defect rather than tallying, so it is reported by PREFLIGHT_FAILED or by
+    # APPLY_FAILED naming the pass, both covered below. This asserts the four by name so a renamed or dropped
+    # counter cannot pass silently.
+    it 'names attached, replaced, unchanged and purged on the media line' do
+      expect { described_class.run('articles') { result } }
+        .to output(a_string_including('1 attached').and(a_string_including('0 replaced'))
+                                                   .and(a_string_including('3 unchanged, 1 purged'))).to_stdout
+    end
+
+    # A Result built before the media member existed, and every PreflightError, carry no media pass. The line is
+    # then absent rather than printed as zeros, because zeros would claim a pass ran and found nothing.
+    it 'prints no media line when the media pass did not run' do
+      result.media = nil
+
       expect { described_class.run('articles') { result } }
         .to output("articles: 2 created, 1 updated, 7 unchanged, 0 adopted, 0 untracked (en, ar)\n").to_stdout
     end
@@ -83,7 +108,8 @@ RSpec.describe DocumentationSeedReport do
         where: 'en/billing.md',
         cause: ActiveRecord::RecordNotUnique.new('duplicate key value violates unique constraint'),
         result: Documentation::ContentSeeder::Result.new(created: 4, updated: 0, unchanged: 0, adopted: 0,
-                                                         untracked: 0, locales: ['en'], divergences: [])
+                                                         untracked: 0, locales: ['en'], divergences: [],
+                                                         media: media)
       )
     end
 
@@ -92,6 +118,21 @@ RSpec.describe DocumentationSeedReport do
         expect { expect { described_class.run('articles') { raise failure } }.to raise_error(SystemExit) }
           .to output(/articles: 4 created/).to_stdout
       end.to output(/APPLY FAILED/).to_stderr
+    end
+
+    # The media counts are part of "what completed". `ContentSeeder#apply!` assigns the LIVE MediaSeeder::Result
+    # before the pass runs, so an attach that fails on the tenth key still reports the nine that landed -- and a
+    # failure in the media pass itself names it, so an operator knows which half to look at.
+    it 'prints the media counts too, and can name the media pass as the failure site' do
+      media_failure = Documentation::ContentSeeder::ApplyFailure.new(
+        where: 'the corpus media pass', result: failure.result,
+        cause: Documentation::MediaSeeder::Error.new('media:a/b.png: image/svg+xml is not permitted')
+      )
+
+      expect do
+        expect { expect { described_class.run('articles') { raise media_failure } }.to raise_error(SystemExit) }
+          .to output(/media: 1 attached, 0 replaced, 3 unchanged, 1 purged/).to_stdout
+      end.to output(/APPLY FAILED at the corpus media pass: Documentation::MediaSeeder::Error/).to_stderr
     end
 
     # One example for the whole message: where it failed, the underlying cause so the operator is not left

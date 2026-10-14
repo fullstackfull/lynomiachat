@@ -41,7 +41,15 @@
 #
 # `seeded_digests` is what makes class C decidable: one SHA-256 per field of the value the seeder last wrote
 # there. It is a digest, never the value, so this is not a second copy of the content and not a revision store.
-class Documentation::ContentSeeder
+# Metrics/ClassLength: 179 against a limit of 175, and the four lines are the corpus media wiring
+# R2-MEDIA-INTERFACE.md section 3.2 assigns to THIS file (owner item A5'-O1). Measured rather than assumed
+# before disabling: ten throwaway methods added inside the nested `Corpus` left the count at 179 and ten added
+# to the outer class took it to 189, so the cop is counting this class's own code and `Corpus` is excluded.
+# Nothing here is dead -- every method and every constant has a live caller -- so the only way under the limit
+# is a second object for the apply phase, which is the redesign the owner's ruling forbids. Recorded as a
+# deliberate four-line overrun rather than hidden in .rubocop.yml's Exclude list, which would switch the cop off
+# for this file permanently.
+class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
   DOCS_ROOT = Rails.root.join('custom/db/documentation')
   CHANGELOG_ROOT = Rails.root.join('custom/db/changelog')
   MERGEABLE_COLUMNS = %w[title description position].freeze
@@ -74,7 +82,12 @@ class Documentation::ContentSeeder
 
   # created/updated/unchanged/adopted/untracked are mutually exclusive outcomes, one per file processed, so they
   # reconcile against the corpus. `divergences` is the per-field detail behind them.
-  Result = Struct.new(:created, :updated, :unchanged, :adopted, :untracked, :locales, :divergences,
+  #
+  # `media` is Documentation::MediaSeeder::Result for the same run -- R2-MEDIA-INTERFACE.md section 3.2 asks for
+  # exactly this member and no second reporting shape. It holds the LIVE struct rather than a copy (assigned in
+  # `apply!` before the pass runs), so an ApplyFailure reports what the media pass completed before it failed.
+  # `nil` means the media pass never ran, which is true of every PreflightError.
+  Result = Struct.new(:created, :updated, :unchanged, :adopted, :untracked, :locales, :divergences, :media,
                       keyword_init: true)
   Divergence = Struct.new(:kind, :locale, :slug, :path, :fields, keyword_init: true)
 
@@ -323,6 +336,28 @@ class Documentation::ContentSeeder
     @corpus ||= Corpus.new(root: root, locales: locales)
   end
 
+  # ONE instance per run, and that is load-bearing rather than tidiness: its preflight memoizes the corpus scan,
+  # so the preflight phase and the apply phase are two calls on the same object and the corpus is read and parsed
+  # once. `root` is this run's root, so `rake documentation:changelog` seeds the changelog portal's media from
+  # custom/db/changelog/media and never the documentation portal's.
+  def media_seeder
+    @media_seeder ||= Documentation::MediaSeeder.new(portal: portal, root: root)
+                                                .tap { |seeder| @result.media = seeder.result }
+  end
+
+  # THE MEDIA HALF is `media_seeder.preflight!`, last, after the corpus list. `MediaSeeder` has a write-free
+  # phase of its own -- owner ruling 3 was applied to it too -- and it decides four things
+  # `Corpus#media_problems` cannot see: empty alt text, a `media:` key in a LINK position, a destination
+  # CommonMark does not read as an image at all, and a corpus file in the reserved `uploads/` namespace. All four
+  # are decidable without a write, so they belong here and not in the apply. It runs LAST so an operator fixing a
+  # corpus still gets every row defect at once; a missing media FILE is in that collected list already, so the
+  # overlap is deliberate and the collecting check is the one that reports it.
+  #
+  # Its `Error` becomes a PreflightError so the operator reads the one message every other refusal prints -- that
+  # NOTHING was written. The cost, recorded rather than hidden: `MediaSeeder` raises on the FIRST media defect
+  # where `refuse` lists all of them, so a corpus with two of those four defects takes two runs to clear. Closing
+  # that is the non-raising `MediaSeeder#problems` R2-MEDIA-INTERFACE.md section 3.2 leaves open.
+  #
   # PHASE 1 -- THE PREFLIGHT. Not one write, and that is the property the whole failure model rests on: the run can
   # say "this corpus will not apply cleanly" with the database exactly as it found it.
   #
@@ -333,7 +368,10 @@ class Documentation::ContentSeeder
     refuse(corpus.manifest_problems)
     plan = corpus.sections.index_with { |section| section.files.map { |file| plan_file(file) } }
     refuse(corpus.problems + foreign_row_problems(plan))
+    media_seeder.preflight!
     plan
+  rescue Documentation::MediaSeeder::Error => e
+    raise PreflightError, e.message
   end
 
   def refuse(problems)
@@ -343,8 +381,16 @@ class Documentation::ContentSeeder
   # PROVENANCE: the three-way class of every row, decided BEFORE anything is written (D9 phase 1 item 5). The
   # lookup stays `(slug, locale)` -- `slug` left ArticleDashboard::FORM_ATTRIBUTES in wave 2 and no live path
   # writes it on an existing row, so it is as stable an identity as the provenance column would be (D4).
+  # `Article.find_or_initialize_by(portal:)` and NOT `portal.articles.find_or_initialize_by` -- same query, same
+  # assignment, and it keeps the planned rows OUT of the portal's association target. Measured when the corpus
+  # media pass was wired in: building through the association puts an unsaved, invalid Article in
+  # `portal.articles.target`, `has_many` autosave then makes `portal.valid?` false ("Articles is invalid") while
+  # `portal.changed?` stays true-to-the-attributes false, and `Attached::Many#attach` saves only
+  # `if record.persisted? && !record.changed?` and bails on `return if !record.save`
+  # (activestorage-7.2.3.2/lib/active_storage/attached/many.rb:51-57). So the media pass reported `uploaded: 1`
+  # with no attachment row. The plan is an inspection, not a mutation, and this is what makes that true.
   def plan_file(file)
-    article = portal.articles.find_or_initialize_by(slug: file.slug, locale: file.locale)
+    article = Article.find_or_initialize_by(portal: portal, slug: file.slug, locale: file.locale)
     adopting = article.persisted? && article.seeded_digests.blank?
     PlannedFile.new(file: file, article: article, adopting: adopting,
                     kept: article.new_record? || adopting ? [] : operator_fields(article, file),
@@ -368,7 +414,11 @@ class Documentation::ContentSeeder
   # PHASE 2 -- THE APPLY. One rescue, around the whole phase: `where` is the unit the run had reached, so the
   # failure names the corpus file an operator has to open, and `@result` carries what completed up to it.
   def apply!(plan)
-    where = nil
+    # THE CORPUS MEDIA PASS, first inside the apply (R2-MEDIA-INTERFACE.md section 3.2). Its preflight already
+    # ran and is memoized, so this is the write half only: every validated `media:` reference becomes an
+    # attachment on THIS portal under its stable key.
+    where = 'the corpus media pass'
+    media_seeder.perform!
     plan.each do |section, planned_files|
       where = "manifest.yml section #{section.slug} (#{section.locale})"
       category = upsert_category(section)

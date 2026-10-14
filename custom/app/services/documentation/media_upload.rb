@@ -99,6 +99,17 @@ class Documentation::MediaUpload
     # skips the job and makes a missing libvips a visible seed count rather than a silent SEO regression.
     blob.analyze
     portal.documentation_media.attach(blob)
+    # AN ATTACH THAT ATTACHED NOTHING MUST NOT REPORT SUCCESS. `Attached::Many#attach` saves the record only
+    # `if record.persisted? && !record.changed?`, and on a failed save it does `return if !record.save`
+    # (activestorage-7.2.3.2/lib/active_storage/attached/many.rb:51-57) -- so a portal that is dirty, or one whose
+    # association target holds an invalid unsaved child, leaves the attachment pending in memory and this method
+    # would still return the blob. Measured: the corpus media pass counted `uploaded: 1` against zero attachment
+    # rows. The cause is fixed where it was created (ContentSeeder#plan_file), and this is the loud failure if it
+    # ever recurs -- read from the database rather than from the in-memory proxy, which is what was lying.
+    unless blob.attachments.exists?(record: portal)
+      raise Error, "#{key} was not attached to #{portal.slug}: #{portal.errors.full_messages.to_sentence.presence || 'the record would not save'}."
+    end
+
     blob
   end
 

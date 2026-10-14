@@ -11,8 +11,10 @@
   action here is a quote request, which is a thing the site can actually do.
 %>
 <section class="mx-auto max-w-4xl px-4 py-14 sm:px-6">
-  <h1 class="text-3xl font-bold text-slate-900 sm:text-4xl"><%= t('marketing.pages.pricing.heading') %></h1>
-  <p class="mt-4 text-base leading-relaxed text-slate-600"><%= t('marketing.pages.pricing.lede') %></p>
+  <h1 class="text-3xl font-bold text-slate-900 sm:text-4xl"><%= @site_page.heading.presence || @site_page.title %></h1>
+  <% if @site_page.lede.present? %>
+    <p class="mt-4 text-base leading-relaxed text-slate-600"><%= @site_page.lede %></p>
+  <% end %>
 
   <% if @plans.any? %>
     <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -39,21 +41,10 @@
       <% end %>
     </div>
   <% else %>
-    <%# No plan is published, so the page says what a quote is based on. Each dimension below is in the
-      schema, not in a claim: ceilings on agents, inboxes and stores; monthly or annual; flat or per agent;
-      channels sellable per plan. %>
-    <section class="mt-10 rounded-2xl border border-slate-100 bg-slate-25 p-6">
-      <h2 class="text-lg font-semibold text-slate-900"><%= t('marketing.pricing.dimensions_title') %></h2>
-      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.pricing.dimensions_lede') %></p>
-      <dl class="mt-5 grid gap-4 sm:grid-cols-2">
-        <% %w[channels agents inboxes stores modules billing].each do |dimension| %>
-          <div>
-            <dt class="text-sm font-semibold text-slate-900"><%= t("marketing.pricing.dimensions.#{dimension}.title") %></dt>
-            <dd class="mt-1 text-sm leading-relaxed text-slate-600"><%= t("marketing.pricing.dimensions.#{dimension}.body") %></dd>
-          </div>
-        <% end %>
-      </dl>
-    </section>
+    <%# No plan is published, so the page says what a quote is based on. Those cards are sections on the row,
+      so an operator can reword them; what they describe is in the schema (ceilings on agents, inboxes and
+      stores; monthly or annual; flat or per agent; channels sellable per plan), not in a claim. %>
+    <%= render 'marketing/shared/sections', sections: @site_page.sections, page: @site_page %>
   <% end %>
 
   <section id="quote" class="mt-12 scroll-mt-24">
@@ -151,10 +142,6 @@
     <% end %>
   </section>
 
-  <section class="mt-12 rounded-2xl bg-slate-25 p-5">
-    <h2 class="text-sm font-semibold text-slate-900"><%= t('marketing.detail.note_title') %></h2>
-    <p class="mt-1 text-sm leading-relaxed text-slate-600"><%= t('marketing.pricing.note') %></p>
-  </section>
 </section>
 
 <%= render 'marketing/shared/cta' %>

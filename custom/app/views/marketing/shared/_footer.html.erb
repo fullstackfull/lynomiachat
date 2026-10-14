@@ -10,47 +10,22 @@
     <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
       <div>
         <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.product') %></h2>
-        <ul class="space-y-2 text-sm text-slate-600">
-          <% marketing_nav_items.each do |item| %>
-            <li><a class="hover:text-slate-900" href="<%= item[:path] %>"><%= item[:label] %></a></li>
-          <% end %>
-        </ul>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_product' %>
       </div>
 
       <div>
         <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.resources') %></h2>
-        <ul class="space-y-2 text-sm text-slate-600">
-          <li><a class="hover:text-slate-900" href="<%= lynomia_docs_path %>"><%= t('marketing.footer.docs') %></a></li>
-          <li><a class="hover:text-slate-900" href="<%= lynomia_changelog_path %>"><%= t('marketing.footer.changelog') %></a></li>
-        </ul>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_resources' %>
       </div>
 
       <div>
         <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.support') %></h2>
-        <ul class="space-y-2 text-sm text-slate-600">
-          <li><a class="hover:text-slate-900" href="<%= marketing_path(:support) %>"><%= t('marketing.footer.support_page') %></a></li>
-          <li><a class="hover:text-slate-900" href="<%= marketing_support_email_url %>"><%= t('marketing.footer.email_us') %></a></li>
-          <li><a class="hover:text-slate-900" href="/app/login"><%= t('marketing.footer.sign_in_ticket') %></a></li>
-        </ul>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_support' %>
       </div>
 
       <div>
         <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.company') %></h2>
-        <ul class="space-y-2 text-sm text-slate-600">
-          <%# The two internal pages first, then the operator's own published documents. `footer.about` is
-            the company site on lynomia.com, which is a different thing from this product's own About page --
-            hence two labels rather than two links called the same thing. %>
-          <li><a class="hover:text-slate-900" href="<%= marketing_path(:about) %>"><%= t('marketing.footer.about_product') %></a></li>
-          <li><a class="hover:text-slate-900" href="<%= marketing_path(:contact) %>"><%= t('marketing.footer.contact') %></a></li>
-          <li><a class="hover:text-slate-900" href="<%= marketing_path(:faq) %>"><%= t('marketing.footer.faq') %></a></li>
-          <% marketing_legal_links.each do |link| %>
-            <li>
-              <a class="hover:text-slate-900" href="<%= link[:href] %>" target="_blank" rel="noopener">
-                <%= link[:label] %>
-              </a>
-            </li>
-          <% end %>
-        </ul>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_company' %>
       </div>
     </div>
 

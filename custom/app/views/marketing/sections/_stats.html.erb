@@ -1,0 +1,23 @@
+<%# Figures.
+  
+  A `metric` IS READ AT RENDER TIME, a `value` is a literal the operator typed. That is what keeps "nine
+  channels" correct on the day a tenth is connected -- the number is not stored anywhere an edit could make
+  it stale. A metric nobody implemented renders nothing rather than a blank figure with a label.
+%>
+<% items = Array(section['items']).filter_map do |item|
+     figure = item['metric'].present? ? marketing_metric(item['metric']) : item['value']
+     next if figure.blank?
+
+     { figure: figure, label: item['label'] }
+   end %>
+
+<% if items.any? %>
+  <dl class="mt-10 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-3">
+    <% items.each do |item| %>
+      <div>
+        <dt class="text-2xl font-bold text-slate-900"><%= item[:figure] %></dt>
+        <dd class="text-sm text-slate-600"><%= item[:label] %></dd>
+      </div>
+    <% end %>
+  </dl>
+<% end %>

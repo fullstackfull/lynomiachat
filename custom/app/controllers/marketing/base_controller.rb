@@ -10,7 +10,7 @@ class Marketing::BaseController < PublicController
   before_action :reject_tenant_custom_domain
   before_action :set_marketing_locale
 
-  helper_method :marketing_locale, :marketing_page
+  helper_method :marketing_locale, :marketing_page, :marketing_published_locales
 
   # The locale the request resolved to, exposed to the views. It lives here rather than in MarketingHelper
   # because it is request state, and a helper that reads controller instance variables can silently render a
@@ -24,6 +24,38 @@ class Marketing::BaseController < PublicController
   # what surfaces it: the head partial would otherwise emit a blank title and a canonical pointing at `/`.
   def marketing_page
     @marketing_page || raise("#{self.class.name}##{action_name} rendered without a Marketing::Page")
+  end
+
+  # The locales whose version of this page a crawler may be sent to.
+  #
+  # Read once per request from the row and its sibling, so the head partial's hreflang set costs one extra
+  # query rather than one per alternate. A page with no row -- there is none in practice -- falls back to
+  # both locales, which is the behaviour the site had before the CMS.
+  def marketing_published_locales
+    return MarketingHelper::LOCALES if @site_page.nil?
+
+    @marketing_published_locales ||=
+      [@site_page, @site_page.translation].compact.select(&:status_published?).map(&:locale)
+  end
+
+  # The published row behind this URL, or a 404.
+  #
+  # THE CONTROLLERS READ `site_pages` AND NOTHING ELSE, which is what "the CMS controls the rendered website"
+  # has to mean: there is no locale-file fallback, so the editor and the visitor cannot see different things.
+  # The cost is that a missing row is a 404, and the mitigation is not a fallback -- it is `rake
+  # marketing:verify`, which the deploy runs and which fails loudly naming every page with no published row.
+  #
+  # The log line exists for the one case the verify step cannot catch: a row an operator unpublished after
+  # the deploy. An operator reading the log sees the kind, the key and the locale rather than a bare 404.
+  def find_site_page(kind, key)
+    page = SitePage.live.find_by(locale: marketing_locale, kind: kind.to_s, key: key.to_s)
+    return page if page
+
+    Rails.logger.error(
+      "[Marketing] no published site_page for #{marketing_locale} #{kind}/#{key} -- " \
+      'run `rake marketing:content` to seed it, or publish it in Super Admin'
+    )
+    nil
   end
 
   private

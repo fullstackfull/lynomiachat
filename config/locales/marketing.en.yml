@@ -94,10 +94,12 @@ en:
         description: >-
           Connect WooCommerce, Salla, Zid, Shopify, Slack, OpenAI, Google Translate, Dialogflow, Linear and
           more to Lynomia Chat — with the prerequisite for each.
-        elsewhere_html: >-
+        elsewhere_channels: >-
           Connecting a channel provider — WhatsApp, Twilio, Bandwidth, Meta, LINE, Telegram — is described on
-          %{channels}. Building your own connection with webhooks, the REST API, a dashboard app or the widget
-          SDK is on %{api}.
+          the channel's own page.
+        elsewhere_api: >-
+          Building your own connection with webhooks, the REST API, a dashboard app or the widget SDK is
+          covered by the API and webhooks page.
       pricing:
         title: Pricing
         heading: Pricing built around how you use it

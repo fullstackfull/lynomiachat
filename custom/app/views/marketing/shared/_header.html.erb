@@ -13,8 +13,8 @@
     </a>
 
     <nav class="hidden items-center gap-1 md:flex" aria-label="<%= t('marketing.nav.label') %>">
-      <% marketing_nav_items.each do |item| %>
-        <a href="<%= item[:path] %>"
+      <% marketing_nav('header').each do |item| %>
+        <a href="<%= item[:href] %>"
            class="rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900">
           <%= item[:label] %>
         </a>
@@ -44,8 +44,8 @@
 
   <nav class="flex gap-1 overflow-x-auto border-t border-slate-100 px-4 py-2 md:hidden"
        aria-label="<%= t('marketing.nav.label') %>">
-    <% marketing_nav_items.each do |item| %>
-      <a href="<%= item[:path] %>" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-slate-700">
+    <% marketing_nav('header').each do |item| %>
+      <a href="<%= item[:href] %>" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm text-slate-700">
         <%= item[:label] %>
       </a>
     <% end %>

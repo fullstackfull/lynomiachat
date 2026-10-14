@@ -16,6 +16,12 @@
 # LOCALES. Arabic is unprefixed and English lives under `/en`, which is D5: Arabic is the primary market and
 # gets the clean URLs. The optional `(:locale)` segment is constrained to `en` alone, so `/ar/features` is a
 # 404 rather than a second address for the same Arabic page -- one page, one URL.
+# Marketing images, OUTSIDE the locale scope because an image has no language, and outside the
+# `module: 'marketing'` block only in the sense that it needs no locale segment -- the controller still lives
+# under Marketing. Served by the application rather than by ActiveStorage's own routes, because robots.txt
+# disallows `/rails/` and a signed blob id never expires (Marketing::MediaController explains both).
+get 'site-media/:id', to: 'marketing/media#show', as: 'marketing_media', constraints: { id: /\d+/ }
+
 scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'home', to: 'pages#home', as: 'home'
 

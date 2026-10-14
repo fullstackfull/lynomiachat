@@ -13,20 +13,45 @@
 <title><%= marketing_page_title %></title>
 <meta name="description" content="<%= marketing_page.description %>">
 
-<link rel="canonical" href="<%= marketing_url(marketing_page) %>">
-<% marketing_locale_alternates(marketing_page).each do |locale, url| %>
+<%# The canonical the operator set, if they set one; otherwise this page's own address. An operator-set
+  canonical is how a deliberately duplicate page points at its original. %>
+<link rel="canonical" href="<%= @site_page&.meta&.dig('canonical_url').presence || marketing_url(marketing_page) %>">
+
+<%# A draft or archived sibling is not a destination, so it gets no alternate: an hreflang pointing at an
+  unpublished page tells a crawler to index a 404. `marketing_published_locales` reads the sibling once. %>
+<% alternates = marketing_locale_alternates(marketing_page, published_locales: marketing_published_locales) %>
+<% alternates.each do |locale, url| %>
   <link rel="alternate" hreflang="<%= locale %>" href="<%= url %>">
 <% end %>
-<%# x-default points at Arabic: it is the primary market and the unprefixed tree (D5). %>
-<link rel="alternate" hreflang="x-default" href="<%= marketing_url(marketing_page, locale: 'ar') %>">
+<%# x-default points at Arabic -- the primary market and the unprefixed tree (D5) -- and only when Arabic is
+  actually published. %>
+<% if alternates.key?('ar') %>
+  <link rel="alternate" hreflang="x-default" href="<%= marketing_url(marketing_page, locale: 'ar') %>">
+<% end %>
+
+<%# A draft previewed in Super Admin, or a page an operator marked noindex, must not be indexed if the URL
+  leaks. Published-and-indexable pages emit nothing, which is the correct default. %>
+<% if @site_page && (!@site_page.status_published? || @site_page.noindex?) %>
+  <meta name="robots" content="noindex, nofollow">
+<% end %>
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<%= t('marketing.site_name') %>">
 <meta property="og:locale" content="<%= marketing_locale == 'ar' ? 'ar_AR' : 'en_US' %>">
 <meta property="og:url" content="<%= marketing_url(marketing_page) %>">
-<meta property="og:title" content="<%= marketing_page.title %>">
-<meta property="og:description" content="<%= marketing_page.description %>">
-<meta name="twitter:card" content="summary_large_image">
+<meta property="og:title" content="<%= @site_page&.meta&.dig('og_title').presence || marketing_page.title %>">
+<meta property="og:description" content="<%= @site_page&.meta&.dig('og_description').presence || marketing_page.description %>">
+
+<%# THE CARD TYPE FOLLOWS THE IMAGE. `summary_large_image` with no og:image is a card that promises a picture
+  and shows a blank -- the exact defect the documentation head records having fixed. So the image is emitted
+  when the operator has set one, and the card type is chosen from whether it exists. %>
+<% og_image = marketing_og_image_url(@site_page) %>
+<% if og_image.present? %>
+  <meta property="og:image" content="<%= og_image %>">
+  <meta name="twitter:card" content="summary_large_image">
+<% else %>
+  <meta name="twitter:card" content="summary">
+<% end %>
 
 <link rel="icon" href="/favicon-32x32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-icon-180x180.png">

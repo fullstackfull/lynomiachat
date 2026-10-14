@@ -25,15 +25,32 @@ class Marketing::EntriesController < Marketing::BaseController
     return render_marketing_404 if scope.nil?
 
     @collection = scope[:collection]
+    @site_page = SitePage.live.find_by(locale: marketing_locale, kind: @collection.to_s.singularize,
+                                       slug: params[:slug])
+    return redirect_or_404 if @site_page.nil?
+
+    # The catalogue entry is OPTIONAL. A seeded page has one, and it contributes the availability badge, the
+    # prerequisite, the documentation link and the neighbours. A page an operator created at a new slug has
+    # none, and renders its own content without inventing a state for it.
     @entry = Marketing::Catalog.find(@collection, params[:slug])
-    return render_marketing_404 if @entry.nil?
 
     @marketing_page = Marketing::Page.new(
-      route: scope[:route],
-      slug: @entry.slug,
-      title: t("marketing.#{@collection}.#{@entry.id}.name"),
-      description: t("marketing.#{@collection}.#{@entry.id}.summary")
+      route: scope[:route], slug: @site_page.slug,
+      title: @site_page.title, description: @site_page.description
     )
     render :show
+  end
+
+  private
+
+  # A slug that no longer exists may have been renamed, which is the one thing the CMS can change about a URL
+  # -- so this is where SiteRedirect is consulted, and why no catch-all route is needed for it. The redirect
+  # is looked up on the request path, so the Arabic and English forms of a renamed page are separate rows and
+  # each sends a visitor to its own locale.
+  def redirect_or_404
+    redirect = SiteRedirect.for_path(request.path)
+    return render_marketing_404 if redirect.nil?
+
+    redirect_to redirect.to_path, status: redirect.status, allow_other_host: false
   end
 end

@@ -19,6 +19,8 @@ Metrics/ClassLength:
     - 'app/models/message.rb'
     - 'app/models/conversation.rb'
     - 'config/initializers/rack_attack.rb'
+    # The website's seed blueprint: a data table for 48 pages, whose `class << self` block is the table.
+    - 'custom/app/services/marketing/content_blueprint.rb'
 
 Metrics/MethodLength:
   Max: 19
@@ -100,6 +102,12 @@ Metrics/ModuleLength:
     # Splitting them into four files would separate COLLECTIONS from its members and move each "not listed
     # because" note away from the table it explains, which is the part of the file worth reading.
     - custom/app/services/marketing/catalog.rb
+    # The seed blueprint for 48 pages in two locales. Its length is content: every line is one page's
+    # heading, standfirst or section, and splitting it would separate `pages` from the pages it returns.
+    - custom/app/services/marketing/content_blueprint.rb
+    # The website section allowlist: the table of permitted section types and the coercion that enforces it.
+    # Splitting the two would put the security boundary in one file and the list it is enforcing in another.
+    - custom/app/services/marketing/section_schema.rb
 
 Rails/ApplicationController:
   Exclude:

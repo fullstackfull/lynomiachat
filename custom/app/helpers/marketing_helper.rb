@@ -9,17 +9,15 @@ module MarketingHelper
   LOCALES = %w[ar en].freeze
   DEFAULT_LOCALE = 'ar'.freeze
 
-  # The pages the header and footer can link to, in one place, so a nav link cannot point at a route that does
-  # not exist. Each entry is a path-helper name; the label comes from the locale file.
+  # The sections the SEEDED header and footer link to. It is no longer read at render time -- the navigation
+  # comes from site_nav_links, which an operator owns -- but Marketing::ContentBlueprint reads it to build
+  # those rows, so the shipped navigation is still declared in one place and still cannot name a page that
+  # does not exist.
   NAV_SECTIONS = %i[features channels solutions integrations pricing].freeze
 
   # `marketing_locale` itself is a helper_method on Marketing::BaseController: the locale is request state the
   # controller resolved from the URL, and reading a controller instance variable from a helper module is both a
   # RuboCop offence and a way for a view to render a locale nobody set.
-
-  def marketing_locale?(locale)
-    marketing_locale == locale
-  end
 
   def marketing_other_locale
     marketing_locale == 'en' ? 'ar' : 'en'
@@ -52,18 +50,38 @@ module MarketingHelper
     "#{host}#{path}"
   end
 
+  # FRONTEND_URL FIRST, AND THAT IS A CORRECTION. This method read `ChatwootApp.help_center_root` first,
+  # which is HELPCENTER_URL -- a variable whose purpose in Chatwoot is to name a SEPARATE host for the Help
+  # Center. On any installation that sets it to a different hostname, every marketing canonical, hreflang,
+  # og:url and sitemap <loc> pointed at the documentation host instead of the website's own. The marketing
+  # site is served on the application's own host, so that is the variable to read.
+  #
+  # The help-centre value is kept as the second choice rather than dropped: on this installation both are the
+  # same host, and an installation that has set only HELPCENTER_URL still gets absolute URLs rather than
+  # root-relative ones.
   def marketing_host
-    host = ChatwootApp.help_center_root.to_s.presence || ENV.fetch('FRONTEND_URL', '').to_s
+    host = ENV.fetch('FRONTEND_URL', nil).presence || ChatwootApp.help_center_root.to_s.presence
     return '' if host.blank?
 
     host = "https://#{host}" unless host.include?('://')
     host.chomp('/')
   end
 
-  # The hreflang set for the current page: both locales plus x-default pointing at Arabic, which is the
-  # primary market. Built from the same helper the canonical uses, so the two cannot drift.
-  def marketing_locale_alternates(page)
-    LOCALES.index_with { |locale| marketing_url(page, locale: locale) }
+  # The hreflang set for the current page.
+  #
+  # ONLY LOCALES WHOSE SIBLING IS PUBLISHED. This used to emit both locales unconditionally from the hardcoded
+  # list, which was harmless while every page was a template and is wrong now that a page is a row: an
+  # alternate pointing at a draft or archived sibling tells a crawler to index a 404. The documentation side
+  # applies the same rule and suppresses the set entirely below two languages
+  # (custom/app/helpers/documentation_helper.rb:116-121).
+  #
+  # `published_locales` is passed in by the caller, which already has the page row and its sibling loaded, so
+  # this does no queries of its own.
+  def marketing_locale_alternates(page, published_locales: LOCALES)
+    locales = LOCALES & Array(published_locales).map(&:to_s)
+    return {} if locales.size < 2
+
+    locales.index_with { |locale| marketing_url(page, locale: locale) }
   end
 
   # The route-helper name behind each catalogue scope, so a view asks for "this entry's page" rather than
@@ -95,19 +113,6 @@ module MarketingHelper
     marketing_entry_path(scope, entry)
   end
 
-  # The navigation, built only from sections whose route actually exists.
-  #
-  # This is the rule that makes a dead nav link unrepresentable: the previous site advertised four legal pages
-  # and a live chat that led nowhere, and a competitor reviewed in doc 03 ships five menu items pointing at
-  # `href="#"`. A section appears here when its page ships, and not before.
-  def marketing_nav_items
-    NAV_SECTIONS.filter_map do |section|
-      next unless respond_to?("marketing_#{section}_path")
-
-      { path: marketing_path(section), label: t("marketing.nav.#{section}") }
-    end
-  end
-
   # The published address on the page today. It is rendered as a real mailto: -- the old page printed it as
   # plain text inside a <span>, so the only contact detail on the site was not clickable.
   SUPPORT_EMAIL = 'info@lynomia.com'.freeze
@@ -116,18 +121,14 @@ module MarketingHelper
 
   # The operator's own published legal documents. They are linked, never restated: this application does not
   # author policy text, and the version that used to live inside the marketing page as a JavaScript string was
-  # a second, unreviewed copy of documents that already exist. W4 moves these into operator-managed settings;
-  # until then they are declared once, here.
+  # a second, unreviewed copy of documents that already exist. The seed puts them in the footer as
+  # site_nav_links rows, so an operator can change a URL without a deploy; this constant is what they start as.
   LEGAL_LINKS = {
     about: 'https://lynomia.com/about_us',
     privacy: 'https://lynomia.com/privacy',
     terms: 'https://lynomia.com/terms',
     data_deletion: 'https://lynomia.com/user-data-deletion'
   }.freeze
-
-  def marketing_legal_links
-    LEGAL_LINKS.map { |key, href| { href: href, label: t("marketing.footer.#{key}") } }
-  end
 
   # The <title>: the page's own title, then the site name. The page supplies its title rather than the helper
   # deriving it from an I18n key, because a detail page's title lives beside its catalogue entry and a
@@ -149,5 +150,74 @@ module MarketingHelper
 
   def marketing_dir
     marketing_locale == 'ar' ? 'rtl' : 'ltr'
+  end
+
+  # An operator-entered link target becomes an href here, and only here.
+  #
+  # `page:<kind>:<key>` is resolved against the published page in the CURRENT locale, so a visitor reading
+  # Arabic is sent to the Arabic page even though the operator typed the target once. A target whose page is
+  # not published resolves to nil, and every caller renders nothing rather than a dead link -- which is the
+  # rule the old footer broke four times.
+  def marketing_target_href(target)
+    reference = Marketing::LinkTarget.page_reference(target)
+    return target.to_s if reference.nil?
+
+    page = SitePage.live.find_by(locale: marketing_locale, kind: reference[:kind], key: reference[:key])
+    return nil if page.nil?
+
+    # A STANDING PAGE'S ROUTE TAKES NO SLUG. `marketing_features_path` has no dynamic segment, so passing one
+    # appends `?slug=features` to a perfectly good URL -- which is not a broken link, just a worse one, and
+    # the kind of thing a crawler treats as a second address for the same page.
+    marketing_path(Marketing::Page.new(route: page_route_for(page),
+                                       slug: page.kind == 'standing' ? nil : page.slug))
+  end
+
+  def marketing_target_external?(target)
+    Marketing::LinkTarget.external?(target)
+  end
+
+  # The navigation and footer, from the operator's rows. A link whose target does not resolve is dropped, so
+  # an unpublished page cannot put a dead entry in the header.
+  def marketing_nav(placement)
+    SiteNavLink.placed(marketing_locale, placement).filter_map do |link|
+      href = marketing_target_href(link.target)
+      next if href.blank?
+
+      { label: link.label, href: href, external: marketing_target_external?(link.target) }
+    end
+  end
+
+  # The social-card image: the first `image` section's attachment on this page, as an absolute URL.
+  #
+  # ABSOLUTE AND APP-OWNED. `og:image` is fetched by a crawler with no referer and no session, so it has to
+  # be absolute; and it is served from the marketing media route rather than `/rails/active_storage/...`
+  # because robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52) and an ActiveStorage
+  # signed id never expires.
+  def marketing_og_image_url(page)
+    return nil if page.nil?
+
+    section = Array(page.sections).find { |candidate| candidate['type'] == 'image' }
+    attachment = page.image_for(section && section['attachment_id'])
+    return nil if attachment.nil?
+
+    marketing_absolute_url(marketing_media_path(id: attachment.id))
+  end
+
+  # The figures a `stats` section may read. Each is computed from the verified catalogue rather than stored,
+  # so none of them can go stale in an editor. An unknown metric returns nil and the figure is not rendered.
+  def marketing_metric(metric)
+    case metric.to_s
+    when 'channel_count' then Marketing::Catalog.channel_count
+    when 'feature_count' then Marketing::Catalog.features.size
+    when 'locale_count' then t('marketing.home.stat_locales_value')
+    end
+  end
+
+  private
+
+  # A standing page's route helper is named after its key (`marketing_features_path`); a detail page's is
+  # named after its kind, which is already singular (`marketing_feature_path`).
+  def page_route_for(page)
+    page.kind == 'standing' ? page.key.to_sym : page.kind.to_sym
   end
 end

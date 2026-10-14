@@ -8,6 +8,11 @@ require 'rails_helper'
 # So these examples pin two things: the page publishes only what an operator has marked for the website, and
 # the quote request it collects actually works.
 describe 'Marketing pricing' do
+  # The page is a row now: its heading, standfirst and the "what a quote is based on" cards are sections an
+  # operator can edit. The plan table and the form stay in the template because one reads the billing tables
+  # and the other is a form.
+  before { Marketing::ContentSeeder.apply! }
+
   describe 'what the page publishes' do
     it 'publishes no price at all when the operator has listed no plan' do
       get '/en/pricing'

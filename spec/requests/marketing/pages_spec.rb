@@ -7,6 +7,11 @@ require 'rails_helper'
 # at their own URLs, every page carries the discovery tags the old one lacked entirely, no link is dead, and
 # the site never answers on a tenant's custom domain.
 describe 'Marketing pages' do
+  # The pages are rows now, not templates, so the suite seeds the website the repository ships before each
+  # example. It runs inside the example's transaction and rolls back, which is why the seeder is NOT hooked to
+  # `db:migrate` -- lib/tasks/marketing.rake records that reasoning.
+  before { Marketing::ContentSeeder.apply! }
+
   let(:pages) do
     { home: '/home', features: '/features', channels: '/channels', solutions: '/solutions',
       integrations: '/integrations', support: '/support', about: '/about', contact: '/contact',
@@ -407,17 +412,24 @@ describe 'Marketing pages' do
   end
 
   describe 'navigation' do
-    # marketing_nav_items filters NAV_SECTIONS to the sections whose route helper exists, which is what makes
-    # a dead nav link unrepresentable. Every section that has shipped is here; a section still to come has no
-    # link, and this example is how a route added without its page would be caught.
-    it 'links every shipped section and nothing that has not shipped' do
+    # The header is site_nav_links rows now, and `marketing_nav` drops any link whose target does not
+    # resolve -- so an unpublished page cannot leave a dead entry behind.
+    it 'links every shipped section from the operator rows' do
       get '/en/home'
 
       %w[features channels solutions integrations pricing].each do |section|
         expect(response.body).to include(%(href="/en/#{section}")), "#{section} is missing from the header"
       end
+    end
 
-      expect(MarketingHelper::NAV_SECTIONS.map(&:to_s)).to eq(%w[features channels solutions integrations pricing])
+    it 'drops a header link whose page has been unpublished rather than rendering a dead one' do
+      SitePage.find_by(locale: 'en', kind: 'standing', key: 'solutions').update!(status: :draft)
+
+      get '/en/home'
+
+      expect(response.body).not_to include('href="/en/solutions"')
+      expect(response.body.scan(/href="(#|)"/)).to be_empty
+      expect(response.body).to include('href="/en/features"')
     end
   end
 

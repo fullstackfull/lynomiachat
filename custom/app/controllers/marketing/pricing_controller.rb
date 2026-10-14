@@ -68,10 +68,11 @@ class Marketing::PricingController < Marketing::BaseController
 
   def set_marketing_page
     @plans = BillingPlan.active.ordered.where(listed_on_website: true)
+    @site_page = find_site_page(:standing, :pricing)
+    return render_marketing_404 if @site_page.nil?
+
     @marketing_page = Marketing::Page.new(
-      route: :pricing,
-      title: t('marketing.pages.pricing.title'),
-      description: t('marketing.pages.pricing.description')
+      route: :pricing, title: @site_page.title, description: @site_page.description
     )
   end
 end

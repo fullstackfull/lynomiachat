@@ -1,0 +1,48 @@
+<%# A block the CODE fills from the verified catalogue.
+  
+  THE OPERATOR OWNS THE COPY AND NOTHING ELSE. The heading, the standfirst and the link label come from the
+  row; the entries, their availability state and their prerequisites come from Marketing::Catalog, which
+  carries the evidence in docs/official-website/02-verified-feature-inventory.md. That split is the line this
+  programme exists to hold: a conditional feature cannot be edited into an available one, because its state
+  was never in the editor.
+%>
+<% source = section['source'].to_s %>
+<% if Marketing::SectionSchema::SOURCES.include?(source) %>
+  <% scope = source.to_sym %>
+  <% entries = Marketing::Catalog.entries(scope) %>
+  <% limit = section['limit'].to_i %>
+  <% entries = entries.first(limit) if limit.positive? %>
+  <% index_href = marketing_target_href("page:standing:#{source}") %>
+
+  <section class="mt-10">
+    <% if section['heading'].present? %>
+      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
+    <% end %>
+    <% if section['lede'].present? %>
+      <p class="mt-2 max-w-2xl leading-relaxed text-slate-600"><%= section['lede'] %></p>
+    <% end %>
+
+    <% if section['style'].to_s == 'chips' %>
+      <ul class="mt-6 flex flex-wrap gap-2">
+        <% entries.each do |entry| %>
+          <li class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">
+            <%= t("marketing.#{scope}.#{entry.id}.name") %>
+            <%= render 'marketing/shared/state_badge', state: entry.state %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <% entries.each do |entry| %>
+          <%= render 'marketing/shared/entry_card', entry: entry, scope: scope %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if section['link_label'].present? && index_href.present? %>
+      <a href="<%= index_href %>" class="mt-6 inline-block text-sm font-medium text-woot-600 hover:text-woot-700">
+        <%= section['link_label'] %>
+      </a>
+    <% end %>
+  </section>
+<% end %>

@@ -136,59 +136,383 @@ en:
         summary: >-
           Every channel in one list, with statuses, priorities, labels, private notes, mentions and search
           across conversations, contacts and articles.
+        detail:
+          lede: >-
+            One list, every channel. A conversation that started on WhatsApp and continued by email is one
+            conversation with one history, and the agent answering it has the same tools whichever channel it
+            came from.
+          points_title: What the inbox gives an agent
+          points:
+            - title: Four states, not just read and unread
+              body: >-
+                Open, pending, snoozed and resolved, plus a priority on each conversation, so a queue of two
+                hundred is still a queue somebody can work through.
+            - title: Assignment to a person or a team
+              body: >-
+                Assign by hand or let an assignment policy do it. Teams have their own queues, and an agent sees
+                what is theirs without filtering for it.
+            - title: Labels, notes and mentions
+              body: >-
+                Label a conversation for reporting, leave a private note your customer never sees, and mention a
+                colleague to notify them. Participants get updates on a conversation without owning it.
+            - title: Search that crosses the boundaries
+              body: >-
+                One search box covers conversations, messages, contacts and documentation articles, so finding
+                "the customer who asked about the invoice last month" does not need three attempts.
+            - title: Filters and saved folders
+              body: >-
+                Build a filter once — unassigned, high priority, this label, this inbox — and save it as a
+                folder the whole team can use.
+            - title: A reply box built for real replies
+              body: >-
+                Attachments, voice notes, approved WhatsApp templates, canned responses, drafts that survive a
+                refresh, message retry when a send fails, and an email transcript of the whole conversation.
+          note: >-
+            Search covers conversations, messages, contacts and documentation articles. There is no separate
+            advanced-search product, and conversation-level SLA timers are not part of this product — the SLA
+            engine in Lynomia applies to support tickets, not to your own conversations.
       team_collaboration:
         name: Teams and permissions
         summary: >-
           Teams, administrator and agent roles, optional custom permission sets, private notes and mentions
           that notify the right colleague.
+        detail:
+          lede: >-
+            A shared inbox only works if it is clear who does what. Roles decide what a person can reach, teams
+            decide where work lands, and notes and mentions keep the conversation with the customer separate
+            from the conversation about the customer.
+          points_title: How a team is organised
+          points:
+            - title: Administrators and agents
+              body: >-
+                Two roles cover most teams: an administrator configures the workspace, an agent works in it.
+                Both are enforced on the server, not hidden in the interface.
+            - title: Custom permission sets
+              body: >-
+                When two roles are not enough, a custom permission set grants exactly the capabilities a role
+                needs — and never more than your plan includes.
+            - title: Teams with their own queues
+              body: >-
+                Group agents into teams, route conversations to a team rather than a person, and let the team
+                decide who picks it up.
+            - title: Private notes and mentions
+              body: >-
+                A note is internal and stays internal. A mention notifies the colleague you need, on the
+                conversation where you need them.
+          note: >-
+            Per-agent capacity limits — a cap on how many conversations one agent may hold — are not part of
+            this product. Fair distribution with a limit and a time window is, and it lives on the assignment
+            policy.
       auto_assignment:
         name: Automatic assignment
         summary: >-
           Round robin and fair distribution with a limit and a time window, team routing, availability states
           and per-inbox business hours.
+        detail:
+          lede: >-
+            Work that lands in a shared inbox and waits for somebody to claim it is work that waits. Assignment
+            policies decide who gets what, and they respect the two things a rota has to respect: who is
+            available, and when you are open.
+          points_title: How work is distributed
+          points:
+            - title: Round robin or fair distribution
+              body: >-
+                Round robin spreads conversations evenly. Fair distribution adds a limit and a time window, so
+                nobody is handed a backlog while a colleague sits idle.
+            - title: Routing to a team first
+              body: >-
+                Send a conversation to the team that owns it and let assignment happen inside the team, which is
+                how most support groups are actually organised.
+            - title: Availability states
+              body: >-
+                Online, busy and offline are honoured by assignment, so an agent on a break does not accumulate
+                a queue they are not reading.
+            - title: Business hours per inbox
+              body: >-
+                Each inbox has its own hours and its own out-of-office message, which matters when a WhatsApp
+                number and a support mailbox are staffed by different people.
+          note: >-
+            Assignment policies are a core capability of this product: no plan can withhold them. Per-agent
+            capacity limits are a separate idea and are not available here.
       contact_management:
         name: Contacts
         summary: >-
           Custom attributes, notes, import and export, segments, merge, and multi-channel identity so one
           person is one contact across channels.
+        detail:
+          lede: >-
+            The same person writes from a phone number on WhatsApp, an email address on Monday and an Instagram
+            handle on Thursday. Contacts is where those become one customer with one history, instead of three
+            strangers.
+          points_title: What a contact record holds
+          points:
+            - title: More than one phone number and email
+              body: >-
+                A contact can hold several verified identities, matched deterministically rather than guessed,
+                so adding a second number does not create a second customer.
+            - title: Your own fields
+              body: >-
+                Custom attributes carry whatever your business needs — account number, plan, region, renewal
+                date — and they can be filtered on and used in automation.
+            - title: Import, export and merge
+              body: >-
+                Bring contacts in from a spreadsheet, take them out again, and merge duplicates when they
+                appear.
+            - title: Segments your team shares
+              body: >-
+                Save a contact filter once and the whole team can reuse it, in campaigns and in automation.
+            - title: One panel beside the conversation
+              body: >-
+                While answering, an agent sees the contact's attributes, notes, labels, previous conversations
+                and — where commerce is connected — their recent orders.
+          note: >-
+            Merging two contacts keeps the campaign, order, ticket and satisfaction history of both: nothing is
+            discarded to make the merge tidy.
       canned_responses:
         name: Canned responses and macros
         summary: >-
           Saved replies for the questions that repeat, and macros that run several steps on a conversation at
           once.
+        detail:
+          lede: >-
+            Most support volume is the same twenty questions. Canned responses answer them in one keystroke,
+            and macros do the three or four other things that always follow the answer.
+          points_title: What you can save and reuse
+          points:
+            - title: Saved replies with a shortcode
+              body: >-
+                Write the answer once, give it a short code, and any agent can insert it mid-reply without
+                leaving the conversation.
+            - title: Macros that do several steps
+              body: >-
+                A macro can add a label, change the status, assign the conversation, send a reply and add a
+                private note — in the order you set, from one click.
+            - title: Templates where the channel needs them
+              body: >-
+                On WhatsApp, approved templates sit in the same reply box, so an agent picks the right one
+                rather than remembering which messages are allowed.
       automation:
         name: Automation rules
         summary: >-
           Trigger on conversation and contact events, check conditions, then assign, label, reply or notify —
           without writing code.
+        detail:
+          lede: >-
+            Automation rules are the part of the product that works when nobody is looking: a rule you write
+            once labels, assigns, replies and notifies for every conversation that matches, without anybody
+            remembering to do it.
+          points_title: How a rule is built
+          points:
+            - title: Five things that can start a rule
+              body: >-
+                A rule runs on conversation creation, a status change, an update, a new message, or a change to
+                a contact — which covers the events a support process actually turns on.
+            - title: Conditions on what you already store
+              body: >-
+                Match on the inbox, the channel, the label, the priority, the assignee, a contact attribute or
+                the message content, and combine conditions rather than writing one rule per case.
+            - title: Twenty things it can do
+              body: >-
+                Assign to an agent or team, add or remove labels, change status and priority, send a message or
+                an email, add a private note, call a webhook, and more.
+            - title: No code
+              body: >-
+                Rules are built in a form and are readable by whoever inherits them, which is the point: an
+                automation nobody understands is an automation nobody will change.
+          note: >-
+            Delaying a rule's action needs the delayed-automation setting enabled for your account; it is off
+            by default. Everything else above is available with no setting at all.
       campaigns:
         name: Campaigns
         summary: Ongoing live-chat campaigns on your website, and one-off campaigns to a chosen audience.
+        detail:
+          lede: >-
+            A campaign is an outbound message to people who have not written to you yet — a prompt on your own
+            website, or a one-off send to a chosen audience — and it lands back in the same inbox when somebody
+            replies.
+          points_title: The two kinds of campaign
+          points:
+            - title: Ongoing campaigns on your website
+              body: >-
+                Choose the pages, write the message, and visitors on those pages get a prompt from the chat
+                widget. Replies become ordinary conversations.
+            - title: One-off campaigns to an audience
+              body: >-
+                Pick a saved audience, write the message, and send once. SMS campaigns need an SMS inbox;
+                WhatsApp campaigns have their own page because they need an approved template.
+            - title: Per-recipient delivery reporting
+              body: >-
+                After a send you can see what happened to each recipient rather than a single success figure.
+          note: >-
+            There are no per-campaign send limits and no suppression lists in this product. If you need to
+            exclude a group, exclude it in the audience filter — that is the mechanism that exists.
       whatsapp_campaigns:
         name: WhatsApp campaigns
         summary: Send an approved template to an audience, with per-recipient delivery reporting.
         requires: the WhatsApp campaigns setting enabled, a WhatsApp Cloud inbox, and a template Meta approved.
+        detail:
+          lede: >-
+            A WhatsApp campaign sends an approved template to an audience your team has saved, and reports what
+            happened to each recipient. It is the one outbound channel where the message itself has to be
+            approved before you may send it.
+          points_title: How a WhatsApp campaign runs
+          points:
+            - title: An approved template, with its variables filled
+              body: >-
+                Pick a template Meta has approved and map its variables to contact fields, so each recipient
+                gets their own name, order number or date.
+            - title: A saved audience
+              body: >-
+                Send to a contact filter your team built and shares, rather than pasting a list into a box.
+            - title: Delivery reporting per recipient
+              body: >-
+                Sent, delivered, read and failed, per person, with the provider's error where a send failed.
+          note: >-
+            Three things have to be true before the first send: the WhatsApp campaigns setting enabled for your
+            account, a WhatsApp Cloud inbox connected, and a template Meta has approved. Approval is Meta's
+            decision and its timing is Meta's too.
       audiences:
         name: Audiences
         summary: >-
           Build a contact filter once, share it with the team, and reuse it across campaigns and automation.
+        detail:
+          lede: >-
+            An audience is a contact filter with a name, shared with the team. It is built once and reused —
+            in campaigns, in automation, and the next time somebody asks for "the customers in Kuwait who
+            bought last month".
+          points_title: Why a named filter beats a list
+          points:
+            - title: Built from the fields you already keep
+              body: >-
+                Labels, custom attributes, channel, country, last activity — whatever is on the contact can
+                narrow an audience.
+            - title: Shared, not personal
+              body: >-
+                An audience belongs to the workspace, so the definition your colleague used last month is the
+                one you can check and reuse today.
+            - title: Reused across campaigns
+              body: >-
+                The same audience can drive a WhatsApp campaign, an SMS campaign and an automation rule without
+                being rebuilt each time.
+          note: >-
+            An audience is a saved filter, evaluated when it is used — not a frozen list. A contact who starts
+            matching tomorrow is in it tomorrow, which is usually what you want and is worth knowing before a
+            send.
       whatsapp_templates:
         name: WhatsApp template manager
         summary: >-
           Create templates, submit them to Meta, follow approval status, and manage variables and multiple
           WhatsApp business accounts.
+        detail:
+          lede: >-
+            WhatsApp requires outbound messages outside a conversation window to use a template Meta has
+            approved. The template manager is where those are written, submitted, tracked and maintained,
+            without leaving the product.
+          points_title: What the template manager does
+          points:
+            - title: Write and submit from here
+              body: >-
+                Compose the template, define its variables, and submit it to Meta for review without opening
+                Meta's own console.
+            - title: Follow the approval
+              body: >-
+                Approved, pending and rejected status is shown per template and kept in step with Meta, so you
+                know what you may actually send.
+            - title: Variables that map to your data
+              body: >-
+                Declare a template's variables once and map them to contact fields when you send, in a campaign
+                or from a conversation.
+            - title: More than one WhatsApp business account
+              body: >-
+                A workspace can hold several WhatsApp Business accounts, each with its own templates, which is
+                what multi-brand and multi-country teams need.
+          note: >-
+            Templates are reviewed and approved by Meta. Lynomia submits and tracks them; it cannot approve one,
+            and rejection reasons come from Meta.
       analytics:
         name: Reports
         summary: >-
           Conversation, WhatsApp, campaign, automation and flow reporting over a date range in your own
           timezone, plus a per-contact activity timeline.
+        detail:
+          lede: >-
+            Reports answer the questions a support manager actually has: how much came in, how fast it was
+            answered, which channels carry the load, and whether the last campaign did anything.
+          points_title: What is reported
+          points:
+            - title: Conversations
+              body: >-
+                Volume, first response and resolution times, and a breakdown by inbox, channel, team and agent
+                over the date range you choose.
+            - title: WhatsApp
+              body: >-
+                Template sends and delivery outcomes, so a failed campaign is visible as a number rather than a
+                rumour.
+            - title: Campaigns, automation and flows
+              body: >-
+                What ran, how often, and what it produced — reported per campaign, per rule and per flow.
+            - title: Your own timezone
+              body: >-
+                A date range means what it says in your timezone, which matters when "yesterday" is being
+                compared across offices.
+            - title: Per-contact history
+              body: >-
+                A contact's activity timeline shows what happened with that one customer, in order, which is
+                the report an agent needs mid-conversation.
+          note: >-
+            Reports are read in the product; there is no CSV export of the analytics dashboards (customer
+            satisfaction responses can be exported). There is no revenue or order-value reporting — this
+            product reports on conversations, not on your takings.
       csat:
         name: Customer satisfaction
         summary: Ask for a rating after a conversation is resolved, and export the responses.
+        detail:
+          lede: >-
+            A satisfaction survey after a resolved conversation is the cheapest honest feedback a support team
+            can get, and the only one that comes from the customer rather than from the queue.
+          points_title: How the survey works
+          points:
+            - title: Sent when the conversation is resolved
+              body: >-
+                The request goes out on resolution, on the channel the conversation was already on, so there is
+                nothing extra for the customer to open.
+            - title: A rating, and room to say why
+              body: >-
+                The response carries the rating and the customer's own comment, which is usually the part that
+                tells you something.
+            - title: Reported and exportable
+              body: >-
+                Results appear in reports by agent, team and inbox, and the responses can be exported for your
+                own analysis.
+          note: >-
+            Agents and managers cannot attach review notes to a satisfaction response in this product; the
+            response is the customer's, unannotated.
       flow_builder:
         name: Flow builder
         summary: Build a guided WhatsApp conversation visually, test it, and inspect a session step by step.
         requires: the flow builder setting enabled for your account, and a WhatsApp Cloud inbox.
+        detail:
+          lede: >-
+            A flow is a WhatsApp conversation drawn as a diagram: ask a question, branch on the answer, collect
+            what you need, and hand to a person at the point where a person is actually needed.
+          points_title: What you can build
+          points:
+            - title: A canvas, not a script
+              body: >-
+                Lay the conversation out visually with the node types the builder provides — questions,
+                conditions, messages, data capture and handover — and read it back as a diagram rather than as
+                code.
+            - title: Test before you publish
+              body: >-
+                Run a flow against yourself first, then inspect a real session step by step to see which branch
+                a customer took and where they left.
+            - title: Handover with the history intact
+              body: >-
+                When a flow hands a conversation to an agent, the agent gets everything the flow collected, in
+                the same conversation.
+          note: >-
+            The flow builder needs its setting enabled for your account and a WhatsApp Cloud inbox: it is a
+            WhatsApp capability, not a general chatbot for every channel.
       ai_assist:
         name: AI assist for agents
         summary: >-
@@ -197,16 +521,84 @@ en:
         requires: >-
           the AI assist setting enabled for your account and your own OpenAI key. Lynomia does not operate an
           autonomous AI agent.
+        detail:
+          lede: >-
+            AI here helps the person writing the reply. It rewrites, summarises and suggests — and an agent
+            reads and approves every word before a customer sees it. Nothing is sent automatically.
+          points_title: The five things it does
+          points:
+            - title: Rewrite
+              body: >-
+                Take a draft an agent has written and tidy its tone, length or clarity, in the language the
+                draft is in.
+            - title: Summarise
+              body: >-
+                Condense a long conversation into something a colleague taking it over can read in ten seconds.
+            - title: Suggest a reply
+              body: >-
+                Propose a reply from the conversation so far, as a draft in the agent's reply box, never as a
+                sent message.
+            - title: Suggest labels
+              body: >-
+                Propose the labels that fit a conversation, which is the part of tidy reporting that agents
+                skip when they are busy.
+            - title: Draft a follow-up
+              body: >-
+                Produce a follow-up message for a conversation that has gone quiet, for the agent to edit and
+                decide on.
+          note: >-
+            Lynomia does not operate an autonomous AI agent, an AI chatbot or an AI knowledge base, and nothing
+            above replies to a customer on its own. These five actions need the AI assist setting enabled for
+            your account and your own OpenAI key, which means you keep the provider relationship and the cost.
       agent_bots:
         name: Agent bots
         summary: >-
           Connect your own bot to an inbox to handle the first message, then hand the conversation to a person
           with the history intact.
+        detail:
+          lede: >-
+            If you want software to answer first, this is the honest way to do it: connect a bot you control to
+            an inbox, let it handle what it can, and hand the conversation to a person — in the same
+            conversation, with the history intact.
+          points_title: How a bot fits in
+          points:
+            - title: Your bot, your logic
+              body: >-
+                The bot runs wherever you run it. Lynomia delivers the messages and takes its replies, so the
+                behaviour is yours to build and change.
+            - title: Attached to an inbox
+              body: >-
+                A bot is connected to the inbox you choose, so it can answer on your website chat while a
+                person handles WhatsApp.
+            - title: Handover, not a dead end
+              body: >-
+                When the bot stops, the conversation becomes an ordinary conversation for an agent, with
+                everything the bot collected already in it.
+          note: >-
+            This is a connection point for a bot you supply, not a bot we provide. What the customer sees is
+            your code's behaviour.
       translation:
         name: Message translation
         summary: >-
           Translate an incoming message and detect the language it was written in, inside the conversation.
         requires: a Google Cloud translation credential connected to your account.
+        detail:
+          lede: >-
+            A customer writing in a language your agent on shift does not read is a conversation that stalls.
+            Translation puts the message in a language they can act on, inside the conversation.
+          points_title: What translation covers
+          points:
+            - title: Translate an incoming message
+              body: >-
+                An agent translates a message where it sits, without copying it into another tab.
+            - title: Detect the language
+              body: >-
+                The language a message was written in is detected, which is also what makes routing by language
+                a sensible thing to build.
+          note: >-
+            Translation needs a Google Cloud translation credential connected to your account; it is off until
+            you connect one. The agent interface itself is available in over fifty languages with no credential
+            at all.
       commerce:
         name: Commerce
         summary: >-
@@ -215,21 +607,129 @@ en:
         requires: >-
           the commerce module enabled for your account, plus the credentials for your store platform. Order
           actions are limited by provider.
+        detail:
+          lede: >-
+            When a customer asks "where is my order", the answer should be on the screen the agent is already
+            looking at. Commerce puts their recent orders beside the conversation, for the store platforms this
+            product connects to.
+          points_title: What commerce adds to a conversation
+          points:
+            - title: Four store platforms
+              body: >-
+                WooCommerce, Salla, Zid and Shopify can be connected, each with its own credentials, and each
+                enabled for your account separately.
+            - title: Orders beside the conversation
+              body: >-
+                The contact's recent orders, their status and their contents appear in the conversation panel,
+                matched to the customer by their identities.
+            - title: Updates as they happen
+              body: >-
+                Order and cart changes arrive from your store rather than being polled, so what the agent sees
+                is current.
+          note: >-
+            Order history in the conversation is read-only: acting on an order — refunding, cancelling,
+            editing — happens in your store platform, not here. Each provider needs the commerce module enabled
+            for your account plus your store credentials, and what each platform reports differs by platform.
       api_webhooks:
         name: API and webhooks
         summary: >-
           A documented REST API, three authentication schemes, signed outbound webhooks, dashboard apps and a
           JavaScript widget SDK.
+        detail:
+          lede: >-
+            Everything the dashboard does, it does over the same documented API you can use. If the product
+            should sit inside something you already run, this is how.
+          points_title: What a developer gets
+          points:
+            - title: A documented REST API
+              body: >-
+                An OpenAPI specification, browsable in the product, covering contacts, conversations, messages,
+                inboxes and the rest of the core.
+            - title: Three ways to authenticate
+              body: >-
+                A user token, an account-scoped access token or a platform token, depending on whether you are
+                acting as a person, an application or the installation.
+            - title: Signed outbound webhooks
+              body: >-
+                Twelve conversation and message events are delivered to your endpoint with an HMAC signature,
+                so you can verify that what arrived came from us.
+            - title: Dashboard apps and a widget SDK
+              body: >-
+                Embed your own interface beside a conversation, and drive the website widget from your own
+                JavaScript — identity, custom attributes, open and close.
+          note: >-
+            The published specification covers the core API. The Lynomia-specific areas — flows, commerce,
+            templates, analytics, support tickets and billing — do not yet have published API documentation,
+            and webhook events for commerce, campaigns, flows, templates and tickets do not exist.
       support_desk:
         name: Support desk
         summary: >-
           Open a ticket with Lynomia from inside your account and follow the replies, with your workspace
           already attached.
+        detail:
+          lede: >-
+            When you need us rather than the documentation, you open a ticket from inside your own workspace,
+            so the request arrives with the account, the inbox and the context already attached.
+          points_title: How support works
+          points:
+            - title: Tickets from inside your account
+              body: >-
+                Help and Support in the dashboard opens a ticket against your workspace. Nothing to copy, no
+                account number to quote.
+            - title: The thread stays in one place
+              body: >-
+                Replies from our side arrive on the same ticket and are notified by email, so the history of a
+                problem is one thread rather than a mailbox search.
+            - title: Documentation first, where it is faster
+              body: >-
+                The documentation is public, searchable, bilingual and free to read without an account — for
+                most setup questions it is the quicker answer.
+          note: >-
+            Tickets are opened from inside a signed-in account; there is no public ticket form. If you are not
+            a customer yet, email us and a person will reply.
       security:
         name: Security and access control
         summary: >-
           Per-account isolation enforced on the server, role-based access, encrypted channel credentials, and
           an audit trail of configuration changes and sign-ins.
+        detail:
+          lede: >-
+            What follows is what this product actually enforces. There is no certification claim on this page
+            and no number that is not measured, because a security page that overstates is worse than one that
+            says less.
+          points_title: What is enforced
+          points:
+            - title: Separation between accounts
+              body: >-
+                Workspaces are isolated on the server. A request for another account's data is answered as not
+                found before any permission check runs, which is the order that makes the isolation hold even
+                if a policy is wrong.
+            - title: Roles, enforced server-side
+              body: >-
+                Administrator, agent and optional custom permission sets are checked on the server for every
+                request. Hiding a button is not access control and is not relied on here.
+            - title: Encrypted in transit, and credentials at rest
+              body: >-
+                Traffic is HTTPS with HSTS. Channel credentials and store keys are encrypted at rest with
+                application-level encryption, and they are never written into the audit trail.
+            - title: An audit trail that cannot be switched off
+              body: >-
+                Configuration changes and sign-ins are recorded, by a mechanism the audited party cannot
+                disable, and retained for 365 days.
+            - title: IP addresses coarsened
+              body: >-
+                Where an address is recorded it is reduced to a network rather than kept in full, and it is
+                never geolocated.
+            - title: A verified backup before every deployment
+              body: >-
+                A database backup is taken and checked as readable before each deployment, the last fourteen
+                are kept, and the rollback procedure is written down rather than improvised.
+          note: >-
+            No certification is claimed: there is no SOC 2, ISO 27001, PCI or HIPAA artefact for this product,
+            and this page makes no data-residency or hosting-region claim. Encryption at rest covers
+            credentials and store keys, not message bodies, contacts or attachments. The audit trail is an
+            operator-side control and is not exposed as a customer-browsable log, and it records configuration
+            changes and sign-ins — not every action an agent takes.
     channels:
       whatsapp:
         name: WhatsApp

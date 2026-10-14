@@ -128,9 +128,88 @@ describe 'Marketing pages' do
     end
   end
 
+  describe 'the catalogue itself' do
+    # The link graph is curated by hand, so a typo in it is a NoMethodError on nil in the detail template.
+    it 'resolves every related feature and every named channel' do
+      Marketing::Catalog::COLLECTIONS.each_value do |entries|
+        entries.each do |entry|
+          entry.related_ids.each do |id|
+            expect(Marketing::Catalog.feature(id)).to be_present, "#{entry.id} relates to unknown feature #{id}"
+          end
+          entry.channel_ids.each do |id|
+            expect(Marketing::Catalog.channel(id)).to be_present, "#{entry.id} names unknown channel #{id}"
+          end
+        end
+      end
+    end
+
+    # A page with no copy renders a heading and nothing else, which is the thin page this site must not have.
+    it 'has detail copy in both locales for every entry that has a page' do
+      %w[ar en].each do |locale|
+        I18n.with_locale(locale) do
+          Marketing::Catalog::COLLECTIONS.each do |scope, entries|
+            entries.select(&:detail?).each do |entry|
+              key = "marketing.#{scope}.#{entry.id}.detail"
+              expect(I18n.t("#{key}.lede", default: nil)).to be_present, "#{locale}/#{entry.id} has no lede"
+              expect(I18n.t("#{key}.points", default: [])).to be_present, "#{locale}/#{entry.id} has no points"
+            end
+          end
+        end
+      end
+    end
+  end
+
   describe 'the catalogue detail pages' do
     let(:channel_paths) do
       Marketing::Catalog.channels.select(&:detail?).map { |entry| "/channels/#{entry.slug}" }
+    end
+    let(:feature_paths) do
+      Marketing::Catalog.features.select(&:detail?).map { |entry| "/features/#{entry.slug}" }
+    end
+
+    it 'gives every feature a page, in both locales, with its own canonical' do
+      (feature_paths + feature_paths.map { |path| "/en#{path}" }).each do |path|
+        get path
+
+        expect(response).to have_http_status(:success), "#{path} did not render"
+        expect(response.body).to match(/<link rel="canonical" href="[^"]*#{Regexp.escape(path)}">/),
+                                 "#{path} canonical does not point at itself"
+      end
+    end
+
+    it 'has no dead links on any feature page' do
+      (feature_paths + feature_paths.map { |path| "/en#{path}" }).each do |path|
+        get path
+        dead = response.body.scan(/href="(#|)"/)
+
+        expect(dead).to be_empty, "#{path} has #{dead.size} dead link(s)"
+      end
+    end
+
+    it 'states the prerequisite on a conditional feature page and omits the callout on an available one' do
+      get '/en/features/flow-builder'
+      expect(response.body).to include('Needs:')
+
+      get '/en/features/unified-inbox'
+      expect(response.body).not_to include('Needs:')
+    end
+
+    # The six claims docs 02 section 6 struck off, checked on the pages that would be tempted to restore them.
+    it 'does not restore a struck-off claim on the pages nearest to it' do
+      get '/en/features/security'
+      body = response.body
+      expect(body).to include('No certification is claimed')
+      expect(body).to include('not every action an agent takes')
+      expect(body).not_to match(/99\.9|uptime|SOC 2 certified|ISO 27001 certified/i)
+
+      get '/en/features/ai-assist'
+      expect(response.body).to include('does not operate an autonomous AI agent')
+
+      get '/en/features/commerce'
+      expect(response.body).to include('read-only')
+
+      get '/en/features/analytics'
+      expect(response.body).to include('no revenue or order-value reporting')
     end
 
     it 'gives every channel with a page one, in both locales, with its own canonical' do

@@ -1,5 +1,9 @@
 # 04 — Information architecture and serving decisions
 
+> **Revised after implementation (W4–W6).** Three claims in §SEO and the reuse map were wrong and are
+> corrected inline, each marked. The decisions D1–D11 stand as written and were implemented as written;
+> `08-implementation-report.md` says what was built and `09-test-results.md` what was measured.
+
 **Date:** 2026-10-14 · Decisions here are binding on W2–W6. Evidence: `01-current-state-audit.md`,
 `02-verified-feature-inventory.md`, `03-competitive-analysis.md`.
 
@@ -172,15 +176,41 @@ resolves the signed-in user's account, or a path-allowlisted `return_to` on `/ap
   (`custom/app/helpers/documentation_helper.rb:56-62`), which exists because the same arithmetic in three
   copies produced `https://hc/hc/...` in canonicals and sitemaps. Canonical, `hreflang`, `og:url`, JSON-LD and
   the sitemap all read from it, so they cannot disagree.
-- **`/sitemap.xml`** — marketing URLs only; the address is free (404 today). The three per-portal documentation
-  sitemaps stay as they are, and a fourth `Sitemap:` line is added to `robots.txt`
-  (`app/controllers/robots_controller.rb:77-83`) without disturbing the generated ones. The regression suite at
-  `spec/requests/search_indexing_spec.rb:112-151` must stay green; in particular no broad `Disallow:` may be
-  added.
+- **`/sitemap.xml`** — marketing URLs only; the address is free (404 today). The per-portal documentation
+  sitemaps stay as they are and a marketing `Sitemap:` line is added to `robots.txt` without disturbing them.
+  The regression suite at `spec/requests/search_indexing_spec.rb:112-151` must stay green; in particular no
+  broad `Disallow:` may be added.
+
+  > **Corrected after implementation.** This originally said "a fourth `Sitemap:` line", which implied three
+  > declared ones to append to. There is no declared list: `RobotsController#sitemap_lines` generates one line
+  > **per non-archived Portal** at request time, so the count is however many portals the installation has.
+  > The marketing line is therefore added in `#body` rather than inside `sitemap_lines` — that method reads the
+  > Portal table and is wrapped in a rescue so a cold boot with no database still answers robots.txt, and the
+  > marketing line needs no database at all. Putting it inside would make it disappear in exactly the situation
+  > it still works in. See `07-seo-strategy.md` §5.
 - **Per page:** unique title and meta description, canonical, reciprocal hreflang, Open Graph and Twitter,
-  breadcrumbs, and structured data where the type genuinely applies — `Organization` and `BreadcrumbList`
-  always, `FAQPage` **only** where FAQ entries exist as structured rows, `SoftwareApplication` on the home.
-  No `AggregateRating`, no `Review`: there is nothing to base them on.
+  breadcrumbs, and structured data where the type genuinely applies. No `AggregateRating`, no `Review`: there
+  is nothing to base them on.
+
+  > **Corrected after implementation.** Two claims here were wrong.
+  >
+  > First, this said `Organization` "always", on the assumption that Documentation V2 already emits one and
+  > that marketing should match. It does not: a no-exclusion search finds `BreadcrumbList` and `TechArticle`
+  > per article and **no top-level `Organization` or `WebSite` node anywhere in this application**
+  > (`custom/app/helpers/documentation_helper.rb:134-172`). So there was no precedent to follow and no
+  > conflict to avoid — and "always" is the wrong placement regardless: `Organization` and `WebSite` describe
+  > the publisher and the site, so they belong on the front page and nowhere else. Repeating them on all 48
+  > pages per locale says nothing extra.
+  >
+  > Second, `SoftwareApplication` on the home page was dropped. Google's own guidance treats it as an
+  > app-listing type whose useful properties are the ones this product has no verified values for —
+  > `offers`, `aggregateRating`, `operatingSystem`, `applicationCategory` with a price. Emitting it with
+  > nothing but a name and a URL is a node that earns no rich result and invites the question of why the
+  > price is missing. `WebSite` is the honest type for what this is.
+  >
+  > What ships: `Organization` + `WebSite` on the home page, `BreadcrumbList` on every detail page beside the
+  > visible trail, `FAQPage` on `/faq` from the same rows the reader sees, and nothing at all on a page that
+  > is not indexable. See `07-seo-strategy.md` §6.
 - **Published pages only** in the sitemap, and alternates only to published siblings — the rule the
   documentation sitemap already follows (`app/views/public/api/v1/portals/sitemap.xml.erb:22`).
 - **The marketing home gets a full head.** The documentation portal's landing page emits none, which is a
@@ -224,7 +254,7 @@ apply.
 | Asset pipeline | a new Vite entrypoint beside `portal.js`; `vite-plugin-ruby` picks it up with no build config | `vite.config.ts:8` |
 | Tailwind | already scans `app/views/**/*.erb` and `custom/app/views/**/*.erb` | `tailwind.config.js:38-39` |
 | Head pattern | `content_for?(:head)` with a title fallback | `app/views/layouts/_portal_head.html.erb:16-20` |
-| Super Admin CMS | Administrate dashboard + controller + route + **the navigation exclusion array** | `app/views/super_admin/application/_navigation.html.erb:40-47` |
+| Super Admin CMS | Administrate dashboard + controller + route; **the navigation exclusion array only for a hand-written controller** | `app/views/super_admin/application/_navigation.html.erb:48` |
 | Editor | the existing Markdown editor component and its mount registry | `app/javascript/entrypoints/superadmin_pages.js:9-13` |
 | Server-side preview | the same renderer the public page uses, never a browser-side Markdown implementation | `custom/app/controllers/super_admin/articles_controller.rb:27-39` |
 | Media upload | server-side through an authenticated action; the direct-upload route stays 403 | `config/initializers/active_storage.rb:48-64` |

@@ -16,6 +16,7 @@ import ProviderPicker from './ProviderPicker.vue';
 import SallaConnectDialog from './SallaConnectDialog.vue';
 import ZidConnectDialog from './ZidConnectDialog.vue';
 import ShopifyConnectDialog from './ShopifyConnectDialog.vue';
+import StoresyriaConnectDialog from './StoresyriaConnectDialog.vue';
 import CartQueue from './CartQueue.vue';
 import { relativeTime } from 'dashboard/components/widgets/conversation/commerce/commerceHelper';
 import { useCommerceLabels } from 'dashboard/components/widgets/conversation/commerce/useCommerceLabels';
@@ -27,9 +28,9 @@ const router = useRouter();
 const { apiErrorMessage, errorMessage, providerName, storeStatus } =
   useCommerceLabels();
 
-// Providers whose credentials are API keys an administrator enters here. Salla, Zid and Shopify stores get their tokens
-// from the provider's app authorization instead, so they have no keys to replace.
-const KEY_PROVIDERS = ['woocommerce'];
+// Providers whose credentials an administrator pastes in here. Salla, Zid and Shopify stores get their tokens from the
+// provider's app authorization instead, so they have no keys to replace.
+const KEY_PROVIDERS = ['woocommerce', 'storesyria'];
 // Providers re-authorized from here (Zid's and Shopify's OAuth). A Salla store is re-authorized from the Salla dashboard.
 const REAUTHORIZED_HERE = ['zid', 'shopify'];
 // Providers whose authorization returns here with `<provider>=connected` or `<provider>_error=<code>`.
@@ -64,6 +65,7 @@ const showShopifyDialog = ref(false);
 const shopifyShop = ref('');
 const shopifyOrderActions = ref(false);
 const showStoreDialog = ref(false);
+const showStoresyriaDialog = ref(false);
 const rotatingStore = ref(null);
 const disconnectingStore = ref(null);
 const disconnectDialogRef = ref(null);
@@ -122,6 +124,9 @@ const providerTexts = store =>
       }),
       disconnect: t('COMMERCE.SETTINGS.SHOPIFY.DISCONNECT_DESCRIPTION'),
     },
+    // Store Syria pastes its token in here, so it is reconnected and disconnected like any key provider. It ships off
+    // on an installation that has not turned it on, which is the one text it needs.
+    storesyria: { off: t('COMMERCE.SETTINGS.STORESYRIA.PROVIDER_OFF') },
   })[store.provider] || {};
 
 const disconnectDescription = store =>
@@ -129,9 +134,11 @@ const disconnectDescription = store =>
     ? t('COMMERCE.SETTINGS.DISCONNECT_CONFIRM.DESCRIPTION')
     : providerTexts(store).disconnect;
 
-const openKeysDialog = () => {
-  rotatingStore.value = null;
-  showStoreDialog.value = true;
+// Each key-pasting provider has its own dialog: what is pasted, and where the merchant gets it, are different.
+const openKeysDialog = (provider, store = null) => {
+  rotatingStore.value = store;
+  if (provider === 'storesyria') showStoresyriaDialog.value = true;
+  else showStoreDialog.value = true;
 };
 
 // Every platform is listed first, so the merchant picks theirs and sees how it connects.
@@ -147,7 +154,7 @@ const openConnect = (provider, store = null, orderActions = false) => {
     shopifyShop.value = store ? new URL(store.base_url).host : '';
     shopifyOrderActions.value = orderActions;
     showShopifyDialog.value = true;
-  } else openKeysDialog();
+  } else openKeysDialog(provider, store);
 };
 
 const onProviderSelected = provider => {
@@ -177,13 +184,11 @@ const onSallaConnected = async () => {
   await fetchStores();
 };
 
-const openReplaceKeys = store => {
-  rotatingStore.value = store;
-  showStoreDialog.value = true;
-};
+const openReplaceKeys = store => openKeysDialog(store.provider, store);
 
 const onStoreSaved = store => {
   showStoreDialog.value = false;
+  showStoresyriaDialog.value = false;
   if (stores.value.some(existing => existing.id === store.id)) {
     replaceStore(store);
     useAlert(t('COMMERCE.SETTINGS.UPDATED'));
@@ -547,6 +552,12 @@ onMounted(() => {
         :show="showStoreDialog"
         :store="rotatingStore"
         @close="showStoreDialog = false"
+        @saved="onStoreSaved"
+      />
+      <StoresyriaConnectDialog
+        :show="showStoresyriaDialog"
+        :store="rotatingStore"
+        @close="showStoresyriaDialog = false"
         @saved="onStoreSaved"
       />
       <Dialog

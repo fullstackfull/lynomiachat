@@ -1,15 +1,25 @@
 # Lynomia Commerce store connections (administrators, `lynomia_commerce` accounts only).
 #
 #   GET    /api/v1/accounts/:account_id/commerce/stores       list, with the providers this installation offers
-#   POST   /api/v1/accounts/:account_id/commerce/stores       connect WooCommerce: provider, base_url, consumer_key, consumer_secret, name
-#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), consumer_key + consumer_secret (WooCommerce),
-#                                                             order_actions (true|false: the store's opt-in to order actions)
+#   POST   /api/v1/accounts/:account_id/commerce/stores       connect a key-pasting provider: provider, base_url, its credentials, name
+#   PATCH  /api/v1/accounts/:account_id/commerce/stores/:id   name, status (active|disabled), the provider's credentials again to
+#                                                             rotate them, order_actions (true|false: the store's opt-in to order actions)
 #   DELETE /api/v1/accounts/:account_id/commerce/stores/:id   disconnect (credentials and customer links deleted)
 #
-# Credentials are write-only: they are accepted here and never rendered back. Salla stores are connected through the Salla
-# app instead (Api::V1::Accounts::Commerce::SallaConnectionsController), so they never take keys here.
+# Credentials are write-only: they are accepted here and never rendered back. Only the providers in CREDENTIAL_FORMATS
+# connect here, because only they are credentials an administrator can hold: Salla, Zid and Shopify stores are connected
+# through their app installation controllers instead, and never take keys here.
 class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseController
-  WOOCOMMERCE_KEY_FORMATS = { consumer_key: /\Ack_[0-9a-f]{40}\z/, consumer_secret: /\Acs_[0-9a-f]{40}\z/ }.freeze
+  # Each provider's credential keys and the exact shape each one has, so a mistyped or pasted-wrong value is a 422 here
+  # rather than a failed health check or a store saved with a credential that can never work.
+  CREDENTIAL_FORMATS = {
+    'woocommerce' => { consumer_key: /\Ack_[0-9a-f]{40}\z/, consumer_secret: /\Acs_[0-9a-f]{40}\z/ },
+    # Store Syria mints lsc_{store}_{revocation version}_{hmac-sha256}. The store and the version travel in the clear
+    # because they are the lookup, not the secret; the hmac covers both, so the token cannot be edited to name another
+    # store or to resurrect a revoked version.
+    'storesyria' => { commerce_token: /\Alsc_\d{1,19}_\d{1,19}_[0-9a-f]{64}\z/ }
+  }.freeze
+  CREDENTIAL_KEYS = CREDENTIAL_FORMATS.values.flat_map(&:keys).freeze
 
   before_action :ensure_commerce_enabled
   before_action -> { authorize(::Commerce::Store) }
@@ -25,16 +35,17 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
 
   def create
     params.require(:base_url)
-    raise ActionController::ParameterMissing, :provider unless params[:provider] == 'woocommerce'
+    provider = params[:provider].to_s
+    raise ActionController::ParameterMissing, :provider unless CREDENTIAL_FORMATS.key?(provider)
 
-    @store = connection.connect(provider: 'woocommerce', base_url: params[:base_url].to_s, credentials: credentials_param,
+    @store = connection.connect(provider: provider, base_url: params[:base_url].to_s, credentials: credentials_param(provider),
                                 name: params[:name].to_s.strip)
     render :show, status: :created
   end
 
   def update
     @store.update!(name: params[:name].to_s.strip) if params.key?(:name)
-    connection.rotate_credentials(@store, credentials_param) if params.key?(:consumer_key) || params.key?(:consumer_secret)
+    connection.rotate_credentials(@store, credentials_param(@store.provider)) if CREDENTIAL_KEYS.any? { |key| params.key?(key) }
     change_status if params.key?(:status)
     change_order_actions if params.key?(:order_actions)
     render :show
@@ -69,10 +80,12 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
     connection.change_order_actions(@store, params[:order_actions])
   end
 
-  def credentials_param
-    raise ActionController::ParameterMissing, :provider if @store && @store.provider != 'woocommerce'
+  # A credential sent to a store whose provider does not take one here is a 422 naming the provider, not a silent no-op.
+  def credentials_param(provider)
+    formats = CREDENTIAL_FORMATS[provider]
+    raise ActionController::ParameterMissing, :provider if formats.nil?
 
-    WOOCOMMERCE_KEY_FORMATS.to_h do |key, format|
+    formats.to_h do |key, format|
       value = params[key].to_s.strip
       raise ActionController::ParameterMissing, key unless value.match?(format)
 

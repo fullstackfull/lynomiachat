@@ -27,7 +27,12 @@
 class Commerce::Store < ApplicationRecord
   self.table_name = 'commerce_stores'
 
-  PROVIDERS = %w[woocommerce salla zid shopify].freeze
+  # KEEP IN STEP WITH Commerce::Providers::REGISTRY. Nothing reconciles the two: a provider
+  # present only in the registry is constructible but fails `validates :provider, inclusion:`
+  # here, on Commerce::Cart and on Commerce::ActionRun, so it can be read but never connected.
+  # The duplication is upstream's; the comment is so the next person does not find out the hard
+  # way. A spec asserts the two lists match.
+  PROVIDERS = %w[woocommerce salla zid shopify storesyria].freeze
 
   belongs_to :account
   belongs_to :created_by, class_name: 'User', optional: true

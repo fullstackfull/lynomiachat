@@ -219,6 +219,62 @@ RSpec.describe 'Super Admin documentation editor', type: :request do
     end
   end
 
+  # THE PREVIEW PANE RESOLVES `media:`. Before this, `preview_markdown` called `render_article` with no resolver,
+  # so an operator uploaded an image, the editor inserted the server's own Markdown, and the preview showed an
+  # inert comment -- ruling R3 point 6's defect class inverted, a preview showing LESS than the published page.
+  describe 'POST preview_markdown with documentation media' do
+    # A 4x3 PNG, decoded rather than fixtured, so the intrinsic dimensions the analyzer reads are known here.
+    let(:png) do
+      Base64.strict_decode64(
+        'iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC26JiGAAAAFUlEQVR4nGP8z8DAwMDEgAAwFhMDAwBkFQIBrDJfBwAAAABJRU5ErkJggg=='
+      )
+    end
+    let(:key) { 'uploads/0123456789abcdef-step-two.png' }
+
+    before do
+      sign_in(super_admin, scope: :super_admin)
+      Documentation::MediaUpload.new(portal: portal).attach!(key: key, io: StringIO.new(png), filename: 'step-two.png')
+    end
+
+    it 'renders an img for a saved article, at the application-owned delivery path' do
+      post '/super_admin/articles/preview_markdown',
+           params: { article: { id: article.id, content: "![Step two](media:#{key})" } }
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include(%(src="/hc/#{portal.slug}/articles/#{article.slug}/media/#{key}"))
+      expect(response.body).to include('alt="Step two"')
+      expect(response.body).not_to include('media: unresolved key')
+    end
+
+    # The limitation, asserted so it is a known state rather than a surprise: an unsaved article has no slug, so
+    # its media has no address yet and the preview says so inertly rather than emitting a broken src.
+    it 'emits an inert comment and no img for an unsaved article' do
+      post '/super_admin/articles/preview_markdown',
+           params: { article: { content: "![Step two](media:#{key})" } }
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('media: unresolved key')
+      expect(response.body).not_to include('<img')
+      expect(response.body).not_to include('src=""')
+    end
+
+    # A posted id cannot point the resolver anywhere the operator is not editing: `scoped_resource` is platform
+    # portals only, so an article on a tenant portal resolves to nothing rather than to that portal's media.
+    it 'ignores an id outside the platform portals' do
+      tenant_portal = create(:portal, account: create(:account), slug: 'tenant-portal')
+      tenant_article = create(:article, portal: tenant_portal, account_id: tenant_portal.account_id,
+                                        author: create(:user, account: tenant_portal.account), locale: 'en',
+                                        slug: 'tenant-page', title: 'Tenant page', content: 'x')
+
+      post '/super_admin/articles/preview_markdown',
+           params: { article: { id: tenant_article.id, content: "![Step two](media:#{key})" } }
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('media: unresolved key')
+      expect(response.body).not_to include('tenant-portal')
+    end
+  end
+
   describe 'POST preview_markdown' do
     let(:markdown) { "## Heading\n\n| a | b |\n|---|---|\n| 1 | 2 |" }
 

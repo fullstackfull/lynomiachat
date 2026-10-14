@@ -15,8 +15,9 @@ require 'rails_helper'
 # The four negatives are the same chain with one role, portal, status or key changed, each asserted by what an
 # attacker or an operator can actually observe.
 #
-# The fixture is four bytes of PNG built here. The corpus media tree is the corpus, and an upload fixture is not
-# part of it -- nothing in this file needs a real screenshot.
+# The fixture is a 4x3 PNG decoded from base64 in this file. The corpus media tree IS the corpus, and an upload
+# fixture is not part of it -- nothing here needs a real screenshot, only real PNG bytes with real dimensions, so
+# that the width and height the analyzer reads are checkable.
 RSpec.describe 'Documentation media -- the whole chain, end to end', type: :request do
   let(:png) { Base64.strict_decode64('iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAAAAACRn/EaAAAAC0lEQVR4nGNgQAEAAA8AAbVWKT4AAAAASUVORK5CYII=') }
   let(:super_admin) { create(:super_admin) }
@@ -77,7 +78,9 @@ RSpec.describe 'Documentation media -- the whole chain, end to end', type: :requ
       sign_out(:super_admin)
       image = rendered_image("/hc/#{docs_portal.slug}/articles/#{article.slug}")
 
-      expect(response).to have_http_status(:ok)
+      # Presence first, so a link that disagrees about the key reads as "the renderer resolved nothing" rather
+      # than as a NoMethodError: an unresolved key emits a comment and no <img> at all.
+      expect([response.status, image.present?]).to eq([200, true])
       expect([image['src'], image['alt'], image['width'], image['height'], image['loading']])
         .to eq(["/hc/#{docs_portal.slug}/articles/#{article.slug}/media/#{key}", alt, '4', '3', 'lazy'])
       expect(response.body).not_to include(attachment.blob.signed_id, attachment.blob.key, 'storage')
@@ -96,24 +99,36 @@ RSpec.describe 'Documentation media -- the whole chain, end to end', type: :requ
     let(:account) { create(:account) }
     let(:tenant_admin) { create(:user, account: account, role: :administrator) }
 
-    it 'is issued no key, and cannot take over the bytes of one a super admin already owns' do
-      sign_in(super_admin, scope: :super_admin)
-      post '/super_admin/documentation_media', params: { portal_id: docs_portal.id, file: upload, alt: alt }
-      key = response.parsed_body['key']
-      sign_out(:super_admin)
+    # The attachment a super admin already owns, made through the service rather than the route: the authorized
+    # upload is the example above, and what is under test here is that a tenant reaches neither link.
+    let!(:owned) do
+      Documentation::MediaUpload.new(portal: docs_portal)
+                                .create!(io: StringIO.new(png), filename: 'Step Two.png', alt: alt)
+    end
 
+    it 'is issued no key, and cannot take over the bytes of one a super admin already owns' do
       sign_in(tenant_admin, scope: :user)
       post '/super_admin/documentation_media', params: { portal_id: docs_portal.id, file: upload, alt: 'Mine' }
+      issued = response.body
 
+      # Refused by `authenticate_super_admin!` before any parameter is read, so no key is minted and the chain
+      # has no first link.
       expect(response).to redirect_to(new_super_admin_session_path)
-      expect(response.parsed_body).not_to include('key', 'markdown')
 
-      patch "/super_admin/documentation_media/#{key}",
+      patch "/super_admin/documentation_media/#{owned.key}",
             params: { portal_id: docs_portal.id,
                       file: Rack::Test::UploadedFile.new(StringIO.new('<html>x</html>'), 'image/png',
                                                          original_filename: 'x.png') }
 
-      expect(response).to redirect_to(new_super_admin_session_path)
+      # 401 here rather than the POST's redirect, and the difference is the URL: a replace path ends in `.png`,
+      # and with a browser-like Accept header Rails derives the request format from the path extension
+      # (MimeNegotiation#format_from_path_extension), so Devise's failure app answers http_auth instead of a
+      # navigational redirect. Measured, and recorded because it is what the editor's fetch sees when a session
+      # has expired mid-edit -- `mediaUpload.js` has no `error` key to read there and shows the status text.
+      expect(response).to have_http_status(:unauthorized)
+      # The raw body, not `parsed_body`: a refusal renders HTML, and the thing being asserted is that neither a
+      # key nor a `media:` reference was ever handed back for the tenant to put in an article.
+      expect(issued).not_to include('uploads/', 'media:')
       expect([docs_portal.reload.documentation_media.count, docs_portal.documentation_media.first.blob.download.b])
         .to eq([1, png])
     end
@@ -160,6 +175,8 @@ RSpec.describe 'Documentation media -- the whole chain, end to end', type: :requ
   # admin, because pre-publication review is the whole reason the section 0.1 predicate is not "published only".
   # Same key, same URL, same bytes: only the requester changes.
   describe 'a draft article' do
+    let(:tenant_reader) { create(:user, account: create(:account), role: :administrator) }
+
     it 'refuses the anonymous requester and serves the signed-in super admin the same chain' do
       sign_in(super_admin, scope: :super_admin)
       post '/super_admin/documentation_media', params: { portal_id: docs_portal.id, file: upload, alt: alt }
@@ -168,13 +185,25 @@ RSpec.describe 'Documentation media -- the whole chain, end to end', type: :requ
       media_url = "/hc/#{docs_portal.slug}/articles/#{article.slug}/media/#{key}"
       sign_out(:super_admin)
 
+      # The media route FIRST, before the page: the page answers 404 by raising RecordNotFound, and the exception
+      # response discards the `Set-Cookie` that the sign-out would otherwise have committed -- so a page request
+      # here would leave the session cookie in place and the "anonymous" half of this example would be signed in.
+      # Measured, and the reason the order is not incidental.
+      get_public media_url
+      refusal = [response.status, response.body, response.headers['Location']]
       get_public "/hc/#{docs_portal.slug}/articles/#{article.slug}"
-      page_status = response.status
+
+      # 404 and never 403, on both routes: a 403 would distinguish "exists but hidden" from "does not exist",
+      # which is an existence oracle for unpublished content on an unauthenticated endpoint.
+      expect(refusal).to eq([404, '', nil])
+      expect(response).to have_http_status(:not_found)
+
+      # Signed in is not the predicate -- signed in AS A SUPER ADMIN is. A tenant administrator, who holds the
+      # highest role there is inside an account, is as unauthorized here as an anonymous visitor.
+      sign_in(tenant_reader, scope: :user)
       get_public media_url
 
-      # 404 and never 403: a 403 would distinguish "exists but hidden" from "does not exist", which is an
-      # existence oracle for unpublished content on an unauthenticated endpoint.
-      expect([page_status, response.status, response.body]).to eq([404, 404, ''])
+      expect(response).to have_http_status(:not_found)
 
       sign_in(super_admin, scope: :super_admin)
       image = rendered_image("/hc/#{docs_portal.slug}/articles/#{article.slug}")
@@ -198,16 +227,20 @@ RSpec.describe 'Documentation media -- the whole chain, end to end', type: :requ
         'uppercase, which the grammar rejects' => 'WhatsApp/Step.PNG',
         'a traversal attempt' => '../../etc/passwd',
         'an SVG extension, which is not raster' => 'a/b.svg',
-        'a width query the grammar has no room for' => 'a/b.png?cw_image_width=400px' }
+        'a width query, stripped by the router before the key is read' => 'a/b.png?cw_image_width=400px' }
     end
 
-    it 'answers 404 with no redirect and an empty body, for every shape' do
+    # Four parts, because "fails safely" is otherwise just a status code: the status, no redirect anywhere, a body
+    # that says nothing at all, and `nosniff`. The declared content type is NOT uniform -- Rails derives it from
+    # the requested path, so a `.svg` key yields `Content-Type: image/svg+xml` on the 404. Measured, and inert:
+    # the body is zero bytes and `nosniff` is on it, so there is nothing for a browser to interpret as a document.
+    it 'answers 404 with no redirect, no body and nosniff, for every shape' do
       results = unresolvable.transform_values do |key|
         get_public "/hc/#{docs_portal.slug}/articles/#{article.slug}/media/#{key}"
-        [response.status, response.body, response.headers['Location'], response.media_type]
+        [response.status, response.body, response.headers['Location'], response.headers['X-Content-Type-Options']]
       end
 
-      expect(results.values.uniq).to eq([[404, '', nil, nil]])
+      expect(results.values.uniq).to eq([[404, '', nil, 'nosniff']])
     end
 
     it 'renders an inert comment rather than an image, and leaks no path into the page' do

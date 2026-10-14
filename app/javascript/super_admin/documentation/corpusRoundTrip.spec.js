@@ -111,9 +111,13 @@ describe('the ProseMirror round-trip gate (ruling R3 point 2)', () => {
     });
   });
 
-  // The editor writes exactly one image string (markdownCommands.image). It survives the pair unchanged, so a
-  // future WYSIWYG adoption will not have to revisit the media grammar.
-  it('round-trips the one image form the editor writes', () => {
+  // The editor writes exactly one image string (markdownCommands.image), and it survives the pair unchanged --
+  // but ONLY for an alt containing none of `[`, `]` or a backslash. `Documentation::MediaUpload#markdown_for`
+  // (custom/app/services/documentation/media_upload.rb:143) escapes those, and prosemirror-markdown reads an
+  // image alt from the first inline token only, so everything from the first escape onward is LOST. That class
+  // is pinned both ways in markdownSource.spec.js; this example is the unescaped case, which is the one a
+  // future WYSIWYG adoption would find already safe.
+  it('round-trips the one image form the editor writes, when the alt needs no escaping', () => {
     const source =
       '![Step two: paste the token](media:whatsapp/connect-number/step-2.png)';
     expect(roundTrip(source)).toEqual(source);

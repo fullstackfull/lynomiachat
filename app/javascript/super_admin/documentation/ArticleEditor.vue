@@ -161,7 +161,9 @@ const refreshPreview = async () => {
         'X-CSRF-Token':
           document.querySelector('meta[name="csrf-token"]')?.content ?? '',
       },
-      body: JSON.stringify({ article: { content: source.value } }),
+      body: JSON.stringify({
+        article: { content: source.value, id: data.articleId },
+      }),
     });
     previewHtml.value = response.ok ? await response.text() : '';
   } catch (error) {

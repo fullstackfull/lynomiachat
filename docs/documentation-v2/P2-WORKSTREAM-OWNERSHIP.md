@@ -1192,3 +1192,117 @@ ignores the override, which is what it used to do.
 — every tenant Help Center — are unaffected. One measurement shaped the spec: without a `custom_domain` on the
 portal the public page answers **401** from `ensure_custom_domain_request` (`public_controller.rb:9-20`), and an
 example written without it would have been measuring the domain guard rather than the title.
+
+### L5 — Ruling 5: the two untested editor-path files, and the integration chain
+
+> These are not acceptable as untested because they are on the editor/media critical path. Add focused tests for
+> both. Also add one integration path proving: Super Admin authorized upload -> Portal-owned documentation media
+> -> stable media: key/reference -> article renderer resolution -> authorized application-owned delivery.
+> Include negative assertions for: tenant cannot upload / wrong portal cannot resolve/deliver / draft media is
+> not exposed to an unauthorized public request / missing/invalid media key fails safely.
+
+Verified by me on my own database and toolchain, not accepted on report:
+
+| Run | Result |
+|---|---|
+| `markdownSource.spec.js` + `mediaUpload.spec.js` | **2 files, 44 tests, 0 failures** |
+| `media_end_to_end_spec.rb` | **6 examples, 0 failures** |
+| `corpusRoundTrip.spec.js` after my comment correction | 22 tests, 0 failures |
+| eslint, the quoted `**/*.{js,vue}` glob | clean |
+
+**The integration chain is one example that performs every step for real** — a real multipart POST as a
+signed-in super admin, the attachment that lands, the `markdown` the server returns (not rebuilt), that string
+saved into an article, a real GET of the public page through `ChatwootMarkdownRenderer#render_article`, and a
+real GET of the `src` the page itself minted. Its **sensitivity is proven rather than assumed**: mutating one
+character of the key saved into the article turns it red at the renderer step.
+
+The step worth naming is the alt. `MediaUpload#markdown_for` escapes `[`/`]` with backslashes, and the chain
+asserts the operator's literal `Step 2 [see note]` survives CommonMark and reaches the page as text — a
+cross-boundary property no per-boundary spec held.
+
+The four negatives each carry a **control in the same example**, which is what makes them mean something: the
+wrong-portal 404 sits beside the right portal serving the same key at 200, so the refusal is about the portal
+and not a broken key; the draft negative runs anonymous → tenant administrator → super admin on one key and one
+URL, so "signed in" is visibly not the predicate, "signed in as a super admin" is; and the invalid-key negative
+asserts all six hostile shapes produce **identical** `[404, empty body, no Location, nosniff]`.
+
+#### L5.1 — `df247fb8` carried a RED snapshot, and the label is why that is not a problem
+
+The agent's report flagged that my in-flight commit `df247fb8` captured `media_end_to_end_spec.rb` between its
+first run and its fixes — **6 examples, 3 failures** at that commit. That is exactly what the commit message
+said it was: *"NOT a verified state … no suite was executed against these files."* The green version is the one
+integrated here, and I re-ran it myself before integrating. The prettier reformatting the agent noticed on its
+two JS files was the husky pre-commit hook running lint-staged on that snapshot, not an edit by anyone.
+
+#### L5.2 — Finding 1 was a real defect in shipped work, and it is fixed
+
+**The editor's preview pane never showed an uploaded image.** `preview_markdown` called `render_article` with no
+resolver, so every `media:` reference rendered as an inert comment. An operator uploaded an image, the editor
+inserted the server's own Markdown, and the preview showed nothing — while the published page and the `preview`
+member action were both correct. Ruling R3 point 6's defect class **inverted**: a preview showing less than the
+published page.
+
+Fixed, with the resolver the public page already builds, per request and per portal:
+
+- `preview_markdown` permits `:id` and passes `media: preview_resolver(permitted[:id])`.
+- The portal comes from the **found article**, not from the posted form, so a posted id cannot point the
+  resolver at a portal the operator is not editing. `scoped_resource` keeps it to platform portals and the
+  action is Super Admin only. Pinned: an article on a tenant portal resolves to nothing, and the response
+  contains no trace of that portal.
+- `_content_editor.html.erb` passes `articleId`; `ArticleEditor.vue` posts it beside the content.
+
+**A limitation stays, and is asserted rather than left to be discovered:** an unsaved article has no slug, so
+`MediaResolver#image_for` has no address to mint, and a new article's preview shows the inert comment until its
+first save. Widening the resolver to an article-less form is Agent 1's interface call
+(`R2-MEDIA-INTERFACE.md` §2.1), not something to improvise at integration. Three examples added; **proven both
+ways** — with the resolver removed the file is `24 examples, 1 failure`, with it 24/0.
+
+#### L5.3 — Findings 2 and 3: two new defect classes in the WYSIWYG pair, inert today
+
+Both are in the ProseMirror pair that ruling R3 keeps **closed**, and both are pinned in
+`markdownSource.spec.js` rather than left as prose:
+
+- **An alt is truncated at the first backslash escape.** `![Step 2 \[see note\]](media:…)` round-trips to
+  `![Step 2 ](media:…)` — prosemirror-markdown reads the alt from the first inline token only. This is the
+  **sixth** measured defect class, and the one that matters most, because the escaped form is exactly what
+  `MediaUpload#markdown_for` composes: the day WYSIWYG reopens, operator alt text with brackets is lost
+  silently.
+- **An image inline with prose is not a fixpoint.** `'before ![Alt](…) after'` needs **two** passes to settle,
+  where every class `corpusRoundTrip.spec.js` measures settles after one. Two consecutive WYSIWYG saves of one
+  unedited article would produce two different files.
+
+I corrected the comment on `corpusRoundTrip.spec.js`'s image example, which read as though the media grammar
+survives the pair unconditionally. It survives for an alt needing no escaping; that is now what it says, and it
+points at the spec holding the other half. **No assertion changed** — this was accuracy, not coverage.
+
+#### L5.4 — Findings 4 and 5: recorded, no change
+
+**Two refusal shapes on one resource**: `POST …/documentation_media` answers 302 to the sign-in page while
+`PATCH …/documentation_media/<key>` answers **401**, because the replace path ends in `.png` and Rails takes the
+format from the extension, so Devise's failure app picks `http_auth` over a navigational redirect. Already
+measured in §J6 from the other direction; consistent. The operator-visible consequence is that an expired
+session shows the raw status text in the editor. Pinned, no change requested.
+
+**A 404's declared Content-Type follows the requested path**, so `…/media/a/b.svg` refuses as
+`Content-Type: image/svg+xml`. Inert — zero-byte body and `nosniff`, both asserted — but it is
+attacker-influenced metadata on a refusal, so it is written down rather than left to be re-found.
+
+#### L5.5 — `markdownSource.js` has no production consumer, and is not dead code
+
+`parseMarkdown` and `serializeDoc` are exported and called only by `roundTrip`, which is called only by
+`corpusRoundTrip.spec.js`. CLAUDE.md says remove dead code, and this is deliberately kept: that module **is**
+the mechanism that keeps ruling R3's gate honest. It is the tripwire that goes red the day the ProseMirror pair
+becomes safe enough to adopt, and deleting it would delete the evidence the ruling rests on. Recorded as a
+judgement rather than left implicit, since a future reader will otherwise read it as an oversight.
+
+#### L5.6 — Open items from ruling 5
+
+| # | Item | What closes it |
+|---|---|---|
+| A2'-O1 | ~~Editor preview shows no uploaded image~~ | **closed** in §L5.2 for a saved article; the unsaved case is the recorded limitation |
+| A2'-O2 | `mediaUpload.js` resolves a **2xx whose body is not JSON** with `{}`, so the editor would insert `undefined`. Deliberately not covered: the server always renders JSON on 201, and asserting either behaviour would bless a choice nobody has made | a decision on whether an unparseable 2xx is an error |
+| A2'-O3 | `mediaUpload.js` has no request cancellation, where the preview path has an `AbortController`. The concurrency guard lives in the component | one example in `ArticleEditor.spec.js` |
+| A2'-O4 | ~~`markdownSource.js` is unused~~ | **answered** in §L5.5: kept, as the R3 tripwire |
+| A2'-O5 | Not covered in `markdownSource.spec.js`: Arabic/RTL round-tripping (`corpusRoundTrip.spec.js` samples it; duplicating it would re-measure another spec's subject) and non-string input (raises from the tokenizer; no caller can pass it) | nothing, unless the module gains such a caller |
+| A2'-O6 | The two halves meet at the **documented wire shape**, not in one process: the JS spec mocks `fetch`, the Ruby spec drives the real route with the same params. The one real cross-language assertion is the `ACCEPTED_TYPES` ↔ `CONTENT_TYPES` mirror, which goes red on drift from either side | a browser-driven test, which this program has none of |
+| A2'-O7 | **Not verified, in those words**: production data, and browser rendering — every markup claim is parser-based, Nokogiri server-side and jsdom client-side | a real browser |

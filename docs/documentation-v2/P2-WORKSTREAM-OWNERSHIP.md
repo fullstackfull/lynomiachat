@@ -1815,6 +1815,19 @@ Plus the failure model: an attach that fails on a later key raises `ApplyFailure
 `the corpus media pass`, whose `result.media.uploaded` is 1, with **no** article or category row written and the
 completed attachment committed — so the re-run is an upsert, not a repair.
 
+**PROVEN BOTH WAYS, and the split is recorded rather than rounded up.** With the two wiring lines removed and
+nothing else changed, the two spec files are `61 examples, 12 failures`; with them, 61/0. The twelve are A, B,
+C, D, E, F, G, H, the partial-failure example, and one each for the four preflight-only defects — every one a
+real discriminator. The two kinds that pass either way are stated as what they are:
+
+- **I** (`refuses a key with no file in the corpus, before writing a row or an attachment`) passes without the
+  wiring, because `Corpus#media_problems` already refused a missing file before this delta (D9 item 8). It is a
+  **regression pin** on the half that was already there, not a pin on the new behaviour; its two added
+  assertions — zero articles and zero attachments afterwards — are what make it a preflight proof.
+- The three `documentation_seed_report_spec.rb` examples build a `Result` by hand, so they pin the REPORT and
+  not the wiring. Deliberate: §N2's four measured rake runs are what exercise the report from a live seed.
+
+
 `purge_later` deletes the attachment row **synchronously** and only enqueues the blob's own purge
 (`activestorage-7.2.3.2/app/models/active_storage/attachment.rb:60-66`), so attachment presence is assertable
 under the `:test` queue adapter (`config/environments/test.rb:46`). Checked before relying on it.

@@ -21,6 +21,10 @@ class Documentation::MediaUpload
   CONTENT_TYPES = { 'image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif', 'image/webp' => 'webp' }.freeze
   MAX_BYTES = 2.megabytes
 
+  # The `has_many_attached` name on Portal (app/models/portal.rb:60). Named here because `attach!` has to assert
+  # against the attachment row itself, where the association's own method name is not available.
+  ATTACHMENT_NAME = 'documentation_media'.freeze
+
   # 16 lowercase hex characters, which the key grammar accepts as-is. Collision inside the operator namespace is
   # a 2^-64 event and is NOT what makes the namespaces disjoint -- the reserved first segment is (section 9.1) --
   # so this needs no retry loop.
@@ -106,7 +110,13 @@ class Documentation::MediaUpload
     # would still return the blob. Measured: the corpus media pass counted `uploaded: 1` against zero attachment
     # rows. The cause is fixed where it was created (ContentSeeder#plan_file), and this is the loud failure if it
     # ever recurs -- read from the database rather than from the in-memory proxy, which is what was lying.
-    unless blob.attachments.exists?(record: portal)
+    # `name:` as well as `record:`, because one blob can be attached to several records AND under several names:
+    # without it, a blob that happened to be the portal's `logo` would satisfy the check while the
+    # documentation_media attach had failed. Read from the blob side rather than from
+    # `portal.documentation_media`, whose proxy returns the PENDING change's attachments when one exists
+    # (activestorage-7.2.3.2/lib/active_storage/attached/many.rb:32-34) -- which is the in-memory state that was
+    # lying in the first place.
+    unless blob.attachments.exists?(record: portal, name: ATTACHMENT_NAME)
       raise Error, "#{key} was not attached to #{portal.slug}: #{portal.errors.full_messages.to_sentence.presence || 'the record would not save'}."
     end
 

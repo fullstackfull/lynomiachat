@@ -41,13 +41,16 @@ namespace :documentation do
 
   desc 'Seed the Lynomia changelog from custom/db/changelog'
   task changelog: :environment do
-    result = Documentation::ContentSeeder.changelog(adopt_untracked: ENV['ADOPT_UNTRACKED'].present?).perform!
+    # `== '1'` and not `.present?`: every non-empty value was truthy, so `ADOPT_UNTRACKED=0` -- which an operator
+    # types to mean OFF -- silently applied the corpus over untracked rows. `1` is the value the instructions
+    # already name, so accepting only it IS the documented interface and every off-looking value is off.
+    result = Documentation::ContentSeeder.changelog(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
     DocumentationSeedReport.print(result, 'releases')
   end
 
   desc 'Seed the Lynomia documentation corpus from custom/db/documentation'
   task content: :environment do
-    result = Documentation::ContentSeeder.new(adopt_untracked: ENV['ADOPT_UNTRACKED'].present?).perform!
+    result = Documentation::ContentSeeder.new(adopt_untracked: ENV['ADOPT_UNTRACKED'] == '1').perform!
     DocumentationSeedReport.print(result, 'articles')
   end
 end

@@ -852,3 +852,144 @@ Verified: **nothing in the repository was changed by any of it.** The working tr
 `content_seeder.rb`, the contract and the two files I edited. Both the role password and the scratch database
 are container-local in an ephemeral container and reach no production system. `a5_test` is dropped as cleanup.
 Recorded here because a change to container state belongs in the owner's view even when its consequence is nil.
+
+## J. Wave 4 — Agent 6's review integrated
+
+### J1 — F1: the branch was RED, and only the gate found it
+
+`spec/controllers/public/api/v1/portals_controller_spec.rb:211` asserted the sitemap holds **exactly 3** URLs,
+all `/articles/`. Wave 2's sitemap rewrite added a portal-home entry per allowed locale and one per category, so
+it holds **4**. Reproduced independently in isolation — `expected: 3, got: 4` — so it is the spec, not database
+pollution.
+
+**This is the fifth selection miss in this program and the first one a mechanism caught rather than a person.**
+The pattern each time: every suite the changing agent owned was green, and the spec that broke belonged to
+nobody. `seo_spec` asserts the new sitemap shape deliberately; the upstream example was simply stale. Fixed by
+asserting the **article** entries (what the example is about) plus **exactly** what else is published, so the
+next addition to the sitemap is a visible change here instead of a silent one. 16/0.
+
+### J2 — F3 and a framework claim I doubted and was wrong about
+
+Agent 6 found that §I4 closed `slug` on the section form and left **`locale`**, the other half of
+`find_or_initialize_by(slug:, locale:)`. One form save on a single-locale section makes the next seed create a
+**second** section at the manifest locale and leaves an orphan published at the other locale's URL.
+
+Its submission said Administrate maps `update` → `edit`. **I doubted that and checked, and the submission was
+right**: `Administrate::BaseDashboard#form_attributes` rewrites the action before the constant lookup —
+`when "update" then "edit"` (`administrate-0.20.1/lib/administrate/base_dashboard.rb:53-60`) — and strong params
+go through the same method (`application_controller.rb:204-206`). I had shipped a `FORM_ATTRIBUTES_UPDATE`
+alongside it on the assumption that `FORM_ATTRIBUTES_EDIT` would guard the form and not the write. Measured:
+
+```
+with both constants:          permitted_attributes("update") -> [portal_id, name, description, position, icon]
+with only FORM_ATTRIBUTES_EDIT: update_defined=false
+                              permitted_attributes("update") -> [portal_id, name, description, position, icon]
+```
+
+`FORM_ATTRIBUTES_UPDATE` is never consulted, so it was a guard on a path that cannot execute — which CLAUDE.md
+forbids and which I removed.
+
+Proven three ways on a portal with **both** locales allowed, because `Category` also runs
+`validate :allowed_locales` and on a single-locale portal that validation refuses the flip on its own — an
+example there would have credited the permitted list with protection it was not providing:
+
+| Variant | Result |
+|---|---|
+| neither constant (before the fix) | **18 examples, 2 failures** — the write and the form both open |
+| `FORM_ATTRIBUTES_EDIT` only | **18 examples, 0 failures** |
+| both constants | 18 examples, 0 failures — the second one dead |
+
+### J3 — The rest of the submissions, applied
+
+| RC | Applied | Note |
+|---|---|---|
+| **RC1** — `ADOPT_UNTRACKED` was `.present?` | yes, both sites | Every non-empty value was truthy, so `ADOPT_UNTRACKED=0` — what an operator types to mean **off** — applied the corpus over untracked rows. `== '1'` is the value the task's own instructions already name |
+| **RC4** — media route overwrote `@portal` from the slug | yes | The page keeps the custom-domain resolution (`@portal ||=`); the media route replaced it. On a tenant's custom domain the page 404'd a documentation article while the media route served its media. Same public bytes, so a consistency defect rather than a disclosure — but one evaluation of "which portal" is the whole point of the shared predicate |
+| **RC5** — NUL byte → unauthenticated 500 | yes, **three** sites | The submission named two; `Public::…::ArticlesController#list_params:100` normalises `query` the same way and reaches the same escape, so it carries the same fix |
+| **RC2** — section `locale` | yes, corrected | §J2 |
+| **RC3** — the stale sitemap example | yes | §J1 |
+| **RC6 / F9** — `preview_markdown` 500s on a scalar `article` param | **no change**, as recommended | Super-admin-only, hand-crafted, no disclosure, and the only caller always sends a hash. CLAUDE.md asks for a 422 at the boundary **and** forbids a guard the caller cannot hit; the behaviour is pinned instead, so it is visible rather than assumed |
+
+**Two of Agent 6's own examples pinned defects and therefore had to invert.** Both were inverted in the same
+change as the fix, both kept rather than deleted, and both carry the previous expectation in the comment so the
+change is visible: the custom-domain pair now asserts the two routes **agree** (`[404, 404]`), and the NUL-byte
+example asserts the search **serves** rather than raising.
+
+### J4 — F6 corrects my own §G10, and the residue is deferred on purpose
+
+§G10 declined to apply the `<title>` fix to the shared Help Center template, on the ground that it would change
+every tenant's output. **F6 shows the asymmetry is not confined to tenants**: `set_view_variant` gives `:plain`
+priority over `:documentation` (`base_controller.rb:27-31`) and `show.html+plain.erb` renders the shared
+`_meta_head`, so the **Super Admin preview URL** titles from `article.title`. An operator previewing never sees
+the SEO title they just set.
+
+Measured as **not** an indexability defect: that variant emits no canonical and `robots.txt` carries
+`Disallow: /hc/*?show_plain_layout=`. So declining the shared template was right for crawlers and leaves the
+preview wrong.
+
+**Deliberately not fixed**, carried as **A6-O4**. Every available fix either changes shared tenant output — the
+decision already in front of the owner from §G10 — or adds a documentation-only branch to a template every
+tenant renders. For a cosmetic issue on an internal preview, taking that decision unilaterally is the wrong
+trade; it should be settled together with §G10, not around it.
+
+### J5 — The gate, rebuilt into five phases
+
+Both original selectors are kept. Agent 6's verdict on them — **necessary but not sufficient, because the gate
+was running the wrong *kind* of thing** — is the right reading of four rounds of selection failure.
+
+| Phase | What it catches that nothing did |
+|---|---|
+| **0** `flock -n` | §I5 fact 2: a second concurrent run refuses instead of producing 31 phantom failures nobody can trust |
+| **A** `rake -T` must succeed **and list the five documentation tasks** | §I5 fact 1: a `.rake` file that cannot load. The name assertions are the other half — an empty list would otherwise pass as exit 0 |
+| **B** `rake zeitwerk:check` | **The same defect class one level over, which §I5 did not name.** `eager_load` is false in test and **true** in production, so a constant that resolves lazily under rspec and raises when eager loaded is a production **boot** failure with every spec green — and §H3's fix, moving a module *into* `lib/`, is exactly what moved risk there |
+| **C** the four §I5 counts plus media attachments must be 0 | §I5 fact 3. **Refuses rather than truncating**, which is right: in this program a populated test database has twice been an agent's in-flight measurement state (§H5) |
+| **E** a vitest leg | The changed-file selector **explicitly excluded** `app/javascript/`, so the entire Super Admin editor — including the `corpusRoundTrip` tripwire that guards ruling R3 — was hand-verified only |
+
+Three mechanical defects in my own selector 2, all measured and all fixed:
+
+- **`git` died on "dubious ownership"** as the `postgres` OS user, so no baseline resolved and the gate silently
+  degraded to subject-patterns-only. Now `git -c safe.directory=$PWD`.
+- **The stem stripped one extension**, so `_meta_head.html.erb` became `meta_head.html` and matched nothing —
+  **every changed view contributed zero specs.** Now `${stem%%.*}`.
+- **`*security*` pulled in five unrelated suites** (TikTok OAuth, SMS webhooks, flow runner): runtime and
+  unrelated reds for the integrator with no added coverage. Narrowed to `*security/documentation_v2*`.
+
+And a new **uncovered report**: the changed files neither selector covers, printed every run. 25 today. Not a
+failure — but the defence against a fifth round of "the gate selected nothing for the thing that broke" is
+printing the list rather than trusting the patterns.
+
+### J6 — Verified safe, worth recording because of how it was proven
+
+- **Tenant authoring**: 10 write endpoints × 4 principals (tenant admin, agent, a custom role holding **every**
+  permission, anonymous) = **40 requests, all refused**, with the row counts and the records unchanged after
+  each. `tenant_help_center_removal_spec` is 63 examples green.
+- **No tenant path can put media on a portal**: the absence rule applied properly — all 100 hits of a
+  no-exclusion `grep -rn documentation_media .` classified, the single write site traced, and the generated
+  `documentation_media=` mass-assignment writer shown absent from every `permit` list and both dashboards.
+- **Content type from the bytes**: four mismatched uploads declaring `image/png` with a `.png` name — HTML, SVG,
+  SVG without xmlns, PHP — all **422**. A real PNG with an HTML tail is accepted, because it is a PNG, and
+  delivery neutralises it with `nosniff` and an `image/png` type.
+- **The `data:` closure, both halves, through the real preview route**: article → `src=""`; message path →
+  `src="data:image/png;base64,…"` still present, in the same example. `base_markdown_renderer_spec` unmodified
+  and green. **R1.1's universal safelist remains unimplemented and is proposed nowhere.**
+- **The fence info string** re-checked through `preview_markdown` *and* the published page, 13 payloads,
+  compared by **parsed DOM** rather than by regex — because a raw-body regex goes red on an inert `onerror=`
+  inside an escaped attribute value, which is how a security assertion becomes noise.
+- **`html_dir_attribute`** over 52 inputs — every available locale plus region suffixes, `'AR'`, `'../ar'`, an
+  injection attempt, `42`, `nil` — yields exactly `%w[ltr rtl]`. It matters because it is emitted unescaped into
+  `<html>` on every portal page.
+- **Item 12**: `git diff lynomia-custom...HEAD -- app/policies custom/app/policies` is **empty**, and the rule
+  is asserted as a rule — every public predicate on the three policies has a `Custom::` override returning
+  `false`.
+
+### J7 — Open items from Wave 4
+
+| # | Item | Status |
+|---|---|---|
+| A6-O1 | An **adopted** row reports nothing: `ADOPT_UNTRACKED` prints `N adopted` and no divergence line, so the operator never learns which fields the corpus took back. RC1 does not fix this half | open; needs an `:adopted` divergence kind in the seeder |
+| A6-O2 | **No seed-boundary refusal** for the two corpus-shape traps (F7: a cross-locale slug collision aborts mid-run with partial state; F8: two same-named files in two sections silently collapse into one row and the first file's prose never publishes). **Neither shape exists in the corpus today** | open; a pre-pass over the globbed paths, the way `MediaSeeder#validate!` already refuses |
+| A6-O3 | **`perform!` is not transactional**, so every abort mode leaves partial state. F7 is the measured instance | **owner decision** — a transaction changes the failure mode of a long operator-run task |
+| A6-O4 | The **preview URL shows the wrong `<title>`** (§J4) | deferred with §G10, deliberately |
+| A6-O5 | `markdownSource.js` and `mediaUpload.js` have **no test at all** — surfaced by the new uncovered report. `mediaUpload.js` is the editor's only route to the upload API | open |
+| A6-O6 | **Phases A–C are in this gate only, not in the repository's real CI.** `.github/workflows/run_foss_spec.yml` runs `find spec -name '*_spec.rb'`, so it is still blind to a broken `load_tasks` and to eager loading — **the §H3 deploy break would still reach the mainline through CI** | **owner decision**: adding two rake invocations to that workflow is cheap and would have caught a deploy-breaking regression, but CI configuration is shared infrastructure and outside this program's fence |
+| A6-O7 | **Not verified, in those words**: production data, Meta behaviour (none needed), browser rendering (no browser used — every markup claim is parser-based), and the gate's own vitest leg (phase E was never reached, because phase D failed on F1 first) |

@@ -7,7 +7,10 @@ class Public::Api::V1::Portals::SearchController < Public::Api::V1::Portals::Bas
   layout 'portal'
 
   def index
-    @query = params[:query].to_s.strip
+    # `delete("\0")` before `strip`: a NUL byte survives `strip`, reaches PostgreSQL's escaping and raises
+    # ArgumentError -- a 500 and a Sentry event on an endpoint that needs no session. Stripped rather than
+    # rejected because this expression already normalises the query, and no client sends a NUL on purpose.
+    @query = params[:query].to_s.delete("\0").strip
     @articles = @portal.articles.published.includes(:category).where(locale: params[:locale])
 
     search_articles

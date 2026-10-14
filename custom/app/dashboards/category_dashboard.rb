@@ -31,6 +31,21 @@ class CategoryDashboard < Administrate::BaseDashboard
   # stays searchable.
   FORM_ATTRIBUTES = %i[portal name description locale position icon].freeze
 
+  # `locale` is the OTHER half of the key the seeder looks a section up by, and removing `slug` closed only one
+  # half. Measured on a single-locale section: one form save flips the locale, the next seed creates a SECOND
+  # section at the manifest locale, reattaches the articles to it, and leaves an orphan section published at the
+  # other locale's URL that no manifest row authored and no run reports. Today's data is not exposed because
+  # every shipped section exists in both locales, so `validates :locale, uniqueness: { scope: [:slug,
+  # :portal_id] }` refuses the flip -- latent until a single-locale section exists.
+  #
+  # So locale is settable at creation (a hand-made section has to choose a language) and immutable afterwards,
+  # which is class D. The EDIT constant alone closes BOTH the form and the write, because
+  # `Administrate::BaseDashboard#form_attributes` rewrites the action before looking the constant up --
+  # `when "update" then "edit"` (administrate-0.20.1/lib/administrate/base_dashboard.rb:53-60) -- and strong
+  # params go through the same method (`application_controller.rb:204-206`). A `FORM_ATTRIBUTES_UPDATE` would
+  # never be consulted.
+  FORM_ATTRIBUTES_EDIT = %i[portal name description position icon].freeze
+
   def display_resource(category)
     "#{category.name} (#{category.locale})"
   end

@@ -97,7 +97,7 @@ class Public::Api::V1::Portals::ArticlesController < Public::Api::V1::Portals::B
 
   def list_params
     @list_params ||= params.permit(:query, :locale, :sort, :status, :page, :per_page).tap do |permitted|
-      permitted[:query] = permitted[:query].to_s.strip.presence
+      permitted[:query] = permitted[:query].to_s.delete("\0").strip.presence
     end
   end
 

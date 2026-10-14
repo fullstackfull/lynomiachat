@@ -502,6 +502,89 @@ RSpec.describe 'Tenant Help Center removal', type: :request do
     end
   end
 
+  # THE SUPER ADMIN DOCUMENTATION SURFACE, which the policy choke point above does not cover at all: these
+  # controllers are Administrate, they authorize through the SuperAdmin Devise scope and they never consult a
+  # Pundit policy. Wave 2 and Wave 3 added five write actions there -- the markdown preview, publish/unpublish,
+  # and the media create/replace pair -- so "tenants are readers" now depends on that session boundary as much
+  # as on the three Custom:: overlays. Asserted for every tenant principal, and for an anonymous request.
+  #
+  # Devise's failure app redirects an HTML request to the Super Admin sign-in rather than answering 401, which
+  # is why the status assertion is a redirect and why each example also checks that nothing was written and no
+  # content came back.
+  describe 'the Super Admin documentation surface' do
+    let!(:docs_portal) do
+      create(:portal, slug: Documentation::Library::DOCS_SLUG, platform_owned: true, account_id: nil,
+                      config: { 'allowed_locales' => ['en'], 'default_locale' => 'en' })
+    end
+    let!(:docs_category) { create(:category, portal: docs_portal, account_id: nil, slug: 'docs-cat', locale: 'en') }
+    let!(:docs_article) do
+      create(:article, portal: docs_portal, account_id: nil, category: docs_category, author: create(:super_admin),
+                       slug: 'docs-page', title: 'A documentation page', content: 'Body', status: :published,
+                       locale: 'en')
+    end
+    let(:png) { Base64.strict_decode64('iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAAAAACRn/EaAAAAC0lEQVR4nGNgQAEAAA8AAbVWKT4AAAAASUVORK5CYII=') }
+
+    def writes
+      file = Rack::Test::UploadedFile.new(StringIO.new(png), 'image/png', original_filename: 'x.png')
+      [[:post, '/super_admin/articles/preview_markdown', { article: { content: '# Injected' } }],
+       [:post, '/super_admin/articles', { article: { portal_id: docs_portal.id, title: 'Injected', content: 'x' } }],
+       [:put, "/super_admin/articles/#{docs_article.id}", { article: { title: 'Renamed by a tenant' } }],
+       [:delete, "/super_admin/articles/#{docs_article.id}", nil],
+       [:post, "/super_admin/articles/#{docs_article.id}/publish", nil],
+       [:post, "/super_admin/articles/#{docs_article.id}/unpublish", nil],
+       [:put, "/super_admin/categories/#{docs_category.id}", { category: { name: 'Renamed by a tenant' } }],
+       [:put, "/super_admin/portals/#{docs_portal.id}", { portal: { name: 'Renamed by a tenant' } }],
+       [:post, '/super_admin/documentation_media', { portal_id: docs_portal.id, file: file, alt: 'Alt' }],
+       [:patch, '/super_admin/documentation_media/uploads/0123456789abcdef-x.png',
+        { portal_id: docs_portal.id, file: file }]]
+    end
+
+    # TWO REFUSAL SHAPES, both measured, both correct. Devise's failure app redirects a navigational request to
+    # the Super Admin sign-in and answers 401 for a non-navigational one -- and the media REPLACE route is the
+    # non-navigational one of this set, because its glob ends in `.png`. So the assertion is "refused", not one
+    # status: pinning the redirect alone would have gone red on a refusal that is, if anything, stricter.
+    def expect_all_refused(label)
+      writes.each do |verb, path, params|
+        public_send(verb, path, params: params)
+
+        where = "#{label}: #{verb.upcase} #{path} -> #{response.status}"
+        expect(response.body).not_to include('cw-article-content'), where
+        next if response.status == 401
+
+        expect(response).to have_http_status(:redirect), where
+        expect(response).to redirect_to(new_super_admin_session_path)
+      end
+    end
+
+    %i[admin agent power_user].each do |principal|
+      it "is refused to #{principal}, who is signed in as a tenant user" do
+        sign_in(send(principal), scope: :user)
+
+        expect { expect_all_refused(principal.to_s) }.not_to change(Article, :count)
+
+        expect(docs_article.reload.title).to eq('A documentation page')
+        expect(docs_category.reload.name).not_to eq('Renamed by a tenant')
+        expect(docs_portal.reload.name).not_to eq('Renamed by a tenant')
+        expect(docs_portal.documentation_media).to be_empty
+      end
+    end
+
+    it 'is refused to an anonymous request' do
+      expect { expect_all_refused('anonymous') }.not_to change(Article, :count)
+      expect(docs_portal.reload.documentation_media).to be_empty
+    end
+
+    # A tenant session is not a Super Admin session even when the same email exists in both tables: the two
+    # Devise scopes are independent, so signing in as the user does not warm the super_admin scope.
+    it 'does not let a tenant session double as a Super Admin session' do
+      sign_in(admin, scope: :user)
+
+      get '/super_admin/articles'
+
+      expect(response).to redirect_to(new_super_admin_session_path)
+    end
+  end
+
   it 'leaves the tenant content itself untouched: nothing here deletes a row' do
     expect { expect_refused(:delete, "/api/v1/accounts/#{account.id}/portals/#{portal.slug}", admin) }
       .not_to change(Portal, :count)

@@ -52,8 +52,14 @@ class Public::Api::V1::Portals::MediaController < PublicController
   # find_by plus an explicit 404 rather than find_by!: PublicController does not rescue
   # ActiveRecord::RecordNotFound (app/controllers/concerns/request_exception_handler.rb rescues RecordInvalid and
   # two custom exceptions only), so a raise would make Rails' HTML error page the body of an image request.
+  # `||=` and not `=`: ensure_custom_domain_request has already resolved the portal from a REGISTERED custom
+  # domain, and the article page keeps that resolution (`@portal ||=`, base_controller.rb:35). Overwriting it
+  # from the URL slug made the two routes disagree -- measured on a tenant's custom domain, the page 404s a
+  # documentation article while this route served its media. Same public bytes either way, so it was a
+  # consistency defect rather than a disclosure, but one evaluation of "which portal" is the point of the
+  # shared predicate.
   def set_portal
-    @portal = Portal.find_by(slug: params[:slug], archived: false)
+    @portal ||= Portal.find_by(slug: params[:slug], archived: false)
     head :not_found if @portal.nil?
   end
 

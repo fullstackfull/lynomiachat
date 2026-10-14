@@ -136,6 +136,23 @@ describe 'Marketing pricing' do
         .to have_enqueued_mail(Marketing::QuoteMailer, :new_request)
     end
 
+    # The owner's requirement: a delivery problem must never cost the submission. `deliver_later` is already
+    # asynchronous, but ENQUEUEING talks to Redis and can fail after the row is committed -- which would show
+    # the visitor a 500 for a request that succeeded, and have them send it again.
+    it 'still thanks the visitor when the notification cannot even be queued' do
+      InstallationConfig.find_or_initialize_by(name: 'MARKETING_QUOTE_NOTIFICATION_EMAIL')
+                        .update!(value: 'sales@example.com')
+      GlobalConfig.clear_cache
+      delivery = instance_double(ActionMailer::MessageDelivery)
+      allow(delivery).to receive(:deliver_later).and_raise(Redis::CannotConnectError, 'down')
+      allow(Marketing::QuoteMailer).to receive(:new_request).and_return(delivery)
+
+      expect { post '/en/pricing/request', params: valid_params }
+        .to change(SiteQuoteRequest, :count).by(1)
+
+      expect(response).to redirect_to('/en/pricing?sent=1')
+    end
+
     # An unset address costs the alert, not the lead: the row is written first and is listed in Super Admin.
     it 'stores the request and sends nothing when no address is configured' do
       InstallationConfig.find_by(name: 'MARKETING_QUOTE_NOTIFICATION_EMAIL')&.destroy

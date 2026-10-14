@@ -30,7 +30,7 @@ class Marketing::PricingController < Marketing::BaseController
     @quote = SiteQuoteRequest.new(quote_params.merge(locale: marketing_locale))
 
     if @quote.save
-      Marketing::QuoteMailer.new_request(@quote).deliver_later
+      notify_operator(@quote)
       redirect_to marketing_pricing_path(locale: params[:locale], sent: 1)
     else
       render :show, status: :unprocessable_entity
@@ -38,6 +38,25 @@ class Marketing::PricingController < Marketing::BaseController
   end
 
   private
+
+  # THE ROW IS THE RECORD; THE EMAIL IS A CONVENIENCE ON TOP OF IT, and this method is what makes that
+  # ordering true rather than merely intended.
+  #
+  # `deliver_later` is already asynchronous -- the SMTP conversation never happens inside the request, and
+  # ApplicationMailer's `rescue_from(*ExceptionList::SMTP_EXCEPTIONS)` handles a relay failure in the job. But
+  # ENQUEUEING can itself fail: the queue adapter talks to Redis, and a Redis that is down raises here, after
+  # the row is committed. Without this rescue the visitor would be shown a 500 for a request that actually
+  # succeeded, and would send it again.
+  #
+  # The rescue is deliberately broad and deliberately tiny: it wraps one call whose only job is to enqueue,
+  # the queue adapter's failure modes are not enumerable from here (Redis, Sidekiq and ActiveJob each have
+  # their own), and the correct response to every one of them is the same. It is logged at error level with
+  # the id, so an operator can find the lead in Super Admin and answer it by hand.
+  def notify_operator(quote)
+    Marketing::QuoteMailer.new_request(quote).deliver_later
+  rescue StandardError => e
+    Rails.logger.error("[Marketing] quote request ##{quote.id} saved but notification could not be queued: #{e.class}: #{e.message}")
+  end
 
   # `fetch` with empty parameters rather than `require`: a POST with no root key is a malformed client, and
   # answering it with the form and its validation errors is both more useful and the documented behaviour for

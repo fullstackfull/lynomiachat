@@ -249,6 +249,21 @@ RSpec.describe 'Flows API', type: :request do
     expect(counts.call).to eq(before)
   end
 
+  it 'tells a disabled flow apart from one that has never run' do
+    fresh = create(:agent_bot, account: account, bot_type: :flow, outgoing_url: nil, name: 'Untouched')
+    Flows::Versions.new(flow).tap { |versions| versions.save!(menu_graph.deep_stringify_keys, lock_version: 0) }.publish!
+
+    get base, headers: admin.create_new_auth_token, as: :json
+    expect(response.parsed_body['payload'].to_h { |entry| [entry['name'], entry['state']] })
+      .to eq('Welcome' => 'published', 'Untouched' => 'draft')
+
+    post "#{base}/#{flow.id}/disable", headers: admin.create_new_auth_token, as: :json
+    get base, headers: admin.create_new_auth_token, as: :json
+    expect(response.parsed_body['payload'].to_h { |entry| [entry['name'], entry['state']] })
+      .to eq('Welcome' => 'disabled', 'Untouched' => 'draft')
+    expect(fresh.flow_versions).to be_empty
+  end
+
   describe 'duplicate' do
     it 'copies the graph into a new unpublished flow of this account, attached to nothing' do
       AgentBotInbox.create!(inbox: whatsapp.inbox, agent_bot: flow)

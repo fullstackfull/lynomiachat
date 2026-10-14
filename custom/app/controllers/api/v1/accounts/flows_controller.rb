@@ -176,8 +176,26 @@ class Api::V1::Accounts::FlowsController < Api::V1::Accounts::BaseController
       id: flow.id, name: flow.name, description: flow.description,
       inboxes: flow.inboxes.map { |inbox| { id: inbox.id, name: inbox.name, channel_type: inbox.channel_type } },
       published: version_json(flow.published_flow_version), draft: version_json(flow.flow_versions.draft.first),
-      live_sessions: flow.flow_sessions.live.count
+      state: lifecycle_of(flow), live_sessions: flow.flow_sessions.live.count
     }
+  end
+
+  # WHICH OF THREE THINGS THIS FLOW IS, which `published` and `draft` cannot say between them.
+  #
+  # A flow that was published and then disabled has no published version and, until somebody edits
+  # it, no draft either -- exactly like a flow created a minute ago and never touched. They are not
+  # the same thing to a merchant: one was running and was turned off, with sessions and history
+  # behind it, and the other has never done anything. A list that calls both of them "draft" is
+  # telling the merchant the wrong thing about the one that matters.
+  #
+  # The archived check only runs for a flow that is in neither of the first two states, so it costs
+  # nothing for a live or an in-progress flow.
+  def lifecycle_of(flow)
+    return 'published' if flow.published_flow_version
+    return 'draft' if flow.flow_versions.draft.first
+    return 'disabled' if flow.flow_versions.archived.exists?
+
+    'draft'
   end
 
   def show_json

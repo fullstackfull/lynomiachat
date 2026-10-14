@@ -101,8 +101,19 @@ class Flows::Versions
 
   private
 
+  # THE LATEST VERSION, NOT ONLY THE PUBLISHED ONE.
+  #
+  # This read `@bot.published_flow_version&.graph || STARTER`, which is correct for a live flow and
+  # silently destructive for a DISABLED one: disable! archives the published version, so a merchant
+  # who turned a flow off and later reopened it got the two-node starter back and their flow was
+  # gone from the editor. The rows were still there -- nothing was deleted -- but the next save
+  # wrote a blank graph over the draft and publishing it replaced a working flow with an empty one.
+  #
+  # Ordering by `version` rather than by `created_at`: version is the sequence this service itself
+  # assigns and the column the one-per-bot unique index is on, so it is total and gap-free, while
+  # two versions created in the same transaction can share a timestamp.
   def create_draft
-    base = @bot.published_flow_version&.graph || STARTER
+    base = (@bot.published_flow_version || @bot.flow_versions.order(version: :desc).first)&.graph || STARTER
     @bot.flow_versions.create!(account: @bot.account, version: (@bot.flow_versions.maximum(:version) || 0) + 1, graph: base,
                                created_by: @user)
   end

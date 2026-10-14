@@ -37,6 +37,20 @@ RSpec.describe Flows::Versions do
     expect(bot.published_flow_version.version).to eq(2)
   end
 
+  # Found while building the Studio's lifecycle view: `create_draft` read only the PUBLISHED version,
+  # and disable! archives it -- so reopening a disabled flow handed the editor a blank starter and the
+  # next save wrote it over the draft.
+  it 'keeps the graph when a disabled flow is edited again' do
+    versions.save!(graph, lock_version: 0)
+    versions.publish!
+    versions.disable!
+
+    reopened = described_class.new(bot.reload, user: admin).draft
+
+    expect(reopened.graph).to eq(graph)
+    expect(reopened).to have_attributes(status: 'draft', version: 2)
+  end
+
   it 'never changes a published graph' do
     versions.save!(graph, lock_version: 0)
     published = versions.publish!

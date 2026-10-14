@@ -462,6 +462,9 @@ Rails.application.routes.draw do
           member do
             get :login
             post :token
+            # A bearer credential confined to one account and expiring on its own, for an
+            # integration that acts on a merchant's behalf server to server.
+            post :scoped_access_token
           end
         end
         resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do

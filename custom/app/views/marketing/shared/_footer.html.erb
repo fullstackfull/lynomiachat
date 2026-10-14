@@ -37,6 +37,12 @@
       <div>
         <h2 class="mb-3 text-sm font-semibold text-slate-900"><%= t('marketing.footer.company') %></h2>
         <ul class="space-y-2 text-sm text-slate-600">
+          <%# The two internal pages first, then the operator's own published documents. `footer.about` is
+            the company site on lynomia.com, which is a different thing from this product's own About page --
+            hence two labels rather than two links called the same thing. %>
+          <li><a class="hover:text-slate-900" href="<%= marketing_path(:about) %>"><%= t('marketing.footer.about_product') %></a></li>
+          <li><a class="hover:text-slate-900" href="<%= marketing_path(:contact) %>"><%= t('marketing.footer.contact') %></a></li>
+          <li><a class="hover:text-slate-900" href="<%= marketing_path(:faq) %>"><%= t('marketing.footer.faq') %></a></li>
           <% marketing_legal_links.each do |link| %>
             <li>
               <a class="hover:text-slate-900" href="<%= link[:href] %>" target="_blank" rel="noopener">

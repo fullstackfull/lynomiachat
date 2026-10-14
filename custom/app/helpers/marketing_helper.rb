@@ -75,6 +75,26 @@ module MarketingHelper
     marketing_path(Marketing::Page.new(route: ENTRY_ROUTES.fetch(scope), slug: entry.slug), locale: locale)
   end
 
+  # Where an FAQ answer leads: a standing page named by a Symbol, or a catalogue page named by a
+  # [scope, entry_id] pair. One resolver, so an FAQ cannot point at a page that is not in the catalogue --
+  # `fetch` on the scope and a raise on a missing entry are deliberate, because a silent nil here would render
+  # an answer with no way to read more.
+  #
+  # NOT NAMED `marketing_faq_path`, which is the route helper for /faq itself. It was, briefly, and the
+  # collision took down every page on the site: `marketing_path(:faq)` in the footer resolves its target with
+  # `public_send("marketing_faq_path", locale: ...)`, which dispatched to this method instead of the route,
+  # handed it a Hash where it expected a link, and raised from the layout. Hence `_href`: a name the router
+  # will never generate.
+  def marketing_faq_href(link)
+    return marketing_path(link) unless link.is_a?(Array)
+
+    scope, entry_id = link
+    entry = Marketing::Catalog.entries(scope).find { |candidate| candidate.id == entry_id }
+    raise ArgumentError, "FAQ links to unknown #{scope} entry #{entry_id}" if entry.nil?
+
+    marketing_entry_path(scope, entry)
+  end
+
   # The navigation, built only from sections whose route actually exists.
   #
   # This is the rule that makes a dead nav link unrepresentable: the previous site advertised four legal pages

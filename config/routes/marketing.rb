@@ -29,6 +29,10 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   # view from a submission.
   get 'pricing', to: 'pricing#show', as: 'pricing'
   post 'pricing/request', to: 'pricing#create', as: 'pricing_request'
+
+  get 'about', to: 'pages#about', as: 'about'
+  get 'contact', to: 'pages#contact', as: 'contact'
+  get 'faq', to: 'pages#faq', as: 'faq'
   get 'support', to: 'pages#support', as: 'support'
 
   # THE DETAIL PAGES. One controller serves every catalogue scope and the scope travels as a route default,
@@ -42,10 +46,6 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'channels/:slug', to: 'entries#show', as: 'channel', defaults: { scope: 'channels' }
   get 'solutions/:slug', to: 'entries#show', as: 'solution', defaults: { scope: 'solutions' }
   get 'integrations/:slug', to: 'entries#show', as: 'integration', defaults: { scope: 'integrations' }
-
-  # /contact, /about and /faq are later W3 slices. A route with no page behind it is a dead link in
-  # the navigation, which is one of the defects this rebuild exists to remove, so each lands with its page
-  # rather than ahead of it.
 end
 
 # The operator's side of the pricing page. A full Administrate resource, so unlike the hand-written Super

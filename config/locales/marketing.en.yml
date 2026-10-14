@@ -44,7 +44,10 @@ en:
       support_page: Getting help
       email_us: Email us
       sign_in_ticket: Sign in to open a ticket
-      about: About us
+      about: Lynomia company site
+      about_product: About Lynomia Chat
+      contact: Contact us
+      faq: FAQ
       privacy: Privacy policy
       terms: Terms of use
       data_deletion: Data deletion
@@ -104,14 +107,34 @@ en:
         description: >-
           Request a quote for Lynomia Chat. What a quote is based on — channels, agents, inboxes, connected
           stores and modules — and how to get one.
-      quote_mailer:
-      heading: A quote request was submitted on the website (#%{id}).
-      blank: '-'
-      language: Language the request was written in
-      footer: >-
-        Reply to this email to answer the sender directly. The request is also listed in Super Admin under
-        Site quote requests.
-    support:
+      about:
+        title: About
+        heading: About Lynomia Chat
+        lede: >-
+          A customer conversations platform built by Lynomia, described here the way we would want a product
+          described to us.
+        description: >-
+          What Lynomia Chat is, how we describe it, and why the Arabic version of this site is the original
+          rather than a translation.
+      contact:
+        title: Contact us
+        heading: Talk to a person
+        lede: >-
+          Email us if you are not a customer yet. If you already are, open a ticket from inside your account
+          so your request arrives with your workspace attached.
+        description: >-
+          How to reach Lynomia about Lynomia Chat: email, a quote request, and where existing customers open
+          a support ticket.
+      faq:
+        title: Frequently asked questions
+        heading: Questions we are asked
+        lede: >-
+          Short answers, each linking to the page that answers it properly. Four of them are a no, and they
+          are here for that reason.
+        description: >-
+          Which channels Lynomia Chat connects, whether it has an AI chatbot, what it costs, whether there is
+          a trial, and what the product does not do.
+      support:
         title: Getting help
         heading: Getting help
         lede: >-
@@ -209,6 +232,152 @@ en:
         There is no published price list and no self-service trial on this site today. We would rather say
         that than show a number we cannot stand behind. If plans are published later, this page will show them
         here.
+    quote_mailer:
+      heading: A quote request was submitted on the website (#%{id}).
+      blank: '-'
+      language: Language the request was written in
+      footer: >-
+        Reply to this email to answer the sender directly. The request is also listed in Super Admin under
+        Site quote requests.
+    about:
+      product:
+        title: What Lynomia Chat is
+        body: >-
+          A customer conversations platform: WhatsApp, Instagram, Messenger, Telegram, LINE, SMS, email and
+          your website chat in one inbox for a team, with routing, saved replies, automation, campaigns,
+          reporting and a documented API. It is built and operated by Lynomia.
+      honesty:
+        title: How we describe it
+        body: >-
+          Every capability on this site is one that exists in the product today, and where it needs a setting,
+          a credential or a plan entitlement before it works, the page says so on the card rather than leaving
+          it out. We do not publish uptime figures we do not measure, certifications we do not hold, or
+          prices we have not set. If something is in beta, it says beta. If something does not exist, we say
+          that too — the features pages name what the product next to them will not do.
+      arabic:
+        title: Arabic is the original, not a translation
+        body: >-
+          The Arabic pages of this site are written in Arabic and are the unprefixed address; English lives
+          under /en. The documentation is published in both languages, and the agent interface is available in
+          over fifty. That is a deliberate choice about which market this product is built for first.
+      company:
+        title: The company
+        body: >-
+          Lynomia builds and runs this product. For the company itself — who we are and what else we do —
+          see the Lynomia site.
+      see_features: See what the product does
+      company_site: Visit lynomia.com
+    contact:
+      email_title: Email us
+      email_body: >-
+        The quickest way to reach a person if you are not a customer yet. Tell us what you are trying to do
+        and we will reply.
+      quote_title: Ask for a quote
+      quote_body: >-
+        Tell us which channels you need and roughly how many people will be answering, and we will come back
+        with a price.
+      quote_cta: Open the quote form
+      customer_title: Already a customer?
+      customer_body: >-
+        Open a support ticket from inside your own account, under Help and Support, so your request arrives
+        with your workspace attached. That reaches the team that can actually look at your inboxes.
+      docs_title: Read first, ask second
+      docs_body: >-
+        Setup guides, channel connection steps and troubleshooting, in Arabic and English, free to read
+        without an account. For most setup questions it is the faster answer.
+      no_phone: >-
+        We do not publish a phone number or a walk-in address for support, because a written request reaches
+        the person who can read your workspace and a phone call does not.
+    faq:
+      channels:
+        question: Which channels can I connect?
+        answer: >-
+          Nine: WhatsApp through the official Cloud API, website chat, email, SMS, Telegram, LINE, Facebook
+          Messenger, Instagram direct messages and a generic API channel. TikTok is in beta on installations
+          configured for it. Each channel needs your own provider account, and Messenger and Instagram also
+          need the matching app configured on this installation.
+        link_label: See what each channel needs
+      ai:
+        question: Do you have an AI chatbot that answers for me?
+        answer: >-
+          No. Lynomia does not operate an autonomous AI agent, an AI chatbot or an AI knowledge base, and
+          nothing in the product replies to a customer on its own. What exists is five assist actions for your
+          agents — rewrite, summarise, suggest a reply, suggest labels and draft a follow-up — which need the
+          AI assist setting enabled for your account and your own OpenAI key, and which an agent reads and
+          approves before anything is sent. If you want software to answer first, connect a bot you control to
+          an inbox and let it hand over to a person.
+        link_label: Read what AI assist actually does
+      price:
+        question: How much does it cost?
+        answer: >-
+          There is no published price list on this site. What a workspace costs depends on which channels you
+          connect, how many people answer, how many inboxes and stores you connect and which modules you
+          need, so we quote it. Ask and we will come back with a price.
+        link_label: Request a quote
+      trial:
+        question: Is there a free trial?
+        answer: >-
+          Not as a self-service sign-up on this site today. If you want to see the product before committing,
+          ask us and we will arrange it.
+        link_label: Ask us about a demo
+      own_number:
+        question: Can I use my own WhatsApp number?
+        answer: >-
+          Yes. The WhatsApp channel uses the official WhatsApp Business Cloud API with your own WhatsApp
+          Business account — connected through guided signup where this installation is configured for it, or
+          with your own Cloud API credentials, or through your Twilio account. The number stays yours.
+        link_label: See what the WhatsApp channel needs
+      arabic:
+        question: Does it work in Arabic?
+        answer: >-
+          Yes, and Arabic is the primary language rather than an afterthought. The agent interface is
+          available in over fifty languages, the documentation is published in Arabic and English, and this
+          website's Arabic pages are written in Arabic rather than translated from English.
+        link_label: See the product
+      orders:
+        question: Can my agents see a customer's orders?
+        answer: >-
+          Yes, for WooCommerce, Salla, Zid and Shopify: the customer's recent orders appear beside the
+          conversation, updated from your store. It is read-only — refunds, cancellations and edits happen in
+          your store platform — and it needs the commerce module enabled for your account plus your store
+          credentials.
+        link_label: Read how commerce works
+      isolation:
+        question: Is my data separate from other customers' data?
+        answer: >-
+          Yes, and it is enforced on the server rather than in the interface: a request for another
+          workspace's data is answered as not found before any permission check runs. Roles are checked
+          server-side on every request, and channel credentials and store keys are encrypted at rest.
+        link_label: Read what security covers
+      certifications:
+        question: Do you have SOC 2 or ISO 27001?
+        answer: >-
+          No, and we will not imply otherwise. There is no SOC 2, ISO 27001, PCI or HIPAA artefact for this
+          product. What we can tell you is exactly which controls the product enforces, which is on the
+          security page, and we are happy to answer a security questionnaire directly.
+        link_label: Read the controls we do enforce
+      api:
+        question: Can I connect it to my own systems?
+        answer: >-
+          Yes. There is a documented REST API with an OpenAPI specification and three authentication schemes,
+          twelve HMAC-signed outbound webhook events, dashboard apps for embedding your own interface beside
+          a conversation, and a JavaScript SDK for the website widget. The Lynomia-specific areas — flows,
+          commerce, templates, analytics, tickets and billing — do not have published API documentation yet.
+        link_label: Read what the API covers
+      support:
+        question: How do I get support?
+        answer: >-
+          The documentation is public, searchable, bilingual and free to read without an account. Customers
+          open a support ticket from inside their own workspace, under Help and Support, so the request
+          arrives with the account attached. If you are not a customer yet, email us.
+        link_label: See how to get help
+      export:
+        question: Can I get my data out?
+        answer: >-
+          Contacts can be exported, and customer satisfaction responses can be exported. The analytics
+          dashboards are read in the product — there is no CSV export of them — and there is no revenue or
+          order-value reporting, because this product reports on conversations rather than on your takings.
+        link_label: See what is reported
     support:
       docs_title: Read the documentation
       docs_body: >-

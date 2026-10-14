@@ -1,0 +1,47 @@
+<%# Contact.
+
+  THIS PAGE IS FOR SOMEBODY WHO IS NOT A CUSTOMER YET, which is what keeps it from being a second copy of
+  /support. A customer with a problem opens a ticket from inside their account, and this page routes them
+  there in one line rather than offering them a worse channel.
+
+  Every destination is real: a mailto: that works, the quote form, the documentation, and the sign-in path.
+  The old page printed its only address inside a <span> and offered a live-chat button that opened nothing.
+%>
+<section class="mx-auto max-w-3xl px-4 py-14 sm:px-6">
+  <h1 class="text-3xl font-bold text-slate-900 sm:text-4xl"><%= t('marketing.pages.contact.heading') %></h1>
+  <p class="mt-4 text-lg leading-relaxed text-slate-600"><%= t('marketing.pages.contact.lede') %></p>
+
+  <div class="mt-10 grid gap-4 sm:grid-cols-2">
+    <article class="rounded-2xl border border-slate-100 bg-white p-6">
+      <h2 class="text-lg font-semibold text-slate-900"><%= t('marketing.contact.email_title') %></h2>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.contact.email_body') %></p>
+      <a class="mt-4 inline-block text-sm font-medium text-woot-600 hover:text-woot-700"
+         href="<%= marketing_support_email_url %>"><%= MarketingHelper::SUPPORT_EMAIL %></a>
+    </article>
+
+    <article class="rounded-2xl border border-slate-100 bg-white p-6">
+      <h2 class="text-lg font-semibold text-slate-900"><%= t('marketing.contact.quote_title') %></h2>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.contact.quote_body') %></p>
+      <a class="mt-4 inline-block text-sm font-medium text-woot-600 hover:text-woot-700"
+         href="<%= marketing_path(:pricing) %>"><%= t('marketing.contact.quote_cta') %></a>
+    </article>
+
+    <article class="rounded-2xl border border-slate-100 bg-white p-6">
+      <h2 class="text-lg font-semibold text-slate-900"><%= t('marketing.contact.customer_title') %></h2>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.contact.customer_body') %></p>
+      <div class="mt-4 flex flex-wrap gap-4 text-sm font-medium">
+        <a class="text-woot-600 hover:text-woot-700" href="/app/login"><%= t('marketing.footer.sign_in_ticket') %></a>
+        <a class="text-woot-600 hover:text-woot-700" href="<%= marketing_path(:support) %>"><%= t('marketing.footer.support_page') %></a>
+      </div>
+    </article>
+
+    <article class="rounded-2xl border border-slate-100 bg-white p-6">
+      <h2 class="text-lg font-semibold text-slate-900"><%= t('marketing.contact.docs_title') %></h2>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600"><%= t('marketing.contact.docs_body') %></p>
+      <a class="mt-4 inline-block text-sm font-medium text-woot-600 hover:text-woot-700"
+         href="<%= lynomia_docs_path %>"><%= t('marketing.read_docs') %></a>
+    </article>
+  </div>
+
+  <p class="mt-8 text-sm leading-relaxed text-slate-500"><%= t('marketing.contact.no_phone') %></p>
+</section>

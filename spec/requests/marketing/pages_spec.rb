@@ -9,7 +9,8 @@ require 'rails_helper'
 describe 'Marketing pages' do
   let(:pages) do
     { home: '/home', features: '/features', channels: '/channels', solutions: '/solutions',
-      integrations: '/integrations', support: '/support' }
+      integrations: '/integrations', support: '/support', about: '/about', contact: '/contact',
+      faq: '/faq' }
   end
 
   describe 'the Arabic tree' do
@@ -45,6 +46,28 @@ describe 'Marketing pages' do
       get '/ar/features'
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  # The guard that catches a locale file edited badly rather than a page written badly.
+  #
+  # I18n renders a missing key as the literal text "translation missing: en.marketing...", which satisfies
+  # every structural assertion in this file -- a <title> with that text in it is still a <title>. A splice
+  # into config/locales/marketing.*.yml that matched a deeper-indented line as a substring of a shallower one
+  # silently moved an entire page's copy out of its block, and nothing here failed. This would have.
+  describe 'translations' do
+    it 'renders no missing translation on any page, in either locale' do
+      paths = pages.values + pages.values.map { |path| "/en#{path}" } + ['/pricing', '/en/pricing']
+      paths += Marketing::Catalog::COLLECTIONS.flat_map do |scope, entries|
+        entries.select(&:detail?).flat_map { |entry| ["/#{scope}/#{entry.slug}", "/en/#{scope}/#{entry.slug}"] }
+      end
+
+      paths.each do |path|
+        get path
+
+        expect(response.body).not_to include('translation missing'), "#{path} renders a missing translation"
+        expect(response.body).not_to include('translation_missing'), "#{path} renders a missing translation"
+      end
     end
   end
 
@@ -342,6 +365,44 @@ describe 'Marketing pages' do
         expect(response.body).to include('commerce module enabled for your account'),
                                  "#{slug} does not state the module gate"
       end
+    end
+  end
+
+  describe 'the standing pages added last' do
+    it 'tells the truth about the company without inventing any of it' do
+      get '/en/about'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('Arabic is the original')
+      # No founding year, headcount, office or customer count is established anywhere this site can check.
+      expect(response.body).not_to match(/founded in \d{4}|\d+\+? (employees|customers|clients)/i)
+    end
+
+    it 'routes a customer to their own account rather than offering a worse channel' do
+      get '/en/contact'
+
+      expect(response.body).to include('href="mailto:info@lynomia.com"')
+      expect(response.body).to include('href="/app/login"')
+      expect(response.body).to include('href="/en/pricing"')
+      expect(response.body).to include('do not publish a phone number')
+    end
+
+    it 'answers the four questions whose honest answer is a no' do
+      get '/en/faq'
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('does not operate an autonomous AI agent')
+      expect(response.body).to include('no published price list')
+      expect(response.body).to include('Not as a self-service sign-up')
+      expect(response.body).to include('No, and we will not imply otherwise')
+    end
+
+    it 'links every FAQ answer to a page that exists' do
+      get '/en/faq'
+
+      expect(response).to have_http_status(:success)
+      expect(Marketing::Faq.entries.size).to eq(12)
+      expect(response.body.scan(/href="(#|)"/)).to be_empty
     end
   end
 

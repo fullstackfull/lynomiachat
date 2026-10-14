@@ -666,8 +666,10 @@ describe Documentation::ContentSeeder do
       # lost mid-upload. That is what the stub stands in for; there is no corpus a fixture can hold that reaches
       # the attach boundary and fails there.
       #
-      # `Dir.glob` sorts and `scan_corpus` keeps first-reference order, so `broken.png` is reached after
-      # `inbox.png`: the partial count is 1 and it is deterministic.
+      # Deterministic, and not by accident: both references are in ONE file, CommonMarker walks the AST in
+      # document order, and `references[key] ||=` keeps first-reference insertion order, which `each_key` then
+      # replays. So `broken.png` is reached after `inbox.png` and the partial count is 1. (`Dir.glob`'s sort is
+      # what orders the FILES, which is a different guarantee and not the one this example rests on.)
       it 'reports the media work that completed when a later key fails at the attach boundary' do
         media('getting-started/inbox.png')
         media('getting-started/broken.png', other_png)

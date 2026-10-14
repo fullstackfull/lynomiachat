@@ -1762,7 +1762,14 @@ fails loudly on the first defect rather than tallying defects, so a failure is r
 it. `APPLY_FAILED`'s own sentence was widened by one clause, because "every write is an upsert on
 (slug, locale)" is an article's vocabulary and an attachment's key is the `media:` key.
 
-### N3 — Defect 1 of three: the pass reported `uploaded: 1` against zero attachment rows
+### N3 — The first defect wiring it found: the pass reported `uploaded: 1` against zero attachment rows
+
+> Five defects were found in the course of this delta, and they are numbered by where they are recorded rather
+> than counted here: §N3 (an attachment never written), §N4 (that failure reported as success), §N10 (a false
+> refusal from an unserved locale tree), §N11 (two decidable checks still in the write loop, and a fenced
+> example of the grammar refusing the whole seed), §N12 (the report crashing on a sweep that died partway).
+> §N5 is a sixth thing, a spec that passed for the wrong reason.
+
 
 The first integration run was green on counts and **empty in the database**. Isolated with a throwaway probe
 rather than reasoned about:

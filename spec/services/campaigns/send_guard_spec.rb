@@ -20,6 +20,21 @@ RSpec.describe Campaigns::SendGuard do
   let(:shopper) { create(:contact, :with_phone_number, account: account, name: 'Shopper') }
   let(:resolved) { [shopper] }
 
+  # A TRANSACTIONAL CAMPAIGN, AND THE CHANNEL HAS TO SAY SO. Campaigns::Eligibility reads the
+  # category from the provider's own synced template list rather than from the campaign's
+  # body, so declaring `category: UTILITY` in `template_params` no longer makes a campaign
+  # transactional -- the template has to be there. Most examples below are about a state
+  # change during the send (a STOP, a kill switch, a revocation) and would otherwise all be
+  # refused for a missing marketing grant before reaching the thing they are testing.
+  let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
+  let(:utility_templates) { [utility.merge('status' => 'approved')] }
+  let(:utility_inbox) do
+    create(:inbox, account: account,
+                   channel: create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
+                                                      sync_templates: false, validate_provider_config: false,
+                                                      message_templates: utility_templates))
+  end
+
   def stop(contact)
     Commerce::MessagingConsents.record(
       account: account, contact: contact,
@@ -31,7 +46,8 @@ RSpec.describe Campaigns::SendGuard do
   context 'with the WhatsApp sender' do
     let!(:channel) do
       create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
-                                validate_provider_config: false, sync_templates: false)
+                                validate_provider_config: false, sync_templates: false,
+                                message_templates: utility_templates)
     end
     let(:campaign) do
       create(:campaign, inbox: channel.inbox, account: account, campaign_type: :one_off,
@@ -191,8 +207,9 @@ RSpec.describe Campaigns::SendGuard do
     let(:store) { create(:commerce_store, account: account, provider: 'storesyria', external_store_id: 'sy-p1') }
     # Transactional (UTILITY), so a missing promotional grant is not in the way and every
     # example below isolates the one state change it makes during the wait.
-    let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
-    let(:campaign) { create(:campaign, account: account, campaign_type: :one_off, template_params: utility) }
+    let(:campaign) do
+      create(:campaign, account: account, inbox: utility_inbox, campaign_type: :one_off, template_params: utility)
+    end
 
     before { Redis::Alfred.delete(Campaigns::Throttle.key(account)) }
 
@@ -235,7 +252,7 @@ RSpec.describe Campaigns::SendGuard do
     # A partner-originated send answers to the installation as well. Revoking it mid-wait must
     # stop the message, not merely stop the next campaign.
     it 'honours an installation revoked during the throttle wait' do
-      partner_campaign = create(:campaign, account: account, campaign_type: :one_off,
+      partner_campaign = create(:campaign, account: account, inbox: utility_inbox, campaign_type: :one_off,
                                            commerce_store: store, template_params: utility)
       create(:commerce_customer_link, account: account, store: store, contact: shopper,
                                       external_customer_id: 'cust-rev')
@@ -339,8 +356,9 @@ RSpec.describe Campaigns::SendGuard do
   # quota is taken LAST, so it is never spent on a recipient the guard was going to refuse,
   # and it refuses when it is used up.
   describe 'the send allowance' do
-    let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
-    let(:campaign) { create(:campaign, account: account, campaign_type: :one_off, template_params: utility) }
+    let(:campaign) do
+      create(:campaign, account: account, inbox: utility_inbox, campaign_type: :one_off, template_params: utility)
+    end
 
     # UPDATED, NOT CREATED: an account arrives with a subscription of its own and
     # `billing_subscriptions.account_id` is unique, so creating a second one fails validation

@@ -164,14 +164,32 @@ module Campaigns::SendGuard
   # A partner-originated send answers to both stores. The native refusal is returned first
   # when it is one of the absolute ones (steps 3-5); a merely-missing native grant does not
   # refuse on its own, because a partner grant in scope is a legitimate basis for it.
+  #
+  # AND THE CONVERSE, WHICH THIS DID NOT DO. ADR-001 §3.3 step 8 is "promotional with no
+  # grant from EITHER source", under a rule it states twice: negatives union, positives do
+  # not. A missing PARTNER grant was returned straight to the caller, so a shopper holding a
+  # native account-wide marketing grant was refused a store-scoped campaign because they had
+  # not also agreed at that installation's checkout. Half of step 8 was enforced as if it
+  # were the whole of it, and the half that was missing is the one §1 of that ADR exists to
+  # provide for. It fails closed, so nobody was messaged who should not have been -- but a
+  # merchant whose customers consented natively reached none of them, which is the
+  # integration looking broken rather than looking strict.
+  #
+  # So only :partner_consent_missing is conditional on the native half. Every other partner
+  # refusal -- a revoked installation, a partner suppression, a partner withdrawal, a subject
+  # this store has never seen -- is a NEGATIVE and still refuses whatever the native store
+  # says.
   def native_or_partner(native, contact, store, purpose, channel)
     return native if native && native != :promotional_consent_missing
 
     partner = Partners::Eligibility.refusal(contact, store, purpose, channel)
-    # Both stores lack a positive grant: report the native code, which is the one a merchant
-    # recognises, rather than leaking which of two subsystems was asked last.
-    return :promotional_consent_missing if native && partner == :partner_consent_missing
+    return partner unless partner == :partner_consent_missing
 
-    partner
+    # Step 8, and `native` is already exactly its answer: the lines above have narrowed it to
+    # nil (the native store permits, so either store's grant is enough and this send goes) or
+    # :promotional_consent_missing (neither store has one). Returning it also reports the
+    # refusal under the code a merchant recognises rather than leaking which subsystem was
+    # asked last.
+    native
   end
 end

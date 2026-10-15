@@ -45,25 +45,76 @@ RSpec.describe Campaigns::Eligibility do
   end
 
   describe '.purpose_for' do
-    # The provider's own classification, not the account's configuration. Meta approves a
-    # UTILITY template for messages about something the customer is already part of, which is
-    # the transactional class; it requires opt-in for MARKETING, which is the promotional one.
-    {
-      'UTILITY' => :transactional, 'utility' => :transactional,
-      'MARKETING' => :promotional, 'AUTHENTICATION' => :promotional, '' => :promotional
-    }.each do |category, purpose|
-      it "reads #{category.presence || 'a missing category'} as #{purpose}" do
-        campaign = build(:campaign, account: account, template_params: { 'category' => category })
+    # THE CLASSIFICATION IS THE PROVIDER'S, AND IT IS READ FROM THE CHANNEL'S SYNCED LIST.
+    # Meta approves a UTILITY template for messages about something the customer is already
+    # part of, which is the transactional class, and requires opt-in for MARKETING, which is
+    # the promotional one. The fixture is therefore a channel that actually holds the
+    # templates, named by the campaign the way the dashboard names them.
+    let(:templates) do
+      [{ 'name' => 'order_shipped', 'language' => 'en_US', 'status' => 'approved', 'category' => 'UTILITY' },
+       { 'name' => 'autumn_sale', 'language' => 'en_US', 'status' => 'approved', 'category' => 'MARKETING' },
+       { 'name' => 'login_code', 'language' => 'en_US', 'status' => 'approved', 'category' => 'AUTHENTICATION' }]
+    end
+    let(:whatsapp_inbox) do
+      create(:inbox, account: account,
+                     channel: create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
+                                                        sync_templates: false, validate_provider_config: false,
+                                                        message_templates: templates))
+    end
+
+    # Four call sites with one field differing each time, which is the case the guideline
+    # against setup helpers makes an exception for.
+    def campaign_claiming(params)
+      build(:campaign, account: account, inbox: whatsapp_inbox, template_params: params)
+    end
+
+    { 'order_shipped' => :transactional, 'autumn_sale' => :promotional, 'login_code' => :promotional }
+      .each do |name, purpose|
+      it "reads #{name} as #{purpose}, from the category the provider gave it" do
+        campaign = campaign_claiming('name' => name, 'language' => 'en_US')
 
         expect(described_class.purpose_for(campaign)).to eq(purpose)
       end
     end
 
+    it 'matches the template language case-insensitively, as the sender does' do
+      campaign = campaign_claiming('name' => 'order_shipped', 'language' => 'EN_us')
+
+      expect(described_class.purpose_for(campaign)).to eq(:transactional)
+    end
+
+    # THE DEFECT THIS PAIR PINS, and it is a consent bypass rather than a classification nit.
+    #
+    # `category` is a field of the campaign's own JSON body -- the dashboard's WhatsApp form
+    # sends `category: currentTemplate?.category || 'UTILITY'` -- and this used to read it.
+    # A campaign created with a MARKETING template and `"category": "UTILITY"` was therefore
+    # transactional on the creator's say-so, required no promotional grant, and went to every
+    # contact in the audience who had never agreed to marketing.
+    it 'ignores a UTILITY claim in the request when the provider calls the template MARKETING' do
+      campaign = campaign_claiming('name' => 'autumn_sale', 'language' => 'en_US', 'category' => 'UTILITY')
+
+      expect(described_class.purpose_for(campaign)).to eq(:promotional)
+    end
+
+    it 'ignores a UTILITY claim for a template the channel has never heard of' do
+      campaign = campaign_claiming('name' => 'not_a_real_template', 'language' => 'en_US', 'category' => 'UTILITY')
+
+      expect(described_class.purpose_for(campaign)).to eq(:promotional)
+    end
+
     # An SMS blast carries no provider classification, so there is nothing authoritative to
-    # read and the conservative answer is the only safe one.
+    # read and the conservative answer is the only safe one. Same for a campaign with no
+    # inbox at all, which is how the audience preview may be asked.
     it 'treats a campaign with no template params at all as promotional' do
       expect(described_class.purpose_for(build(:campaign, account: account, template_params: nil)))
         .to eq(:promotional)
+    end
+
+    it 'treats a campaign on a channel with no template list as promotional' do
+      campaign = build(:campaign, account: account, inbox: create(:inbox, account: account),
+                                  template_params: { 'name' => 'order_shipped', 'category' => 'UTILITY' })
+
+      expect(described_class.purpose_for(campaign)).to eq(:promotional)
     end
   end
 
@@ -156,10 +207,24 @@ RSpec.describe Campaigns::Eligibility do
   # The filter has to hold at the entry point every sender, the preview and the snapshot share,
   # not only when called directly -- that is the whole reason it was put there.
   describe 'through Campaign#audience_contacts' do
-    let(:inbox) { create(:inbox, account: account) }
+    # A REAL CHANNEL WITH REAL TEMPLATES, because the campaign's class is now read from the
+    # list Meta's sync writes rather than from the campaign's own body. A fixture that only
+    # claimed `category` would have described a campaign the provider would classify as
+    # marketing, which is the shape the claim used to be able to hide.
+    let(:inbox) do
+      create(:inbox, account: account,
+                     channel: create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
+                                                        sync_templates: false, validate_provider_config: false,
+                                                        message_templates: [
+                                                          { 'name' => 'order_shipped', 'language' => 'en_US',
+                                                            'status' => 'approved', 'category' => 'UTILITY' },
+                                                          { 'name' => 'autumn_sale', 'language' => 'en_US',
+                                                            'status' => 'approved', 'category' => 'MARKETING' }
+                                                        ]))
+    end
     let(:campaign) do
       create(:campaign, account: account, inbox: inbox, campaign_type: :one_off,
-                        template_params: { 'category' => 'UTILITY' },
+                        template_params: { 'name' => 'order_shipped', 'language' => 'en_US' },
                         audience: [{ 'type' => 'Label', 'id' => label.id }])
     end
 
@@ -170,7 +235,15 @@ RSpec.describe Campaigns::Eligibility do
     end
 
     it 'returns nobody for a MARKETING campaign where no one has granted consent' do
-      campaign.update!(template_params: { 'category' => 'MARKETING' })
+      campaign.update!(template_params: { 'name' => 'autumn_sale', 'language' => 'en_US' })
+
+      expect(campaign.audience_contacts).to be_empty
+    end
+
+    # The same campaign, with the request claiming the transactional class: the audience is
+    # the MARKETING one, so the bypass does not survive the entry point either.
+    it 'returns nobody for a MARKETING campaign whose request claims UTILITY' do
+      campaign.update!(template_params: { 'name' => 'autumn_sale', 'language' => 'en_US', 'category' => 'UTILITY' })
 
       expect(campaign.audience_contacts).to be_empty
     end

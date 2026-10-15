@@ -71,9 +71,40 @@ module Campaigns::Eligibility
 
   # @return [Symbol] :transactional or :promotional, from the provider's own classification.
   def purpose_for(campaign)
-    category = campaign.template_params.is_a?(Hash) ? campaign.template_params['category'].to_s.upcase : ''
+    TRANSACTIONAL_CATEGORIES.include?(category_for(campaign)) ? :transactional : :promotional
+  end
 
-    TRANSACTIONAL_CATEGORIES.include?(category) ? :transactional : :promotional
+  # THE CATEGORY IS READ FROM THE CHANNEL'S SYNCED TEMPLATE LIST, NOT FROM THE REQUEST THAT
+  # CREATED THE CAMPAIGN -- and that distinction is the whole consent boundary.
+  #
+  # This used to read `template_params['category']`, which is a field of the campaign's JSON
+  # body: whoever creates the campaign declares what class its messages are. The dashboard's
+  # own WhatsApp form sends `category: currentTemplate?.category || 'UTILITY'`, so the value
+  # is not even notional -- a campaign created with `{"category": "UTILITY"}` and a MARKETING
+  # template read as transactional, needed no promotional grant, and went to every contact in
+  # the audience who had never agreed to marketing. The docblock above already said the class
+  # is "the provider's answer, not the account's"; the code was asking the client.
+  #
+  # `channel.message_templates` is the snapshot Meta's own sync writes, and it is the same
+  # list Whatsapp::TemplateProcessorService resolves the template from at send time -- so the
+  # class this returns is the class of the template that will actually be sent, matched the
+  # same way (name, and language case-insensitively). Nothing a client submits can add a row
+  # to it.
+  #
+  # ANYTHING IT CANNOT ESTABLISH IS PROMOTIONAL: a channel with no template list, a name that
+  # is not in it, a campaign with no inbox (the audience preview may be asked without one),
+  # and every SMS channel, which has no provider classification at all. That is the same
+  # conservative default the docblock above commits to, now reached by failing to find a
+  # UTILITY rather than by trusting a caller who said so.
+  def category_for(campaign)
+    params = campaign.template_params
+    channel = campaign.inbox&.channel
+    return '' unless params.is_a?(Hash) && channel.respond_to?(:message_templates)
+
+    template = Array(channel.message_templates).find do |remote|
+      remote['name'] == params['name'].to_s && remote['language'].to_s.casecmp?(params['language'].to_s)
+    end
+    template&.fetch('category', nil).to_s.upcase
   end
 
   # @param relation [ActiveRecord::Relation] contacts the audience selected
@@ -102,10 +133,11 @@ module Campaigns::Eligibility
   #
   # So a store-scoped campaign composes this with Partners::Eligibility.filter, which is
   # exactly the composition Campaigns::SendGuard makes per recipient: a native refusal stops
-  # the send whatever the partner says, and the positive comes from the installation the
-  # campaign belongs to. Applying `filter` to such a campaign instead required a native grant
-  # that the only people it could ever reach were never going to have, so the audience was
-  # empty and the P5E opt-in could not produce a single recipient.
+  # the send whatever the partner says, and the positive may come from EITHER store -- the
+  # installation's own grant, or `granted` below, passed to that filter as `native_granted`.
+  # Applying `filter` to such a campaign instead required a native grant that the only people
+  # it could ever reach were never going to have, so the audience was empty and the P5E
+  # opt-in could not produce a single recipient.
   def refusals(relation, account, purpose)
     relation.where(blocked: false).where.not(id: blocked_by_decision(account, purpose))
   end

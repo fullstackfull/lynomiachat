@@ -61,12 +61,28 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
     expect(campaign.audience_contacts).to be_empty
   end
 
-  # A native grant is not a partner grant. This is not a gap: the send boundary refuses the
-  # same contact, so including them would promise a merchant somebody their campaign will not
-  # message.
-  it 'does not reach a shopper with only an account-wide native grant' do
+  # EITHER STORE'S GRANT SATISFIES STEP 8, and this example used to assert the opposite.
+  #
+  # ADR-001 §3.3 step 8 is "promotional with no grant from EITHER source", under the rule it
+  # states twice: negatives union, positives do not. Requiring a grant from THIS installation
+  # and discounting an account-wide native one enforced half of that step as though it were
+  # all of it. It failed closed -- nobody was messaged who should not have been -- but a
+  # merchant whose customers had agreed on Lynomia's own channels reached none of them, which
+  # is the gap §1 of that ADR exists to close, reappearing from the other side.
+  it 'reaches a shopper with an account-wide native grant and no grant at this store' do
     native_only = shopper('native only')
     native(native_only, :granted)
+
+    expect(campaign.audience_contacts).to contain_exactly(native_only)
+  end
+
+  # AND THE UNION IS OF POSITIVES ONLY. A native grant is a basis for a send; it is not an
+  # answer to this installation's own withdrawal, which is a NEGATIVE and still refuses. This
+  # is the direction the step-8 correction above could have broken.
+  it 'does not reach a shopper this store withdrew, however they agreed natively' do
+    both_ways = shopper('granted natively, withdrawn here')
+    native(both_ways, :granted)
+    partner_consent(both_ways, store, :withdrawn)
 
     expect(campaign.audience_contacts).to be_empty
   end
@@ -123,7 +139,9 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
     allowed_by_boundary = population.values.select { |c| Campaigns::SendGuard.allows?(c, campaign, :sms) }
 
     expect(campaign.audience_contacts).to match_array(allowed_by_boundary)
-    expect(allowed_by_boundary).to contain_exactly(population[:partner_granted])
+    # Two of the nine: a grant at this installation, and an account-wide native grant. Step 8
+    # takes either, and nothing else in the population has one in scope.
+    expect(allowed_by_boundary).to contain_exactly(population[:partner_granted], population[:native_only])
   end
 
   # An installation an operator revoked authorises nothing, and the audience says so before

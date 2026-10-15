@@ -26,16 +26,20 @@ module Custom::CampaignAudience
     return Campaigns::Eligibility.filter(selected, account, purpose) unless commerce_store
 
     # A CAMPAIGN THAT BELONGS TO AN INSTALLATION ASKS BOTH CONSENT STORES, in the same
-    # composition Campaigns::SendGuard makes per recipient: the native refusals are
-    # unconditional, and the positive comes from the installation the campaign belongs to.
+    # composition Campaigns::SendGuard makes per recipient: the native refusals and the
+    # partner's are both unconditional, and a grant from EITHER store satisfies step 8.
     #
     # It cannot be `filter` here. That requires a NATIVE promotional grant, and the people a
     # Store Syria campaign exists to reach agreed at a Store Syria checkout -- recorded as a
     # partner consent, because this account has no surface on which they could have agreed
     # natively. Asking for a native grant made the audience of every store-scoped
     # promotional campaign empty, so the whole opt-in produced nobody to send to.
+    # `native_granted` is the other half of step 8: a shopper who agreed natively is in this
+    # audience even without a grant at this installation, exactly as Campaigns::SendGuard
+    # lets them through at the boundary.
     Partners::Eligibility.filter(Campaigns::Eligibility.refusals(selected, account, purpose),
-                                 commerce_store, purpose, consent_channel)
+                                 commerce_store, purpose, consent_channel,
+                                 native_granted: Campaigns::Eligibility.granted(account))
   end
 
   # A saved audience's members, scoped to this campaign's installation.

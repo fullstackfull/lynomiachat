@@ -85,7 +85,7 @@ RSpec.describe Billing::MeteredUsage do
     # Every Store Syria merchant is entitled through a bundled package and has no Lynomia
     # subscription, so the calendar month is the only anchor this side knows.
     it 'falls back to the calendar month with no subscription' do
-      expect(BillingUsageCounter.period_start_for(account)).to eq(Time.zone.today.beginning_of_month)
+      expect(BillingUsageCounter.period_start_for(account)).to eq(Time.now.utc.to_date.beginning_of_month)
     end
 
     # A PERIOD END THAT HAS PASSED STILL ANCHORS THE PERIOD, which is the opposite of what
@@ -97,7 +97,7 @@ RSpec.describe Billing::MeteredUsage do
     it 'keeps anchoring to a period end that has already passed, rather than refilling early' do
       subscribe(plan, period_end: 2.months.ago)
 
-      expect(BillingUsageCounter.period_start_for(account)).to eq((2.months.ago - 1.month).to_date)
+      expect(BillingUsageCounter.period_start_for(account)).to eq((2.months.ago.utc - 1.month).to_date)
     end
 
     it 'does not hand out a second allowance while a renewal is late' do
@@ -131,6 +131,46 @@ RSpec.describe Billing::MeteredUsage do
       described_class.consume(account)
 
       expect(BillingUsageCounter.where(account: account).count).to eq(2)
+    end
+
+    # ONE SUBSCRIPTION ANCHORS ONE PERIOD, NOT ONE PER READER.
+    #
+    # `period_start` is the third column of index_billing_usage_counters_on_scope, and this
+    # used to derive it through `Time.zone` -- which is a THREAD-LOCAL. Two callers whose
+    # zones straddle midnight read the same `current_period_end` as two different dates, and
+    # two dates are two counter rows: two full allowances on a ceiling whose entire purpose is
+    # to fail closed, plus a usage display reading a row the sender never writes to.
+    #
+    # The full sweep is what found it. spec/models/working_hour_spec sets
+    # `Time.zone = 'Australia/Sydney'` and never puts it back, so from that file onward the
+    # main thread asked this question in a different zone from the worker threads in
+    # metered_usage_concurrency_spec -- whose ledger assertion then read zero, because the row
+    # the workers had incremented was keyed a day away from the one the assertion looked up.
+    #
+    # 23:30 UTC is 10:30 the NEXT DAY in Sydney, so the two readings fall on different dates
+    # unless the derivation ignores the reader entirely.
+    it 'anchors the same period whatever zone the caller reads it in' do
+      travel_to(Time.utc(2026, 11, 4, 23, 30)) do
+        subscribe(plan, period_end: Time.utc(2026, 11, 20, 23, 30))
+        utc = Time.use_zone('UTC') { BillingUsageCounter.period_start_for(account.reload) }
+        sydney = Time.use_zone('Australia/Sydney') { BillingUsageCounter.period_start_for(account.reload) }
+
+        expect(utc).to eq(Date.new(2026, 10, 20))
+        expect(sydney).to eq(utc)
+      end
+    end
+
+    # The same property on the other branch, where the anchor is the calendar month -- and a
+    # month boundary is where that branch diverges: at 23:30 UTC on the 31st it is already
+    # November in Sydney.
+    it 'anchors the same calendar month whatever zone the caller reads it in' do
+      travel_to(Time.utc(2026, 10, 31, 23, 30)) do
+        utc = Time.use_zone('UTC') { BillingUsageCounter.period_start_for(account) }
+        sydney = Time.use_zone('Australia/Sydney') { BillingUsageCounter.period_start_for(account) }
+
+        expect(utc).to eq(Date.new(2026, 10, 1))
+        expect(sydney).to eq(utc)
+      end
     end
   end
 

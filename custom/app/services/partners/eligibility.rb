@@ -77,13 +77,26 @@ module Partners::Eligibility
   # The contacts of `relation` this installation may message, as a relation, for resolving an
   # audience. The per-contact decision above stays the authority at the send boundary;
   # spec/services/partners/eligibility_spec.rb asserts the two agree contact for contact.
-  def filter(relation, store, purpose, channel)
+  #
+  # `native_granted` IS THE OTHER HALF OF ADR-001 §3.3 STEP 8 -- the contact ids the NATIVE
+  # consent store has granted this purpose -- because the step is "no grant from EITHER
+  # source" and a grant from either one satisfies it. Omitted, this required a grant from
+  # THIS installation and nothing else, which excluded from the audience every shopper who
+  # had agreed natively instead; Campaigns::SendGuard#native_or_partner made the same mistake
+  # per recipient, so the two agreed with each other while both disagreed with the ADR.
+  #
+  # Passed in rather than read here, because the native store's grants are
+  # Campaigns::Eligibility's to express and this module deliberately knows only the partner
+  # half (see the note at the top). The default is "none", which is the honest answer for a
+  # caller asking the partner half on its own -- spec/services/partners/eligibility_spec.rb's
+  # agreement check is exactly such a caller.
+  def filter(relation, store, purpose, channel, native_granted: nil)
     return relation.none unless store&.active?
 
     scope = relation.where.not(id: blocking_ids(store, purpose, channel))
     return scope unless purpose.to_sym == :promotional
 
-    scope.where(id: granted_ids(store, purpose, channel))
+    scope.where(id: granted_ids(store, purpose, channel)).or(scope.where(id: native_granted))
   end
 
   def blocking_ids(store, purpose, channel)

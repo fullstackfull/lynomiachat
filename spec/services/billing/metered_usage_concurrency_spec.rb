@@ -81,9 +81,17 @@ RSpec.describe Billing::MeteredUsage, type: :model do
   # AND THE LEDGER AGREES WITH WHAT WAS ALLOWED. A ceiling that refuses correctly but
   # miscounts is the same defect one period later, when the merchant is refused sends they
   # never made.
-  it 'records exactly one unit of usage' do
+  #
+  # ONE ROW, not just one unit. Four workers converging on two counter rows would report
+  # `used == 1` from whichever row the reader keyed -- and would have handed out two full
+  # allowances. That is not hypothetical: it is how this example failed in the full sweep
+  # before BillingUsageCounter.period_start_for stopped deriving the period through
+  # `Time.zone`, a thread-local the workers and the main thread did not share. So the row
+  # count is asserted beside the number in it.
+  it 'records exactly one unit of usage, in exactly one counter row' do
     consume_concurrently(workers)
 
+    expect(BillingUsageCounter.where(account_id: account.id, resource: described_class::RESOURCE).pluck(:used)).to eq([1])
     expect(described_class.usage(account)[:used]).to eq(1)
   end
 end

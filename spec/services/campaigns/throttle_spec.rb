@@ -117,9 +117,15 @@ RSpec.describe Campaigns::Throttle do
   # Verified in the real loop, not only against the module: a throttle nothing calls is a
   # throttle that does not exist.
   describe 'in the WhatsApp sender' do
+    # The channel holds the template the campaign names, because Campaigns::Eligibility takes
+    # the campaign's class from the provider's synced list rather than from `template_params`
+    # -- without it every recipient here is refused for a missing marketing grant and the
+    # sender paces nobody, which is not what these examples are about.
     let!(:channel) do
       create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
-                                validate_provider_config: false, sync_templates: false)
+                                validate_provider_config: false, sync_templates: false,
+                                message_templates: [{ 'name' => 't', 'language' => 'en',
+                                                      'status' => 'approved', 'category' => 'UTILITY' }])
     end
     let(:campaign) do
       create(:campaign, inbox: channel.inbox, account: account, campaign_type: :one_off,
@@ -129,9 +135,17 @@ RSpec.describe Campaigns::Throttle do
 
     before do
       account.enable_features!(:whatsapp_campaign)
+      # A DISTINCT MESSAGE ID PER CALL, as Meta returns. `campaign_recipients.source_id` is
+      # UNIQUE, so a stub answering 'm1' every time makes the second recipient's row a
+      # duplicate-key violation -- which aborts the transaction and takes the rest of the
+      # run down with it. It went unnoticed while the channel held no template the campaign
+      # named: the sender then refused every recipient for a missing template and this
+      # example passed having paced three people it sent nothing to.
       stub_request(:post, /graph\.facebook\.com.*messages/)
-        .to_return(status: 200, body: { messages: [{ id: 'm1' }] }.to_json,
-                   headers: { 'Content-Type' => 'application/json' })
+        .to_return do |_request|
+          { status: 200, body: { messages: [{ id: SecureRandom.hex(8) }] }.to_json,
+            headers: { 'Content-Type' => 'application/json' } }
+        end
       allow_any_instance_of(Whatsapp::OneoffCampaignService).to receive(:channel).and_return(channel) # rubocop:disable RSpec/AnyInstance
     end
 

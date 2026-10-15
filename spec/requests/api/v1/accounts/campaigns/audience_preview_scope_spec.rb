@@ -92,7 +92,9 @@ RSpec.describe 'Campaign audience preview, store scope', type: :request do
   describe 'the channel and the purpose' do
     let(:whatsapp_inbox) do
       create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
-                                validate_provider_config: false).inbox
+                                validate_provider_config: false,
+                                message_templates: [{ 'name' => 'order_shipped', 'language' => 'en_US',
+                                                      'status' => 'approved', 'category' => 'UTILITY' }]).inbox
     end
     let(:sms_inbox) { create(:inbox, account: account, channel: create(:channel_sms, account: account)) }
     let!(:label) { create(:label, account: account, title: 'preview') }
@@ -140,10 +142,23 @@ RSpec.describe 'Campaign audience preview, store scope', type: :request do
       create(:commerce_customer_link, account: account, store: ours, contact: plain, external_customer_id: 'cust-plain')
 
       promotional = preview(inbox_id: whatsapp_inbox.id)
-      transactional = preview(inbox_id: whatsapp_inbox.id, template_params: { category: 'UTILITY' })
+      transactional = preview(inbox_id: whatsapp_inbox.id,
+                              template_params: { name: 'order_shipped', language: 'en_US' })
 
       expect(promotional).to eq(1)
       expect(transactional).to eq(2)
+    end
+
+    # AND THE PREVIEW IS NOT A SECOND PLACE TO DECLARE THE CLASS. The count has to be the
+    # number the send will reach, so the category comes from the channel's template list
+    # here too: a body that claims UTILITY and names no template Meta approved is a
+    # promotional preview, exactly as it is a promotional send.
+    it 'ignores a UTILITY claim that no template on the channel supports' do
+      plain = create(:contact, account: account, name: 'No grant', email: 'plain@example.test')
+      plain.update_labels(['preview'])
+      create(:commerce_customer_link, account: account, store: ours, contact: plain, external_customer_id: 'cust-plain')
+
+      expect(preview(inbox_id: whatsapp_inbox.id, template_params: { category: 'UTILITY' })).to eq(1)
     end
   end
 end

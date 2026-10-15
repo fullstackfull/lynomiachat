@@ -42,10 +42,26 @@ class BillingUsageCounter < ApplicationRecord
   # does the merchant has the one they were sold. The calendar month remains for an account
   # with NO subscription at all -- every Store Syria merchant, entitled through the
   # integration's bundled package -- because it is the only anchor this side knows for them.
+  #
+  # IN UTC, BECAUSE THIS VALUE IS PART OF A UNIQUE KEY AND MUST NOT DEPEND ON WHO IS ASKING.
+  # `Time.zone` is thread-local. Read through it, `current_period_end` is converted to the
+  # CALLING THREAD's zone before `.to_date` truncates it, so the same subscription anchors two
+  # different periods for two callers whose zones straddle midnight -- and `period_start` is
+  # the third column of index_billing_usage_counters_on_scope. Two values mean two counter
+  # rows, which means two full allowances on a ceiling whose whole purpose is to fail closed,
+  # and a usage display reading a row the sender never writes to.
+  #
+  # Nothing in this application sets `Time.zone` per request or per job today -- the reporting
+  # code converts with `in_time_zone` and leaves the thread-local alone -- so no shipped caller
+  # diverges. But the per-user `Time.use_zone` around_action is the ordinary Rails idiom for
+  # exactly this app's "show me my hours in my timezone" surface, and a key derived from
+  # ambient state is wrong the day somebody adds it rather than the day it is written. The
+  # stored column is UTC; deriving the key from it directly is also one character shorter than
+  # deriving it from the reader.
   def self.period_start_for(account)
     ends_at = account.billing_subscription&.current_period_end
-    return Time.zone.today.beginning_of_month if ends_at.nil?
+    return Time.now.utc.to_date.beginning_of_month if ends_at.nil?
 
-    (ends_at - 1.month).to_date
+    (ends_at.utc - 1.month).to_date
   end
 end

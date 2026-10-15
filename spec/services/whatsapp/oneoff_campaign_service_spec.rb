@@ -299,10 +299,15 @@ describe Whatsapp::OneoffCampaignService do
         contact = create(:contact, :with_phone_number, account: account, name: 'Jane', email: nil)
         contact.update_labels([label1.title])
 
+        # A template the CHANNEL holds, like the rest of this file. Campaigns::Eligibility
+        # reads the campaign's class from the channel's synced list rather than from
+        # `template_params`, so a name that is not in it is a promotional campaign -- and
+        # this contact has no marketing grant, so the audience would be empty and the skip
+        # this example is about would never be reached.
         campaign_with_blank_liquid = create(:campaign, inbox: whatsapp_inbox, account: account,
                                                        audience: [{ type: 'Label', id: label1.id }],
                                                        template_params: {
-                                                         'name' => 'test_template',
+                                                         'name' => 'ticket_status_updated',
                                                          'namespace' => 'test_namespace',
                                                          'category' => 'UTILITY',
                                                          'language' => 'en',

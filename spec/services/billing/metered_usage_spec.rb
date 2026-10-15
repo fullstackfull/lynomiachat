@@ -88,22 +88,37 @@ RSpec.describe Billing::MeteredUsage do
       expect(BillingUsageCounter.period_start_for(account)).to eq(Time.zone.today.beginning_of_month)
     end
 
-    # A stale period end would anchor a window in the PAST and hand back an allowance that
-    # has not refilled.
-    it 'ignores a period end that has already passed' do
+    # A PERIOD END THAT HAS PASSED STILL ANCHORS THE PERIOD, which is the opposite of what
+    # this did. Switching to the calendar month while the provider had not yet written the
+    # next period MOVED the anchor, and a moved anchor is a new counter row, which is a
+    # fresh allowance. A merchant at their ceiling got a second one in the renewal gap and a
+    # third when the renewal landed -- in exactly the window where the only reason they are
+    # being refused is that they are at the ceiling.
+    it 'keeps anchoring to a period end that has already passed, rather than refilling early' do
       subscribe(plan, period_end: 2.months.ago)
 
-      expect(BillingUsageCounter.period_start_for(account)).to eq(Time.zone.today.beginning_of_month)
+      expect(BillingUsageCounter.period_start_for(account)).to eq((2.months.ago - 1.month).to_date)
     end
 
-    it 'starts a fresh allowance when the period turns over' do
+    it 'does not hand out a second allowance while a renewal is late' do
+      subscribe(plan, period_end: 1.minute.ago)
+      3.times { described_class.consume(account) }
+
+      expect(described_class.consume(account)).to eq(3)
+      expect(described_class.usage(account)[:used]).to eq(3)
+    end
+
+    # THE RENEWAL IS WHAT REFILLS IT, NOT THE CALENDAR. Time passing is not a renewal: the
+    # allowance moves when the provider writes the next `current_period_end`, which is the
+    # same moment the merchant is billed for it.
+    it 'starts a fresh allowance when the subscription renews' do
       subscribe(plan, period_end: 5.days.from_now)
       3.times { described_class.consume(account) }
       expect(described_class.consume(account)).to eq(3)
 
-      travel_to(40.days.from_now) do
-        expect(described_class.consume(account)).to be_nil
-      end
+      subscribe(plan, period_end: 35.days.from_now)
+
+      expect(described_class.consume(account)).to be_nil
     end
 
     # Last period's number is what a merchant disputing a bill, and an operator asked why a
@@ -112,7 +127,8 @@ RSpec.describe Billing::MeteredUsage do
       subscribe(plan, period_end: 5.days.from_now)
       described_class.consume(account)
 
-      travel_to(40.days.from_now) { described_class.consume(account) }
+      subscribe(plan, period_end: 35.days.from_now)
+      described_class.consume(account)
 
       expect(BillingUsageCounter.where(account: account).count).to eq(2)
     end

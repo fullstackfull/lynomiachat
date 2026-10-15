@@ -47,7 +47,12 @@ RSpec.describe 'audience_fields contract', type: :request do
     # BOTH switches, because `counted_stores` honours both: the installation has to offer
     # the provider and the account has to be entitled to Commerce. A store of a provider the
     # installation has switched off is not counted, which is the rule Customer 360 applies.
-    create(:installation_config, name: 'STORESYRIA_ENABLED', value: true)
+    #
+    # Upserted rather than created, because an installation config is GLOBAL state with a
+    # unique index on the name: a non-transactional file earlier in the same run can have
+    # committed it already, and `create` would then raise RecordNotUnique for a reason that
+    # has nothing to do with this contract.
+    InstallationConfig.find_or_initialize_by(name: 'STORESYRIA_ENABLED').update!(value: true)
     contact = create(:contact, account: account)
     create(:commerce_customer_link, account: account, store: store, contact: contact, external_customer_id: 'cust-77')
   end

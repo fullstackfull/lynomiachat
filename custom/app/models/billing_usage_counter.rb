@@ -28,12 +28,23 @@ class BillingUsageCounter < ApplicationRecord
   # Derived from the subscription's `current_period_end` by stepping one month back, because
   # that is the field the billing provider actually maintains -- there is no period_start
   # column to read and inventing one would be a second thing to keep in sync with the
-  # provider. A subscription whose period end has passed has not been renewed yet, so its
-  # stale end would anchor a period in the past; the calendar month is used instead, which
-  # errs towards giving the merchant the smaller, current window rather than a stale allowance.
+  # provider.
+  #
+  # A SUBSCRIPTION WHOSE END HAS PASSED KEEPS ANCHORING THE PERIOD, and the earlier version
+  # of this switched to the calendar month instead. That was a hole in a ceiling that is
+  # supposed to fail closed: between a period ending and the provider writing the next one,
+  # the anchor moved, which is a NEW counter row, which is a FRESH ALLOWANCE. A merchant at
+  # their limit got a second one in the renewal gap and a third when the renewal landed. The
+  # window is short but it is exactly the window a runaway campaign is in -- the account is
+  # at its ceiling, which is why it is being refused at all.
+  #
+  # So a stale end is kept. The allowance refills when the provider renews, and until it
+  # does the merchant has the one they were sold. The calendar month remains for an account
+  # with NO subscription at all -- every Store Syria merchant, entitled through the
+  # integration's bundled package -- because it is the only anchor this side knows for them.
   def self.period_start_for(account)
     ends_at = account.billing_subscription&.current_period_end
-    return Time.zone.today.beginning_of_month if ends_at.nil? || ends_at.past?
+    return Time.zone.today.beginning_of_month if ends_at.nil?
 
     (ends_at - 1.month).to_date
   end

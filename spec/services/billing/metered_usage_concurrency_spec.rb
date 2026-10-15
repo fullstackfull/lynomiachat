@@ -34,10 +34,20 @@ RSpec.describe Billing::MeteredUsage, type: :model do
     account.reload
   end
 
+  # Nothing here is rolled back, so this file has to remove what it commits -- and a leak in
+  # a non-transactional file is not its own problem, it is every later file's.
+  #
+  # BOTH AUDIT SHAPES. Custom::AuditLog carries `auditable` AND `associated`, and an entry
+  # about a PLAN's entitlements is installation-wide: it names the account as `auditable` and
+  # leaves `associated` empty. Deleting only the account-scoped ones left those behind, and
+  # spec/services/billing/feature_sync_spec -- which asserts that no revoked-by-sync entry
+  # exists at all -- then failed depending on file order.
   after do
     BillingUsageCounter.where(account_id: account.id).delete_all
     BillingSubscription.where(account_id: account.id).delete_all
     Custom::AuditLog.where(associated_type: 'Account', associated_id: account.id).delete_all
+    Custom::AuditLog.where(auditable_type: 'Account', auditable_id: account.id).delete_all
+    Custom::AuditLog.where(auditable_type: 'BillingPlan', auditable_id: plan.id).delete_all
     Account.where(id: account.id).delete_all
     BillingPlan.where(id: plan.id).delete_all
   end

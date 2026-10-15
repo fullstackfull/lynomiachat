@@ -93,9 +93,15 @@ module Campaigns::SendGuard
   # campaign is most likely to be the cause. `Billing::MeteredUsage.consume` raises rather
   # than returning on a database it cannot reach, and a raise here aborts the send.
   #
-  # The lock it takes is released when the caller's transaction ends. There is no transaction
-  # around a campaign's send loop, so it is held for the increment alone -- which is exactly
-  # the window two senders would otherwise both read `used == limit - 1` in.
+  # IT CAN RAISE, AND A RAISE STRANDS THE RUN. `consume` fails closed, so a database it
+  # cannot reach aborts the send loop, and an aborted loop leaves the campaign `processing`
+  # -- which `Campaign#mark_processing!` then refuses forever, so the retried job does
+  # nothing. That is upstream's shape for ANY exception in the loop and it is not made
+  # better by resetting the status here: the senders address every contact the audience
+  # resolves, without skipping the ones already recorded as `sent`, so re-running a
+  # half-sent campaign would message those people twice. Double-sending is worse than
+  # stopping, so the run stops and an operator decides. Recorded in
+  # PHASE-5-COMPLETION-REPORT.md as a known limitation rather than papered over.
   def quota(campaign)
     Billing::MeteredUsage.consume(campaign.account) ? :send_quota_exceeded : nil
   end

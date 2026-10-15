@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_24_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_25_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -2253,16 +2253,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_24_000000) do
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
-  add_foreign_key "partner_consent_events", "accounts"
-  add_foreign_key "partner_consent_events", "commerce_stores"
-  add_foreign_key "partner_consent_events", "contacts"
-  add_foreign_key "partner_consent_events", "platform_apps"
-  add_foreign_key "partner_consent_events", "users", column: "recorded_by_id"
-  add_foreign_key "partner_consents", "accounts"
-  add_foreign_key "partner_consents", "commerce_stores"
-  add_foreign_key "partner_consents", "contacts"
-  add_foreign_key "partner_consents", "platform_apps"
-  add_foreign_key "partner_consents", "users", column: "recorded_by_id"
+  add_foreign_key "partner_consent_events", "accounts", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "commerce_stores", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "contacts", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "platform_apps", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "users", column: "recorded_by_id", on_delete: :nullify
+  add_foreign_key "partner_consents", "accounts", on_delete: :cascade
+  add_foreign_key "partner_consents", "commerce_stores", on_delete: :cascade
+  add_foreign_key "partner_consents", "contacts", on_delete: :cascade
+  add_foreign_key "partner_consents", "platform_apps", on_delete: :cascade
+  add_foreign_key "partner_consents", "users", column: "recorded_by_id", on_delete: :nullify
   add_foreign_key "platform_support_agents", "users", on_delete: :cascade
   add_foreign_key "platform_support_events", "platform_support_tickets", on_delete: :cascade
   add_foreign_key "platform_support_internal_notes", "platform_support_agents", column: "agent_id"

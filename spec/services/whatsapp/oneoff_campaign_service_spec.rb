@@ -107,6 +107,27 @@ describe Whatsapp::OneoffCampaignService do
         described_class.new(campaign: campaign).perform
       end
 
+      # THE BRAKE, PROVED IN THE REAL SEND PATH RATHER THAN AT THE FILTER.
+      #
+      # Until Campaigns::Eligibility existed this sender messaged all four of these people.
+      # `suppressed` is the one that does lasting damage: it is set when the provider reports
+      # the number cannot receive, so re-sending to it is what degrades a sender's quality
+      # rating and eventually its messaging tier.
+      it 'never sends to a blocked, withdrawn or suppressed contact' do
+        reachable, blocked, withdrawn, suppressed =
+          create_list(:contact, 4, :with_phone_number, account: account)
+        [reachable, blocked, withdrawn, suppressed].each { |contact| contact.update_labels([label1.title]) }
+        blocked.update!(blocked: true)
+        [[withdrawn, :withdrawn], [suppressed, :suppressed]].each do |contact, state|
+          Commerce::MessagingConsent.create!(account: account, contact: contact, purpose: :promotional,
+                                             state: state, source: 'merchant', decided_at: Time.current)
+        end
+
+        expect(whatsapp_channel).to receive(:send_template).once
+
+        described_class.new(campaign: campaign).perform
+      end
+
       it 'skips contacts without phone numbers' do
         contact_without_phone = create(:contact, account: account, phone_number: nil)
         contact_without_phone.update_labels([label1.title])

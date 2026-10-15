@@ -20,7 +20,7 @@ abort 'no inboxes -- run `rails db:seed` first' if inboxes.empty?
 
 web_inbox = inboxes.find { |i| i.channel_type == 'Channel::WebWidget' } || inboxes.first
 
-CAMPAIGNS = [
+campaigns = [
   { title: 'Welcome to Lynomia',
     description: 'Greets a visitor the first time they open the chat.',
     message: 'Hi! Anything we can help you find today?',
@@ -41,11 +41,20 @@ CAMPAIGNS = [
     description: 'Sent once, last month.',
     message: 'Your order shipped. Reply here if anything is wrong with it.',
     campaign_type: :one_off, enabled: true, scheduled_at: 4.weeks.ago,
-    campaign_status: :completed },
+    campaign_status: :completed }
 ]
 
-CAMPAIGNS.each do |attrs|
+campaigns.each do |attrs|
   campaign = account.campaigns.find_or_initialize_by(title: attrs[:title])
+
+  # A COMPLETED CAMPAIGN IS FINISHED, and the model says so: re-saving one raises "The campaign is
+  # already completed". The first run of this script created it, so the second run must leave it alone
+  # rather than try to write the same attributes back over it.
+  if campaign.persisted? && campaign.completed?
+    puts "campaign: #{campaign.title} (already completed, left as is)"
+    next
+  end
+
   campaign.assign_attributes(
     attrs.except(:campaign_status).merge(inbox: web_inbox, sender: user)
   )
@@ -54,7 +63,7 @@ CAMPAIGNS.each do |attrs|
   puts "campaign: #{campaign.title}"
 end
 
-RULES = [
+rules = [
   { name: 'Tag billing questions',
     description: 'Adds the billing label when a message mentions an invoice or a refund.',
     event_name: 'message_created', active: true,
@@ -79,10 +88,10 @@ RULES = [
     event_name: 'conversation_updated', active: true,
     conditions: [{ attribute_key: 'status', filter_operator: 'equal_to',
                    values: ['resolved'], query_operator: nil }],
-    actions: [{ action_name: 'resolve_conversation', action_params: [] }] },
+    actions: [{ action_name: 'resolve_conversation', action_params: [] }] }
 ]
 
-RULES.each do |attrs|
+rules.each do |attrs|
   rule = account.automation_rules.find_or_initialize_by(name: attrs[:name])
   rule.assign_attributes(attrs)
   rule.save!

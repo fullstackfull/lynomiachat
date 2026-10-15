@@ -163,7 +163,7 @@ export default {
     class="relative isolate flex w-full h-full min-w-0 gap-0 p-0 md:gap-1.5 md:p-1.5 lg:gap-2.5 lg:p-2.5 bg-n-background text-n-slate-12 [scrollbar-width:thin]"
   >
     <ChatList
-      class="relative z-20 overflow-hidden border-0 md:border md:border-n-weak md:rounded-overlay lg:rounded-2xl md:shadow-raised transition-colors duration-200 md:hover:border-n-brand/30 motion-safe:animate-fade-in-up bg-n-background"
+      class="relative z-20 overflow-hidden border-0 md:border md:border-n-weak md:rounded-overlay lg:rounded-2xl md:shadow-raised transition-colors duration-200 motion-safe:animate-fade-in-up bg-n-background"
       :show-conversation-list="showConversationList"
       :conversation-inbox="inboxId"
       :label="label"
@@ -176,7 +176,7 @@ export default {
 
     <ConversationBox
       v-if="showMessageView"
-      class="relative z-10 flex-1 min-w-0 overflow-hidden border-0 md:border md:border-n-weak md:rounded-overlay lg:rounded-2xl md:shadow-raised transition-[border-color,box-shadow] duration-200 md:hover:border-n-brand/30 md:hover:shadow-overlay motion-safe:animate-fade-in-up bg-n-background"
+      class="relative z-10 flex-1 min-w-0 overflow-hidden border-0 md:border md:border-n-weak md:rounded-overlay lg:rounded-2xl md:shadow-raised transition-[border-color,box-shadow] duration-200 md:hover:shadow-overlay motion-safe:animate-fade-in-up bg-n-background"
       :inbox-id="inboxId"
       :is-on-expanded-layout="isOnExpandedLayout"
     />

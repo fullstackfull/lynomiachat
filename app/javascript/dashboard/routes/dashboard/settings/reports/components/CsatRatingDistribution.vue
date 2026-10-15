@@ -66,7 +66,7 @@ const chartData = computed(() => ({
           <span class="text-sm font-medium text-n-slate-12">
             {{ formattedPercentage }}
           </span>
-          <span class="text-xs text-n-slate-10">({{ formattedValue }})</span>
+          <span class="text-xs text-n-slate-11">({{ formattedValue }})</span>
         </template>
       </PercentageChart>
       <div v-else class="h-6 w-full rounded bg-n-alpha-2" />

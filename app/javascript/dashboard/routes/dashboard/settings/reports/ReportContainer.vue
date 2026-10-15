@@ -156,7 +156,10 @@ export default {
               metric.KEY === 'reply_time'
                 ? this.$t('REPORT.METRICS.REPLY_TIME.TOOLTIP_LABEL')
                 : metric.NAME,
-            color: 'rgb(var(--blue-9))',
+            // `--blue-9` is #2781F6, the Chatwoot blue this project retired when `n.brand` moved to
+            // Lynomia's indigo. These charts carry one series each, so there is no palette to collide
+            // with and no reason for the product's own data to be drawn in the old brand's colour.
+            color: 'rgb(var(--iris-9))',
             data,
           },
         ],
@@ -329,7 +332,7 @@ export default {
             :clickable="isDrilldownEnabled()"
             @item-click="onChartElementClick(metric, $event)"
           />
-          <span v-else class="text-sm text-n-slate-10">
+          <span v-else class="text-sm text-n-slate-11">
             {{ $t('REPORT.NO_ENOUGH_DATA') }}
           </span>
         </div>

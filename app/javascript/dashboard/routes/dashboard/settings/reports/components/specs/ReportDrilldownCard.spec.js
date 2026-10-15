@@ -146,10 +146,10 @@ describe('ReportDrilldownCard.vue', () => {
       true
     );
     expect(
-      links.every(link => link.classes().includes('text-n-slate-10'))
+      links.every(link => link.classes().includes('text-n-slate-11'))
     ).toBe(true);
     expect(
-      links.every(link => !link.classes().includes('text-n-blue-11'))
+      links.every(link => !link.classes().includes('text-n-iris-11'))
     ).toBe(true);
     expect(wrapper.find('.i-lucide-contact').exists()).toBe(true);
     expect(wrapper.find('.i-lucide-inbox').exists()).toBe(true);

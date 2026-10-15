@@ -16,8 +16,13 @@ import AudienceExplainer from 'dashboard/components-next/audience/AudienceExplai
 import { useContactFilterContext } from 'dashboard/components-next/filter/contactProvider';
 import { summariseAudience } from 'dashboard/helper/audienceSummary';
 
-defineProps({
+const props = defineProps({
   message: { type: String, default: '' },
+  // The channel the campaign will send on, and the template it will send -- the two things
+  // besides the audience that decide who it may reach. Both optional: the SMS form has no
+  // template, and neither form has an inbox until one is picked.
+  inboxId: { type: [Number, String], default: null },
+  templateParams: { type: Object, default: null },
 });
 
 // The page owns the trip to Contacts and back, because it is the page that has a draft to keep.
@@ -79,7 +84,11 @@ const audience = computed(() =>
 const fetchCount = debounce(async () => {
   try {
     const response = await run(signal =>
-      CampaignsAPI.audiencePreview(audience.value, { signal })
+      CampaignsAPI.audiencePreview(audience.value, {
+        signal,
+        inboxId: props.inboxId,
+        templateParams: props.templateParams,
+      })
     );
     if (response) count.value = response.data.count;
   } catch {
@@ -87,15 +96,20 @@ const fetchCount = debounce(async () => {
   }
 }, PREVIEW_DELAY_MS);
 
-watch(audience, entries => {
-  count.value = null;
-  countFailed.value = false;
-  if (entries.length) {
-    fetchCount();
-  } else {
-    abort();
+// The channel and the template change WHO the campaign can reach, not just what it says, so
+// the count is stale the moment either of them does.
+watch(
+  [audience, () => props.inboxId, () => props.templateParams],
+  ([entries]) => {
+    count.value = null;
+    countFailed.value = false;
+    if (entries.length) {
+      fetchCount();
+    } else {
+      abort();
+    }
   }
-});
+);
 
 const countNote = computed(() => {
   if (!audience.value.length) return '';

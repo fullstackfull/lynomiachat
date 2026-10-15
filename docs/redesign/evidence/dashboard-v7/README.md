@@ -18,6 +18,12 @@ rather than here. What follows is only the part that is visible.
 | `after-canned-shortcode-error.png` | Add canned response, short code emptied and blurred | The red outline and "Short Code is required." are back. `dedf7d66` called `v$.shortCode.$touch` and nothing read the result, so a touched-and-invalid field looked identical to a valid one. The "Message" label above the editor is a `role="group"` name now, not a `label for` pointing at a `<div>`. |
 | `after-regex-label-toggles.png` | Add custom attribute, after clicking the WORDS beside the regex checkbox | The box toggled and the pattern and hint fields appeared. Its accessible name reads "Enable regex validation"; before, the text was a loose sibling node, so the box had no name and the words did not toggle it. |
 
+## One artifact in the frames
+
+`after-command-palette-brand-accent.png` carries a small `9019.7 ms ×26` badge in the top-left
+corner. That is Vite's dev-server HMR overlay, not product chrome — these are captures of a
+development build, which is the only build this environment can run. It does not ship.
+
 ## What is deliberately not pictured
 
 Three dead Tailwind utilities were replaced (`bg-black/50`, `from-black/*`, `text-gray-900`),

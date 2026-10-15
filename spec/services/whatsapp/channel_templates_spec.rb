@@ -19,7 +19,9 @@ RSpec.describe Whatsapp::ChannelTemplates do
      { 'name' => 'autumn_sale', 'language' => 'en_US', 'status' => 'approved', 'category' => 'MARKETING',
        'components' => [{ 'type' => 'BODY', 'text' => 'Sale!' }] },
      { 'name' => 'pending_one', 'language' => 'en_US', 'status' => 'pending', 'category' => 'MARKETING',
-       'components' => [{ 'type' => 'BODY', 'text' => 'Soon.' }] }]
+       'components' => [{ 'type' => 'BODY', 'text' => 'Soon.' }] },
+     { 'name' => 'verify_code', 'language' => 'en_US', 'status' => 'approved', 'category' => 'AUTHENTICATION',
+       'components' => [{ 'type' => 'BODY', 'text' => 'Your code.' }] }]
   end
   let(:channel) do
     create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
@@ -28,6 +30,13 @@ RSpec.describe Whatsapp::ChannelTemplates do
 
   def params(name, language = 'en_US')
     { 'name' => name, 'language' => language }
+  end
+
+  # The guard returns at its first line for anything that is not a WhatsApp business id, so
+  # every example that wants its lookup to run has to pass one.
+  def guard_for(name)
+    Whatsapp::AuthenticationTemplateGuard.new(channel: channel, recipient: 'SY.ENT.AB12CD34',
+                                              template_params: params(name))
   end
 
   describe '.find' do
@@ -77,16 +86,27 @@ RSpec.describe Whatsapp::ChannelTemplates do
       expect(name).to eq(described_class.find(channel, campaign.template_params, approved: true)['name'])
     end
 
+    # THE GUARD ONLY LOOKS WHEN THE RECIPIENT IS A BUSINESS ID. Asked with a phone number it
+    # returns at its first line, so an example that passes one asserts nothing about which
+    # row the guard reads -- which is exactly what this example did until an audit of the
+    # closure caught it. Three verdicts, each of which is the guard's own lookup speaking:
+    # it errors on the row it found being AUTHENTICATION, is silent on the row it found
+    # being MARKETING, and reports a missing category when it found no row at all.
     it 'selects the same template as the authentication guard' do
-      guard = Whatsapp::AuthenticationTemplateGuard.new(channel: channel, recipient: '+963900000000',
-                                                        template_params: campaign.template_params)
+      expect(guard_for('verify_code').error).to be_present
+      expect(guard_for('autumn_sale').error).to be_nil
+      expect(guard_for('never_synced').error)
+        .to eq(I18n.t('errors.whatsapp.template_category_required_for_bsuid'))
 
-      # The guard reads its template's category to decide; a MARKETING one is not an
-      # authentication template, and neither is the row this module finds.
-      expect(guard.error).to be_nil
-      expect(described_class.find(channel, campaign.template_params)['category']).to eq('MARKETING')
+      expect(described_class.find(channel, params('verify_code'))['category']).to eq('AUTHENTICATION')
+      expect(described_class.find(channel, params('autumn_sale'))['category']).to eq('MARKETING')
+      expect(described_class.find(channel, params('never_synced'))).to be_nil
     end
 
+    # NOT AN INDEPENDENT AGREEMENT, AND NOT OFFERED AS ONE: the class and the recorded text
+    # are the two lookups this module replaced, so they now call it rather than each other.
+    # What this pins is that both still route through it instead of growing a private copy
+    # again, and that the single row they get carries both the class and the text.
     it 'gives the class and the recorded text the same row' do
       rendered = Campaigns::RenderedTemplateText.new(channel: channel, template_params: campaign.template_params)
 

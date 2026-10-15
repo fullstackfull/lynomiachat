@@ -66,6 +66,35 @@ RSpec.describe 'cancelling a campaign mid-run', type: :model do
     end
   end
 
+  # THE THIRD SENDER. B2.4 changed three send loops and this suite covered two of them, so
+  # reverting the `break` in this one left every example green -- the gap an audit of the
+  # closure found, not a run. Twilio SMS is a campaign channel a merchant can actually be on.
+  context 'with the Twilio SMS sender' do
+    let(:channel) { create(:channel_twilio_sms, account: account) }
+    let(:campaign) do
+      create(:campaign, account: account, inbox: channel.inbox, campaign_type: :one_off, scheduled_at: 1.hour.ago)
+    end
+    let(:service) { Twilio::OneoffSmsCampaignService.new(campaign: campaign) }
+
+    before do
+      allow(campaign).to receive(:audience_contacts).and_return(audience)
+      allow(channel).to receive(:send_message)
+    end
+
+    it_behaves_like 'a sender that stops'
+
+    # Only the shared example pins the `break`: SendGuard refuses every recipient of a
+    # cancelled campaign either way, so this one stays green without it. It guards the
+    # record -- nobody is messaged -- rather than the cost of reaching it.
+    it 'sends to nobody after the cancellation' do
+      campaign.cancel!
+
+      service.perform
+
+      expect(channel).not_to have_received(:send_message)
+    end
+  end
+
   context 'with the WhatsApp sender' do
     let(:channel) do
       create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,

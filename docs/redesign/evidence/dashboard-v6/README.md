@@ -10,6 +10,21 @@ page behind them is identical and only the dialog differs.
 | `before-label-add-color.png` / `after-label-add-color.png` | The same dialog with the colour panel open. **This is the frame that decided the dialog's scroll mode.** The panel is an in-flow `absolute` child of the form (`ColorPicker.vue`'s `.colorpicker--chrome`), exactly like `ComboBoxDropdown.vue:69`. It reaches 792px while the form ends at 689px, so it only survives because the dialog keeps its default `overflow: visible`. Passing `scroll-body` here would have given it a second, closer clipping box and cut the hex field off the bottom. |
 | `before-label-edit.png` / `after-label-edit.png` | Edit label, opened from the first row. |
 
+# Canned Responses: one modal instead of two
+
+| shot | what it is |
+|---|---|
+| `before-canned-add.png` / `after-canned-add.png` | Add canned response. **The page behind it was being dimmed twice.** `Index.vue` wrapped `AddCanned` in a `woot-modal` while `AddCanned` rendered a `woot-modal` of its own, so two backdrops stacked. Counted in the browser before the change: 2 `.modal-mask`, 0 native dialogs. After: 0 and 1. |
+
+The editor inside it is the same ProseMirror instance as before, with its menubar hidden and its
+12.5rem body — moved from a scoped `:deep()` block to arbitrary variants, which needed `!hidden`
+because the menubar's own `display: flex` comes from a global sheet that loads after Tailwind's
+utilities and wins an equal-specificity contest. The scoped block had won on source order instead.
+
+`verify-canned-dialog.mjs` has eight checks, including the backdrop count, the hidden menubar, the
+200px editor body, and that the editor's own link prompt — itself a modal `<dialog>` — does not take
+the canned dialog down with it when dismissed.
+
 ## What is not in a picture
 
 Two of the changes do not show up in a frame.

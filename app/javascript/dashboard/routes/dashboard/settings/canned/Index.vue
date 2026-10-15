@@ -4,7 +4,7 @@ import AddCanned from './AddCanned.vue';
 import EditCanned from './EditCanned.vue';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import { picoSearch } from '@chatwoot/pico-search';
@@ -27,9 +27,9 @@ const { t } = useI18n();
 
 const { getPlainText } = useMessageFormatter();
 
-const showAddPopup = ref(false);
+const addDialogRef = ref(null);
 const loading = ref({});
-const showEditPopup = ref(false);
+const editDialogRef = ref(null);
 const showDeleteConfirmationPopup = ref(false);
 const activeResponse = ref({});
 const cannedResponseAPI = ref({ message: '' });
@@ -91,19 +91,12 @@ const showAlertMessage = message => {
   useAlert(message);
 };
 
-const openAddPopup = () => {
-  showAddPopup.value = true;
-};
-const hideAddPopup = () => {
-  showAddPopup.value = false;
-};
+const openAddPopup = () => addDialogRef.value?.open();
 
 const openEditPopup = response => {
-  showEditPopup.value = true;
   activeResponse.value = response;
-};
-const hideEditPopup = () => {
-  showEditPopup.value = false;
+  // After the props land, so the form fills from the response that was just clicked.
+  nextTick(() => editDialogRef.value?.open());
 };
 
 const openDeletePopup = response => {
@@ -235,19 +228,14 @@ const tableHeaders = computed(() => {
         </template>
       </BaseTable>
     </template>
-    <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">
-      <AddCanned :on-close="hideAddPopup" />
-    </woot-modal>
+    <AddCanned ref="addDialogRef" />
 
-    <woot-modal v-model:show="showEditPopup" :on-close="hideEditPopup">
-      <EditCanned
-        v-if="showEditPopup"
-        :id="activeResponse.id"
-        :edshort-code="activeResponse.short_code"
-        :edcontent="activeResponse.content"
-        :on-close="hideEditPopup"
-      />
-    </woot-modal>
+    <EditCanned
+      :id="activeResponse.id"
+      ref="editDialogRef"
+      :edshort-code="activeResponse.short_code"
+      :edcontent="activeResponse.content"
+    />
 
     <woot-delete-modal
       v-model:show="showDeleteConfirmationPopup"

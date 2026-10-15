@@ -108,7 +108,10 @@ export default {
     },
     showCannedResponseModal() {
       useTrack(ACCOUNT_EVENTS.ADDED_TO_CANNED_RESPONSE);
+      // The flag still drives `v-if` on the context menu below, which hides itself while the dialog
+      // is up. The dialog itself is a real `<dialog>` now and owns its own open state.
       this.isCannedResponseModalOpen = true;
+      this.$refs.cannedDialog?.open();
     },
     hideCannedResponseModal() {
       this.isCannedResponseModalOpen = false;
@@ -170,16 +173,12 @@ export default {
 <template>
   <div class="context-menu">
     <!-- Add To Canned Responses -->
-    <woot-modal
-      v-if="isCannedResponseModalOpen && enabledOptions['cannedResponse']"
-      v-model:show="isCannedResponseModalOpen"
-      :on-close="hideCannedResponseModal"
-    >
-      <AddCannedModal
-        :response-content="plainTextContent"
-        :on-close="hideCannedResponseModal"
-      />
-    </woot-modal>
+    <AddCannedModal
+      v-if="enabledOptions['cannedResponse']"
+      ref="cannedDialog"
+      :response-content="plainTextContent"
+      @close="hideCannedResponseModal"
+    />
     <!-- Confirm Deletion -->
     <woot-delete-modal
       v-if="showDeleteModal && enabledOptions['delete']"

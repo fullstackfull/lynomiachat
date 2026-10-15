@@ -115,7 +115,7 @@ const emitNewAccount = () => {
               </span>
               <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
               <span
-                class="text-n-slate-11 max-w-24 truncate capitalize"
+                class="text-n-slate-11 max-w-24 truncate"
                 :title="account.name"
               >
                 {{

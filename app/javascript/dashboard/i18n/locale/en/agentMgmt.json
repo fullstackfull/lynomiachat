@@ -1,7 +1,7 @@
 {
   "AGENT_MGMT": {
     "HEADER": "Agents",
-    "HEADER_BTN_TXT": "Add Agent",
+    "HEADER_BTN_TXT": "Add agent",
     "LOADING": "Fetching Agent List",
     "DESCRIPTION": "An agent is a member of your customer support team who can view and respond to user messages. The list below shows all the agents in your account.",
     "LEARN_MORE": "Learn about user roles",

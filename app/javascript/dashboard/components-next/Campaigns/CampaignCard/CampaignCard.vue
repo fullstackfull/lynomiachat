@@ -116,7 +116,7 @@ const inboxIcon = computed(() => {
       <div class="flex items-center gap-3 w-full min-w-0">
         <span
           :title="title"
-          class="min-w-0 text-base font-medium capitalize text-n-slate-12 line-clamp-1"
+          class="min-w-0 text-base font-medium text-n-slate-12 line-clamp-1"
         >
           {{ title }}
         </span>

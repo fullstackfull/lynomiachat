@@ -75,7 +75,7 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
     >
       <p
         v-if="description || $slots.description"
-        class="mb-0 line-clamp-5 sm:line-clamp-none max-w-3xl text-body-main"
+        class="mb-0 line-clamp-5 sm:line-clamp-none max-w-prose text-body-main"
       >
         <slot name="description">{{ description }}</slot>
       </p>

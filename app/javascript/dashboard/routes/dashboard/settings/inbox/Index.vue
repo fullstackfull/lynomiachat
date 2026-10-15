@@ -189,7 +189,7 @@ const openDelete = inbox => {
             <div class="flex flex-col items-start gap-1 min-w-0">
               <span
                 :title="inbox.name"
-                class="block text-heading-3 text-n-slate-12 capitalize truncate max-w-full"
+                class="block text-heading-3 text-n-slate-12 truncate max-w-full"
               >
                 {{ inbox.name }}
               </span>

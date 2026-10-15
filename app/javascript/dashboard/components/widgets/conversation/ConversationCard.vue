@@ -148,7 +148,7 @@ const selectedModel = computed({
       <div class="flex items-center min-w-0 gap-2">
         <h4
           dir="auto"
-          class="conversation--user flex-1 min-w-0 my-0 text-sm capitalize truncate text-n-slate-12"
+          class="conversation--user flex-1 min-w-0 my-0 text-sm truncate text-n-slate-12"
           :class="hasUnread ? 'font-semibold' : 'font-medium'"
         >
           {{ currentContact.name }}

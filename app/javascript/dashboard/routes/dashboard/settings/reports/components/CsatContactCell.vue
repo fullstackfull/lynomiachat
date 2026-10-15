@@ -30,7 +30,7 @@ defineProps({
       rounded-full
     />
     <div class="flex flex-col gap-0.5">
-      <span class="text-sm text-n-slate-12 font-medium capitalize">
+      <span class="text-sm text-n-slate-12 font-medium">
         {{ contact?.name || '—' }}
       </span>
       <div

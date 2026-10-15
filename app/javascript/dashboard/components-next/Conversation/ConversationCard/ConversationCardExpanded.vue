@@ -158,7 +158,7 @@ const selectedModel = computed({
       />
 
       <h4
-        class="text-heading-3 my-0 capitalize truncate text-n-slate-12 font-medium min-w-24 max-w-56 flex-1"
+        class="text-heading-3 my-0 truncate text-n-slate-12 font-medium min-w-24 max-w-56 flex-1"
       >
         {{ currentContact.name }}
       </h4>

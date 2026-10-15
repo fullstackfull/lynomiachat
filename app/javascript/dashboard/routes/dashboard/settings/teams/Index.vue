@@ -175,7 +175,7 @@ const confirmPlaceHolderText = computed(() =>
               />
             </div>
             <div class="flex flex-col items-start gap-1">
-              <span class="block text-heading-3 text-n-slate-12 capitalize">
+              <span class="block text-heading-3 text-n-slate-12">
                 {{ team.name }}
               </span>
               <p class="mb-0 text-n-slate-11 text-body-main">

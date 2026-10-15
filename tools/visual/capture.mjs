@@ -81,6 +81,15 @@ const SETS = {
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',
       campaigns: '/app/accounts/1/campaigns/ongoing',
+      'campaigns-one-off': '/app/accounts/1/campaigns/one_off',
+      automations: '/app/accounts/1/settings/automation/list',
+      labels: '/app/accounts/1/settings/labels',
+      // The contacts list's rows expand in place into an editor. Shooting the list alone would not
+      // show it, and "it still exists" is the whole point of capturing it.
+      'contact-expanded': {
+        path: '/app/accounts/1/contacts',
+        click: ['.ph-no-capture >> nth=0', 'button[aria-label], [data-testid] >> nth=0'],
+      },
       'settings-inboxes': '/app/accounts/1/settings/inboxes',
       'settings-labels': '/app/accounts/1/settings/labels',
       'settings-profile': '/app/accounts/1/profile/settings',

@@ -1,6 +1,5 @@
 <script setup>
 import Button from 'dashboard/components-next/button/Button.vue';
-import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { computed } from 'vue';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
@@ -28,21 +27,18 @@ useKeyboardEvents(keyboardEvents);
 </script>
 
 <template>
-  <ButtonGroup
-    class="flex flex-col justify-center items-center absolute top-36 xl:top-24 ltr:right-2 rtl:left-2 bg-n-solid-2/90 backdrop-blur-lg border border-n-weak/50 rounded-full gap-1.5 p-1.5 shadow-sm transition-shadow duration-200 hover:shadow !z-20"
-  >
-    <Button
-      v-tooltip.top="$t('CONVERSATION.SIDEBAR.CONTACT')"
-      :aria-label="$t('CONVERSATION.SIDEBAR.CONTACT')"
-      ghost
-      slate
-      sm
-      class="!rounded-full transition-all duration-[250ms] ease-out active:!scale-95 active:!brightness-105 active:duration-75"
-      :class="{
-        'bg-n-alpha-2 active:shadow-sm': isContactSidebarOpen,
-      }"
-      icon="i-ph-user-bold"
-      @click="handleConversationSidebarToggle"
-    />
-  </ButtonGroup>
+  <!-- This used to float over the message timeline on its own absolutely positioned pill. It now sits with
+       the call button and the overflow menu, which is where every other conversation-level action lives. -->
+  <Button
+    v-tooltip.top="$t('CONVERSATION.SIDEBAR.CONTACT')"
+    :aria-label="$t('CONVERSATION.SIDEBAR.CONTACT')"
+    :aria-pressed="isContactSidebarOpen"
+    ghost
+    slate
+    sm
+    class="transition-colors duration-150"
+    :class="{ 'bg-n-alpha-2 text-n-slate-12': isContactSidebarOpen }"
+    icon="i-lucide-user-round"
+    @click="handleConversationSidebarToggle"
+  />
 </template>

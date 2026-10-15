@@ -7,7 +7,6 @@ import ConversationBox from '../../../components/widgets/conversation/Conversati
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import CmdBarConversationSnooze from 'dashboard/routes/dashboard/commands/CmdBarConversationSnooze.vue';
 import { emitter } from 'shared/helpers/mitt';
-import SidepanelSwitch from 'dashboard/components-next/Conversation/SidepanelSwitch.vue';
 import ConversationSidebar from 'dashboard/components/widgets/conversation/ConversationSidebar.vue';
 
 export default {
@@ -15,7 +14,6 @@ export default {
     ChatList,
     ConversationBox,
     CmdBarConversationSnooze,
-    SidepanelSwitch,
     ConversationSidebar,
   },
   beforeRouteLeave(to, from, next) {
@@ -181,9 +179,7 @@ export default {
       class="relative z-10 flex-1 min-w-0 overflow-hidden border-0 md:border md:border-n-weak md:rounded-overlay lg:rounded-2xl md:shadow-raised transition-[border-color,box-shadow] duration-200 md:hover:border-n-brand/30 md:hover:shadow-overlay motion-safe:animate-fade-in-up bg-n-background"
       :inbox-id="inboxId"
       :is-on-expanded-layout="isOnExpandedLayout"
-    >
-      <SidepanelSwitch v-if="currentChat.id" />
-    </ConversationBox>
+    />
 
     <!-- The slide used a physical `translateX`, so in Arabic the panel entered from the wrong edge. -->
     <Transition

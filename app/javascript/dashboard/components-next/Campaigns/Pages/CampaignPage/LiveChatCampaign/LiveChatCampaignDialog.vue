@@ -51,7 +51,7 @@ defineExpose({ dialogRef });
     type="edit"
     width="xl"
     position="top"
-    overflow-y-auto
+    scroll-body
     :title="t('CAMPAIGN.LIVE_CHAT.CREATE.TITLE')"
     :confirm-button-label="t('CAMPAIGN.LIVE_CHAT.CREATE.FORM.BUTTONS.CREATE')"
     :cancel-button-label="t('CAMPAIGN.LIVE_CHAT.CREATE.FORM.BUTTONS.CANCEL')"

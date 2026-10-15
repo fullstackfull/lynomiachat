@@ -56,7 +56,7 @@ defineExpose({ dialogRef });
     type="edit"
     width="xl"
     position="top"
-    overflow-y-auto
+    scroll-body
     :title="t('CAMPAIGN.WHATSAPP.CREATE.TITLE')"
     :confirm-button-label="t('CAMPAIGN.WHATSAPP.CREATE.FORM.BUTTONS.CREATE')"
     :cancel-button-label="t('CAMPAIGN.WHATSAPP.CREATE.FORM.BUTTONS.CANCEL')"

@@ -16,8 +16,27 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
   end
   let(:inbox) { channel.inbox }
   let(:campaign) { create(:campaign, account: account, inbox: inbox) }
-  let(:metrics_path) { "/api/v1/accounts/#{account.id}/campaigns/#{campaign.id}/analytics/metrics" }
-  let(:contacts_path) { "/api/v1/accounts/#{account.id}/campaigns/#{campaign.id}/analytics/contacts" }
+  let(:metrics_path) { "/api/v1/accounts/#{account.id}/campaigns/#{campaign.display_id}/analytics/metrics" }
+  let(:contacts_path) { "/api/v1/accounts/#{account.id}/campaigns/#{campaign.display_id}/analytics/contacts" }
+
+  # THE IDENTIFIER, PINNED, because the two numbers are equal for an account's FIRST campaign
+  # and an example that only ever creates one cannot tell them apart. `_campaign.json.jbuilder`
+  # renders `json.id resource.display_id` and never renders the primary key, so display_id is
+  # the only campaign id any client holds; this endpoint used to look the campaign up by
+  # primary key and therefore answered about a different campaign.
+  it 'addresses a campaign by the id the API hands out, not by its primary key' do
+    create_list(:campaign, 2, account: account, inbox: inbox, campaign_type: :one_off)
+    later = create(:campaign, account: account, inbox: inbox, campaign_type: :one_off)
+    expect(later.display_id).not_to eq(later.id)
+
+    get "/api/v1/accounts/#{account.id}/campaigns/#{later.display_id}/analytics/metrics",
+        headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:success)
+
+    get "/api/v1/accounts/#{account.id}/campaigns/#{later.id}/analytics/metrics",
+        headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:not_found)
+  end
   let(:message_body) { 'Your parcel PARCEL-SECRET-7 is out for delivery' }
 
   # A mirrored second tenant: the same shape of data under another account, so a missing account predicate shows
@@ -31,7 +50,7 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
     CampaignRecipient.create!(account: other_account, campaign: other_campaign, inbox: other_inbox,
                               contact: other_contact, status: :sent, source_id: 'wamid.theirs',
                               sent_at: 1.hour.ago, message_content: 'Their own parcel is on its way')
-    { campaign: other_campaign, contact: other_contact }
+    { account: other_account, campaign: other_campaign, contact: other_contact }
   end
 
   let!(:recipients) do
@@ -165,17 +184,31 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
   end
 
   describe '[isolation] another account\'s campaign' do
-    it 'answers 404 at both endpoints and returns none of its recipients' do
+    # A DISPLAY ID IS PER ACCOUNT, so every account has a campaign 1 and the interesting
+    # question is not whether somebody else's number is "found" -- it is whether this
+    # account's request can ever be answered with THAT account's data. The lookup runs
+    # inside `Current.account.campaigns`, so the worst case is being shown your own
+    # campaign of the same number, and the assertion is that none of the other account's
+    # recipients appear whichever of the two happens.
+    it 'never answers with another account\'s recipients, whatever number is asked for' do
       %w[metrics contacts].each do |endpoint|
-        get "/api/v1/accounts/#{account.id}/campaigns/#{other[:campaign].id}/analytics/#{endpoint}",
-            headers: admin.create_new_auth_token, as: :json
+        [other[:campaign].display_id, other[:campaign].id].each do |asked|
+          get "/api/v1/accounts/#{account.id}/campaigns/#{asked}/analytics/#{endpoint}",
+              headers: admin.create_new_auth_token, as: :json
 
-        # Campaign ids are sequential and guessable, so the lookup happens inside the requesting account and an
-        # id from elsewhere is simply not found.
-        expect(response).to have_http_status(:not_found)
-        expect(response.body).not_to include(other[:contact].name)
-        expect(response.body).not_to include(other[:contact].phone_number)
+          expect(response.body).not_to include(other[:contact].name)
+          expect(response.body).not_to include(other[:contact].phone_number)
+        end
       end
+    end
+
+    # And the account in the path is still checked against the token, which is the boundary
+    # that actually keeps the two apart.
+    it 'refuses a request made against the other account itself' do
+      get "/api/v1/accounts/#{other[:account].id}/campaigns/#{other[:campaign].display_id}/analytics/metrics",
+          headers: admin.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 

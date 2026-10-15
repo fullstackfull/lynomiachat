@@ -67,10 +67,10 @@ RSpec.describe 'Clean-room cross-package behaviour', type: :request do
       # a wider permission than reading the campaign.
       as(role_holder, :get, account_path(mine, "campaigns/#{mine[:campaign].id}"))
       reading_the_campaign = response.status
-      as(role_holder, :get, account_path(mine, "campaigns/#{mine[:campaign].id}/analytics/metrics"))
+      as(role_holder, :get, account_path(mine, "campaigns/#{mine[:campaign].display_id}/analytics/metrics"))
       expect(response.status).to eq(reading_the_campaign)
 
-      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].id}/analytics/metrics"))
+      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].display_id}/analytics/metrics"))
       expect(response).to have_http_status(:success)
     end
   end
@@ -153,7 +153,7 @@ RSpec.describe 'Clean-room cross-package behaviour', type: :request do
     end
 
     it 'reads a pre-rewrite recipient in every state without reinterpreting it' do
-      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].id}/analytics/metrics"))
+      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].display_id}/analytics/metrics"))
 
       expect(response).to have_http_status(:success)
       # One row per state, written as raw integers: the enum still maps every one of them to the same name.
@@ -189,7 +189,7 @@ RSpec.describe 'Clean-room cross-package behaviour', type: :request do
       recipient(mine, contact: create(:contact, account: mine[:account]), status: :skipped,
                       error_message: Campaigns::RecipientSnapshot::NO_DESTINATION)
 
-      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].id}/analytics/metrics"))
+      as(mine[:admin], :get, account_path(mine, "campaigns/#{mine[:campaign].display_id}/analytics/metrics"))
       per_campaign = response.parsed_body
 
       cross = Analytics::Campaigns::Metrics.new(
@@ -210,7 +210,7 @@ RSpec.describe 'Clean-room cross-package behaviour', type: :request do
   describe 'F-5 nothing references an absent dependency' do
     it 'serves every one of the five areas without a missing constant, file or route' do
       recipient(mine, status: :sent, source_id: 'wamid.f5', sent_at: Time.current, message_content: 'hi')
-      campaign_id = mine[:campaign].id
+      campaign_id = mine[:campaign].display_id
 
       [
         'audit_logs',

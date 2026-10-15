@@ -126,7 +126,7 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
                                           validate_provider_config: false)
       campaign = create(:campaign, account: account, inbox: channel.inbox)
 
-      get "/api/v1/accounts/#{account.id}/campaigns/#{campaign.id}/analytics/contacts",
+      get "/api/v1/accounts/#{account.id}/campaigns/#{campaign.display_id}/analytics/contacts",
           params: { page: %w[2 3] }, headers: admin.create_new_auth_token, as: :json
 
       expect(response).to have_http_status(:success)

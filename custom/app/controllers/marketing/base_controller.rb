@@ -8,7 +8,7 @@ class Marketing::BaseController < PublicController
   layout 'marketing'
 
   before_action :reject_tenant_custom_domain
-  before_action :set_marketing_locale
+  around_action :set_marketing_locale
 
   helper_method :marketing_locale, :marketing_page, :marketing_published_locales
 
@@ -110,8 +110,25 @@ class Marketing::BaseController < PublicController
   # Arabic is the default and is unprefixed; English is `/en` (D5). The locale is a URL decision made here,
   # server-side -- never a client-side swap, which is the defect that flipped every Arabic visitor to English
   # on the old page (docs/official-website/01-current-state-audit.md section 3.3).
-  def set_marketing_locale
+  #
+  # AN `around_action` WITH `with_locale`, NOT A BARE ASSIGNMENT. This was `I18n.locale = @marketing_locale`
+  # in a `before_action`, which sets the locale and never puts it back. `I18n.locale` is a thread variable
+  # (i18n 1.15.2 stores it with `Thread.current.thread_variable_set(:i18n_config, ...)`) and nothing in Rails
+  # restores it per request, so a Puma thread that served an Arabic marketing page kept `:ar` afterwards.
+  #
+  # Measured, on the real host: `I18n.locale = :en; get '/'` leaves `I18n.locale == :ar`.
+  #
+  # Most of the application was safe from that because it sets its locale explicitly on the way in --
+  # `ApplicationController:11`, `Api::V1::Accounts::BaseController:6`, `DashboardController:38` and
+  # `Public::Api::V1::Portals::BaseController:7` all use `around_action` + `I18n.with_locale`. The exposed
+  # ones are the `PublicController` descendants that set no locale of their own: `CsatSurveyController`,
+  # `InboxesController`, `Portals::MediaController` and this controller's own `MediaController`. A CSAT
+  # survey rendered on a thread that had just served the Arabic homepage came back in Arabic.
+  #
+  # `with_locale` restores in an `ensure`, which is the form `app/controllers/concerns/switch_locale.rb:56`
+  # already documents in this repository: "Ensure locale won't bleed into other requests".
+  def set_marketing_locale(&)
     @marketing_locale = params[:locale] == 'en' ? 'en' : 'ar'
-    I18n.locale = @marketing_locale
+    I18n.with_locale(@marketing_locale, &)
   end
 end

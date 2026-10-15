@@ -69,6 +69,11 @@ class Contacts::MergeRelocation
     SIMPLE.each_key { |relation| move_simple(relation) }
     SCOPED.each { |relation, (_model, scope_column)| move_scoped(relation, scope_column) }
     move_labels
+    # NOT A MOVE, which is why it is not in either list above. Both consent tables are unique
+    # per contact and scope, so two contacts holding a decision for the same scope collide --
+    # and the question is not which row to keep but what the two together mean. The strongest
+    # refusal wins, so a merge can never lose an opt-out. See Contacts::ConsentMerge.
+    @moved.merge!(Contacts::ConsentMerge.perform(base: @base, mergee: @mergee))
     { moved: without_zeros(@moved), discarded: without_zeros(@discarded) }
   end
 

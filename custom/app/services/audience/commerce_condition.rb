@@ -10,6 +10,24 @@
 #                                 of the contact is known; otherwise the contact does not match
 #
 # Spend is per currency, never converted: `commerce_spend_<currency>` (commerce_spend_sar).
+#
+# STORE SCOPE IS AN EVALUATION CONTEXT, NOT A CONDITION. `store_id` narrows every aggregate
+# below to one installation's links, and it comes from WHO IS ASKING rather than from another
+# condition in the same filter. The same saved audience therefore means "customers who spent
+# over 500 with us" when a store-scoped campaign resolves it, and "customers who spent over
+# 500 anywhere" when the account's own contact filter does -- without the audience being
+# rewritten, and without two conditions in one payload having to know about each other.
+#
+# WHY IT MATTERS, CONCRETELY. Unscoped, a Store Syria campaign targeting "more than three
+# orders" selected a contact with four orders at the merchant's Shopify store and none at
+# their Store Syria one. The send boundary already refused that contact -- Partners::Eligibility
+# has no customer link for them at this installation -- so nothing wrong was ever SENT; what
+# was wrong was the number the merchant was shown before sending, and the people they thought
+# they were reaching.
+#
+# ADDITIVE BY CONSTRUCTION. With no store_id the SQL is byte-identical to what it was, which
+# is what keeps every existing audience, automation rule and flow condition meaning exactly
+# what it meant.
 class Audience::CommerceCondition
   FIELDS = {
     'commerce_store' => %w[equal_to not_equal_to is_present is_not_present],
@@ -39,9 +57,14 @@ class Audience::CommerceCondition
     Commerce::CustomerLink.where(account: account, commerce_store_id: counted_stores(account).select(:id)).where.not(match_source: :suppressed)
   end
 
-  def initialize(key, account:)
+  # @param store_id [Integer, nil] narrow every aggregate to this installation's links. Must
+  #   already be one of the account's counted stores -- resolved by the caller, because a
+  #   store id that is not this account's is a tenancy error to refuse at the boundary, not a
+  #   predicate to silently match nothing on.
+  def initialize(key, account:, store_id: nil)
     @key = key
     @account = account
+    @store_id = store_id
   end
 
   def operators = FIELDS[@key] || SPEND_OPERATORS
@@ -52,6 +75,7 @@ class Audience::CommerceCondition
     @binds = { 'audience_account' => @account.id, 'audience_providers' => Commerce::Providers.enabled,
                'audience_suppressed' => Commerce::CustomerLink.match_sources[:suppressed],
                'audience_active' => Commerce::Store.statuses[:active] }
+    @binds['audience_store'] = @store_id if @store_id
     [condition(operator, values), @binds]
   rescue ArgumentError, TypeError
     invalid!
@@ -72,14 +96,22 @@ class Audience::CommerceCondition
   end
 
   # Every counted link of the contact, with its summary when there is one.
+  #
+  # THE STORE PREDICATE GOES HERE AND NOWHERE ELSE, which is what makes the scope total: every
+  # condition above is expressed over this fragment, so narrowing it narrows the EXISTS checks,
+  # the known-only aggregates and the completeness test together. A scope applied per condition
+  # would eventually miss one, and the one it missed would be the one that counted another
+  # store's orders as this store's.
   def links
     'FROM commerce_customer_links audience_links ' \
       'INNER JOIN commerce_stores audience_stores ON audience_stores.id = audience_links.commerce_store_id ' \
       'LEFT JOIN commerce_contact_metrics audience_metrics ON audience_metrics.commerce_customer_link_id = audience_links.id ' \
       'WHERE audience_links.contact_id = contacts.id AND audience_links.account_id = :audience_account ' \
       'AND audience_links.match_source <> :audience_suppressed AND audience_stores.status = :audience_active ' \
-      'AND audience_stores.provider IN (:audience_providers)'
+      "AND audience_stores.provider IN (:audience_providers)#{store_predicate}"
   end
+
+  def store_predicate = @store_id ? ' AND audience_links.commerce_store_id = :audience_store' : ''
 
   def link_condition(operator, column, values)
     return "EXISTS (SELECT 1 #{links})" if operator == 'is_present'

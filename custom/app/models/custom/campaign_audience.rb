@@ -35,7 +35,13 @@ module Custom::CampaignAudience
     audiences = shared_audiences.find(audience_ids)
     return yield if audiences.empty?
 
-    sources = audiences.map(&:members)
+    # A STORE-SCOPED CAMPAIGN ASKS ABOUT ITS OWN STORE'S CUSTOMERS. Unscoped, "more than three
+    # orders" selected a contact with four orders at the merchant's OTHER store and none at
+    # this one. Nothing wrong was ever sent -- the send boundary refuses a contact who is not
+    # this installation's customer -- but the preview counted them, so the merchant was told
+    # their campaign would reach people it could not. A campaign with no store keeps the
+    # account-wide meaning, which is every campaign that existed before this.
+    sources = audiences.map { |saved| saved.members(commerce_store_id: commerce_store_id) }
     sources << yield if audience.any? { |entry| entry['type'] == 'Label' }
     sources.map { |source| account.contacts.where(id: source.unscope(:select, :order).select(:id)) }.reduce(:or)
   end

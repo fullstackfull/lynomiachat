@@ -137,7 +137,10 @@ const isMuted = computed(() => {
     </div>
 
     <div class="flex flex-col items-start justify-between flex-1 min-w-0 gap-2">
-      <div class="flex items-center w-full min-w-0 gap-3">
+      <!-- Wrapping, because the status chip is `shrink-0` and "Not sent -- channel unavailable" is 170px
+      wide: at phone width it took the row and left the title rendering as a single letter. The chip drops
+      to its own line instead. -->
+      <div class="flex flex-wrap items-center w-full min-w-0 gap-x-3 gap-y-1">
         <span
           :title="title"
           class="min-w-0 text-heading-2 text-n-slate-12 line-clamp-1"

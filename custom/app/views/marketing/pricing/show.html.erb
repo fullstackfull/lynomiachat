@@ -49,11 +49,16 @@
 
   <section id="quote" class="mt-12 scroll-mt-24">
     <% if params[:sent].present? %>
-      <div class="rounded-2xl border border-green-200 bg-green-50 p-6">
-        <h2 class="text-lg font-semibold text-green-900"><%= t('marketing.pricing.sent_title') %></h2>
-        <p class="mt-2 text-sm leading-[1.8] text-green-900"><%= t('marketing.pricing.sent_body') %></p>
+      <%# THE PANELS ARE ON THE LYN RAMP, NOT ON `green-*`/`red-*`. This repository remaps the stock green and
+        red scales to saturated mid tints (theme/colors.js: `green.50` is `greenDark.green12`), so
+        `bg-green-50 text-green-900` did not render as the pale wash with dark type the class names describe.
+        A confirmation is a quiet state, so it takes the site's own quiet surface -- mist behind a hairline --
+        and lyn-royal carries the one link out of it. %>
+      <div class="rounded-2xl border border-lyn-line bg-lyn-mist p-6">
+        <h2 class="text-lg font-semibold text-lyn-ink"><%= t('marketing.pricing.sent_title') %></h2>
+        <p class="mt-2 text-sm leading-[1.8] text-lyn-ink-soft"><%= t('marketing.pricing.sent_body') %></p>
         <p class="mt-4 text-sm">
-          <a class="font-medium text-lyn-royal underline" href="<%= lynomia_docs_path %>">
+          <a class="font-medium text-lyn-royal underline hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue" href="<%= lynomia_docs_path %>">
             <%= t('marketing.pricing.sent_docs') %>
           </a>
         </p>
@@ -61,13 +66,44 @@
     <% else %>
       <h2 class="text-xl font-semibold text-lyn-ink"><%= t('marketing.pricing.form_title') %></h2>
       <p class="mt-2 text-sm leading-[1.8] text-lyn-ink-soft"><%= t('marketing.pricing.form_lede') %></p>
+      <%# WHICH FIELDS ARE MANDATORY IS STATED, not left to be discovered on submit. The form already told the
+        reader which block was optional (`channels_label`) and said nothing about the rest, which reads as
+        "all of it is required". Two fields are. The marker is `aria-hidden` because the inputs carry
+        `required`, which is what a screen reader announces; the asterisk is for the eye, and this line is
+        what makes it mean something. %>
+      <p class="mt-1 text-xs text-lyn-ink-soft"><%= t('marketing.pricing.required_legend') %></p>
+
+      <%# EVERY CONTROL'S STATE IS BUILT IN ONE PLACE. Each of the six fields needs the same focus ring, the
+        same padding (the controls were 42px tall, under the 44px target), and a border that answers whether
+        that field is the one that failed -- and an invalid field also needs `aria-invalid` plus an
+        `aria-describedby` pointing at the message rendered under it. Spelled out per field that is six
+        copies of one twenty-class string, which is how the focus ring came to be missing from all of them
+        and the errors came to live only in the summary at the top.
+
+        `channels` is not in this set: the fieldset offers the catalogue's own slugs, so the one validation
+        it has cannot fail for anything the form can send, and the summary panel covers a tampered POST. %>
+      <% field_options = lambda do |attribute|
+           invalid = @quote.errors[attribute].any?
+           {
+             class: 'mt-1 w-full rounded-xl border px-3 py-3 text-sm text-lyn-ink focus-visible:outline ' \
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue ' \
+                    "#{invalid ? 'border-lyn-magenta' : 'border-lyn-line'}",
+             aria: invalid ? { invalid: true, describedby: "quote_#{attribute}_error" } : {}
+           }
+         end %>
+      <% field_error = lambda do |attribute|
+           next if @quote.errors[attribute].empty?
+
+           tag.p(@quote.errors.full_messages_for(attribute).to_sentence,
+                 id: "quote_#{attribute}_error", class: 'mt-1 text-sm text-lyn-magenta')
+         end %>
 
       <%= form_with model: @quote, url: marketing_pricing_request_path(locale: params[:locale]),
                     method: :post, class: 'mt-6 space-y-5' do |form| %>
         <% if @quote.errors.any? %>
-          <div class="rounded-xl border border-red-200 bg-red-50 p-4" role="alert">
-            <p class="text-sm font-semibold text-red-900"><%= t('marketing.pricing.form_errors') %></p>
-            <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-900">
+          <div class="rounded-xl border border-lyn-magenta/30 bg-lyn-magenta/5 p-4 text-lyn-ink" role="alert">
+            <p class="text-sm font-semibold"><%= t('marketing.pricing.form_errors') %></p>
+            <ul class="mt-2 list-inside list-disc space-y-1 text-sm">
               <% @quote.errors.full_messages.each do |message| %>
                 <li><%= message %></li>
               <% end %>
@@ -77,24 +113,28 @@
 
         <div class="grid gap-5 sm:grid-cols-2">
           <div>
-            <%= form.label :name, class: 'block text-sm font-medium text-lyn-ink' %>
-            <%= form.text_field :name, required: true, maxlength: 120, autocomplete: 'name',
-                                class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+            <%= form.label :name, class: 'block text-sm font-medium text-lyn-ink' do %>
+              <%= SiteQuoteRequest.human_attribute_name(:name) %><span aria-hidden="true" class="text-lyn-magenta"> *</span>
+            <% end %>
+            <%= form.text_field :name, **field_options.call(:name), required: true, maxlength: 120, autocomplete: 'name' %>
+            <%= field_error.call(:name) %>
           </div>
           <div>
-            <%= form.label :email, class: 'block text-sm font-medium text-lyn-ink' %>
-            <%= form.email_field :email, required: true, maxlength: 180, autocomplete: 'email',
-                                 class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+            <%= form.label :email, class: 'block text-sm font-medium text-lyn-ink' do %>
+              <%= SiteQuoteRequest.human_attribute_name(:email) %><span aria-hidden="true" class="text-lyn-magenta"> *</span>
+            <% end %>
+            <%= form.email_field :email, **field_options.call(:email), required: true, maxlength: 180, autocomplete: 'email' %>
+            <%= field_error.call(:email) %>
           </div>
           <div>
             <%= form.label :company, class: 'block text-sm font-medium text-lyn-ink' %>
-            <%= form.text_field :company, maxlength: 160, autocomplete: 'organization',
-                                class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+            <%= form.text_field :company, **field_options.call(:company), maxlength: 160, autocomplete: 'organization' %>
+            <%= field_error.call(:company) %>
           </div>
           <div>
             <%= form.label :phone, class: 'block text-sm font-medium text-lyn-ink' %>
-            <%= form.telephone_field :phone, maxlength: 40, autocomplete: 'tel',
-                                     class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+            <%= form.telephone_field :phone, **field_options.call(:phone), maxlength: 40, autocomplete: 'tel' %>
+            <%= field_error.call(:phone) %>
           </div>
         </div>
 
@@ -103,7 +143,8 @@
           <%= form.select :team_size,
                           SiteQuoteRequest::TEAM_SIZES.map { |size| [size, size] },
                           { include_blank: t('marketing.pricing.not_sure') },
-                          class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+                          **field_options.call(:team_size) %>
+          <%= field_error.call(:team_size) %>
         </div>
 
         <fieldset>
@@ -112,11 +153,15 @@
             <%# The options are the catalogue's own channel slugs, which is also what the model validates
               against -- so the form cannot offer a value the model would reject, and the model cannot accept
               a value the form never offered. %>
+            <%# `py-3` RATHER THAN A BARE ROW: the label is the hit area for its box, and at the row's natural
+              20px that was the smallest target on the form's largest control -- nine of them, side by side,
+              on a phone. The padding takes each row to 44px without moving the box or the text. %>
             <% Marketing::Catalog.channels.each do |channel| %>
-              <label class="flex items-center gap-2 text-sm text-lyn-ink-soft">
+              <label class="flex items-center gap-2 py-3 text-sm text-lyn-ink-soft">
                 <%= check_box_tag 'site_quote_request[channels][]', channel.slug,
                                   @quote.channels.include?(channel.slug),
-                                  id: "channel_#{channel.slug}", class: 'rounded border-slate-300' %>
+                                  id: "channel_#{channel.slug}",
+                                  class: 'rounded border-lyn-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue' %>
                 <%= t("marketing.channels.#{channel.id}.name") %>
               </label>
             <% end %>
@@ -125,17 +170,23 @@
 
         <div>
           <%= form.label :message, class: 'block text-sm font-medium text-lyn-ink' %>
-          <%= form.text_area :message, rows: 5, maxlength: 4000,
-                             class: 'mt-1 w-full rounded-xl border border-lyn-line px-3 py-2.5 text-sm text-lyn-ink' %>
+          <%= form.text_area :message, **field_options.call(:message), rows: 5, maxlength: 4000 %>
+          <%= field_error.call(:message) %>
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
+          <%# ONE PRIMARY BLUE ON THE PAGE. This was `bg-woot-700`, the product dashboard's blue, sitting
+            twenty lines above the closing CTA's `bg-lyn-indigo` -- two different primary blues in one
+            viewport. Indigo is the primary action everywhere on this site, so the page's two actions now
+            agree. %>
           <%= form.submit t('marketing.pricing.submit'),
-                          class: 'rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800' %>
+                          class: 'rounded-xl bg-lyn-indigo px-5 py-3 text-sm font-semibold text-lyn-paper transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue' %>
           <p class="text-xs text-lyn-ink-soft">
+            <%# lyn-royal is the link colour on paper; inheriting the paragraph's secondary ink left the only
+              way out of this form reading as emphasis rather than as a link. %>
             <%= t('marketing.pricing.privacy_html',
                   privacy: link_to(t('marketing.footer.privacy'), MarketingHelper::LEGAL_LINKS[:privacy],
-                                   class: 'underline hover:text-lyn-ink')) %>
+                                   class: 'text-lyn-royal underline hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue')) %>
           </p>
         </div>
       <% end %>

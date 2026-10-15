@@ -14,13 +14,17 @@
 
   CHANNEL MARKS ARE NEUTRAL GLYPHS, not the channels' own logos. The channel is named in text beside each
   one, which is clearer, needs no trademark, and keeps the panel to one colour.
+
+  AND IT DOES NOT CLOSE ITSELF WITH A RULE. The section carried a `border-b`, but whatever follows it opens
+  with a `border-t` of its own -- the specification row, or any section head -- so the page began with two
+  hairlines 48px apart. The next section owns that boundary; the hero simply ends.
 %>
 <% primary = marketing_target_href(section['primary_target']) %>
 <% secondary = marketing_target_href(section['secondary_target']) %>
 <% heading = (page.heading.presence || page.title).to_s %>
 <% highlight = section['highlight'].to_s %>
 
-<section class="relative border-b border-lyn-line bg-lyn-paper">
+<section class="relative bg-lyn-paper">
   <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_30rem] lg:gap-20 lg:py-24">
     <div class="motion-safe:animate-fade-in-up">
       <% if section['kicker'].present? %>
@@ -66,11 +70,26 @@
     </div>
 
     <%# The shared inbox. Tilted a degree and a half so it reads as an object on the page rather than a
-        rectangle in the layout, with two labels overlapping its edge for the same reason. %>
-    <div class="relative mx-auto w-full max-w-md pb-7 lg:max-w-none" aria-hidden="true">
-        <%# A second plate behind the panel, offset the other way. Depth without anything sitting on top of
-            the messages -- which is what the two floating pills did, and why there is now one, below. %>
-        <span class="absolute inset-x-3 inset-y-5 -z-10 rotate-[2deg] rounded-2xl border border-lyn-line bg-lyn-mist"></span>
+        rectangle in the layout, with ONE label below its bottom edge -- not two overlapping it, which is
+        what this block used to say and used to do.
+
+        THE BOTTOM PADDING IS THE LABEL'S CLEARANCE, and it is sized for the label (34px) plus the dip the
+        tilt puts in the card's lower corner (~6px at this width). It was 28px, less than the label itself,
+        so the label sat ON the card -- and by how much depended on the locale: a `-1.5deg` tilt drops the
+        card's start-side corner in English and lifts it in Arabic, and `start-4` puts the label under
+        whichever one that is. Sized for the dropping corner, it clears the card in both. %>
+    <div class="relative isolate mx-auto w-full max-w-md pb-12 lg:max-w-none" aria-hidden="true">
+      <%# A second plate behind the panel, offset the other way. Depth without anything sitting on top of
+          the messages -- which is what the two floating pills did, and why there is now one, below.
+
+          `isolate` IS WHAT MAKES IT PAINT AT ALL. `relative` is not a stacking context, so this `-z-10`
+          was resolved against the root and the plate was drawn behind the section's own opaque
+          `bg-lyn-paper`: the stated depth device was never once visible on the page. Isolating the wrapper
+          contains the negative z-index here, between this wrapper and the card. And the plate is now drawn
+          LARGER than the card rather than inset within it -- inset, it had nowhere to show. The sideways
+          offset stops at 8px because the card is already tilted: at 360px the two rotated boxes together
+          have to stay inside the page's 16px gutter, or the plate's corner puts a scrollbar on the page. %>
+      <span class="absolute -inset-x-2 -top-3 bottom-9 -z-10 rotate-[2deg] rounded-2xl border border-lyn-line bg-lyn-mist"></span>
       <div class="rotate-[-1.5deg] rounded-2xl border border-lyn-line bg-lyn-paper shadow-[0_24px_60px_-28px_rgba(10,23,51,0.45)]">
         <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-5 py-3.5">
           <span class="text-sm font-semibold text-lyn-ink"><%= t('marketing.hero_panel.title') %></span>

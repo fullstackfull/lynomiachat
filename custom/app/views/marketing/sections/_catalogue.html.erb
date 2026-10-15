@@ -12,6 +12,14 @@
   one undifferentiated field with no way to tell where a section began. Same entries, same honesty, different
   form.
 %>
+<%# THE ENTRY HEADING LEVEL FOLLOWS THE SECTION'S OWN, exactly as sections/_cards.html.erb computes it. With a
+  section heading the entries sit under an <h2> and are <h3>s; without one they are the first headings after
+  the page's <h1> and must be <h2>s. Both shapes that print an entry name read this one value, because they
+  disagreed: `list` was always an <h3> (so the home page's heading-less blocks skipped a level) and the card
+  was always an <h2> (so the nine cards under the home page's features heading were its siblings, not its
+  children).
+%>
+<% item_heading = section['heading'].present? ? 'h3' : 'h2' %>
 <% source = section['source'].to_s %>
 <% if Marketing::SectionSchema::SOURCES.include?(source) %>
   <% scope = source.to_sym %>
@@ -38,7 +46,7 @@
       <ul class="mt-7 border-t border-lyn-line">
         <% entries.each do |entry| %>
           <li class="grid gap-x-10 gap-y-2 border-b border-lyn-line py-5 sm:grid-cols-[13rem_minmax(0,1fr)]">
-            <h3 class="flex flex-wrap items-start gap-2 text-base font-semibold text-lyn-ink">
+            <%= content_tag item_heading, class: 'flex flex-wrap items-start gap-2 text-base font-semibold text-lyn-ink' do %>
               <% if entry.detail? %>
                 <a class="transition-colors hover:text-lyn-royal" href="<%= marketing_entry_path(scope, entry) %>">
                   <%= t("marketing.#{scope}.#{entry.id}.name") %>
@@ -47,7 +55,7 @@
                 <%= t("marketing.#{scope}.#{entry.id}.name") %>
               <% end %>
               <%= render 'marketing/shared/state_badge', state: entry.state %>
-            </h3>
+            <% end %>
             <div>
               <p class="text-sm leading-[1.8] text-lyn-ink-soft">
                 <%= t("marketing.#{scope}.#{entry.id}.summary") %>
@@ -68,7 +76,7 @@
     <% else %>
       <div class="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <% entries.each do |entry| %>
-          <%= render 'marketing/shared/entry_card', entry: entry, scope: scope %>
+          <%= render 'marketing/shared/entry_card', entry: entry, scope: scope, heading_level: item_heading %>
         <% end %>
       </div>
     <% end %>

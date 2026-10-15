@@ -11,6 +11,11 @@
 @import '../marketing/fonts/plex-arabic';
 @import '../shared/assets/fonts/inter';
 
+// The marketing site compiles against its own Tailwind config (same theme, narrower `content` and no icon
+// collections it does not use), which is what keeps this stylesheet from carrying the dashboard's utilities.
+// `@config` is scoped to this file and must come before the Tailwind imports.
+@config '../../../tailwind.marketing.config.js';
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';

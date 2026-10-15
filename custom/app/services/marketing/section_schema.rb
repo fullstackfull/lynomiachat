@@ -34,7 +34,7 @@ module Marketing::SectionSchema
     'hero' => {
       fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target]
     },
-    # A heading and a paragraph. The About page is four of these.
+    # A heading and a paragraph -- the plainest section there is, and the one the About page opens with.
     'prose' => { fields: %w[heading body] },
     # The workhorse: a grid of title/body cards, each optionally linking somewhere. Detail-page points,
     # pricing dimensions, the support bands and the contact cards are all this one type.

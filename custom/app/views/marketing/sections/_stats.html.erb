@@ -8,6 +8,11 @@
   three large figures there would compete with the headline for the same glance -- the reading these deserve
   is "what this product supports", which is a spec line, so they get a rule above them, a quiet size, and
   equal weight with their labels.
+
+  THAT RULE IS THE ONLY ONE BETWEEN THIS ROW AND THE HERO, and the gap above it is the page's own section
+  step. The row sat at `mt-10`, off the `mt-16` every other section uses, and its rule landed 48px below a
+  `border-b` the hero drew for itself -- two hairlines that close to each other read as a mistake rather than
+  as a boundary. The hero no longer closes itself (sections/_hero.html.erb); this rule is the boundary.
 %>
 <% items = Array(section['items']).filter_map do |item|
      figure = item['metric'].present? ? marketing_metric(item['metric']) : item['value']
@@ -17,7 +22,7 @@
    end %>
 
 <% if items.any? %>
-  <dl class="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-lyn-line pt-6 sm:grid-cols-3">
+  <dl class="mt-16 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-lyn-line pt-6 sm:grid-cols-3">
     <% items.each do |item| %>
       <div class="flex flex-col gap-1">
         <dt class="text-xl font-semibold tracking-tight text-lyn-ink"><%= item[:figure] %></dt>

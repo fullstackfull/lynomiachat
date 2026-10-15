@@ -120,3 +120,48 @@ and in the channel list it is the second line of the row.
 
 96 pages, two locales, the CMS, the canonical URLs, hreflang, breadcrumbs, structured data and the sitemap
 are untouched. `spec/requests/marketing` and `spec/models/site_page_spec.rb` — 150 examples — pass.
+
+---
+
+## 6. What the audit found, and the five calls that were mine
+
+Six reviewers went over the first milestone and every finding was handed to a separate agent told to refute
+it. 59 survived — 14 blocking. They are fixed. Five needed a decision rather than a patch.
+
+**The Arabic typeface was never loading.** `url('marketing/fonts/…')` copied `inter.scss`'s shape, but that
+file's path resolves through a Vite ALIAS (`shared`, in `vite.shared.ts`). There is no `marketing` alias, so
+the URL passed through untouched and 404'd. Every Arabic page was still on `Tahoma, Arial`. A screenshot
+could not catch it — the page had changed size, weight and leading, so it looked different — and fetching the
+asset could. Fixed to `./fonts/…`, verified in dev (200, 42,848 bytes, `font/woff2`) and in a production
+build (four hashed `.woff2` in `assets/`, referenced by the built CSS).
+
+**No h2 was added to /faq.** The audit read "one H1 then twelve `dt`s" as two defects. The missing RULE was
+real and is fixed in `_section_head`, which now draws its line whether or not a section has a heading. The
+missing H2 is not a defect: `h1` → `dl` skips no level, and the page has one section, so a heading for it
+could only restate the H1 two lines below it.
+
+**The duplicate strings were not just paraphrased.** Two proposed keys were byte-identical to existing FAQ
+strings — four strings for two meanings, which drift. The link labels got their own copy instead. The home
+help cards got bodies of their own rather than /support's lede repeated on the front page.
+
+**The availability badge moved out of the `<h1>`.** Survivable at 30px, not at the new 48px display step,
+where `items-center` hung a 12px chip in the middle of a headline. It is also not part of a page's NAME. It
+is rendered through `capture` so the row is drawn only when the badge has something to say — the partial
+stays the single place that decides which states those are.
+
+**Arabic validation messages were showing English diagnostics.** `config/application.rb:40` enables only
+`:pluralization` from rails-i18n, so its `ar` ActiveModel catalogue never loads and a failed quote submission
+printed `Translation missing: ar.errors.messages.blank` on the primary market's most important conversion
+page. Pre-existing — the error summary already did this — but per-field errors multiply it. Fixed under
+`models.site_quote_request` in `marketing.ar.yml`, so no other model in the application changes:
+`enabled_modules` is an infrastructure decision, not a marketing-site one, and `config/locales/ar.yml` is
+Crowdin-managed.
+
+### The marketing stylesheet: 1,539,855 → 42,034 bytes
+
+It was generated from the config whose `content` globs reach every Vue file in the dashboard, so a site of
+twenty ERB partials shipped the agent console's utilities and seven icon collections. It uses four icons.
+`tailwind.marketing.config.js` imports the shared theme — the ramp, the type scale and the spacing ladder
+must not fork — and narrows only `content` and the safelist, reached by `@config` from the marketing
+stylesheet alone. **Proof nothing was dropped**: every class on all 98 pages was extracted from the rendered
+HTML and looked up in the built stylesheet. 221 distinct classes, 0 without a rule.

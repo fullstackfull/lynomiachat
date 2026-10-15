@@ -1,5 +1,10 @@
-<%# A heading and a paragraph. The About page is four of these, so they carry the page's reading rhythm and
-  use the same section head as every other block. %>
+<%# A heading and a paragraph, using the same section head as every other block.
+
+  THIS TYPE IS NOT THE WHOLE ABOUT PAGE ANY MORE. It used to be four of these in a row, which is what the
+  design system's rule 2 forbids -- the About page now runs prose -> note -> prose -> cards, so this partial
+  sets one subject at a time rather than carrying a page's entire rhythm on its own
+  (Marketing::ContentBlueprint#about_page says why each of the two recasts is the better type).
+%>
 <section class="mt-16">
   <%= render 'marketing/shared/section_head', heading: section['heading'], lede: nil %>
   <% if section['body'].present? %>

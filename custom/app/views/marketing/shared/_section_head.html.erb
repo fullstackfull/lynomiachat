@@ -4,16 +4,21 @@
   so the page's section rhythm depended on three partials agreeing by coincidence. They did not: the home
   page's three sections opened at the same size with the same gap, and nothing told a reader where one ended
   and the next began. One partial, one rule above the heading, one measure for the standfirst.
+
+  THE RULE IS THE SECTION BOUNDARY, SO IT IS NOT CONDITIONAL. It used to be emitted inside the guard below,
+  which meant a block carrying neither heading nor standfirst got no rule and no padding -- and that is
+  exactly the shape every index page opens with (`Marketing::ContentBlueprint#index_page` is one catalogue
+  block with no copy of its own, because the page's H1 already names it). The section step above it then read
+  as a 92px void with nothing in it. Only the padding belongs to the heading, because without a heading there
+  is nothing to pad away from.
 %>
-<% if heading.present? || lede.present? %>
-  <div class="border-t border-lyn-line pt-8">
-    <% if heading.present? %>
-      <h2 class="text-balance text-2xl font-semibold leading-[1.4] tracking-tight text-lyn-ink sm:text-3xl">
-        <%= heading %>
-      </h2>
-    <% end %>
-    <% if lede.present? %>
-      <p class="mt-3 max-w-2xl text-base leading-[1.85] text-lyn-ink-soft"><%= lede %></p>
-    <% end %>
-  </div>
-<% end %>
+<div class="border-t border-lyn-line <%= 'pt-8' if heading.present? || lede.present? %>">
+  <% if heading.present? %>
+    <h2 class="text-balance text-2xl font-semibold leading-[1.4] tracking-tight text-lyn-ink sm:text-3xl">
+      <%= heading %>
+    </h2>
+  <% end %>
+  <% if lede.present? %>
+    <p class="mt-3 max-w-2xl text-base leading-[1.85] text-lyn-ink-soft"><%= lede %></p>
+  <% end %>
+</div>

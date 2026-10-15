@@ -9,8 +9,13 @@
   the band is the page's last word, so it gets the whole measure and the type is set to the same start edge
   as everything above it instead of being centred. Electric blue is readable here and nowhere else -- on
   paper it is 3.3:1 and would fail, on this field it carries the eye to the one live accent.
+
+  THE DISTANCE ABOVE THE BAND IS STATED HERE AND NOWHERE ELSE, and it is the page's own section step. It was
+  `mt-20` adding to the padding the caller already puts under its last section -- two unrelated spacings
+  nobody could read as one decision, totalling 128px of empty paper before the page's last word. The band
+  owns its distance because it is the band that moves; a caller's job ends with its own content.
 %>
-<section class="mt-20 bg-lyn-ink">
+<section class="mt-16 bg-lyn-ink">
   <div class="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:py-20">
     <div>
       <h2 class="max-w-xl text-balance text-2xl font-semibold leading-[1.4] tracking-tight text-lyn-paper sm:text-3xl">

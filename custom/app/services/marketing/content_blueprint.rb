@@ -115,14 +115,21 @@ module Marketing::ContentBlueprint
         'link_label' => t('marketing.home.features_link') }
     end
 
+    # A CARD'S LINK LABEL IS NOT ITS TITLE. Both items here stored the same string twice -- as the title and
+    # again as the label -- with no body between them, so each card rendered one phrase repeated under itself
+    # across a 16px gap. This is the last section before the closing CTA, which is the worst place on the site
+    # to look like a rendering fault. A card is three things: what the destination is, what it actually holds,
+    # and the label that goes there -- which is what every other `cards` block in this file already carries.
     def home_help
       { 'type' => 'cards', 'columns' => '2',
         'heading' => t('marketing.home.help_title'),
         'lede' => t('marketing.home.help_lede'),
         'items' => [
-          { 'title' => t('marketing.home.help_docs'),
+          { 'title' => t('marketing.nav.docs'),
+            'body' => t('marketing.home.help_docs_body'),
             'link_label' => t('marketing.home.help_docs'), 'link_target' => DOCS_PATH },
-          { 'title' => t('marketing.home.help_support'),
+          { 'title' => t('marketing.footer.support'),
+            'body' => t('marketing.home.help_support_body'),
             'link_label' => t('marketing.home.help_support'), 'link_target' => 'page:standing:support' }
         ] }
     end
@@ -136,16 +143,20 @@ module Marketing::ContentBlueprint
     # The integrations index's "this is described elsewhere" paragraph becomes two linked cards rather than a
     # sentence with two inline links. Plain-text bodies cannot carry an inline link (Marketing::SectionSchema
     # explains why), and two cards are the better answer anyway: each destination gets its own label.
+    #
+    # The label was the title repeated, which printed the destination's name twice on one card. It now says
+    # what the reader will find there, the same rule `home_help` above is held to.
     def integrations_page
       standing(:integrations, [
                  { 'type' => 'cards', 'columns' => '2',
                    'items' => [
                      { 'title' => t('marketing.nav.channels'),
                        'body' => t('marketing.pages.integrations.elsewhere_channels'),
-                       'link_label' => t('marketing.nav.channels'), 'link_target' => 'page:standing:channels' },
+                       'link_label' => t('marketing.pages.integrations.elsewhere_channels_cta'),
+                       'link_target' => 'page:standing:channels' },
                      { 'title' => t('marketing.features.api_webhooks.name'),
                        'body' => t('marketing.pages.integrations.elsewhere_api'),
-                       'link_label' => t('marketing.features.api_webhooks.name'),
+                       'link_label' => t('marketing.pages.integrations.elsewhere_api_cta'),
                        'link_target' => 'page:feature:api_webhooks' }
                    ] },
                  { 'type' => 'catalogue', 'source' => 'integrations' }
@@ -184,22 +195,35 @@ module Marketing::ContentBlueprint
                ])
     end
 
+    # NO TWO CONSECUTIVE SECTIONS MAY TAKE THE SAME FORM -- docs/redesign/01-design-system.md, rule 2. This
+    # page was built by mapping four locale keys into four `prose` blocks, which put the same heading at the
+    # same size over the same paragraph four times running: nothing told a reader they had moved from one
+    # subject to the next, and the page read as one long column rather than as four answers.
+    #
+    # Two of the four were the wrong type anyway, which is why the fix is a recast rather than a reskin. The
+    # honesty paragraph is literally what `note` exists for (Marketing::SectionSchema names it "the honesty
+    # paragraph"), and it brings that type's own start-edge rule with it. The company paragraph was the body
+    # the closing "visit lynomia.com" card had been missing -- which is the same defect `home_help` carried,
+    # a card whose title was also its only other line. The page now reads prose -> note -> prose -> cards.
     def about_page
-      prose = %w[product honesty arabic company].map do |section|
-        { 'type' => 'prose', 'heading' => t("marketing.about.#{section}.title"),
-          'body' => t("marketing.about.#{section}.body") }
-      end
-
-      standing(:about, prose + [
-        { 'type' => 'cards', 'columns' => '2',
-          'items' => [
-            { 'title' => t('marketing.about.see_features'),
-              'link_label' => t('marketing.about.see_features'), 'link_target' => 'page:standing:features' },
-            { 'title' => t('marketing.about.company_site'),
-              'link_label' => t('marketing.about.company_site'),
-              'link_target' => MarketingHelper::LEGAL_LINKS[:about] }
-          ] }
-      ])
+      standing(:about, [
+                 { 'type' => 'prose', 'heading' => t('marketing.about.product.title'),
+                   'body' => t('marketing.about.product.body') },
+                 { 'type' => 'note', 'body' => t('marketing.about.honesty.body') },
+                 { 'type' => 'prose', 'heading' => t('marketing.about.arabic.title'),
+                   'body' => t('marketing.about.arabic.body') },
+                 { 'type' => 'cards', 'columns' => '2',
+                   'items' => [
+                     { 'title' => t('marketing.nav.features'),
+                       'body' => t('marketing.about.see_features_body'),
+                       'link_label' => t('marketing.about.see_features'),
+                       'link_target' => 'page:standing:features' },
+                     { 'title' => t('marketing.about.company.title'),
+                       'body' => t('marketing.about.company.body'),
+                       'link_label' => t('marketing.about.company_site'),
+                       'link_target' => MarketingHelper::LEGAL_LINKS[:about] }
+                   ] }
+               ])
     end
 
     def contact_page
@@ -222,6 +246,12 @@ module Marketing::ContentBlueprint
 
     # The FAQ's content is site_faq_entries, reached through a `faq` section -- the same shape as a
     # `catalogue` block: the operator owns the block's copy and edits the rows where they live.
+    #
+    # NO SECTION HEADING, DELIBERATELY. An audit flagged that this page is one H1 followed by twelve `dt`s
+    # and nothing else -- true, and two separate things were read into it. The missing RULE was real and is
+    # fixed where it belongs, in `_section_head`, which now draws its line whether or not a section has a
+    # heading. The missing H2 is not a defect: a question is a `dt`, `h1` -> `dl` skips no level, and this
+    # page has exactly one section -- so a heading for it could only restate the H1 two lines below it.
     def faq_page
       standing(:faq, [{ 'type' => 'faq' }])
     end

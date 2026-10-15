@@ -41,35 +41,49 @@
 
   <% unless lead_hero %>
     <header>
-      <h1 class="flex flex-wrap items-center gap-3 text-3xl font-bold leading-[1.3] tracking-tight text-lyn-ink sm:text-4xl">
+      <h1 class="text-balance text-4xl font-bold leading-[1.3] text-lyn-ink sm:text-5xl">
         <%= page.heading.presence || page.title %>
-        <% if entry %>
-          <%= render 'marketing/shared/state_badge', state: entry.state %>
-        <% end %>
       </h1>
+
+      <%# THE AVAILABILITY BADGE SITS BESIDE THE TITLE, NOT INSIDE IT. It used to be a flex child of the H1,
+          which was survivable while the heading was 30px and is not now that it is 48px: `items-center` hung
+          a 12px chip in the middle of a display headline. It is also not part of the page's NAME, which is
+          what an H1 states -- it is a fact about the thing the page is about.
+
+          `capture` rather than a second copy of "which states render": an available entry renders nothing at
+          all, and whitespace is blank, so the row is drawn only when the badge has something to say. The
+          partial stays the one place that decides what that is. %>
+      <% badge = entry ? capture { render 'marketing/shared/state_badge', state: entry.state } : nil %>
+      <% if badge.present? %>
+        <p class="mt-4"><%= badge %></p>
+      <% end %>
       <% if page.lede.present? %>
         <p class="mt-4 max-w-3xl text-lg leading-[1.85] text-lyn-ink-soft"><%= page.lede %></p>
       <% end %>
     </header>
   <% end %>
 
-  <%# The prerequisite, which is what makes the sentences above it true. From the catalogue, never the row. %>
+  <%# The prerequisite, which is what makes the sentences above it true. From the catalogue, never the row.
+
+      MARKED LIKE AN ASIDE IN A DOCUMENT, NOT A TINTED SLAB IN AN ADMIN SCREEN. This was a tinted box in
+      a colour from outside the ramp -- the one off-system colour field on the page, and exactly the
+      treatment sections/_note.html.erb rejects for the same reason. It now takes that partial's rule on the start edge and the catalogue
+      card's inline label, so the sentence that decides whether a reader can use this feature today does
+      not get two incompatible looks depending on which page they met it on. %>
   <% if entry && t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
-    <div class="mt-8 rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
-      <h2 class="text-sm font-semibold text-yellow-900">
+    <p class="mt-8 max-w-2xl border-s-2 border-lyn-royal/30 ps-5 text-sm leading-[1.8] text-lyn-ink-soft">
+      <span class="font-semibold text-lyn-ink">
         <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
-      </h2>
-      <p class="mt-1 text-sm leading-[1.8] text-yellow-900">
-        <%= t("marketing.#{scope}.#{entry.id}.requires") %>
-      </p>
-    </div>
+      </span>
+      <%= t("marketing.#{scope}.#{entry.id}.requires") %>
+    </p>
   <% end %>
 
   <%= render 'marketing/shared/sections', sections: body_sections, page: page %>
 
   <% if entry&.docs %>
     <p class="mt-10">
-      <a class="inline-flex items-center gap-2 rounded-xl border border-lyn-line px-4 py-2.5 text-sm font-medium text-lyn-ink hover:bg-lyn-mist"
+      <a class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-lyn-line px-4 py-2.5 text-sm font-medium text-lyn-ink hover:bg-lyn-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
          href="<%= lynomia_docs_article_path(entry.docs) %>">
         <%= t('marketing.read_docs') %>
       </a>
@@ -78,12 +92,12 @@
 
   <% if entry&.channel_ids&.any? %>
     <section class="mt-12 border-t border-lyn-line pt-8">
-      <h2 class="text-sm font-semibold text-lyn-ink"><%= t('marketing.detail.works_with') %></h2>
+      <h2 class="text-lg font-semibold text-lyn-ink"><%= t('marketing.detail.works_with') %></h2>
       <ul class="mt-3 flex flex-wrap gap-2">
         <% entry.channel_ids.each do |channel_id| %>
           <% channel = Marketing::Catalog.channel(channel_id) %>
           <li>
-            <a class="inline-block rounded-full border border-lyn-line px-3 py-1 text-sm text-lyn-ink-soft hover:bg-lyn-mist"
+            <a class="inline-flex min-h-11 items-center rounded-full border border-lyn-line px-3 text-sm text-lyn-ink-soft hover:bg-lyn-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
                href="<%= marketing_entry_path(:channels, channel) %>">
               <%= t("marketing.channels.#{channel.id}.name") %>
             </a>
@@ -95,14 +109,14 @@
 
   <% if entry&.related_ids&.any? %>
     <section class="mt-10 border-t border-lyn-line pt-8">
-      <h2 class="text-sm font-semibold text-lyn-ink"><%= t('marketing.detail.read_next') %></h2>
+      <h2 class="text-lg font-semibold text-lyn-ink"><%= t('marketing.detail.read_next') %></h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-3">
         <% entry.related_ids.each do |feature_id| %>
           <% feature = Marketing::Catalog.feature(feature_id) %>
-          <a class="rounded-2xl border border-lyn-line p-4 hover:border-lyn-line hover:bg-lyn-mist"
+          <a class="rounded-2xl border border-lyn-line p-4 transition-colors hover:border-lyn-royal/40 hover:bg-lyn-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
              href="<%= marketing_entry_path(:features, feature) %>">
             <span class="block text-sm font-semibold text-lyn-ink"><%= t("marketing.features.#{feature.id}.name") %></span>
-            <span class="mt-1 block text-xs leading-[1.8] text-lyn-ink-soft"><%= t("marketing.features.#{feature.id}.summary") %></span>
+            <span class="mt-1 block text-sm leading-[1.8] text-lyn-ink-soft"><%= t("marketing.features.#{feature.id}.summary") %></span>
           </a>
         <% end %>
       </div>

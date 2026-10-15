@@ -5,6 +5,12 @@
   arrangement.
 
   A link whose page is unpublished resolves to nil and is not rendered, so an answer never points at a 404.
+
+  A QUESTION IS AN ITEM UNDER THE BLOCK'S OWN HEADING, SO IT IS SET LIKE ONE. The `dt` was `text-lg` -- the
+  size this layout gives a page standfirst -- which made twelve questions compete with the H2 above them, and
+  the `dd` declared no size at all, so an answer inherited the root 16px and ran the full width of a
+  `max-w-6xl` article with no measure. They now take the card item's title size and the prose body's measure
+  and leading, which is the scale every other block on the site is on.
 %>
 <% entries = SiteFaqEntry.published_for(marketing_locale) %>
 <% if entries.any? %>
@@ -18,11 +24,15 @@
       <% entries.each do |entry| %>
         <% href = entry.link? ? marketing_target_href(entry.target) : nil %>
         <div class="py-6">
-          <dt class="text-lg font-semibold text-lyn-ink"><%= entry.question %></dt>
-          <dd class="mt-2 leading-[1.8] text-lyn-ink-soft">
-            <%= entry.answer %>
+          <dt class="text-base font-semibold text-lyn-ink"><%= entry.question %></dt>
+          <dd class="mt-2 max-w-2xl text-base leading-[1.85] text-lyn-ink-soft">
+            <p><%= entry.answer %></p>
+            <%# The answer is its own paragraph so the link below it is a target rather than the last words of
+              a sentence: it keeps its own line, reaches the 44px tap floor, and takes a focus ring, none of
+              which a bare inline anchor inside the `dd` did. Same label treatment as a card's link. %>
             <% if href.present? %>
-              <a class="mt-2 block text-sm font-medium text-lyn-royal hover:text-lyn-ink" href="<%= href %>">
+              <a class="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-lyn-royal transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                 href="<%= href %>">
                 <%= entry.link_label %>
               </a>
             <% end %>

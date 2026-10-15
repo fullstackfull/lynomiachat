@@ -178,12 +178,18 @@ module MarketingHelper
 
   # The navigation and footer, from the operator's rows. A link whose target does not resolve is dropped, so
   # an unpublished page cannot put a dead entry in the header.
+  #
+  # `current` IS DECIDED HERE, not in the two navigations. Neither the desktop row nor the mobile row marked
+  # the page you were on, so the header gave a visitor no sense of place at all; and the comparison belongs
+  # beside the `href` that was just built, because this is the only place that knows what address an operator
+  # row resolved to. An external target is an absolute URL, so it can never equal a request path.
   def marketing_nav(placement)
     SiteNavLink.placed(marketing_locale, placement).filter_map do |link|
       href = marketing_target_href(link.target)
       next if href.blank?
 
-      { label: link.label, href: href, external: marketing_target_external?(link.target) }
+      { label: link.label, href: href, external: marketing_target_external?(link.target),
+        current: href == request.path }
     end
   end
 

@@ -7,19 +7,29 @@
   THE PREREQUISITE IS THE POINT OF THE CARD, not a footnote on it: "you need a WhatsApp Business account" is
   the sentence that decides whether a reader can use this channel today. It sits on its own tinted strip at
   the foot of the card, where the eye lands last and the answer is waiting.
+
+  THE WHOLE CARD IS THE TARGET, AND ONLY WHEN THERE IS SOMEWHERE TO GO. Two defects met here. The border lit
+  up on hover on every card, including the seven across /integrations and /channels that link nowhere, so the
+  page promised a destination it did not have; and on the cards that do link, the only clickable thing was the
+  title -- a ~24px target on the page a reader opens on a phone. The title's `after:absolute after:inset-0`
+  now stretches the one anchor over the positioned card, so the hit area is the affordance, and `group` (which
+  nothing used before) is what carries the hover back to the title.
 %>
-<article class="group flex flex-col overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper transition-colors hover:border-lyn-royal/40">
+<% links = entry.detail? %>
+<article class="<%= class_names('flex flex-col overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper',
+                               'group relative transition-colors hover:border-lyn-royal/40' => links) %>">
   <div class="flex grow flex-col p-5">
-    <h2 class="flex flex-wrap items-center gap-2 text-base font-semibold text-lyn-ink">
-      <% if entry.detail? %>
-        <a class="transition-colors hover:text-lyn-royal" href="<%= marketing_entry_path(scope, entry) %>">
+    <%= content_tag heading_level, class: 'flex flex-wrap items-center gap-2 text-base font-semibold text-lyn-ink' do %>
+      <% if links %>
+        <a class="transition-colors after:absolute after:inset-0 group-hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+           href="<%= marketing_entry_path(scope, entry) %>">
           <%= t("marketing.#{scope}.#{entry.id}.name") %>
         </a>
       <% else %>
         <%= t("marketing.#{scope}.#{entry.id}.name") %>
       <% end %>
       <%= render 'marketing/shared/state_badge', state: entry.state %>
-    </h2>
+    <% end %>
 
     <p class="mt-2 grow text-sm leading-[1.8] text-lyn-ink-soft">
       <%= t("marketing.#{scope}.#{entry.id}.summary") %>

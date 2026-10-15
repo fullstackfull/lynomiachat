@@ -80,4 +80,70 @@ RSpec.describe 'Campaign audience preview, store scope', type: :request do
 
     expect(response).to have_http_status(:unauthorized)
   end
+
+  # THE CHANNEL AND THE PURPOSE ARE PART OF THE QUESTION, for a store-scoped campaign, and
+  # the preview used to supply neither.
+  #
+  # A store-scoped campaign's audience is scoped by channel -- a partner grant taken for
+  # WhatsApp does not authorise an SMS blast -- and by purpose, because a UTILITY template is
+  # transactional and needs no marketing grant. The ephemeral campaign this endpoint builds
+  # carried no inbox and no template params, so every preview resolved as :sms and
+  # :promotional however the campaign was actually going to send.
+  describe 'the channel and the purpose' do
+    let(:whatsapp_inbox) do
+      create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
+                                validate_provider_config: false).inbox
+    end
+    let(:sms_inbox) { create(:inbox, account: account, channel: create(:channel_sms, account: account)) }
+    let!(:label) { create(:label, account: account, title: 'preview') }
+    let(:whatsapp_only) { create(:contact, account: account, name: 'WhatsApp only', email: 'wa@example.test') }
+
+    before do
+      whatsapp_only.update_labels(['preview'])
+      create(:commerce_customer_link, account: account, store: ours, contact: whatsapp_only,
+                                      external_customer_id: 'cust-wa')
+      PartnerConsent.create!(platform_app: create(:platform_app), account: account, commerce_store: ours,
+                             contact: whatsapp_only, external_subject_id: 'cust-wa', source: 'checkout_optin',
+                             purpose: :promotional, channel: :whatsapp, state: :granted, captured_at: Time.current)
+    end
+
+    def preview(extra)
+      post url, params: { audience: [{ type: 'Label', id: label.id }], commerce_store_id: ours.id }.merge(extra),
+                headers: headers, as: :json
+      response.parsed_body['count']
+    end
+
+    it 'counts a WhatsApp grant when the campaign will send on a WhatsApp inbox' do
+      expect(preview(inbox_id: whatsapp_inbox.id)).to eq(1)
+    end
+
+    it 'does not count it when the campaign will send on SMS' do
+      expect(preview(inbox_id: sms_inbox.id)).to eq(0)
+    end
+
+    # TENANCY on the new parameter, the same rule as the store id beside it.
+    it 'refuses an inbox belonging to another account with 422' do
+      stranger = create(:inbox, account: create(:account))
+
+      post url, params: { audience: [{ type: 'Label', id: label.id }], inbox_id: stranger.id },
+                headers: headers, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    # A UTILITY template is transactional, and a transactional send needs no marketing grant
+    # at all -- so a preview that forced :promotional under-counted it. This contact holds no
+    # grant of any kind and must still be counted.
+    it 'does not require a marketing grant when the template is a UTILITY one' do
+      plain = create(:contact, account: account, name: 'No grant', email: 'plain@example.test')
+      plain.update_labels(['preview'])
+      create(:commerce_customer_link, account: account, store: ours, contact: plain, external_customer_id: 'cust-plain')
+
+      promotional = preview(inbox_id: whatsapp_inbox.id)
+      transactional = preview(inbox_id: whatsapp_inbox.id, template_params: { category: 'UTILITY' })
+
+      expect(promotional).to eq(1)
+      expect(transactional).to eq(2)
+    end
+  end
 end

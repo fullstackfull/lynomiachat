@@ -38,6 +38,44 @@ module Custom::CampaignAudience
                                  commerce_store, purpose, consent_channel)
   end
 
+  # A saved audience's members, scoped to this campaign's installation.
+  #
+  # A saved audience whose store no longer counts can match nobody AT THAT STORE, so it
+  # contributes nothing rather than being resolved account-wide -- which would over-count,
+  # the very thing the store scope exists to stop -- or raising; see `installation_counted?`.
+  def members_of(saved)
+    return account.contacts.none if commerce_store_id && !installation_counted?
+
+    saved.members(commerce_store_id: commerce_store_id)
+  end
+
+  # WHETHER THIS CAMPAIGN'S INSTALLATION STILL COUNTS FOR COMMERCE CONDITIONS.
+  #
+  # `Custom::Contacts::FilterService#scoped_store_id` RAISES InvalidValue for a store that is
+  # not among `Audience::CommerceCondition.counted_stores`. That is right at the REQUEST
+  # boundary -- somebody typed an id that is not theirs, and 422 beats silently answering
+  # zero -- and wrong at SEND time, where the id was valid when the campaign was saved and
+  # what changed is the STORE. A store leaves that set unattended: a rejected token flips it
+  # to `needs_reauth`, an operator disables it, or a Super Admin turns the provider off for
+  # the whole installation. The raise would then escape `process_audience`, the job would
+  # die, and `mark_processing!` refuses to re-enter -- so pausing an integration would wedge
+  # every store-scoped campaign in it, permanently.
+  #
+  # GUARDED HERE AND NOT HIGHER UP, because the two layers draw different lines and both are
+  # right. `counted_stores` excludes a store whose PROVIDER is switched off installation-wide;
+  # `Partners::Eligibility` and `Campaigns::SendGuard` only require the store to be ACTIVE.
+  # Short-circuiting the whole audience on `counted_stores` would exclude contacts the send
+  # boundary goes on to allow, which is the audience being NARROWER than the send -- a
+  # merchant silently not reaching customers who agreed. So only the commerce conditions,
+  # which are the only thing that can raise, are made to contribute nothing; labels resolve
+  # as they always did, and a store that is not active is still turned into an empty audience
+  # by `Partners::Eligibility.filter` a few lines above.
+  def installation_counted?
+    return @installation_counted if defined?(@installation_counted)
+
+    @installation_counted = Audience::CommerceCondition.counted_stores(account).exists?(id: commerce_store_id)
+  end
+
   # THE CHANNEL A PARTNER GRANT HAS TO COVER, and it is the sender's answer rather than a
   # second opinion: a grant taken for WhatsApp does not authorise an SMS blast. Each sender
   # passes this same value to Campaigns::SendGuard -- :whatsapp from the WhatsApp service,
@@ -63,7 +101,7 @@ module Custom::CampaignAudience
     # this installation's customer -- but the preview counted them, so the merchant was told
     # their campaign would reach people it could not. A campaign with no store keeps the
     # account-wide meaning, which is every campaign that existed before this.
-    sources = audiences.map { |saved| saved.members(commerce_store_id: commerce_store_id) }
+    sources = audiences.map { |saved| members_of(saved) }
     sources << yield if audience.any? { |entry| entry['type'] == 'Label' }
     sources.map { |source| account.contacts.where(id: source.unscope(:select, :order).select(:id)) }.reduce(:or)
   end

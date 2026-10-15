@@ -134,4 +134,42 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
 
     expect(campaign.reload.audience_contacts).to be_empty
   end
+
+  # AND IT MUST NOT RAISE WHILE DOING IT, which is the difference between a campaign that
+  # sends nothing and a campaign that is wedged forever.
+  #
+  # `Custom::Contacts::FilterService#scoped_store_id` raises InvalidValue for a store that is
+  # not among the counted ones -- correct at the request boundary, wrong at send time, where
+  # the id was valid when the campaign was saved and the STORE changed underneath it. A
+  # rejected token flips a store to `needs_reauth` unattended. The raise escapes
+  # `process_audience`, the job dies, and `mark_processing!` refuses to re-enter, so pausing
+  # an integration would wedge every store-scoped campaign in it permanently.
+  it 'resolves to nobody, without raising, when the installation stops being counted' do
+    opted_in = shopper('opted in')
+    partner_consent(opted_in, store, :granted)
+    audience = create(:custom_filter, account: account, filter_type: :contact, shared: true,
+                                      query: { 'payload' => [{ 'attribute_key' => 'commerce_orders_count',
+                                                               'filter_operator' => 'is_greater_than',
+                                                               'values' => ['0'], 'query_operator' => 'and' }] })
+    campaign.update!(audience: [{ type: 'Audience', id: audience.id }])
+    store.update!(status: :needs_reauth)
+
+    expect { campaign.reload.audience_contacts.to_a }.not_to raise_error
+    expect(campaign.reload.audience_contacts).to be_empty
+  end
+
+  # The channel is the campaign's, and a grant taken for another channel is not a basis for
+  # this one -- asserted here as well as in the agreement example because the PREVIEW builds
+  # a campaign of its own and used to get this wrong.
+  it 'reaches a WhatsApp grant from a WhatsApp campaign' do
+    whatsapp_inbox = create(:inbox, account: account,
+                                    channel: create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
+                                                                       sync_templates: false,
+                                                                       validate_provider_config: false))
+    campaign.update!(inbox: whatsapp_inbox)
+    reachable = shopper('whatsapp only')
+    partner_consent(reachable, store, :granted, channel: :whatsapp)
+
+    expect(campaign.reload.audience_contacts).to contain_exactly(reachable)
+  end
 end

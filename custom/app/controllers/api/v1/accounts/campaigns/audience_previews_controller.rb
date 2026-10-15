@@ -17,6 +17,7 @@ class Api::V1::Accounts::Campaigns::AudiencePreviewsController < Api::V1::Accoun
   def create
     authorize Campaign, :create?
     campaign = Current.account.campaigns.new(campaign_type: :one_off, commerce_store_id: scoped_store_id,
+                                             inbox_id: scoped_inbox_id, template_params: template_params,
                                              audience: params.permit(audience: [:type, :id]).require(:audience))
     return render_could_not_create_error(I18n.t('errors.campaigns.audience_not_shared')) unless campaign.audiences_shared_in_account?
 
@@ -33,6 +34,34 @@ class Api::V1::Accounts::Campaigns::AudiencePreviewsController < Api::V1::Accoun
   end
 
   private
+
+  # THE INBOX AND THE TEMPLATE CATEGORY ARE PART OF THE QUESTION TOO, for a store-scoped
+  # campaign, and omitting them made the preview answer a different one from the send.
+  #
+  # A store-scoped campaign's audience is scoped by CHANNEL and by PURPOSE: a partner grant
+  # taken for WhatsApp does not authorise an SMS blast, and a UTILITY template is
+  # transactional and needs no marketing grant at all. The ephemeral campaign below used to
+  # carry neither, so `consent_channel` fell through to :sms for every preview and
+  # `purpose_for` returned :promotional for every preview. A WhatsApp campaign was previewed
+  # against SMS-scoped grants and a transactional one against a grant requirement its send
+  # does not have -- in both cases UNDER-counting, which is the safer direction and still
+  # the wrong number.
+  #
+  # Both are optional, because a caller previewing an audience rather than a specific
+  # campaign legitimately knows neither; the defaults are then exactly what they were.
+  def scoped_inbox_id
+    requested = params[:inbox_id].presence
+    return if requested.nil?
+
+    Current.account.inboxes.where(id: requested).pick(:id) ||
+      raise(CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'inbox_id'))
+  end
+
+  # Only the category is read (Campaigns::Eligibility.purpose_for), but the whole hash is
+  # accepted so the preview is given literally what the campaign will be created with.
+  def template_params
+    params[:template_params].is_a?(ActionController::Parameters) ? params[:template_params].permit!.to_h : nil
+  end
 
   # Resolved through the ACCOUNT'S OWN stores rather than taken on trust: an id belonging to
   # another tenant is refused here with a 422 rather than silently narrowing the count to

@@ -61,6 +61,9 @@ module Campaigns::SendGuard
   # window that does not exist. When it did sleep, the first answer is stale by construction
   # and is re-taken.
   #
+  # AND THE QUOTA IS TAKEN AFTER BOTH. See `quota` below for why it is last and why, unlike
+  # the pacing it follows, it fails closed.
+  #
   # PACING CANNOT WIDEN WHAT IS PERMITTED. Every refusal `refusal` can return is re-asked
   # after the wait: the kill switch (step 1), installation revocation (step 2), blocking and
   # withdrawal in both consent stores (steps 3-7) and the missing promotional grant (step 8).
@@ -72,9 +75,29 @@ module Campaigns::SendGuard
     before = refusal(contact, campaign, channel)
     return before if before
 
-    return nil unless Campaigns::Throttle.pace(campaign.account) == :waited
+    after = Campaigns::Throttle.pace(campaign.account) == :waited ? refusal(contact, campaign, channel) : nil
+    return after if after
 
-    refusal(contact, campaign, channel)
+    quota(campaign)
+  end
+
+  # THE COMMERCIAL CEILING, TAKEN LAST AND ONLY FOR A SEND THAT IS OTHERWISE GOING TO HAPPEN.
+  #
+  # LAST, because a unit of a paid allowance must not be spent on somebody the next line was
+  # going to refuse anyway. Charging a merchant for messages to people who opted out is the
+  # one accounting error that is also a complaint.
+  #
+  # AND IT FAILS CLOSED, which is the opposite of the throttle immediately above it. Pacing is
+  # a courtesy and lets the send through when its counter is unreachable; a quota that did
+  # that would stop applying exactly when the system is under stress, which is when a runaway
+  # campaign is most likely to be the cause. `Billing::MeteredUsage.consume` raises rather
+  # than returning on a database it cannot reach, and a raise here aborts the send.
+  #
+  # The lock it takes is released when the caller's transaction ends. There is no transaction
+  # around a campaign's send loop, so it is held for the increment alone -- which is exactly
+  # the window two senders would otherwise both read `used == limit - 1` in.
+  def quota(campaign)
+    Billing::MeteredUsage.consume(campaign.account) ? :send_quota_exceeded : nil
   end
 
   # EVERY RECORD IS RE-READ, and that is the difference between this and the audience filter.

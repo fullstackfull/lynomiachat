@@ -27,11 +27,18 @@ courtesy ceiling ends up being relied on as a quota.
 | --- | --- | --- | --- |
 | **Pacing** | a courtesy ceiling on how fast *we* dial, so a merchant stays inside their messaging tier | `Campaigns::Throttle`, best effort | fails **open** |
 | **Provider limit** | the provider's own 429 and messaging tier | the provider | provider refuses |
-| **Commercial quota** | "this plan allows N sends this period" | **does not exist yet — P5G** | must fail **closed** |
+| **Commercial quota** | "this plan allows N sends this period" | `Billing::MeteredUsage` (P5G) | fails **closed** |
 
 The commercial quota is explicitly recorded in the docblock as something that **must not** be
 routed through this module, because a quota that fails open is not a quota. It belongs with
 `Billing::ResourceLimit.exceeded`, which takes a lock and refuses.
+
+**That requirement was honoured when P5G built it.** `Billing::MeteredUsage` is a separate
+module, takes the same `account.lock!` as `Billing::ResourceLimit#exceeded`, reads its
+ceiling from `Billing::Entitlements` so overrides and bundled grants are both honoured, and
+raises rather than permitting when it cannot reach its counter. It is taken **after** the
+pacing and **after** the final eligibility re-check, so a unit of a paid allowance is never
+spent on somebody the next line would have refused.
 
 ## 2. Redis failure never bypasses provider restrictions or hard subscription limits — PASS
 
@@ -81,11 +88,15 @@ Everything `refusal` can return is re-asked after the wait: the kill switch (ste
 installation revocation (step 2), blocking and withdrawal in both consent stores (steps 3–7)
 and the missing promotional grant (step 8).
 
-**Campaign cancellation** does not exist yet. `campaign_status` today is
+**Campaign cancellation** did not exist when this note was written: `campaign_status` was
 `active / completed / processing / blocked`, and `blocked` is only ever set *before* a run
-begins. There is no operator action that cancels a campaign mid-run, so there is nothing for
-the gate to check and a check for it would be unreachable code. P5D introduces cancellation
-and will enforce it at this gate — recorded here so it is not quietly skipped.
+begins, so a check for a cancellation would have been unreachable code.
+
+**P5D added it and enforced it here, as this note promised.** `campaign_status: cancelled` is
+terminal and is read at step 2 of the precedence — from the live row, not the campaign object
+the run started with, because cancelling is something an operator does *while* a campaign is
+running. A run in flight stops at its next recipient
+(`spec/models/campaign_cancellation_spec.rb`).
 
 Evidence: `spec/services/campaigns/send_guard_spec.rb` → `.clear_to_send` — "honours a
 withdrawal that lands during the throttle wait", "honours a kill switch thrown during the
@@ -208,14 +219,17 @@ spec/models/campaign_blocked_spec.rb spec/models/campaign_send_concurrency_spec.
 
 | # | Property | Outcome |
 | --- | --- | --- |
-| 1 | pacing ≠ provider limit ≠ commercial quota | PASS (documented) |
+| 1 | pacing ≠ provider limit ≠ commercial quota | PASS; the quota exists as of P5G and is a separate, fail-closed module |
 | 2 | Redis failure bypasses no provider or subscription limit | PASS |
-| 3 | pacing cannot bypass kill switch / withdrawal / revocation | **WAS BROKEN — FIXED** |
+| 3 | pacing cannot bypass kill switch / withdrawal / revocation / **cancellation** | **WAS BROKEN — FIXED**; cancellation added in P5D |
 | 4 | eligibility revalidated after the wait | **WAS BROKEN — FIXED** |
 | 5 | no double-send, no ceiling overshoot under concurrency | PASS (now verified under contention) |
 | 6 | no unbounded sleeping | PASS |
 | 7 | failures in logs and monitoring | PASS (signal was being dropped; fixed) |
 | 8 | four-sender regression intact | PASS |
 
-Campaign cancellation (part of property 3) is **deferred to P5D**, where the state it depends
-on is introduced. It is not silently skipped: the gate is the place it will be enforced.
+Campaign cancellation (part of property 3) was **deferred to P5D** and has since been
+delivered: the state exists, the gate reads it live, and a run in flight stops at its next
+recipient. The commercial quota named in property 1 was **deferred to P5G** and has since been
+delivered as `Billing::MeteredUsage`, outside this module and failing closed, exactly as this
+note required. Both deferrals are closed; neither was silently dropped.

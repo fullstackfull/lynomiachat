@@ -35,13 +35,28 @@ module Billing::ResourceLimit
     flows: ->(account) { account.agent_bots.flow.count }
   }.freeze
 
+  # RESOURCES WHOSE USAGE IS METERED RATHER THAN COUNTED. The four in COUNTS above count rows
+  # that EXIST, so deleting one gives it back; a send is spent and the allowance refills when
+  # the billing period turns over. Billing::MeteredUsage owns the stored counter, and this
+  # list is what routes a read to it -- without it `current_count` would KeyError on every
+  # usage display the moment a metered key joined BillingPlan::LIMIT_KEYS.
+  METERED = %i[campaign_sends].freeze
+
   # @param resource [Symbol, String] one of BillingPlan::LIMIT_KEYS
   def current_count(account, resource)
-    COUNTS.fetch(resource.to_sym).call(account)
+    key = resource.to_sym
+    return Billing::MeteredUsage.usage(account, key.to_s)[:used] if METERED.include?(key)
+
+    COUNTS.fetch(key).call(account)
   end
 
-  # THE GATE. Locks the account row, then counts, so concurrent creates are serialized.
-  # Call it inside the caller's transaction -- the lock is released when that transaction ends.
+  # THE GATE for a COUNTED resource. Locks the account row, then counts, so concurrent creates
+  # are serialized. Call it inside the caller's transaction -- the lock is released when that
+  # transaction ends.
+  #
+  # A METERED resource has its own gate, Billing::MeteredUsage.consume, because the two do
+  # different things: this one asks "is there room", which is idempotent and may be asked
+  # twice; that one TAKES a unit, which may not.
   # @return [Integer, nil] the limit that was exceeded, or nil when there is room
   def exceeded(account, resource)
     limit = Billing::Entitlements.limit(account, resource)

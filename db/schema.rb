@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_22_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_23_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -394,6 +394,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_22_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_billing_trial_usages_on_email", unique: true
+  end
+
+  create_table "billing_usage_counters", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "resource", limit: 40, null: false
+    t.date "period_start", null: false
+    t.bigint "used", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "resource", "period_start"], name: "index_billing_usage_counters_on_scope", unique: true
   end
 
   create_table "billing_webhook_events", force: :cascade do |t|
@@ -2202,6 +2212,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_22_000000) do
   add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
   add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"
+  add_foreign_key "billing_usage_counters", "accounts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "accounts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade

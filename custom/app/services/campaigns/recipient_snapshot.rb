@@ -41,6 +41,7 @@ class Campaigns::RecipientSnapshot
   CONSENT_REASONS = {
     outbound_halted: 'Sending is paused',
     campaign_cancelled: 'The campaign was cancelled',
+    send_quota_exceeded: 'This plan\'s message allowance for the period is used up',
     installation_revoked: 'The store integration is not active',
     contact_unavailable: 'Contact is blocked',
     messaging_suppressed: 'The provider reported this number cannot receive',

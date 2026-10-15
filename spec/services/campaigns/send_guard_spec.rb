@@ -330,4 +330,71 @@ RSpec.describe Campaigns::SendGuard do
       expect(described_class.refusal(doomed, campaign, :whatsapp)).to eq(:contact_unavailable)
     end
   end
+
+  # ================================================================ the commercial quota
+  #
+  # P5G. docs/partner-consent/THROTTLE-SAFETY.md §1 required that a commercial quota must NOT
+  # be routed through Campaigns::Throttle, because that module fails OPEN and a quota that
+  # fails open is not a quota. These examples pin the two properties that separate them: the
+  # quota is taken LAST, so it is never spent on a recipient the guard was going to refuse,
+  # and it refuses when it is used up.
+  describe 'the send allowance' do
+    let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
+    let(:campaign) { create(:campaign, account: account, campaign_type: :one_off, template_params: utility) }
+
+    # UPDATED, NOT CREATED: an account arrives with a subscription of its own and
+    # `billing_subscriptions.account_id` is unique, so creating a second one fails validation
+    # rather than replacing the first.
+    def subscribe_to(limits)
+      subscription = account.billing_subscription || BillingSubscription.new(account: account, source: 'manual')
+      subscription.update!(plan: create(:billing_plan, limits: limits), status: 'active',
+                           current_period_end: 20.days.from_now)
+      account.reload
+    end
+
+    before do
+      allow(Billing::Settings).to receive(:enforced?).and_return(true)
+      subscribe_to('campaign_sends' => 2)
+      Redis::Alfred.delete(Campaigns::Throttle.key(account))
+    end
+
+    it 'lets a send through while there is allowance left' do
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+    end
+
+    it 'refuses once the period allowance is used up' do
+      2.times { described_class.clear_to_send(shopper, campaign, :whatsapp) }
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:send_quota_exceeded)
+    end
+
+    # THE ORDERING THAT MATTERS COMMERCIALLY. Charging a merchant for messages to people who
+    # opted out is the one accounting error that is also a complaint.
+    it 'does not spend a unit on a recipient it was going to refuse anyway' do
+      stop(shopper)
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:consent_withdrawn)
+      expect(Billing::MeteredUsage.usage(account)[:used]).to eq(0)
+    end
+
+    it 'does not spend a unit when the kill switch refuses the send' do
+      account.update!(settings: account.settings.merge(Campaigns::Outbound::ACCOUNT_KEY => true))
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:outbound_halted)
+      expect(Billing::MeteredUsage.usage(account)[:used]).to eq(0)
+    end
+
+    # An account with no metered ceiling -- which is every account that existed before P5G --
+    # must be untouched, and must not acquire a counter row it never needed.
+    it 'is inert for an account whose plan sets no allowance' do
+      subscribe_to({})
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+      expect(BillingUsageCounter.count).to eq(0)
+    end
+
+    it 'has a recorded reason, or the sender crashes trying to record the skip' do
+      expect(Campaigns::RecipientSnapshot::CONSENT_REASONS).to have_key(:send_quota_exceeded)
+    end
+  end
 end

@@ -12,7 +12,7 @@ import { usePlatformSupportUnread } from 'dashboard/routes/dashboard/help/platfo
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useBranding } from 'shared/composables/useBranding';
-import { useWindowSize, useEventListener } from '@vueuse/core';
+import { useWindowSize, useEventListener, useScroll } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
@@ -45,6 +45,42 @@ const emit = defineEmits([
   'showCreateAccountModal',
   'closeMobileSidebar',
 ]);
+
+// THE NAVIGATION'S FADE IS A SCROLL AFFORDANCE, SO IT ONLY APPEARS WHERE THERE IS SOMETHING TO SCROLL TO.
+//
+// It used to be one unconditional `mask-image` fading the first and last 12px of the scroll box, whether or
+// not either end had anything beyond it. Measured in the browser at 1440x900 on an account whose navigation
+// fits: scrollHeight 726, clientHeight 714, scrollTop 0 -- so the box "overflows" by 12px that are entirely
+// its own `pb-5`, and a fade was drawn over the foot of a list that had nothing below it.
+//
+// WHAT THIS DOES NOT FIX, because it was measured and it is not this: the last item ("Settings") renders
+// dimmer than its siblings in both the old and the new build -- peak glyph luminance (124,131,144) before
+// and (121,131,144) after, against (176,180,186) for "Help & Support". That is the item's own colour, not
+// the mask. This change is about the affordance being honest, not about that item.
+//
+// `offset.bottom` is the padding, so "arrived at the bottom" means "nothing but padding is left"; the two
+// ends are then independent, and a nav that does not scroll carries no mask at all (verified: computed
+// `mask-image` is now `none` on that account, where it was the gradient). The three values are written as
+// whole literal strings because Tailwind generates a rule only for a class it can see in a scanned file,
+// and a mask assembled from fragments at runtime would be purged.
+const navRef = ref(null);
+const { arrivedState: navArrived } = useScroll(navRef, {
+  offset: { bottom: 20 },
+});
+
+const NAV_FADE_TOP =
+  '[mask-image:linear-gradient(to_bottom,transparent_0,#000_12px)]';
+const NAV_FADE_BOTTOM =
+  '[mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent_100%)]';
+const NAV_FADE_BOTH =
+  '[mask-image:linear-gradient(to_bottom,transparent_0,#000_12px,#000_calc(100%-12px),transparent_100%)]';
+
+const navFadeClass = computed(() => {
+  if (navArrived.top && navArrived.bottom) return '';
+  if (navArrived.top) return NAV_FADE_BOTTOM;
+  if (navArrived.bottom) return NAV_FADE_TOP;
+  return NAV_FADE_BOTH;
+});
 
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 const store = useStore();
@@ -1141,8 +1177,9 @@ const menuItems = computed(() => {
     </section>
 
     <nav
-      class="relative z-10 grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0 [mask-image:linear-gradient(to_bottom,transparent_0,#000_12px,#000_calc(100%-12px),transparent_100%)]"
-      :class="isEffectivelyCollapsed ? 'px-1.5' : 'px-3'"
+      ref="navRef"
+      class="relative z-10 grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"
+      :class="[isEffectivelyCollapsed ? 'px-1.5' : 'px-3', navFadeClass]"
     >
       <ul
         class="flex flex-col gap-1.5 m-0 list-none min-w-0"

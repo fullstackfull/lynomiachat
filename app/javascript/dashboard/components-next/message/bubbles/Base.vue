@@ -42,8 +42,20 @@ const emailMetaClass = computed(() =>
   variant.value === MESSAGE_VARIANTS.EMAIL ? 'px-3 pb-3' : ''
 );
 
+// THE TEAM'S OWN VOICE IS THE BRAND'S COLOUR, AND IT WAS THE RETIRED ONE'S.
+//
+// An agent's reply -- the thing an agent writes all day, and the most-drawn surface in the product -- was set
+// on `--solid-blue` (218 236 255), a tint of the blue this installation retired when it became Lynomia, while
+// the BOT and TEMPLATE variants below were already on the brand's own iris. The account's own replies spoke
+// in the old identity and its automations spoke in the new one.
+//
+// `iris-5` rather than `solid-iris`: it is the brand hue one step stronger than the tint the automated
+// variants carry, so the human reply still reads as distinct from the bot reply -- which is the distinction
+// the blue/iris pair was carrying, at the same contrast, in the right colour. It stays a LIGHT field in both
+// modes on purpose: `prose-bubble` (tailwind.config.js) hardcodes `--slate-12` for body text, headings,
+// `strong` and links, so a saturated field would need every one of those overridden in every bubble type.
 const varaintBaseMap = {
-  [MESSAGE_VARIANTS.AGENT]: 'bg-n-solid-blue text-n-slate-12',
+  [MESSAGE_VARIANTS.AGENT]: 'bg-n-iris-5 text-n-slate-12',
   [MESSAGE_VARIANTS.PRIVATE]:
     'bg-n-solid-amber text-n-amber-12 [&_.prosemirror-mention-node]:font-semibold',
   [MESSAGE_VARIANTS.USER]: 'bg-n-slate-4 text-n-slate-12',

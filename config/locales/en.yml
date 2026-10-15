@@ -232,6 +232,7 @@ en:
     campaigns:
       audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
       unknown_recipient_status: "'%{status}' is not a recipient status. Allowed: %{allowed}."
+      cannot_cancel: This campaign has already finished sending, so there is nothing to cancel.
     analytics:
       missing_date: "%{field} is required and must be a date in YYYY-MM-DD form."
       invalid_date: "%{field} must be a date in %{expected_format} form, got '%{value}'."

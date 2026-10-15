@@ -15,14 +15,15 @@
 # overturn something above.
 #
 #   1  outbound kill switch            installation-wide
-#   2  installation revoked            partner-originated sends only
-#   3  contact blocked                 native, always
-#   4  native suppression              native, always, per purpose
-#   5  native withdrawal               native, always, per purpose
-#   6  partner suppression in scope    partner-originated only
-#   7  partner withdrawal in scope     partner-originated only
-#   8  promotional with no grant       satisfied by EITHER store, each within its own scope
-#   9  provider rules                  left to the sender that owns them
+#   2  campaign cancelled              this campaign only
+#   3  installation revoked            partner-originated sends only
+#   4  contact blocked                 native, always
+#   5  native suppression              native, always, per purpose
+#   6  native withdrawal               native, always, per purpose
+#   7  partner suppression in scope    partner-originated only
+#   8  partner withdrawal in scope     partner-originated only
+#   9  promotional with no grant       satisfied by EITHER store, each within its own scope
+#  10  provider rules                  left to the sender that owns them
 #
 # NEGATIVES UNION AND POSITIVES DO NOT. Steps 3-7 mean either consent store can refuse and
 # neither can overturn the other. Step 8 is the only place a positive is read, and a partner
@@ -33,7 +34,7 @@
 # purpose and channel scoped, so it stops that store's messages of that class on that channel
 # and says nothing about another store or another class.
 #
-# STEP 9 IS DELIBERATELY NOT HERE. Template approval, the 24-hour window and the
+# STEP 10 IS DELIBERATELY NOT HERE. Template approval, the 24-hour window and the
 # authentication-template guard belong to the sender that knows the channel, and each already
 # refuses on its own terms. Restating them here would be a second copy to keep in step.
 module Campaigns::SendGuard
@@ -91,6 +92,12 @@ module Campaigns::SendGuard
   # @return [Symbol, nil] nil when the send may proceed, else the refusal code
   def refusal(contact, campaign, channel)
     return :outbound_halted if Campaigns::Outbound.halted?(live(campaign.account))
+    # STEP 2, AND IT IS RE-READ RATHER THAN TAKEN FROM THE HELD OBJECT, for the reason the
+    # note above gives: the campaign the sender holds was loaded when the run began, and
+    # cancelling is something an operator does WHILE it is running. A cancellation that only
+    # took effect on the next job would be no cancellation at all, because by then there is
+    # no run to stop.
+    return :campaign_cancelled if live(campaign)&.cancelled?
 
     purpose = Campaigns::Eligibility.purpose_for(campaign)
     native = Commerce::MessagingEligibility.refusal(live(contact), purpose)
@@ -102,6 +109,7 @@ module Campaigns::SendGuard
   end
 
   # A record as it is NOW, or nil when it has been deleted.
+  #
   #
   # A narrow re-read by primary key rather than `reload`, because `reload` raises on a deleted
   # row and a contact deleted mid-run has to REFUSE this recipient, not abort a run that has

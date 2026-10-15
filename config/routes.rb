@@ -105,6 +105,11 @@ Rails.application.routes.draw do
             # (custom/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb), so these are not gated.
             get 'analytics/metrics', to: 'campaigns/analytics#metrics'
             get 'analytics/contacts', to: 'campaigns/analytics#contacts'
+            # Lynomia Campaigns (P5D): stopping a campaign that is running or due to run. A
+            # POST rather than a DELETE because the campaign and its results are KEPT -- a
+            # cancelled campaign is evidence of what was and was not sent, and deleting it
+            # would destroy the recipient snapshot an operator cancelled it in order to read.
+            post :cancel, on: :member
           end
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do

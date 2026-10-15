@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_21_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_22_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -479,7 +479,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_21_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "campaign_type", default: 0, null: false
-    t.integer "campaign_status", default: 0, null: false
+    t.integer "campaign_status", default: 0, null: false, comment: "0 active, 1 completed, 2 processing, 3 blocked (capability unavailable), 4 cancelled (operator stopped it)"
     t.jsonb "audience", default: []
     t.datetime "scheduled_at", precision: nil
     t.boolean "trigger_only_during_business_hours", default: false

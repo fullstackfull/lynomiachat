@@ -58,7 +58,14 @@ class Campaign < ApplicationRecord
   #
   # Only a WhatsApp campaign can hold it: `feature_enabled?` is true for every other inbox type, so no SMS or
   # website campaign can reach the transition.
-  enum campaign_status: { active: 0, completed: 1, processing: 2, blocked: 3 }
+  # `cancelled` is Lynomia's (P5D): an operator stopped this campaign. Unlike `blocked` it is
+  # TERMINAL and deliberate -- `blocked` is a holding state the system entered on its own and
+  # can leave, while a cancellation is a person's decision and there is no un-cancel. A
+  # cancelled campaign is never picked up again by the scheduler, and a run already in flight
+  # stops at its next recipient: Campaigns::SendGuard re-reads the status per recipient, so
+  # cancelling stops the send that is happening NOW rather than the next one, which is the
+  # only moment anybody reaches for it.
+  enum campaign_status: { active: 0, completed: 1, processing: 2, blocked: 3, cancelled: 4 }
 
   # The machine-readable reason a campaign is blocked. One value today; a constant rather than a literal so a
   # reader can match on it and a second reason has somewhere to go.
@@ -73,10 +80,33 @@ class Campaign < ApplicationRecord
 
   def trigger!
     return unless one_off?
+    return if cancelled?
     return block_for_disabled_feature! unless feature_enabled?
     return unless mark_processing!
 
     execute_campaign
+  end
+
+  # An operator stopping a campaign.
+  #
+  # TERMINAL, AND UNDER THE SAME LOCK AS mark_processing! -- a scheduler job and a cancelling
+  # operator can reach the row at the same moment, and without the lock the job's flip to
+  # `processing` could land after the cancellation and resurrect it. Taking the lock means one
+  # of the two sees the other's write.
+  #
+  # A COMPLETED CAMPAIGN CANNOT BE CANCELLED, because there is nothing left to stop and saying
+  # otherwise would misreport what happened: its messages were sent.
+  #
+  # The in-flight run is NOT interrupted here and does not need to be. Campaigns::SendGuard
+  # re-reads the campaign per recipient, so the loop stops at its next one; reaching into a
+  # running job would be a second mechanism for the same effect, and the harder one to prove.
+  def cancel!(reason = nil)
+    with_lock do
+      next false if completed? || cancelled?
+
+      update!(campaign_status: :cancelled, blocked_reason: reason.presence)
+      true
+    end
   end
 
   # Back to `active`, which is the only way out of `blocked` other than the operator deleting the campaign.
@@ -150,7 +180,7 @@ class Campaign < ApplicationRecord
     # real independent path to this method: it would otherwise find the capability restored and send a campaign
     # the operator has not re-activated.
     with_lock do
-      next if completed? || processing? || blocked?
+      next if completed? || processing? || blocked? || cancelled?
 
       update!(campaign_status: :processing, started_at: Time.current)
     end

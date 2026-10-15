@@ -63,7 +63,8 @@ seo_description: "المتجر في لينوميا تشات: الطلبات بج
 
 1. **الإعدادات ← المتجر ← إضافة متجر.**
 2. اختر منصتك. ولكل منصة طريقة: مفتاح في [WooCommerce](connect-woocommerce)، وتثبيت تطبيق في
-   [Salla](connect-salla) و[Zid](connect-zid) و[Shopify](connect-shopify).
+   [Salla](connect-salla) و[Zid](connect-zid) و[Shopify](connect-shopify)، ورمز تكامل مرتبط
+   بالمتجر في [متجر سوريا](connect-store-syria).
 3. افتح محادثة لعميل من ذلك المتجر. فيطابقه قسم المتجر ويقرأ طلباته.
 
 ## من يستطيع ماذا

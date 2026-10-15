@@ -16,10 +16,10 @@
 #
 # That note also said this must not be routed through Campaigns::Throttle and must live with
 # Billing::ResourceLimit. It does: the ceiling comes from Billing::Entitlements, so an
-# operator override and an integration's bundled grant are both honoured, and the counter is
-# taken under `account.lock!` -- the same lock Billing::ResourceLimit#exceeded uses, for the
-# same reason. Two senders arriving at `used == limit - 1` would otherwise both read
-# `limit - 1`, both decide there was room, and both send.
+# operator override and an integration's bundled grant are both honoured, and the unit is
+# taken under a row lock held across the read and the write. Two senders arriving at
+# `used == limit - 1` would otherwise both read `limit - 1`, both decide there was room, and
+# both send. See `consume` for why the lock is the counter's and not the account's.
 #
 # THE UNIT IS AN ATTEMPT, NOT A DELIVERY, and that is deliberate. A message handed to the
 # provider has been spent whatever the provider then does with it: counting only deliveries
@@ -38,24 +38,43 @@ module Billing::MeteredUsage
 
   # Take one unit of this period's allowance.
   #
-  # CALL IT INSIDE THE CALLER'S TRANSACTION. The lock is released when that transaction ends,
-  # and without one the lock is held for a single statement and buys nothing.
+  # THE LOCK HAS TO SPAN THE READ AND THE WRITE, AND `with_lock` IS WHAT MAKES IT DO THAT.
+  # This first read `account.lock!` and then compared and incremented, which looked like the
+  # gate in Billing::ResourceLimit#exceeded and was not one. That method is called from inside
+  # a `validate ... on: :create`, so it already runs in the save's transaction and its lock is
+  # held to the end of it. Nothing wraps a campaign's send loop in a transaction -- none of
+  # the four senders opens one -- so here the `SELECT ... FOR UPDATE` was its own autocommit
+  # statement and the row lock was released before the next line ran. Two workers both read
+  # `used == limit - 1`, both found room, and both sent. The scheduler enqueues one job per
+  # due campaign, so an account with two active campaigns has exactly that shape, and the
+  # overshoot grows with the number of workers -- a ceiling that stops applying precisely when
+  # it is load-bearing. spec/services/billing/metered_usage_concurrency_spec.rb forces the
+  # window rather than racing for it.
+  #
+  # IT LOCKS THE COUNTER ROW, NOT THE ACCOUNT. That is the row being read and written, it is
+  # the narrowest thing that serialises two senders of the same account, and it leaves
+  # Billing::ResourceLimit's account lock uncontended. `counter_for` runs OUTSIDE the lock on
+  # purpose: its `find_or_create_by!` can raise RecordNotUnique, and a RecordNotUnique inside
+  # a transaction poisons it, so its rescue would have nothing to re-read with.
   #
   # @return [Integer, nil] the ceiling that was reached, or nil when the send may proceed
   def consume(account, resource = RESOURCE)
     limit = Billing::Entitlements.limit(account, resource)
     return nil if limit.nil?
 
-    account.lock!
     counter = counter_for(account, resource)
-    return limit if counter.used >= limit
+    # `with_lock` reloads the row FOR UPDATE inside a transaction, so `used` below is the
+    # committed value no other sender can be changing, and it stays that way until the
+    # increment commits.
+    counter.with_lock do
+      next limit if counter.used >= limit
 
-    # `increment!` deliberately: it issues `UPDATE ... SET used = used + 1`, which is one
-    # atomic statement, rather than reading the value into Ruby and writing it back. Skipping
-    # validations is the point -- the row was validated when it was created, and re-validating
-    # a counter bump buys nothing while turning an atomic update into a read-modify-write.
-    counter.increment!(:used) # rubocop:disable Rails/SkipsModelValidations
-    nil
+      # `increment!` deliberately: it issues `UPDATE ... SET used = used + 1` rather than
+      # writing back a value read into Ruby. Skipping validations is the point -- the row was
+      # validated when it was created, and re-validating a counter bump buys nothing.
+      counter.increment!(:used) # rubocop:disable Rails/SkipsModelValidations
+      nil
+    end
   end
 
   # What the merchant has used and what they are allowed, for a usage display. A read with no

@@ -218,10 +218,23 @@ RSpec.describe 'Clean-room integration corrections', type: :request do
     let(:campaign) do
       create(:campaign, account: account, inbox: channel.inbox, audience: [{ type: 'Label', id: label.id }])
     end
+    # EVERY CONTACT HERE HAS AGREED TO MARKETING, which is setup rather than noise. A campaign
+    # with no provider template category is promotional (Campaigns::Eligibility), and
+    # `audience_contacts` filters promotional sends down to contacts who granted -- so without
+    # a grant the audience is correctly EMPTY and the three examples below would pass or fail
+    # for a reason that has nothing to do with the snapshot they are about. The consent rule
+    # itself is pinned in spec/services/campaigns/eligibility_spec.rb.
+    #
+    # Recorded through the service rather than inserted, because a hand-built row is not a
+    # shape the system ever produces.
     let!(:contacts) do
       Array.new(3) do |index|
         create(:contact, account: account, phone_number: "+9655000000#{index}").tap do |contact|
           contact.update_labels([label.title])
+          Commerce::MessagingConsents.record(
+            account: account, contact: contact,
+            decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant')
+          )
         end
       end
     end

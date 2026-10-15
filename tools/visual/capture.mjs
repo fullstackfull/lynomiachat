@@ -108,6 +108,11 @@ if (!set)
 // The dashboard has no locale in its URL -- it reads the account's, from the database -- so shooting it in
 // Arabic means setting that column, running this with `--locale ar`, and setting it back. The marketing site
 // does carry a prefix, so there this just narrows the run to one of the set's own locales.
+// The dashboard's default appearance is "auto": App.vue reads `prefers-color-scheme` and puts `.dark` on
+// the root, which is what the whole `n-*` token set resolves against. Playwright can set that media query,
+// so shooting the dark palette needs no setting change and no second account.
+const darkMode = args.includes('--dark');
+
 const localeOverride = arg('locale');
 if (localeOverride) {
   const prefix = set.locales[localeOverride];
@@ -142,6 +147,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
   const context = await browser.newContext({
     viewport,
     deviceScaleFactor: viewport.deviceScaleFactor,
+    colorScheme: darkMode ? 'dark' : 'light',
   });
   const page = await context.newPage();
 

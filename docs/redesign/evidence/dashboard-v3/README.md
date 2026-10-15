@@ -8,13 +8,19 @@ in any of them: every name in these shots belongs to the PaperLayer / Acme Inc f
 ```
 node tools/visual/capture.mjs --set dashboard --viewports desktop,mobile --out <dir>
 node tools/visual/capture.mjs --set dashboard --locale ar --viewports desktop --out <dir>
+node tools/visual/capture.mjs --set dashboard --dark --viewports desktop --out <dir>
 ```
+
+The dashboard's default appearance is "auto" -- `App.vue` reads `prefers-color-scheme` and puts `.dark`
+on the root, which is what the whole `n-*` token set resolves against -- so `--dark` sets that media
+query in the browser rather than changing a setting or using a second account.
 
 | Set | Viewport | Pages |
 | --- | --- | --- |
 | `en/desktop` | 1440×900 | 10 |
 | `en/mobile` | 390×844 | 10 |
 | `ar/desktop` | 1440×900, RTL | 10 |
+| `en/desktop-dark` | 1440×900, dark palette | 10 |
 
 The earlier passes are `dashboard-before/` (the baseline this project started from) and
 `dashboard-v2/`. Compare the same filename across directories.
@@ -28,6 +34,8 @@ The earlier passes are `dashboard-before/` (the baseline this project started fr
   "10:49 PM" rather than the bidi-reordered "PM 10:49".
 - `conversation-list` — the Mine / Unassigned / All counts, whose inactive badge moved from
   `slate-10` (3.0:1) to `slate-11`.
+- `en/desktop-dark/conversation-chat` — the same screen on the dark palette: the selection rail, the
+  tab counts, the day marker and the segmented control all resolve against the dark token set.
 - `settings-profile` — the settings column centred in the space it has instead of pinned to the
   inline start with ~400px of empty page beside it.
 

@@ -65,9 +65,9 @@ defineProps({
             <slot name="icon">
               <span
                 v-if="icon"
-                class="grid place-items-center rounded-overlay size-12 bg-n-alpha-2 text-n-slate-11"
+                class="grid place-items-center rounded-overlay size-14 bg-lyn-indigo/10 text-lyn-indigo ring-1 ring-inset ring-lyn-indigo/20"
               >
-                <span :class="icon" class="size-6" />
+                <span :class="icon" class="size-7" />
               </span>
             </slot>
             <h2

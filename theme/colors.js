@@ -226,7 +226,12 @@ export const colors = {
     },
 
     black: '#000000',
-    brand: '#2781F6',
+    // The one accent every `n-brand` call site resolves to: primary buttons, tab indicators, focus rings and
+    // spinners across the dashboard, the widget and the portal. It is `lyn.indigo`, the colour the website
+    // and the Flutter app already share, so the three read as one product. It is also the accessible
+    // choice: the Chatwoot blue it replaces (`#2781F6`) is 3.8:1 on white and fails AA wherever it is used
+    // as text, where this is 5.0:1. Super Admin is on the `woot` ramp and is deliberately left alone.
+    brand: '#5B5BF0',
     portal: 'var(--dynamic-portal-color)',
     'portal-soft': 'var(--dynamic-portal-color-soft)',
     'portal-faint': 'var(--dynamic-portal-color-faint)',

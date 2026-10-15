@@ -521,13 +521,13 @@ export default {
         <li
           v-show="unreadMessageCount != 0"
           data-unread-separator
-          class="list-none flex justify-center items-center"
+          class="list-none flex items-center gap-3 my-3"
         >
-          <span
-            class="shadow-raised rounded-full bg-n-teal-9 text-white text-xs font-medium my-2.5 mx-auto px-2.5 py-1.5"
-          >
+          <span class="flex-1 h-px bg-n-iris-6" />
+          <span class="text-xs font-semibold text-n-iris-11">
             {{ unreadMessageLabel }}
           </span>
+          <span class="flex-1 h-px bg-n-iris-6" />
         </li>
       </template>
       <template #after>

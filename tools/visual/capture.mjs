@@ -31,6 +31,10 @@ const VIEWPORTS = {
 
 // Each page is captured in both locales, because Arabic is the primary market and a layout that only works
 // left-to-right is a defect this project exists to fix.
+// The conversation list's assignee tabs are the third item in their own list; addressed by position rather
+// than by label so the same shot can be taken in Arabic, where the label is not "All".
+const ALL_TAB = '.conversations-list-wrap ul > li:nth-child(3) a';
+
 const SETS = {
   marketing: {
     locales: { ar: '', en: '/en' },
@@ -58,6 +62,22 @@ const SETS = {
     locales: { en: '' },
     pages: {
       conversations: '/app/accounts/1/dashboard',
+      // "Mine" is the default tab and the seed assigns nothing to the signed-in agent, so these two press
+      // "All" first; the second then opens the first row to shoot the message timeline and the composer.
+      'conversation-list': {
+        path: '/app/accounts/1/dashboard',
+        click: [ALL_TAB],
+      },
+      'conversation-open': {
+        path: '/app/accounts/1/dashboard',
+        click: [ALL_TAB, '.conversations-list div.conversation'],
+      },
+      // The first row is an email thread, whose bubbles are full-width by design; this one opens further down
+      // the seeded list to catch an ordinary chat channel, where the bubbles are the capped kind.
+      'conversation-chat': {
+        path: '/app/accounts/1/dashboard',
+        click: [ALL_TAB, '.conversations-list div.conversation >> nth=3'],
+      },
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',
       campaigns: '/app/accounts/1/campaigns/ongoing',
@@ -80,7 +100,19 @@ const only = arg('only');
 const viewportNames = (arg('viewports') || 'mobile,desktop').split(',');
 
 const set = SETS[setName];
-if (!set) throw new Error(`unknown set: ${setName} (have: ${Object.keys(SETS).join(', ')})`);
+if (!set)
+  throw new Error(
+    `unknown set: ${setName} (have: ${Object.keys(SETS).join(', ')})`
+  );
+
+// The dashboard has no locale in its URL -- it reads the account's, from the database -- so shooting it in
+// Arabic means setting that column, running this with `--locale ar`, and setting it back. The marketing site
+// does carry a prefix, so there this just narrows the run to one of the set's own locales.
+const localeOverride = arg('locale');
+if (localeOverride) {
+  const prefix = set.locales[localeOverride];
+  set.locales = { [localeOverride]: prefix ?? '' };
+}
 
 const browser = await chromium.launch();
 let captured = 0;
@@ -89,19 +121,28 @@ const failures = [];
 // The dashboard is a single-page app behind a session, so a set that declares `signIn` signs in through the
 // real form once per browser context and reuses the cookie for the rest of its pages.
 async function signIn(page, credentials) {
-  await page.goto(`${BASE}/app/login`, { waitUntil: 'networkidle', timeout: 45000 });
+  await page.goto(`${BASE}/app/login`, {
+    waitUntil: 'networkidle',
+    timeout: 45000,
+  });
   await page.fill('[data-testid="email_input"]', credentials.email);
   await page.fill('[data-testid="password_input"]', credentials.password);
   await page.click('[data-testid="submit_button"]');
   // `commit`, not the default `load`: the dashboard holds open a websocket and a poll, so the load event
   // never fires and waiting for it times out on a page that is already there.
-  await page.waitForURL(/\/app\/accounts\//, { waitUntil: 'commit', timeout: 45000 });
+  await page.waitForURL(/\/app\/accounts\//, {
+    waitUntil: 'commit',
+    timeout: 45000,
+  });
 }
 
 for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
   if (!viewportNames.includes(viewportName)) continue;
 
-  const context = await browser.newContext({ viewport, deviceScaleFactor: viewport.deviceScaleFactor });
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor: viewport.deviceScaleFactor,
+  });
   const page = await context.newPage();
 
   if (set.signIn) await signIn(page, set.signIn);
@@ -110,9 +151,21 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
     for (const [name, suffix] of Object.entries(set.pages)) {
       if (only && name !== only) continue;
 
+      // A page is either a path, or `{ path, click }` where `click` is a list of selectors pressed in
+      // order after the page settles -- the conversation list defaults to the "Mine" tab, so a shot of
+      // the inbox taken without pressing "All" is a shot of an empty list.
+      const { path: suffixPath, click = [] } =
+        typeof suffix === 'string' ? { path: suffix } : suffix;
+
       // `/en` + `/` would be `/en/`, which is a different URL from `/en`.
-      const url = `${BASE}${(prefix + suffix).replace(/\/$/, '') || '/'}`;
-      const file = path.join(outDir, setName, locale, viewportName, `${name}.png`);
+      const url = `${BASE}${(prefix + suffixPath).replace(/\/$/, '') || '/'}`;
+      const file = path.join(
+        outDir,
+        setName,
+        locale,
+        viewportName,
+        `${name}.png`
+      );
       await mkdir(path.dirname(file), { recursive: true });
 
       const response = await page.goto(url, {
@@ -120,7 +173,9 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
         timeout: 45000,
       });
       if (!response || !response.ok()) {
-        failures.push(`${url} -> ${response ? response.status() : 'no response'}`);
+        failures.push(
+          `${url} -> ${response ? response.status() : 'no response'}`
+        );
         continue;
       }
 
@@ -130,9 +185,17 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       if (set.signIn) {
         await page.waitForTimeout(1000);
         await page
-          .waitForFunction(() => !document.body.innerText.includes('Loading inboxes'), { timeout: 20000 })
+          .waitForFunction(
+            () => !document.body.innerText.includes('Loading inboxes'),
+            { timeout: 20000 }
+          )
           .catch(() => {});
         await page.waitForTimeout(3500);
+      }
+
+      for (const selector of click) {
+        await page.click(selector, { timeout: 15000 });
+        await page.waitForTimeout(2500);
       }
 
       await page.screenshot({ path: file, fullPage: !set.signIn });

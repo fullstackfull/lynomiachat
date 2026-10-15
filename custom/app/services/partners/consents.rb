@@ -84,6 +84,7 @@ module Partners::Consents
     return REFUSED_WITHDRAWAL_DOMINANT if refuses_grant?(state, event)
 
     state.update!(state_attributes(event))
+    Consents::ChangeFeed.publish_partner(state)
     APPLIED
   end
 
@@ -107,10 +108,11 @@ module Partners::Consents
   end
 
   def create_state(event)
-    PartnerConsent.create!(scope_of(event).merge(state_attributes(event)).merge(
-                             platform_app_id: event.platform_app_id, account_id: event.account_id,
-                             external_subject_id: event.external_subject_id
-                           ))
+    state = PartnerConsent.create!(scope_of(event).merge(state_attributes(event)).merge(
+                                     platform_app_id: event.platform_app_id, account_id: event.account_id,
+                                     external_subject_id: event.external_subject_id
+                                   ))
+    Consents::ChangeFeed.publish_partner(state)
     APPLIED
   end
 

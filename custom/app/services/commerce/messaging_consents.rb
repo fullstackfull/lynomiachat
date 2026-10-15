@@ -38,6 +38,10 @@ module Commerce::MessagingConsents
     row.assign_attributes(account_id: account.id, state: decision.state.to_s, source: decision.source,
                           decided_at: Time.current, evidence: decision.evidence)
     row.save!
+    # A partner cannot see this store, so it is told. The feed is best effort by construction
+    # -- it enqueues a job -- and a delivery that fails is recovered by reconciliation rather
+    # than by holding up the decision, which must be recorded whatever the network is doing.
+    Consents::ChangeFeed.publish_native(row)
     audit('commerce.consent_changed', account, contact, decision.user,
           purpose: purpose, state: [previous, decision.state.to_s], source: decision.source)
     row

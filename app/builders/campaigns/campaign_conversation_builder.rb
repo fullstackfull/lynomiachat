@@ -13,7 +13,7 @@ class Campaigns::CampaignConversationBuilder
     # misreporting cancellation exists to stop. Raising rather than returning because that
     # is how this method already refuses ("Conversation already present"): the rescue below
     # logs it and answers nil.
-    raise "Campaign #{@campaign.display_id} is cancelled" if @campaign.cancelled?
+    raise stopped_reason if stopped_reason
 
     ActiveRecord::Base.transaction do
       @contact_inbox.lock!
@@ -31,6 +31,17 @@ class Campaigns::CampaignConversationBuilder
   end
 
   private
+
+  # BOTH OF THE CAMPAIGN'S STOP CONTROLS, asked here because this is the point that creates
+  # the conversation. The widget's list filters on `enabled`, and the cancel endpoint writes
+  # `campaign_status`, but the visitor supplies the display id and the lookup above applies
+  # neither predicate -- so a campaign absent from the list could still be asked for by name,
+  # and both controls were enforced by the thing that merely advertises campaigns.
+  def stopped_reason
+    return "Campaign #{@campaign.display_id} is cancelled" if @campaign.cancelled?
+
+    "Campaign #{@campaign.display_id} is disabled" unless @campaign.enabled?
+  end
 
   def message_params
     ActionController::Parameters.new({

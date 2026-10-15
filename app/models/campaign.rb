@@ -75,6 +75,12 @@ class Campaign < ApplicationRecord
 
   before_validation :ensure_correct_campaign_attributes
   before_update :set_completed_at, if: :marking_completed?
+  # DELETING IS THE THIRD WAY OUT OF `blocked`, AND THE ONLY ONE THE DASHBOARD OFFERS. The signal is resolved
+  # by `unblock!` -- which has no caller anywhere -- and by `cancel!`; a campaign that is simply removed left an
+  # open row asserting a capability problem about a campaign that no longer exists, in the feed an operator
+  # reads. A callback rather than a line in the controller, because `destroy` has more than one caller and the
+  # row must not outlive its subject whichever of them did it.
+  before_destroy :resolve_blocked_signal, if: :blocked?
   after_commit :set_display_id, unless: :display_id?
   after_destroy_commit :invalidate_filtered_unread_count_filters
 
@@ -111,17 +117,20 @@ class Campaign < ApplicationRecord
   # sent at all. `resolve` is subject-scoped and a no-op when there is no open row, so it is
   # safe for every other campaign.
   def cancel!(reason = nil)
-    was_blocked = nil
-    cancelled = with_lock do
+    with_lock do
       next false if completed? || cancelled?
 
       was_blocked = blocked?
       update!({ campaign_status: :cancelled }.merge(reason.present? ? { blocked_reason: reason } : {}))
+      # INSIDE THE LOCK, because the other writer of this signal is not atomic with its own
+      # status change either: `block_for_disabled_feature!` committed `blocked` and then
+      # inserted the row after releasing. A cancel landing in that gap read `blocked?` as
+      # true, resolved nothing (there was nothing yet), and the insert followed -- leaving
+      # an open capability signal on a cancelled campaign that nothing can ever resolve.
+      # Both are now under the lock, so one of them always sees the other's row.
+      resolve_blocked_signal if was_blocked
       true
     end
-
-    Operations::SignalRecorder.new(source: :campaign, account: account, subject: self).resolve(:feature_disabled) if was_blocked
-    cancelled
   end
 
   # TERMINAL MEANS TERMINAL, INCLUDING AGAINST THE RUN THAT WAS ALREADY GOING.
@@ -165,7 +174,7 @@ class Campaign < ApplicationRecord
     # Operations feed asserting something that is no longer true -- and the feed is the surface this decision
     # relies on for operator visibility. `resolve` is subject-scoped (signal_recorder.rb:90-95), so this closes
     # this campaign's row and nobody else's, and it is a no-op when there is none.
-    Operations::SignalRecorder.new(source: :campaign, account: account, subject: self).resolve(:feature_disabled)
+    resolve_blocked_signal
     true
   end
 
@@ -188,14 +197,15 @@ class Campaign < ApplicationRecord
   # changes nothing, and the signal's own dedup means the second observation raises `occurrences` rather than
   # adding a row. Returns nil so `trigger!` reads as a guard clause.
   def block_for_disabled_feature!
-    newly_blocked = with_lock do
+    with_lock do
       next false if completed? || blocked?
 
       update!(campaign_status: :blocked, blocked_reason: BLOCKED_FEATURE_DISABLED)
+      # Under the lock with the status it describes; see the note in `cancel!`.
+      record_blocked_signal
       true
     end
 
-    record_blocked_signal if newly_blocked
     nil
   end
 
@@ -203,6 +213,10 @@ class Campaign < ApplicationRecord
   # the identity is (account, source, subject, signal), so a second observation of the same campaign updates
   # the row rather than inserting one. `detail` carries the capability name only -- an allow-listed key holding
   # an identifier, never the campaign's message or audience.
+  def resolve_blocked_signal
+    Operations::SignalRecorder.new(source: :campaign, account: account, subject: self).resolve(:feature_disabled)
+  end
+
   def record_blocked_signal
     recorder = Operations::SignalRecorder.new(source: :campaign, account: account, subject: self)
     recorder.record(

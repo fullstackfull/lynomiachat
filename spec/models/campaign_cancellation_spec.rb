@@ -191,6 +191,16 @@ RSpec.describe Campaign do
       expect(blocked.reload.blocked_reason).to eq('superseded')
     end
 
+    # DELETING IS THE THIRD WAY OUT OF `blocked`, and it is the only one the Lynomia
+    # dashboard offers: `unblock!` has no caller anywhere in the repository and the card
+    # had no Stop button until this phase. A campaign simply removed left the Operations
+    # feed asserting a capability problem about a campaign that no longer exists.
+    it 'closes the signal when the campaign is deleted instead' do
+      blocked
+
+      expect { blocked.destroy! }.to change { open_signals_for(blocked) }.from(1).to(0)
+    end
+
     def open_signals_for(record)
       Operations::Signal.where(account_id: record.account_id, source: :campaign, subject_type: 'Campaign',
                                subject_id: record.id, signal: :feature_disabled, resolved_at: nil).count

@@ -57,7 +57,15 @@ module Consents::ChangeFeed
     account.webhooks.account_type.each do |webhook|
       next unless webhook.subscriptions.include?(EVENT)
 
-      WebhookJob.perform_later(webhook.url, body, :account_webhook, secret: webhook.secret, delivery_id: delivery_id)
+      # AFTER THE TRANSACTION, NOT INSIDE IT. A publisher may run inside one -- a contact
+      # merge wraps its whole relocation in `ActiveRecord::Base.transaction` -- and this
+      # app does not set `enqueue_after_transaction_commit`, so the job went to Redis
+      # immediately. A rollback then left a partner being told about a decision this side
+      # does not hold, which is the one direction consent delivery must never fail in.
+      # Outside a transaction this runs straight away, so nothing else changes.
+      ActiveRecord.after_all_transactions_commit do
+        WebhookJob.perform_later(webhook.url, body, :account_webhook, secret: webhook.secret, delivery_id: delivery_id)
+      end
     end
   end
 

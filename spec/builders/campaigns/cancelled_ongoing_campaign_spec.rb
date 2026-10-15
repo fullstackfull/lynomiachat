@@ -67,5 +67,16 @@ RSpec.describe 'a cancelled ongoing campaign', type: :request do
 
       expect { trigger }.not_to change(Message, :count)
     end
+
+    # AND `enabled`, which is the only stop control the Lynomia dashboard offers for a
+    # live-chat campaign. The widget's list filters on it; this method looked the campaign
+    # up by the display id the visitor supplies and applied no predicate at all, so the
+    # control was enforced by the thing that advertises campaigns rather than by the thing
+    # that messages people.
+    it 'creates none once the campaign is disabled' do
+      campaign.update!(enabled: false)
+
+      expect { trigger }.not_to change(Conversation, :count)
+    end
   end
 end

@@ -29,9 +29,20 @@ module Custom::Whatsapp::OneoffCampaignService
     super
   end
 
+  # THE FINAL ELIGIBILITY CHECK, here rather than where the audience was resolved.
+  #
+  # The audience was resolved when the scheduler dispatched this campaign and the snapshot was
+  # seeded before the loop began; both are records of who was ADDRESSED, not evidence that
+  # they still may be. Between then and now the shopper can reply STOP, an agent can block
+  # them, the provider can report the number dead, an operator can revoke the integration or
+  # throw the kill switch. This is the last moment any of that can be honoured, so it is
+  # asked here, per recipient, against live rows.
   def process_contact(contact)
     @contact = contact
     @outcome = nil
+    refusal = Campaigns::SendGuard.refusal(contact, campaign, :whatsapp)
+    return record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)) if refusal
+
     super
     record(:skipped, unhooked_reason) if @outcome.nil?
   ensure

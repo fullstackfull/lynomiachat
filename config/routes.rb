@@ -487,6 +487,13 @@ Rails.application.routes.draw do
           get 'entitlement_grants', to: 'entitlement_grants#index'
           put 'entitlement_grants', to: 'entitlement_grants#update'
           delete 'entitlement_grants', to: 'entitlement_grants#destroy'
+          # Consent a customer gave an approved external partner, reported by that partner.
+          # POST because each call is an EVENT rather than a desired state: two reports of one
+          # decision are the same event, and the response says whether it was applied, ignored
+          # as a duplicate, superseded, or refused because the customer had withdrawn.
+          # See Platform::Api::V1::PartnerConsentsController.
+          get 'partner_consents', to: 'partner_consents#index'
+          post 'partner_consents', to: 'partner_consents#create'
           resources :account_users, only: [:index, :create] do
             collection do
               delete :destroy

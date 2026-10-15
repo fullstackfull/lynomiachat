@@ -13,7 +13,7 @@ describe('#actions', () => {
       axios.get.mockResolvedValue({ data: campaignList });
       await actions.get({ commit }, { inboxId: 23 });
       expect(commit.mock.calls).toEqual([
-        [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: true }],
+        [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: true, hasError: false }],
         [types.default.SET_CAMPAIGNS, campaignList],
         [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: false }],
       ]);
@@ -22,7 +22,8 @@ describe('#actions', () => {
       axios.get.mockRejectedValue({ message: 'Incorrect header' });
       await actions.get({ commit }, { inboxId: 23 });
       expect(commit.mock.calls).toEqual([
-        [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: true }],
+        [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: true, hasError: false }],
+        [types.default.SET_CAMPAIGN_UI_FLAG, { hasError: true }],
         [types.default.SET_CAMPAIGN_UI_FLAG, { isFetching: false }],
       ]);
     });

@@ -13,7 +13,7 @@ describe('#actions', () => {
       axios.get.mockResolvedValue({ data: { payload: automationsList } });
       await actions.get({ commit });
       expect(commit.mock.calls).toEqual([
-        [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: true }],
+        [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: true, hasError: false }],
         [types.default.SET_AUTOMATIONS, automationsList],
         [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: false }],
       ]);
@@ -22,7 +22,8 @@ describe('#actions', () => {
       axios.get.mockRejectedValue({ message: 'Incorrect header' });
       await actions.get({ commit });
       expect(commit.mock.calls).toEqual([
-        [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: true }],
+        [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: true, hasError: false }],
+        [types.default.SET_AUTOMATION_UI_FLAG, { hasError: true }],
         [types.default.SET_AUTOMATION_UI_FLAG, { isFetching: false }],
       ]);
     });

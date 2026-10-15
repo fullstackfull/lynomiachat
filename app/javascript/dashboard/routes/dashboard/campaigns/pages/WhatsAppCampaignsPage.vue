@@ -22,6 +22,7 @@ import {
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
+import FetchErrorState from 'dashboard/components-next/FetchErrorState.vue';
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
 import WhatsAppCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/WhatsAppCampaign/WhatsAppCampaignDialog.vue';
 import ConfirmDeleteCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmDeleteCampaignDialog.vue';
@@ -39,6 +40,11 @@ const [showWhatsAppCampaignDialog, toggleWhatsAppCampaignDialog] = useToggle();
 
 const uiFlags = useMapGetter('campaigns/getUIFlags');
 const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
+// A failed fetch is not an empty account. Without this the page drew its empty state -- sample
+// campaign cards and all -- for a request that never came back.
+const hasFetchError = computed(() => uiFlags.value.hasError);
+
+const retryFetch = () => store.dispatch('campaigns/get');
 
 const confirmDeleteCampaignDialogRef = ref(null);
 const initialSharedAudienceIds = ref([]);
@@ -148,10 +154,11 @@ const handleAnalytics = campaign => {
       @analytics="handleAnalytics"
     />
     <WhatsAppCampaignEmptyState
-      v-else
+      v-else-if="!hasFetchError"
       :title="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.SUBTITLE')"
     />
+    <FetchErrorState v-else @retry="retryFetch" />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"
       :selected-campaign="selectedCampaign"

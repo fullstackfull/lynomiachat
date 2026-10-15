@@ -79,11 +79,19 @@ module Contacts::ConsentMerge
         next
       end
 
-      if overwrite(existing, row, native: native)
-        announce(existing)
-        applied += 1
-      end
+      changed = overwrite(existing, row, native: native)
+      # PUBLISHED EVEN WHEN NOTHING WAS OVERWRITTEN. Contacts::MergeRelocation moves the
+      # customer links to the base BEFORE this runs, so by here the decision that governs
+      # that subject at a partner is the base's -- whether or not this merge changed it.
+      # A partner that had been told the mergee's decision for that subject still holds it:
+      # a shopper whose surviving record says withdrawn stayed "subscribed" on the
+      # merchant's screen because the row that said so was simply deleted. The revision is
+      # raised in that case too, or the republished state arrives at or below the one the
+      # partner already has and is dropped.
+      existing.update!(revision_bump(native)) if !changed && native
+      announce(existing)
       row.destroy!
+      applied += 1 if changed
     end
 
     applied

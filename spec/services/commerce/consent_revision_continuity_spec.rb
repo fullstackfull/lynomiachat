@@ -75,16 +75,33 @@ RSpec.describe 'native consent revision continuity', type: :model do
       expect(promotional_for(shopper).revision).to be > before_revision
     end
 
-    # The merge must not be able to loosen a scope, and the bump must not pretend it did.
-    it 'leaves a base that already holds the stronger decision alone' do
+    # THE MERGE MUST NOT LOOSEN A SCOPE -- the state stays as strong as it was.
+    it 'does not weaken a base that already holds the stronger decision' do
       decide(shopper, :withdrawn)
       decide(duplicate, :granted)
-      unchanged = promotional_for(shopper).revision
 
       Contacts::ConsentMerge.perform(base: shopper, mergee: duplicate)
 
       expect(promotional_for(shopper)).to be_consent_withdrawn
-      expect(promotional_for(shopper).revision).to eq(unchanged)
+    end
+
+    # BUT IT IS STILL REPUBLISHED, because the customer links moved to the base before this
+    # ran: the decision governing that subject at a partner is now the base's, even though
+    # this merge did not change it. A partner that had been told the mergee's decision for
+    # that subject still holds it -- a shopper whose surviving record says withdrawn stayed
+    # "subscribed" on the merchant's screen, because the row that said otherwise was simply
+    # deleted. The revision has to rise with it, or the republished state arrives at or
+    # below the one the partner already has and is dropped.
+    it 'republishes the surviving decision, with a revision that can land' do
+      decide(shopper, :withdrawn)
+      decide(duplicate, :granted)
+      before_revision = promotional_for(shopper).revision
+
+      expect(Consents::ChangeFeed).to receive(:publish_native).at_least(:once)
+
+      Contacts::ConsentMerge.perform(base: shopper, mergee: duplicate)
+
+      expect(promotional_for(shopper).revision).to be > before_revision
     end
 
     # THE PARTNER TABLE IS A MERGE TOO. Its `revision` is already monotonic -- one row per

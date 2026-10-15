@@ -124,8 +124,16 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
         continue;
       }
 
-      // A single-page app paints after its first data fetch, which `networkidle` can precede.
-      if (set.signIn) await page.waitForTimeout(2500);
+      // A single-page app paints after its first data fetch, which `networkidle` can precede. The dashboard
+      // makes several in sequence -- account, inboxes, then the conversation list -- and a shot taken before
+      // the last one lands shows skeletons, which is not what the screen looks like.
+      if (set.signIn) {
+        await page.waitForTimeout(1000);
+        await page
+          .waitForFunction(() => !document.body.innerText.includes('Loading inboxes'), { timeout: 20000 })
+          .catch(() => {});
+        await page.waitForTimeout(3500);
+      }
 
       await page.screenshot({ path: file, fullPage: !set.signIn });
       captured += 1;

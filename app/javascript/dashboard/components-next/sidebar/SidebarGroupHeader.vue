@@ -38,14 +38,15 @@ const onClick = event => {
 <template>
   <component
     :is="to ? 'a' : 'button'"
-    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0 w-full focus-ring"
+    class="relative flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0 w-full transition-colors duration-150 focus-ring"
     draggable="false"
     :type="to ? undefined : 'button'"
     :href="href"
     :title="label"
     :aria-expanded="expandable ? isExpanded : undefined"
     :class="{
-      'text-n-slate-12 bg-n-alpha-2 font-medium': isActive && !hasActiveChild,
+      'text-n-slate-12 bg-lyn-indigo/15 font-medium before:absolute before:inset-y-1.5 before:ltr:left-0 before:rtl:right-0 before:w-0.5 before:rounded-full before:bg-lyn-indigo':
+        isActive && !hasActiveChild,
       'text-n-slate-12 font-medium': hasActiveChild,
       'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
     }"

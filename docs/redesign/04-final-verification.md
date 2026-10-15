@@ -75,7 +75,7 @@ Run on a clean tree at `98702ccc`:
 
 ## 4. Evidence
 
-`docs/redesign/evidence/` carries 207 PNGs across ten sets, each captured from the running
+`docs/redesign/evidence/` carries 215 PNGs across eleven sets, each captured from the running
 dashboard on seed data at the same widths and URLs so filenames line up for comparison. The newest,
 `dashboard-v7/`, has its own README that is explicit about what it does *not* picture: most of the
 last two commits is accessible names and `aria-*` wiring, which has no picture and was verified by

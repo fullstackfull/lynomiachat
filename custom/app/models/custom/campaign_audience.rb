@@ -21,8 +21,30 @@ module Custom::CampaignAudience
   # opted out. See Campaigns::Eligibility for what is excluded and why the refusal half of the
   # rule is unconditional while the grant half is not.
   def audience_contacts
-    Campaigns::Eligibility.filter(selected_contacts { super }, account, Campaigns::Eligibility.purpose_for(self))
+    purpose = Campaigns::Eligibility.purpose_for(self)
+    selected = selected_contacts { super }
+    return Campaigns::Eligibility.filter(selected, account, purpose) unless commerce_store
+
+    # A CAMPAIGN THAT BELONGS TO AN INSTALLATION ASKS BOTH CONSENT STORES, in the same
+    # composition Campaigns::SendGuard makes per recipient: the native refusals are
+    # unconditional, and the positive comes from the installation the campaign belongs to.
+    #
+    # It cannot be `filter` here. That requires a NATIVE promotional grant, and the people a
+    # Store Syria campaign exists to reach agreed at a Store Syria checkout -- recorded as a
+    # partner consent, because this account has no surface on which they could have agreed
+    # natively. Asking for a native grant made the audience of every store-scoped
+    # promotional campaign empty, so the whole opt-in produced nobody to send to.
+    Partners::Eligibility.filter(Campaigns::Eligibility.refusals(selected, account, purpose),
+                                 commerce_store, purpose, consent_channel)
   end
+
+  # THE CHANNEL A PARTNER GRANT HAS TO COVER, and it is the sender's answer rather than a
+  # second opinion: a grant taken for WhatsApp does not authorise an SMS blast. Each sender
+  # passes this same value to Campaigns::SendGuard -- :whatsapp from the WhatsApp service,
+  # :sms from both the SMS and the Twilio one -- so the audience and the send boundary scope
+  # a partner consent identically. Derived rather than stored because the inbox already
+  # decides it and a column would be a second thing to keep in step.
+  def consent_channel = inbox&.channel_type == 'Channel::Whatsapp' ? :whatsapp : :sms
 
   # Who the audience NAMES, before eligibility is applied. Public and separate so the preview
   # can report why the reachable number is smaller than the selected one, counting both off the

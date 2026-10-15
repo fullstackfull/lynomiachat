@@ -35,8 +35,14 @@ module Commerce::MessagingConsents
   def self.write(account, contact, purpose, decision)
     row = Commerce::MessagingConsent.find_or_initialize_by(contact_id: contact.id, purpose: purpose)
     previous = row.state
+    # THE REVISION GOES UP WITH EVERY DECISION, because a partner's projector keeps the
+    # highest it has seen and drops anything at or below it. The row itself is updated in
+    # place -- one row per (contact, purpose) for the life of the scope -- so there is no
+    # id, timestamp or sequence here that rises on its own, and the feed used to publish the
+    # row's id, which is the one number that never changes. Every native decision after the
+    # first was read as a late duplicate and discarded, permanently.
     row.assign_attributes(account_id: account.id, state: decision.state.to_s, source: decision.source,
-                          decided_at: Time.current, evidence: decision.evidence)
+                          decided_at: Time.current, evidence: decision.evidence, revision: row.revision.to_i + 1)
     row.save!
     # A partner cannot see this store, so it is told. The feed is best effort by construction
     # -- it enqueues a job -- and a delivery that fails is recovered by reconciliation rather

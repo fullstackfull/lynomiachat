@@ -79,7 +79,12 @@ module Consents::ChangeFeed
       store: { provider: link.store.provider, external_store_id: link.store.external_store_id },
       subject: { external_customer_id: link.external_customer_id },
       purpose: consent.purpose, channel: channel, state: consent.state, source: consent.source,
-      occurred_at: timestamp_of(consent), revision: consent.id }
+      # `revision`, NOT `id`. The native row is updated in place, so its id is the same for
+      # every decision in a scope and a receiver that drops anything at or below the highest
+      # revision it holds would discard every decision after the first.
+      # Commerce::MessagingConsents.write bumps this column on each write; the partner side's
+      # own revision is already monotonic because it is one row per event.
+      occurred_at: timestamp_of(consent), revision: consent.revision }
   end
 
   def partner_payload(consent)

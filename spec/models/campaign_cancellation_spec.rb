@@ -120,6 +120,26 @@ RSpec.describe Campaign do
       Sms::OneoffSmsCampaignService.new(campaign: campaign).perform
 
       expect(sent).to eq(1), 'the loop must stop at the next recipient, not finish the audience'
+      # AND THE RECORD HAS TO SAY SO AFTERWARDS. Every sender ends with `campaign.completed!`
+      # once its loop returns, and the loop returns NORMALLY when a cancellation stopped it --
+      # Campaigns::SendGuard refuses each remaining recipient rather than raising. So the
+      # status an operator watched change to `cancelled` was overwritten by `completed` a
+      # moment later, and the only account anyone can read afterwards said the campaign had
+      # finished sending when a person had stopped it. The sends did stop; the record lied.
+      expect(campaign.reload).to be_cancelled
+      expect(campaign.blocked_reason).to be_nil
+    end
+
+    # The same property stated on its own, because the example above would still pass if the
+    # loop stopped for any other reason.
+    it 'is not moved out of cancelled by the sender finishing its loop' do
+      campaign.cancel!('wrong audience')
+
+      expect(campaign.completed!).to be(false)
+
+      expect(campaign.reload).to be_cancelled
+      expect(campaign.blocked_reason).to eq('wrong audience')
+      expect(campaign.completed_at).to be_nil
     end
 
     it 'has a recorded skip reason, or the sender crashes trying to record it' do

@@ -109,6 +109,31 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # TERMINAL MEANS TERMINAL, INCLUDING AGAINST THE RUN THAT WAS ALREADY GOING.
+  #
+  # Every sender ends `perform` with `campaign.completed!` once its loop returns, and the
+  # loop returns NORMALLY when a cancellation stopped it -- Campaigns::SendGuard refuses each
+  # remaining recipient rather than raising, which is deliberate: a run that has already
+  # handed messages to a provider must not abort. So the status an operator watched change to
+  # `cancelled` was overwritten by `completed` a moment later, along with a `completed_at`
+  # that says the campaign finished sending. The sends really did stop. What was wrong was
+  # the only account of it anybody can read afterwards, and a cancellation whose record
+  # disappears is indistinguishable from one that never happened.
+  #
+  # HERE RATHER THAN IN THE SENDERS, because there are four of them and the first one
+  # somebody forgot would be the one that reported a stopped campaign as finished. `false`
+  # rather than a raise, for the same reason the guard refuses rather than raises.
+  #
+  # AND UNDER THE LOCK, READING THE ROW RATHER THAN THE ATTRIBUTE. The sender holds the
+  # campaign object it was handed when the job started; the operator cancels in another
+  # process. `cancelled?` on the held object answers a question about the moment the run
+  # began, so a guard written that way lets exactly the case it exists for through -- which
+  # is the same staleness Campaigns::SendGuard#live exists to defeat. The lock is the one
+  # `cancel!` takes, so the two serialise: whichever arrives second sees the first's write.
+  def completed!
+    with_lock { cancelled? ? false : super }
+  end
+
   # Back to `active`, which is the only way out of `blocked` other than the operator deleting the campaign.
   # Scheduled time moves to now when it has fallen outside the window `TriggerScheduledItemsJob` selects on
   # (scheduled_at:3), because otherwise re-activating a campaign that was blocked for more than three days

@@ -101,7 +101,12 @@ RSpec.describe 'Audiences API', type: :request do
 
       get path, headers: agent.create_new_auth_token, as: :json
 
-      expect(response.parsed_body).to eq('stores' => [{ 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce' }],
+      # `external_store_id` is asserted because a PARTNER INSTALLATION reads this list to find
+      # which row is itself before it can ask for a store-scoped count. It was missing, so
+      # every Store Syria "customers of this store" number silently fell back to the
+      # account-wide one. Pinned here with an exact `eq` so dropping it fails loudly.
+      expect(response.parsed_body).to eq('stores' => [{ 'id' => store.id, 'name' => 'Syria Cosmetics', 'provider' => 'woocommerce',
+                                                        'external_store_id' => store.external_store_id }],
                                          'currencies' => ['SAR'], 'unread_contacts' => 1)
       expect(response.body).not_to include('base_url', 'credentials', 'ck_factory')
     end

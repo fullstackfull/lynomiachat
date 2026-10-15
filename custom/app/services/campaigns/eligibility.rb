@@ -86,10 +86,28 @@ module Campaigns::Eligibility
   # refusal still stops everything. An earlier draft blocked on a refusal of any purpose and
   # the agreement spec below caught the divergence.
   def filter(relation, account, purpose)
-    scope = relation.where(blocked: false).where.not(id: blocked_by_decision(account, purpose))
+    scope = refusals(relation, account, purpose)
     return scope unless purpose.to_sym == :promotional
 
     scope.where(id: granted(account))
+  end
+
+  # THE REFUSAL HALF ON ITS OWN, for a campaign that belongs to a partner installation.
+  #
+  # Native refusals are unconditional and apply to every send; the native GRANT is not the
+  # only way a promotional send can be permitted. A shopper who ticked the marketing box at
+  # a Store Syria checkout agreed through that installation, and the agreement is recorded
+  # as a partner consent -- Lynomia's own consent table has no row for them, because this
+  # account has no surface on which that agreement could have been made natively.
+  #
+  # So a store-scoped campaign composes this with Partners::Eligibility.filter, which is
+  # exactly the composition Campaigns::SendGuard makes per recipient: a native refusal stops
+  # the send whatever the partner says, and the positive comes from the installation the
+  # campaign belongs to. Applying `filter` to such a campaign instead required a native grant
+  # that the only people it could ever reach were never going to have, so the audience was
+  # empty and the P5E opt-in could not produce a single recipient.
+  def refusals(relation, account, purpose)
+    relation.where(blocked: false).where.not(id: blocked_by_decision(account, purpose))
   end
 
   # Why the audience shrank, as counts by the same reason codes Commerce::MessagingEligibility

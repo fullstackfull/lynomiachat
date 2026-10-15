@@ -170,7 +170,10 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   def present_native(row)
     { external_subject_id: native_subjects[row.contact_id]&.external_customer_id,
       purpose: row.purpose, channel: 'any', state: row.state, source: row.source,
-      decided_at: row.decided_at, revision: row.id }
+      # The same column Consents::ChangeFeed publishes, so a partner reconciling and a
+      # partner listening compare like with like. Reporting the row's id here instead was
+      # what made reconciliation unable to repair a scope the feed had already got stuck.
+      decided_at: row.decided_at, revision: row.revision }
   end
 
   def present_event(event)

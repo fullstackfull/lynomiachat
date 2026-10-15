@@ -137,6 +137,45 @@ RSpec.describe Consents::ChangeFeed do
     end
   end
 
+  # A DIFFERENT DELIVERY ID IS NOT ENOUGH, and the two examples above could not tell the
+  # difference. The receiver accepts the delivery and THEN compares revisions, keeping the
+  # highest it has seen and dropping anything at or below it -- which is what stops a delayed
+  # delivery reinstating a decision a later one replaced. So a revision that does not rise
+  # makes every decision after the first a no-op at the far end, with the delivery arriving
+  # and being discarded.
+  #
+  # It did not rise. The feed published the consent row's id, and the native row is updated
+  # in place -- one row per (contact, purpose) for the life of the scope -- so the id was the
+  # one number in it that never changes.
+  describe 'revision' do
+    it 'rises with every decision, so a receiver keeping the highest does not drop the later ones' do
+      stop!
+      first = payloads.map { |body| body[:revision] }.uniq
+      ActiveJob::Base.queue_adapter.enqueued_jobs.clear
+
+      Commerce::MessagingConsents.record(
+        account: account, contact: shopper,
+        decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant')
+      )
+      second = payloads.map { |body| body[:revision] }.uniq
+
+      expect(first).to all(be_positive)
+      expect(second.min).to be > first.max
+    end
+
+    # Reconciliation has to report the SAME number the feed publishes, or a sweep could not
+    # repair a scope the feed had got stuck -- it would feed the stale value back through the
+    # same comparison.
+    it 'is the number the reconciliation endpoint reports for the same row' do
+      stop!
+      row = Commerce::MessagingConsent.find_by(contact_id: shopper.id, purpose: :promotional)
+
+      published = payloads.map { |body| body[:revision] }.uniq
+
+      expect(published).to eq([row.revision])
+    end
+  end
+
   describe 'partner decisions' do
     it 'echoes back what Lynomia actually applied, in that installation\'s scope' do
       PartnerConsent.create!(platform_app: create(:platform_app), account: account, commerce_store: store,

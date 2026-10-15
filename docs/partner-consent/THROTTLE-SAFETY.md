@@ -219,7 +219,7 @@ spec/models/campaign_blocked_spec.rb spec/models/campaign_send_concurrency_spec.
 
 | # | Property | Outcome |
 | --- | --- | --- |
-| 1 | pacing ≠ provider limit ≠ commercial quota | PASS; the quota exists as of P5G and is a separate, fail-closed module |
+| 1 | pacing ≠ provider limit ≠ commercial quota | PASS; the quota exists as of P5G and is a separate, fail-closed module. P5H fixed its lock (it spanned nothing) and moved where it is taken (it charged for unsent messages) — see §1 |
 | 2 | Redis failure bypasses no provider or subscription limit | PASS |
 | 3 | pacing cannot bypass kill switch / withdrawal / revocation / **cancellation** | **WAS BROKEN — FIXED**; cancellation added in P5D |
 | 4 | eligibility revalidated after the wait | **WAS BROKEN — FIXED** |

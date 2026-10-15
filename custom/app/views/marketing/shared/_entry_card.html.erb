@@ -14,12 +14,16 @@
   title -- a ~24px target on the page a reader opens on a phone. The title's `after:absolute after:inset-0`
   now stretches the one anchor over the positioned card, so the hit area is the affordance, and `group` (which
   nothing used before) is what carries the hover back to the title.
+
+  A CARD THAT LEADS SOMEWHERE LIFTS. The hover was a border colour alone, which on a grid of nine is almost
+  invisible; the shadow and the 2px rise read at a glance and cost nothing to a reader who never hovers. The
+  transition is on `transform` and `box-shadow`, so nothing in the grid reflows.
 %>
 <% links = entry.detail? %>
 <article class="<%= class_names('flex flex-col overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper',
-                               'group relative transition-colors hover:border-lyn-royal/40' => links) %>">
-  <div class="flex grow flex-col p-5">
-    <%= content_tag heading_level, class: 'flex flex-wrap items-center gap-2 text-base font-semibold text-lyn-ink' do %>
+                               'group relative transition-all duration-200 hover:-translate-y-0.5 hover:border-lyn-royal/40 hover:shadow-[0_20px_44px_-28px_rgba(10,23,51,0.5)]' => links) %>">
+  <div class="flex grow flex-col p-6">
+    <%= content_tag heading_level, class: 'flex flex-wrap items-center gap-2 text-lg font-semibold text-lyn-ink' do %>
       <% if links %>
         <a class="transition-colors after:absolute after:inset-0 group-hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
            href="<%= marketing_entry_path(scope, entry) %>">
@@ -30,14 +34,12 @@
       <% end %>
       <%= render 'marketing/shared/state_badge', state: entry.state %>
     <% end %>
-
-    <p class="mt-2 grow text-sm leading-[1.8] text-lyn-ink-soft">
+    <p class="mt-2.5 grow text-base leading-[1.75] text-lyn-ink-soft">
       <%= t("marketing.#{scope}.#{entry.id}.summary") %>
     </p>
   </div>
-
   <% if t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
-    <p class="border-t border-lyn-line bg-lyn-mist px-5 py-3 text-xs leading-[1.75] text-lyn-ink-soft">
+    <p class="border-t border-lyn-line bg-lyn-mist px-6 py-3.5 text-sm leading-[1.7] text-lyn-ink-soft">
       <span class="font-semibold text-lyn-ink">
         <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
       </span>

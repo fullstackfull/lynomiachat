@@ -5,9 +5,11 @@
   sets one subject at a time rather than carrying a page's entire rhythm on its own
   (Marketing::ContentBlueprint#about_page says why each of the two recasts is the better type).
 %>
-<section class="mt-16">
-  <%= render 'marketing/shared/section_head', heading: section['heading'], lede: nil %>
-  <% if section['body'].present? %>
-    <p class="mt-5 max-w-2xl text-base leading-[1.85] text-lyn-ink-soft"><%= section['body'] %></p>
-  <% end %>
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <%= render 'marketing/shared/section_head', heading: section['heading'], lede: nil %>
+    <% if section['body'].present? %>
+      <p class="mt-6 max-w-2xl text-lg leading-[1.8] text-lyn-ink-soft"><%= section['body'] %></p>
+    <% end %>
+  </div>
 </section>

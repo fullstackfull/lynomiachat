@@ -3,6 +3,10 @@
   A LINK WHOSE TARGET DOES NOT RESOLVE IS NOT RENDERED. `marketing_target_href` returns nil for a page that
   is unpublished or gone, and a card then shows its text without a link rather than an href="#" -- which is
   the defect the old footer had four of.
+
+  A CARD IS AN OBJECT ON THE FIELD, NOT A TINTED RECTANGLE IN IT. These were `bg-lyn-mist` slabs, which on
+  the mist band they now alternate onto would have been invisible; they take paper, a hairline and a shadow
+  that only appears under the pointer, so a card that leads somewhere says so before it is hovered.
 %>
 <%# THE ITEM HEADING LEVEL FOLLOWS THE SECTION'S OWN. With a section heading the cards sit under an <h2> and
   are <h3>s; without one they are the first headings after the page's <h1> and must be <h2>s, or the document
@@ -14,27 +18,28 @@
   zero to find: an operator who left the field empty silently got a single column instead of the grid. The
   default now sits inside the same expression that bounds the value. %>
 <% columns = (section['columns'].presence || 2).to_i.clamp(1, 3) %>
-<section class="mt-16">
-  <%= render 'marketing/shared/section_head', heading: section['heading'], lede: section['lede'] %>
-
-  <div class="mt-7 grid gap-5 <%= columns == 3 ? 'sm:grid-cols-3' : (columns == 2 ? 'sm:grid-cols-2' : '') %>">
-    <% Array(section['items']).each do |item| %>
-      <% href = marketing_target_href(item['link_target']) %>
-      <article class="rounded-2xl bg-lyn-mist p-6">
-        <% if item['title'].present? %>
-          <%= content_tag(item_heading, item['title'], class: 'text-base font-semibold text-lyn-ink') %>
-        <% end %>
-        <% if item['body'].present? %>
-          <p class="mt-2 text-sm leading-[1.8] text-lyn-ink-soft"><%= item['body'] %></p>
-        <% end %>
-        <% if href.present? && item['link_label'].present? %>
-          <a class="mt-4 inline-block text-sm font-semibold text-lyn-royal transition-colors hover:text-lyn-ink"
-             href="<%= href %>"
-             <%= 'target=_blank rel=noopener'.html_safe if marketing_target_external?(item['link_target']) %>>
-            <%= item['link_label'] %>
-          </a>
-        <% end %>
-      </article>
-    <% end %>
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <%= render 'marketing/shared/section_head', heading: section['heading'], lede: section['lede'] %>
+    <div class="mt-12 grid gap-5 <%= columns == 3 ? 'sm:grid-cols-3' : (columns == 2 ? 'sm:grid-cols-2' : 'max-w-3xl') %>">
+      <% Array(section['items']).each do |item| %>
+        <% href = marketing_target_href(item['link_target']) %>
+        <article class="flex flex-col rounded-2xl border border-lyn-line bg-lyn-paper p-7">
+          <% if item['title'].present? %>
+            <%= content_tag(item_heading, item['title'], class: 'text-lg font-semibold text-lyn-ink') %>
+          <% end %>
+          <% if item['body'].present? %>
+            <p class="mt-2.5 grow text-base leading-[1.75] text-lyn-ink-soft"><%= item['body'] %></p>
+          <% end %>
+          <% if href.present? && item['link_label'].present? %>
+            <a class="mt-6 inline-flex min-h-11 items-center text-base font-semibold text-lyn-royal transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+               href="<%= href %>"
+               <%= 'target=_blank rel=noopener'.html_safe if marketing_target_external?(item['link_target']) %>>
+              <%= item['link_label'] %>
+            </a>
+          <% end %>
+        </article>
+      <% end %>
+    </div>
   </div>
 </section>

@@ -1,5 +1,5 @@
 <%# An operator-uploaded image, served from the marketing media route rather than /rails/active_storage/...
-  
+
   WHY NOT `url_for(attachment)`. robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52),
   so an ActiveStorage redirect URL is invisible to a crawler -- and its signed id never expires, so a URL a
   crawler did index would stay fetchable forever. The documentation side froze an app-owned same-origin route
@@ -10,14 +10,18 @@
 %>
 <% attachment = page&.image_for(section['attachment_id']) %>
 <% if attachment.present? %>
-  <figure class="mt-10">
-    <img src="<%= marketing_media_path(id: attachment.id) %>"
-         alt="<%= section['alt'].to_s %>"
-         <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
-         loading="lazy" decoding="async"
-         class="w-full rounded-2xl border border-lyn-line">
-    <% if section['caption'].present? %>
-      <figcaption class="mt-2 text-xs text-lyn-ink-soft"><%= section['caption'] %></figcaption>
-    <% end %>
-  </figure>
+  <section class="<%= tone %>">
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <figure>
+        <img src="<%= marketing_media_path(id: attachment.id) %>"
+             alt="<%= section['alt'].to_s %>"
+             <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
+             loading="lazy" decoding="async"
+             class="w-full rounded-2xl border border-lyn-line">
+        <% if section['caption'].present? %>
+          <figcaption class="mt-3 text-sm text-lyn-ink-soft"><%= section['caption'] %></figcaption>
+        <% end %>
+      </figure>
+    </div>
+  </section>
 <% end %>

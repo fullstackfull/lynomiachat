@@ -25,7 +25,6 @@
 # the recipient row and nowhere else.
 class Campaigns::RenderedTemplateText
   IDENTITY = ->(value) { value }
-  APPROVED = 'approved'.freeze
 
   def initialize(channel:, template_params:)
     @channel = channel
@@ -62,16 +61,12 @@ class Campaigns::RenderedTemplateText
     Array(template['components']).find { |entry| entry['type'].to_s.upcase == type }
   end
 
+  # The same three conditions the send path resolves a template by -- name, language
+  # case-insensitively, and Meta having approved it -- asked through the lookup
+  # Campaigns::Eligibility also uses, so the text recorded for a message and the class that
+  # message was sent under cannot come from two different rows.
   def template
-    @template ||= Array(@channel.message_templates).find { |entry| requested?(entry) } || {}
-  end
-
-  # The same three conditions the send path resolves a template by: the name, the language case-insensitively,
-  # and Meta having approved it.
-  def requested?(entry)
-    entry['name'] == @template_params['name'] &&
-      entry['language'].to_s.downcase == @template_params['language'].to_s.downcase &&
-      entry['status'].to_s.downcase == APPROVED
+    @template ||= Whatsapp::ChannelTemplates.find(@channel, @template_params, approved: true) || {}
   end
 
   # The body's variable values, keyed the way the template's own placeholders are: by position for a POSITIONAL

@@ -22,6 +22,17 @@ class CampaignsAPI extends ApiClient {
   // the merchant was shown a number smaller than the one the campaign reaches. Both are
   // optional on the server: a caller previewing an audience rather than a specific campaign
   // legitimately knows neither.
+  // STOPPING A CAMPAIGN THAT IS SENDING. Cancelling is terminal and is gated as an update,
+  // which is an administrator's act. It existed on the server and on the Store Syria page
+  // and nowhere in Lynomia's own dashboard, so an operator looking at a campaign a merchant
+  // had stopped could not stop one themselves.
+  cancel(displayId, reason) {
+    return axios.post(
+      `${this.url}/${displayId}/cancel`,
+      reason ? { reason } : {}
+    );
+  }
+
   audiencePreview(audience, { signal, inboxId, templateParams } = {}) {
     const payload = { audience };
     if (inboxId) payload.inbox_id = inboxId;

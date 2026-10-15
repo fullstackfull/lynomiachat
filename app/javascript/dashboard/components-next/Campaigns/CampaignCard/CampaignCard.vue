@@ -49,7 +49,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['edit', 'delete', 'analytics']);
+const emit = defineEmits(['edit', 'delete', 'analytics', 'cancel']);
 
 const { t } = useI18n();
 
@@ -79,11 +79,31 @@ const ONE_OFF_TONES = {
 };
 
 const statusTone = computed(() => {
+  if (props.status === STATUS_CANCELLED) return ONE_OFF_TONES[STATUS_CANCELLED];
   if (props.isLiveChatType) return props.isEnabled ? 'success' : 'neutral';
   return ONE_OFF_TONES[props.status] || 'warning';
 });
 
+// WHEN THERE IS SOMETHING LEFT TO STOP. `Campaign#cancel!` refuses a completed or an
+// already-cancelled campaign and accepts everything else, so the button is offered for
+// exactly the states the server will act on. A live-chat campaign has its own reversible
+// switch and is left to it.
+const canCancel = computed(
+  () =>
+    !props.isLiveChatType &&
+    ![STATUS_COMPLETED, STATUS_CANCELLED].includes(props.status)
+);
+
 const campaignStatus = computed(() => {
+  // CANCELLED IS READ FIRST, AND FOR EVERY TYPE. An ongoing campaign reports enabled or
+  // disabled, which is a reversible switch -- and cancelling is not reversible, and now
+  // genuinely stops an ongoing campaign (Campaigns::CampaignConversationBuilder refuses
+  // it). Leaving the enabled/disabled reading in front of it told an operator the campaign
+  // was still on.
+  if (props.status === STATUS_CANCELLED) {
+    return t('CAMPAIGN.SMS.CARD.STATUS.CANCELLED');
+  }
+
   if (props.isLiveChatType) {
     return props.isEnabled
       ? t('CAMPAIGN.LIVE_CHAT.CARD.STATUS.ENABLED')
@@ -179,6 +199,16 @@ const inboxIcon = computed(() => {
         icon="i-lucide-sliders-vertical"
         :aria-label="$t('CAMPAIGN.CARD.EDIT')"
         @click="emit('edit')"
+      />
+      <Button
+        v-if="canCancel"
+        v-tooltip.top="t('CAMPAIGN.CARD.CANCEL')"
+        variant="faded"
+        color="amber"
+        size="sm"
+        icon="i-lucide-circle-stop"
+        :aria-label="t('CAMPAIGN.CARD.CANCEL')"
+        @click="emit('cancel')"
       />
       <Button
         variant="faded"

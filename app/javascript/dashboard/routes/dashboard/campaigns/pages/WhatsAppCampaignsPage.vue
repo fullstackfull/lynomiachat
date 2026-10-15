@@ -25,6 +25,7 @@ import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.v
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
 import WhatsAppCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/WhatsAppCampaign/WhatsAppCampaignDialog.vue';
 import ConfirmDeleteCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmDeleteCampaignDialog.vue';
+import ConfirmCancelCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmCancelCampaignDialog.vue';
 import WhatsAppCampaignEmptyState from 'dashboard/components-next/Campaigns/EmptyState/WhatsAppCampaignEmptyState.vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -41,6 +42,7 @@ const uiFlags = useMapGetter('campaigns/getUIFlags');
 const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
 
 const confirmDeleteCampaignDialogRef = ref(null);
+const confirmCancelCampaignDialogRef = ref(null);
 const initialSharedAudienceIds = ref([]);
 const initialLabelIds = ref([]);
 const initialDraft = ref(null);
@@ -59,6 +61,13 @@ const hasNoWhatsAppCampaigns = computed(
 const handleDelete = campaign => {
   selectedCampaign.value = campaign;
   confirmDeleteCampaignDialogRef.value.dialogRef.open();
+};
+
+// Stopping is terminal, so it is confirmed -- and it is not deleting: the recipient
+// snapshot stays, which is the whole reason a campaign is cancelled rather than removed.
+const handleCancel = campaign => {
+  selectedCampaign.value = campaign;
+  confirmCancelCampaignDialogRef.value.dialogRef.open();
 };
 
 // "Use in a new WhatsApp campaign", from an audience. The query stays in the URL, so the link is shareable and a
@@ -145,12 +154,17 @@ const handleAnalytics = campaign => {
       v-else-if="!hasNoWhatsAppCampaigns"
       :campaigns="WhatsAppCampaigns"
       @delete="handleDelete"
+      @cancel="handleCancel"
       @analytics="handleAnalytics"
     />
     <WhatsAppCampaignEmptyState
       v-else
       :title="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.SUBTITLE')"
+    />
+    <ConfirmCancelCampaignDialog
+      ref="confirmCancelCampaignDialogRef"
+      :selected-campaign="selectedCampaign"
     />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"

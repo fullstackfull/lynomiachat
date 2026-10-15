@@ -87,6 +87,23 @@ RSpec.describe 'native consent revision continuity', type: :model do
       expect(promotional_for(shopper).revision).to eq(unchanged)
     end
 
+    # THE PARTNER TABLE IS A MERGE TOO. Its `revision` is already monotonic -- one row per
+    # event in `partner_consent_events` -- so it needs no number of its own; what it needs
+    # is to be PUBLISHED, or the partner's projector goes on reporting the decision it last
+    # heard about while Lynomia holds another. The first version of this fix passed
+    # `native: true` for one table and nothing for the other.
+    it 'publishes the partner decision a merge moved onto the surviving contact' do
+      app = create(:platform_app)
+      store = create(:commerce_store, account: account, provider: 'storesyria', external_store_id: 'sy-merge')
+      PartnerConsent.create!(platform_app: app, account: account, commerce_store: store, contact: duplicate,
+                             external_subject_id: 'cust-m', source: 'checkout_optin', purpose: :promotional,
+                             channel: :any, state: :withdrawn, captured_at: Time.current)
+
+      expect(Consents::ChangeFeed).to receive(:publish_partner).at_least(:once)
+
+      Contacts::ConsentMerge.perform(base: shopper, mergee: duplicate)
+    end
+
     # The move path: the base has no row for the scope, so the mergee's row is relocated --
     # and a scope the base once held and cleared may still have a high-water mark upstream.
     it 'raises the revision of a row it moves onto the surviving contact' do

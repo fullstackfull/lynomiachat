@@ -51,7 +51,7 @@ module Contacts::ConsentMerge
   def merge_partner(base, mergee)
     combine(PartnerConsent.where(contact_id: mergee.id),
             PartnerConsent.where(contact_id: base.id).index_by { |row| partner_scope(row) },
-            base) { |row| partner_scope(row) }
+            base, native: false) { |row| partner_scope(row) }
   end
 
   def partner_scope(row) = [row.commerce_store_id, row.purpose, row.channel]
@@ -74,13 +74,13 @@ module Contacts::ConsentMerge
 
       if existing.nil?
         row.update!({ contact_id: base.id }.merge(revision_bump(native)))
-        announce(row) if native
+        announce(row)
         applied += 1
         next
       end
 
       if overwrite(existing, row, native: native)
-        announce(existing) if native
+        announce(existing)
         applied += 1
       end
       row.destroy!
@@ -114,9 +114,16 @@ module Contacts::ConsentMerge
   #
   # The MOVE path publishes too. A scope the base had no row for may still have a stored
   # high-water mark from one that was cleared, and the moved row's own revision predates it.
+  # BOTH TABLES, because the rule is about the merge and not about which table happens to
+  # hold the row. The partner side's `revision` is already monotonic -- it is a
+  # `partner_consent_events` id, one row per event -- so a merge needs no number of its
+  # own there; what it needs is to be PUBLISHED, because the partner's projector will
+  # otherwise go on reporting the decision it last heard about while Lynomia holds another.
   def revision_bump(native) = native ? { revision: Commerce::MessagingConsent.next_revision } : {}
 
-  def announce(row) = Consents::ChangeFeed.publish_native(row)
+  def announce(row)
+    row.is_a?(PartnerConsent) ? Consents::ChangeFeed.publish_partner(row) : Consents::ChangeFeed.publish_native(row)
+  end
 
   def stronger?(row, existing) = RANK.fetch(row.state, 0) > RANK.fetch(existing.state, 0)
 

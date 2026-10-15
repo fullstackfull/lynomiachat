@@ -175,6 +175,33 @@ RSpec.describe Billing::MeteredUsage do
       expect(BillingUsageCounter.period_start_for(account.reload)).to eq(Date.new(2026, 10, 7))
     end
 
+    # "EXTEND TRIAL" IS THE SAME DEFECT THROUGH A DIFFERENT BUTTON, and testing `manual?`
+    # alone did not catch it. `source` records who wrote the row, not whether a cycle is
+    # running, and `Billing::AdminActions#extend_trial` writes `source: 'stripe'` and
+    # `status: 'trialing'` while deliberately leaving `current_period_end` alone -- so one
+    # click moved a comp's anchor off the calendar month and reissued its whole allowance.
+    it 'does not refill a spent manual allowance when an operator extends the trial' do
+      account.billing_subscription.update!(source: 'manual', status: 'active', plan: plan,
+                                           current_period_end: 3.months.from_now)
+      account.reload
+      3.times { described_class.consume(account) }
+
+      Billing::AdminActions.new(account.billing_subscription).extend_trial(14)
+
+      expect(described_class.consume(account.reload)).to eq(3)
+    end
+
+    # The mirror: a cycle the provider has finished with anchors nothing, or an account
+    # still entitled through a Store Syria bundled grant is pinned to one dead period and
+    # never refills at all.
+    it 'stops anchoring to a cancelled subscription and refills on the calendar month' do
+      account.billing_subscription.update!(source: 'stripe', status: 'canceled', plan: plan,
+                                           current_period_end: 2.months.ago)
+
+      expect(BillingUsageCounter.period_start_for(account.reload))
+        .to eq(Time.now.utc.to_date.beginning_of_month)
+    end
+
     # ONE SUBSCRIPTION ANCHORS ONE PERIOD, NOT ONE PER READER.
     #
     # `period_start` is the third column of index_billing_usage_counters_on_scope, and this

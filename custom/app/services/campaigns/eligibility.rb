@@ -55,8 +55,8 @@
 # not: Api::V1::Accounts::Commerce::ConsentsController is behind `ensure_commerce_enabled`, so
 # an account without Commerce has no authorized way to record that a shopper agreed. The
 # consequence is deliberate and is reported rather than hidden -- a promotional campaign from
-# such an account reaches nobody, `excluded_counts` says `promotional_consent_missing` and how
-# many, and the remedy is a UTILITY template for transactional sends or Commerce for marketing.
+# such an account reaches nobody, and the remedy is a UTILITY template for transactional sends
+# or Commerce for marketing.
 # Inventing a permission to fill that gap is the one thing this must not do.
 #
 module Campaigns::Eligibility
@@ -96,14 +96,14 @@ module Campaigns::Eligibility
   # and every SMS channel, which has no provider classification at all. That is the same
   # conservative default the docblock above commits to, now reached by failing to find a
   # UTILITY rather than by trusting a caller who said so.
+  # The lookup is Whatsapp::ChannelTemplates', shared with Campaigns::RenderedTemplateText
+  # so the class of a message and the text recorded for it cannot come from two different
+  # rows. `approved:` is not required here: an unapproved MARKETING template is still
+  # marketing, and reading it as transactional for want of an approval is the wrong
+  # direction -- the send refuses it on its own terms either way.
   def category_for(campaign)
-    params = campaign.template_params
-    channel = campaign.inbox&.channel
-    return '' unless params.is_a?(Hash) && channel.respond_to?(:message_templates)
+    template = Whatsapp::ChannelTemplates.find(campaign.inbox&.channel, campaign.template_params)
 
-    template = Array(channel.message_templates).find do |remote|
-      remote['name'] == params['name'].to_s && remote['language'].to_s.casecmp?(params['language'].to_s)
-    end
     template&.fetch('category', nil).to_s.upcase
   end
 
@@ -142,40 +142,11 @@ module Campaigns::Eligibility
     relation.where(blocked: false).where.not(id: blocked_by_decision(account, purpose))
   end
 
-  # Why the audience shrank, as counts by the same reason codes Commerce::MessagingEligibility
-  # returns. Served beside a preview count so "400 of 1,000" is answerable on screen rather
-  # than being a number a merchant has to take on faith.
-  #
-  # Counted off the ORIGINAL relation, so the four numbers and the filtered count describe the
-  # same population.
-  def excluded_counts(relation, account, purpose)
-    refused = relation.where(blocked: false).where(id: blocked_by_decision(account, purpose))
-
-    counts = { contact_unavailable: relation.where(blocked: true).count,
-               consent_withdrawn: refused.where(id: in_state(account, purpose, :withdrawn)).count,
-               messaging_suppressed: refused.where(id: in_state(account, purpose, :suppressed)).count }
-    counts[:promotional_consent_missing] = ungranted_count(relation, account, purpose) if purpose.to_sym == :promotional
-    counts
-  end
-
   def blocked_by_decision(account, purpose)
     Commerce::MessagingConsent.where(account_id: account.id, purpose: purpose, state: BLOCKING_STATES).select(:contact_id)
   end
 
-  def in_state(account, purpose, state)
-    Commerce::MessagingConsent.where(account_id: account.id, purpose: purpose, state: state).select(:contact_id)
-  end
-
   def granted(account)
     Commerce::MessagingConsent.where(account_id: account.id, purpose: :promotional, state: :granted).select(:contact_id)
-  end
-
-  # Reachable but for the missing grant: not blocked, not refused, and not granted. Counted
-  # this way rather than as a subtraction so it stays correct if a contact is both.
-  def ungranted_count(relation, account, purpose)
-    relation.where(blocked: false)
-            .where.not(id: blocked_by_decision(account, purpose))
-            .where.not(id: granted(account))
-            .count
   end
 end

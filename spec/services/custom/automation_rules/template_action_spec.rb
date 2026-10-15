@@ -12,7 +12,12 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
      { 'name' => 'cart_paused', 'language' => 'en', 'status' => 'PAUSED', 'category' => 'MARKETING',
        'components' => [{ 'type' => 'BODY', 'text' => 'Hi {{1}}' }] },
      { 'name' => 'login_code', 'language' => 'en', 'status' => 'approved', 'category' => 'AUTHENTICATION',
-       'components' => [{ 'type' => 'BODY', 'text' => 'Code {{1}}' }] }]
+       'components' => [{ 'type' => 'BODY', 'text' => 'Code {{1}}' }] },
+     # A UTILITY template, which is what an order trigger is supposed to carry. Without one
+     # every example here used `cart_reminder` -- MARKETING -- and the transactional cases
+     # were asserting that a marketing template needs no marketing consent.
+     { 'name' => 'order_shipped', 'language' => 'en', 'status' => 'approved', 'category' => 'UTILITY',
+       'components' => [{ 'type' => 'BODY', 'text' => 'Hi {{1}}, your order is on its way: {{2}}' }] }]
   end
   let(:channel) do
     create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
@@ -34,8 +39,12 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
     described_class.new(rule: rule, account: account, conversation: conversation, config: config).perform
   end
 
+  # THE DEFAULT IS THE UTILITY TEMPLATE, so an example that is about something else -- the
+  # message shape, the parameter mapping, an unresolved variable -- is not also silently
+  # about consent. The class of a template send needs the trigger AND Meta's category to
+  # agree, so `cart_reminder` (MARKETING) requires a marketing grant whatever the rule is.
   def config(overrides = {})
-    { 'inbox_id' => inbox.id, 'name' => 'cart_reminder', 'language' => 'en', 'params' => mapping }.merge(overrides)
+    { 'inbox_id' => inbox.id, 'name' => 'order_shipped', 'language' => 'en', 'params' => mapping }.merge(overrides)
   end
 
   describe 'sending an approved template' do
@@ -50,7 +59,7 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
       message = conversation.messages.reload.last
       expect(message).to have_attributes(message_type: 'outgoing', private: false)
       expect(message.additional_attributes['template_params']).to include(
-        'name' => 'cart_reminder', 'language' => 'en', 'category' => 'MARKETING', 'content_mode' => 'rendered'
+        'name' => 'order_shipped', 'language' => 'en', 'category' => 'UTILITY', 'content_mode' => 'rendered'
       )
     end
 
@@ -179,25 +188,40 @@ RSpec.describe Custom::AutomationRules::TemplateAction do
     # An abandoned basket is not a transaction the shopper completed and not a message they
     # asked for. The absence of a decision is not a grant.
     it 'refuses a cart message to a shopper who never agreed to marketing' do
-      expect(run_for('commerce_cart_abandoned').reason).to eq('promotional_consent_missing')
+      expect(run_for('commerce_cart_abandoned', 'name' => 'cart_reminder').reason).to eq('promotional_consent_missing')
     end
 
     it 'sends a cart message once the shopper has agreed to marketing' do
       consent(:granted, purposes: ['promotional'])
 
-      expect(run_for('commerce_cart_abandoned').reason).to be_nil
+      expect(run_for('commerce_cart_abandoned', 'name' => 'cart_reminder').reason).to be_nil
     end
 
     # The shopper placed the order; being told it shipped is the service they asked for, and
     # withholding it for want of a marketing opt-in would be the worse outcome for them.
     it 'sends an order update to a shopper who agreed to nothing' do
-      expect(run_for('commerce_order_shipped').reason).to be_nil
+      expect(run_for('commerce_order_shipped', 'name' => 'order_shipped').reason).to be_nil
+    end
+
+    # THE PAIRING THE TRIGGER ALONE COULD NOT SEE. `send_whatsapp_template` is offered on
+    # EVERY rule, and the editor's picker offers every approved non-AUTHENTICATION template,
+    # so a MARKETING template on an order trigger is a pairing an admin can make in two
+    # clicks. Reading only the trigger called it transactional and sent it to somebody who
+    # had withdrawn marketing; the class now needs the trigger AND Meta's category to agree.
+    it 'refuses a MARKETING template on an order trigger, whatever the trigger says' do
+      expect(run_for('commerce_order_shipped', 'name' => 'cart_reminder').reason).to eq('promotional_consent_missing')
+    end
+
+    it 'sends that same pairing once the shopper has agreed to marketing' do
+      consent(:granted, purposes: ['promotional'])
+
+      expect(run_for('commerce_order_shipped', 'name' => 'cart_reminder').reason).to be_nil
     end
 
     it 'refuses an order update once the shopper has said stop' do
       consent(:withdrawn, purposes: Commerce::MessagingConsents::PURPOSES)
 
-      expect(run_for('commerce_order_shipped').reason).to eq('consent_withdrawn')
+      expect(run_for('commerce_order_shipped', 'name' => 'order_shipped').reason).to eq('consent_withdrawn')
     end
 
     it 'refuses everything to a suppressed number, and says which it is' do

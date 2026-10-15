@@ -191,19 +191,6 @@ RSpec.describe Campaigns::Eligibility do
     end
   end
 
-  describe '.excluded_counts' do
-    it "says why the audience shrank, in the policy's own reason codes" do
-      expect(described_class.excluded_counts(relation, account, :transactional))
-        .to eq(contact_unavailable: 1, consent_withdrawn: 1, messaging_suppressed: 1)
-    end
-
-    it 'counts the marketing-only refusal and the missing grants on a promotional send' do
-      expect(described_class.excluded_counts(relation, account, :promotional))
-        .to eq(contact_unavailable: 1, consent_withdrawn: 2, messaging_suppressed: 1,
-               promotional_consent_missing: 1)
-    end
-  end
-
   # The filter has to hold at the entry point every sender, the preview and the snapshot share,
   # not only when called directly -- that is the whole reason it was put there.
   describe 'through Campaign#audience_contacts' do

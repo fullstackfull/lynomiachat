@@ -326,7 +326,16 @@
     },
     "CARD": {
       "EDIT": "Edit campaign",
-      "DELETE": "Delete campaign"
+      "DELETE": "Delete campaign",
+      "CANCEL": "Stop campaign"
+    },
+    "CONFIRM_CANCEL": {
+      "TITLE": "Stop this campaign?",
+      "DESCRIPTION": "Messages already sent cannot be recalled. The campaign stops sending to everyone it has not reached yet, and its results stay available.",
+      "CONFIRM": "Stop campaign",
+      "DISMISS": "Keep sending",
+      "SUCCESS_MESSAGE": "Campaign stopped",
+      "ERROR_MESSAGE": "Could not stop the campaign"
     },
     "LOADING": "Loading campaigns"
   }

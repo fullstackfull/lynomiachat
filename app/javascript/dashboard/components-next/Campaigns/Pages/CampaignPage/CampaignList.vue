@@ -13,7 +13,7 @@ defineProps({
   },
 });
 
-const emit = defineEmits(['edit', 'delete', 'analytics']);
+const emit = defineEmits(['edit', 'delete', 'analytics', 'cancel']);
 // `cancelled` belongs here: the recipient snapshot is the whole reason a campaign is
 // cancelled rather than deleted -- who was reached before it was stopped is exactly what an
 // operator needs afterwards -- and leaving it out hid the Results button for the one case it
@@ -23,6 +23,7 @@ const ANALYTICS_CAMPAIGN_STATUSES = ['processing', 'completed', 'cancelled'];
 const handleEdit = campaign => emit('edit', campaign);
 const handleDelete = campaign => emit('delete', campaign);
 const handleAnalytics = campaign => emit('analytics', campaign);
+const handleCancel = campaign => emit('cancel', campaign);
 </script>
 
 <template>
@@ -45,6 +46,7 @@ const handleAnalytics = campaign => emit('analytics', campaign);
       @edit="handleEdit(campaign)"
       @delete="handleDelete(campaign)"
       @analytics="handleAnalytics(campaign)"
+      @cancel="handleCancel(campaign)"
     />
   </div>
 </template>

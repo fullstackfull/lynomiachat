@@ -58,25 +58,45 @@ class BillingUsageCounter < ApplicationRecord
   # ambient state is wrong the day somebody adds it rather than the day it is written. The
   # stored column is UTC; deriving the key from it directly is also one character shorter than
   # deriving it from the reader.
-  # A MANUAL GRANT'S `current_period_end` IS AN EXPIRY, NOT A CYCLE END, so it does not
-  # anchor anything. Only a provider-maintained subscription has a period this can be
-  # derived from; for an operator's comp the calendar month is the anchor whether or not an
-  # expiry is set, which is the same answer an account with no subscription at all gets.
+  # ONLY A LIVE PROVIDER CYCLE ANCHORS THE PERIOD. Everything else -- an operator's comp, a
+  # trial, a cancelled subscription, an account with none at all -- takes the calendar
+  # month, because none of them has a cycle anybody is going to advance.
   #
-  # Reading it for a manual grant handed out a second allowance for free. nil is a supported
-  # state with its own copy on the Super Admin screen ("Plan X granted with no end date"),
-  # and Billing::AdminActions#grant_plan defaults to it, so a comp starts on the calendar
-  # month. The moment an operator re-grants the same plan WITH an expiry -- an ordinary
-  # tidying-up, not a renewal -- the anchor jumped to (expiry - 1 month), which for a comp
-  # running to the end of the year is a date in the FUTURE and in any case a different
-  # counter key: a full fresh allowance in the same calendar month, repeatable by toggling
-  # the expiry. The renewal-gap reasoning above is about a provider's own cycle and does not
-  # transfer to a date an operator typed.
+  # A MANUAL GRANT'S `current_period_end` IS AN EXPIRY, NOT A CYCLE END. nil is a supported
+  # state with its own Super Admin copy ("Plan X granted with no end date") and is the
+  # default of `Billing::AdminActions#grant_plan`, so a comp starts on the calendar month.
+  # The moment an operator re-granted the same plan WITH an expiry -- an ordinary tidying-up,
+  # not a renewal -- the anchor jumped to (expiry - 1 month), which for a comp running to the
+  # end of the year is a date in the FUTURE and in any case a different counter key: a full
+  # fresh allowance in the same calendar month, reissuable by toggling the expiry.
+  #
+  # TESTING `manual?` WAS NOT ENOUGH, and that is why this reads the STATUS as well. `source`
+  # is a mutable column recording who wrote the row, not whether a cycle is running, and one
+  # shipped operator action flips it: `extend_trial` writes `source: 'stripe'` and
+  # `status: 'trialing'` while deliberately leaving `current_period_end` alone, so clicking
+  # "Extend trial" on a comp that has an expiry moved the anchor and handed out the whole
+  # allowance again -- the same defect through a different button. The mirror case is a
+  # subscription the provider has finished with: a `canceled` row keeps a
+  # `current_period_end` nothing will ever advance, so an account still entitled through a
+  # Store Syria bundled grant was pinned to one dead period forever and never refilled.
+  #
+  # `past_due` anchors with `active` on purpose: the provider still owns that cycle and will
+  # advance it on payment, and the alternative -- the calendar month -- would hand a merchant
+  # who has not paid a fresh allowance, which is the wrong direction for a ceiling that is
+  # supposed to fail closed.
+  CYCLED_STATUSES = %w[active past_due].freeze
+
   def self.period_start_for(account)
-    subscription = account.billing_subscription
-    ends_at = subscription&.manual? ? nil : subscription&.current_period_end
+    ends_at = provider_cycle_end(account.billing_subscription)
     return Time.now.utc.to_date.beginning_of_month if ends_at.nil?
 
     (ends_at.utc - 1.month).to_date
+  end
+
+  def self.provider_cycle_end(subscription)
+    return nil if subscription.nil? || subscription.manual?
+    return nil unless CYCLED_STATUSES.include?(subscription.status)
+
+    subscription.current_period_end
   end
 end

@@ -82,7 +82,7 @@ Counted from the 48 screenshots, not guessed.
 | 1 | The hero is not a hero. `_page.html.erb` renders `h1` + lede; the `hero` section renders only kicker + buttons, so the eyebrow prints *below* the standfirst. | `custom/app/views/marketing/shared/_page.html.erb`, `sections/_hero.html.erb` |
 | 2 | Three consecutive sections use the same bordered white card in the same 3-column grid. No section is distinguishable from another at a glance. | `ar/desktop/home.png` |
 | 3 | Zero images on any of the 96 pages. The `image` section type exists and is used nowhere. | `Marketing::SectionSchema::TYPES` |
-| 4 | Arabic mobile home is 11,828px of undifferentiated cards with no anchor to orient against. | `ar/mobile/home.png` |
+| 4 | Arabic mobile home is 5,918px of undifferentiated cards with no anchor to orient against. | `ar/mobile/home.png` |
 | 5 | The wordmark renders `Chat Lynomia` left-to-right inside an RTL header, so the Arabic page reads the brand backwards. | `shared/_header.html.erb` |
 | 6 | The closing CTA is a flat blue rectangle — the only coloured surface on the page, spent on the least interesting block. | `shared/_cta.html.erb` |
 | 7 | The type scale is `text-3xl/4xl` for h1 and `text-lg` for the lede, with no display size anywhere. Nothing on the page is set larger than a heading in the dashboard. | all 48 |
@@ -90,6 +90,17 @@ Counted from the 48 screenshots, not guessed.
 
 Items 1, 5 and 6 are structural and are fixed in Phase C. Items 2, 3, 4, 7 and 8 are what the design
 direction has to answer.
+
+> **Correction, 15 Oct.** Item 4 first read 11,828px. That is about twice the height of the artifact it
+> cites: `before/marketing/ar/mobile/home.png` is 390×5,918, and `tools/visual/capture.mjs` shoots at
+> `deviceScaleFactor: 1`, so its pixel heights ARE CSS pixels. Item 1's desktop figure on line 47
+> (3,067px) matches its own file exactly, which is what proves the tool rather than the file was being
+> read correctly there. The number is corrected above, and the claim that rested on it — a drop to
+> 6,556px, quoted onward into the pull request — does not survive it: measured live at the same
+> settings, the redesigned Arabic mobile home is **6,503px, about 10% TALLER than the baseline**. The
+> complaint in item 4 was never really about length, and the redesign did not shorten the page; it gave
+> it a hero, section-by-section differentiation and an anchor to orient against, and spent height doing
+> it. The before/after screenshots are what to judge that on.
 
 ---
 

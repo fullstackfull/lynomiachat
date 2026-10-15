@@ -25,6 +25,11 @@ class Sms::OneoffSmsCampaignService
       # last moment any of that can be honoured. See Campaigns::SendGuard for the precedence.
       next if Campaigns::SendGuard.refusal(contact, campaign, :sms)
 
+      # PACED, not merely permitted. SendGuard answers "may this person be messaged"; this
+      # answers "how fast". Immediately before the provider call so the ceiling applies to
+      # real traffic rather than to the loop's bookkeeping.
+      Campaigns::Throttle.pace(campaign.account)
+
       content = Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)
       send_message(to: contact.phone_number, content: content)
     end

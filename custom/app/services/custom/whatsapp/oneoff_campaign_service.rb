@@ -43,6 +43,9 @@ module Custom::Whatsapp::OneoffCampaignService
     refusal = Campaigns::SendGuard.refusal(contact, campaign, :whatsapp)
     return record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)) if refusal
 
+    # PACED, not merely permitted. SendGuard answers "may this person be messaged"; this
+    # answers "how fast", immediately before the send rather than around the loop.
+    Campaigns::Throttle.pace(campaign.account)
     super
     record(:skipped, unhooked_reason) if @outcome.nil?
   ensure

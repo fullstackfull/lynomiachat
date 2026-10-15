@@ -21,6 +21,10 @@
     "SEARCH_MESSAGES": "ابحث عن رسائل في المحادثات",
     "VIEW_ORIGINAL": "View original",
     "VIEW_TRANSLATED": "View translated",
+    "DATE_SEPARATOR": {
+      "TODAY": "اليوم",
+      "YESTERDAY": "أمس"
+    },
     "EMPTY_STATE": {
       "CMD_BAR": "لفتح قائمة الأوامر",
       "KEYBOARD_SHORTCUTS": "لعرض اختصارات لوحة المفاتيح"

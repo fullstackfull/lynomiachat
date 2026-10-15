@@ -35,8 +35,12 @@ const {
   contentAttributes,
 } = useMessageContext();
 
+// The day is stated once, on the separator above each day's run of messages, so repeating it on every
+// stamp spent seven characters to say what the rule overhead already said -- and crowded the one part of
+// this line that does change per message. `messageTimestamp` still escalates to a full 'LLL d y, h:mm a'
+// for a message from another year, and the exact date and time stay in the hover tooltip below.
 const readableTime = computed(() =>
-  messageTimestamp(createdAt.value, 'LLL d, h:mm a')
+  messageTimestamp(createdAt.value, 'h:mm a')
 );
 
 const exactTime = computed(() => exactTimestamp(createdAt.value));

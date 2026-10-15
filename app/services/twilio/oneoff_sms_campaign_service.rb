@@ -26,7 +26,13 @@ class Twilio::OneoffSmsCampaignService
       #
       # It paces as well as permits, and in that order -- the throttle SLEEPS, so a refusal
       # landing during the wait has to be read after it, not before.
-      next if Campaigns::SendGuard.clear_to_send(contact, campaign, :sms)
+      refusal = Campaigns::SendGuard.clear_to_send(contact, campaign, :sms)
+      # A CANCELLATION STOPS THE RUN, not just this recipient. It is a fact about the
+      # campaign and it is identical for everyone left, so walking the rest of the audience
+      # to refuse each one in turn costs two queries a head to reach a conclusion already
+      # reached. See Campaigns::RecipientSnapshot#abandon_queued for the rows.
+      break if refusal == :campaign_cancelled
+      next if refusal
 
       content = Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)
       # The paid allowance, taken on the line before the message goes -- not in the gate

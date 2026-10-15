@@ -47,7 +47,44 @@ module Partners::Eligibility
     blocking_refusal(scoped) || grant_refusal(scoped, purpose)
   end
 
-  def subject_of?(contact, store) = contact.present? && contact.account_id == store.account_id
+  # WHOSE CUSTOMER THIS CAMPAIGN MAY ADDRESS.
+  #
+  # This compared account ids and nothing else, while two docblocks and the snapshot's own
+  # skip reason said it meant "a customer of this store". For a one-installation account the
+  # two agree, so it never showed; in an account with a SECOND connected store a
+  # store-scoped campaign addressed that store's customers, who had never dealt with this
+  # one. The gap widened when step 8 began accepting a native account-wide grant: before
+  # that, a promotional recipient needed a PartnerConsent row, which can only be written for
+  # a contact this installation has a customer link to, so the scope was enforced by
+  # accident.
+  #
+  # THE RULE IS NOT "HAS A LINK TO THIS STORE", and that is deliberate. A contact who has
+  # only ever chatted -- no order, so no customer link -- is still the merchant's own
+  # customer, and a Store Syria merchant can create nothing BUT store-scoped campaigns, so
+  # requiring a link would put their chat-only contacts out of reach from their own
+  # dashboard. What is actually wrong is addressing somebody who belongs to a DIFFERENT
+  # installation of the same account, so that is what is excluded: a contact linked to
+  # another of this account's stores and not to this one.
+  def subject_of?(contact, store)
+    return false unless contact.present? && contact.account_id == store.account_id
+
+    !foreign_customer?(contact, store)
+  end
+
+  # Linked to another installation of this account, and not to this one. `linked` throughout:
+  # a suppressed link is an agent saying this contact is NOT that store's customer, so it
+  # neither qualifies them here nor disqualifies them from this store.
+  def foreign_customer?(contact, store)
+    return false if Commerce::CustomerLink.linked.exists?(commerce_store_id: store.id, contact_id: contact.id)
+
+    Commerce::CustomerLink.linked.exists?(contact_id: contact.id, commerce_store_id: sibling_store_ids(store))
+  end
+
+  # The account's OTHER installations. Scoped to the account so one merchant's stores are
+  # never compared with another's.
+  def sibling_store_ids(store)
+    Commerce::Store.where(account_id: store.account_id).where.not(id: store.id).select(:id)
+  end
 
   def blocking_refusal(scoped)
     blocking = scoped.blocking.first
@@ -94,9 +131,22 @@ module Partners::Eligibility
     return relation.none unless store&.active?
 
     scope = relation.where.not(id: blocking_ids(store, purpose, channel))
+                    .where.not(id: foreign_customer_ids(store))
     return scope unless purpose.to_sym == :promotional
 
     scope.where(id: granted_ids(store, purpose, channel)).or(scope.where(id: native_granted))
+  end
+
+  # The relation form of `foreign_customer?`, and it has to stay the relation form of exactly
+  # that: `refusal` is the authority at the send boundary, and an audience that selects
+  # somebody the boundary then refuses is a campaign reporting it reached people it did not.
+  # spec/models/campaign_partner_audience_spec.rb decides a population containing another
+  # installation's customer both ways and asserts the two agree.
+  def foreign_customer_ids(store)
+    ours = Commerce::CustomerLink.linked.where(commerce_store_id: store.id).select(:contact_id)
+
+    Commerce::CustomerLink.linked.where(commerce_store_id: sibling_store_ids(store))
+                          .where.not(contact_id: ours).select(:contact_id)
   end
 
   def blocking_ids(store, purpose, channel)

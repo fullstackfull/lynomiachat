@@ -26,7 +26,14 @@ module Custom::Whatsapp::OneoffCampaignService
   # only thing lost is the pending count while the run is in progress.
   def process_audience
     seed_audience
-    super
+    cancelled = catch(:campaign_cancelled) { super and nil }
+    # A CANCELLATION STOPS THE RUN. Upstream's loop has no way out of its own -- `super` is
+    # `contacts.each { process_contact(_1) }` and `process_contact` cannot break its
+    # caller's loop -- so the refusal is thrown past it. `throw`/`catch` rather than an
+    # exception because stopping on purpose is not an error, and an exception here would
+    # look like the crashed-loop case the send guard's docblock describes, which strands
+    # the campaign in `processing`.
+    snapshot.abandon_queued(cancelled) if cancelled
   end
 
   # THE FINAL ELIGIBILITY CHECK, here rather than where the audience was resolved.
@@ -45,7 +52,15 @@ module Custom::Whatsapp::OneoffCampaignService
     @contact = contact
     @outcome = nil
     refusal = Campaigns::SendGuard.clear_to_send(contact, campaign, :whatsapp)
-    return record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)) if refusal
+    if refusal
+      reason = Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)
+      record(:skipped, reason)
+      # Everyone left is refused for the same reason and `abandon_queued` says so for all of
+      # them in one statement; see `process_audience`.
+      throw :campaign_cancelled, reason if refusal == :campaign_cancelled
+
+      return nil
+    end
 
     super
     record(:skipped, unhooked_reason) if @outcome.nil?

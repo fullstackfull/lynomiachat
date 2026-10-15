@@ -33,6 +33,12 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
     create(:contact, :with_phone_number, account: account, name: name).tap { |c| c.update_labels([label.title]) }
   end
 
+  def customer_of(contact, store, match_source: :external_id)
+    create(:commerce_customer_link, account: account, store: store, contact: contact,
+                                    external_customer_id: "cust-#{store.id}-#{contact.id}",
+                                    match_source: match_source)
+  end
+
   def partner_consent(contact, store, state, channel: :any)
     PartnerConsent.create!(platform_app: app, account: account, commerce_store: store, contact: contact,
                            external_subject_id: "ext-#{contact.id}", source: 'checkout_optin',
@@ -87,6 +93,53 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
     expect(campaign.audience_contacts).to be_empty
   end
 
+  # ANOTHER INSTALLATION'S CUSTOMER IS NOT THIS ONE'S.
+  #
+  # `subject_of?` compared account ids and nothing else, while the snapshot's skip reason
+  # and two docblocks all said "not a customer of this store". For a merchant with one
+  # installation those agree; with a second connected store this campaign addressed that
+  # store's customers. Step 8 accepting a native account-wide grant is what made it
+  # reachable: before that a promotional recipient needed a PartnerConsent row, which exists
+  # only for a contact this installation has a link to.
+  it 'does not reach a shopper who is the merchant’s OTHER store’s customer' do
+    theirs = shopper('other store customer')
+    native(theirs, :granted)
+    customer_of(theirs, other_store)
+
+    expect(campaign.audience_contacts).to be_empty
+  end
+
+  # AND THE RULE IS NOT "HAS A LINK TO THIS STORE". A contact who has only ever chatted has
+  # no customer link anywhere, and a Store Syria merchant can create nothing but
+  # store-scoped campaigns -- requiring a link would put their chat-only contacts out of
+  # reach from their own dashboard.
+  it 'reaches a shopper with no customer link anywhere' do
+    chat_only = shopper('chat only')
+    native(chat_only, :granted)
+
+    expect(campaign.audience_contacts).to contain_exactly(chat_only)
+  end
+
+  # A shopper of BOTH stores is this store's customer too, so the other link says nothing.
+  it 'reaches a shopper who is a customer of this store as well as the other' do
+    both = shopper('customer of both')
+    native(both, :granted)
+    customer_of(both, store)
+    customer_of(both, other_store)
+
+    expect(campaign.audience_contacts).to contain_exactly(both)
+  end
+
+  # A SUPPRESSED link is an agent saying this contact is NOT that store's customer, so it
+  # cannot be what puts them out of this store's reach.
+  it 'is not excluded by a suppressed link to the other store' do
+    unlinked = shopper('suppressed elsewhere')
+    native(unlinked, :granted)
+    customer_of(unlinked, other_store, match_source: :suppressed)
+
+    expect(campaign.audience_contacts).to contain_exactly(unlinked)
+  end
+
   # NEGATIVES UNION. A native withdrawal is unconditional and stops a partner-authorised send.
   it 'does not reach a shopper who agreed at checkout and later replied STOP' do
     changed_mind = shopper('changed mind')
@@ -129,6 +182,18 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
       partner_withdrawn: shopper('partner withdrawn').tap { |c| partner_consent(c, store, :withdrawn) },
       partner_suppressed: shopper('partner suppressed').tap { |c| partner_consent(c, store, :suppressed) },
       wrong_channel: shopper('wrong channel').tap { |c| partner_consent(c, store, :granted, channel: :whatsapp) },
+      # THE SUBJECT CHECK, which lived only in `refusal` until the audience grew one too.
+      # Without a member of this shape the population cannot tell the two expressions apart
+      # on it, and the warning in PRODUCTION-READINESS-BLOCKERS B2.1 is about exactly that.
+      other_store_customer: shopper('other store customer').tap do |c|
+        native(c, :granted)
+        customer_of(c, other_store)
+      end,
+      customer_of_both: shopper('customer of both').tap do |c|
+        native(c, :granted)
+        customer_of(c, store)
+        customer_of(c, other_store)
+      end,
       blocked: shopper('blocked').tap do |c|
         partner_consent(c, store, :granted)
         c.update!(blocked: true)
@@ -141,7 +206,8 @@ RSpec.describe 'a campaign that belongs to an installation', type: :model do
     expect(campaign.audience_contacts).to match_array(allowed_by_boundary)
     # Two of the nine: a grant at this installation, and an account-wide native grant. Step 8
     # takes either, and nothing else in the population has one in scope.
-    expect(allowed_by_boundary).to contain_exactly(population[:partner_granted], population[:native_only])
+    expect(allowed_by_boundary).to contain_exactly(population[:partner_granted], population[:native_only],
+                                                   population[:customer_of_both])
   end
 
   # An installation an operator revoked authorises nothing, and the audience says so before

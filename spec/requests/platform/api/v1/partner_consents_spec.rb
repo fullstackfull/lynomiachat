@@ -69,6 +69,27 @@ RSpec.describe 'Platform Partner Consents API', type: :request do
       expect(PartnerConsent.count).to eq(0)
     end
 
+    # AND SAYS WHICH 404 IT IS, because the two this endpoint can answer are not the same
+    # fact. "No such installation" is permanent for the configuration that produced it;
+    # this one is the ordinary race for a first-time shopper, whose checkout opt-in is
+    # dispatched before the order event that creates their customer link. Store Syria
+    # classed every 404 as this side's mistake and retired the decision on its first
+    # attempt, so that shopper's opt-in was lost; it now defers on this code and retries.
+    it 'says the subject is merely not linked yet, so a partner can retry rather than give up' do
+      post url, params: body.merge(external_subject_id: 'nobody'), headers: headers, as: :json
+
+      expect(response.parsed_body['error_code']).to eq('subject_not_linked')
+    end
+
+    # The other 404 carries no code, so a partner cannot mistake a missing installation for
+    # a race and retry it hourly forever.
+    it 'does not mark a missing installation as retryable' do
+      post url, params: body.merge(external_store_id: 'sy-nope'), headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(response.parsed_body).not_to have_key('error_code')
+    end
+
     # A SUPPRESSED LINK IS AN AGENT SAYING THIS IS NOT THAT STORE'S CUSTOMER, which is the
     # whole reason the state exists -- and the link row survives, so a lookup that did not
     # exclude it found one anyway. The store could then record decisions about somebody it

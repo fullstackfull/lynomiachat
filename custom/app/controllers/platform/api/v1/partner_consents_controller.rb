@@ -131,7 +131,17 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
 
     return if @contact
 
-    render json: { error: 'No customer of this installation matches that subject' }, status: :not_found
+    # `error_code`, because the two 404s this endpoint can answer are not the same fact and
+    # the caller has to tell them apart. "No such installation" is permanent for the
+    # configuration that produced it; THIS one is the ordinary race for a first-time
+    # shopper, whose checkout opt-in is dispatched before the order event that creates
+    # their customer link. Store Syria classed every 404 as non-transient and retired the
+    # decision on its first attempt, so that shopper's opt-in was simply lost -- and the
+    # reconciler's drift count skipped the scope, believing the outbox still owned it, so
+    # nothing said so.
+    render json: { error: 'No customer of this installation matches that subject',
+                   error_code: 'subject_not_linked' },
+           status: :not_found
   end
 
   # The cap on each collection. Named because `index` reports whether the native list hit it.

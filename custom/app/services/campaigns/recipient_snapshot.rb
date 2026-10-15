@@ -50,7 +50,7 @@ class Campaigns::RecipientSnapshot
     partner_consent_withdrawn: 'Customer opted out at this store',
     promotional_consent_missing: 'No marketing consent on record',
     partner_consent_missing: 'No marketing consent on record for this store',
-    partner_scope_mismatch: 'Not a customer of this store'
+    partner_scope_mismatch: 'A customer of another of your stores'
   }.freeze
 
   SKIP_REASONS = ([
@@ -90,6 +90,22 @@ class Campaigns::RecipientSnapshot
       contact, status: :failed, failed_at: Time.current, message_content: message_content,
                error_code: error_code, error_title: error_title, error_message: error_message
     )
+  end
+
+  # EVERYBODY STILL QUEUED WHEN A RUN STOPPED EARLY, IN ONE STATEMENT.
+  #
+  # A cancellation is a fact about the CAMPAIGN, identical for every remaining recipient, so
+  # the senders stop rather than walking the rest of the audience to refuse each one in turn
+  # -- a 100k campaign cancelled a minute in was writing ~99k skip rows and issuing ~200k
+  # queries to reach a conclusion it already had. The rows still have to say what happened,
+  # or the analytics page leaves them `queued` forever and reads as a run that never
+  # finished; one UPDATE says it for all of them.
+  #
+  # Scoped to `queued`, so it cannot overwrite an outcome the loop already recorded.
+  def abandon_queued(reason)
+    CampaignRecipient.where(campaign_id: @campaign.id, status: :queued)
+                     .update_all(status: CampaignRecipient.statuses[:skipped], # rubocop:disable Rails/SkipsModelValidations
+                                 error_message: reason, updated_at: Time.current)
   end
 
   # The audience as it stood when the run began, written before the first provider call.

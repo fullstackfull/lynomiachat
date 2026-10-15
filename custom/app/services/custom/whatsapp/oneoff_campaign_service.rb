@@ -88,8 +88,28 @@ module Custom::Whatsapp::OneoffCampaignService
   # refusal means Meta, or the network, said no -- and that refusal is only reachable at all because
   # Custom::Channel::Whatsapp keeps the provider instance alive across the call. Neither means no provider call
   # was made: upstream found no approved template of that name and language, so nothing was attempted.
+  # THE PAID ALLOWANCE IS TAKEN HERE, which is the last line before the template goes to
+  # Meta -- not in `clear_to_send` above, where it started.
+  #
+  # That gate runs before every check upstream still makes: no reachable WhatsApp
+  # destination, no template params on the campaign, a Liquid variable that resolved to
+  # blank. A recipient refused by any of those is never handed to a provider, and charging a
+  # merchant's allowance for them contradicts the rule Billing::MeteredUsage states about
+  # itself -- that a unit is an ATTEMPT. An attempt is a provider call.
+  #
+  # Two refusals remain BELOW this line (an authentication template, and no approved
+  # template of that name) and they do spend a unit. That is the honest edge of "attempt":
+  # by here the campaign has a destination, parameters and rendered text, and the only thing
+  # left is Meta's own answer.
   def send_whatsapp_template_message(to:, template_params:)
     text = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params).text
+    quota = Campaigns::SendGuard.spend(campaign)
+    if quota
+      record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(quota), message_content: text)
+
+      return nil
+    end
+
     source_id = super
     return source_id if @outcome.present?
 

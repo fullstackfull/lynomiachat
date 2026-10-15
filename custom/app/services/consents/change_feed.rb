@@ -64,8 +64,13 @@ module Consents::ChangeFeed
   # Only the installations whose own customer this is. `connected` rather than `active`: a
   # paused integration may not AUTHORISE a send, but it must still be told that somebody
   # opted out, because that is the fact it will need when it resumes.
+  #
+  # `linked`, because a suppressed link is an agent saying this is NOT that store's
+  # customer. Publishing to it anyway sent one shopper's opt-out to a merchant who had been
+  # told the match was wrong -- a small leak, and of exactly the data this subsystem exists
+  # to handle carefully.
   def links(contact)
-    Commerce::CustomerLink.joins(:store)
+    Commerce::CustomerLink.linked.joins(:store)
                           .where(contact_id: contact.id)
                           .where.not(commerce_stores: { status: Commerce::Store.statuses[:disconnected] })
   end

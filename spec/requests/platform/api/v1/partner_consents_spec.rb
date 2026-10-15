@@ -68,6 +68,34 @@ RSpec.describe 'Platform Partner Consents API', type: :request do
       expect(response).to have_http_status(:not_found)
       expect(PartnerConsent.count).to eq(0)
     end
+
+    # A SUPPRESSED LINK IS AN AGENT SAYING THIS IS NOT THAT STORE'S CUSTOMER, which is the
+    # whole reason the state exists -- and the link row survives, so a lookup that did not
+    # exclude it found one anyway. The store could then record decisions about somebody it
+    # had been told was matched in error, and was told their account-wide state in return.
+    it 'refuses a subject whose link an agent suppressed' do
+      Commerce::CustomerLink.find_by(commerce_store_id: store.id, contact_id: shopper.id)
+                            .update!(match_source: :suppressed)
+
+      post url, params: body, headers: headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+      expect(PartnerConsent.count).to eq(0)
+    end
+
+    it 'does not report the account-wide state of a subject whose link was suppressed' do
+      Commerce::MessagingConsents.record(
+        account: account, contact: shopper,
+        decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+      )
+      Commerce::CustomerLink.find_by(commerce_store_id: store.id, contact_id: shopper.id)
+                            .update!(match_source: :suppressed)
+
+      get url, params: { provider: 'storesyria', external_store_id: 'sy-1' }, headers: headers, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(response.parsed_body['native']).to be_empty
+    end
   end
 
   describe 'recording a decision' do

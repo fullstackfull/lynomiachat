@@ -61,8 +61,9 @@ module Campaigns::SendGuard
   # window that does not exist. When it did sleep, the first answer is stale by construction
   # and is re-taken.
   #
-  # AND THE QUOTA IS TAKEN AFTER BOTH. See `quota` below for why it is last and why, unlike
-  # the pacing it follows, it fails closed.
+  # THE QUOTA IS NOT TAKEN HERE. See `spend`: it is a UNIT OF A PAID ALLOWANCE, so it is
+  # taken by the sender at the point the message is actually handed over, not by this gate
+  # several checks earlier.
   #
   # PACING CANNOT WIDEN WHAT IS PERMITTED. Every refusal `refusal` can return is re-asked
   # after the wait: the kill switch (step 1), installation revocation (step 2), blocking and
@@ -75,17 +76,26 @@ module Campaigns::SendGuard
     before = refusal(contact, campaign, channel)
     return before if before
 
-    after = Campaigns::Throttle.pace(campaign.account) == :waited ? refusal(contact, campaign, channel) : nil
-    return after if after
+    return nil unless Campaigns::Throttle.pace(campaign.account) == :waited
 
-    quota(campaign)
+    refusal(contact, campaign, channel)
   end
 
-  # THE COMMERCIAL CEILING, TAKEN LAST AND ONLY FOR A SEND THAT IS OTHERWISE GOING TO HAPPEN.
+  # THE COMMERCIAL CEILING, TAKEN BY THE SENDER IMMEDIATELY BEFORE IT HANDS THE MESSAGE OVER.
   #
-  # LAST, because a unit of a paid allowance must not be spent on somebody the next line was
-  # going to refuse anyway. Charging a merchant for messages to people who opted out is the
-  # one accounting error that is also a complaint.
+  # NOT INSIDE `clear_to_send`, which is where it started. That gate runs before the sender's
+  # OWN checks -- for WhatsApp: no reachable destination, no template params, a Liquid
+  # variable that resolved to blank -- and a recipient refused by any of those is never
+  # handed to a provider. Taking the unit first charged a merchant's paid allowance for
+  # messages that did not exist, which contradicts this module's own rule that the unit is an
+  # ATTEMPT. An attempt is a provider call, and these were not.
+  #
+  # A SEPARATE CALL RATHER THAN A HOOK, because the point differs per channel and only the
+  # sender knows where it is: for SMS it is the line before `send_text_message`, for WhatsApp
+  # the line before the template goes to Meta. Three call sites, each one line, each at the
+  # boundary it is about. spec/services/campaigns/send_quota_per_channel_spec.rb asserts each
+  # sender takes exactly one unit per message it actually sends -- a missing call site is an
+  # UNMETERED channel, which is the failure this arrangement has to be watched for.
   #
   # AND IT FAILS CLOSED, which is the opposite of the throttle immediately above it. Pacing is
   # a courtesy and lets the send through when its counter is unreachable; a quota that did
@@ -102,7 +112,7 @@ module Campaigns::SendGuard
   # half-sent campaign would message those people twice. Double-sending is worse than
   # stopping, so the run stops and an operator decides. Recorded in
   # PHASE-5-COMPLETION-REPORT.md as a known limitation rather than papered over.
-  def quota(campaign)
+  def spend(campaign)
     Billing::MeteredUsage.consume(campaign.account) ? :send_quota_exceeded : nil
   end
 

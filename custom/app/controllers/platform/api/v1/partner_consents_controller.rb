@@ -109,8 +109,10 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   # Resolved through the installation's own customer links. A subject this store has never seen
   # is not somebody this store may record a decision about.
   def set_contact
-    link = Commerce::CustomerLink.find_by(commerce_store_id: @store.id,
-                                          external_customer_id: params[:external_subject_id].to_s)
+    # `linked`: a suppressed link is an agent saying this contact is NOT this store's
+    # customer, so the store may not record a decision about them either.
+    link = Commerce::CustomerLink.linked.find_by(commerce_store_id: @store.id,
+                                                 external_customer_id: params[:external_subject_id].to_s)
     @contact = link&.contact
 
     return if @contact
@@ -131,7 +133,7 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   # full export.
   def native_consents
     @native_consents ||= Commerce::MessagingConsent
-                         .where(contact_id: Commerce::CustomerLink.where(commerce_store_id: @store.id)
+                         .where(contact_id: Commerce::CustomerLink.linked.where(commerce_store_id: @store.id)
                                                                   .select(:contact_id))
                          .order(updated_at: :desc).limit(200).to_a
   end
@@ -143,9 +145,9 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   # first version of this did. Scoped to the contacts actually being presented, so a store
   # with a large customer base does not load its whole link table to answer a read.
   def native_subjects
-    @native_subjects ||= Commerce::CustomerLink
-                         .where(commerce_store_id: @store.id, contact_id: native_consents.map(&:contact_id))
-                         .index_by(&:contact_id)
+    @native_subjects ||= Commerce::CustomerLink.linked
+                                               .where(commerce_store_id: @store.id, contact_id: native_consents.map(&:contact_id))
+                                               .index_by(&:contact_id)
   end
 
   def valid_state? = Commerce::MessagingConsent.states.key?(params[:state].to_s)

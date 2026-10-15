@@ -36,6 +36,17 @@ class Commerce::CustomerLink < ApplicationRecord
 
   enum :match_source, { external_id: 0, verified_phone: 1, verified_email: 2, manual: 3, suppressed: 4 }
 
+  # THE LINKS THAT MEAN "THIS STORE'S CUSTOMER", which is every link except a suppressed one.
+  #
+  # The class note above has always said a suppressed row counts as NOT LINKED, and exactly
+  # one reader honoured it (Audience::CommerceCondition.counted_links, by spelling the
+  # condition out). The partner-consent read API, its write API and the consent change feed
+  # all treated a suppressed link as a customer, so a store an agent had told us was NOT
+  # this shopper's could still record consent decisions about them, was still told their
+  # account-wide consent state, and was still sent their opt-outs. One scope, so the rule is
+  # stated once and a new reader gets it by default.
+  scope :linked, -> { where.not(match_source: :suppressed) }
+
   encrypts :external_customer_id, deterministic: true
 
   validates :external_customer_id, presence: true

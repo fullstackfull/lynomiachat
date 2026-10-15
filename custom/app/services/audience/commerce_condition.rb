@@ -54,7 +54,7 @@ class Audience::CommerceCondition
   def self.counted_stores(account) = account.commerce_stores.active.where(provider: Commerce::Providers.enabled)
 
   def self.counted_links(account)
-    Commerce::CustomerLink.where(account: account, commerce_store_id: counted_stores(account).select(:id)).where.not(match_source: :suppressed)
+    Commerce::CustomerLink.linked.where(account: account, commerce_store_id: counted_stores(account).select(:id))
   end
 
   # @param store_id [Integer, nil] narrow every aggregate to this installation's links. Must

@@ -29,6 +29,10 @@ class Twilio::OneoffSmsCampaignService
       next if Campaigns::SendGuard.clear_to_send(contact, campaign, :sms)
 
       content = Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)
+      # The paid allowance, taken on the line before the message goes -- not in the gate
+      # above, which runs before every check that can still stop this recipient. See
+      # Campaigns::SendGuard.spend.
+      next if Campaigns::SendGuard.spend(campaign)
 
       begin
         channel.send_message(to: contact.phone_number, body: content)

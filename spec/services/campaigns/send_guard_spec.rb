@@ -359,25 +359,32 @@ RSpec.describe Campaigns::SendGuard do
     end
 
     it 'lets a send through while there is allowance left' do
-      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+      expect(described_class.spend(campaign)).to be_nil
     end
 
     it 'refuses once the period allowance is used up' do
-      2.times { described_class.clear_to_send(shopper, campaign, :whatsapp) }
+      2.times { described_class.spend(campaign) }
 
-      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:send_quota_exceeded)
+      expect(described_class.spend(campaign)).to eq(:send_quota_exceeded)
     end
 
-    # THE ORDERING THAT MATTERS COMMERCIALLY. Charging a merchant for messages to people who
-    # opted out is the one accounting error that is also a complaint.
-    it 'does not spend a unit on a recipient it was going to refuse anyway' do
+    # THE SEPARATION THAT MATTERS COMMERCIALLY. The eligibility gate runs before every check
+    # that can still stop a recipient, so taking the unit there charged a merchant for
+    # messages that were never handed to a provider. `clear_to_send` now takes nothing, and
+    # the sender spends on the line before the message goes.
+    it 'is not spent by the eligibility gate' do
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+      expect(Billing::MeteredUsage.usage(account)[:used]).to eq(0)
+    end
+
+    it 'is not spent on a recipient the gate refuses' do
       stop(shopper)
 
       expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:consent_withdrawn)
       expect(Billing::MeteredUsage.usage(account)[:used]).to eq(0)
     end
 
-    it 'does not spend a unit when the kill switch refuses the send' do
+    it 'is not spent when the kill switch refuses the send' do
       account.update!(settings: account.settings.merge(Campaigns::Outbound::ACCOUNT_KEY => true))
 
       expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:outbound_halted)
@@ -389,7 +396,7 @@ RSpec.describe Campaigns::SendGuard do
     it 'is inert for an account whose plan sets no allowance' do
       subscribe_to({})
 
-      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+      expect(described_class.spend(campaign)).to be_nil
       expect(BillingUsageCounter.count).to eq(0)
     end
 

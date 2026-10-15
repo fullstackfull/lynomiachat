@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_21_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -487,9 +487,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
     t.datetime "started_at"
     t.datetime "completed_at"
     t.string "blocked_reason"
+    t.bigint "commerce_store_id"
     t.index ["account_id"], name: "index_campaigns_on_account_id"
     t.index ["campaign_status"], name: "index_campaigns_on_campaign_status"
     t.index ["campaign_type"], name: "index_campaigns_on_campaign_type"
+    t.index ["commerce_store_id"], name: "index_campaigns_on_commerce_store_id"
     t.index ["inbox_id"], name: "index_campaigns_on_inbox_id"
     t.index ["scheduled_at"], name: "index_campaigns_on_scheduled_at"
   end
@@ -1683,6 +1685,34 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
     t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
   end
 
+  create_table "partner_consents", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "external_subject_id", limit: 128, null: false
+    t.integer "purpose", null: false
+    t.integer "channel", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.string "policy_version", limit: 40
+    t.datetime "captured_at", null: false
+    t.datetime "withdrawn_at"
+    t.jsonb "evidence", default: {}, null: false
+    t.bigint "recorded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "state"], name: "index_partner_consents_on_account_and_state"
+    t.index ["account_id"], name: "index_partner_consents_on_account_id"
+    t.index ["commerce_store_id", "contact_id", "purpose", "channel"], name: "index_partner_consents_on_scope", unique: true
+    t.index ["commerce_store_id", "external_subject_id"], name: "index_partner_consents_on_store_and_subject"
+    t.index ["commerce_store_id"], name: "index_partner_consents_on_commerce_store_id"
+    t.index ["contact_id"], name: "index_partner_consents_on_contact_id"
+    t.index ["platform_app_id", "account_id"], name: "index_partner_consents_on_app_and_account"
+    t.index ["platform_app_id"], name: "index_partner_consents_on_platform_app_id"
+    t.index ["recorded_by_id"], name: "index_partner_consents_on_recorded_by_id"
+  end
+
   create_table "platform_app_entitlement_grants", force: :cascade do |t|
     t.bigint "platform_app_id", null: false
     t.bigint "account_id", null: false
@@ -2144,6 +2174,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "inboxes", on_delete: :cascade
+  add_foreign_key "campaigns", "commerce_stores"
   add_foreign_key "commerce_action_runs", "accounts", on_delete: :cascade
   add_foreign_key "commerce_action_runs", "commerce_stores", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "contacts", on_delete: :nullify
@@ -2178,6 +2209,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_20_000002) do
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
+  add_foreign_key "partner_consents", "accounts"
+  add_foreign_key "partner_consents", "commerce_stores"
+  add_foreign_key "partner_consents", "contacts"
+  add_foreign_key "partner_consents", "platform_apps"
+  add_foreign_key "partner_consents", "users", column: "recorded_by_id"
   add_foreign_key "platform_support_agents", "users", on_delete: :cascade
   add_foreign_key "platform_support_events", "platform_support_tickets", on_delete: :cascade
   add_foreign_key "platform_support_internal_notes", "platform_support_agents", column: "agent_id"

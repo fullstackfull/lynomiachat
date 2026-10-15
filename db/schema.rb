@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_21_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_21_000002) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1685,6 +1685,36 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_21_000001) do
     t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
   end
 
+  create_table "partner_consent_events", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "decision_ref", limit: 128, null: false
+    t.string "external_subject_id", limit: 128, null: false
+    t.integer "purpose", null: false
+    t.integer "channel", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.string "policy_version", limit: 40
+    t.datetime "captured_at", null: false
+    t.datetime "received_at", null: false
+    t.boolean "re_consent", default: false, null: false
+    t.string "outcome", limit: 32, null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.bigint "recorded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "received_at"], name: "index_partner_consent_events_on_account_time"
+    t.index ["account_id"], name: "index_partner_consent_events_on_account_id"
+    t.index ["commerce_store_id", "contact_id", "purpose", "channel"], name: "index_partner_consent_events_on_scope"
+    t.index ["commerce_store_id", "decision_ref"], name: "index_partner_consent_events_idempotency", unique: true
+    t.index ["commerce_store_id"], name: "index_partner_consent_events_on_commerce_store_id"
+    t.index ["contact_id"], name: "index_partner_consent_events_on_contact_id"
+    t.index ["platform_app_id"], name: "index_partner_consent_events_on_platform_app_id"
+    t.index ["recorded_by_id"], name: "index_partner_consent_events_on_recorded_by_id"
+  end
+
   create_table "partner_consents", force: :cascade do |t|
     t.bigint "platform_app_id", null: false
     t.bigint "account_id", null: false
@@ -1702,6 +1732,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_21_000001) do
     t.bigint "recorded_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "revision"
+    t.string "decision_ref", limit: 128
     t.index ["account_id", "state"], name: "index_partner_consents_on_account_and_state"
     t.index ["account_id"], name: "index_partner_consents_on_account_id"
     t.index ["commerce_store_id", "contact_id", "purpose", "channel"], name: "index_partner_consents_on_scope", unique: true
@@ -2209,6 +2241,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_21_000001) do
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
+  add_foreign_key "partner_consent_events", "accounts"
+  add_foreign_key "partner_consent_events", "commerce_stores"
+  add_foreign_key "partner_consent_events", "contacts"
+  add_foreign_key "partner_consent_events", "platform_apps"
+  add_foreign_key "partner_consent_events", "users", column: "recorded_by_id"
   add_foreign_key "partner_consents", "accounts"
   add_foreign_key "partner_consents", "commerce_stores"
   add_foreign_key "partner_consents", "contacts"

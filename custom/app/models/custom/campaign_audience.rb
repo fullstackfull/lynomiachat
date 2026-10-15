@@ -21,7 +21,7 @@ module Custom::CampaignAudience
   # opted out. See Campaigns::Eligibility for what is excluded and why the refusal half of the
   # rule is unconditional while the grant half is not.
   def audience_contacts
-    Campaigns::Eligibility.filter(selected_contacts { super }, account)
+    Campaigns::Eligibility.filter(selected_contacts { super }, account, Campaigns::Eligibility.purpose_for(self))
   end
 
   # Who the audience NAMES, before eligibility is applied. Public and separate so the preview

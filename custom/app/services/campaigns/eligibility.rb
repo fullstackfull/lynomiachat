@@ -24,38 +24,70 @@
 # fixture set covering every state. Two expressions of one rule are a drift hazard; an
 # executable cross-check is what makes them one rule with two readings.
 #
-# A CAMPAIGN IS PROMOTIONAL. Not a decision taken here -- `Commerce::MessagingConsent`'s own
-# documentation says so: "promotional: an abandoned basket, A CAMPAIGN, anything the shopper
-# did not ask for. It is refused unless they said yes."
+# WHAT CLASS A CAMPAIGN'S MESSAGES BELONG TO IS THE PROVIDER'S ANSWER, NOT THE ACCOUNT'S.
 #
-# BUT THE GRANT REQUIREMENT IS CONDITIONAL AND THE REFUSALS ARE NOT, and that asymmetry is
-# deliberate:
+# An earlier version of this file required a promotional grant only where the account ran
+# Commerce, reasoning that an account with no consent rows had no way to collect any. That was
+# wrong in the one way that matters: it read the ABSENCE of a consent record as permission to
+# market. Absence of a record is not consent, and an account that happens not to use Commerce
+# is not thereby allowed to send promotional messages to people who never agreed.
 #
-#   REFUSALS ALWAYS APPLY. Blocked, withdrawn and suppressed are explicit facts about a person
-#   -- somebody said stop, or the provider said it cannot be delivered. Honouring those must
-#   never depend on a feature flag, so this half runs for every account on every campaign.
+# So the class is taken from the message itself, using the classification the provider already
+# applies and enforces:
 #
-#   THE GRANT IS REQUIRED ONLY WHERE GRANTS CAN EXIST. `commerce_messaging_consents` is written
-#   by the Commerce consent surface and the opt-out keyword listener. An account that does not
-#   run Commerce has no rows and no way to collect any, so demanding a grant there would not be
-#   enforcement -- it would silently reduce every campaign to zero recipients against data that
-#   structurally cannot exist, with nothing on screen to explain it. Where the account DOES run
-#   Commerce, the model's rule applies in full: no grant, no send.
+#   WhatsApp UTILITY      transactional. Meta approves a UTILITY template for messages about
+#                         something the customer is already party to, and that is exactly the
+#                         transactional class: allowed unless refused. A merchant sending order
+#                         updates through an approved UTILITY template keeps working, on the
+#                         provider's authority rather than on an assumption made here.
+#   WhatsApp MARKETING    promotional. Meta requires opt-in for marketing templates, so this is
+#                         the provider's own rule being honoured rather than a policy invented
+#                         here: no grant, no send.
+#   WhatsApp AUTHENTICATION  treated as promotional, which is conservative and harmless -- the
+#                         authentication-template guard in the sender refuses these anyway.
+#   SMS and Twilio SMS    no provider classification exists for a plain SMS blast, so it is
+#                         promotional. The conservative default is the only safe one when
+#                         nothing authoritative says otherwise.
+#
+# WHERE A NON-COMMERCE ACCOUNT STANDS, stated plainly because it is a real limitation and not a
+# loophole. The consent STORE is universal: Commerce::ConsentListener writes a withdrawal for
+# any account on any inbound STOP, so opt-outs are honoured everywhere. The grant SURFACE is
+# not: Api::V1::Accounts::Commerce::ConsentsController is behind `ensure_commerce_enabled`, so
+# an account without Commerce has no authorized way to record that a shopper agreed. The
+# consequence is deliberate and is reported rather than hidden -- a promotional campaign from
+# such an account reaches nobody, `excluded_counts` says `promotional_consent_missing` and how
+# many, and the remedy is a UTILITY template for transactional sends or Commerce for marketing.
+# Inventing a permission to fill that gap is the one thing this must not do.
+#
 module Campaigns::Eligibility
   BLOCKING_STATES = %i[withdrawn suppressed].freeze
 
-  # The purpose a campaign's messages belong to. A constant rather than a literal so the one
-  # place that would ever change it is visible.
-  PURPOSE = :promotional
+  # Provider categories whose messages are transactional. Only Meta's UTILITY qualifies: it is
+  # the one category the provider approves for messages about something the customer is already
+  # part of. Everything else, and anything with no category at all, is promotional.
+  TRANSACTIONAL_CATEGORIES = %w[UTILITY].freeze
 
   module_function
 
+  # @return [Symbol] :transactional or :promotional, from the provider's own classification.
+  def purpose_for(campaign)
+    category = campaign.template_params.is_a?(Hash) ? campaign.template_params['category'].to_s.upcase : ''
+
+    TRANSACTIONAL_CATEGORIES.include?(category) ? :transactional : :promotional
+  end
+
   # @param relation [ActiveRecord::Relation] contacts the audience selected
-  # @param account [Account]
   # @return [ActiveRecord::Relation] the subset this campaign may actually message
-  def filter(relation, account)
-    scope = relation.where(blocked: false).where.not(id: blocked_by_decision(account))
-    return scope unless grant_required?(account)
+  # A REFUSAL BLOCKS THE CLASS IT WAS MADE AGAINST, NOT BOTH. Withdrawing marketing consent
+  # must not silence a parcel notification -- that asymmetry is the whole point of the
+  # two-class model, and Commerce::MessagingEligibility looks the decision up per purpose for
+  # exactly that reason. A real opt-out is not weakened by this: Commerce::ConsentListener
+  # writes BOTH classes from one STOP, "because that is what the person meant", so a keyword
+  # refusal still stops everything. An earlier draft blocked on a refusal of any purpose and
+  # the agreement spec below caught the divergence.
+  def filter(relation, account, purpose)
+    scope = relation.where(blocked: false).where.not(id: blocked_by_decision(account, purpose))
+    return scope unless purpose.to_sym == :promotional
 
     scope.where(id: granted(account))
   end
@@ -66,37 +98,33 @@ module Campaigns::Eligibility
   #
   # Counted off the ORIGINAL relation, so the four numbers and the filtered count describe the
   # same population.
-  def excluded_counts(relation, account)
-    unavailable = relation.where(blocked: true)
-    refused = relation.where(blocked: false).where(id: blocked_by_decision(account))
+  def excluded_counts(relation, account, purpose)
+    refused = relation.where(blocked: false).where(id: blocked_by_decision(account, purpose))
 
-    counts = { contact_unavailable: unavailable.count,
-               consent_withdrawn: refused.where(id: in_state(account, :withdrawn)).count,
-               messaging_suppressed: refused.where(id: in_state(account, :suppressed)).count }
-    counts[:promotional_consent_missing] = ungranted_count(relation, account) if grant_required?(account)
+    counts = { contact_unavailable: relation.where(blocked: true).count,
+               consent_withdrawn: refused.where(id: in_state(account, purpose, :withdrawn)).count,
+               messaging_suppressed: refused.where(id: in_state(account, purpose, :suppressed)).count }
+    counts[:promotional_consent_missing] = ungranted_count(relation, account, purpose) if purpose.to_sym == :promotional
     counts
   end
 
-  # Only where the consent model is actually operated; see the note at the top of this file.
-  def grant_required?(account) = account.feature_enabled?('lynomia_commerce')
-
-  def blocked_by_decision(account)
-    Commerce::MessagingConsent.where(account_id: account.id, state: BLOCKING_STATES).select(:contact_id)
+  def blocked_by_decision(account, purpose)
+    Commerce::MessagingConsent.where(account_id: account.id, purpose: purpose, state: BLOCKING_STATES).select(:contact_id)
   end
 
-  def in_state(account, state)
-    Commerce::MessagingConsent.where(account_id: account.id, state: state).select(:contact_id)
+  def in_state(account, purpose, state)
+    Commerce::MessagingConsent.where(account_id: account.id, purpose: purpose, state: state).select(:contact_id)
   end
 
   def granted(account)
-    Commerce::MessagingConsent.where(account_id: account.id, purpose: PURPOSE, state: :granted).select(:contact_id)
+    Commerce::MessagingConsent.where(account_id: account.id, purpose: :promotional, state: :granted).select(:contact_id)
   end
 
   # Reachable but for the missing grant: not blocked, not refused, and not granted. Counted
   # this way rather than as a subtraction so it stays correct if a contact is both.
-  def ungranted_count(relation, account)
+  def ungranted_count(relation, account, purpose)
     relation.where(blocked: false)
-            .where.not(id: blocked_by_decision(account))
+            .where.not(id: blocked_by_decision(account, purpose))
             .where.not(id: granted(account))
             .count
   end

@@ -118,9 +118,14 @@ describe Whatsapp::OneoffCampaignService do
           create_list(:contact, 4, :with_phone_number, account: account)
         [reachable, blocked, withdrawn, suppressed].each { |contact| contact.update_labels([label1.title]) }
         blocked.update!(blocked: true)
+        # Through the real writer, which records BOTH classes -- what a keyword STOP and a
+        # provider suppression actually produce. The campaign here is UTILITY, so a
+        # marketing-only refusal would correctly NOT stop it; these two do.
         [[withdrawn, :withdrawn], [suppressed, :suppressed]].each do |contact, state|
-          Commerce::MessagingConsent.create!(account: account, contact: contact, purpose: :promotional,
-                                             state: state, source: 'merchant', decided_at: Time.current)
+          Commerce::MessagingConsents.record(
+            account: account, contact: contact,
+            decision: Commerce::MessagingConsents::Decision.new(state: state, source: 'shopper_keyword')
+          )
         end
 
         expect(whatsapp_channel).to receive(:send_template).once
@@ -299,6 +304,7 @@ describe Whatsapp::OneoffCampaignService do
                                                        template_params: {
                                                          'name' => 'test_template',
                                                          'namespace' => 'test_namespace',
+                                                         'category' => 'UTILITY',
                                                          'language' => 'en',
                                                          'processed_params' => {
                                                            'body' => {
@@ -322,6 +328,14 @@ describe Whatsapp::OneoffCampaignService do
       it 'skips contacts and logs error' do
         contact = create(:contact, :with_phone_number, account: account)
         contact.update_labels([label1.title])
+        # A campaign with no template_params has no provider category, so it is promotional and
+        # needs a grant to reach anyone at all. Granted here so this example still exercises the
+        # missing-template_params skip rather than stopping at the consent gate.
+        Commerce::MessagingConsents.record(
+          account: account, contact: contact,
+          decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant',
+                                                              purposes: ['promotional'])
+        )
 
         expect(Rails.logger).to receive(:error)
           .with("Skipping campaign recipient contact_id=#{contact.id} - no template_params found for WhatsApp campaign")

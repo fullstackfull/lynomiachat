@@ -12,7 +12,7 @@
       },
       "store": {
         "provider": "storesyria",
-        "external_store_id": "4242"
+        "external_store_id": "merchant.example:4242"
       },
       "subject": {
         "external_customer_id": "cust-77"
@@ -32,7 +32,7 @@
       },
       "store": {
         "provider": "storesyria",
-        "external_store_id": "4242"
+        "external_store_id": "merchant.example:4242"
       },
       "subject": {
         "external_customer_id": "cust-77"

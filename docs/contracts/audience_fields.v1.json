@@ -9,7 +9,7 @@
         "id": 5101,
         "name": "Damascus Linens",
         "provider": "storesyria",
-        "external_store_id": "4242"
+        "external_store_id": "merchant.example:4242"
       }
     ],
     "currencies": [],

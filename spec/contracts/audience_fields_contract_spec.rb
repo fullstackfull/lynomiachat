@@ -29,14 +29,17 @@ RSpec.describe 'audience_fields contract', type: :request do
   contract_path = Rails.root.join('docs/contracts/audience_fields.v1.json')
   # Asserted identically in the consumer repository. Changing the artifact means changing
   # this value in BOTH places, which is the point.
-  contract_sha256 = '46382538cef05d7125b2bf4cd58b734d3029791e2150f5b721cb537e4d92ed8f'
+  contract_sha256 = '7ca6f1905a80602f9bd297ea59ae7c92ff4fd3ca375dff3ebb898f0889a57a11'
 
   let(:artifact) { JSON.parse(contract_path.read) }
   let(:account) { create(:account) }
   let(:administrator) { create(:user, account: account, role: :administrator) }
+  # QUALIFIED, because that is the shape a partner installation actually registers: its own
+  # reference and its store id together, never a bare number. The consumer looks for ITSELF
+  # in this list by that value, and comparing a bare id against it matches nothing.
   let(:store) do
     create(:commerce_store, account: account, provider: 'storesyria', name: 'Damascus Linens',
-                            external_store_id: '4242', status: :active)
+                            external_store_id: 'merchant.example:4242', status: :active)
   end
 
   before do

@@ -31,7 +31,7 @@ RSpec.describe 'consent_changed contract', type: :model do
   CONTRACT_PATH = Rails.root.join('docs/partner-consent/contract/consent_changed.v1.json')
   # Asserted identically in the consumer repository. Changing the artifact means changing
   # this constant in BOTH places, which is the point.
-  CONTRACT_SHA256 = 'e69d400bfcef51e65738b484d4c98221517f4fc1f7eaca0aa3a561c799ec5808'.freeze
+  CONTRACT_SHA256 = '05183533cbc234b9dc1a9e24f54a41e6f3010f17d9653018252ea4afb7bb8373'.freeze
 
   let(:artifact) { JSON.parse(CONTRACT_PATH.read) }
   let(:account) { create(:account) }
@@ -50,7 +50,11 @@ RSpec.describe 'consent_changed contract', type: :model do
   def normalise(payload)
     payload = payload.deep_dup
     payload[:account][:id] = 7001
-    payload[:store][:external_store_id] = '4242'
+    # QUALIFIED, because that is the shape, and the shape is the part of this that got
+    # misread: a partner's store identifier is its installation's reference and its store
+    # id together, never a bare number. Four call sites on the consumer side compared a
+    # bare id against this value and silently matched nothing.
+    payload[:store][:external_store_id] = 'merchant.example:4242'
     payload
   end
 

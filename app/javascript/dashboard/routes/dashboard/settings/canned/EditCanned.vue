@@ -35,6 +35,12 @@ const v$ = useVuelidate(
   { shortCode, content }
 );
 
+// `$touch` on its own changes nothing a user can see. `Input` draws the red outline and the
+// message from `message` + `message-type`, so the touched state has to reach it.
+const shortCodeError = computed(() =>
+  v$.value.shortCode.$error ? t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.ERROR') : ''
+);
+
 const isInvalid = computed(
   () => v$.value.shortCode.$invalid || v$.value.content.$invalid
 );
@@ -101,19 +107,27 @@ defineExpose({ open, dialogRef });
       v-model="shortCode"
       :label="t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.LABEL')"
       :placeholder="t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.PLACEHOLDER')"
+      :message="shortCodeError"
+      :message-type="shortCodeError ? 'error' : 'info'"
       @input="v$.shortCode.$touch"
     />
 
-    <div class="flex flex-col gap-1">
-      <label
-        for="canned-edit-content"
+    <!-- A group, not a `label for`: `WootMessageEditor`'s root is a div, and `for` binds only to a
+      labelable element, so an id on it associates with nothing. Same shape as the colour row in the
+      label dialogs. -->
+    <div
+      role="group"
+      aria-labelledby="canned-edit-content-label"
+      class="flex flex-col gap-1"
+    >
+      <span
+        id="canned-edit-content-label"
         class="text-sm font-medium text-n-slate-12"
       >
         {{ t('CANNED_MGMT.EDIT.FORM.CONTENT.LABEL') }}
-      </label>
+      </span>
       <!-- Arbitrary variants in place of the scoped SCSS `:deep()` block this file used to carry. -->
       <WootMessageEditor
-        id="canned-edit-content"
         v-model="content"
         class="message-editor [&>div]:px-1 [&_.ProseMirror-menubar]:!hidden [&_.ProseMirror-woot-style]:min-h-[12.5rem]"
         :class="{ editor_warning: v$.content.$error }"

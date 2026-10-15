@@ -108,10 +108,12 @@ export default {
     },
     showCannedResponseModal() {
       useTrack(ACCOUNT_EVENTS.ADDED_TO_CANNED_RESPONSE);
-      // The flag still drives `v-if` on the context menu below, which hides itself while the dialog
-      // is up. The dialog itself is a real `<dialog>` now and owns its own open state.
+      // The flag gates the dialog's `v-if` as well as the context menu's, so the component does
+      // not exist yet on this tick -- `open()` has to wait for it. Mounting it unconditionally
+      // instead would put one teleported `<dialog>`, one body scroll-lock watcher and one
+      // click-outside document listener on the page per outgoing text message.
       this.isCannedResponseModalOpen = true;
-      this.$refs.cannedDialog?.open();
+      this.$nextTick(() => this.$refs.cannedDialog?.open());
     },
     hideCannedResponseModal() {
       this.isCannedResponseModalOpen = false;
@@ -174,7 +176,7 @@ export default {
   <div class="context-menu">
     <!-- Add To Canned Responses -->
     <AddCannedModal
-      v-if="enabledOptions['cannedResponse']"
+      v-if="isCannedResponseModalOpen && enabledOptions['cannedResponse']"
       ref="cannedDialog"
       :response-content="plainTextContent"
       @close="hideCannedResponseModal"

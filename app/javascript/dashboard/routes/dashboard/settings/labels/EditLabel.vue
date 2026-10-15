@@ -1,142 +1,155 @@
-<script>
-import { mapGetters } from 'vuex';
-import { useAlert } from 'dashboard/composables';
-import validations, { getLabelTitleErrorMessage } from './validations';
+<script setup>
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
+import { useAlert } from 'dashboard/composables';
+import { useMapGetter, useStore } from 'dashboard/composables/store';
 
-import NextButton from 'dashboard/components-next/button/Button.vue';
+import validations, { getLabelTitleErrorMessage } from './validations';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
+import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
+import ColorPicker from 'dashboard/components-next/colorpicker/ColorPicker.vue';
 
-export default {
-  components: {
-    NextButton,
+const props = defineProps({
+  selectedResponse: {
+    type: Object,
+    default: () => ({}),
   },
-  props: {
-    selectedResponse: {
-      type: Object,
-      default: () => {},
-    },
-  },
-  emits: ['close'],
-  setup() {
-    return { v$: useVuelidate() };
-  },
-  data() {
-    return {
-      title: '',
-      description: '',
-      showOnSidebar: true,
-      color: '',
-    };
-  },
-  validations,
-  computed: {
-    ...mapGetters({
-      uiFlags: 'labels/getUIFlags',
-    }),
-    pageTitle() {
-      return `${this.$t('LABEL_MGMT.EDIT.TITLE')} - ${
-        this.selectedResponse.title
-      }`;
-    },
-    labelTitleErrorMessage() {
-      const errorMessage = getLabelTitleErrorMessage(this.v$);
-      return this.$t(errorMessage);
-    },
-  },
-  mounted() {
-    this.setFormValues();
-  },
-  methods: {
-    onClose() {
-      this.$emit('close');
-    },
-    setFormValues() {
-      this.title = this.selectedResponse.title;
-      this.description = this.selectedResponse.description;
-      this.showOnSidebar = this.selectedResponse.show_on_sidebar;
-      this.color = this.selectedResponse.color;
-    },
-    editLabel() {
-      this.$store
-        .dispatch('labels/update', {
-          id: this.selectedResponse.id,
-          color: this.color,
-          description: this.description,
-          title: this.title.toLowerCase(),
-          show_on_sidebar: this.showOnSidebar,
-        })
-        .then(() => {
-          useAlert(this.$t('LABEL_MGMT.EDIT.API.SUCCESS_MESSAGE'));
-          setTimeout(() => this.onClose(), 10);
-        })
-        .catch(() => {
-          useAlert(this.$t('LABEL_MGMT.EDIT.API.ERROR_MESSAGE'));
-        });
-    },
-  },
+});
+
+const emit = defineEmits(['close']);
+
+const { t } = useI18n();
+const store = useStore();
+
+const dialogRef = ref(null);
+
+const title = ref('');
+const description = ref('');
+const color = ref('');
+const showOnSidebar = ref(true);
+
+const state = { title, description, color, showOnSidebar };
+const v$ = useVuelidate(validations, state);
+
+const uiFlags = useMapGetter('labels/getUIFlags');
+const isUpdating = computed(() => uiFlags.value.isUpdating);
+
+const dialogTitle = computed(
+  () => `${t('LABEL_MGMT.EDIT.TITLE')} - ${props.selectedResponse?.title ?? ''}`
+);
+
+const titleError = computed(() => {
+  const key = getLabelTitleErrorMessage(v$.value);
+  return key ? t(key) : '';
+});
+
+// The dialog stays mounted between openings now, where the old modal built a fresh component each
+// time and filled it in `mounted`. Two things follow. The prop is watched, so picking a different
+// label refills the form; and the fill runs again on open, because re-opening the SAME label after
+// typing into it leaves the prop identical and would otherwise keep the abandoned edit.
+const fillFromProp = () => {
+  const label = props.selectedResponse;
+  title.value = label?.title ?? '';
+  description.value = label?.description ?? '';
+  color.value = label?.color ?? '';
+  showOnSidebar.value = label?.show_on_sidebar ?? true;
+  v$.value.$reset();
 };
+
+watch(() => props.selectedResponse, fillFromProp, {
+  immediate: true,
+  deep: true,
+});
+
+const open = () => {
+  fillFromProp();
+  dialogRef.value?.open();
+};
+
+const handleClose = () => emit('close');
+
+const editLabel = async () => {
+  const isValid = await v$.value.$validate();
+  if (!isValid) return;
+
+  try {
+    await store.dispatch('labels/update', {
+      id: props.selectedResponse.id,
+      color: color.value,
+      description: description.value,
+      title: title.value.toLowerCase(),
+      show_on_sidebar: showOnSidebar.value,
+    });
+    useAlert(t('LABEL_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+    dialogRef.value?.close();
+  } catch (error) {
+    useAlert(error?.message || t('LABEL_MGMT.EDIT.API.ERROR_MESSAGE'));
+  }
+};
+
+defineExpose({ open, dialogRef });
 </script>
 
 <template>
-  <div class="flex flex-col h-auto overflow-auto">
-    <woot-modal-header :header-title="pageTitle" />
-    <form class="flex flex-wrap mx-0" @submit.prevent="editLabel">
-      <woot-input
-        v-model="title"
-        :class="{ error: v$.title.$error }"
-        class="w-full label-name--input"
-        :label="$t('LABEL_MGMT.FORM.NAME.LABEL')"
-        :placeholder="$t('LABEL_MGMT.FORM.NAME.PLACEHOLDER')"
-        :error="labelTitleErrorMessage"
-        @input="v$.title.$touch"
-        @blur="v$.title.$touch"
-      />
-      <woot-input
-        v-model="description"
-        :class="{ error: v$.description.$error }"
-        class="w-full"
-        :label="$t('LABEL_MGMT.FORM.DESCRIPTION.LABEL')"
-        :placeholder="$t('LABEL_MGMT.FORM.DESCRIPTION.PLACEHOLDER')"
-        @input="v$.description.$touch"
-        @blur="v$.description.$touch"
-      />
+  <Dialog
+    ref="dialogRef"
+    type="edit"
+    width="md"
+    :title="dialogTitle"
+    :confirm-button-label="t('LABEL_MGMT.FORM.EDIT')"
+    :cancel-button-label="t('LABEL_MGMT.FORM.CANCEL')"
+    :is-loading="isUpdating"
+    :disable-confirm-button="v$.title.$invalid || isUpdating"
+    @confirm="editLabel"
+    @close="handleClose"
+  >
+    <Input
+      v-model="title"
+      :label="t('LABEL_MGMT.FORM.NAME.LABEL')"
+      :placeholder="t('LABEL_MGMT.FORM.NAME.PLACEHOLDER')"
+      :message="titleError"
+      :message-type="titleError ? 'error' : 'info'"
+      custom-input-class="lowercase"
+      @input="v$.title.$touch"
+      @blur="v$.title.$touch"
+    />
 
-      <div class="w-full">
-        <label>
-          {{ $t('LABEL_MGMT.FORM.COLOR.LABEL') }}
-          <woot-color-picker v-model="color" />
-        </label>
-      </div>
-      <div class="flex items-center w-full gap-2">
-        <input v-model="showOnSidebar" type="checkbox" :value="true" />
-        <label for="conversation_creation">
-          {{ $t('LABEL_MGMT.FORM.SHOW_ON_SIDEBAR.LABEL') }}
-        </label>
-      </div>
-      <div class="flex items-center justify-end w-full gap-2 px-0 py-2">
-        <NextButton
-          faded
-          slate
-          type="reset"
-          :label="$t('LABEL_MGMT.FORM.CANCEL')"
-          @click.prevent="onClose"
-        />
-        <NextButton
-          type="submit"
-          :label="$t('LABEL_MGMT.FORM.EDIT')"
-          :disabled="v$.title.$invalid || uiFlags.isUpdating"
-          :is-loading="uiFlags.isUpdating"
-        />
-      </div>
-    </form>
-  </div>
+    <Input
+      v-model="description"
+      :label="t('LABEL_MGMT.FORM.DESCRIPTION.LABEL')"
+      :placeholder="t('LABEL_MGMT.FORM.DESCRIPTION.PLACEHOLDER')"
+    />
+
+    <!-- A group rather than a `label for`: the picker's root is a div, so an id put on it would not
+      associate, and `for` only binds to a labelable element. -->
+    <div
+      role="group"
+      aria-labelledby="edit-label-color-label"
+      class="flex flex-col gap-1"
+    >
+      <span
+        id="edit-label-color-label"
+        class="text-sm font-medium text-n-slate-12"
+      >
+        {{ t('LABEL_MGMT.FORM.COLOR.LABEL') }}
+      </span>
+      <!-- Default overflow, not `scroll-body`: the picker panel is an in-flow `absolute` child, and
+        a scrolling body would clip it. -->
+      <ColorPicker v-model="color" />
+    </div>
+
+    <!-- The label used to point `for` at an id that exists nowhere in this codebase, so the text did
+      not toggle the box and a screen reader announced an unnamed checkbox. -->
+    <div class="flex items-center gap-2">
+      <Checkbox id="edit-label-show-on-sidebar" v-model="showOnSidebar" />
+      <label
+        for="edit-label-show-on-sidebar"
+        class="text-sm cursor-pointer text-n-slate-12"
+      >
+        {{ t('LABEL_MGMT.FORM.SHOW_ON_SIDEBAR.LABEL') }}
+      </label>
+    </div>
+  </Dialog>
 </template>
-
-<style lang="scss" scoped>
-// Label API supports only lowercase letters
-.label-name--input {
-  :deep(input) {
-    @apply lowercase;
-  }
-}
-</style>

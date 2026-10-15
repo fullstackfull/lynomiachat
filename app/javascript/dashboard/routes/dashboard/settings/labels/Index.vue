@@ -1,6 +1,6 @@
 <script setup>
 import { useAlert } from 'dashboard/composables';
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, nextTick, onBeforeMount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStoreGetters, useStore } from 'dashboard/composables/store';
 import { picoSearch } from '@chatwoot/pico-search';
@@ -21,8 +21,8 @@ const store = useStore();
 const { t } = useI18n();
 
 const loading = ref({});
-const showAddPopup = ref(false);
-const showEditPopup = ref(false);
+const addDialogRef = ref(null);
+const editDialogRef = ref(null);
 const showDeleteConfirmationPopup = ref(false);
 const selectedLabel = ref({});
 const searchQuery = ref('');
@@ -59,19 +59,12 @@ const handleSort = ({ key, order }) => {
 
 const deleteMessage = computed(() => ` ${selectedLabel.value.title}?`);
 
-const openAddPopup = () => {
-  showAddPopup.value = true;
-};
-const hideAddPopup = () => {
-  showAddPopup.value = false;
-};
+const openAddPopup = () => addDialogRef.value?.open();
 
 const openEditPopup = response => {
-  showEditPopup.value = true;
   selectedLabel.value = response;
-};
-const hideEditPopup = () => {
-  showEditPopup.value = false;
+  // After the prop lands, so the form fills from the label that was just clicked.
+  nextTick(() => editDialogRef.value?.open());
 };
 
 const openDeletePopup = response => {
@@ -220,13 +213,9 @@ onBeforeMount(() => {
       </BaseTable>
     </template>
 
-    <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">
-      <AddLabel @close="hideAddPopup" />
-    </woot-modal>
+    <AddLabel ref="addDialogRef" />
 
-    <woot-modal v-model:show="showEditPopup" :on-close="hideEditPopup">
-      <EditLabel :selected-response="selectedLabel" @close="hideEditPopup" />
-    </woot-modal>
+    <EditLabel ref="editDialogRef" :selected-response="selectedLabel" />
 
     <woot-delete-modal
       v-model:show="showDeleteConfirmationPopup"

@@ -161,6 +161,7 @@ const statusToShow = computed(() => {
           delay: { show: 500, hide: 0 },
         }"
         :datetime="machineTime"
+        dir="ltr"
         class="inline"
       >
         {{ readableTime }}

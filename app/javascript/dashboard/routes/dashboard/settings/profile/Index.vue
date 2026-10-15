@@ -228,7 +228,7 @@ export default {
 </script>
 
 <template>
-  <div class="grid max-w-2xl ltr:mr-auto rtl:ml-auto">
+  <div class="grid max-w-2xl mx-auto">
     <BaseSettingsHeader :title="$t('PROFILE_SETTINGS.TITLE')" description="" />
     <SectionLayout title="" description="" class="!pt-0">
       <div class="flex flex-col gap-6">

@@ -84,12 +84,12 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
         :href="helpURL"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-blue-11 hover:underline mb-2"
+        class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-iris-11 hover:underline mb-2 rounded-sm focus-ring"
       >
         {{ linkText }}
         <Icon
           icon="i-lucide-chevron-right"
-          class="flex-shrink-0 text-n-blue-11 size-4"
+          class="flex-shrink-0 text-n-iris-11 size-4"
         />
       </a>
       <slot name="meta" />

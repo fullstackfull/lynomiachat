@@ -150,5 +150,40 @@ RSpec.describe 'Platform Partner Consents API', type: :request do
 
       expect(response.parsed_body['consents'].pluck('external_subject_id')).to eq(['cust-77'])
     end
+
+    # THE COLLECTION A RECONCILIATION CANNOT DO WITHOUT. A shopper replying STOP on WhatsApp
+    # is recorded natively, not as a partner row, and it is the single most important fact a
+    # merchant's consent screen can show. A read that returned only what the partner itself
+    # reported would let a partner converge happily on a view with every opt-out missing.
+    it 'also serves the native decisions that apply to this installation\'s customers' do
+      Commerce::MessagingConsents.record(
+        account: account, contact: shopper,
+        decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+      )
+
+      get url, params: { provider: 'storesyria', external_store_id: 'sy-1' }, headers: headers, as: :json
+
+      native = response.parsed_body['native']
+      expect(native.pluck('state').uniq).to eq(['withdrawn'])
+      # Named in the PARTNER'S terms -- its own customer id, never a Lynomia contact id.
+      expect(native.pluck('external_subject_id').uniq).to eq(['cust-77'])
+      # Account-wide and channel-agnostic, which is the value Consents::ChangeFeed publishes
+      # it under too, so a reconciling consumer and a listening one land on the same row.
+      expect(native.pluck('channel').uniq).to eq(['any'])
+    end
+
+    # The same confinement the write side applies: a partner is told about its own customers
+    # and nobody else's, even when they share an account.
+    it 'does not serve native decisions about somebody who is not this installation\'s customer' do
+      stranger = create(:contact, account: account, name: 'Not a customer here')
+      Commerce::MessagingConsents.record(
+        account: account, contact: stranger,
+        decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+      )
+
+      get url, params: { provider: 'storesyria', external_store_id: 'sy-1' }, headers: headers, as: :json
+
+      expect(response.parsed_body['native']).to be_empty
+    end
   end
 end

@@ -30,8 +30,21 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   before_action :set_store
   before_action :set_contact, only: [:create]
 
+  # BOTH CONSENT STORES, because a partner reconciling its own view has to see the decisions
+  # it did not make. A shopper replying STOP on WhatsApp is recorded natively and is the
+  # single most important fact a merchant's consent screen can show; a reconciliation that
+  # returned only the rows the partner itself reported would converge happily on a view that
+  # omits every opt-out made on Lynomia's own channels.
+  #
+  # TWO COLLECTIONS RATHER THAN ONE MERGED LIST, and deliberately. `revision` counts in a
+  # different sequence in each -- a `partner_consent_events` id and a
+  # `commerce_messaging_consents` id -- so a merged list would invite a consumer to order
+  # across them, which decides nothing. Kept apart, each is ordered against itself, and the
+  # consumer unions the negatives the way the send boundary does.
   def index
-    render json: { account_id: @resource.id, store: store_json, consents: consents.map { |row| present(row) } }
+    render json: { account_id: @resource.id, store: store_json,
+                   consents: consents.map { |row| present(row) },
+                   native: native_consents.map { |row| present_native(row) } }
   end
 
   def create
@@ -107,6 +120,34 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
 
   def consents = PartnerConsent.where(commerce_store_id: @store.id).order(updated_at: :desc).limit(200)
 
+  # The account-wide decisions that apply to THIS installation's customers, selected through
+  # the installation's own customer links -- so a partner is told about its own customers and
+  # nobody else's, the same confinement `set_contact` applies on the write side.
+  #
+  # NEWEST FIRST AND BOUNDED, like `consents`. A reconciliation sweep repairs deliveries that
+  # were LOST, and a lost delivery is overwhelmingly a recent one, so the most recent
+  # decisions are the ones worth serving. A merchant with more than the limit still receives
+  # every change as it happens over the event feed; this is the safety net behind that, not a
+  # full export.
+  def native_consents
+    @native_consents ||= Commerce::MessagingConsent
+                         .where(contact_id: Commerce::CustomerLink.where(commerce_store_id: @store.id)
+                                                                  .select(:contact_id))
+                         .order(updated_at: :desc).limit(200).to_a
+  end
+
+  # The partner's own id for each of those people.
+  #
+  # LOADED AS MODELS, NOT SELECTED IN SQL, because `external_customer_id` is an encrypted
+  # column: a joined `SELECT ... AS` hands back the ciphertext envelope, which is what the
+  # first version of this did. Scoped to the contacts actually being presented, so a store
+  # with a large customer base does not load its whole link table to answer a read.
+  def native_subjects
+    @native_subjects ||= Commerce::CustomerLink
+                         .where(commerce_store_id: @store.id, contact_id: native_consents.map(&:contact_id))
+                         .index_by(&:contact_id)
+  end
+
   def valid_state? = Commerce::MessagingConsent.states.key?(params[:state].to_s)
 
   def valid_purpose? = params[:purpose].blank? || Commerce::MessagingConsent.purposes.key?(params[:purpose].to_s)
@@ -121,6 +162,15 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
     { external_subject_id: row.external_subject_id, purpose: row.purpose, channel: row.channel,
       state: row.state, source: row.source, policy_version: row.policy_version,
       captured_at: row.captured_at, withdrawn_at: row.withdrawn_at, revision: row.revision }
+  end
+
+  # `channel: 'any'` because a native decision is account-wide and channel-agnostic, which is
+  # the same value Consents::ChangeFeed publishes it under -- so a consumer that reconciles
+  # and a consumer that listens arrive at the same row rather than two.
+  def present_native(row)
+    { external_subject_id: native_subjects[row.contact_id]&.external_customer_id,
+      purpose: row.purpose, channel: 'any', state: row.state, source: row.source,
+      decided_at: row.decided_at, revision: row.id }
   end
 
   def present_event(event)

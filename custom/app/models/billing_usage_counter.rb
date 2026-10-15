@@ -58,8 +58,23 @@ class BillingUsageCounter < ApplicationRecord
   # ambient state is wrong the day somebody adds it rather than the day it is written. The
   # stored column is UTC; deriving the key from it directly is also one character shorter than
   # deriving it from the reader.
+  # A MANUAL GRANT'S `current_period_end` IS AN EXPIRY, NOT A CYCLE END, so it does not
+  # anchor anything. Only a provider-maintained subscription has a period this can be
+  # derived from; for an operator's comp the calendar month is the anchor whether or not an
+  # expiry is set, which is the same answer an account with no subscription at all gets.
+  #
+  # Reading it for a manual grant handed out a second allowance for free. nil is a supported
+  # state with its own copy on the Super Admin screen ("Plan X granted with no end date"),
+  # and Billing::AdminActions#grant_plan defaults to it, so a comp starts on the calendar
+  # month. The moment an operator re-grants the same plan WITH an expiry -- an ordinary
+  # tidying-up, not a renewal -- the anchor jumped to (expiry - 1 month), which for a comp
+  # running to the end of the year is a date in the FUTURE and in any case a different
+  # counter key: a full fresh allowance in the same calendar month, repeatable by toggling
+  # the expiry. The renewal-gap reasoning above is about a provider's own cycle and does not
+  # transfer to a date an operator typed.
   def self.period_start_for(account)
-    ends_at = account.billing_subscription&.current_period_end
+    subscription = account.billing_subscription
+    ends_at = subscription&.manual? ? nil : subscription&.current_period_end
     return Time.now.utc.to_date.beginning_of_month if ends_at.nil?
 
     (ends_at.utc - 1.month).to_date

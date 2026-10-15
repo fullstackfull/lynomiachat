@@ -91,6 +91,7 @@
           "PROCESSING": "Processing",
           "COMPLETED": "Completed",
           "SCHEDULED": "Scheduled",
+          "CANCELLED": "Cancelled",
           "BLOCKED": "Not sent — channel unavailable"
         },
         "CAMPAIGN_DETAILS": {

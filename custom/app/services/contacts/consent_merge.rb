@@ -45,7 +45,7 @@ module Contacts::ConsentMerge
   def merge_native(base, mergee)
     combine(Commerce::MessagingConsent.where(contact_id: mergee.id),
             Commerce::MessagingConsent.where(contact_id: base.id).index_by(&:purpose),
-            base, &:purpose)
+            base, native: true, &:purpose)
   end
 
   def merge_partner(base, mergee)
@@ -66,31 +66,57 @@ module Contacts::ConsentMerge
   #
   # The first path keeps the row, which is why the discard below is not unconditional: an
   # earlier draft moved the row and then destroyed the row it had just moved.
-  def combine(incoming, held, base)
+  def combine(incoming, held, base, native: false)
     applied = 0
 
     incoming.find_each do |row|
       existing = held[yield(row)]
 
       if existing.nil?
-        row.update!(contact_id: base.id)
+        row.update!({ contact_id: base.id }.merge(revision_bump(native)))
+        announce(row) if native
         applied += 1
         next
       end
 
-      applied += 1 if overwrite(existing, row)
+      if overwrite(existing, row, native: native)
+        announce(existing) if native
+        applied += 1
+      end
       row.destroy!
     end
 
     applied
   end
 
-  def overwrite(existing, row)
+  def overwrite(existing, row, native: false)
     return false unless stronger?(row, existing)
 
-    existing.update!(carried_attributes(row))
+    existing.update!(carried_attributes(row).merge(revision_bump(native)))
     true
   end
+
+  # A MERGE IS A DECISION CHANGE, AND IT HAS TO LOOK LIKE ONE FROM OUTSIDE.
+  #
+  # This wrote `commerce_messaging_consents` directly -- the one path other than
+  # Commerce::MessagingConsents.write that does -- and carried neither the revision bump nor
+  # the feed publish with it. A partner therefore never learned about the change, and could
+  # not learn about it afterwards either: the reconciliation pull reports the row's
+  # revision, which was still the one the partner already held, and a projector drops
+  # anything at or below its high-water mark.
+  #
+  # Concretely: the base contact is granted at revision 80 and projected as subscribed; a
+  # duplicate contact holds a withdrawal because the shopper replied STOP on the number only
+  # that record carried. An agent merges them -- everyday deduplication -- the strongest
+  # refusal wins and the base flips to withdrawn, and the merchant's consent screen goes on
+  # saying "subscribed" permanently, because 80 is not greater than 80. The drift check
+  # cannot see it either: both sides read the local state as granted.
+  #
+  # The MOVE path publishes too. A scope the base had no row for may still have a stored
+  # high-water mark from one that was cleared, and the moved row's own revision predates it.
+  def revision_bump(native) = native ? { revision: Commerce::MessagingConsent.next_revision } : {}
+
+  def announce(row) = Consents::ChangeFeed.publish_native(row)
 
   def stronger?(row, existing) = RANK.fetch(row.state, 0) > RANK.fetch(existing.state, 0)
 

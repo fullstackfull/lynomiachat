@@ -97,13 +97,30 @@ module Custom::Whatsapp::OneoffCampaignService
   # merchant's allowance for them contradicts the rule Billing::MeteredUsage states about
   # itself -- that a unit is an ATTEMPT. An attempt is a provider call.
   #
-  # Two refusals remain BELOW this line (an authentication template, and no approved
-  # template of that name) and they do spend a unit. That is the honest edge of "attempt":
-  # by here the campaign has a destination, parameters and rendered text, and the only thing
-  # left is Meta's own answer.
+  # AND THE TWO REFUSALS STILL BELOW THIS LINE ARE ASKED FIRST, because neither of them
+  # reaches Meta either. This previously spent the unit unconditionally here and defended it
+  # as "the only thing left is Meta's own answer", which was simply untrue: upstream's
+  # `return if name.blank?` comes from TemplateProcessorService resolving the template
+  # against `channel.message_templates`, and the authentication guard reads the same jsonb
+  # column. Both are offline.
+  #
+  # The cost of getting that wrong is not one unit. An unapproved, rejected, paused or
+  # language-mismatched template is a property of the CAMPAIGN, identical for every
+  # recipient, so a 5,000-contact audience on a plan of 1,000 consumed the merchant's whole
+  # period allowance, recorded 5,000 skips, sent nothing, and left every later campaign that
+  # period refused -- the exact "charged for messages that were never handed to a provider"
+  # this call site was moved down here to stop.
+  #
+  # Both are asked through the objects upstream itself uses -- the template lookup
+  # Campaigns::RenderedTemplateText has already performed for the text on the line above,
+  # and Whatsapp::AuthenticationTemplateGuard -- rather than restated, so there is no second
+  # copy of "which template is this" to keep in step. The guard is called directly instead
+  # of through `authentication_template_blocked?` because that override records an outcome,
+  # and upstream calls it again a moment later.
   def send_whatsapp_template_message(to:, template_params:)
-    text = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params).text
-    quota = Campaigns::SendGuard.spend(campaign)
+    rendered = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params)
+    text = rendered.text
+    quota = provider_call_expected?(to, template_params, rendered) ? Campaigns::SendGuard.spend(campaign) : nil
     if quota
       record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(quota), message_content: text)
 
@@ -122,6 +139,14 @@ module Custom::Whatsapp::OneoffCampaignService
     end
 
     source_id
+  end
+
+  # Whether upstream will actually call the provider for this recipient, or refuse it from the
+  # channel's own jsonb without a network call. See the note on the spend above.
+  def provider_call_expected?(recipient, params, rendered)
+    rendered.approved? &&
+      Whatsapp::AuthenticationTemplateGuard.new(channel: channel, recipient: recipient, template_params: params)
+                                           .error.nil?
   end
 
   # Upstream's two refusals are "Phone number and BSUID are missing" and "Multiple WhatsApp identities found;

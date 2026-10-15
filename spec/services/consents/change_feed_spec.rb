@@ -166,13 +166,19 @@ RSpec.describe Consents::ChangeFeed do
     # Reconciliation has to report the SAME number the feed publishes, or a sweep could not
     # repair a scope the feed had got stuck -- it would feed the stale value back through the
     # same comparison.
+    #
+    # PER ROW, because one STOP writes both purposes and they no longer share a number. The
+    # revision is drawn from the table's own sequence rather than counted on the row, so
+    # that `clear_suppression` destroying a row cannot restart it at 1; two rows written in
+    # the same breath therefore take two consecutive numbers. Collapsing the payloads with
+    # `uniq` and comparing against one row passed only while the two happened to agree.
     it 'is the number the reconciliation endpoint reports for the same row' do
       stop!
-      row = Commerce::MessagingConsent.find_by(contact_id: shopper.id, purpose: :promotional)
+      rows = Commerce::MessagingConsent.where(contact_id: shopper.id)
 
-      published = payloads.map { |body| body[:revision] }.uniq
+      published = payloads.to_h { |body| [body[:purpose], body[:revision]] }
 
-      expect(published).to eq([row.revision])
+      expect(published).to eq(rows.to_h { |row| [row.purpose, row.revision] })
     end
   end
 

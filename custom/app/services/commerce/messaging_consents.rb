@@ -41,8 +41,13 @@ module Commerce::MessagingConsents
     # id, timestamp or sequence here that rises on its own, and the feed used to publish the
     # row's id, which is the one number that never changes. Every native decision after the
     # first was read as a late duplicate and discarded, permanently.
+    #
+    # Drawn from the TABLE rather than counted on the row: `clear_suppression` destroys the
+    # row, and `row.revision.to_i + 1` on the replacement published 1. See
+    # Commerce::MessagingConsent.next_revision.
     row.assign_attributes(account_id: account.id, state: decision.state.to_s, source: decision.source,
-                          decided_at: Time.current, evidence: decision.evidence, revision: row.revision.to_i + 1)
+                          decided_at: Time.current, evidence: decision.evidence,
+                          revision: Commerce::MessagingConsent.next_revision)
     row.save!
     # A partner cannot see this store, so it is told. The feed is best effort by construction
     # -- it enqueues a job -- and a delivery that fails is recovered by reconciliation rather

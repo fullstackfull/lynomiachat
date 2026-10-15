@@ -146,4 +146,54 @@ RSpec.describe Campaign do
       expect(Campaigns::RecipientSnapshot::CONSENT_REASONS).to have_key(:campaign_cancelled)
     end
   end
+
+  # CANCELLING A BLOCKED CAMPAIGN, which this handled by destroying the evidence.
+  #
+  # `blocked_reason` was overwritten with `reason.presence` whatever the campaign's state,
+  # so cancelling a campaign the system had blocked -- with the reason box empty, the normal
+  # way to cancel -- erased BLOCKED_FEATURE_DISABLED, the only record of why it never went
+  # out. And the Operations signal the block opened is resolved only by `unblock!`, which
+  # refuses anything no longer `blocked?`; with no un-cancel, the feed asserted a capability
+  # problem about a campaign nobody was going to send, permanently.
+  describe 'cancelling a blocked campaign' do
+    let(:whatsapp_inbox) do
+      create(:inbox, account: account,
+                     channel: create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud',
+                                                        sync_templates: false, validate_provider_config: false))
+    end
+    let(:blocked) do
+      create(:campaign, account: account, inbox: whatsapp_inbox, campaign_type: :one_off,
+                        scheduled_at: 1.hour.ago).tap(&:trigger!)
+    end
+
+    it 'is blocked to begin with, with its reason and an open signal' do
+      expect(blocked.reload).to be_blocked
+      expect(blocked.blocked_reason).to eq(Campaign::BLOCKED_FEATURE_DISABLED)
+      expect(open_signals_for(blocked)).to eq(1)
+    end
+
+    it 'keeps the block reason when no cancellation reason is given' do
+      blocked.cancel!
+
+      expect(blocked.reload).to be_cancelled
+      expect(blocked.blocked_reason).to eq(Campaign::BLOCKED_FEATURE_DISABLED)
+    end
+
+    it 'closes the capability signal, which nothing else would ever close' do
+      blocked.cancel!
+
+      expect(open_signals_for(blocked)).to eq(0)
+    end
+
+    it 'still records a reason the operator did give' do
+      blocked.cancel!('superseded')
+
+      expect(blocked.reload.blocked_reason).to eq('superseded')
+    end
+
+    def open_signals_for(record)
+      Operations::Signal.where(account_id: record.account_id, source: :campaign, subject_type: 'Campaign',
+                               subject_id: record.id, signal: :feature_disabled, resolved_at: nil).count
+    end
+  end
 end

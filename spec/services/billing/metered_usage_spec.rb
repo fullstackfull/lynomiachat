@@ -133,6 +133,48 @@ RSpec.describe Billing::MeteredUsage do
       expect(BillingUsageCounter.where(account: account).count).to eq(2)
     end
 
+    # AN OPERATOR'S COMP IS NOT A BILLING CYCLE, and reading its expiry as one handed out a
+    # second allowance for nothing.
+    #
+    # `grant_plan` defaults to no end date, which is a supported state with its own copy on
+    # the Super Admin screen. Re-granting the same plan WITH an expiry is an ordinary
+    # tidying-up rather than a renewal, and it used to move the anchor from the calendar
+    # month to (expiry - 1 month) -- a different counter key, so a full fresh allowance in
+    # the same calendar month, reissuable at will by toggling the expiry. For a comp running
+    # to the end of the year that key is also a date in the future.
+    #
+    # `subscribe` cannot set this up: an account arrives with a subscription the trial
+    # starter made, whose source is `stripe`, and updating it leaves the source alone.
+    it 'keeps a manual grant on the calendar month when an operator adds an expiry' do
+      account.billing_subscription.update!(source: 'manual', status: 'active', plan: plan, current_period_end: nil)
+      before_expiry = BillingUsageCounter.period_start_for(account.reload)
+
+      account.billing_subscription.update!(current_period_end: 3.months.from_now)
+
+      expect(before_expiry).to eq(Time.now.utc.to_date.beginning_of_month)
+      expect(BillingUsageCounter.period_start_for(account.reload)).to eq(before_expiry)
+    end
+
+    # The allowance itself, not just the key: the merchant does not get a second one.
+    it 'does not refill a spent manual allowance when an expiry is added' do
+      account.billing_subscription.update!(source: 'manual', status: 'active', plan: plan, current_period_end: nil)
+      account.reload
+      3.times { described_class.consume(account) }
+
+      account.billing_subscription.update!(current_period_end: 3.months.from_now)
+
+      expect(described_class.consume(account.reload)).to eq(3)
+    end
+
+    # A provider's own cycle still anchors the period, which is the case the derivation
+    # exists for -- and the one the clause above must not have taken with it.
+    it 'still anchors a provider-maintained subscription to its current period end' do
+      account.billing_subscription.update!(source: 'stripe', status: 'active', plan: plan,
+                                           current_period_end: Time.utc(2026, 11, 7, 12, 0))
+
+      expect(BillingUsageCounter.period_start_for(account.reload)).to eq(Date.new(2026, 10, 7))
+    end
+
     # ONE SUBSCRIPTION ANCHORS ONE PERIOD, NOT ONE PER READER.
     #
     # `period_start` is the third column of index_billing_usage_counters_on_scope, and this

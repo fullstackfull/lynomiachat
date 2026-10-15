@@ -37,4 +37,26 @@ class Commerce::MessagingConsent < ApplicationRecord
 
   # Blocks a send whoever decided it. A gate asks this, not which of the two it is.
   def blocking? = consent_withdrawn? || consent_suppressed?
+
+  # THE NEXT REVISION, AND IT HAS TO OUTLIVE THE ROW.
+  #
+  # A partner's projector keeps the highest revision it has seen for a scope and drops
+  # anything at or below it. Counting on the row -- `revision + 1` -- is monotonic only
+  # while the row exists, and `MessagingConsents.clear_suppression` DESTROYS it: clearing a
+  # suppression is an ordinary merchant action, and the next decision for that scope then
+  # came from `find_or_initialize_by` on a fresh row whose revision was the column default,
+  # so it published 1. A partner holding 80 discarded it, and discarded every decision after
+  # it, until eighty more writes climbed back over the mark. Reconciliation could not repair
+  # it either: it reports the same number.
+  #
+  # So the counter is the TABLE's, not the row's. `nextval` on the primary key's own
+  # sequence is strictly increasing for the life of the installation, is ahead of every
+  # revision ever published (the backfill seeded them from `id`), costs one round trip, and
+  # does not roll back -- an aborted write burns a number rather than reusing one, which is
+  # the safe direction. A standalone sequence would have been the obvious object, but
+  # schema.rb does not dump one, so it would not exist after `db:schema:load`; this sequence
+  # exists wherever the table does.
+  def self.next_revision
+    connection.select_value("SELECT nextval(pg_get_serial_sequence('#{table_name}', 'id'))").to_i
+  end
 end

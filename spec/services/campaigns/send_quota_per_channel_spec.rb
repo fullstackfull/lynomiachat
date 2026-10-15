@@ -105,9 +105,15 @@ RSpec.describe 'the send allowance, per channel', type: :model do
   # WhatsApp destination AFTER the eligibility gate, so a unit taken in the gate was spent on
   # somebody Meta never heard about.
   describe Whatsapp::OneoffCampaignService do
+    # The channel HOLDS the template the campaign names. The allowance is now taken only for
+    # a recipient upstream will actually hand to Meta, and upstream resolves the template
+    # from this column, so a channel without it is the misconfiguration the last example in
+    # this file is about rather than the ordinary case the rest of them are.
     let(:channel) do
       create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', sync_templates: false,
-                                validate_provider_config: false)
+                                validate_provider_config: false,
+                                message_templates: [{ 'name' => 'promo', 'language' => 'en',
+                                                      'status' => 'approved', 'category' => 'MARKETING' }])
     end
     let(:campaign) do
       create(:campaign, account: account, inbox: channel.inbox, campaign_type: :one_off, scheduled_at: 1.hour.ago,
@@ -145,6 +151,29 @@ RSpec.describe 'the send allowance, per channel', type: :model do
         end
       end
       allow(campaign).to receive(:audience_contacts).and_return(audience)
+
+      service.perform
+
+      expect(sent).to be_empty
+      expect(Billing::MeteredUsage.usage(account)[:used]).to eq(0)
+    end
+
+    # AND THE ONE THAT COSTS A WHOLE PERIOD RATHER THAN A RECIPIENT.
+    #
+    # Upstream's other refusal is `return if name.blank?`, from TemplateProcessorService
+    # resolving the name and language against `channel.message_templates`. That is a lookup
+    # in a jsonb column -- no network call -- and because it is a property of the CAMPAIGN
+    # it is identical for every recipient. With the unit taken before it, an audience larger
+    # than the plan's allowance consumed the merchant's entire period, recorded a skip for
+    # everyone, sent nothing, and left every later campaign that period refused.
+    #
+    # The processor stub is dropped here so the real resolution runs; the plan allows 2 and
+    # the audience is 3, so a regression shows up as a spent allowance rather than as one
+    # unit.
+    it 'spends nothing when the channel holds no approved template of that name' do
+      allow(Whatsapp::TemplateProcessorService).to receive(:new).and_call_original
+      campaign.update!(template_params: campaign.template_params.merge('name' => 'never_approved'))
+      allow(campaign).to receive(:audience_contacts).and_return(shoppers(3))
 
       service.perform
 

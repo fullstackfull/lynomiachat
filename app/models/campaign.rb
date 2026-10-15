@@ -100,13 +100,28 @@ class Campaign < ApplicationRecord
   # The in-flight run is NOT interrupted here and does not need to be. Campaigns::SendGuard
   # re-reads the campaign per recipient, so the loop stops at its next one; reaching into a
   # running job would be a second mechanism for the same effect, and the harder one to prove.
+  # CANCELLING A BLOCKED CAMPAIGN KEEPS ITS BLOCK REASON AND CLOSES ITS SIGNAL. This wrote
+  # `blocked_reason: reason.presence` unconditionally, so cancelling a campaign the system
+  # had blocked -- with the reason box left empty, which is the normal way to cancel --
+  # erased BLOCKED_FEATURE_DISABLED, the only record of WHY it never went out. And the
+  # Operations signal that block opened is resolved in exactly one place, `unblock!`, which
+  # refuses anything that is not still `blocked?`; since there is no un-cancel, the feed
+  # went on asserting "Scheduled WhatsApp campaign not sent: the whatsapp_campaign
+  # capability is not available" forever, about a campaign that is no longer going to be
+  # sent at all. `resolve` is subject-scoped and a no-op when there is no open row, so it is
+  # safe for every other campaign.
   def cancel!(reason = nil)
-    with_lock do
+    was_blocked = nil
+    cancelled = with_lock do
       next false if completed? || cancelled?
 
-      update!(campaign_status: :cancelled, blocked_reason: reason.presence)
+      was_blocked = blocked?
+      update!({ campaign_status: :cancelled }.merge(reason.present? ? { blocked_reason: reason } : {}))
       true
     end
+
+    Operations::SignalRecorder.new(source: :campaign, account: account, subject: self).resolve(:feature_disabled) if was_blocked
+    cancelled
   end
 
   # TERMINAL MEANS TERMINAL, INCLUDING AGAINST THE RUN THAT WAS ALREADY GOING.

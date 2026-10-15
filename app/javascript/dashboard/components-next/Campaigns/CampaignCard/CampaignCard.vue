@@ -58,6 +58,10 @@ const STATUS_PROCESSING = 'processing';
 // DECISION 6: a scheduled WhatsApp campaign that reached its send time while the capability was unavailable.
 // Without its own branch it fell through to "Scheduled" below, which is the silence the decision removes.
 const STATUS_BLOCKED = 'blocked';
+// Cancelled had no branch either, so it fell through to "Scheduled" in amber -- an operator
+// who had just stopped a half-sent campaign saw it described as waiting for its send time,
+// and `mark_processing!` refuses a cancelled campaign, so it waited there forever.
+const STATUS_CANCELLED = 'cancelled';
 
 const { formatMessage } = useMessageFormatter();
 
@@ -69,6 +73,9 @@ const ONE_OFF_TONES = {
   // `danger`, not the `warning` that scheduled falls through to: this campaign did not send and will not until
   // somebody acts, so it must not look like one that is merely waiting for its time.
   [STATUS_BLOCKED]: 'danger',
+  // `neutral`, not `danger`: nothing is wrong and nobody needs to act -- a person stopped
+  // this on purpose and it is finished, in the way a completed campaign is finished.
+  [STATUS_CANCELLED]: 'neutral',
 };
 
 const statusTone = computed(() => {
@@ -93,6 +100,10 @@ const campaignStatus = computed(() => {
 
   if (props.status === STATUS_BLOCKED) {
     return t('CAMPAIGN.SMS.CARD.STATUS.BLOCKED');
+  }
+
+  if (props.status === STATUS_CANCELLED) {
+    return t('CAMPAIGN.SMS.CARD.STATUS.CANCELLED');
   }
 
   return t('CAMPAIGN.SMS.CARD.STATUS.SCHEDULED');

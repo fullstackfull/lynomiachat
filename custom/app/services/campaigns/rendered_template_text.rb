@@ -46,6 +46,12 @@ class Campaigns::RenderedTemplateText
     nil
   end
 
+  # WHETHER THE CHANNEL ACTUALLY HOLDS THE TEMPLATE THIS CAMPAIGN NAMES, by the same three
+  # conditions the send path resolves by. Asked so a caller can tell a recipient upstream
+  # will hand to Meta from one it will refuse locally -- which is the difference between a
+  # paid attempt and a campaign misconfiguration, and the lookup is already done here.
+  def approved? = template.present?
+
   private
 
   def body_text

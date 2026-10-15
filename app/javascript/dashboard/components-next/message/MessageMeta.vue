@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { fromUnixTime } from 'date-fns';
 import { messageTimestamp } from 'shared/helpers/timeHelper';
 import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 
@@ -44,6 +45,10 @@ const readableTime = computed(() =>
 );
 
 const exactTime = computed(() => exactTimestamp(createdAt.value));
+
+// `<time>` without `datetime` is just a span to a parser: the visible text is a localised, abbreviated
+// 12-hour clock, so this carries the machine-readable instant the element is actually about.
+const machineTime = computed(() => fromUnixTime(createdAt.value).toISOString());
 
 const showStatusIndicator = computed(() => {
   if (isPrivate.value) return false;
@@ -155,13 +160,23 @@ const statusToShow = computed(() => {
           content: exactTime,
           delay: { show: 500, hide: 0 },
         }"
+        :datetime="machineTime"
         class="inline"
       >
         {{ readableTime }}
       </time>
     </div>
-    <Icon v-if="isPrivate" icon="i-lucide-lock-keyhole" class="size-3" />
+    <template v-if="isPrivate">
+      <Icon
+        icon="i-lucide-lock-keyhole"
+        class="size-3"
+        aria-hidden="true"
+        role="presentation"
+      />
+      <span class="sr-only">
+        {{ $t('CONVERSATION.REPLYBOX.PRIVATE_NOTE') }}
+      </span>
+    </template>
     <MessageStatus v-if="showStatusIndicator" :status="statusToShow" />
   </div>
 </template>
-`

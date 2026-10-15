@@ -33,7 +33,7 @@ const VIEWPORTS = {
 // left-to-right is a defect this project exists to fix.
 // The conversation list's assignee tabs are the third item in their own list; addressed by position rather
 // than by label so the same shot can be taken in Arabic, where the label is not "All".
-const ALL_TAB = '.conversations-list-wrap ul > li:nth-child(3) a';
+const ALL_TAB = '.conversations-list-wrap ul > li:nth-child(3) button';
 
 const SETS = {
   marketing: {

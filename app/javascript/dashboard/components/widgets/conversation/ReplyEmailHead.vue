@@ -38,6 +38,12 @@ export default {
       if (newVal !== this.bccEmailsVal) {
         this.bccEmailsVal = newVal;
       }
+      // Reveal the row rather than only the value: a reply inherits the previous email's blind copies and
+      // sends them (ReplyBox sets `messagePayload.bccEmails` from this), so leaving the row collapsed meant
+      // the agent could not see, edit or remove who was being blind-copied.
+      if (newVal) {
+        this.showBcc = true;
+      }
     },
     ccEmails(newVal) {
       if (newVal !== this.ccEmailsVal) {
@@ -54,6 +60,7 @@ export default {
     this.ccEmailsVal = this.ccEmails;
     this.bccEmailsVal = this.bccEmails;
     this.toEmailsVal = this.toEmails;
+    this.showBcc = Boolean(this.bccEmails);
   },
   validations: {
     ccEmailsVal: {

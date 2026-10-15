@@ -285,6 +285,7 @@
     "REPLYBOX": {
       "REPLY": "إضافة رد",
       "PRIVATE_NOTE": "إضافة ملاحظة خاصة",
+      "MODE_SWITCHER": "وضع الرد",
       "SEND": "إرسال",
       "CREATE": "إضافة ملاحظة",
       "INSERT_READ_MORE": "اقرأ المزيد",

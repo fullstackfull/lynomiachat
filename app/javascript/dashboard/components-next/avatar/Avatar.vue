@@ -83,6 +83,14 @@ const STATUS_CLASSES = computed(() => ({
 
 const showDefaultAvatar = computed(() => !props.src && !props.name);
 
+// `role="img"` makes everything inside presentational, so the initials, the `alt` on the photo and the
+// fallback icon's `title` were all suppressed and the avatar reached a screen reader as an unnamed image.
+// Every conversation row, message group and assignee control carries one, so this was most of the names
+// in the product going unannounced.
+const accessibleName = computed(
+  () => props.name || t('THUMBNAIL.AUTHOR.NOT_AVAILABLE')
+);
+
 const initials = computed(() => {
   if (!props.name) return '';
   const words = removeEmoji(props.name).split(/\s+/);
@@ -218,17 +226,23 @@ watch(
     </slot>
 
     <!-- Delete Avatar Button -->
-    <div
+    <!-- Was a `div` with a click handler revealed only on hover, so deleting an avatar was unreachable by
+    keyboard and unnamed to assistive technology. `focus-visible:visible` also makes it appear when it is
+    focused, not only when a pointer is over it. -->
+    <button
       v-if="src && allowUpload"
-      class="absolute z-20 flex items-center justify-center invisible w-6 h-6 transition-all duration-300 ease-in-out opacity-0 cursor-pointer outline outline-1 outline-n-container -top-2 ltr:-right-2 rtl:-left-2 rounded-xl bg-n-solid-3 group-hover/avatar:visible group-hover/avatar:opacity-100"
+      type="button"
+      :aria-label="t('THUMBNAIL.DELETE')"
+      class="absolute z-20 flex items-center justify-center invisible w-6 h-6 transition-all duration-300 ease-in-out opacity-0 cursor-pointer outline outline-1 outline-n-container -top-2 ltr:-right-2 rtl:-left-2 rounded-xl bg-n-solid-3 group-hover/avatar:visible group-hover/avatar:opacity-100 focus-visible:visible focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-n-brand"
       @click="handleDismiss"
     >
       <Icon icon="i-lucide-x" class="text-n-slate-11 size-4" />
-    </div>
+    </button>
 
     <!-- Avatar Container -->
     <span
       role="img"
+      :aria-label="accessibleName"
       class="relative inline-flex items-center justify-center object-cover overflow-hidden font-medium outline outline-1 -outline-offset-1 outline-[rgb(0_0_0_/_0.03)] dark:outline-[rgb(255_255_255_/_0.04)]"
       :class="[
         borderRadiusClass,
@@ -269,36 +283,45 @@ watch(
           :style="iconStyles"
         />
       </template>
-
-      <!-- Upload Overlay and Input -->
-      <slot
-        v-if="allowUpload || $slots.overlay"
-        name="overlay"
-        :size="size"
-        :handle-upload="handleUploadAvatar"
-        :file-input-ref="fileInput"
-        :handle-image-upload="handleImageUpload"
-      >
-        <div
-          v-if="allowUpload"
-          class="absolute inset-0 z-10 flex items-center justify-center invisible w-full h-full transition-all duration-300 ease-in-out opacity-0 bg-n-alpha-black1 group-hover/avatar:visible group-hover/avatar:opacity-100"
-          :class="borderRadiusClass"
-          @click="handleUploadAvatar"
-        >
-          <Icon
-            icon="i-lucide-upload"
-            class="text-white"
-            :style="{ width: `${size / 2}px`, height: `${size / 2}px` }"
-          />
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
-            class="hidden"
-            @change="handleImageUpload"
-          />
-        </div>
-      </slot>
     </span>
+
+    <!-- Upload overlay / selection slot, outside the `role="img"` element on purpose: that role makes its whole subtree presentational, so
+    the selection checkboxes the conversation and contact lists put in this slot -- and their
+    `aria-label`s -- were invisible to assistive technology. Geometry is unchanged: the outer element is
+    `relative` and exactly the same size as the inner one, which is what `absolute inset-0` resolves
+    against either way. -->
+    <slot
+      v-if="allowUpload || $slots.overlay"
+      name="overlay"
+      :size="size"
+      :handle-upload="handleUploadAvatar"
+      :file-input-ref="fileInput"
+      :handle-image-upload="handleImageUpload"
+    >
+      <button
+        v-if="allowUpload"
+        type="button"
+        :aria-label="t('THUMBNAIL.UPLOAD')"
+        class="absolute inset-0 z-10 flex items-center justify-center invisible w-full h-full transition-all duration-300 ease-in-out opacity-0 bg-n-alpha-black1 group-hover/avatar:visible group-hover/avatar:opacity-100 focus-visible:visible focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-n-brand"
+        :class="borderRadiusClass"
+        @click="handleUploadAvatar"
+      >
+        <Icon
+          icon="i-lucide-upload"
+          class="text-white"
+          :style="{ width: `${size / 2}px`, height: `${size / 2}px` }"
+        />
+      </button>
+      <!-- Outside the trigger: a form control inside a button is invalid markup, and the input's own
+      click event bubbles back into the trigger that opened it. -->
+      <input
+        v-if="allowUpload"
+        ref="fileInput"
+        type="file"
+        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
+        class="hidden"
+        @change="handleImageUpload"
+      />
+    </slot>
   </span>
 </template>

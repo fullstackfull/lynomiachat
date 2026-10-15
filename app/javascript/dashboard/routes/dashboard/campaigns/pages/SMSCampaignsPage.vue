@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onActivated, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useToggle } from '@vueuse/core';
 import { useRoute, useRouter } from 'vue-router';
 import {
   useStore,
@@ -36,7 +35,11 @@ const route = useRoute();
 const router = useRouter();
 
 const selectedCampaign = ref(null);
-const [showSMSCampaignDialog, toggleSMSCampaignDialog] = useToggle();
+const createDialogRef = ref(null);
+
+// The create flow used to be an absolutely positioned div hung off the header button: no backdrop, no focus
+// trap, no Escape, and on a 900px screen its Create button sat below the fold. It is a real modal now.
+const openCreateDialog = () => createDialogRef.value?.dialogRef?.open();
 
 const initialSharedAudienceIds = ref([]);
 const initialLabelIds = ref([]);
@@ -86,11 +89,10 @@ onActivated(async () => {
     const label = findAccountLabel(accountLabels.value, labelId);
     initialLabelIds.value = label ? [label.id] : [];
   }
-  toggleSMSCampaignDialog(true);
+  openCreateDialog();
 });
 
 const closeDialog = () => {
-  toggleSMSCampaignDialog(false);
   initialSharedAudienceIds.value = [];
   initialLabelIds.value = [];
   initialDraft.value = null;
@@ -106,20 +108,11 @@ const handleCreateAudience = draft => {
 <template>
   <CampaignLayout
     :header-title="t('CAMPAIGN.SMS.HEADER_TITLE')"
+    :header-description="t('CAMPAIGN.SMS.HEADER_DESCRIPTION')"
+    :count="isFetchingCampaigns ? null : SMSCampaigns.length"
     :button-label="t('CAMPAIGN.SMS.NEW_CAMPAIGN')"
-    @click="toggleSMSCampaignDialog()"
-    @close="closeDialog"
+    @click="openCreateDialog"
   >
-    <template #action>
-      <SMSCampaignDialog
-        v-if="showSMSCampaignDialog"
-        :initial-shared-audience-ids="initialSharedAudienceIds"
-        :initial-label-ids="initialLabelIds"
-        :initial-draft="initialDraft"
-        @close="closeDialog"
-        @create-audience="handleCreateAudience"
-      />
-    </template>
     <div
       v-if="isFetchingCampaigns"
       class="flex items-center justify-center py-10 text-n-slate-11"
@@ -140,6 +133,14 @@ const handleCreateAudience = draft => {
       :subtitle="t('CAMPAIGN.SMS.EMPTY_STATE.SUBTITLE')"
     />
     <FetchErrorState v-else @retry="retryFetch" />
+    <SMSCampaignDialog
+      ref="createDialogRef"
+      :initial-shared-audience-ids="initialSharedAudienceIds"
+      :initial-label-ids="initialLabelIds"
+      :initial-draft="initialDraft"
+      @close="closeDialog"
+      @create-audience="handleCreateAudience"
+    />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"
       :selected-campaign="selectedCampaign"

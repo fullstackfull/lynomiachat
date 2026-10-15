@@ -456,6 +456,7 @@ const tableHeaders = computed(() => {
             <Button
               :label="$t('AUTOMATION.HEADER_BTN_TXT')"
               size="sm"
+              data-test-id="automation-add-button"
               @click="openAddPopup"
             />
           </div>

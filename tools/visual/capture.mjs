@@ -80,9 +80,21 @@ const SETS = {
       },
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',
+      // `ongoing` and `one_off` redirect to the live-chat and SMS pages; the WhatsApp one has no alias.
       campaigns: '/app/accounts/1/campaigns/ongoing',
       'campaigns-one-off': '/app/accounts/1/campaigns/one_off',
+      'campaigns-whatsapp': '/app/accounts/1/campaigns/whatsapp',
+      // Creating a campaign and editing a rule are the two screens behind a button, so a shot of the list
+      // pages alone says nothing about either. The campaign header holds exactly one button.
+      'campaign-create': {
+        path: '/app/accounts/1/campaigns/whatsapp',
+        click: ['header button'],
+      },
       automations: '/app/accounts/1/settings/automation/list',
+      'automation-editor': {
+        path: '/app/accounts/1/settings/automation/list',
+        click: ['[data-test-id="automation-add-button"]'],
+      },
       labels: '/app/accounts/1/settings/labels',
       // The contacts list's rows expand in place into an editor. Shooting the list alone would not
       // show it, and "it still exists" is the whole point of capturing it.

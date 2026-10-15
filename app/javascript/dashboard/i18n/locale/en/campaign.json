@@ -77,7 +77,8 @@
             "ERROR_MESSAGE": "There was an error. Please try again."
           }
         }
-      }
+      },
+      "HEADER_DESCRIPTION": "Messages that open on their own while someone is on your site."
     },
     "SMS": {
       "HEADER_TITLE": "SMS campaigns",
@@ -132,7 +133,8 @@
             "ERROR_MESSAGE": "There was an error. Please try again."
           }
         }
-      }
+      },
+      "HEADER_DESCRIPTION": "One text message, sent once, to everyone in the audience you choose."
     },
     "WHATSAPP": {
       "HEADER_TITLE": "WhatsApp campaigns",
@@ -288,7 +290,8 @@
           "ERROR_CODE": "Code {code}",
           "LOADING": "Loading deliveries"
         }
-      }
+      },
+      "HEADER_DESCRIPTION": "One approved WhatsApp template, sent once, to everyone in the audience you choose."
     },
     "CONFIRM_DELETE": {
       "TITLE": "Are you sure to delete?",
@@ -325,7 +328,16 @@
     },
     "CARD": {
       "EDIT": "Edit campaign",
-      "DELETE": "Delete campaign"
+      "DELETE": "Delete campaign",
+      "COUNT": "{n} campaign | {n} campaigns",
+      "SCHEDULE": {
+        "SENDS": "Sends {date}",
+        "SENDING": "Sending now",
+        "SENT": "Sent {date}",
+        "MISSED": "Was due {date}"
+      },
+      "AUDIENCE": "{n} audience label | {n} audience labels",
+      "CHANNEL": "Channel"
     },
     "LOADING": "Loading campaigns"
   }

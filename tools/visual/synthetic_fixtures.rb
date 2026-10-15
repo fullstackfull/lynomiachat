@@ -18,7 +18,21 @@ user    = account.users.first
 inboxes = account.inboxes.to_a
 abort 'no inboxes -- run `rails db:seed` first' if inboxes.empty?
 
-web_inbox = inboxes.find { |i| i.channel_type == 'Channel::WebWidget' } || inboxes.first
+# Which inbox a campaign sits on is not decoration: `Campaign#ensure_correct_campaign_attributes` derives
+# `campaign_type` from it, and each of the three campaign pages filters on BOTH. A one-off campaign parked on
+# the website inbox is forced back to `ongoing` and then appears on no page at all, which is what the first
+# version of this file did to its two one-off rows.
+def inbox_of(inboxes, channel_type)
+  inboxes.find { |i| i.channel_type == channel_type } or abort "no #{channel_type} inbox -- run `rails db:seed` first"
+end
+
+web_inbox      = inbox_of(inboxes, 'Channel::WebWidget')
+sms_inbox      = inbox_of(inboxes, 'Channel::Sms')
+whatsapp_inbox = inbox_of(inboxes, 'Channel::Whatsapp')
+
+# An audience is a list of label references, the same shape the campaign form submits. Two labels so the
+# recipients line has something to summarise rather than a bare count.
+audience = account.labels.order(:id).limit(2).map { |label| { 'type' => 'Label', 'id' => label.id } }
 
 campaigns = [
   { title: 'Welcome to Lynomia',
@@ -36,12 +50,28 @@ campaigns = [
   { title: 'Spring restock announcement — everything back in stock from Sunday',
     description: 'A long title, on purpose: this is what the row does when it has to wrap.',
     message: 'Good news — the pieces you asked about are back in stock from Sunday.',
-    campaign_type: :one_off, enabled: true, scheduled_at: 3.days.from_now },
+    inbox: :sms, enabled: true, scheduled_at: 3.days.from_now },
   { title: 'Order status check-in',
     description: 'Sent once, last month.',
     message: 'Your order shipped. Reply here if anything is wrong with it.',
-    campaign_type: :one_off, enabled: true, scheduled_at: 4.weeks.ago,
-    campaign_status: :completed }
+    inbox: :sms, enabled: true, scheduled_at: 4.weeks.ago,
+    campaign_status: :completed },
+  { title: 'Delivery window reminder',
+    description: 'Goes out the evening before the courier arrives.',
+    message: 'Your order arrives tomorrow between 9am and noon. Reply if that does not suit.',
+    inbox: :whatsapp, enabled: true, scheduled_at: 2.days.from_now },
+  { title: 'Ramadan hours',
+    description: 'Sent to everyone on the announcements label.',
+    message: 'Our hours change from Monday: 10am to 4pm, and 8pm to midnight.',
+    inbox: :whatsapp, enabled: true, scheduled_at: 3.weeks.ago,
+    campaign_status: :completed },
+  # DECISION 6's holding state. A campaign in it reads "Blocked" in `danger` on the card, which is a state no
+  # amount of seeded data would otherwise produce on a developer's machine.
+  { title: 'Loyalty points expiring',
+    description: 'Reached its send time while the WhatsApp campaign capability was unavailable.',
+    message: 'You have 400 points expiring at the end of the month.',
+    inbox: :whatsapp, enabled: true, scheduled_at: 1.day.ago,
+    campaign_status: :blocked, blocked_reason: Campaign::BLOCKED_FEATURE_DISABLED }
 ]
 
 campaigns.each do |attrs|
@@ -55,10 +85,20 @@ campaigns.each do |attrs|
     next
   end
 
+  inbox = case attrs[:inbox]
+          when :sms      then sms_inbox
+          when :whatsapp then whatsapp_inbox
+          else web_inbox
+          end
+
   campaign.assign_attributes(
-    attrs.except(:campaign_status).merge(inbox: web_inbox, sender: user)
+    attrs.except(:campaign_status, :blocked_reason, :inbox)
+         .merge(inbox: inbox, sender: user, audience: audience)
   )
+  # Status and the reason behind it are assigned after the rest, because `campaign_status` is validated against
+  # the record's own previous value and `blocked_reason` only means anything alongside `blocked`.
   campaign.campaign_status = attrs[:campaign_status] if attrs[:campaign_status]
+  campaign.blocked_reason = attrs[:blocked_reason] if attrs.key?(:blocked_reason)
   campaign.save!
   puts "campaign: #{campaign.title}"
 end

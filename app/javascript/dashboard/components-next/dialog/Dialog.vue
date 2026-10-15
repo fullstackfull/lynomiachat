@@ -90,6 +90,10 @@ const maxWidthClass = computed(() => {
   return classesMap[props.width] ?? 'max-w-md';
 });
 
+// `position: top` already pushes the dialog down by up to 5rem, so a plain 85vh cap could still run off the
+// bottom of a short window.
+const SCROLLING_FORM_HEIGHT = 'max-h-[calc(100dvh-8rem)]';
+
 const positionClass = computed(() =>
   props.position === 'top' ? 'dialog-position-top' : ''
 );
@@ -137,7 +141,7 @@ defineExpose({ open, close });
       :class="[
         maxWidthClass,
         positionClass,
-        overflowYAuto ? 'overflow-y-auto' : 'overflow-visible',
+        overflowYAuto ? 'overflow-hidden' : 'overflow-visible',
       ]"
       @close.prevent="handleDialogClose"
     >
@@ -145,6 +149,7 @@ defineExpose({ open, close });
         <form
           ref="dialogContentRef"
           class="flex flex-col w-full h-auto gap-6 p-6 overflow-visible text-start align-middle transition-all duration-300 ease-in-out transform bg-n-alpha-3 backdrop-blur-panel shadow-modal rounded-overlay"
+          :class="overflowYAuto ? SCROLLING_FORM_HEIGHT : ''"
           @submit.prevent="confirm"
           @click.stop
         >
@@ -168,8 +173,19 @@ defineExpose({ open, close });
               </p>
             </slot>
           </div>
-          <slot v-if="isOpen" />
-          <!-- Dialog content will be injected here -->
+          <!-- Dialog content will be injected here. A long form used to make the WHOLE dialog scroll, which
+          pushed its own Create button past the bottom of the screen; only the body scrolls now, so the title
+          and the footer stay where they are. `contents` leaves the non-scrolling case exactly as it was. -->
+          <div
+            v-if="isOpen"
+            :class="
+              overflowYAuto
+                ? 'flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto -mx-6 px-6'
+                : 'contents'
+            "
+          >
+            <slot />
+          </div>
           <slot name="footer">
             <div
               v-if="showCancelButton || showConfirmButton"

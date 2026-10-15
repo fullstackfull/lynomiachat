@@ -6,9 +6,9 @@ import { getInboxIconByType } from 'dashboard/helper/inbox';
 
 import CardLayout from 'dashboard/components-next/CardLayout.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Label from 'dashboard/components-next/label/Label.vue';
-import LiveChatCampaignDetails from './LiveChatCampaignDetails.vue';
-import SMSCampaignDetails from './SMSCampaignDetails.vue';
+import CampaignMeta from './CampaignMeta.vue';
 
 const props = defineProps({
   title: {
@@ -42,6 +42,10 @@ const props = defineProps({
   scheduledAt: {
     type: Number,
     default: 0,
+  },
+  audience: {
+    type: Array,
+    default: () => [],
   },
   showAnalytics: {
     type: Boolean,
@@ -108,15 +112,35 @@ const inboxIcon = computed(() => {
   } = props.inbox;
   return getInboxIconByType(type, medium, 'fill', voiceEnabled);
 });
+
+// A campaign that is off, finished or blocked is not the one you are looking for in a list of twelve, so its
+// channel tile drops to the neutral ramp. The title keeps its contrast either way -- dimming the text of a
+// disabled row is the usual way this is done and it costs the people who most need to read it.
+const isMuted = computed(() => {
+  if (props.isLiveChatType) return !props.isEnabled;
+  return props.status === STATUS_COMPLETED || props.status === STATUS_BLOCKED;
+});
 </script>
 
 <template>
   <CardLayout layout="row">
+    <div
+      class="grid self-start mt-0.5 shrink-0 place-items-center size-10 rounded-xl"
+      :class="isMuted ? 'bg-n-alpha-2' : 'bg-n-brand/10'"
+      :title="t('CAMPAIGN.CARD.CHANNEL')"
+    >
+      <Icon
+        :icon="inboxIcon"
+        class="size-[18px]"
+        :class="isMuted ? 'text-n-slate-11' : 'text-n-brand'"
+      />
+    </div>
+
     <div class="flex flex-col items-start justify-between flex-1 min-w-0 gap-2">
-      <div class="flex items-center gap-3 w-full min-w-0">
+      <div class="flex items-center w-full min-w-0 gap-3">
         <span
           :title="title"
-          class="min-w-0 text-base font-medium text-n-slate-12 line-clamp-1"
+          class="min-w-0 text-heading-2 text-n-slate-12 line-clamp-1"
         >
           {{ title }}
         </span>
@@ -130,26 +154,20 @@ const inboxIcon = computed(() => {
       <div
         v-dompurify-html="formatMessage(message, false, false, false)"
         dir="auto"
-        class="text-sm text-n-slate-11 line-clamp-1 [&>p]:mb-0 h-6"
+        class="text-sm text-n-slate-11 line-clamp-1 [&>p]:mb-0"
       />
-      <div
-        class="flex flex-wrap items-center w-full gap-x-2 gap-y-1 h-auto md:h-6 md:flex-nowrap md:overflow-hidden"
-      >
-        <LiveChatCampaignDetails
-          v-if="isLiveChatType"
-          :sender="sender"
-          :inbox-name="inboxName"
-          :inbox-icon="inboxIcon"
-        />
-        <SMSCampaignDetails
-          v-else
-          :inbox-name="inboxName"
-          :inbox-icon="inboxIcon"
-          :scheduled-at="scheduledAt"
-        />
-      </div>
+      <CampaignMeta
+        :is-live-chat-type="isLiveChatType"
+        :status="status"
+        :sender="sender"
+        :inbox-name="inboxName"
+        :inbox-icon="inboxIcon"
+        :scheduled-at="scheduledAt"
+        :audience="audience"
+      />
     </div>
-    <div class="flex items-center justify-end shrink-0 gap-2">
+
+    <div class="flex items-center self-start justify-end gap-2 shrink-0">
       <Button
         v-if="showAnalytics"
         v-tooltip.top="t('CAMPAIGN.WHATSAPP.CARD.ANALYTICS')"
@@ -162,19 +180,21 @@ const inboxIcon = computed(() => {
       />
       <Button
         v-if="isLiveChatType"
+        v-tooltip.top="t('CAMPAIGN.CARD.EDIT')"
         variant="faded"
         size="sm"
         color="slate"
         icon="i-lucide-sliders-vertical"
-        :aria-label="$t('CAMPAIGN.CARD.EDIT')"
+        :aria-label="t('CAMPAIGN.CARD.EDIT')"
         @click="emit('edit')"
       />
       <Button
+        v-tooltip.top="t('CAMPAIGN.CARD.DELETE')"
         variant="faded"
         color="ruby"
         size="sm"
         icon="i-lucide-trash"
-        :aria-label="$t('CAMPAIGN.CARD.DELETE')"
+        :aria-label="t('CAMPAIGN.CARD.DELETE')"
         @click="emit('delete')"
       />
     </div>

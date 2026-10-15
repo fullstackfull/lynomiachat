@@ -33,6 +33,7 @@ const handleAnalytics = campaign => emit('analytics', campaign);
       :sender="campaign.sender"
       :inbox="campaign.inbox"
       :scheduled-at="campaign.scheduled_at"
+      :audience="campaign.audience"
       :is-live-chat-type="isLiveChatType"
       :show-analytics="
         campaign.inbox?.channel_type === INBOX_TYPES.WHATSAPP &&

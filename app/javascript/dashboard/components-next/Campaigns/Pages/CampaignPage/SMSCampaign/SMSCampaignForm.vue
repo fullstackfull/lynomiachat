@@ -19,6 +19,9 @@ const props = defineProps({
   initialLabelIds: { type: Array, default: () => [] },
   // What the user had typed before stepping out to build a shared audience.
   initialDraft: { type: Object, default: null },
+  // False when the form sits inside a Dialog, which supplies the footer buttons itself. Same contract the
+  // live-chat form has carried since it moved into one.
+  showActionButtons: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['submit', 'cancel', 'createAudience']);
@@ -142,6 +145,10 @@ const handleSubmit = async () => {
   resetState();
   handleCancel();
 };
+
+// The Dialog that now wraps this form owns the footer, so it needs to drive submission and to know when the
+// button should be disabled.
+defineExpose({ handleSubmit, isSubmitDisabled });
 </script>
 
 <template>
@@ -195,7 +202,10 @@ const handleSubmit = async () => {
       :message-type="formErrors.scheduledAt ? 'error' : 'info'"
     />
 
-    <div class="flex items-center justify-between w-full gap-3">
+    <div
+      v-if="showActionButtons"
+      class="flex items-center justify-between w-full gap-3"
+    >
       <Button
         variant="faded"
         color="slate"

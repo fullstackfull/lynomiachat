@@ -24,6 +24,9 @@ const props = defineProps({
   // resumes rather than restarts; the template's own parameters are not part of it, because the template picker
   // rebuilds them from the chosen template.
   initialDraft: { type: Object, default: null },
+  // False when the form sits inside a Dialog, which supplies the footer buttons itself. Same contract the
+  // live-chat form has carried since it moved into one.
+  showActionButtons: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['submit', 'cancel', 'createAudience']);
@@ -211,6 +214,10 @@ const handleSubmit = async () => {
   handleCancel();
 };
 
+// The Dialog that now wraps this form owns the footer, so it needs to drive submission and to know when the
+// button should be disabled.
+defineExpose({ handleSubmit, isSubmitDisabled });
+
 // Reset template selection when inbox changes
 watch(
   () => state.inboxId,
@@ -287,7 +294,10 @@ watch(
       :message-type="formErrors.scheduledAt ? 'error' : 'info'"
     />
 
-    <div class="flex gap-3 justify-between items-center w-full">
+    <div
+      v-if="showActionButtons"
+      class="flex gap-3 justify-between items-center w-full"
+    >
       <Button
         variant="faded"
         color="slate"

@@ -43,6 +43,14 @@ RSpec.describe Consents::ChangeFeed do
 
   def payloads = enqueued.map { |job| clean(job[:args][1]) }
 
+  # The receiver refuses a correctly signed delivery whose account is not the one that store
+  # is linked to, so the account has to travel or nothing is accepted.
+  it 'names the workspace, which the receiver checks before it accepts anything' do
+    stop!
+
+    expect(payloads).to all(include(account: { id: account.id }))
+  end
+
   it 'tells the store when a shopper opts out on a Lynomia channel' do
     stop!
 

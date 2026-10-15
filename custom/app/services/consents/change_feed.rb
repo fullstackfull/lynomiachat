@@ -70,8 +70,12 @@ module Consents::ChangeFeed
                           .where.not(commerce_stores: { status: Commerce::Store.statuses[:disconnected] })
   end
 
+  # `account` travels because the receiver checks it. Store Syria's ingress refuses a
+  # correctly signed delivery whose account is not the one that store is linked to -- a
+  # signature proves who sent it, this proves what it may talk about -- so a payload without
+  # it would be rejected as `unknown_workspace` however well formed it was.
   def payload(link, consent, origin:, channel:)
-    { event: EVENT, origin: origin,
+    { event: EVENT, origin: origin, account: { id: link.account_id },
       store: { provider: link.store.provider, external_store_id: link.store.external_store_id },
       subject: { external_customer_id: link.external_customer_id },
       purpose: consent.purpose, channel: channel, state: consent.state, source: consent.source,
@@ -79,7 +83,7 @@ module Consents::ChangeFeed
   end
 
   def partner_payload(consent)
-    { event: EVENT, origin: 'partner',
+    { event: EVENT, origin: 'partner', account: { id: consent.account_id },
       store: { provider: consent.commerce_store.provider,
                external_store_id: consent.commerce_store.external_store_id },
       subject: { external_customer_id: consent.external_subject_id },

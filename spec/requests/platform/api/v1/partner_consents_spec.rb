@@ -83,6 +83,36 @@ RSpec.describe 'Platform Partner Consents API', type: :request do
       expect(PartnerConsent.count).to eq(0)
     end
 
+    # THE FLAG A CONSUMER THAT DELETES ON ABSENCE CANNOT BE CORRECT WITHOUT. Both collections
+    # are capped at NATIVE_LIMIT, newest first, because this read is the safety net behind
+    # the event feed rather than a full export. Store Syria's reconciler removes a projected
+    # native row that is absent here -- which is how it learns that an operator cleared a
+    # suppression, a path that destroys the row and publishes nothing -- so it has to be able
+    # to tell "no decision" from "past the cap".
+    it 'says whether the native list is the whole truth' do
+      get url, params: { provider: 'storesyria', external_store_id: 'sy-1' }, headers: headers, as: :json
+
+      expect(response.parsed_body['native_complete']).to be(true)
+    end
+
+    it 'says the native list is incomplete once it reaches the cap' do
+      stub_const('Platform::Api::V1::PartnerConsentsController::NATIVE_LIMIT', 1)
+      2.times do |index|
+        other = create(:contact, account: account, name: "Shopper #{index}")
+        create(:commerce_customer_link, account: account, store: store, contact: other,
+                                        external_customer_id: "cust-#{index}")
+        Commerce::MessagingConsents.record(
+          account: account, contact: other,
+          decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+        )
+      end
+
+      get url, params: { provider: 'storesyria', external_store_id: 'sy-1' }, headers: headers, as: :json
+
+      expect(response.parsed_body['native'].size).to eq(1)
+      expect(response.parsed_body['native_complete']).to be(false)
+    end
+
     it 'does not report the account-wide state of a subject whose link was suppressed' do
       Commerce::MessagingConsents.record(
         account: account, contact: shopper,

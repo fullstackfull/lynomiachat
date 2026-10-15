@@ -41,10 +41,24 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
   # `commerce_messaging_consents` id -- so a merged list would invite a consumer to order
   # across them, which decides nothing. Kept apart, each is ordered against itself, and the
   # consumer unions the negatives the way the send boundary does.
+  # `native_complete` SAYS WHETHER THE NATIVE LIST IS THE WHOLE TRUTH, and a consumer that
+  # deletes on absence cannot be correct without it.
+  #
+  # Both collections are capped (see `consents` and `native_consents`), because this is the
+  # safety net behind the event feed rather than a full export. A consumer reconciling
+  # against a CAPPED list can tell "this scope has no decision" from "this scope is past the
+  # cap" only if it is told which it is looking at -- and Store Syria's reconciler removes a
+  # projected native row that is absent here, which is how it learns that an operator cleared
+  # a suppression (that path DESTROYS the row and publishes nothing, so absence is the only
+  # signal there is). Without this flag that removal would delete every scope past the 200th
+  # on every sweep.
   def index
+    native = native_consents
+
     render json: { account_id: @resource.id, store: store_json,
                    consents: consents.map { |row| present(row) },
-                   native: native_consents.map { |row| present_native(row) } }
+                   native: native.map { |row| present_native(row) },
+                   native_complete: native.size < NATIVE_LIMIT }
   end
 
   def create
@@ -120,7 +134,10 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
     render json: { error: 'No customer of this installation matches that subject' }, status: :not_found
   end
 
-  def consents = PartnerConsent.where(commerce_store_id: @store.id).order(updated_at: :desc).limit(200)
+  # The cap on each collection. Named because `index` reports whether the native list hit it.
+  NATIVE_LIMIT = 200
+
+  def consents = PartnerConsent.where(commerce_store_id: @store.id).order(updated_at: :desc).limit(NATIVE_LIMIT)
 
   # The account-wide decisions that apply to THIS installation's customers, selected through
   # the installation's own customer links -- so a partner is told about its own customers and
@@ -135,7 +152,7 @@ class Platform::Api::V1::PartnerConsentsController < PlatformController
     @native_consents ||= Commerce::MessagingConsent
                          .where(contact_id: Commerce::CustomerLink.linked.where(commerce_store_id: @store.id)
                                                                   .select(:contact_id))
-                         .order(updated_at: :desc).limit(200).to_a
+                         .order(updated_at: :desc).limit(NATIVE_LIMIT).to_a
   end
 
   # The partner's own id for each of those people.

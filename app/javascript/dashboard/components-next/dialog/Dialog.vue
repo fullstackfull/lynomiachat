@@ -178,15 +178,23 @@ defineExpose({ open, close });
             >
               {{ title }}
             </h3>
-            <slot name="description" :description-id="descriptionId">
-              <p
-                v-if="description"
-                :id="descriptionId"
-                class="mb-0 text-sm text-n-slate-11"
-              >
-                {{ description }}
-              </p>
-            </slot>
+            <!-- `aria-describedby` on the <dialog> names this wrapper, not the paragraph
+              inside it. Five of the six consumers that override `#description` never bound
+              the slot's `descriptionId`, so the dialog pointed at an element that did not
+              exist and announced no description at all. Holding the id here makes it true
+              for every consumer, overriding or not; the slot prop stays exposed for the one
+              that already uses it. -->
+            <div
+              v-if="description || $slots.description"
+              :id="descriptionId"
+              class="contents"
+            >
+              <slot name="description" :description-id="descriptionId">
+                <p v-if="description" class="mb-0 text-sm text-n-slate-11">
+                  {{ description }}
+                </p>
+              </slot>
+            </div>
           </div>
           <!-- Dialog content will be injected here. Under `scrollBody` only this part scrolls, so a long
           form stops pushing its own submit button past the bottom of the screen. `contents` leaves every

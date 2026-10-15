@@ -23,8 +23,12 @@ const handleError = () => {
 </script>
 
 <template>
-  <div
-    class="size-[72px] overflow-hidden contain-content rounded-xl cursor-pointer"
+  <!-- This was a <div> with @click: the thumbnail opened the gallery for a mouse and for
+    nothing else. A real button carries the name, so the <img> inside it is decoration. -->
+  <button
+    type="button"
+    class="size-[72px] p-0 border-0 overflow-hidden contain-content rounded-xl cursor-pointer focus-ring"
+    :aria-label="$t('COMPONENTS.MEDIA.OPEN_IMAGE')"
     @click="showGallery = true"
   >
     <div
@@ -36,11 +40,12 @@ const handleError = () => {
     </div>
     <img
       v-else
+      alt=""
       class="object-cover w-full h-full skip-context-menu"
       :src="attachment.dataUrl"
       @error="handleError"
     />
-  </div>
+  </button>
   <GalleryView
     v-if="showGallery"
     v-model:show="showGallery"

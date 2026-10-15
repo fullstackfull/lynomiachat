@@ -324,7 +324,7 @@ const resetDatePicker = () => {
 
 const emitDateRange = () => {
   if (!isValid(selectedStartDate.value) || !isValid(selectedEndDate.value)) {
-    useAlert('Please select a valid time range');
+    useAlert(t('DATE_PICKER.INVALID_RANGE'));
   } else {
     showDatePicker.value = false;
     emit('dateRangeChanged', [

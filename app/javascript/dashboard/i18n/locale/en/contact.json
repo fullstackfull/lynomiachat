@@ -878,6 +878,9 @@
         }
       },
       "ACTION_BUTTONS": {
+        "EMOJI": "Insert an emoji",
+        "ATTACH": "Attach a file",
+        "SIGNATURE": "Add your signature to this message",
         "DISCARD": "Discard",
         "SEND": "Send ({keyCode})"
       }

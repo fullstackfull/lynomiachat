@@ -44,7 +44,8 @@
     "TOGGLE": "Toggle switch"
   },
   "LABEL": {
-    "TAG_BUTTON": "tag"
+    "TAG_BUTTON": "tag",
+    "REMOVE": "Remove the label “{name}”"
   },
   "FEATURE_SPOTLIGHT": {
     "LEARN_MORE": "Learn more",

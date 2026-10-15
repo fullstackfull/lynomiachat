@@ -87,9 +87,11 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
         class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-iris-11 hover:underline mb-2 rounded-sm focus-ring"
       >
         {{ linkText }}
-        <Icon
-          icon="i-lucide-chevron-right"
-          class="flex-shrink-0 text-n-iris-11 size-4"
+        <!-- A bare span, not `Icon`: `Icon` renders `h('span', { class })` and forwards nothing
+          else, so `aria-hidden` on it never reaches the DOM. The link's own text names it. -->
+        <span
+          aria-hidden="true"
+          class="i-lucide-chevron-right flex-shrink-0 text-n-iris-11 size-4 rtl:rotate-180"
         />
       </a>
       <slot name="meta" />

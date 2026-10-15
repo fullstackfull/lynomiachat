@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 
 const props = defineProps({
@@ -13,6 +14,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['remove', 'hover']);
+
+const { t } = useI18n();
 
 const handleRemoveLabel = () => {
   emit('remove', props.label);
@@ -38,18 +41,22 @@ const handleMouseEnter = () => {
     <span class="text-sm text-n-slate-12 ltr:mr-px rtl:ml-px">
       {{ label.title }}
     </span>
+    <!-- `focus-within` so the button is not a hover-only control: tabbing to it used to
+      leave it collapsed to zero width and fully transparent, i.e. focused and invisible.
+      It also had no text, so it announced only "button" next to the label's name. -->
     <div
-      class="w-0 flex relative ltr:left-1 rtl:right-1 flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out"
+      class="w-0 flex relative ltr:left-1 rtl:right-1 flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-out focus-within:w-6"
       :class="{ 'w-6': isHovered }"
     >
       <Button
-        class="transition-opacity duration-200 !h-7 ltr:rounded-r-md rtl:rounded-l-md ltr:rounded-l-none rtl:rounded-r-none w-6 bg-transparent"
+        class="transition-opacity duration-200 !h-7 ltr:rounded-r-md rtl:rounded-l-md ltr:rounded-l-none rtl:rounded-r-none w-6 bg-transparent focus-within:opacity-100 focus:opacity-100"
         :class="{ 'opacity-0': !isHovered, 'opacity-100': isHovered }"
         type="button"
         slate
         xs
         faded
         icon="i-lucide-x"
+        :aria-label="t('LABEL.REMOVE', { name: label?.title })"
         @click="handleRemoveLabel"
       />
     </div>

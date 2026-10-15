@@ -37,15 +37,16 @@ module Custom::Whatsapp::OneoffCampaignService
   # them, the provider can report the number dead, an operator can revoke the integration or
   # throw the kill switch. This is the last moment any of that can be honoured, so it is
   # asked here, per recipient, against live rows.
+  # `clear_to_send` rather than `refusal` + a separate `pace` call, because the throttle
+  # SLEEPS and the order matters: asking first and pacing second meant a withdrawal landing
+  # during the wait was read, found nothing to stop, and the message went out anyway. The gate
+  # paces inside itself and re-asks afterwards. See Campaigns::SendGuard.
   def process_contact(contact)
     @contact = contact
     @outcome = nil
-    refusal = Campaigns::SendGuard.refusal(contact, campaign, :whatsapp)
+    refusal = Campaigns::SendGuard.clear_to_send(contact, campaign, :whatsapp)
     return record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)) if refusal
 
-    # PACED, not merely permitted. SendGuard answers "may this person be messaged"; this
-    # answers "how fast", immediately before the send rather than around the loop.
-    Campaigns::Throttle.pace(campaign.account)
     super
     record(:skipped, unhooked_reason) if @outcome.nil?
   ensure

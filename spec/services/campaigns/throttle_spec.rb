@@ -14,7 +14,7 @@ RSpec.describe Campaigns::Throttle do
   before { Redis::Alfred.delete(described_class.key(account)) }
 
   it 'lets a send through while the account is under its ceiling' do
-    described_class.pace(account, sleeper: sleeper)
+    expect(described_class.pace(account, sleeper: sleeper)).to eq(:clear)
 
     expect(paused).to be_empty
     expect(described_class.used(account)).to eq(1)
@@ -33,7 +33,7 @@ RSpec.describe Campaigns::Throttle do
     account.update!(settings: account.settings.merge(described_class::SETTING_KEY => 2))
     2.times { described_class.pace(account, sleeper: sleeper) }
 
-    expect(described_class.pace(account, sleeper: sleeper)).to be(true)
+    expect(described_class.pace(account, sleeper: sleeper)).to eq(:waited)
     expect(paused).not_to be_empty
   end
 
@@ -85,9 +85,33 @@ RSpec.describe Campaigns::Throttle do
   # that is consent, and consent fails closed elsewhere. A cache blip must not become an
   # outage.
   it 'lets the send through when Redis cannot be read' do
-    allow(Redis::Alfred).to receive(:get).and_raise(Redis::CannotConnectError)
+    allow(Redis::Alfred).to receive(:incr).and_raise(Redis::CannotConnectError)
 
-    expect(described_class.pace(account, sleeper: sleeper)).to be(true)
+    expect(described_class.pace(account, sleeper: sleeper)).to eq(:degraded)
+    expect(paused).to be_empty, 'a degraded throttle must not sleep; there is no window to wait for'
+  end
+
+  # A degraded throttle has to be VISIBLE, not only permissive. Recorded on the operations
+  # feed an operator watches rather than only in a log nobody greps after the fact.
+  it 'records an operations signal when its counter is unreachable' do
+    allow(Redis::Alfred).to receive(:incr).and_raise(Redis::CannotConnectError)
+
+    described_class.pace(account, sleeper: sleeper)
+
+    signal = Operations::Signal.find_by(account: account, source: 'campaign', signal: 'sync_failed')
+    expect(signal).to be_present, 'source and signal must be values the allow-lists accept, or nothing is written'
+    expect(signal.reason).to eq('throttle_unavailable')
+    expect(signal.detail['code']).to eq('Redis::CannotConnectError')
+  end
+
+  # THE RETURN VALUE IS THE CALLER'S CUE TO RE-CHECK ELIGIBILITY. If it ever stopped
+  # distinguishing "slept" from "did not", Campaigns::SendGuard would silently stop re-asking
+  # after a wait and the gap this whole ordering exists to close would reopen in silence.
+  it 'tells the caller whether time actually passed' do
+    account.update!(settings: account.settings.merge(described_class::SETTING_KEY => 1))
+
+    expect(described_class.pace(account, sleeper: sleeper)).to eq(:clear)
+    expect(described_class.pace(account, sleeper: sleeper)).to eq(:waited)
   end
 
   # Verified in the real loop, not only against the module: a throttle nothing calls is a
@@ -119,6 +143,19 @@ RSpec.describe Campaigns::Throttle do
       Whatsapp::OneoffCampaignService.new(campaign: campaign).perform
 
       expect(described_class).to have_received(:pace).exactly(3).times
+    end
+
+    # A recipient who is refused anyway must not claim a slot in the ceiling. Otherwise a
+    # mostly-suppressed audience paces itself against its own skips and a run that should
+    # take a minute takes a quarter of an hour.
+    it 'does not spend the ceiling on a recipient it refuses' do
+      contacts = create_list(:contact, 3, :with_phone_number, account: account)
+      allow(campaign).to receive(:audience_contacts).and_return(contacts)
+      account.update!(settings: account.settings.merge(Campaigns::Outbound::ACCOUNT_KEY => true))
+
+      Whatsapp::OneoffCampaignService.new(campaign: campaign).perform
+
+      expect(described_class.used(account)).to eq(0)
     end
   end
 end

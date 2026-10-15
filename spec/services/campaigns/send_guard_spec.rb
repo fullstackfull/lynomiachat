@@ -177,4 +177,157 @@ RSpec.describe Campaigns::SendGuard do
       expect(Campaigns::RecipientSnapshot::CONSENT_REASONS.keys).to include(*codes)
     end
   end
+
+  # ================================================================ pacing and the gate
+  #
+  # THE REGRESSION THIS SECTION EXISTS FOR. The senders used to ask `refusal` and then call
+  # `Campaigns::Throttle.pace`, in that order. Pacing SLEEPS -- up to MAX_WAIT per recipient,
+  # and a large audience spends most of its wall-clock time inside those sleeps -- so a
+  # withdrawal, a kill switch or a revocation landing during the wait was read, found nothing
+  # left to stop, and the message went out anyway. The answer was taken before the wait and
+  # acted on after it, which made asking late pointless for exactly the window in which
+  # asking late is the only thing that helps.
+  describe '.clear_to_send' do
+    let(:store) { create(:commerce_store, account: account, provider: 'storesyria', external_store_id: 'sy-p1') }
+    # Transactional (UTILITY), so a missing promotional grant is not in the way and every
+    # example below isolates the one state change it makes during the wait.
+    let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
+    let(:campaign) { create(:campaign, account: account, campaign_type: :one_off, template_params: utility) }
+
+    before { Redis::Alfred.delete(Campaigns::Throttle.key(account)) }
+
+    it 'permits a send that nothing refuses' do
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+    end
+
+    it 'refuses before pacing, so a refused recipient never claims a slot in the ceiling' do
+      stop(shopper)
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:consent_withdrawn)
+      expect(Campaigns::Throttle.used(account)).to eq(0)
+    end
+
+    # The property itself: eligibility is re-taken AFTER the wait. The withdrawal is recorded
+    # from inside the sleep, which is the only way to reproduce the real sequence -- the
+    # recipient was eligible when the guard first asked and is not by the time the provider
+    # would be called.
+    it 'honours a withdrawal that lands during the throttle wait' do
+      account.update!(settings: account.settings.merge(Campaigns::Throttle::SETTING_KEY => 1))
+      Campaigns::Throttle.pace(account, sleeper: ->(_) {}) # spend the window
+
+      allow(Campaigns::Throttle).to receive(:pace) do |_account, **_kwargs|
+        stop(shopper)
+        :waited
+      end
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:consent_withdrawn)
+    end
+
+    it 'honours a kill switch thrown during the throttle wait' do
+      allow(Campaigns::Throttle).to receive(:pace) do |_account, **_kwargs|
+        account.update!(settings: account.settings.merge(Campaigns::Outbound::ACCOUNT_KEY => true))
+        :waited
+      end
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:outbound_halted)
+    end
+
+    # A partner-originated send answers to the installation as well. Revoking it mid-wait must
+    # stop the message, not merely stop the next campaign.
+    it 'honours an installation revoked during the throttle wait' do
+      partner_campaign = create(:campaign, account: account, campaign_type: :one_off,
+                                           commerce_store: store, template_params: utility)
+      create(:commerce_customer_link, account: account, store: store, contact: shopper,
+                                      external_customer_id: 'cust-rev')
+      allow(Campaigns::Throttle).to receive(:pace) do |_account, **_kwargs|
+        store.update!(status: :disconnected)
+        :waited
+      end
+
+      expect(described_class.clear_to_send(shopper, partner_campaign, :whatsapp)).to eq(:installation_revoked)
+    end
+
+    # The second ask costs a query per recipient on the whole audience. It buys nothing when
+    # no time passed, so it is not paid then -- and this pins that, because a change that
+    # always re-asks would pass every example above while doubling the cost of every campaign.
+    it 'does not re-ask when pacing did not actually wait' do
+      allow(Campaigns::Throttle).to receive(:pace).and_return(:clear)
+      allow(described_class).to receive(:refusal).and_call_original
+
+      described_class.clear_to_send(shopper, campaign, :whatsapp)
+
+      expect(described_class).to have_received(:refusal).once
+    end
+
+    # A degraded throttle does not sleep, so there is no window to cover. It must not become
+    # a reason to send to someone who is already refused, nor a reason to re-query.
+    it 'still refuses a withdrawn recipient when the throttle is degraded' do
+      allow(Redis::Alfred).to receive(:incr).and_raise(Redis::CannotConnectError)
+      stop(shopper)
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to eq(:consent_withdrawn)
+    end
+
+    it 'lets an eligible recipient through when the throttle is degraded' do
+      allow(Redis::Alfred).to receive(:incr).and_raise(Redis::CannotConnectError)
+
+      expect(described_class.clear_to_send(shopper, campaign, :whatsapp)).to be_nil
+    end
+  end
+
+  # ================================================================ live state
+  #
+  # THE DEFECT THESE PIN. The consent tables were always queried fresh, so a withdrawal
+  # arriving mid-run was honoured. Three other inputs were not: `campaign.account` and
+  # `campaign.commerce_store` are memoised associations held for the whole job, and each
+  # contact comes out of the audience relation resolved when the scheduler dispatched the
+  # campaign. `settings`, `status` and `blocked` were therefore read off objects loaded before
+  # the loop began, so the per-account kill switch, an installation revoked mid-run and an
+  # agent blocking a shopper mid-run all did nothing until the next job.
+  #
+  # EVERY EXAMPLE CHANGES THE ROW THROUGH A DIFFERENT OBJECT than the one the campaign holds,
+  # because that is what reproduces it. Mutating `campaign.account` directly would pass
+  # against the broken implementation and prove nothing.
+  describe 'reading live rows rather than the objects the run started with' do
+    let(:store) { create(:commerce_store, account: account, provider: 'storesyria', external_store_id: 'sy-live') }
+    let(:utility) { { 'name' => 't', 'category' => 'UTILITY', 'language' => 'en' } }
+    let(:campaign) { create(:campaign, account: account, campaign_type: :one_off, template_params: utility) }
+
+    it 'honours a kill switch thrown on the account after the campaign loaded it' do
+      campaign.account.settings # memoise the association exactly as the sender does
+      Account.find(account.id).update!(settings: { Campaigns::Outbound::ACCOUNT_KEY => true })
+
+      expect(described_class.refusal(shopper, campaign, :whatsapp)).to eq(:outbound_halted)
+    end
+
+    it 'honours an agent blocking the shopper after the audience was resolved' do
+      resolved.first.blocked # memoise exactly as the audience relation leaves it
+      Contact.find(shopper.id).update!(blocked: true)
+
+      expect(described_class.refusal(resolved.first, campaign, :whatsapp)).to eq(:contact_unavailable)
+    end
+
+    it 'honours an installation revoked after the campaign loaded it' do
+      partner = create(:campaign, account: account, campaign_type: :one_off,
+                                  commerce_store: store, template_params: utility)
+      create(:commerce_customer_link, account: account, store: store, contact: shopper,
+                                      external_customer_id: 'cust-live')
+      partner.commerce_store.status
+      Commerce::Store.find(store.id).update!(status: :disconnected)
+
+      expect(described_class.refusal(shopper, partner, :whatsapp)).to eq(:installation_revoked)
+    end
+
+    # A deleted CONTACT is reachable: nothing stops an agent deleting one mid-run, and
+    # `campaigns` has no foreign key to `contacts`. It must refuse this recipient rather than
+    # abort a run that has already handed messages to the provider, which is why the re-read
+    # is a find_by and not a reload. (A deleted STORE is not reachable -- `campaigns` has a
+    # foreign key to `commerce_stores`, so the database refuses the delete.)
+    it 'refuses a contact deleted mid-run instead of raising' do
+      doomed = create(:contact, :with_phone_number, account: account)
+      Contact.find(doomed.id).destroy!
+
+      expect(described_class.refusal(doomed, campaign, :whatsapp)).to eq(:contact_unavailable)
+    end
+  end
 end

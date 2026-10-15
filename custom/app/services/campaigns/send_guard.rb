@@ -39,17 +39,77 @@
 module Campaigns::SendGuard
   module_function
 
+  # THE WHOLE GATE, IN THE ONE ORDER THAT IS CORRECT: ask, pace, ask again.
+  #
+  # The senders used to call `refusal` and then `Campaigns::Throttle.pace`, in that order,
+  # which quietly undid the point of asking late. Pacing sleeps -- up to MAX_WAIT per
+  # recipient, and a large audience spends most of its wall-clock time inside those sleeps --
+  # so a withdrawal, a kill switch or a revocation landing during the wait was read, found
+  # nothing to stop, and the message went out anyway. The answer was taken before the wait and
+  # acted on after it.
+  #
+  # WHY ASK TWICE RATHER THAN ONLY AFTER. The first ask is not a duplicate: it keeps a
+  # recipient who is already refused from claiming a slot in the ceiling. A campaign whose
+  # audience is mostly suppressed would otherwise pace itself against its own skips, turning a
+  # ten-thousand-row audience with a thousand eligible recipients into a sixteen-minute run of
+  # which fifteen minutes are spent pacing nothing.
+  #
+  # AND WHY THE SECOND ASK IS CONDITIONAL. `pace` reports whether it actually slept. When it
+  # did not, no meaningful time passed between the two asks and the second would re-run the
+  # same queries for the same answer -- a per-recipient cost on the whole audience to cover a
+  # window that does not exist. When it did sleep, the first answer is stale by construction
+  # and is re-taken.
+  #
+  # PACING CANNOT WIDEN WHAT IS PERMITTED. Every refusal `refusal` can return is re-asked
+  # after the wait: the kill switch (step 1), installation revocation (step 2), blocking and
+  # withdrawal in both consent stores (steps 3-7) and the missing promotional grant (step 8).
+  # A degraded throttle returns :degraded and does not sleep, so there is no window to cover
+  # and nothing is skipped.
+  #
+  # @return [Symbol, nil] nil when the send may proceed, else the refusal code
+  def clear_to_send(contact, campaign, channel)
+    before = refusal(contact, campaign, channel)
+    return before if before
+
+    return nil unless Campaigns::Throttle.pace(campaign.account) == :waited
+
+    refusal(contact, campaign, channel)
+  end
+
+  # EVERY RECORD IS RE-READ, and that is the difference between this and the audience filter.
+  #
+  # The consent tables were always queried fresh, so a withdrawal arriving mid-run was already
+  # honoured. Three other inputs were not, because they are ATTRIBUTES OF OBJECTS LOADED
+  # BEFORE THE LOOP BEGAN: `campaign.account` and `campaign.commerce_store` are memoised
+  # associations held for the whole job, and each contact came out of the audience relation
+  # when the scheduler dispatched the campaign. Reading `settings`, `status` and `blocked` off
+  # them answered a question about the moment the campaign started. So the per-account kill
+  # switch, an installation revoked mid-run and an agent blocking a shopper mid-run all did
+  # nothing until the next job -- the three cases this guard's whole docblock promises to
+  # honour, and the only three where "now" is the only answer worth having.
+  #
   # @return [Symbol, nil] nil when the send may proceed, else the refusal code
   def refusal(contact, campaign, channel)
-    return :outbound_halted if Campaigns::Outbound.halted?(campaign.account)
+    return :outbound_halted if Campaigns::Outbound.halted?(live(campaign.account))
 
     purpose = Campaigns::Eligibility.purpose_for(campaign)
-    native = Commerce::MessagingEligibility.refusal(contact, purpose)
-    store = campaign.commerce_store
+    native = Commerce::MessagingEligibility.refusal(live(contact), purpose)
+    # The memoised association decides WHETHER this is a partner-originated send, which cannot
+    # change; the re-read decides whether that installation is still authorised, which can.
+    return native unless campaign.commerce_store
 
-    return native_or_partner(native, contact, store, purpose, channel) if store
+    native_or_partner(native, contact, live(campaign.commerce_store), purpose, channel)
+  end
 
-    native
+  # A record as it is NOW, or nil when it has been deleted.
+  #
+  # A narrow re-read by primary key rather than `reload`, because `reload` raises on a deleted
+  # row and a contact deleted mid-run has to REFUSE this recipient, not abort a run that has
+  # already handed messages to the provider. `Commerce::MessagingEligibility` reads nil as
+  # :contact_unavailable, which is the right answer for somebody who no longer exists.
+  # (A deleted store cannot reach here: `campaigns` has a foreign key to `commerce_stores`.)
+  def live(record)
+    record&.class&.find_by(id: record.id)
   end
 
   def allows?(contact, campaign, channel) = refusal(contact, campaign, channel).nil?

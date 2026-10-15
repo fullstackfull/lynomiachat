@@ -23,12 +23,10 @@ class Twilio::OneoffSmsCampaignService
       # shopper can reply STOP, an agent can block them, the provider can report the number
       # dead, an operator can revoke the integration or throw the kill switch; this is the
       # last moment any of that can be honoured. See Campaigns::SendGuard for the precedence.
-      next if Campaigns::SendGuard.refusal(contact, campaign, :sms)
-
-      # PACED, not merely permitted. SendGuard answers "may this person be messaged"; this
-      # answers "how fast". Immediately before the provider call so the ceiling applies to
-      # real traffic rather than to the loop's bookkeeping.
-      Campaigns::Throttle.pace(campaign.account)
+      #
+      # It paces as well as permits, and in that order -- the throttle SLEEPS, so a refusal
+      # landing during the wait has to be read after it, not before.
+      next if Campaigns::SendGuard.clear_to_send(contact, campaign, :sms)
 
       content = Liquid::CampaignTemplateService.new(campaign: campaign, contact: contact).call(campaign.message)
 

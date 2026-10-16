@@ -1,10 +1,19 @@
 <%# The question list, from site_faq_entries in this locale.
-  
+
   THE SAME ROWS THE STRUCTURED DATA IS BUILT FROM. W5's FAQPage JSON-LD reads these rows, not a copy, so the
   markup and the structured data cannot disagree -- which is both Google's own requirement and the honest
   arrangement.
 
   A link whose page is unpublished resolves to nil and is not rendered, so an answer never points at a 404.
+
+  A QUESTION IS AN ITEM UNDER THE BLOCK'S OWN HEADING, SO IT IS SET LIKE ONE. The `dt` was `text-lg` -- the
+  size this layout gives a page standfirst -- which made twelve questions compete with the H2 above them, and
+  the `dd` declared no size at all, so an answer inherited the root 16px and ran the full width of a
+  `max-w-6xl` article with no measure.
+
+  TWO COLUMNS, BECAUSE THERE ARE TWELVE OF THEM. A single column of question and answer ran the length of a
+  screen and a half with the outer half of the window empty beside it. The measure that matters is the
+  answer's, and it is set on the column rather than on the page.
 %>
 <% entries = SiteFaqEntry.published_for(marketing_locale) %>
 <% if entries.any? %>
@@ -12,25 +21,29 @@
   <% content_for :structured_data do %>
     <%= marketing_structured_data(marketing_faq_schema(entries)) %>
   <% end %>
-  <section class="mt-10">
-    <% if section['heading'].present? %>
-      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
-    <% end %>
-    <dl class="mt-6 divide-y divide-slate-100">
-      <% entries.each do |entry| %>
-        <% href = entry.link? ? marketing_target_href(entry.target) : nil %>
-        <div class="py-6">
-          <dt class="text-lg font-semibold text-slate-900"><%= entry.question %></dt>
-          <dd class="mt-2 leading-relaxed text-slate-600">
-            <%= entry.answer %>
-            <% if href.present? %>
-              <a class="mt-2 block text-sm font-medium text-woot-700 hover:text-woot-800" href="<%= href %>">
-                <%= entry.link_label %>
-              </a>
-            <% end %>
-          </dd>
-        </div>
-      <% end %>
-    </dl>
+  <section class="<%= tone %>">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <%= render 'marketing/shared/section_head', heading: section['heading'], lede: nil %>
+      <dl class="mt-12 grid gap-x-12 gap-y-9 lg:grid-cols-2">
+        <% entries.each do |entry| %>
+          <% href = entry.link? ? marketing_target_href(entry.target) : nil %>
+          <div>
+            <dt class="text-lg font-semibold leading-[1.45] text-lyn-ink"><%= entry.question %></dt>
+            <dd class="mt-2.5 text-base leading-[1.8] text-lyn-ink-soft">
+              <p><%= entry.answer %></p>
+              <%# The answer is its own paragraph so the link below it is a target rather than the last words
+                of a sentence: it keeps its own line, reaches the 44px tap floor, and takes a focus ring, none
+                of which a bare inline anchor inside the `dd` did. Same label treatment as a card's link. %>
+              <% if href.present? %>
+                <a class="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-lyn-royal transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                   href="<%= href %>">
+                  <%= entry.link_label %>
+                </a>
+              <% end %>
+            </dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
   </section>
 <% end %>

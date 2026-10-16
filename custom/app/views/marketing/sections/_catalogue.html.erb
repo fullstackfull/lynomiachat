@@ -1,11 +1,31 @@
 <%# A block the CODE fills from the verified catalogue.
-  
+
   THE OPERATOR OWNS THE COPY AND NOTHING ELSE. The heading, the standfirst and the link label come from the
   row; the entries, their availability state and their prerequisites come from Marketing::Catalog, which
   carries the evidence in docs/official-website/02-verified-feature-inventory.md. That split is the line this
   programme exists to hold: a conditional feature cannot be edited into an available one, because its state
   was never in the editor.
+
+  THREE SHAPES, AND THE OPERATOR PICKS. `cards` is the index grid, `chips` is an inline strip, and `list` is
+  the channel index. `list` exists because the home page carries TWO catalogue blocks in a row -- channels,
+  then features -- and when both drew the same grid of bordered white cards the page became one
+  undifferentiated field with no way to tell where a section began. Same entries, same honesty, different
+  form.
+
+  WHAT `list` NOW IS. It was nine full-width rows of hairline-separated text in a 13rem/auto split: the most
+  important content on the site, set as a specification table, running half the height of the home page and
+  leaving the outer third of a desktop window empty beside it. It is now a two-column index led by a glyph --
+  no borders, no rules, the band's own field showing between the entries -- which halves the height, uses the
+  measure, and still reads as something other than the card grid that follows it.
 %>
+<%# THE ENTRY HEADING LEVEL FOLLOWS THE SECTION'S OWN, exactly as sections/_cards.html.erb computes it. With a
+  section heading the entries sit under an <h2> and are <h3>s; without one they are the first headings after
+  the page's <h1> and must be <h2>s. Both shapes that print an entry name read this one value, because they
+  disagreed: `list` was always an <h3> (so the home page's heading-less blocks skipped a level) and the card
+  was always an <h2> (so the nine cards under the home page's features heading were its siblings, not its
+  children).
+%>
+<% item_heading = section['heading'].present? ? 'h3' : 'h2' %>
 <% source = section['source'].to_s %>
 <% if Marketing::SectionSchema::SOURCES.include?(source) %>
   <% scope = source.to_sym %>
@@ -14,35 +34,82 @@
   <% entries = entries.first(limit) if limit.positive? %>
   <% index_href = marketing_target_href("page:standing:#{source}") %>
 
-  <section class="mt-10">
-    <% if section['heading'].present? %>
-      <h2 class="text-xl font-semibold text-slate-900"><%= section['heading'] %></h2>
-    <% end %>
-    <% if section['lede'].present? %>
-      <p class="mt-2 max-w-2xl leading-relaxed text-slate-600"><%= section['lede'] %></p>
-    <% end %>
+  <%# NEUTRAL GLYPHS, NOT THE CHANNELS' OWN LOGOS -- the same rule the hero panel is held to: the channel is
+      named in text beside the mark, which is clearer, needs no trademark, and keeps the section to one
+      colour. They are WRITTEN HERE rather than stored on the catalogue entry, because Tailwind's icon plugin
+      emits a rule only for a class it can see in a scanned file, and an icon name that lived in a Ruby
+      constant or a YAML string would be purged and render as an empty square. An entry with no mark of its
+      own falls back to the generic one rather than leaving a hole in the grid. %>
+  <% channel_glyphs = { whatsapp: 'i-lucide-message-circle', live_chat: 'i-lucide-message-square',
+                        email: 'i-lucide-mail', sms: 'i-lucide-smartphone', telegram: 'i-lucide-send',
+                        line: 'i-lucide-messages-square', facebook_messenger: 'i-lucide-messages-square',
+                        instagram: 'i-lucide-camera', api_channel: 'i-lucide-code',
+                        tiktok: 'i-lucide-video' } %>
 
-    <% if section['style'].to_s == 'chips' %>
-      <ul class="mt-6 flex flex-wrap gap-2">
-        <% entries.each do |entry| %>
-          <li class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700">
-            <%= t("marketing.#{scope}.#{entry.id}.name") %>
-            <%= render 'marketing/shared/state_badge', state: entry.state %>
-          </li>
-        <% end %>
-      </ul>
-    <% else %>
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <% entries.each do |entry| %>
-          <%= render 'marketing/shared/entry_card', entry: entry, scope: scope %>
-        <% end %>
-      </div>
-    <% end %>
+  <section class="<%= tone %>">
+    <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <%= render 'marketing/shared/section_head', heading: section['heading'], lede: section['lede'] %>
 
-    <% if section['link_label'].present? && index_href.present? %>
-      <a href="<%= index_href %>" class="mt-6 inline-block text-sm font-medium text-woot-700 hover:text-woot-800">
-        <%= section['link_label'] %>
-      </a>
-    <% end %>
+      <% case section['style'].to_s %>
+      <% when 'chips' %>
+        <ul class="mt-10 flex flex-wrap gap-2.5">
+          <% entries.each do |entry| %>
+            <li class="inline-flex items-center gap-2 rounded-full border border-lyn-line bg-lyn-paper px-4 py-2.5 text-sm font-medium text-lyn-ink">
+              <%= t("marketing.#{scope}.#{entry.id}.name") %>
+              <%= render 'marketing/shared/state_badge', state: entry.state %>
+            </li>
+          <% end %>
+        </ul>
+
+      <% when 'list' %>
+        <ul class="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-2">
+          <% entries.each do |entry| %>
+            <li class="flex items-start gap-4">
+              <span class="mt-0.5 grid size-11 shrink-0 place-items-center rounded-xl bg-lyn-royal/[0.07] text-lyn-royal" aria-hidden="true">
+                <span class="<%= channel_glyphs.fetch(entry.id, 'i-lucide-message-circle') %> size-5"></span>
+              </span>
+              <div class="min-w-0">
+                <%= content_tag item_heading, class: 'flex flex-wrap items-center gap-2 text-lg font-semibold text-lyn-ink' do %>
+                  <% if entry.detail? %>
+                    <a class="transition-colors hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                       href="<%= marketing_entry_path(scope, entry) %>">
+                      <%= t("marketing.#{scope}.#{entry.id}.name") %>
+                    </a>
+                  <% else %>
+                    <%= t("marketing.#{scope}.#{entry.id}.name") %>
+                  <% end %>
+                  <%= render 'marketing/shared/state_badge', state: entry.state %>
+                <% end %>
+                <p class="mt-2 text-base leading-[1.75] text-lyn-ink-soft">
+                  <%= t("marketing.#{scope}.#{entry.id}.summary") %>
+                </p>
+                <% if t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
+                  <p class="mt-2 text-sm leading-[1.7] text-lyn-ink-soft/80">
+                    <span class="font-semibold text-lyn-ink-soft">
+                      <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
+                    </span>
+                    <%= t("marketing.#{scope}.#{entry.id}.requires") %>
+                  </p>
+                <% end %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+
+      <% else %>
+        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <% entries.each do |entry| %>
+            <%= render 'marketing/shared/entry_card', entry: entry, scope: scope, heading_level: item_heading %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if section['link_label'].present? && index_href.present? %>
+        <a href="<%= index_href %>"
+           class="mt-10 inline-flex min-h-11 items-center gap-2 text-base font-semibold text-lyn-royal transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+          <%= section['link_label'] %>
+        </a>
+      <% end %>
+    </div>
   </section>
 <% end %>

@@ -1,0 +1,137 @@
+# dashboard route inventory -- 136 named routes
+account_overview_reports	overview	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+account_suspended		menu	app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+agent_assignment_policy_create	assignment/create	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_assignment_policy_edit	assignment/edit/:id	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_assignment_policy_index	assignment	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_bots		menu	app/javascript/dashboard/routes/dashboard/settings/agentBots/agentBot.routes.js
+agent_capacity_policy_create	capacity/create	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_capacity_policy_edit	capacity/edit/:id	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_capacity_policy_index	capacity	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+agent_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/agents/agent.routes.js
+agent_reports	agent	-	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+agent_reports_index	agents_overview	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+agent_reports_show	agents/:id	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+analytics_automations	automations	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_campaigns	campaigns	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_commerce	commerce	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_flows	flows	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_overview		menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_tickets	tickets	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+analytics_whatsapp	whatsapp	menu	app/javascript/dashboard/routes/dashboard/analytics/analytics.routes.js
+assignment_policy_index	index	menu	app/javascript/dashboard/routes/dashboard/settings/assignmentPolicy/assignmentPolicy.routes.js
+attributes_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/attributes/attributes.routes.js
+auditlogs_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/auditlogs/audit.routes.js
+auth_confirmation		-	app/javascript/v3/views/routes.js
+auth_password_edit		-	app/javascript/v3/views/routes.js
+auth_reset_password		-	app/javascript/v3/views/routes.js
+auth_signup		-	app/javascript/v3/views/routes.js
+auth_verify_email		-	app/javascript/v3/views/routes.js
+automation_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/automation/automation.routes.js
+billing_settings_index		menu	app/javascript/dashboard/routes/dashboard/settings/billing/billing.routes.js
+bot_reports	bot	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+campaigns_livechat_index	live_chat	menu	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+campaigns_one_off_index	one_off	-	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+campaigns_ongoing_index	ongoing	-	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+campaigns_sms_index	sms	menu	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+campaigns_whatsapp_analytics	whatsapp/:campaignId/analytics	-	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+campaigns_whatsapp_index	whatsapp	menu	app/javascript/dashboard/routes/dashboard/campaigns/campaigns.routes.js
+canned_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/canned/canned.routes.js
+captain_settings_index		-	app/javascript/dashboard/routes/dashboard/settings/captain/captain.routes.js
+contacts_dashboard_active	active	menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_dashboard_audiences_index		menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_dashboard_index		menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_dashboard_labels_index	labels/:label	menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_dashboard_segments_index	segments/:segmentId	menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_edit		menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_edit_label	labels/:label	menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+contacts_edit_segment	segments/:segmentId	menu	app/javascript/dashboard/routes/dashboard/contacts/routes.js
+conversation_mentions		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_participating		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_reports	conversation	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+conversation_through_inbox		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_through_mentions		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_through_participating		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_through_unattended		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_unattended		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversation_workflow_index		menu	app/javascript/dashboard/routes/dashboard/settings/conversationWorkflow/conversationWorkflow.routes.js
+conversations_through_folders		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversations_through_label		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+conversations_through_team		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+csat_reports	csat	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+custom_roles_list		menu	app/javascript/dashboard/routes/dashboard/settings/customRoles/customRole.routes.js
+folder_conversations		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+general_settings_index		menu	app/javascript/dashboard/routes/dashboard/settings/account/account.routes.js
+home		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+inbox_conversation		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+inbox_dashboard		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+inbox_reports	inboxes	-	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+inbox_reports_index	inboxes_overview	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+inbox_reports_show	inboxes/:id	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+inbox_view		menu	app/javascript/dashboard/routes/dashboard/inbox/routes.js
+inbox_view_conversation	:type/:id	menu	app/javascript/dashboard/routes/dashboard/inbox/routes.js
+label_conversations		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+label_reports	label	-	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+label_reports_index	labels_overview	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+label_reports_show	labels/:id	-	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+labels_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/labels/labels.routes.js
+labels_wrapper		-	app/javascript/dashboard/routes/dashboard/settings/labels/labels.routes.js
+login		-	app/javascript/v3/views/routes.js
+macros_edit	:macroId/edit	-	app/javascript/dashboard/routes/dashboard/settings/macros/macros.routes.js
+macros_new	new	-	app/javascript/dashboard/routes/dashboard/settings/macros/macros.routes.js
+macros_wrapper		menu	app/javascript/dashboard/routes/dashboard/settings/macros/macros.routes.js
+no_accounts		-	app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+onboarding_account_details		-	app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+onboarding_inbox_setup		-	app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+platform_support_tickets_index		menu	app/javascript/dashboard/routes/dashboard/help/help.routes.js
+platform_support_tickets_new	new	menu	app/javascript/dashboard/routes/dashboard/help/help.routes.js
+platform_support_tickets_show	:ticketId	menu	app/javascript/dashboard/routes/dashboard/help/help.routes.js
+portals_articles_edit		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_articles_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_articles_new		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_categories_articles_edit		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_categories_articles_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_categories_articles_new		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_categories_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_locales_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_new		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+portals_settings_index		-	app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+profile_settings		-	app/javascript/dashboard/routes/dashboard/settings/profile/profile.routes.js
+profile_settings_index	settings	menu	app/javascript/dashboard/routes/dashboard/settings/profile/profile.routes.js
+profile_settings_mfa	mfa	-	app/javascript/dashboard/routes/dashboard/settings/profile/profile.routes.js
+search		menu	app/javascript/dashboard/modules/search/search.routes.js
+settings_applications		menu	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_applications_integration	:integration_id	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_commerce_index		menu	app/javascript/dashboard/routes/dashboard/settings/commerce/commerce.routes.js
+settings_data_import_show	:dataImportId	-	app/javascript/dashboard/routes/dashboard/settings/data/data.routes.js
+settings_data_imports		menu	app/javascript/dashboard/routes/dashboard/settings/data/data.routes.js
+settings_flows_builder		-	app/javascript/dashboard/routes/dashboard/settings/flows/flows.routes.js
+settings_home		-	app/javascript/dashboard/routes/dashboard/settings/settings.routes.js
+settings_inbox_finish	:inbox_id/finish	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_inbox_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_inbox_new	new	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_inbox_show	:inboxId/:tab?	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_inboxes_add_agents	:inbox_id/agents	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_inboxes_page_channel	:sub_page	menu	app/javascript/dashboard/routes/dashboard/settings/inbox/inbox.routes.js
+settings_integrations_dashboard_apps	dashboard_apps	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_integrations_linear	linear	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_integrations_notion	notion	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_integrations_slack	slack	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_integrations_webhook	webhook	-	app/javascript/dashboard/routes/dashboard/settings/integrations/integrations.routes.js
+settings_teams_add_agents	:teamId/agents	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_edit	:teamId/edit	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_edit_finish	finish	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_edit_members	agents	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_finish	:teamId/finish	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_list	list	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_teams_new	new	menu	app/javascript/dashboard/routes/dashboard/settings/teams/teams.routes.js
+settings_templates		menu	app/javascript/dashboard/routes/dashboard/settings/templates/templates.routes.js
+subscription_settings_index		-	app/javascript/dashboard/routes/dashboard/settings/subscription/subscription.routes.js
+support_sla_policies_index	list	menu	app/javascript/dashboard/routes/dashboard/settings/supportSla/supportSla.routes.js
+support_tickets_index		menu	app/javascript/dashboard/routes/dashboard/tickets/tickets.routes.js
+support_tickets_show	:ticketId	menu	app/javascript/dashboard/routes/dashboard/tickets/tickets.routes.js
+team_conversations		menu	app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+team_reports	teams	-	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+team_reports_index	teams_overview	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+team_reports_show	teams/:id	menu	app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js

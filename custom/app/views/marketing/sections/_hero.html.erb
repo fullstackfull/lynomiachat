@@ -1,26 +1,143 @@
-<%# The home page's opening block. The headline and standfirst are the page's own heading and lede, rendered
-  by the page wrapper, so this section carries only the kicker and the two actions. %>
+<%# THE HERO: heading, standfirst, actions and a picture of the product, composed as one block on the one
+  dark field the page opens with.
+
+  WHY DARK. The page used to open on paper and stay there: brand colour reached nothing but the buttons
+  until the closing band 4,000px further down, and the product panel -- the only picture of the thing being
+  sold -- was a white card on a white field, so it had no edge to separate it. On `lyn-ink` the panel is the
+  brightest object on the screen without any decoration drawn around it, and the page gains the first beat of
+  a rhythm it did not have: ink, then paper, then mist, then ink again at the close.
+
+  THE EMPHASIS IS A RULE, NOT A STICKER. `highlight` is a phrase out of the heading that a translator may
+  move to wherever their sentence actually turns, and it used to render as rotated magenta block -- white
+  type on a coloured lozenge, which is a decade-old trope and was the only magenta on the site. It is now an
+  underline in `lyn-blue`: the same emphasis, carried by the typography rather than by a shape behind it, and
+  `whitespace-nowrap` keeps the marked phrase from breaking across two lines where the rule would read as two
+  unrelated marks.
+
+  THE PANEL IS THE PRODUCT, drawn in HTML rather than shipped as an image: a shared inbox with messages
+  arriving from three channels, in the page's own language, which is the one thing that distinguishes this
+  product from a chat widget. It is `aria-hidden` -- the names in it are illustrative, the heading and lede
+  already carry the meaning, and a screen reader gains nothing from reading a drawing of a UI aloud.
+
+  AND IT IS UPRIGHT. It used to be tilted a degree and a half over a second tilted plate, which needed a
+  stacking context to paint at all, needed locale-dependent bottom padding so the badge cleared the dropping
+  corner, and bought depth the dark field now gives for free.
+
+  CHANNEL MARKS ARE NEUTRAL GLYPHS, not the channels' own logos. The channel is named in text beside each
+  one, which is clearer, needs no trademark, and keeps the panel to one colour.
+%>
 <% primary = marketing_target_href(section['primary_target']) %>
 <% secondary = marketing_target_href(section['secondary_target']) %>
+<% heading = (page.heading.presence || page.title).to_s %>
+<% highlight = section['highlight'].to_s %>
 
-<% if section['kicker'].present? %>
-  <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-woot-25 px-3 py-1 text-xs font-medium text-woot-700">
-    <%= section['kicker'] %>
-  </p>
-<% end %>
+<section class="relative isolate overflow-hidden bg-lyn-ink">
+  <%# THE FIELD. Two soft pools of brand colour rather than a flat slab -- indigo behind the panel, royal
+      low and wide behind the heading -- so the band has depth without anything drawn on it. They are
+      `-z-10` inside this isolated section, and `overflow-hidden` is what keeps a pool from putting a
+      horizontal scrollbar on a narrow screen. %>
+  <span class="absolute -right-40 -top-56 -z-10 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(91,91,240,0.42),transparent_62%)]" aria-hidden="true"></span>
+  <span class="absolute -bottom-72 -left-32 -z-10 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(29,63,168,0.38),transparent_64%)]" aria-hidden="true"></span>
 
-<% if primary.present? || secondary.present? %>
-  <div class="mt-8 flex flex-wrap gap-3">
-    <% if primary.present? && section['primary_label'].present? %>
-      <a href="<%= primary %>" class="rounded-xl bg-woot-700 px-5 py-3 text-sm font-semibold text-white hover:bg-woot-800">
-        <%= section['primary_label'] %>
-      </a>
-    <% end %>
-    <% if secondary.present? && section['secondary_label'].present? %>
-      <a href="<%= secondary %>"
-         class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-        <%= section['secondary_label'] %>
-      </a>
-    <% end %>
+  <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_29rem] lg:gap-14 lg:py-28">
+    <div class="motion-safe:animate-fade-in-up">
+      <% if section['kicker'].present? %>
+        <p class="inline-flex items-center gap-2 rounded-full border border-lyn-line-dark bg-lyn-ink/40 py-1.5 pe-4 ps-3 text-sm font-medium text-lyn-paper/80">
+          <span class="size-2 rounded-full bg-lyn-blue" aria-hidden="true"></span>
+          <%= section['kicker'] %>
+        </p>
+      <% end %>
+
+      <%# ONE H1, built from the row's own heading. The highlight is a literal phrase out of that string, so
+          the two cannot disagree; a phrase that is not in the heading simply does not match and the heading
+          renders whole. `split` on a literal needs no escaping of the needle, and every part is escaped by
+          ERB on the way out.
+
+          LEADING IS 1.18 AND NOT TIGHTER. This headline is set in IBM Plex Sans Arabic half the time, where
+          the marks above and below the line need the room; display leading tuned on the Latin cut alone
+          collides them. %>
+      <h1 class="mt-6 text-balance text-[2.6rem] font-bold leading-[1.16] tracking-tight text-lyn-paper sm:text-[3.1rem] lg:text-[3.45rem]">
+        <% if highlight.present? && heading.include?(highlight) %>
+          <% before, after = heading.split(highlight, 2) %>
+          <%= before %><span class="whitespace-nowrap underline decoration-lyn-blue decoration-[0.085em] underline-offset-[0.19em]"><%= highlight %></span><%= after %>
+        <% else %>
+          <%= heading %>
+        <% end %>
+      </h1>
+
+      <% if page.lede.present? %>
+        <p class="mt-7 max-w-xl text-lg leading-[1.8] text-lyn-paper/70"><%= page.lede %></p>
+      <% end %>
+
+      <% if primary.present? || secondary.present? %>
+        <div class="mt-10 flex flex-wrap items-center gap-3">
+          <% if primary.present? && section['primary_label'].present? %>
+            <a href="<%= primary %>"
+               class="inline-flex min-h-12 items-center rounded-xl bg-lyn-indigo px-7 text-base font-semibold text-lyn-paper shadow-[0_14px_38px_-12px_rgba(91,91,240,0.85)] transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['primary_label'] %>
+            </a>
+          <% end %>
+          <% if secondary.present? && section['secondary_label'].present? %>
+            <a href="<%= secondary %>"
+               class="inline-flex min-h-12 items-center rounded-xl border border-lyn-line-dark px-7 text-base font-semibold text-lyn-paper/90 transition-colors hover:border-lyn-blue hover:text-lyn-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['secondary_label'] %>
+            </a>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-md pb-11 lg:max-w-none" aria-hidden="true">
+      <div class="overflow-hidden rounded-3xl bg-lyn-paper shadow-[0_44px_90px_-32px_rgba(0,0,0,0.7)]">
+        <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-6 py-4">
+          <span class="text-sm font-semibold text-lyn-ink"><%= t('marketing.hero_panel.title') %></span>
+          <span class="flex items-center gap-1.5 text-xs font-medium text-lyn-ink-soft">
+            <span class="size-1.5 rounded-full bg-lyn-blue"></span>
+            <%= t('marketing.hero_panel.live') %>
+          </span>
+        </div>
+
+        <ul class="divide-y divide-lyn-line">
+          <%# The glyph is WRITTEN HERE rather than read from the locale file, because Tailwind's icon plugin
+              generates a rule only for a class it can see in a scanned file -- an icon name that lived in a
+              YAML string would be purged and render as an empty square. %>
+          <% [['one', 'i-lucide-message-circle'], ['two', 'i-lucide-instagram'], ['three', 'i-lucide-globe']]
+               .each_with_index do |(row, icon), index| %>
+            <li class="flex items-start gap-3.5 px-6 py-4 <%= 'bg-lyn-mist' if index.zero? %>">
+              <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-royal/10 text-lyn-royal">
+                <span class="<%= icon %> size-[1.15rem]"></span>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-baseline gap-2">
+                  <span class="truncate text-sm font-semibold text-lyn-ink"><%= t("marketing.hero_panel.rows.#{row}.name") %></span>
+                  <span class="shrink-0 text-xs text-lyn-ink-soft"><%= t("marketing.hero_panel.rows.#{row}.channel") %></span>
+                </span>
+                <span class="mt-1 block truncate text-sm leading-relaxed text-lyn-ink-soft">
+                  <%= t("marketing.hero_panel.rows.#{row}.message") %>
+                </span>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+
+        <div class="flex items-center gap-3 border-t border-lyn-line px-6 py-4">
+          <span class="flex-1 rounded-xl bg-lyn-mist px-4 py-3 text-sm text-lyn-ink-soft">
+            <%= t('marketing.hero_panel.composer') %>
+          </span>
+          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-indigo text-lyn-paper">
+            <span class="i-lucide-send size-[1.1rem]"></span>
+          </span>
+        </div>
+      </div>
+
+      <%# THE ONE LABEL, AND IT SITS CLEAR OF THE CARD. Two floating pills used to overlap the messages they
+          were meant to annotate; the first attempt at one pill still had 14px of it lying across the
+          composer row. The wrapper's bottom padding is the badge's own height plus its clearance, so the
+          card ends where the card ends in both locales. %>
+      <span class="absolute bottom-0 start-6 inline-flex items-center gap-2 rounded-full bg-lyn-indigo px-4 py-2 text-xs font-semibold text-lyn-paper shadow-[0_16px_34px_-14px_rgba(0,0,0,0.8)]">
+        <span class="i-lucide-check size-3.5"></span>
+        <%= t('marketing.hero_panel.badges.assigned') %>
+      </span>
+    </div>
   </div>
-<% end %>
+</section>

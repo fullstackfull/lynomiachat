@@ -3,26 +3,44 @@
   The card links to the entry's own page when it has one. TikTok is the single entry that does not: the
   inventory's verdict is "mention only, labelled beta", so it keeps its card, its badge and its prerequisite
   and links nowhere -- which is honest, and still not a dead link.
+
+  THE PREREQUISITE IS THE POINT OF THE CARD, not a footnote on it: "you need a WhatsApp Business account" is
+  the sentence that decides whether a reader can use this channel today. It sits on its own tinted strip at
+  the foot of the card, where the eye lands last and the answer is waiting.
+
+  THE WHOLE CARD IS THE TARGET, AND ONLY WHEN THERE IS SOMEWHERE TO GO. Two defects met here. The border lit
+  up on hover on every card, including the seven across /integrations and /channels that link nowhere, so the
+  page promised a destination it did not have; and on the cards that do link, the only clickable thing was the
+  title -- a ~24px target on the page a reader opens on a phone. The title's `after:absolute after:inset-0`
+  now stretches the one anchor over the positioned card, so the hit area is the affordance, and `group` (which
+  nothing used before) is what carries the hover back to the title.
+
+  A CARD THAT LEADS SOMEWHERE LIFTS. The hover was a border colour alone, which on a grid of nine is almost
+  invisible; the shadow and the 2px rise read at a glance and cost nothing to a reader who never hovers. The
+  transition is on `transform` and `box-shadow`, so nothing in the grid reflows.
 %>
-<article class="flex flex-col rounded-2xl border border-slate-100 bg-white p-5">
-  <h2 class="flex flex-wrap items-center gap-2 text-base font-semibold text-slate-900">
-    <% if entry.detail? %>
-      <a class="hover:text-woot-700" href="<%= marketing_entry_path(scope, entry) %>">
+<% links = entry.detail? %>
+<article class="<%= class_names('flex flex-col overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper',
+                               'group relative transition-all duration-200 hover:-translate-y-0.5 hover:border-lyn-royal/40 hover:shadow-[0_20px_44px_-28px_rgba(10,23,51,0.5)]' => links) %>">
+  <div class="flex grow flex-col p-6">
+    <%= content_tag heading_level, class: 'flex flex-wrap items-center gap-2 text-lg font-semibold text-lyn-ink' do %>
+      <% if links %>
+        <a class="transition-colors after:absolute after:inset-0 group-hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+           href="<%= marketing_entry_path(scope, entry) %>">
+          <%= t("marketing.#{scope}.#{entry.id}.name") %>
+        </a>
+      <% else %>
         <%= t("marketing.#{scope}.#{entry.id}.name") %>
-      </a>
-    <% else %>
-      <%= t("marketing.#{scope}.#{entry.id}.name") %>
+      <% end %>
+      <%= render 'marketing/shared/state_badge', state: entry.state %>
     <% end %>
-    <%= render 'marketing/shared/state_badge', state: entry.state %>
-  </h2>
-
-  <p class="mt-2 grow text-sm leading-relaxed text-slate-600">
-    <%= t("marketing.#{scope}.#{entry.id}.summary") %>
-  </p>
-
+    <p class="mt-2.5 grow text-base leading-[1.75] text-lyn-ink-soft">
+      <%= t("marketing.#{scope}.#{entry.id}.summary") %>
+    </p>
+  </div>
   <% if t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
-    <p class="mt-3 rounded-lg bg-slate-25 px-3 py-2 text-xs leading-relaxed text-slate-600">
-      <span class="font-medium">
+    <p class="border-t border-lyn-line bg-lyn-mist px-6 py-3.5 text-sm leading-[1.7] text-lyn-ink-soft">
+      <span class="font-semibold text-lyn-ink">
         <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
       </span>
       <%= t("marketing.#{scope}.#{entry.id}.requires") %>

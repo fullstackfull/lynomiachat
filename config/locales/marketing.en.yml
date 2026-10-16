@@ -8,6 +8,25 @@ en:
   marketing:
     site_name: Lynomia Chat
     skip_to_content: Skip to content
+    hero_panel:
+      title: Shared inbox
+      live: Live
+      composer: Write your reply…
+      badges:
+        assigned: Assigned automatically
+      rows:
+        one:
+          name: Noura
+          channel: WhatsApp
+          message: Has my order 4821 shipped yet?
+        two:
+          name: Fahad
+          channel: Instagram
+          message: Do you have this in a large?
+        three:
+          name: Latifa
+          channel: Website chat
+          message: I need a tax invoice for my last order
     read_docs: Read the documentation
     breadcrumb: Breadcrumb
     detail:
@@ -23,7 +42,7 @@ en:
       requires: 'Needs:'
       you_supply: 'You supply:'
     nav:
-      label: Main
+      label: Main navigation
       features: Features
       channels: Channels
       solutions: Solutions
@@ -52,6 +71,7 @@ en:
       terms: Terms of use
       data_deletion: Data deletion
       rights: © %{year} Lynomia. All rights reserved.
+      opens_new_tab: opens in a new tab
     pages:
       home:
         title: Every customer conversation in one inbox
@@ -100,6 +120,8 @@ en:
         elsewhere_api: >-
           Building your own connection with webhooks, the REST API, a dashboard app or the widget SDK is
           covered by the API and webhooks page.
+        elsewhere_channels_cta: View the channels
+        elsewhere_api_cta: Open the API page
       pricing:
         title: Pricing
         heading: Pricing built around how you use it
@@ -146,6 +168,7 @@ en:
           How to get help with Lynomia Chat: documentation in Arabic and English, support tickets from inside
           your account, and how to reach us before you sign up.
     home:
+      headline_highlight: in one inbox
       kicker: Customer conversations platform by Lynomia
       headline: Every customer conversation in one inbox — whatever the channel
       lede: >-
@@ -171,6 +194,8 @@ en:
         account.
       help_docs: Open the documentation
       help_support: How to get help
+      help_docs_body: What the documentation covers, and where to start.
+      help_support_body: How to reach a person, and what to send them.
     cta:
       title: Ready to bring your conversations together?
       lede: >-
@@ -221,6 +246,7 @@ en:
         Tell us which channels you need and roughly how many people will be answering, and we will come back
         with a price. A person reads this; nothing is automated.
       form_errors: Please check the following before sending
+      required_legend: 'Fields marked with * are required.'
       channels_label: Which channels do you need? (optional)
       not_sure: Not sure yet
       submit: Request a quote
@@ -258,7 +284,6 @@ en:
           your website chat in one inbox for a team, with routing, saved replies, automation, campaigns,
           reporting and a documented API. It is built and operated by Lynomia.
       honesty:
-        title: How we describe it
         body: >-
           Every capability on this site is one that exists in the product today, and where it needs a setting,
           a credential or a plan entitlement before it works, the page says so on the card rather than leaving
@@ -277,6 +302,7 @@ en:
           Lynomia builds and runs this product. For the company itself — who we are and what else we do —
           see the Lynomia site.
       see_features: See what the product does
+      see_features_body: Every capability on this site in one list, with what each one needs before it works.
       company_site: Visit lynomia.com
     contact:
       email_title: Email us

@@ -7,18 +7,29 @@
 
   The last item carries aria-current and no href: a link to the page you are already on is noise for a screen
   reader and a self-referential internal link for a crawler.
+
+  THREE THINGS, AND THEY LOOK LIKE THREE THINGS. The trail used to be one undifferentiated grey run: the links
+  carried the same colour as the current page, and the separator was set in `text-lyn-line` -- the hairline
+  token, 1.24:1 on paper, which is a surface colour and not readable type. The link now takes the paper link
+  accent, the separator sits between the two, and where you are is the darkest and the only weighted crumb.
+
+  AND THE LINKS ARE REAL TAP TARGETS. They were ~16px tall on the one component whose entire job is getting
+  out of a detail page on a phone. The anchors take the 44px control floor through vertical padding, and the
+  row pulls that padding back off with a negative margin, so a reader gets the target without the trail
+  growing into a band.
 %>
-<nav aria-label="<%= t('marketing.breadcrumb') %>" class="mb-6 text-xs text-slate-600">
-  <ol class="flex flex-wrap items-center gap-1.5">
+<nav aria-label="<%= t('marketing.breadcrumb') %>" class="mb-6 text-xs text-lyn-ink-soft">
+  <ol class="-my-3 flex flex-wrap items-center gap-1.5">
     <% trail.each_with_index do |crumb, index| %>
       <li class="flex items-center gap-1.5">
         <% if index.positive? %>
-          <span aria-hidden="true" class="text-slate-300">/</span>
+          <span aria-hidden="true" class="text-lyn-ink-soft/50">/</span>
         <% end %>
         <% if crumb[:path] %>
-          <a class="hover:text-slate-800" href="<%= crumb[:path] %>"><%= crumb[:label] %></a>
+          <a class="inline-flex min-h-11 items-center py-3 text-lyn-royal transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+             href="<%= crumb[:path] %>"><%= crumb[:label] %></a>
         <% else %>
-          <span aria-current="page" class="text-slate-700"><%= crumb[:label] %></span>
+          <span aria-current="page" class="font-medium text-lyn-ink"><%= crumb[:label] %></span>
         <% end %>
       </li>
     <% end %>

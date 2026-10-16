@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+// THE FEATURE-PRESERVATION BASELINE for the dashboard redesign.
+//
+// A redesign is allowed to change how a screen looks. It is NOT allowed to remove a screen, or to
+// leave one with no way in. This script enumerates every named Vue route and every sidebar/menu
+// entry that points at one, so the same command run before and after a visual change produces two
+// files a `diff` can judge. A removed route or an orphaned menu entry shows up as a deleted line.
+//
+//   bin/dashboard-route-inventory > docs/redesign/inventory/dashboard-routes.txt
+//
+// It reads the route tables and the menu sources as text rather than booting Vite, so it runs in a
+// few milliseconds and needs no browser, no server and no database.
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const JS = path.join(ROOT, 'app/javascript');
+
+function walk(dir, match, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name !== 'node_modules') walk(full, match, out);
+    } else if (match(full)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+const isRouteFile = (f) => /routes?\.js$/.test(path.basename(f)) && !/\bspecs?\b/.test(f);
+
+// A route entry spans several lines and the files nest them freely, so this pairs each `name:` with
+// the nearest `path:` in the same object literal rather than trying to parse the module.
+function routesIn(source) {
+  const found = [];
+  const lines = source.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const name = lines[i].match(/^\s*name:\s*['"`]([^'"`]+)['"`]/);
+    if (!name) continue;
+    let route = '';
+    for (let j = Math.max(0, i - 6); j < Math.min(lines.length, i + 7); j += 1) {
+      const p = lines[j].match(/^\s*path:\s*['"`]([^'"`]*)['"`]/);
+      if (p) { route = p[1]; break; }
+    }
+    found.push({ name: name[1], path: route });
+  }
+  return found;
+}
+
+const routes = new Map();
+for (const file of walk(JS, isRouteFile)) {
+  const rel = path.relative(ROOT, file);
+  for (const r of routesIn(fs.readFileSync(file, 'utf8'))) {
+    if (!routes.has(r.name)) routes.set(r.name, { ...r, file: rel });
+  }
+}
+
+// Every route name named by the sidebar tree or the go-to command palette, which is how a route is
+// reached by clicking or by keyboard rather than by typing a URL. A route that loses its last entry here
+// still answers, but nobody can find it -- which the brief counts as making a feature inaccessible.
+const MENU_SOURCES = [
+  'dashboard/components-next/sidebar/Sidebar.vue',
+  'dashboard/composables/commands/useGoToCommandHotKeys.js',
+  'dashboard/helper/routeHelpers.js',
+];
+const linked = new Set();
+for (const entry of MENU_SOURCES) {
+  const target = path.join(JS, entry);
+  if (!fs.existsSync(target)) continue;
+  // Any quoted string in these files that IS a route name counts as a link to it. The sidebar names
+  // routes several ways -- `accountScopedRoute('x')`, `to: 'x'`, an `activeOn: [...]` list -- and matching
+  // against the route set is exact where matching each spelling by hand would quietly miss one.
+  const source = fs.readFileSync(target, 'utf8');
+  for (const m of source.matchAll(/['"`]([a-z][a-zA-Z0-9_]{2,})['"`]/g)) {
+    if (routes.has(m[1])) linked.add(m[1]);
+  }
+}
+
+const sorted = [...routes.values()].sort((a, b) => a.name.localeCompare(b.name));
+console.log(`# dashboard route inventory -- ${sorted.length} named routes`);
+for (const r of sorted) {
+  console.log(`${r.name}\t${r.path}\t${linked.has(r.name) ? 'menu' : '-'}\t${r.file}`);
+}

@@ -63,6 +63,11 @@ const tailwindConfig = {
         sans: defaultSansFonts,
         inter: ['Inter', ...defaultSansFonts],
         interDisplay: ['InterDisplay', ...defaultSansFonts],
+        // The marketing site's stack. Arabic resolves to IBM Plex Sans Arabic and everything else falls
+        // through to Inter, because the Arabic @font-face rules carry a `unicode-range`
+        // (app/javascript/marketing/fonts/plex-arabic.scss). One class, both locales, no branch in any
+        // template -- and an English page downloads no Arabic file.
+        lyn: ['"IBM Plex Sans Arabic"', 'Inter', ...defaultSansFonts],
       },
       fontWeight: {
         420: '420',

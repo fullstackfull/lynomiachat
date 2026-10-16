@@ -287,4 +287,38 @@ export const colors = {
       border: 'rgba(var(--label-border))',
     },
   },
+
+  // THE LYNOMIA BRAND RAMP.
+  //
+  // One palette for the three surfaces that currently disagree: the marketing site is blue on white, the
+  // dashboard sidebar is navy with a pink nobody else uses, and the Flutter app is indigo. These are the
+  // colours those three already contain, named once so they can stop drifting.
+  //
+  // EACH ONE HAS A JOB, and the jobs come from contrast rather than taste:
+  //
+  //   ink / ink-soft  body and secondary text on paper (17:1 and 10:1 on white)
+  //   royal           links and text accents on paper -- 9:1 on white, which `blue` cannot reach
+  //   blue            focus rings, live indicators, and accents on the DARK field, where `royal` goes muddy.
+  //                   It is 3.3:1 on white, so it is never body text and never a link on paper.
+  //   indigo          the primary action, on every surface. It is the one colour the Flutter app
+  //                   (#6366F1, lib/shared/styles/themes.dart) and the website can share, and white on it
+  //                   is 4.9:1.
+  //   magenta         the single bold note. ONE per page, and white on it is 4.9:1 -- so when it sits
+  //                   behind a headline phrase the type on it is white, not ink.
+  //   paper/mist/line the surfaces and the hairlines between them.
+  //
+  // These are additive. Nothing that exists changes colour until a call site asks for `lyn-*`.
+  lyn: {
+    ink: '#0A1733',
+    'ink-soft': '#2A3A5C',
+    royal: '#1D3FA8',
+    blue: '#0090FF',
+    indigo: '#5B5BF0',
+    'indigo-deep': '#4038C9',
+    magenta: '#D6246E',
+    paper: '#FFFFFF',
+    mist: '#F3F5FB',
+    line: '#E2E7F3',
+    'line-dark': '#1C2E55',
+  },
 };

@@ -149,8 +149,13 @@ describe 'The homepage cutover' do
 
         get '/'
 
-        href = response.body[/<a href="([^"]*)"[^>]*>\s*الصفحة الرئيسية/m, 1]
-        expect(href).to eq('/')
+        # PARSED, NOT MATCHED POSITIONALLY. This read `/<a href="..."/` until the header's links moved onto
+        # `link_to`, which emits `class` first -- so the assertion started returning nil while the href it
+        # was checking was still exactly right. What this example is about is where an operator's `home` nav
+        # row RESOLVES TO, and that question does not depend on attribute order.
+        link = Nokogiri::HTML(response.body).css('a').find { |a| a.text.strip == 'الصفحة الرئيسية' }
+        expect(link).to be_present
+        expect(link['href']).to eq('/')
       end
 
       it 'links home from a detail page breadcrumb, in the trail and in its structured data' do

@@ -138,6 +138,17 @@ Chatwoot surfaces (integrations 617, inbox management 470, settings 425, help ce
 `CLAUDE.md` routes through Crowdin and the community rather than through product pull requests. It
 is the single largest remaining gap between the two languages and it deserves a plan of its own.
 
+### The mobile repository has no CI at all
+
+`fullstackfull/lynomia-chat-app98` has no `.github/workflows` directory, so **PR #1 has no automated
+gate**: nothing runs `flutter analyze`, nothing runs the 99 tests, and a pull request that broke both
+would look exactly like one that did not. The numbers above were measured by hand in this container.
+
+A workflow doing `flutter pub get`, `flutter analyze` and `flutter test` on every pull request would
+close that, and it is three lines of YAML. It is not in this pull request because adding CI to a
+repository is an owner's decision — runner minutes, which branches it gates, whether it becomes
+required — rather than part of a redesign.
+
 ## 5. Limitations, stated precisely
 
 - **No emulator, so no device screenshots of the Flutter app.** `/dev/kvm` is absent and

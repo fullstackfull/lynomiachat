@@ -22,6 +22,13 @@ end
 
 namespace :api, defaults: { format: 'json' } do
   namespace :v1 do
+    # The plan a visitor chose on the public pricing page, read back once they have an identity. Outside the
+    # :accounts scope on purpose: it is asked before an account is chosen. See
+    # custom/app/controllers/api/v1/billing/pending_plan_controller.rb.
+    namespace :billing do
+      resource :pending_plan, only: [:show, :destroy], controller: 'pending_plan'
+    end
+
     resources :accounts, only: [] do
       scope module: :accounts do
         resource :billing, only: [:show], controller: 'billing' do

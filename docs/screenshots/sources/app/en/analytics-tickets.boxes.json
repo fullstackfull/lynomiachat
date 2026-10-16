@@ -1,0 +1,21 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "deviceScaleFactor": 1
+  },
+  "boxes": {
+    "header": {
+      "x": 368,
+      "y": 0,
+      "width": 1024,
+      "height": 117
+    },
+    "kpis": {
+      "x": 368,
+      "y": 165,
+      "width": 1024,
+      "height": 348
+    }
+  }
+}

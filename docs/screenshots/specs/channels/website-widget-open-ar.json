@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/widget/ar/host-open.png",
+  "locale": "ar",
+  "dir": "rtl",
+  "width": 1280,
+  "height": 860,
+  "crop": {
+    "x": 824,
+    "y": 92,
+    "w": 456,
+    "h": 768
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "source": "docs/screenshots/sources/app/ar/website-script.png",
+  "locale": "ar",
+  "dir": "rtl",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "around": [
+      "preview"
+    ],
+    "pad": 10,
+    "$comment": "The snippet panel is a fixed 720px tall whatever the snippet's length, so the measured box ends 350px below the last line of code. The frame stops just under </script>.",
+    "extendBottom": -355
+  },
+  "redact": [
+    {
+      "box": "token",
+      "pad": 3,
+      "label": "رمز موقعك"
+    }
+  ],
+  "steps": [
+    {
+      "n": 1,
+      "box": "tabs",
+      "at": "bottom",
+      "label": "معاينة / النص"
+    }
+  ]
+}

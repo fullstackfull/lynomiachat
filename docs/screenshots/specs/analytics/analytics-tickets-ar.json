@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/app/ar/analytics-tickets.png",
+  "locale": "ar",
+  "dir": "rtl",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 32,
+    "y": 16,
+    "w": 1056,
+    "h": 600
+  }
+}

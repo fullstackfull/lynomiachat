@@ -61,9 +61,15 @@ function markerHtml(step, index) {
   const n = step.n ?? index + 1;
   const tone = step.tone === 'result' ? TOKENS.magenta : TOKENS.indigo;
   // The label sits on the side with room for it. `side` is explicit in the spec when the automatic
-  // choice would run the label off the edge.
-  const side = step.side || (step.x > 55 ? 'start' : 'end');
-  const labelOnLeft = side === 'start' ? !isRtl : isRtl;
+  // choice would run the label off the edge, and it is a READING side -- `start` is the left in English
+  // and the right in Arabic -- because a spec names the side of the control a reader looks at.
+  //
+  // THE AUTOMATIC CHOICE IS PHYSICAL, and conflating the two was a defect: `x > 55 ? 'start' : 'end'`
+  // reads a physical position off the frame, so mapping its answer back through the reading direction
+  // negated it a second time and every Arabic label landed on the side with LESS room. Measured on the
+  // Arabic install-snippet figure, whose label ran off the right edge of the crop.
+  const namedSideIsLeft = step.side === 'start' ? !isRtl : isRtl;
+  const labelOnLeft = step.side ? namedSideIsLeft : step.x > 55;
 
   // Clamped away from the frame edge: a marker at 2% puts half its dot and all of its label outside
   // the picture, and the label is the part that carries the meaning.
@@ -108,10 +114,19 @@ function highlightHtml(step) {
 // In SOURCE pixels, like the crop, because the thing being covered is at a place on the screen rather than
 // at a place in the composition.
 function redactionHtml(redaction, frame) {
-  const x = ((redaction.x - frame.x) / frame.w) * 100;
-  const y = ((redaction.y - frame.y) / frame.h) * 100;
-  const w = (redaction.w / frame.w) * 100;
-  const h = (redaction.h / frame.h) * 100;
+  // Either a measured control by name -- which is how a credential is covered in both reading directions
+  // without a second set of coordinates -- or an explicit box in source pixels.
+  const pad = redaction.pad ?? 2;
+  const box = redaction.box ? boxOf(redaction.box) : null;
+  const sx = box ? box.x - pad : redaction.x;
+  const sy = box ? box.y - pad : redaction.y;
+  const sw = box ? box.width + pad * 2 : redaction.w;
+  const sh = box ? box.height + pad * 2 : redaction.h;
+
+  const x = ((sx - frame.x) / frame.w) * 100;
+  const y = ((sy - frame.y) / frame.h) * 100;
+  const w = (sw / frame.w) * 100;
+  const h = (sh / frame.h) * 100;
   return `
   <div class="redaction" style="left:${pc(x)};top:${pc(y)};width:${pc(w)};height:${pc(h)}">
     ${redaction.label ? escapeHtml(redaction.label) : ''}
@@ -180,7 +195,9 @@ async function loadBoxes() {
 }
 
 const needsBoxes =
-  (spec.crop && spec.crop.around) || (spec.steps || []).some(step => step.box);
+  (spec.crop && spec.crop.around) ||
+  (spec.steps || []).some(step => step.box) ||
+  (spec.redact || []).some(redaction => redaction.box);
 const boxes = needsBoxes ? await loadBoxes() : null;
 if (needsBoxes && !boxes) {
   throw new Error(
@@ -197,13 +214,19 @@ function boxOf(name) {
   return box;
 }
 
-/** The union of several measured boxes, grown by `pad` and clamped to the source, in source pixels. */
-function around(names, pad = 24) {
+/**
+ * The union of several measured boxes, grown by `pad` and clamped to the source, in source pixels.
+ *
+ * `extendBottom` carries the frame further down than anything measured: a reporting screen's figure is
+ * usually "the header and the counters, plus the chart under them", and the chart is a canvas with no
+ * stable handle to measure. One number, in the spec, beside the reason for it.
+ */
+function around(names, pad = 24, extendBottom = 0) {
   const all = names.map(boxOf);
   const left = Math.min(...all.map(b => b.x)) - pad;
   const top = Math.min(...all.map(b => b.y)) - pad;
   const right = Math.max(...all.map(b => b.x + b.width)) + pad;
-  const bottom = Math.max(...all.map(b => b.y + b.height)) + pad;
+  const bottom = Math.max(...all.map(b => b.y + b.height)) + pad + extendBottom;
   return {
     x: Math.max(0, Math.round(left)),
     y: Math.max(0, Math.round(top)),
@@ -249,7 +272,9 @@ function resolveStep(step, frame) {
 // 358px on a phone and its annotations are unreadable, which is the usual reason documentation screenshots
 // are useless on the device most people read them on. In SOURCE pixels; the markers and rings are then
 // percentages of the CROPPED frame.
-const crop = spec.crop?.around ? around(spec.crop.around, spec.crop.pad) : spec.crop;
+const crop = spec.crop?.around
+  ? around(spec.crop.around, spec.crop.pad, spec.crop.extendBottom)
+  : spec.crop;
 const W = crop ? crop.w : spec.width;
 const H = crop ? crop.h : spec.height;
 const frame = crop ? { ...crop } : { x: 0, y: 0, w: spec.width, h: spec.height };
@@ -289,8 +314,14 @@ const html = `<!doctype html>
   /* A zero-size anchor at the point itself: the dot centres on it and the label hangs to one side, so the
      label's width can never move the dot off the control it is pointing at. */
   .marker { position: absolute; z-index: 4; width: 0; height: 0; }
+  /* left:0 is not decoration. With left and right both auto, an absolutely positioned box falls at its
+     STATIC position, and that position is direction-dependent: under dir=rtl the box is placed by its
+     RIGHT edge, so the dot landed a whole width to the left of the anchor and every Arabic figure drew
+     its number underneath its own label. Anchoring to the marker's left edge -- the marker is zero-sized,
+     so both its edges ARE the point -- leaves the translate as the only thing that moves the dot, in
+     either direction. */
   .dot {
-    position: absolute; transform: translate(-50%, -50%);
+    position: absolute; left: 0; top: 0; transform: translate(-50%, -50%);
     width: 34px; height: 34px; border-radius: 999px; color: #fff;
     display: grid; place-content: center; font-weight: 700; font-size: 17px;
     border: 3px solid rgba(255,255,255,.95);

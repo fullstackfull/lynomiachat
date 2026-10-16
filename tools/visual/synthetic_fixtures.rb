@@ -378,3 +378,21 @@ end
 
 puts "\nsupport: #{Support::Ticket.where(account: account).count} case(s), " \
      "#{Support::SlaPolicy.where(account: account).count} SLA policies"
+
+# ---------------------------------------------------------------------------------------------------------
+# THE LYNOMIA MODULES, SWITCHED ON for the demo account.
+#
+# Each one is an account feature flag that ships OFF, because an installation sells them separately. The
+# sidebar hides what is off -- the support desk, its analytics tab, the flow builder, commerce, the unified
+# identity panel -- so a documentation capture run against a stock seed photographs a product with four of
+# its modules missing, and the articles about them have no figures.
+#
+# This is a development demo account whose whole purpose is to show the product, so it gets all four. It
+# says nothing about what any real account is entitled to: that is a billing plan decision, made in Super
+# Admin, and nothing here touches it.
+%w[lynomia_commerce lynomia_flow_builder lynomia_support_tickets lynomia_unified_identity].each do |feature|
+  account.enable_features!(feature) unless account.feature_enabled?(feature)
+end
+
+puts "\nmodules: #{%w[lynomia_commerce lynomia_flow_builder lynomia_support_tickets lynomia_unified_identity]
+  .select { |f| account.feature_enabled?(f) }.join(', ')}"

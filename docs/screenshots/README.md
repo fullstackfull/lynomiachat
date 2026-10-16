@@ -22,6 +22,32 @@ frame. The source stays the whole screen that was photographed, because that is 
 — and a 1440-wide screenshot published whole is 358px on a phone, which is where documentation is
 read and where its annotations stop being legible.
 
+## Measured geometry, and the one thing that is covered
+
+Two numbers in a spec used to be eyeballed off the PNG: where a ring goes, and where a marker's dot
+sits. They are now read off the live page instead. A page in `tools/visual/capture.mjs` may declare
+
+```js
+measure: { 'status-filter': 'button:has(.i-lucide-filter)' }
+```
+
+and the capture writes `<name>.boxes.json` beside the shot, holding each named control's bounding box
+in the shot's own pixels. A spec then says `"box": "status-filter"` instead of a coordinate, and
+`"crop": { "around": ["header", "kpis"], "pad": 16 }` instead of a rectangle. The payoff is not
+tidiness: it is that **one spec crops the same thing in both reading directions**, because under
+`dir=rtl` the sidebar moves to the other side and every x in the screenshot shifts by the sidebar's
+width.
+
+`extendBottom` carries the frame past anything measured, for the chart under a header that has no
+stable handle to measure.
+
+**A redaction covers a credential without editing the capture.** The widget's install snippet contains
+a real website token, which belongs in the screenshot's composition and must not be published. A spec
+may carry `"redact": [{ "box": "token", "label": "your website token" }]`, drawn into the annotation
+layer over the capture — so the source keeps the pixels that were photographed, the figure never
+carries the secret, and nobody has to retouch an image. It is a solid block rather than a blur,
+because a blurred credential still looks like something a reader should go and find.
+
 ## Where the outputs go
 
 They go wherever that consumer's own pipeline requires, because the two systems are different:

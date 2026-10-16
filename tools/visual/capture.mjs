@@ -58,10 +58,12 @@ const SIDEPANEL_IS_OPEN = 'button[aria-pressed="true"]:has(.i-lucide-user-round)
 // A CONVERSATION ON A NAMED CHANNEL, rather than whichever one happens to be at the top of the list.
 // Inbox names are DATA, not translation: `rails db:seed` calls them "PaperLayer Line", "PaperLayer Website"
 // and so on in every locale, so a card can be addressed by the channel it came in on and the same line works
-// in Arabic. This removes two real defects from the shots that used `nth=0`: the top of the list moves
-// whenever anything arrives -- the widget capture creates a conversation and takes it -- and the top of this
-// seeded list is a Facebook thread, which carries the "you cannot reply due to 24 hour message window
-// restriction" banner and a composer locked to Private Note. That is a true screen and a terrible hero.
+// in Arabic. It fixes a real defect in the shot that used `nth=0`: the top of this seeded list is a Facebook
+// thread, which carries the "you cannot reply due to 24 hour message window restriction" banner and a
+// composer locked to Private Note. That is a true screen and a terrible hero.
+//
+// It is NOT enough on its own to find one particular conversation -- see `widget-arrival` below, which
+// needs a specific one and addresses it by id.
 const conversationOn = inbox =>
   `.conversations-list div.conversation:has-text("${inbox}") >> nth=0`;
 
@@ -81,6 +83,9 @@ const WEBSITE_INBOX = 2;
 // a 45rem floor nothing else on the page sets -- because its tabs ("Preview", "Script") carry translated
 // labels and the panel itself has no test id.
 const PREVIEW_PANEL = '[class*="min-h-[45rem]"]';
+
+// Its "Preview" / "Script" switch, which is the control the install article tells a reader to press.
+const PREVIEW_TABS = `${PREVIEW_PANEL} div.relative.flex.items-center.h-8`;
 
 const SETS = {
   marketing: {
@@ -147,12 +152,19 @@ const SETS = {
       },
       // THE AGENT'S HALF OF THE WIDGET PAIR. `tools/visual/capture-widget.mjs` sends a real message from the
       // real widget on a demo shop; this shoots where it lands, which is the half of "connect website chat"
-      // that no picture of the widget alone can show. Run it after that script: it opens the most recent
-      // conversation ON THE WEBSITE CHANNEL, so anything arriving on another channel in between cannot
-      // steal the shot.
+      // that no picture of the widget alone can show.
+      //
+      // ADDRESSED BY ITS OWN URL, not by clicking a row. Two attempts to pick it out of the list failed for
+      // the same reason: the list is live. "The first row" moved when the next seeded conversation arrived,
+      // and "the first row on the website channel" opened a SEEDED website conversation instead of the new
+      // one -- the published figure showed a different customer from the one the widget half shows. The
+      // conversation's own display id is the only address that cannot drift, so the runner that follows the
+      // widget capture reads it out of the database and puts it in WIDGET_CONVERSATION.
       'widget-arrival': {
-        path: '/app/accounts/1/dashboard',
-        click: [ALL_TAB, conversationOn('PaperLayer Website'), SIDEPANEL_CLOSE],
+        path: process.env.WIDGET_CONVERSATION
+          ? `/app/accounts/1/conversations/${process.env.WIDGET_CONVERSATION}`
+          : '/app/accounts/1/dashboard',
+        click: [SIDEPANEL_CLOSE],
         expect: [SIDEPANEL_IS_CLOSED],
       },
       contacts: '/app/accounts/1/contacts',
@@ -213,10 +225,7 @@ const SETS = {
       'inbox-new': '/app/accounts/1/settings/inboxes/new',
       'website-settings': {
         path: `/app/accounts/1/settings/inboxes/${WEBSITE_INBOX}`,
-        measure: {
-          preview: PREVIEW_PANEL,
-          tabs: '[class*="min-h-[45rem]"] div.relative.flex.items-center.h-8',
-        },
+        measure: { preview: PREVIEW_PANEL, tabs: PREVIEW_TABS },
       },
       // The same page with the preview panel showing the INSTALL SNIPPET instead of the widget. This is
       // the one screen an administrator has to find to put chat on their site, and it is behind a tab
@@ -224,7 +233,15 @@ const SETS = {
       'website-script': {
         path: `/app/accounts/1/settings/inboxes/${WEBSITE_INBOX}`,
         click: [`${PREVIEW_PANEL} button >> nth=1`],
-        measure: { preview: PREVIEW_PANEL },
+        // THE TOKEN, SO THE FIGURE CAN COVER IT. The snippet on this screen carries a real website token,
+        // and a published figure must not. It is addressed by its SHAPE rather than its position -- the one
+        // syntax-highlighted string in the block that is a long bare alphanumeric in quotes -- so the same
+        // line finds it under `dir=rtl`, where the panel is on the other side of the screen.
+        measure: {
+          preview: PREVIEW_PANEL,
+          tabs: PREVIEW_TABS,
+          token: `${PREVIEW_PANEL} :text-matches("^'[A-Za-z0-9_-]{16,}',?$")`,
+        },
       },
       'website-prechat': `/app/accounts/1/settings/inboxes/${WEBSITE_INBOX}/pre-chat-form`,
       'website-configuration': `/app/accounts/1/settings/inboxes/${WEBSITE_INBOX}/configuration`,

@@ -20,18 +20,24 @@
 
   THE TOKEN IS A PLACEHOLDER. `__WEBSITE_TOKEN__` and `__BASE_URL__` are substituted by the capture script
   from the database, so this file does not go stale when the seed is rebuilt.
+
+  SO IS THE LANGUAGE. Every word a reader sees, plus `lang` and `dir`, is a placeholder the capture script
+  fills from its own per-locale table. ONE file rather than one per language, because the snippet below is
+  quoted verbatim in the article and a second copy of it is a second thing to keep in step. It also makes
+  the Arabic figure honest: the shop around the widget reads right to left, instead of an English page with
+  an Arabic caption under it.
 -->
-<html lang="en">
+<html lang="__LANG__" dir="__DIR__">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PaperLayer — stationery for people who still write things down</title>
+  <title>__TITLE__</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: __FONT__;
       color: #1b2338;
       background: #fff;
     }
@@ -60,32 +66,31 @@
 </head>
 <body>
   <header>
-    <div class="logo">PaperLayer <span>· demo shop</span></div>
-    <nav><span>Notebooks</span><span>Pens</span><span>Refills</span><span>Gifts</span></nav>
-    <div class="cart">Cart (2)</div>
+    <div class="logo">PaperLayer <span>· __DEMO__</span></div>
+    <nav><span>__NAV1__</span><span>__NAV2__</span><span>__NAV3__</span><span>__NAV4__</span></nav>
+    <div class="cart">__CART__</div>
   </header>
 
   <section class="hero">
-    <h1>Stationery for people who still write things down</h1>
+    <h1>__H1__</h1>
     <p>
-      Ruled, dotted and plain. Sewn bindings that open flat, paper that does not bleed, and a delivery
-      promise we answer for in the chat on this page.
+      __LEDE__
     </p>
-    <a class="buy" href="#">Shop notebooks</a>
+    <a class="buy" href="#">__CTA__</a>
   </section>
 
   <section class="grid">
     <article class="card">
       <div class="swatch" style="background: linear-gradient(135deg,#eef1fb,#d8def4)"></div>
-      <div class="meta"><h2>A5 dotted, navy</h2><p>192 pages · 100 gsm</p></div>
+      <div class="meta"><h2>__P1__</h2><p>__P1META__</p></div>
     </article>
     <article class="card">
       <div class="swatch" style="background: linear-gradient(135deg,#fdeef1,#f3d6de)"></div>
-      <div class="meta"><h2>A5 ruled, clay</h2><p>192 pages · 100 gsm</p></div>
+      <div class="meta"><h2>__P2__</h2><p>__P2META__</p></div>
     </article>
     <article class="card">
       <div class="swatch" style="background: linear-gradient(135deg,#eaf6ef,#cfe8da)"></div>
-      <div class="meta"><h2>B6 plain, sage</h2><p>160 pages · 90 gsm</p></div>
+      <div class="meta"><h2>__P3__</h2><p>__P3META__</p></div>
     </article>
   </section>
 

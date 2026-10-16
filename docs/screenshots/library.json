@@ -177,7 +177,7 @@
       "screen": "Conversations → the conversation the widget created",
       "locale": "en",
       "theme": "light",
-      "viewport": "1280x860",
+      "viewport": "1440x900",
       "captured": {
         "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
         "revision": "cfa85cff",
@@ -345,7 +345,7 @@
       "screen": "Conversations → the conversation the widget created",
       "locale": "ar",
       "theme": "light",
-      "viewport": "1280x860",
+      "viewport": "1440x900",
       "captured": {
         "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
         "revision": "cfa85cff",

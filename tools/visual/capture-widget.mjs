@@ -47,9 +47,51 @@ if (!TOKEN) {
   );
 }
 
-// The demo shop, with the token and base URL substituted. One file read, held in memory for the run.
+// THE SHOP AROUND THE WIDGET READS IN THE VISITOR'S LANGUAGE. The widget takes its own language from
+// `navigator.language` below, but the PAGE it sits on is this file -- and while that page was English in
+// both runs, the Arabic article's "check the visitor's side" figure was an English left-to-right shop with
+// an Arabic caption under it. Measured: the `ar` and `en` captures of the closed bubble were byte-identical,
+// the only such pair in the media tree. Every word, plus `lang` and `dir`, is substituted from here.
+const COPY = {
+  en: {
+    LANG: 'en', DIR: 'ltr',
+    FONT: 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+    TITLE: 'PaperLayer — stationery for people who still write things down',
+    DEMO: 'demo shop',
+    NAV1: 'Notebooks', NAV2: 'Pens', NAV3: 'Refills', NAV4: 'Gifts', CART: 'Cart (2)',
+    H1: 'Stationery for people who still write things down',
+    LEDE:
+      'Ruled, dotted and plain. Sewn bindings that open flat, paper that does not bleed, and a delivery ' +
+      'promise we answer for in the chat on this page.',
+    CTA: 'Shop notebooks',
+    P1: 'A5 dotted, navy', P1META: '192 pages · 100 gsm',
+    P2: 'A5 ruled, clay', P2META: '192 pages · 100 gsm',
+    P3: 'B6 plain, sage', P3META: '160 pages · 90 gsm',
+  },
+  ar: {
+    LANG: 'ar', DIR: 'rtl',
+    FONT: '"Noto Naskh Arabic", "Noto Sans Arabic", "Segoe UI", Tahoma, ui-sans-serif, system-ui, sans-serif',
+    TITLE: 'PaperLayer — قرطاسية لمن ما زال يكتب بيده',
+    DEMO: 'متجر تجريبي',
+    NAV1: 'دفاتر', NAV2: 'أقلام', NAV3: 'عبوات', NAV4: 'هدايا', CART: 'السلة (٢)',
+    H1: 'قرطاسية لمن ما زال يكتب بيده',
+    LEDE:
+      'مسطّر ومنقّط وسادة. تجليد مخيط ينفتح مستوياً، وورق لا ينفذ منه الحبر، ووعد تسليم نجيب عنه في ' +
+      'الدردشة على هذه الصفحة.',
+    CTA: 'تصفّح الدفاتر',
+    P1: 'A5 منقّط، كحلي', P1META: '١٩٢ صفحة · ١٠٠ غم',
+    P2: 'A5 مسطّر، طيني', P2META: '١٩٢ صفحة · ١٠٠ غم',
+    P3: 'B6 سادة، زيتي', P3META: '١٦٠ صفحة · ٩٠ غم',
+  },
+};
+
+// The demo shop, with the token, the base URL and the language substituted. One file read, held in memory.
 const template = await readFile(path.join(ROOT, 'tools/visual/widget-host/index.html'), 'utf8');
-const html = template.replaceAll('__WEBSITE_TOKEN__', TOKEN).replaceAll('__BASE_URL__', BASE);
+const copy = COPY[locale] || COPY.en;
+const html = Object.entries({ ...copy, WEBSITE_TOKEN: TOKEN, BASE_URL: BASE }).reduce(
+  (doc, [key, value]) => doc.replaceAll(`__${key}__`, value),
+  template
+);
 
 const host = createServer((_req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });

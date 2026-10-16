@@ -32,16 +32,16 @@ which is the point of it.
 
 ## Search
 
-Press **/** or open **Search**. Type three characters or more.
+Press **/** or open **Search**. Type two characters or more — or any number of digits, because a
+conversation id is a search in itself.
 
-Results come back in four groups, each with its own tab:
+Results come back in groups, each with its own tab, and **All** across them:
 
 | Group | What it searches |
 |---|---|
 | **Conversations** | by id, and by the people in them |
 | **Messages** | the text of messages |
 | **Contacts** | name, email, phone number |
-| **Articles** | your help centre content |
 
 The most reliable searches are the specific ones: a conversation id, a full email address, a phone number
 in the form it was saved in. A common word will match a great deal and rank nothing usefully.
@@ -52,7 +52,7 @@ Your recent searches are kept, and can be cleared.
 
 - **Search covers what you can see.** An agent does not find conversations on channels they are not a
   member of.
-- **Three characters minimum.**
+- **Two characters minimum**, and a query that is all digits passes at any length.
 - **A saved view belongs to the person who saved it** unless it was created as a shared folder.
 - **Filters match the present.** A saved view cannot show what matched last week.
 

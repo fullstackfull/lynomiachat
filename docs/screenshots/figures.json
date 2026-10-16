@@ -11,7 +11,8 @@
         "width": 768,
         "height": 676
       },
-      "why": "The section's claim is 'say what should happen, without writing code', and the thing that shows that is the rule dialog: event, conditions, actions. The rule list behind it and the settings sidebar are context the sentence beside the figure already gives, and at the 600px this is published at they cost the dialog a third of its scale."
+      "why": "The section's claim is 'say what should happen, without writing code', and the thing that shows that is the rule dialog: event, conditions, actions. The rule list behind it and the settings sidebar are context the sentence beside the figure already gives, and at the 600px this is published at they cost the dialog a third of its scale.",
+      "sourceSha": "5e3ed1ce5971c0eddf31fd2c8b94f6fe16c2ea064696be12d39fc98985c2640b"
     },
     {
       "key": "home/reports",
@@ -23,7 +24,8 @@
         "width": 1056,
         "height": 600
       },
-      "why": "The live counters and one week of conversation traffic. The page continues with two more heatmaps of the same shape; including them would halve the scale of the numbers to show the reader a third copy of a pattern they have already read."
+      "why": "The live counters and one week of conversation traffic. The page continues with two more heatmaps of the same shape; including them would halve the scale of the numbers to show the reader a third copy of a pattern they have already read.",
+      "sourceSha": "42f1ffe0807791b6c1f0113ed2607be709374855ec76added376b8e388c735b0"
     },
     {
       "key": "home/automation-ar",
@@ -35,7 +37,8 @@
         "width": 768,
         "height": 676
       },
-      "why": "The same crop as the English figure, mirrored: under `dir=rtl` the dialog opens against the left edge instead of the right. Same box, so the two pages publish the same picture at the same scale rather than one that happens to be bigger."
+      "why": "The same crop as the English figure, mirrored: under `dir=rtl` the dialog opens against the left edge instead of the right. Same box, so the two pages publish the same picture at the same scale rather than one that happens to be bigger.",
+      "sourceSha": "59f75d0764055e530f7d02fce163c541e2159ebe9bea003b3fc729ced7b8f625"
     },
     {
       "key": "home/reports-ar",
@@ -47,7 +50,8 @@
         "width": 1056,
         "height": 600
       },
-      "why": "The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason."
+      "why": "The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason.",
+      "sourceSha": "86c40c36e1dfe66d0c19184557ab91a955632b40ad421e183be14b43c484ab56"
     }
   ]
 }

@@ -116,7 +116,7 @@ you save.
 | the colour of the bubble and the visitor's messages | Widget Color |
 | "Typically replies in a few minutes" | Reply time |
 | "We are Online" / "We are away at the moment" | whether any agent of this channel is online right now |
-| the first reply the visitor receives | the channel greeting |
+| the first reply the visitor receives | the channel greeting, in **Channel Preferences** |
 | the paper-clip, the emoji button, "End conversation" | Features |
 
 **Reply time is a promise you are making, not a measurement.** It says what you choose — a few minutes, a
@@ -157,13 +157,14 @@ contact with an email address is worth a great deal — you can reply when they 
 can continue over email. Asking for a name and an email is usually right; asking for a phone number, a
 company and an order number usually is not.
 
-If you do not use a pre-chat form, switch on the **email collect box** instead (in Widget features). It asks
+If you do not use a pre-chat form, switch on the **email collect box** instead (in **Channel Preferences**, the accordion below Widget
+features). It asks
 for an email address inside the conversation, after the visitor has already started talking to you, which
 costs far fewer of them.
 
 ## Making the channel yours
 
-Three settings on the **Widget features** section decide how the conversation behaves rather than how it
+Three settings on the **Channel Preferences** section decide how the conversation behaves rather than how it
 looks:
 
 - **Enable email collect box** — asks an anonymous visitor for their email address inside the chat.

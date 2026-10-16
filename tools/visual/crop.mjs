@@ -25,6 +25,7 @@
 
 import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -44,18 +45,26 @@ const manifest = JSON.parse(await readFile(MANIFEST, 'utf8'));
 const figures = manifest.figures.filter(figure => !only || figure.key === only);
 if (!figures.length) throw new Error(`no figure matches --key ${only}`);
 
-// A FIGURE IS STALE IF ITS SOURCE IS NEWER THAN IT. Modification time is enough here and a content hash is
-// not worth the bookkeeping: these files are produced by this script from a file produced by `capture.mjs`,
-// and both are committed, so a source that moved after its figure did is exactly the case to catch.
+// A FIGURE IS STALE IF ITS SOURCE'S CONTENT IS NOT THE CONTENT IT WAS CUT FROM, recorded as `sourceSha` in
+// the manifest when the figure is written.
+//
+// THIS USED TO COMPARE MODIFICATION TIMES, and that was wrong for the one reason its own comment named:
+// both files are committed. Git records no mtime, so a clone writes every file at checkout time in index
+// order -- and `figures/` sorts before `sources/`, so on any machine that did not generate these figures
+// every source is newer than its figure and `--check` reports all of them stale. The gate is a documented
+// release step (11-publishing-procedure.md), so a gate that can only pass for its author is worse than no
+// gate. One hash per figure is the bookkeeping that buys a check which means the same thing everywhere.
+async function sha(file) {
+  return createHash('sha256').update(await readFile(file)).digest('hex');
+}
+
 async function state(figure) {
   const source = path.join(ROOT, figure.source);
   const out = path.join(ROOT, figure.out);
-  const sourceStat = await stat(source).catch(() => null);
-  if (!sourceStat) return { status: 'source-missing' };
-
-  const outStat = await stat(out).catch(() => null);
-  if (!outStat) return { status: 'missing' };
-  if (outStat.mtimeMs < sourceStat.mtimeMs) return { status: 'stale' };
+  if (!(await stat(source).catch(() => null))) return { status: 'source-missing' };
+  if (!(await stat(out).catch(() => null))) return { status: 'missing' };
+  if (!figure.sourceSha) return { status: 'unrecorded -- re-run without --check to record its source hash' };
+  if ((await sha(source)) !== figure.sourceSha) return { status: 'stale' };
   return { status: 'current' };
 }
 
@@ -114,11 +123,21 @@ if (checkOnly) {
     }
 
     await page.screenshot({ path: out, clip: { x, y, width, height } });
+    // Recorded on the manifest entry itself, so `--check` has something to compare against that survives a
+    // clone. Written back below with the rest of the manifest.
+    figure.sourceSha = await sha(source);
     written += 1;
     process.stdout.write(`${figure.out}  ${width}x${height} from ${figure.source}\n`);
   }
 
   await browser.close();
+
+  // The manifest now carries state, so it is rewritten rather than only read. `--only` leaves every other
+  // entry exactly as it was, because `figures` holds references into `manifest.figures`.
+  await writeFile(
+    path.join(ROOT, 'docs/screenshots/figures.json'),
+    `${JSON.stringify(manifest, null, 2)}\n`
+  );
 }
 
 // The manifest is also the record of why each crop is the shape it is, so a regenerated figure is reviewable

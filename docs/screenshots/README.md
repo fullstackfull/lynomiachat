@@ -99,6 +99,15 @@ bundle exec rails runner 'u = User.find(1); u.tokens = {}; u.save!; u.user_sessi
 ## Privacy
 
 Every capture is taken against the local seeded database (`rails db:seed`, the `acme.inc` demo
-account). There is no real customer conversation, contact, phone number, address or token in any of
-them. Before a source is committed it is looked at. A screenshot that would need blurring is
-re-captured with different data instead.
+account). There is no real customer conversation, contact, phone number or address in any of them.
+Before a source is committed it is looked at. A screenshot that would need blurring is re-captured
+with different data instead.
+
+**One exception, and it is deliberate: a source can hold a website token.** The install-snippet
+captures (`sources/app/{en,ar}/website-script.png`) show the seeded website channel's token in clear
+text, because that is the screen -- the whole point of the figure is the snippet an administrator
+copies. It is a value `rails db:seed` generated for an inbox whose `BASE_URL` is
+`http://localhost:3000`; it authorises nothing anywhere else, and it is replaced the next time the
+seed is rebuilt. The PUBLISHED figure covers it: the spec carries a `redact` box over the token, and
+that is what the article shows. Treat the uncropped source as dev-only, and never point a `redact`
+at a capture taken against anything but a local seed.

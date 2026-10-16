@@ -125,6 +125,19 @@ it are all validated by `Documentation::MediaSeeder`, which refuses the whole se
 letting a bad one through — so the scheme is now excluded from that check, reading it from
 `Documentation::MediaResolver::SCHEME` rather than spelling it a second time.
 
+### Arabic, counted
+
+Every key the English catalogue has and the pre-redesign base did not was checked against its Arabic
+sibling. **Twenty-six had none** — most of them the aria-labels this redesign's accessibility work
+added — and all twenty-six are now translated. An accessibility pass that names every control and
+then names them in English is half a pass in a product whose primary market reads Arabic.
+
+The wider picture, which is not this stack's to fix: **3,091 of 8,403 dashboard keys carry the
+English string in the Arabic catalogue** — 37% of the interface. It concentrates in upstream
+Chatwoot surfaces (integrations 617, inbox management 470, settings 425, help centre 355), which
+`CLAUDE.md` routes through Crowdin and the community rather than through product pull requests. It
+is the single largest remaining gap between the two languages and it deserves a plan of its own.
+
 ## 5. Limitations, stated precisely
 
 - **No emulator, so no device screenshots of the Flutter app.** `/dev/kvm` is absent and

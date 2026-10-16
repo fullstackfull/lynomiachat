@@ -7,29 +7,22 @@
   brightest object on the screen without any decoration drawn around it, and the page gains the first beat of
   a rhythm it did not have: ink, then paper, then mist, then ink again at the close.
 
-  THE EMPHASIS IS A RULE, NOT A STICKER. `highlight` is a phrase out of the heading that a translator may
-  move to wherever their sentence actually turns, and it used to render as rotated magenta block -- white
-  type on a coloured lozenge, which is a decade-old trope and was the only magenta on the site. It is now an
-  underline in `lyn-blue`: the same emphasis, carried by the typography rather than by a shape behind it, and
-  `whitespace-nowrap` keeps the marked phrase from breaking across two lines where the rule would read as two
-  unrelated marks.
+  THE EMPHASIS IS THE ONE HOT COLOUR ON THE PAGE. `highlight` is a phrase out of the heading that a
+  translator may move to wherever their sentence actually turns. It was a magenta block on the original site;
+  a redesign pass replaced it with a thin blue underline and `lyn-magenta` then appeared nowhere but a
+  validation error, which is how the page lost its only accent. It is a magenta block again --
+  docs/redesign/00-visual-baseline.md:52 named it a strength, and theme/colors.js:323 has already
+  contrast-checked white type on it at 4.9:1. It is upright, not rotated: the tilt was the dated part, not
+  the colour. `whitespace-nowrap` keeps the marked phrase from breaking across two lines, where one block
+  would read as two unrelated marks.
 
-  THE PANEL IS THE PRODUCT, drawn in HTML rather than shipped as an image: a shared inbox with messages
-  arriving from three channels, in the page's own language, which is the one thing that distinguishes this
-  product from a chat widget. It is `aria-hidden` -- the names in it are illustrative, the heading and lede
-  already carry the meaning, and a screen reader gains nothing from reading a drawing of a UI aloud.
-
-  AND IT IS UPRIGHT. It used to be tilted a degree and a half over a second tilted plate, which needed a
-  stacking context to paint at all, needed locale-dependent bottom padding so the badge cleared the dropping
-  corner, and bought depth the dark field now gives for free.
-
-  CHANNEL MARKS ARE NEUTRAL GLYPHS, not the channels' own logos. The channel is named in text beside each
-  one, which is clearer, needs no trademark, and keeps the panel to one colour.
+  THE PANEL IS A PHOTOGRAPH OF THE PRODUCT, not a drawing of one -- see the note above the figure.
 %>
 <% primary = marketing_target_href(section['primary_target']) %>
 <% secondary = marketing_target_href(section['secondary_target']) %>
 <% heading = (page.heading.presence || page.title).to_s %>
 <% highlight = section['highlight'].to_s %>
+<% hero_shot = page&.image_for(section['attachment_id']) %>
 
 <section class="relative isolate overflow-hidden bg-lyn-ink">
   <%# THE FIELD. Two soft pools of brand colour rather than a flat slab -- indigo behind the panel, royal
@@ -39,11 +32,29 @@
   <span class="absolute -right-40 -top-56 -z-10 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(91,91,240,0.42),transparent_62%)]" aria-hidden="true"></span>
   <span class="absolute -bottom-72 -left-32 -z-10 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(29,63,168,0.38),transparent_64%)]" aria-hidden="true"></span>
 
-  <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_29rem] lg:gap-14 lg:py-28">
+  <%# THE SCREENSHOT RUNS OFF THE EDGE OF THE PAGE, and that is the point of this grid.
+      The product shot is a 1440x900 capture of a four-column agent workspace. Sized to fit a tidy half of
+      a 72rem container it renders about 460px wide, every label in it turns to grey mush, and the one
+      picture of the product on the site says nothing about the product. Here the text column is fixed at
+      30rem and the figure is given 68rem regardless of what is left, so it overruns its cell, crosses the
+      container edge and is cut off by the viewport: about three quarters of the capture at three quarters
+      of its own scale, which is the size at which a conversation list reads as a conversation list.
+
+      A too-wide block overflows at its INLINE-END edge, so this works in both directions without a rule of
+      its own -- rightwards in English, leftwards in Arabic, where the figure sits on the left. The section
+      carries `overflow-hidden`, so the overrun is clipped at the viewport and cannot put a horizontal
+      scrollbar on the document; that is checked at 390, 820 and 1440 by tools/visual/marketing-gate.mjs. %>
+  <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[31rem_minmax(0,1fr)] lg:gap-16 lg:py-28">
     <div class="motion-safe:animate-fade-in-up">
       <% if section['kicker'].present? %>
         <p class="inline-flex items-center gap-2 rounded-full border border-lyn-line-dark bg-lyn-ink/40 py-1.5 pe-4 ps-3 text-sm font-medium text-lyn-paper/80">
-          <span class="size-2 rounded-full bg-lyn-blue" aria-hidden="true"></span>
+          <%# THE DOT IS ALIVE AGAIN. The ring is a second span that expands out of the dot and fades, so the
+              dot keeps its box and the label beside it never moves. `motion-safe` on the ring alone: a
+              reader who asked for stillness gets the plain dot, which is what the badge needs anyway. %>
+          <span class="relative flex size-2 flex-none" aria-hidden="true">
+            <span class="absolute inset-0 rounded-full bg-lyn-blue motion-safe:animate-live-ring"></span>
+            <span class="relative size-2 rounded-full bg-lyn-blue"></span>
+          </span>
           <%= section['kicker'] %>
         </p>
       <% end %>
@@ -53,13 +64,15 @@
           renders whole. `split` on a literal needs no escaping of the needle, and every part is escaped by
           ERB on the way out.
 
-          LEADING IS 1.18 AND NOT TIGHTER. This headline is set in IBM Plex Sans Arabic half the time, where
+          LEADING IS 1.16 AND NOT TIGHTER. This headline is set in IBM Plex Sans Arabic half the time, where
           the marks above and below the line need the room; display leading tuned on the Latin cut alone
-          collides them. %>
-      <h1 class="mt-6 text-balance text-[2.6rem] font-bold leading-[1.16] tracking-tight text-lyn-paper sm:text-[3.1rem] lg:text-[3.45rem]">
+          collides them. The highlight block needs a little more again, which is what `leading-[1.3]` and
+          the negative inline margin on the block do: the lozenge is padded, and without the pull the padded
+          line would sit wider than the unmarked ones. %>
+      <h1 class="mt-6 text-balance text-[2.6rem] font-bold leading-[1.16] tracking-tight text-lyn-paper sm:text-[3rem] lg:text-[3.05rem]">
         <% if highlight.present? && heading.include?(highlight) %>
           <% before, after = heading.split(highlight, 2) %>
-          <%= before %><span class="whitespace-nowrap underline decoration-lyn-blue decoration-[0.085em] underline-offset-[0.19em]"><%= highlight %></span><%= after %>
+          <%= before %><span class="-mx-[0.12em] inline-block whitespace-nowrap rounded-lg bg-lyn-magenta px-[0.12em] py-[0.02em] text-lyn-paper"><%= highlight %></span><%= after %>
         <% else %>
           <%= heading %>
         <% end %>
@@ -87,57 +100,34 @@
       <% end %>
     </div>
 
-    <div class="relative mx-auto w-full max-w-md pb-11 lg:max-w-none" aria-hidden="true">
-      <div class="overflow-hidden rounded-3xl bg-lyn-paper shadow-[0_44px_90px_-32px_rgba(0,0,0,0.7)]">
-        <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-6 py-4">
-          <span class="text-sm font-semibold text-lyn-ink"><%= t('marketing.hero_panel.title') %></span>
-          <span class="flex items-center gap-1.5 text-xs font-medium text-lyn-ink-soft">
-            <span class="size-1.5 rounded-full bg-lyn-blue"></span>
-            <%= t('marketing.hero_panel.live') %>
-          </span>
-        </div>
+    <%# THE PRODUCT, PHOTOGRAPHED -- not a drawing of it.
 
-        <ul class="divide-y divide-lyn-line">
-          <%# The glyph is WRITTEN HERE rather than read from the locale file, because Tailwind's icon plugin
-              generates a rule only for a class it can see in a scanned file -- an icon name that lived in a
-              YAML string would be purged and render as an empty square. %>
-          <% [['one', 'i-lucide-message-circle'], ['two', 'i-lucide-instagram'], ['three', 'i-lucide-globe']]
-               .each_with_index do |(row, icon), index| %>
-            <li class="flex items-start gap-3.5 px-6 py-4 <%= 'bg-lyn-mist' if index.zero? %>">
-              <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-royal/10 text-lyn-royal">
-                <span class="<%= icon %> size-[1.15rem]"></span>
-              </span>
-              <span class="min-w-0 flex-1">
-                <span class="flex items-baseline gap-2">
-                  <span class="truncate text-sm font-semibold text-lyn-ink"><%= t("marketing.hero_panel.rows.#{row}.name") %></span>
-                  <span class="shrink-0 text-xs text-lyn-ink-soft"><%= t("marketing.hero_panel.rows.#{row}.channel") %></span>
-                </span>
-                <span class="mt-1 block truncate text-sm leading-relaxed text-lyn-ink-soft">
-                  <%= t("marketing.hero_panel.rows.#{row}.message") %>
-                </span>
-              </span>
-            </li>
-          <% end %>
-        </ul>
+        WHAT WAS HERE BEFORE. A hand-built panel: a fake "Shared inbox" header, three invented customers
+        with invented messages in `marketing.hero_panel.rows`, a fake composer and a fake "Assigned
+        automatically" pill. It was the first thing every visitor saw and it was a picture of a product that
+        does not look like that, with customers who do not exist. The owner's instruction is explicit -- a
+        meaningful preview of the real product, not a fabricated dashboard -- and this is where that rule
+        bites hardest, because the hero is the one image everybody sees.
 
-        <div class="flex items-center gap-3 border-t border-lyn-line px-6 py-4">
-          <span class="flex-1 rounded-xl bg-lyn-mist px-4 py-3 text-sm text-lyn-ink-soft">
-            <%= t('marketing.hero_panel.composer') %>
-          </span>
-          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-indigo text-lyn-paper">
-            <span class="i-lucide-send size-[1.1rem]"></span>
-          </span>
-        </div>
+        IF THERE IS NO SCREENSHOT, THERE IS NO PICTURE. No placeholder, no fallback to the old panel: a
+        fallback that fabricates is still fabricating. The text column simply takes the full measure, which
+        is a perfectly good hero, and `marketing:enrich` is how the capture gets attached.
+
+        `rise-in` IS THE ONE ORCHESTRATED MOMENT on the page -- the element the page is about, settling in
+        once. It respects reduced motion through `motion-safe`, so a reader who asked for stillness is given
+        the screenshot already in place rather than an animation they cannot stop. %>
+    <% if hero_shot.present? %>
+      <div class="relative mx-auto w-full max-w-xl lg:mx-0 lg:w-[68rem] lg:max-w-none">
+        <figure class="overflow-hidden rounded-2xl ring-1 ring-white/15 shadow-[0_44px_90px_-32px_rgba(0,0,0,0.75)] motion-safe:animate-rise-in">
+          <img src="<%= marketing_media_path(id: hero_shot.id) %>"
+               alt="<%= section['alt'].to_s %>"
+               <%= "width=#{hero_shot.blob.metadata['width']} height=#{hero_shot.blob.metadata['height']}".html_safe if hero_shot.blob.metadata['width'].present? %>
+               <%# THE ONE IMAGE ON THE SITE THAT IS NOT LAZY. It is the largest contentful paint: deferring
+                   it is deferring the moment the page appears to have loaded. %>
+               loading="eager" fetchpriority="high" decoding="async"
+               class="block w-full">
+        </figure>
       </div>
-
-      <%# THE ONE LABEL, AND IT SITS CLEAR OF THE CARD. Two floating pills used to overlap the messages they
-          were meant to annotate; the first attempt at one pill still had 14px of it lying across the
-          composer row. The wrapper's bottom padding is the badge's own height plus its clearance, so the
-          card ends where the card ends in both locales. %>
-      <span class="absolute bottom-0 start-6 inline-flex items-center gap-2 rounded-full bg-lyn-indigo px-4 py-2 text-xs font-semibold text-lyn-paper shadow-[0_16px_34px_-14px_rgba(0,0,0,0.8)]">
-        <span class="i-lucide-check size-3.5"></span>
-        <%= t('marketing.hero_panel.badges.assigned') %>
-      </span>
-    </div>
+    <% end %>
   </div>
 </section>

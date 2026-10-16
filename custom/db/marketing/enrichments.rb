@@ -115,6 +115,11 @@ showcases = {
   }
 }
 
+HERO_ALT = {
+  'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open in the middle, and the contact panel beside it.',
+  'ar' => 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
+}.freeze
+
 enrichments = []
 
 %w[en ar].each do |locale|
@@ -142,6 +147,18 @@ enrichments = []
       }
     )
   end
+end
+
+%w[en ar].each do |locale|
+  # THE HERO'S SCREENSHOT IS A FILL, NOT AN INSERT: every page already has a hero, and what it needed was a
+  # picture of the product in place of the hand-built panel the template used to draw. It is written only
+  # when the hero carries no image, so an operator who has chosen their own keeps it.
+  enrichments << Enrichment.new(
+    key: "home.hero-shot.#{locale}", locale: locale, slug: 'home',
+    fill: { type: 'hero' },
+    image: { file: "docs/screenshots/sources/marketing/#{locale}/conversation-open.png", field: 'attachment_id' },
+    section: { 'alt' => HERO_ALT[locale] }
+  )
 end
 
 enrichments

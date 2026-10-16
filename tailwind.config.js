@@ -344,6 +344,12 @@ const tailwindConfig = {
         from: { opacity: 0, transform: 'translateY(1.25rem) scale(0.985)' },
         to: { opacity: 1, transform: 'translateY(0) scale(1)' },
       },
+      // The ring that leaves the hero's live dot. The dot itself does not move -- a second, absolutely
+      // positioned span expands out of it and fades -- so nothing reflows and the text beside it is still.
+      'live-ring': {
+        '0%': { opacity: 0.55, transform: 'scale(1)' },
+        '70%, 100%': { opacity: 0, transform: 'scale(2.6)' },
+      },
     },
     animation: {
       ...defaultTheme.animation,
@@ -357,6 +363,7 @@ const tailwindConfig = {
       'marquee-ltr': 'marquee-ltr 48s linear infinite',
       'marquee-rtl': 'marquee-rtl 48s linear infinite',
       'rise-in': 'rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+      'live-ring': 'live-ring 2.2s cubic-bezier(0, 0, 0.2, 1) infinite',
     },
   },
   plugins: [

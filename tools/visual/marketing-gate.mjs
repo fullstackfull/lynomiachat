@@ -7,8 +7,8 @@
 //
 //   node tools/visual/marketing-gate.mjs
 //
-// It needs the dev server running. Every page is visited in both locales at phone and desktop width,
-// and the run exits non-zero listing each problem, so it is usable as a gate rather than a report.
+// It needs the dev server running. Every page is visited in both locales at phone, tablet and desktop
+// width, and the run exits non-zero listing each problem, so it is usable as a gate rather than a report.
 
 // Playwright is a container tool rather than a project dependency, so it is outside this repository's
 // node_modules. ESM `import` ignores NODE_PATH and would not find it; CommonJS resolution does.
@@ -21,7 +21,14 @@ const PAGES = ['/', '/features', '/pricing', '/channels', '/solutions', '/integr
   '/contact', '/faq', '/support', '/features/unified-inbox', '/channels/whatsapp',
   '/features/whatsapp-campaigns', '/channels/instagram', '/integrations/salla', '/solutions/ecommerce'];
 const LOCALES = { ar: { prefix: '', dir: 'rtl' }, en: { prefix: '/en', dir: 'ltr' } };
-const VIEWPORTS = { mobile: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
+// PHONE, TABLET AND DESKTOP. The tablet column is not decoration: at 820px the header's full navigation
+// row was shown and did not fit, so every marketing page was 52px wider than its viewport -- a horizontal
+// scrollbar on every iPad, invisible to a gate that only looked at 390 and 1440.
+const VIEWPORTS = {
+  mobile: { width: 390, height: 844 },
+  tablet: { width: 820, height: 1180 },
+  desktop: { width: 1440, height: 900 },
+};
 
 const browser = await chromium.launch();
 let checked = 0;

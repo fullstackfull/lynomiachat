@@ -8,25 +8,6 @@ en:
   marketing:
     site_name: Lynomia Chat
     skip_to_content: Skip to content
-    hero_panel:
-      title: Shared inbox
-      live: Live
-      composer: Write your reply…
-      badges:
-        assigned: Assigned automatically
-      rows:
-        one:
-          name: Noura
-          channel: WhatsApp
-          message: Has my order 4821 shipped yet?
-        two:
-          name: Fahad
-          channel: Instagram
-          message: Do you have this in a large?
-        three:
-          name: Latifa
-          channel: Website chat
-          message: I need a tax invoice for my last order
     flow:
       default:
         '0': Assigned to the right person or team

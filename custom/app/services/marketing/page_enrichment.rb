@@ -9,8 +9,10 @@
 #
 # THE GUARANTEES, which are the whole point:
 #
-#   1. IT ONLY EVER ADDS. No existing section is modified, reordered or removed. The only write to
-#      `page.sections` is an insert.
+#   1. IT ONLY EVER ADDS, AND IT ONLY EVER FILLS A BLANK. No existing section is reordered or removed, and
+#      no field that holds anything is rewritten. The two writes to `page.sections` are an insert of a new
+#      section and setting a field that was empty -- which is how the hero, present on all 96 pages and
+#      never added by this mechanism, gets its screenshot.
 #   2. IT IS IDEMPOTENT. Each enrichment carries a stable `key` that is stored on the section it adds, so a
 #      second run finds its own work and skips it. Running it ten times and running it once are the same.
 #   3. IT PREFLIGHTS, AND NOTHING RUNS ON DEPLOY. `plan` performs no writes and returns exactly what
@@ -19,6 +21,9 @@
 #   4. AN IMAGE IS ATTACHED ONCE. Attachments are matched by filename on the page's own `marketing_images`,
 #      so re-running does not pile up duplicates of the same screenshot, and the section is pointed at the
 #      attachment's id -- which is what the renderers resolve.
+#   5. A BLANK FIELD IS REPAIRED, AND ONLY A BLANK ONE. If the section is already on the page but the
+#      attachment it pointed at has been purged, the next run re-attaches and re-points it. A field that
+#      holds anything is left exactly as the operator left it.
 #
 # WHAT IT DELIBERATELY DOES NOT PROMISE. It cannot tell "the operator deleted this on purpose" from "this
 # was never added": the only durable marker is the section's own key, and a deleted section takes its key
@@ -42,7 +47,13 @@ module Marketing::PageEnrichment
   #            which is the honest fallback: appended is wrong-ish, dropped is invisible.
   #   image    optional { file:, field: } -- `file` is a path under the repository, `field` the section
   #            field that should hold the resulting attachment id.
-  Enrichment = Struct.new(:key, :locale, :slug, :section, :after, :image, keyword_init: true)
+  #   fill     optional { type: } -- makes this a FILL rather than an insert: instead of adding a section,
+  #            it sets `image[:field]` on the FIRST section of that type, and ONLY IF THAT FIELD IS BLANK.
+  #            This exists for the hero, which is already on all 96 pages and needs a screenshot rather than
+  #            a new block. It is the one operation that touches a section the repository did not add, and
+  #            it is narrowed to the point where it cannot destroy anything: an operator who has already
+  #            chosen a hero image keeps it, and no other field is read or written.
+  Enrichment = Struct.new(:key, :locale, :slug, :section, :after, :image, :fill, keyword_init: true)
 
   # What one enrichment did or would do.
   Outcome = Struct.new(:key, :locale, :slug, :status, :detail, keyword_init: true)
@@ -88,33 +99,81 @@ module Marketing::PageEnrichment
       return outcome(enrichment, :missing_page, 'no page with that locale and slug') if page.nil?
 
       sections = Array(page.sections)
-      if sections.any? { |section| section['key'] == enrichment.key }
-        return outcome(enrichment, :present, 'already on the page')
-      end
+      index = existing_index(sections, enrichment)
+      return insert(page, sections, enrichment, commit: commit) if index == :absent
+      return outcome(enrichment, :missing_page, "no #{target_name(enrichment)} on the page") if index.nil?
 
+      fill_blanks(page, sections, index, enrichment, commit: commit)
+    end
+
+    # WHERE THIS ENRICHMENT'S SECTION IS, if it is on the page at all. An insert finds its own work by the
+    # `key` it stamped on it; a `fill` names a TYPE instead, because the hero it is for was never added by
+    # this mechanism and carries no key. Three answers: an index, `:absent` for an insert that has not run,
+    # and nil for a fill whose type is not on this page -- which is a problem to report, not a no-op.
+    def existing_index(sections, enrichment)
+      return sections.index { |section| section['type'] == enrichment.fill[:type].to_s } if enrichment.fill
+
+      sections.index { |section| section['key'] == enrichment.key } || :absent
+    end
+
+    def target_name(enrichment)
+      enrichment.fill ? "#{enrichment.fill[:type]} section" : 'section already on the page'
+    end
+
+    def insert(page, sections, enrichment, commit:)
       section = enrichment.section.deep_dup.merge('key' => enrichment.key)
       if enrichment.image
         attachment_id, note = resolve_image(page, enrichment.image, commit: commit)
-        return outcome(enrichment, :image_missing, note) if attachment_id.nil? && note
+        return outcome(enrichment, :image_missing, note) if note
+
         section[enrichment.image[:field].to_s] = attachment_id.to_s if attachment_id
       end
 
-      insert_at = position_for(sections, enrichment.after)
-      updated = sections.dup.insert(insert_at, section)
+      at = position_for(sections, enrichment.after)
+      write(page, sections.dup.insert(at, section), enrichment,
+            "inserted at #{at} of #{sections.length + 1}", commit: commit)
+    end
 
+    # THE SECTION IS ALREADY HERE, so nothing is inserted -- but a field on it that holds nothing is filled.
+    #
+    # WHY THAT IS NOT "REWRITING THE OPERATOR'S PAGE". It is the narrowest write there is: a blank field gets
+    # what the declaration says it should hold, and a field holding anything at all is left exactly as it
+    # was. The hero needs it because every page already has a hero and what it lacked was a screenshot, not a
+    # section. A showcase needs it because purging an attachment in Super Admin leaves `attachment_id`
+    # pointing at nothing and the figure then renders as nothing at all -- the section quietly becomes a
+    # column of text captioned about a picture nobody can see, and no amount of re-running would repair it.
+    def fill_blanks(page, sections, index, enrichment, commit:)
+      name = target_name(enrichment)
+      values, note = blank_values(page, sections[index], enrichment, commit: commit)
+      return outcome(enrichment, :image_missing, note) if note
+      return outcome(enrichment, :present, "#{name} needs nothing") if values.empty?
+
+      updated = sections.deep_dup
+      values.each { |key, value| updated[index][key] = value }
+      write(page, updated, enrichment, "filled #{values.keys.sort.join(', ')} on the #{name}", commit: commit)
+    end
+
+    # Every field this declaration would set that the section leaves blank, the image among them.
+    def blank_values(page, section, enrichment, commit:)
+      values = enrichment.section.to_h.select { |key, _| section[key].blank? }
+      field = enrichment.image.to_h[:field].to_s
+      return [values, nil] if field.blank? || section[field].present?
+
+      attachment_id, note = resolve_image(page, enrichment.image, commit: commit)
+      values[field] = attachment_id.to_s if attachment_id
+      [values, note]
+    end
+
+    # The one place sections are validated and saved, so an insert and a fill cannot disagree about either.
+    def write(page, updated, enrichment, done, commit:)
       errors = Marketing::SectionSchema.errors(updated)
       return outcome(enrichment, :invalid, errors.join('; ')) if errors.any?
-
-      unless commit
-        return outcome(enrichment, :would_add, "insert at #{insert_at} of #{updated.length}")
-      end
+      return outcome(enrichment, :would_add, done) unless commit
 
       page.sections = updated
-      if page.save
-        outcome(enrichment, :added, "inserted at #{insert_at} of #{page.sections.length}")
-      else
-        outcome(enrichment, :refused, page.errors.full_messages.join(', '))
-      end
+      return outcome(enrichment, :refused, page.errors.full_messages.join(', ')) unless page.save
+
+      outcome(enrichment, :added, done)
     end
 
     # Where the section goes. `after` names a TYPE rather than an index because an operator's page has
@@ -135,14 +194,16 @@ module Marketing::PageEnrichment
 
       existing = page.marketing_images.find { |a| a.blob.filename.to_s == path.basename.to_s }
       return [existing.id, nil] if existing
-      return [nil, nil] unless commit
+      # A PLAN MUST NOT REPORT "NOTHING TO DO" FOR AN IMAGE IT WOULD ATTACH. Nothing is written in plan mode,
+      # so there is no id yet; `:pending` is a truthy stand-in that makes the field show up in the plan's
+      # report and is never persisted, because `write` does not save when `commit` is false.
+      return [:pending, nil] unless commit
 
       attachment = Marketing::ImageUpload.new(page: page).attach!(io: path.open('rb'), filename: path.basename.to_s)
       [attachment.id, nil]
     rescue StandardError => e
       [nil, "image refused: #{e.message}"]
     end
-
 
     def outcome(enrichment, status, detail)
       Outcome.new(key: enrichment.key, locale: enrichment.locale, slug: enrichment.slug,

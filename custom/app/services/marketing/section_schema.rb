@@ -32,7 +32,11 @@ module Marketing::SectionSchema
     # it on the one coloured block the page is allowed, which is how the headline gets a focal point without
     # the operator writing markup -- and the heading stays one plain, escaped string.
     'hero' => {
-      fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target]
+      # `attachment_id`/`alt`: the hero's product screenshot. It replaced a hand-built panel of invented
+      # customers -- see the partial. With no attachment the hero renders as text alone rather than falling
+      # back to a drawing of a dashboard.
+      fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target
+                 attachment_id alt]
     },
     # A heading and a paragraph -- the plainest section there is, and the one the About page opens with.
     'prose' => { fields: %w[heading body] },

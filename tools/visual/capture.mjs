@@ -47,6 +47,14 @@ const SIDEPANEL_OPEN = 'button[aria-pressed="false"]:has(.i-lucide-user-round)?'
 const SIDEPANEL_CLOSE = 'button[aria-pressed="true"]:has(.i-lucide-user-round)?';
 const CONVERSATION_ACTIONS_OPEN = '.conversation--actions button[aria-expanded="false"] >> nth=0?';
 
+// THE SAME TOGGLE, READ RATHER THAN PRESSED. A shot whose whole subject is a panel being shut must not be
+// allowed to come out with the panel open: `docs/screenshots/sources/marketing/en/conversation-open.png`
+// was byte-identical to `conversation-assignment.png` -- the same screen, published on the homepage under a
+// caption describing a different one -- because the optional close silently did nothing and nothing
+// afterwards looked. These are `expect` selectors: present after the clicks, or the shot fails.
+const SIDEPANEL_IS_CLOSED = 'button[aria-pressed="false"]:has(.i-lucide-user-round)';
+const SIDEPANEL_IS_OPEN = 'button[aria-pressed="true"]:has(.i-lucide-user-round)';
+
 const SETS = {
   marketing: {
     locales: { ar: '', en: '/en' },
@@ -83,12 +91,14 @@ const SETS = {
       'conversation-open': {
         path: '/app/accounts/1/dashboard',
         click: [ALL_TAB, '.conversations-list div.conversation', SIDEPANEL_CLOSE],
+        expect: [SIDEPANEL_IS_CLOSED],
       },
       // The first row is an email thread, whose bubbles are full-width by design; this one opens further down
       // the seeded list to catch an ordinary chat channel, where the bubbles are the capped kind.
       'conversation-chat': {
         path: '/app/accounts/1/dashboard',
         click: [ALL_TAB, '.conversations-list div.conversation >> nth=3', SIDEPANEL_CLOSE],
+        expect: [SIDEPANEL_IS_CLOSED],
       },
       // The side panel -- assignee, team, priority, labels, the contact's details -- is CLOSED until an agent
       // opens it: `is_contact_sidebar_open` is absent from a new user's ui_settings and absent is false
@@ -106,6 +116,7 @@ const SETS = {
           SIDEPANEL_OPEN,
           CONVERSATION_ACTIONS_OPEN,
         ],
+        expect: [SIDEPANEL_IS_OPEN],
       },
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',
@@ -235,7 +246,7 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       // A page is either a path, or `{ path, click }` where `click` is a list of selectors pressed in
       // order after the page settles -- the conversation list defaults to the "Mine" tab, so a shot of
       // the inbox taken without pressing "All" is a shot of an empty list.
-      const { path: suffixPath, click = [] } =
+      const { path: suffixPath, click = [], expect = [] } =
         typeof suffix === 'string' ? { path: suffix } : suffix;
 
       // `/en` + `/` would be `/en/`, which is a different URL from `/en`.
@@ -294,6 +305,15 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
             continue;
           }
           await page.waitForTimeout(2500);
+        }
+
+        // THE SHOT IS OF THE SCREEN IT CLAIMS TO BE OF. A toggle whose state is saved to the signed-in
+        // user's `ui_settings` carries over between runs, so a click that addresses the state the control is
+        // in is a no-op when the run before left it the other way round -- correct, and indistinguishable
+        // from a selector that stopped matching. `expect` is what tells the two apart: the state the screen
+        // must be in once the clicks are done, read back from the page.
+        for (const selector of expect) {
+          await page.waitForSelector(selector, { state: 'attached', timeout: 10000 });
         }
 
         // LAZY IMAGES DO NOT LOAD FOR A FULL-PAGE SCREENSHOT UNLESS THE PAGE IS SCROLLED.

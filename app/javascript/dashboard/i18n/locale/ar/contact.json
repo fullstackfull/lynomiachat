@@ -39,10 +39,10 @@
       },
       "CONVERSATION": {
         "TITLE": "وسوم المحادثة",
-        "ADD_BUTTON": "اضافة تصنيف جديد"
+        "ADD_BUTTON": "إضافة وسوم"
       },
       "LABEL_SELECT": {
-        "TITLE": "اضافة تصنيف جديد",
+        "TITLE": "إضافة وسوم",
         "PLACEHOLDER": "ابحث عن تصنيفات",
         "NO_RESULT": "لم يتم العثور على تصنيفات",
         "CREATE_LABEL": "إنشاء تسمية جديدة"

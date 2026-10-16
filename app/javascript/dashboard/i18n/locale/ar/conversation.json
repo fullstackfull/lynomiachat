@@ -470,12 +470,12 @@
       "CONVERSATION_ACTIONS": "إجراءات المحادثة",
       "CONVERSATION_LABELS": "وسوم المحادثة",
       "CONVERSATION_INFO": "معلومات المحادثة",
-      "CONTACT_NOTES": "Contact Notes",
+      "CONTACT_NOTES": "ملاحظات جهة الاتصال",
       "CONTACT_ATTRIBUTES": "سمات جهة الاتصال",
       "PREVIOUS_CONVERSATION": "المحادثات السابقة",
       "MACROS": "ماكروس",
-      "LINEAR_ISSUES": "Linked Linear Issues",
-      "SHARED_FILES": "Attachments"
+      "LINEAR_ISSUES": "قضايا Linear المرتبطة",
+      "SHARED_FILES": "المرفقات"
     },
     "SHARED_FILES": {
       "EMPTY": "No attachments yet",

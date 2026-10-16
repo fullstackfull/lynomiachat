@@ -7,10 +7,15 @@
   every figure on the grid below is a column on a row somebody created in Super Admin.
   `bundle exec rails pricing:diagnose` prints, read-only, which plans exist and why each is or is not here.
 
-  THERE IS NO CHECKOUT ON THIS PAGE, AND THE CARDS DO NOT PRETEND THERE IS. `Billing::Checkout` is reachable
-  only from inside an authenticated account by an administrator (config/routes/billing.rb:30), so a visitor
-  cannot buy a plan here however the button is worded. Each card asks about its plan, which is the thing
-  this page can actually do, and the form below is where that goes.
+  THE CARDS SELL, AND STILL NOTHING IS BOUGHT HERE. `Billing::Checkout` is reachable only from inside an
+  authenticated account by an administrator (config/routes/billing.rb:30), and that has not changed: the
+  CTA is a plain link to `marketing_plan_selection_path`, which re-reads the plan from the database, records
+  the CHOICE in the visitor's session and sends them to sign in. Nothing about the plan travels in the URL
+  the browser is given, there is no amount anywhere near the visitor, and the purchase itself still happens
+  on the subscription page against the endpoints that re-check the account, the role and the plan. A card
+  whose plan cannot be sold -- unlisted, inactive, no Stripe price, or an installation with no Stripe keys
+  at all -- says "Contact sales" and goes to the form below, because `Billing::PlanOffer` answers that
+  question for the view and for the controller in the same place.
 
   THE OLD PAGE'S `free trial - no credit card` IS NOT REPLACED WITH A SOFTER VERSION OF ITSELF. It was not
   deliverable -- the trial plan id defaults to nil and there is no plan row for it to point at.

@@ -17,7 +17,13 @@ class Platform::Api::V1::AccountsController < PlatformController
     # dead id and `permissible` resolves to nil. Before this, those nils went straight into the view; with a
     # filter reading custom_attributes off each one they would be a 500 on the recovery path that exists
     # precisely to clean such things up.
-    @resources = scope.filter_map(&:permissible)
+    # AND NEVER THE INSTALLATION'S OWN WORKSPACE (P6D). A partner holds a permissible on it --
+    # it has to, to send from it -- so without this it appears in the partner's account list
+    # like any merchant's, and the provisioning path that adopts an existing workspace by
+    # marker is one missing filter away from adopting it. It is addressed deliberately by id,
+    # through `show`, which is permissible-checked like everything else; it is not something
+    # a listing hands out.
+    @resources = scope.filter_map(&:permissible).reject(&:platform_owned?)
     @resources = filter_by_custom_attributes(@resources)
   end
 

@@ -111,6 +111,31 @@ RSpec.describe 'Platform Accounts API', type: :request do
         expect(json_response.size).to eq(2)
         expect(json_response.map { |acc| acc['name'] }).to include('Account A', 'Account B')
       end
+
+      # P6D. THE INSTALLATION'S OWN WORKSPACE IS NEVER LISTED, even though the partner holds a
+      # permissible on it -- it has to, to send from it. Without this it appears among the
+      # merchants, and the provisioning path that adopts an existing workspace by marker is
+      # one missing filter away from adopting it for a store. It is reachable deliberately by
+      # id through `show`, which is permissible-checked like everything else.
+      it 'never lists a platform-owned workspace among them' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get '/platform/api/v1/accounts', headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        names = response.parsed_body.map { |acc| acc['name'] }
+        expect(names).to contain_exactly('Account A', 'Account B')
+      end
+
+      it 'still answers for it when the partner asks by id' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get "/platform/api/v1/accounts/#{platform.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response).to have_http_status(:success)
+      end
     end
   end
 

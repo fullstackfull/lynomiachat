@@ -486,6 +486,9 @@ Rails.application.routes.draw do
           end
         end
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
+          # What this installation looks like from inside Lynomia, for the partner that owns
+          # it. Singular: one answer per installation, addressed by the account it is about.
+          resource :integration_health, only: [:show], controller: 'integration_health'
           # Ceilings an integration includes with its own product -- seats a merchant has already
           # paid for once, on the other platform. Singular: a grant is addressed by its resource
           # name, not by an id. See Platform::Api::V1::EntitlementGrantsController.

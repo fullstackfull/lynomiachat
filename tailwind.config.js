@@ -322,6 +322,28 @@ const tailwindConfig = {
         '50%': { transform: 'translateX(-0.234375rem)' },
         '75%': { transform: 'translateX(0.234375rem)' },
       },
+      // THE CHANNEL STRIP. The track holds the same row of marks TWICE and travels exactly -50% of its own
+      // width, so the moment the first copy has left, the second is sitting precisely where the first
+      // started and the loop restarts with nothing to see. A percentage is what makes that exact: a pixel
+      // figure would have to be re-measured for every viewport, every font and both writing directions, and
+      // would show a jump wherever it was out by a pixel.
+      //
+      // TWO DIRECTIONS, because this site is read in both. Under `dir="rtl"` the row must travel the way
+      // Arabic reads -- rightwards -- or the strip scrolls backwards for the primary market.
+      'marquee-ltr': {
+        from: { transform: 'translateX(0)' },
+        to: { transform: 'translateX(-50%)' },
+      },
+      'marquee-rtl': {
+        from: { transform: 'translateX(0)' },
+        to: { transform: 'translateX(50%)' },
+      },
+      // The hero's product screenshot settles in rather than appearing. One orchestrated moment on the
+      // page, per the design rule, and it is the element the page is about.
+      'rise-in': {
+        from: { opacity: 0, transform: 'translateY(1.25rem) scale(0.985)' },
+        to: { opacity: 1, transform: 'translateY(0) scale(1)' },
+      },
     },
     animation: {
       ...defaultTheme.animation,
@@ -330,6 +352,11 @@ const tailwindConfig = {
       'loader-pulse': 'loader-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       'card-select': 'card-select 0.25s ease-in-out',
       shake: 'shake 0.3s ease-in-out 0s 2',
+      // 48s for a full pass of a ten-mark row doubled. Slow enough to read a logo rather than register a
+      // blur, and `linear` because a marquee that eases is a marquee that visibly restarts.
+      'marquee-ltr': 'marquee-ltr 48s linear infinite',
+      'marquee-rtl': 'marquee-rtl 48s linear infinite',
+      'rise-in': 'rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
     },
   },
   plugins: [

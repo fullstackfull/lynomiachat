@@ -79,7 +79,26 @@ module Marketing::SectionSchema
     # The question list, filled from site_faq_entries. Like `catalogue`, the operator owns the block's own
     # copy and the rows are edited where they live -- which is also what lets the FAQPage structured data in
     # W5 be generated from the same rows the reader sees.
-    'faq' => { fields: %w[heading] }
+    'faq' => { fields: %w[heading] },
+    # THE MOVING CHANNEL STRIP. Operator copy only: the marks themselves come from
+    # Marketing::ChannelBrand, keyed by the Marketing::Catalog channel ids, for the same reason the
+    # catalogue's states are not editable -- a logo is a product fact, and an operator should not be able
+    # to edit WhatsApp's mark onto the LINE entry.
+    'channel_strip' => { fields: %w[heading lede] },
+    # ONE GENUINE PRODUCT SCREENSHOT BESIDE THE CLAIM IT EVIDENCES, alternating down the page.
+    #
+    # It is not `walkthrough`: a walkthrough's picture carries numbered markers and its items ARE those
+    # markers, so the two must agree. A showcase's picture carries nothing, its items are the capability's
+    # own points, and its job is to show the reader the screen they will actually be working in. Trying to
+    # serve both from one type meant either numbering points that nothing on the image pointed at, or
+    # shipping a figure with no explanation beside it.
+    'showcase' => {
+      fields: %w[kicker heading lede attachment_id alt media_position link_label link_target],
+      items: %w[title body]
+    },
+    # How the channels converge: sources on one side, the one inbox on the other, drawn rather than
+    # described. The operator owns the labels; which channels appear comes from the catalogue.
+    'flow' => { fields: %w[heading lede inbox_label outbox_label] }
   }.freeze
 
   # The only values `catalogue.source` may take: the catalogue's own collections.

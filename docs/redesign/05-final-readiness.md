@@ -33,8 +33,13 @@ bundle exec rails documentation:content     # publishes the article and attaches
 
 That step is **required**: a file in `custom/db/documentation/media/` is not published until the
 seeder runs, and until it does the article renders an HTML comment where the image should be. The
-seeder is idempotent and digest-guarded — measured here as `138 unchanged, 1 replaced` on a second
-run against a populated database.
+seeder is idempotent and digest-guarded — a second run against a populated database reports every
+article unchanged and replaces only a file whose bytes actually differ.
+
+One thing the deploy **cannot** do, and that is deliberate: putting the product screenshot on the two
+`unified-inbox` marketing pages is an operator action in Super Admin, once per locale, because the
+seeder never overwrites a page that already exists. `docs/screenshots/marketing-walkthroughs.md` is
+the procedure and the copy is already written in both languages.
 
 Nothing in this stack is merged or deployed. That decision is the owner's.
 
@@ -56,7 +61,7 @@ Across both pull requests, from the pre-redesign base to the current head:
 | `Gemfile`, `Gemfile.lock`, `package.json`, `pnpm-lock.yaml` | **0** |
 | `config/routes.rb` and `config/routes/` | **0** |
 | Ruby files outside specs | **5** — `custom/app/controllers/marketing/base_controller.rb`, `custom/app/helpers/marketing_helper.rb`, `custom/app/services/marketing/{content_blueprint,section_schema}.rb`, and one capture tool |
-| Documentation corpus | one article, one image |
+| Documentation corpus | four articles, four images — two English, two Arabic |
 
 No model, no policy, no job, no API controller, no Enterprise file. A redesign of this size that
 touches no server-side domain code is the shape it should be, and it is what makes the route
@@ -67,8 +72,43 @@ inventory a sufficient gate rather than a comforting one.
 | Gate | Result |
 | --- | --- |
 | `tools/visual/marketing-gate.mjs` | **64 page renders clean** — 16 pages × 2 locales × 2 widths: HTTP 200, correct `dir` and `lang`, exactly one `h1`, a non-empty `<title>`, no "Translation missing", nothing wider than the viewport |
-| `spec/custom/services/documentation/content_seeder_corpus_spec.rb` | 349 examples, 0 failures |
-| `rails documentation:content` | 138 articles, 1 media attached, **0 without dimensions**; re-run reports 138 unchanged, 1 replaced |
+| `spec/custom/services/documentation/` | **481 examples, 0 failures** |
+| `rails documentation:content` | 138 articles; the Arabic pass reports **2 updated, 136 unchanged, 2 media attached, 0 without dimensions**, and a re-run reports nothing changed |
+| The four figures, fetched from the running server | HTTP 200, `image/png`, each `<img>` carrying its intrinsic `width` and `height` |
+| The acceptance screenshot set, `docs/redesign/evidence/final/` | **162 captures** — the dashboard at 36 screens × English light, English dark and Arabic RTL, each at phone and desktop width, plus the marketing walkthrough in both locales and the published documentation pages |
+
+### The visual documentation exists in both languages, not just English
+
+| | English | Arabic |
+| --- | --- | --- |
+| Illustrated articles | `conversations/assign-and-prioritise`, `conversations/work-in-the-inbox` | the same two |
+| Annotated figures | `conversations/assign-agent-en`, `conversations/inbox-filters-en` | `…-ar`, `…-ar` |
+| Marketing walkthrough on `unified-inbox` | built and photographed | built and photographed |
+
+The Arabic figures are **not mirrored copies of the English ones**. The dashboard was re-captured
+with the account set to `ar`, so the panel is on the left, the labels are Arabic and the list reads
+right-to-left; the ring positions were then measured against that capture, because the panel's
+vertical rhythm is not the same in the two locales, and each ring was checked against the control it
+claims to point at. The spec's `side` values are logical (`start` / `end`), so the renderer puts
+every label on the reading-start side in both directions.
+
+Both Arabic articles were fetched from the running server after seeding and carry their figure with
+intrinsic dimensions, and the Arabic marketing page renders the walkthrough with its three numbered
+points as real markup in right-to-left order.
+
+### What looking at the screens found
+
+Two defects came out of reading the screenshots rather than the code, and both are fixed here:
+
+- **The side-panel toggle reported no state.** `aria-pressed` was bound to a key absent from a new
+  user's `ui_settings`, and Vue omits an attribute bound to `undefined` — so on every account that
+  had never opened the panel, a toggle rendered as a bare icon told a screen reader nothing. Verified
+  in the live DOM before (`null`) and after (`"false"`).
+- **The contacts list's expand control had no name.** It is the only control that opens the editor
+  inside a contact row, and it is a bare chevron: a screen reader announced "button". It now carries
+  a translated name and `aria-expanded`. This one also explains a capture failure — the sidebar's
+  account switcher carries the same icon and comes first in the document, so the selector addressing
+  "the first chevron button" had been clicking the account menu.
 
 ### The mobile app
 
@@ -132,6 +172,18 @@ sibling. **Twenty-six had none** — most of them the aria-labels this redesign'
 added — and all twenty-six are now translated. An accessibility pass that names every control and
 then names them in English is half a pass in a product whose primary market reads Arabic.
 
+Looking at the Arabic screenshots then found five more that the key comparison could not: three
+accordion titles in the conversation side panel carried the English string as their Arabic value
+(`Contact Notes`, `Attachments`, `Linked Linear Issues`), and two label buttons had an orthography
+error and an inconsistent term. All five are corrected. The one key this final pass adds — the
+contacts row's expand control — ships in both catalogues in the same commit.
+
+**The Arabic screenshots show this gap, and they are meant to.** Open
+`docs/redesign/evidence/final/dashboard-ar-rtl/` and English strings are visible on several screens —
+"Update contact", "Select country", "Showing 1 - 15 of 20 contacts", "My Inbox". The layout mirrors
+correctly and every control this redesign touched is in Arabic; what is left in English is the
+upstream catalogue, below.
+
 The wider picture, which is not this stack's to fix: **3,091 of 8,403 dashboard keys carry the
 English string in the Arabic catalogue** — 37% of the interface. It concentrates in upstream
 Chatwoot surfaces (integrations 617, inbox management 470, settings 425, help centre 355), which
@@ -159,8 +211,11 @@ required — rather than part of a redesign.
 - **A walkthrough on an existing marketing page is an operator action, not a deploy.**
   `Marketing::ContentSeeder` never overwrites a page that already exists, and a walkthrough's image is
   an attachment id on that page's own row — so a section added to the blueprint reaches a fresh
-  install and no existing one. `docs/screenshots/marketing-walkthroughs.md` is the three-minute
-  procedure, with the copy written and the screenshots committed.
+  install and no existing one. The section type, its renderer, its validation and the images all ship
+  in the repository; putting one on a live page is three minutes in Super Admin, per page and per
+  locale. `docs/screenshots/marketing-walkthroughs.md` is that procedure, with the copy already
+  written in both languages and both finished pages photographed under
+  `docs/redesign/evidence/final/marketing-walkthrough/`.
 - **`dio 4.0.6` in the Flutter app is under CVE-2021-31402** (CRLF injection when the attacker
   controls the HTTP method string; CVSS 7.5; fixed in 5.0.0). That precondition does not exist in
   this codebase — all 38 call sites use a fixed verb, and there is no `_dio.request(...)` and no

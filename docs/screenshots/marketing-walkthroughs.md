@@ -41,9 +41,11 @@ below is ready to paste.
 
 ## The copy that is already written
 
-`features/unified-inbox` has been built and photographed in both locales; the exact text is in
-`docs/redesign/evidence/final/marketing-walkthrough/`. Reuse it verbatim or edit it in the form —
-it is operator content from the moment it is saved.
+The `unified-inbox` row — the page served at `/features/unified-inbox`, and at `/en/features/…` for
+its English twin — has been built and photographed in **both locales**; the finished pages are in
+`docs/redesign/evidence/final/marketing-walkthrough/`. Each row carries its own locale's screenshot:
+the English page shows the dashboard in English, the Arabic page shows it in Arabic, right-to-left.
+Reuse the copy verbatim or edit it in the form — it is operator content from the moment it is saved.
 
 ## Two rules worth keeping
 

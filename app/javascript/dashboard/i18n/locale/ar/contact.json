@@ -879,7 +879,10 @@
       },
       "ACTION_BUTTONS": {
         "DISCARD": "Discard",
-        "SEND": "Send ({keyCode})"
+        "SEND": "Send ({keyCode})",
+        "EMOJI": "إدراج رمز تعبيري",
+        "ATTACH": "إرفاق ملف",
+        "SIGNATURE": "إضافة توقيعك إلى هذه الرسالة"
       }
     }
   },

@@ -302,7 +302,18 @@
     },
     "MEDIA": {
       "IMAGE_UNAVAILABLE": "This image is no longer available.",
-      "LOADING_FAILED": "Loading failed"
+      "LOADING_FAILED": "Loading failed",
+      "AUDIO": {
+        "PLAY": "تشغيل",
+        "PAUSE": "إيقاف مؤقت",
+        "SEEK": "الموضع في التسجيل",
+        "SPEED": "سرعة التشغيل: {speed}. غيّرها.",
+        "MUTE": "كتم الصوت",
+        "UNMUTE": "إلغاء كتم الصوت",
+        "DOWNLOAD": "تنزيل التسجيل"
+      },
+      "OPEN_IMAGE": "فتح الصورة المرفقة",
+      "OPEN_VIDEO": "فتح المقطع المرفق"
     }
   },
   "CONFIRM_EMAIL": "جار التحقق...",
@@ -444,7 +455,8 @@
     },
     "ANALYTICS_TICKETS": "حالات الدعم",
     "SUPPORT": "الدعم",
-    "SUPPORT_SLA_POLICIES": "سياسات اتفاقية الخدمة"
+    "SUPPORT_SLA_POLICIES": "سياسات اتفاقية الخدمة",
+    "TOGGLE_MENU": "إظهار القائمة الرئيسية أو إخفاؤها"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

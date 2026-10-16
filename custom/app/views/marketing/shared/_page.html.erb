@@ -102,12 +102,17 @@
 
   <%= render 'marketing/shared/sections', sections: body_sections, page: page %>
 
-  <% if entry&.docs || entry&.channel_ids&.any? || entry&.related_ids&.any? %>
+  <%# THE DOCUMENTATION LINK RESOLVES TO THE READER'S OWN LANGUAGE. `entry.docs` names the article's
+      locale-independent key, not its slug -- see MarketingHelper#marketing_docs_article -- so it is resolved
+      here and the block is drawn only when a published article answers it. %>
+  <% docs_article = entry&.docs && marketing_docs_article(entry.docs) %>
+
+  <% if docs_article || entry&.channel_ids&.any? || entry&.related_ids&.any? %>
     <div class="<%= measure %> py-16">
-      <% if entry&.docs %>
+      <% if docs_article %>
         <p>
           <a class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-lyn-line px-5 py-2.5 text-sm font-semibold text-lyn-ink transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
-             href="<%= lynomia_docs_article_path(entry.docs) %>">
+             href="<%= lynomia_docs_article_path(docs_article.slug) %>">
             <%= t('marketing.read_docs') %>
           </a>
         </p>

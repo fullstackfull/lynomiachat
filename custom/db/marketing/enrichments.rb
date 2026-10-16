@@ -287,4 +287,224 @@ enrichments = []
   )
 end
 
+# ---------------------------------------------------------------------------------------------------------
+# THE DETAIL PAGES GET THE SAME TREATMENT AS THE HOMEPAGE: a real screenshot and a way into the manual.
+#
+# Eight pages carried the product's claims entirely in prose. Each one now opens, under its hero, on a
+# picture of the screen it is about and a link to the article that explains how to work it. The link is a
+# ROOT-RELATIVE PATH to the documentation (`/docs/<slug>`, and `-ar` for the Arabic article), which is what
+# `Marketing::LinkTarget` allows and what survives a marketing-page rename.
+#
+# WHY THESE EIGHT. They are the pages where a reader has already decided they are interested and wants to
+# know what the thing looks like and how it works. A page whose subject this project has no honest
+# screenshot of is not in this list.
+detail_showcases = {
+  'unified-inbox' => {
+    :file => ->(locale) { "docs/screenshots/sources/marketing/#{locale}/conversation-open.png" },
+    :docs => 'work-in-the-inbox',
+    'en' => {
+      kicker: 'One inbox', heading: 'Every channel, in one list',
+      lede: 'WhatsApp, website chat, email, Telegram and the rest arrive in the same place, in the order ' \
+            'they came, with the customer attached.',
+      alt: 'The Lynomia Chat conversation list beside an open conversation and its reply box.',
+      link_label: 'How to work in the inbox',
+      items: [['One list', 'Filter by channel, assignment, status, label or priority.'],
+              ['One history', 'Every conversation with a contact, on any channel, in one place.'],
+              ['One reply box', 'The same composer whatever the channel, with saved replies behind a slash.']]
+    },
+    'ar' => {
+      kicker: 'صندوق واحد', heading: 'كل القنوات في قائمة واحدة',
+      lede: 'واتساب ودردشة الموقع والبريد وتيليجرام وغيرها تصل إلى المكان نفسه، بترتيب وصولها، ومعها العميل.',
+      alt: 'قائمة المحادثات في لينوميا تشات إلى جوار محادثة مفتوحة وصندوق الرد.',
+      link_label: 'كيف تعمل في صندوق الوارد',
+      items: [['قائمة واحدة', 'رشّح بالقناة أو الإسناد أو الحالة أو التصنيف أو الأولوية.'],
+              ['سجل واحد', 'كل محادثات جهة الاتصال، على أي قناة، في مكان واحد.'],
+              ['صندوق رد واحد', 'المحرّر نفسه مهما كانت القناة، والردود المحفوظة خلف شَرطة مائلة.']]
+    }
+  },
+  'live-chat' => {
+    :file => ->(locale) { "docs/screenshots/sources/widget/#{locale}/host-open.png" },
+    :docs => 'website-live-chat',
+    'en' => {
+      kicker: 'Website chat', heading: 'A chat bubble on your own site, in your own colour',
+      lede: 'One script tag. The visitor clicks, types, and the message lands in the inbox your team ' \
+            'already works in.',
+      alt: 'A shop page with the Lynomia Chat widget open in the corner, showing its welcome heading and ' \
+           'a Start Conversation button.',
+      link_label: 'Set up website chat',
+      items: [['Your words', 'The heading, the tagline and the reply time are yours to write.'],
+              ['Your brand', 'The bubble takes the colour of the site it sits on.'],
+              ['Your domains', 'Restrict the widget to the sites you own.']]
+    },
+    'ar' => {
+      kicker: 'دردشة الموقع', heading: 'فقاعة دردشة على موقعك أنت، بلونك أنت',
+      lede: 'وسم برمجي واحد. ينقر الزائر، ويكتب، فتهبط الرسالة في الصندوق الذي يعمل فيه فريقك أصلاً.',
+      alt: 'صفحة متجر وأداة لينوميا تشات مفتوحة في الزاوية، وفيها العنوان الترحيبي وزر "ابدأ المحادثة".',
+      link_label: 'جهّز دردشة الموقع',
+      items: [['كلماتك', 'العنوان والافتتاحية ووقت الرد كلها تكتبها أنت.'],
+              ['هويتك', 'الفقاعة تأخذ لون الموقع الذي تجلس عليه.'],
+              ['نطاقاتك', 'اقصر الأداة على المواقع التي تملكها.']]
+    }
+  },
+  'automation' => {
+    :file => ->(locale) { "docs/screenshots/figures/marketing/#{locale}/automation-rule.png" },
+    :docs => 'automation-rules',
+    'en' => {
+      kicker: 'Automation', heading: 'Say what should happen, without writing code',
+      lede: 'An event, some conditions, and the actions to take. The rule dialog is the whole of it.',
+      alt: 'The automation rule dialog: the event that starts it, the conditions it checks, and the ' \
+           'actions it takes.',
+      link_label: 'How automation rules work',
+      items: [['On arrival', 'Label, assign, reply or escalate the moment a message lands.'],
+              ['On a delay', 'Re-check the conditions when the clock runs out, and act only if they still hold.'],
+              ['On a change', 'React when a conversation is resolved, reopened or updated.']]
+    },
+    'ar' => {
+      kicker: 'الأتمتة', heading: 'قل ما ينبغي أن يحدث، دون كتابة شيفرة',
+      lede: 'حدث، وبعض الشروط، والإجراءات التي تُتخذ. ونافذة القاعدة هي كل الأمر.',
+      alt: 'نافذة قاعدة الأتمتة: الحدث الذي يبدؤها، والشروط التي تفحصها، والإجراءات التي تتخذها.',
+      link_label: 'كيف تعمل قواعد الأتمتة',
+      items: [['عند الوصول', 'صنّف أو أسند أو ردّ أو صعّد لحظة هبوط الرسالة.'],
+              ['بعد تأجيل', 'أعد فحص الشروط حين تنتهي الساعة، ولا تتصرّف إلا إن بقيت قائمة.'],
+              ['عند تغيّر', 'تفاعل حين تُحلّ المحادثة أو يُعاد فتحها أو تُحدَّث.']]
+    }
+  },
+  'analytics' => {
+    :file => ->(locale) { "docs/screenshots/figures/marketing/#{locale}/reports-overview.png" },
+    :docs => 'reports',
+    'en' => {
+      kicker: 'Reports', heading: 'How the team is actually doing',
+      lede: 'Volume, response times and resolutions, by agent, channel, label and team — with the records ' \
+            'behind every bar.',
+      alt: 'The reports overview: live counters for open, unattended and unassigned work, and a week of ' \
+           'conversation traffic by day and hour.',
+      link_label: 'What each report answers',
+      items: [['Live', 'Open, unattended, unassigned and pending, counted now.'],
+              ['Over time', 'First response and resolution times, with business hours on or off.'],
+              ['Drill down', 'Click a bar to read the conversations it is made of.']]
+    },
+    'ar' => {
+      kicker: 'التقارير', heading: 'كيف حال الفريق فعلاً',
+      lede: 'الحجم وأزمنة الرد والحلول، بحسب الوكيل والقناة والتصنيف والفريق — ومعها السجلات خلف كل عمود.',
+      alt: 'نظرة التقارير العامة: عدّادات حيّة للعمل المفتوح وغير المتابَع وغير المُسنَد، وأسبوع من حركة ' \
+           'المحادثات بحسب اليوم والساعة.',
+      link_label: 'عمَّ يجيب كل تقرير',
+      items: [['الآن', 'المفتوح وغير المتابَع وغير المُسنَد والمعلّق، معدوداً هذه اللحظة.'],
+              ['عبر الزمن', 'أزمنة أول ردّ والحل، بساعات العمل أو بدونها.'],
+              ['تعمّق', 'انقر عموداً لتقرأ المحادثات التي يتكوّن منها.']]
+    }
+  },
+  'campaigns' => {
+    :file => ->(locale) { "docs/screenshots/sources/marketing/#{locale}/campaigns-whatsapp.png" },
+    :docs => 'whatsapp-campaigns',
+    'en' => {
+      kicker: 'Campaigns', heading: 'Reach a group on purpose, and see what happened',
+      lede: 'Pick an audience, pick an approved template, send — then read who received it and who did not.',
+      alt: 'The WhatsApp campaigns list, with each campaign, its audience and its status.',
+      link_label: 'How WhatsApp campaigns work',
+      items: [['An audience', 'Built from labels and contact attributes, saved and reused.'],
+              ['A template', 'Only an approved template leaves the 24-hour window.'],
+              ['An outcome', 'Addressed, sent, delivered, read, failed and skipped, per campaign.']]
+    },
+    'ar' => {
+      kicker: 'الحملات', heading: 'اصل إلى مجموعة عن قصد، وانظر ماذا حدث',
+      lede: 'اختر جمهوراً، واختر قالباً معتمداً، وأرسل — ثم اقرأ من استلم ومن لم يستلم.',
+      alt: 'قائمة حملات واتساب، وفيها كل حملة وجمهورها وحالتها.',
+      link_label: 'كيف تعمل حملات واتساب',
+      items: [['جمهور', 'مبنيّ من التصنيفات وسمات جهات الاتصال، محفوظ ومُعاد استخدامه.'],
+              ['قالب', 'لا يخرج من نافذة الـ٢٤ ساعة إلا قالب معتمد.'],
+              ['نتيجة', 'المخاطَب والمُرسل والمُسلَّم والمقروء والفاشل والمتخطّى، لكل حملة.']]
+    }
+  },
+  'contact-management' => {
+    :file => ->(locale) { "docs/screenshots/sources/marketing/#{locale}/contacts.png" },
+    :docs => 'contacts',
+    'en' => {
+      kicker: 'Contacts', heading: 'Who they are, not just what they last said',
+      lede: 'Every message creates or finds a contact, so the person is the record and the channel is a ' \
+            'detail.',
+      alt: 'The contacts list, with names, channels, labels and the attributes held against each person.',
+      link_label: 'Working with contacts',
+      items: [['One person, many channels', 'The same customer on WhatsApp and email is one contact.'],
+              ['Your own fields', 'Custom attributes for the things your business needs to know.'],
+              ['Import and export', 'Bring a list in as a CSV, and take it out again.']]
+    },
+    'ar' => {
+      kicker: 'جهات الاتصال', heading: 'من هم، لا آخر ما قالوه فقط',
+      lede: 'كل رسالة تُنشئ جهة اتصال أو تجدها، فالشخص هو السجل والقناة تفصيل.',
+      alt: 'قائمة جهات الاتصال، وفيها الأسماء والقنوات والتصنيفات والسمات المحفوظة لكل شخص.',
+      link_label: 'العمل مع جهات الاتصال',
+      items: [['شخص واحد، قنوات كثيرة', 'العميل نفسه على واتساب والبريد جهة اتصال واحدة.'],
+              ['حقولك أنت', 'سمات مخصّصة لما يحتاج عملك معرفته.'],
+              ['استيراد وتصدير', 'أدخل قائمة بصيغة CSV، وأخرجها مرة أخرى.']]
+    }
+  },
+  'support-desk' => {
+    :file => ->(locale) { "docs/screenshots/sources/app/#{locale}/support-cases.png" },
+    :docs => 'support-cases',
+    'en' => {
+      kicker: 'Support cases', heading: 'For the work that outlives the conversation',
+      lede: 'A refund waiting on finance, a bug waiting on a developer: a case with an owner, a due time ' \
+            'and a history you can read back.',
+      alt: 'The support case list, with references, subjects, statuses, priorities, owners and SLA states.',
+      link_label: 'How support cases work',
+      items: [['An owner', 'One person, or a team, and a status that says who is blocked.'],
+              ['A due time', 'An SLA policy with first-response and resolution targets.'],
+              ['A history', 'Every change, who made it, and when.']]
+    },
+    'ar' => {
+      kicker: 'حالات الدعم', heading: 'للعمل الذي يعيش بعد المحادثة',
+      lede: 'استرداد ينتظر المالية، وعطب ينتظر مطوّراً: حالة لها مالك ووقت استحقاق وسجلّ يمكن قراءته لاحقاً.',
+      alt: 'قائمة حالات الدعم، وفيها المراجع والمواضيع والحالات والأولويات والمالكون وحالات اتفاقية الخدمة.',
+      link_label: 'كيف تعمل حالات الدعم',
+      items: [['مالك', 'شخص واحد أو فريق، وحالة تقول من المحجوب.'],
+              ['وقت استحقاق', 'سياسة اتفاقية خدمة بأهداف لأول ردّ وللحل.'],
+              ['سجلّ', 'كل تغيير، ومن أجراه، ومتى.']]
+    }
+  },
+  'team-collaboration' => {
+    :file => ->(locale) { "docs/screenshots/sources/marketing/#{locale}/conversation-assignment.png" },
+    :docs => 'teams-and-agents',
+    'en' => {
+      kicker: 'Teams', heading: 'One owner per conversation, and everyone can see who',
+      lede: 'Assign to a person or a team, set a priority, and leave a private note nobody outside sees.',
+      alt: 'A conversation with its side panel open on the assigned agent, the assigned team and the priority.',
+      link_label: 'Teams, agents and permissions',
+      items: [['An assignee', 'Handed out in turn, or picked up by hand.'],
+              ['A team', 'The group that owns the question, with its own view.'],
+              ['A private note', 'Said to each other, inside the conversation, never to the customer.']]
+    },
+    'ar' => {
+      kicker: 'الفرق', heading: 'مالك واحد لكل محادثة، والجميع يرى من هو',
+      lede: 'أسنِد إلى شخص أو فريق، وحدّد أولوية، واترك ملحوظة خاصة لا يراها أحد من الخارج.',
+      alt: 'محادثة ولوحتها الجانبية مفتوحة على الوكيل المكلف والفريق المكلف والأولوية.',
+      link_label: 'الفرق والوكلاء والصلاحيات',
+      items: [['مُسنَد إليه', 'يُوزَّع بالدور، أو يُلتقط باليد.'],
+              ['فريق', 'المجموعة التي تملك السؤال، ولها عرضها الخاص.'],
+              ['ملحوظة خاصة', 'تُقال بينكم داخل المحادثة، ولا تصل العميل أبداً.']]
+    }
+  }
+}
+
+%w[en ar].each do |locale|
+  detail_showcases.each do |slug, spec|
+    copy = spec[locale]
+    enrichments << Enrichment.new(
+      key: "detail.showcase.#{slug}.#{locale}", locale: locale, slug: slug, after: 'hero',
+      image: { file: spec[:file].call(locale), field: 'attachment_id' },
+      section: {
+        'type' => 'showcase',
+        'kicker' => copy[:kicker], 'heading' => copy[:heading], 'lede' => copy[:lede],
+        'alt' => copy[:alt], 'media_position' => 'top',
+        'link_label' => copy[:link_label],
+        # The ARTICLE, not another marketing page: a reader on a feature page who wants more wants the
+        # manual. Arabic articles carry an `-ar` slug (Documentation::ContentSeeder keeps one globally
+        # unique slug per article), so the link follows the reader's language.
+        'link_target' => "/docs/#{spec[:docs]}#{locale == 'ar' ? '-ar' : ''}",
+        'items' => copy[:items].map { |title, body| { 'title' => title, 'body' => body } }
+      }
+    )
+  end
+end
+
 enrichments

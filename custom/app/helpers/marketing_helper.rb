@@ -109,6 +109,21 @@ module MarketingHelper
     marketing_entry_path(scope, entry)
   end
 
+  # THE DOCUMENTATION LINK ON A DETAIL PAGE, IN THE READER'S OWN LANGUAGE. `entry.docs` is the article's
+  # `doc_key` -- the corpus file's basename, which is deliberately the same string in both locales -- while the
+  # row's `slug` is locale-specific: every locale but the default suffixes it, so the Arabic article for
+  # `connect-whatsapp` is published at /docs/connect-whatsapp-ar. Handing the key straight to the route helper
+  # therefore sent every Arabic reader of all eleven detail pages that declare a `docs` slug to the ENGLISH
+  # article. `Documentation::Library.article_for` is the resolver the contextual-help links already use, and it
+  # falls back to the default locale when a language has no translation yet.
+  #
+  # Returns nil when no published article answers the key, and the caller then prints no link rather than one
+  # into a 404. An article's `status` is the operator's column and not the corpus's (the seeder sets it on
+  # create only), so an unpublished article is a state an operator can reach from Super Admin at any time.
+  def marketing_docs_article(doc_key, locale: marketing_locale)
+    Documentation::Library.article_for(doc_key, locale: locale)
+  end
+
   # The published address on the page today. It is rendered as a real mailto: -- the old page printed it as
   # plain text inside a <span>, so the only contact detail on the site was not clickable.
   SUPPORT_EMAIL = 'info@lynomia.com'.freeze

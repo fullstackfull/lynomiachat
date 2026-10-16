@@ -29,9 +29,13 @@ RSpec.describe Documentation::ContentSeeder do
   describe 'cross-references' do
     articles.each do |locale, path|
       it "#{locale}/#{File.basename(path, '.md')} links only to articles that exist" do
-        # `[label](target)`, keeping only the bare-key links the corpus uses for its own articles. A URL, an anchor
-        # or a path is somebody else's to validate.
-        targets = File.read(path).scan(%r{\]\((?!https?:|#|/)([^)\s]+)\)}).flatten.uniq
+        # `[label](target)`, keeping only the bare-key links the corpus uses for its own articles. A URL, an anchor,
+        # a path and a `media:` key are somebody else's to validate -- the media key's grammar, its reserved
+        # namespace and the file behind it are all checked by `Documentation::MediaSeeder`, which refuses the whole
+        # seed rather than letting a bad one through. The scheme is read from the resolver rather than spelled
+        # again here, because that class owns it.
+        scheme = Regexp.escape(Documentation::MediaResolver::SCHEME)
+        targets = File.read(path).scan(%r{\]\((?!https?:|#{scheme}|#|/)([^)\s]+)\)}).flatten.uniq
 
         expect(targets - keys_by_locale[locale]).to be_empty
       end

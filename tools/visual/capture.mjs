@@ -43,7 +43,9 @@ const ALL_TAB = '.conversations-list-wrap ul > li:nth-child(3) button';
 // The conversation header's side-panel toggle, addressed by the icon it carries rather than by its
 // `aria-label`, which is translated. Three other buttons on this screen also expose `aria-pressed`
 // (the composer's reply/note toggle and its quoted-reply button), so that attribute is not an address.
-const SIDEPANEL_SWITCH = 'button:has(.i-lucide-user-round)';
+const SIDEPANEL_OPEN = 'button[aria-pressed="false"]:has(.i-lucide-user-round)?';
+const SIDEPANEL_CLOSE = 'button[aria-pressed="true"]:has(.i-lucide-user-round)?';
+const CONVERSATION_ACTIONS_OPEN = '.conversation--actions button[aria-expanded="false"] >> nth=0?';
 
 const SETS = {
   marketing: {
@@ -80,13 +82,13 @@ const SETS = {
       },
       'conversation-open': {
         path: '/app/accounts/1/dashboard',
-        click: [ALL_TAB, '.conversations-list div.conversation'],
+        click: [ALL_TAB, '.conversations-list div.conversation', SIDEPANEL_CLOSE],
       },
       // The first row is an email thread, whose bubbles are full-width by design; this one opens further down
       // the seeded list to catch an ordinary chat channel, where the bubbles are the capped kind.
       'conversation-chat': {
         path: '/app/accounts/1/dashboard',
-        click: [ALL_TAB, '.conversations-list div.conversation >> nth=3'],
+        click: [ALL_TAB, '.conversations-list div.conversation >> nth=3', SIDEPANEL_CLOSE],
       },
       // The side panel -- assignee, team, priority, labels, the contact's details -- is CLOSED until an agent
       // opens it: `is_contact_sidebar_open` is absent from a new user's ui_settings and absent is false
@@ -101,8 +103,8 @@ const SETS = {
         click: [
           ALL_TAB,
           '.conversations-list div.conversation',
-          SIDEPANEL_SWITCH,
-          '.conversation--actions button >> nth=0',
+          SIDEPANEL_OPEN,
+          CONVERSATION_ACTIONS_OPEN,
         ],
       },
       contacts: '/app/accounts/1/contacts',
@@ -127,7 +129,7 @@ const SETS = {
       // show it, and "it still exists" is the whole point of capturing it.
       'contact-expanded': {
         path: '/app/accounts/1/contacts',
-        click: ['.ph-no-capture >> nth=0', 'button[aria-label], [data-testid] >> nth=0'],
+        click: ['button:has(.i-lucide-chevron-down) >> nth=0'],
       },
       'settings-inboxes': '/app/accounts/1/settings/inboxes',
       'settings-labels': '/app/accounts/1/settings/labels',
@@ -269,8 +271,20 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
           await page.waitForTimeout(3500);
         }
 
+        // A selector ending in `?` is clicked only if it is there. The side panel and the accordion inside
+        // it are TOGGLES whose state is saved to the signed-in user's `ui_settings`, so a plain click is not
+        // idempotent: the second run of the same shot closes what the first opened. Addressing the state the
+        // control is in -- `aria-pressed="false"`, `aria-expanded="false"` -- and tolerating its absence
+        // makes a page's shot the same whatever the run before it left behind.
         for (const selector of click) {
-          await page.click(selector, { timeout: 15000 });
+          const optional = selector.endsWith('?');
+          const target = optional ? selector.slice(0, -1) : selector;
+          try {
+            await page.click(target, { timeout: optional ? 4000 : 15000 });
+          } catch (error) {
+            if (!optional) throw error;
+            continue;
+          }
           await page.waitForTimeout(2500);
         }
 

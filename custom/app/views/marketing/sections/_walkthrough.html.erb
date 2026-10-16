@@ -17,7 +17,12 @@
 %>
 <% attachment = page&.image_for(section['attachment_id']) %>
 <% steps = Array(section['items']) %>
-<% media_end = section['media_position'].to_s == 'end' %>
+<% position = section['media_position'].to_s %>
+<%# `top` is for a screenshot of a whole screen. Beside the steps it is a quarter of the page wide and
+  the product in it stops being readable, which defeats the point of photographing it; across the
+  content width it is a 1.25x reduction of a 1440px capture and every control in it can be read. %>
+<% media_top = position == 'top' %>
+<% media_end = position == 'end' %>
 
 <section class="<%= tone %>">
   <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -34,7 +39,7 @@
       </div>
     <% end %>
 
-    <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div class="<%= media_top ? 'space-y-12' : 'grid items-center gap-10 lg:grid-cols-2 lg:gap-16' %>">
       <% if attachment.present? %>
         <%# `order` moves the picture, never the list: the DOM order is always picture-then-steps, so the
           reading order a screen reader and a keyboard follow does not depend on which side it is drawn. %>
@@ -50,7 +55,7 @@
       <% end %>
 
       <% if steps.any? %>
-        <ol class="space-y-6">
+        <ol class="<%= media_top ? 'grid gap-8 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-6' %>">
           <% steps.each_with_index do |step, index| %>
             <li class="flex gap-4">
               <%# The same number, in the same indigo, as the marker on the screenshot. `aria-hidden`

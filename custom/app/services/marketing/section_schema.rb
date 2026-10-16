@@ -91,10 +91,11 @@ module Marketing::SectionSchema
   # blocks look like two sections rather than one long field of identical cards.
   STYLES = %w[cards chips list].freeze
 
-  # Which side a walkthrough's screenshot sits on. `start`/`end` rather than left/right because the page is
-  # rendered in both directions and a walkthrough whose image is pinned to the physical left would sit on the
-  # wrong side of the Arabic page.
-  MEDIA_POSITIONS = %w[start end].freeze
+  # Where a walkthrough's screenshot sits. `start`/`end` rather than left/right because the page is rendered
+  # in both directions and a walkthrough whose image is pinned to the physical left would sit on the wrong
+  # side of the Arabic page; `top` puts it across the content width above the steps, which is the only one of
+  # the three a screenshot of a WHOLE SCREEN stays readable in.
+  MEDIA_POSITIONS = %w[start end top].freeze
 
   # The only metrics a stat may read. A metric nobody implemented would render blank.
   METRICS = %w[channel_count feature_count locale_count].freeze

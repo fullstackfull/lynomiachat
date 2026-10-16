@@ -4,15 +4,11 @@
   channels" correct on the day a tenth is connected -- the number is not stored anywhere an edit could make
   it stale. A metric nobody implemented renders nothing rather than a blank figure with a label.
 
-  SET AS A SPECIFICATION ROW, not as three big numbers. On the home page this section follows the hero, and
-  three large figures there would compete with the headline for the same glance -- the reading these deserve
-  is "what this product supports", which is a spec line, so they get a rule above them, a quiet size, and
-  equal weight with their labels.
-
-  THAT RULE IS THE ONLY ONE BETWEEN THIS ROW AND THE HERO, and the gap above it is the page's own section
-  step. The row sat at `mt-10`, off the `mt-16` every other section uses, and its rule landed 48px below a
-  `border-b` the hero drew for itself -- two hairlines that close to each other read as a mistake rather than
-  as a boundary. The hero no longer closes itself (sections/_hero.html.erb); this rule is the boundary.
+  THE PROOF BELONGS TO THE HERO, so it is set on the hero's own field and divided from it by a hairline
+  rather than by a change of paper. It used to be a specification row in small type on white, three sizes
+  below the headline above it and the first thing a reader met after the opening: the page's evidence,
+  whispered. It is the one place on the site where a figure gets display size, and it gets it because there
+  are three of them and they are the shortest true thing the page can say.
 %>
 <% items = Array(section['items']).filter_map do |item|
      figure = item['metric'].present? ? marketing_metric(item['metric']) : item['value']
@@ -22,12 +18,16 @@
    end %>
 
 <% if items.any? %>
-  <dl class="mt-16 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-lyn-line pt-6 sm:grid-cols-3">
-    <% items.each do |item| %>
-      <div class="flex flex-col gap-1">
-        <dt class="text-xl font-semibold tracking-tight text-lyn-ink"><%= item[:figure] %></dt>
-        <dd class="text-sm leading-relaxed text-lyn-ink-soft"><%= item[:label] %></dd>
-      </div>
-    <% end %>
-  </dl>
+  <section class="<%= tone %>">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <dl class="grid grid-cols-1 gap-x-10 gap-y-8 border-t border-lyn-line-dark py-14 sm:grid-cols-3">
+        <% items.each do |item| %>
+          <div class="flex flex-col gap-2">
+            <dt class="text-4xl font-bold tracking-tight text-lyn-paper sm:text-5xl"><%= item[:figure] %></dt>
+            <dd class="max-w-xs text-base leading-[1.7] text-lyn-paper/60"><%= item[:label] %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+  </section>
 <% end %>

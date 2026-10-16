@@ -1,13 +1,17 @@
 <%# An operator's sections, rendered.
-  
+
   ONE DISPATCHER, AND IT CANNOT RENDER A PARTIAL THAT DOES NOT EXIST: `Marketing::SectionSchema.coerce` drops
   any section whose type is not in TYPES before the row is saved, and TYPES is the list of partials in this
   directory. So a malformed section is impossible here rather than guarded against.
+
+  EACH SECTION IS A BAND AND THE SCHEMA DECIDES ITS FIELD, because the alternation is a property of the
+  sequence rather than of any one block -- a partial cannot know whether it follows paper or mist.
+  `Marketing::SectionSchema.banded` holds that rule, beside the TYPES it keys off.
 
   Every string a section carries is rendered escaped. Bodies are plain text by design -- the schema module
   gives the full reasoning, which comes down to this repository having already shipped a stored XSS through a
   Markdown path.
 %>
-<% Array(sections).each do |section| %>
-  <%= render "marketing/sections/#{section['type']}", section: section, page: page %>
+<% Marketing::SectionSchema.banded(sections).each do |section, tone| %>
+  <%= render "marketing/sections/#{section['type']}", section: section, page: page, tone: tone %>
 <% end %>

@@ -1,34 +1,48 @@
-<%# THE HERO, and it is now a hero: the page's heading, standfirst, actions and a picture of the product,
-  composed as one block.
+<%# THE HERO: heading, standfirst, actions and a picture of the product, composed as one block on the one
+  dark field the page opens with.
 
-  WHAT CHANGED AND WHY. This partial used to render a kicker and two buttons, while `_page.html.erb` printed
-  the H1 and the lede above it -- so the eyebrow appeared BELOW the standfirst, the actions floated away from
-  the sentence they belonged to, and the page opened with nothing to look at. The heading and lede still live
-  in the row and there is still exactly one H1; the wrapper now hands them here instead of printing them
-  itself (`_page.html.erb`), so the whole opening is one composition.
+  WHY DARK. The page used to open on paper and stay there: brand colour reached nothing but the buttons
+  until the closing band 4,000px further down, and the product panel -- the only picture of the thing being
+  sold -- was a white card on a white field, so it had no edge to separate it. On `lyn-ink` the panel is the
+  brightest object on the screen without any decoration drawn around it, and the page gains the first beat of
+  a rhythm it did not have: ink, then paper, then mist, then ink again at the close.
 
-  THE PANEL IS THE PRODUCT, drawn in HTML rather than shipped as an image: it is a shared inbox with messages
+  THE EMPHASIS IS A RULE, NOT A STICKER. `highlight` is a phrase out of the heading that a translator may
+  move to wherever their sentence actually turns, and it used to render as rotated magenta block -- white
+  type on a coloured lozenge, which is a decade-old trope and was the only magenta on the site. It is now an
+  underline in `lyn-blue`: the same emphasis, carried by the typography rather than by a shape behind it, and
+  `whitespace-nowrap` keeps the marked phrase from breaking across two lines where the rule would read as two
+  unrelated marks.
+
+  THE PANEL IS THE PRODUCT, drawn in HTML rather than shipped as an image: a shared inbox with messages
   arriving from three channels, in the page's own language, which is the one thing that distinguishes this
   product from a chat widget. It is `aria-hidden` -- the names in it are illustrative, the heading and lede
   already carry the meaning, and a screen reader gains nothing from reading a drawing of a UI aloud.
 
+  AND IT IS UPRIGHT. It used to be tilted a degree and a half over a second tilted plate, which needed a
+  stacking context to paint at all, needed locale-dependent bottom padding so the badge cleared the dropping
+  corner, and bought depth the dark field now gives for free.
+
   CHANNEL MARKS ARE NEUTRAL GLYPHS, not the channels' own logos. The channel is named in text beside each
   one, which is clearer, needs no trademark, and keeps the panel to one colour.
-
-  AND IT DOES NOT CLOSE ITSELF WITH A RULE. The section carried a `border-b`, but whatever follows it opens
-  with a `border-t` of its own -- the specification row, or any section head -- so the page began with two
-  hairlines 48px apart. The next section owns that boundary; the hero simply ends.
 %>
 <% primary = marketing_target_href(section['primary_target']) %>
 <% secondary = marketing_target_href(section['secondary_target']) %>
 <% heading = (page.heading.presence || page.title).to_s %>
 <% highlight = section['highlight'].to_s %>
 
-<section class="relative bg-lyn-paper">
-  <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_30rem] lg:gap-20 lg:py-24">
+<section class="relative isolate overflow-hidden bg-lyn-ink">
+  <%# THE FIELD. Two soft pools of brand colour rather than a flat slab -- indigo behind the panel, royal
+      low and wide behind the heading -- so the band has depth without anything drawn on it. They are
+      `-z-10` inside this isolated section, and `overflow-hidden` is what keeps a pool from putting a
+      horizontal scrollbar on a narrow screen. %>
+  <span class="absolute -right-40 -top-56 -z-10 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(91,91,240,0.42),transparent_62%)]" aria-hidden="true"></span>
+  <span class="absolute -bottom-72 -left-32 -z-10 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(29,63,168,0.38),transparent_64%)]" aria-hidden="true"></span>
+
+  <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_29rem] lg:gap-14 lg:py-28">
     <div class="motion-safe:animate-fade-in-up">
       <% if section['kicker'].present? %>
-        <p class="flex items-center gap-2 text-sm font-medium text-lyn-ink-soft">
+        <p class="inline-flex items-center gap-2 rounded-full border border-lyn-line-dark bg-lyn-ink/40 py-1.5 pe-4 ps-3 text-sm font-medium text-lyn-paper/80">
           <span class="size-2 rounded-full bg-lyn-blue" aria-hidden="true"></span>
           <%= section['kicker'] %>
         </p>
@@ -37,31 +51,35 @@
       <%# ONE H1, built from the row's own heading. The highlight is a literal phrase out of that string, so
           the two cannot disagree; a phrase that is not in the heading simply does not match and the heading
           renders whole. `split` on a literal needs no escaping of the needle, and every part is escaped by
-          ERB on the way out. %>
-      <h1 class="mt-5 max-w-2xl text-balance text-4xl font-bold leading-[1.3] tracking-tight text-lyn-ink sm:text-5xl lg:text-[3.5rem]">
+          ERB on the way out.
+
+          LEADING IS 1.18 AND NOT TIGHTER. This headline is set in IBM Plex Sans Arabic half the time, where
+          the marks above and below the line need the room; display leading tuned on the Latin cut alone
+          collides them. %>
+      <h1 class="mt-6 text-balance text-[2.6rem] font-bold leading-[1.16] tracking-tight text-lyn-paper sm:text-[3.1rem] lg:text-[3.45rem]">
         <% if highlight.present? && heading.include?(highlight) %>
           <% before, after = heading.split(highlight, 2) %>
-          <%= before %><span class="-mx-1 inline-block rotate-[-1.2deg] rounded-md bg-lyn-magenta px-2 py-0.5 text-lyn-paper"><%= highlight %></span><%= after %>
+          <%= before %><span class="whitespace-nowrap underline decoration-lyn-blue decoration-[0.085em] underline-offset-[0.19em]"><%= highlight %></span><%= after %>
         <% else %>
           <%= heading %>
         <% end %>
       </h1>
 
       <% if page.lede.present? %>
-        <p class="mt-6 max-w-xl text-lg leading-[1.85] text-lyn-ink-soft"><%= page.lede %></p>
+        <p class="mt-7 max-w-xl text-lg leading-[1.8] text-lyn-paper/70"><%= page.lede %></p>
       <% end %>
 
       <% if primary.present? || secondary.present? %>
-        <div class="mt-9 flex flex-wrap items-center gap-3">
+        <div class="mt-10 flex flex-wrap items-center gap-3">
           <% if primary.present? && section['primary_label'].present? %>
             <a href="<%= primary %>"
-               class="rounded-xl bg-lyn-indigo px-6 py-3.5 text-base font-semibold text-lyn-paper transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+               class="inline-flex min-h-12 items-center rounded-xl bg-lyn-indigo px-7 text-base font-semibold text-lyn-paper shadow-[0_14px_38px_-12px_rgba(91,91,240,0.85)] transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
               <%= section['primary_label'] %>
             </a>
           <% end %>
           <% if secondary.present? && section['secondary_label'].present? %>
             <a href="<%= secondary %>"
-               class="rounded-xl border border-lyn-line px-6 py-3.5 text-base font-semibold text-lyn-ink transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+               class="inline-flex min-h-12 items-center rounded-xl border border-lyn-line-dark px-7 text-base font-semibold text-lyn-paper/90 transition-colors hover:border-lyn-blue hover:text-lyn-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
               <%= section['secondary_label'] %>
             </a>
           <% end %>
@@ -69,29 +87,9 @@
       <% end %>
     </div>
 
-    <%# The shared inbox. Tilted a degree and a half so it reads as an object on the page rather than a
-        rectangle in the layout, with ONE label below its bottom edge -- not two overlapping it, which is
-        what this block used to say and used to do.
-
-        THE BOTTOM PADDING IS THE LABEL'S CLEARANCE, and it is sized for the label (34px) plus the dip the
-        tilt puts in the card's lower corner (~6px at this width). It was 28px, less than the label itself,
-        so the label sat ON the card -- and by how much depended on the locale: a `-1.5deg` tilt drops the
-        card's start-side corner in English and lifts it in Arabic, and `start-4` puts the label under
-        whichever one that is. Sized for the dropping corner, it clears the card in both. %>
-    <div class="relative isolate mx-auto w-full max-w-md pb-12 lg:max-w-none" aria-hidden="true">
-      <%# A second plate behind the panel, offset the other way. Depth without anything sitting on top of
-          the messages -- which is what the two floating pills did, and why there is now one, below.
-
-          `isolate` IS WHAT MAKES IT PAINT AT ALL. `relative` is not a stacking context, so this `-z-10`
-          was resolved against the root and the plate was drawn behind the section's own opaque
-          `bg-lyn-paper`: the stated depth device was never once visible on the page. Isolating the wrapper
-          contains the negative z-index here, between this wrapper and the card. And the plate is now drawn
-          LARGER than the card rather than inset within it -- inset, it had nowhere to show. The sideways
-          offset stops at 8px because the card is already tilted: at 360px the two rotated boxes together
-          have to stay inside the page's 16px gutter, or the plate's corner puts a scrollbar on the page. %>
-      <span class="absolute -inset-x-2 -top-3 bottom-9 -z-10 rotate-[2deg] rounded-2xl border border-lyn-line bg-lyn-mist"></span>
-      <div class="rotate-[-1.5deg] rounded-2xl border border-lyn-line bg-lyn-paper shadow-[0_24px_60px_-28px_rgba(10,23,51,0.45)]">
-        <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-5 py-3.5">
+    <div class="relative mx-auto w-full max-w-md pb-11 lg:max-w-none" aria-hidden="true">
+      <div class="overflow-hidden rounded-3xl bg-lyn-paper shadow-[0_44px_90px_-32px_rgba(0,0,0,0.7)]">
+        <div class="flex items-center justify-between gap-3 border-b border-lyn-line px-6 py-4">
           <span class="text-sm font-semibold text-lyn-ink"><%= t('marketing.hero_panel.title') %></span>
           <span class="flex items-center gap-1.5 text-xs font-medium text-lyn-ink-soft">
             <span class="size-1.5 rounded-full bg-lyn-blue"></span>
@@ -105,9 +103,9 @@
               YAML string would be purged and render as an empty square. %>
           <% [['one', 'i-lucide-message-circle'], ['two', 'i-lucide-instagram'], ['three', 'i-lucide-globe']]
                .each_with_index do |(row, icon), index| %>
-            <li class="flex items-start gap-3 px-5 py-4 <%= 'bg-lyn-mist' if index.zero? %>">
-              <span class="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-lyn-royal/10 text-lyn-royal">
-                <span class="<%= icon %> size-[1.1rem]"></span>
+            <li class="flex items-start gap-3.5 px-6 py-4 <%= 'bg-lyn-mist' if index.zero? %>">
+              <span class="mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-royal/10 text-lyn-royal">
+                <span class="<%= icon %> size-[1.15rem]"></span>
               </span>
               <span class="min-w-0 flex-1">
                 <span class="flex items-baseline gap-2">
@@ -122,17 +120,22 @@
           <% end %>
         </ul>
 
-        <div class="flex items-center gap-3 border-t border-lyn-line px-5 py-3.5">
-          <span class="flex-1 rounded-xl bg-lyn-mist px-3.5 py-2.5 text-sm text-lyn-ink-soft">
+        <div class="flex items-center gap-3 border-t border-lyn-line px-6 py-4">
+          <span class="flex-1 rounded-xl bg-lyn-mist px-4 py-3 text-sm text-lyn-ink-soft">
             <%= t('marketing.hero_panel.composer') %>
           </span>
-          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-lyn-indigo text-lyn-paper">
-            <span class="i-lucide-send size-[1.05rem]"></span>
+          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-lyn-indigo text-lyn-paper">
+            <span class="i-lucide-send size-[1.1rem]"></span>
           </span>
         </div>
       </div>
 
-      <span class="absolute bottom-0 start-4 rounded-full border border-lyn-line bg-lyn-paper px-3.5 py-2 text-xs font-medium text-lyn-ink shadow-[0_12px_32px_-14px_rgba(10,23,51,0.5)]">
+      <%# THE ONE LABEL, AND IT SITS CLEAR OF THE CARD. Two floating pills used to overlap the messages they
+          were meant to annotate; the first attempt at one pill still had 14px of it lying across the
+          composer row. The wrapper's bottom padding is the badge's own height plus its clearance, so the
+          card ends where the card ends in both locales. %>
+      <span class="absolute bottom-0 start-6 inline-flex items-center gap-2 rounded-full bg-lyn-indigo px-4 py-2 text-xs font-semibold text-lyn-paper shadow-[0_16px_34px_-14px_rgba(0,0,0,0.8)]">
+        <span class="i-lucide-check size-3.5"></span>
         <%= t('marketing.hero_panel.badges.assigned') %>
       </span>
     </div>

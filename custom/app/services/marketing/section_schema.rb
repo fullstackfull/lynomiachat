@@ -77,6 +77,19 @@ module Marketing::SectionSchema
   # The only metrics a stat may read. A metric nobody implemented would render blank.
   METRICS = %w[channel_count feature_count locale_count].freeze
 
+  # THE FIELD EACH SECTION IS DRAWN ON, which is a property of the SEQUENCE and so cannot live in a partial.
+  # Every block used to sit in one measured column on one colour, separated from its neighbour by a hairline:
+  # nine sections, one scale, one surface, and nothing to tell a reader where a subject ended. Each section is
+  # now a full-bleed band, and consecutive bands alternate between paper and mist, so the boundary is a change
+  # of field rather than a 1px rule.
+  #
+  # `stats` is the exception and keeps the ink field: on the home page it follows the hero and is that hero's
+  # evidence. Keying that off the TYPE rather than off the position means a page that opens some other way
+  # still gets a coherent band.
+  INK_TYPES = %w[stats].freeze
+
+  BANDS = { ink: 'bg-lyn-ink', paper: 'bg-lyn-paper', mist: 'bg-lyn-mist' }.freeze
+
   MAX_SECTIONS = 24
   MAX_ITEMS = 24
   LIMITS = { 'body' => 4000, 'lede' => 1200, 'default' => 300 }.freeze
@@ -89,6 +102,20 @@ module Marketing::SectionSchema
     def item_fields_for(type) = TYPES.fetch(type.to_s, {})[:items] || []
 
     def itemised?(type) = item_fields_for(type).any?
+
+    # Each section paired with the background its band is drawn on. The alternation restarts per call, which
+    # is what a page wants: shared/_page.html.erb renders a leading hero itself and hands the REST here, so
+    # the first band below the hero is always paper.
+    def banded(sections)
+      step = -1
+
+      Array(sections).map do |section|
+        next [section, BANDS[:ink]] if INK_TYPES.include?(section['type'].to_s)
+
+        step += 1
+        [section, BANDS[step.even? ? :paper : :mist]]
+      end
+    end
 
     # Normalise what an operator submitted into exactly what the renderer understands.
     #

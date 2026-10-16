@@ -29,3 +29,15 @@ each one below says which part of which screen it is, and why that part.
 - **file** `docs/screenshots/figures/marketing/ar/reports-overview.png`
 - **from** `docs/screenshots/sources/marketing/ar/reports.png` at 32,64, 1056x600
 - **why** The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason.
+
+## `home/inbox-list`
+
+- **file** `docs/screenshots/figures/marketing/en/conversation-list.png`
+- **from** `docs/screenshots/sources/marketing/en/conversation-open.png` at 0,0, 680x620
+- **why** The channel sidebar and the conversation list, which is what 'every channel in one list' means: each row says who wrote and which channel it arrived on. The homepage HERO already publishes this same capture whole, and a page that shows one screenshot twice tells a reader the band is decoration -- so the showcase takes the half the hero is not about.
+
+## `home/inbox-list-ar`
+
+- **file** `docs/screenshots/figures/marketing/ar/conversation-list.png`
+- **from** `docs/screenshots/sources/marketing/ar/conversation-open.png` at 760,0, 680x620
+- **why** The channel sidebar and the conversation list, which is what 'every channel in one list' means: each row says who wrote and which channel it arrived on. The homepage HERO already publishes this same capture whole, and a page that shows one screenshot twice tells a reader the band is decoration -- so the showcase takes the half the hero is not about. Mirrored: in Arabic the sidebar and the list are on the right of the window.

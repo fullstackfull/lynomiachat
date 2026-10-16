@@ -28,17 +28,18 @@ flow_copy = {
             outbox_label: 'Lynomia Chat', inbox_label: 'One shared inbox' },
   'ar' => { heading: 'ستة أماكن يكتب منها عملاؤك. ومكان واحد يعمل فيه فريقك.',
             lede: 'كل رسالة تصل إلى القائمة نفسها، ومعها سجلها، من أي تطبيق جاءت.',
-            outbox_label: 'لينوميا شات', inbox_label: 'صندوق وارد واحد مشترك' }
+            outbox_label: 'لنوميا شات', inbox_label: 'صندوق وارد واحد مشترك' }
 }
 
 showcases = {
   'inbox' => {
-    :file => 'conversation-open.png', :after => 'flow', :position => 'top',
+    :file => 'figures/conversation-list.png', :after => 'flow', :position => 'top',
     'en' => {
       kicker: 'The agent workspace',
       heading: 'Read it, answer it, and see who the customer is — on one screen',
       lede: 'This is the screen your team spends the day in, photographed from the running product.',
-      alt: 'The Lynomia Chat agent workspace: the channel list, a conversation open in the middle, and the customer panel beside it.',
+      alt: 'The Lynomia Chat conversation list: the channels down the side, and a queue whose rows each say ' \
+           'who wrote and which channel the message arrived on.',
       link_label: 'What the inbox does', link_target: 'page:feature:unified_inbox',
       items: [
         ['Every channel in one list',
@@ -53,7 +54,8 @@ showcases = {
       kicker: 'مساحة عمل وكيل الدعم',
       heading: 'اقرأها، وأجب عليها، واعرف من العميل — في شاشة واحدة',
       lede: 'هذه هي الشاشة التي يقضي فيها فريقك يومه، مُصوَّرة من المنتج وهو يعمل.',
-      alt: 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات، ومحادثة مفتوحة في الوسط، ولوحة العميل بجانبها.',
+      alt: 'قائمة المحادثات في لنوميا شات: القنوات على الجانب، وطابور يقول كل صفّ فيه من كتب ومن أي قناة ' \
+           'وصلت الرسالة.',
       link_label: 'ماذا يفعل الصندوق الموحّد', link_target: 'page:feature:unified_inbox',
       items: [
         ['كل القنوات في قائمة واحدة',
@@ -69,7 +71,8 @@ showcases = {
       kicker: 'Automation',
       heading: 'Say what should happen, without writing code',
       lede: 'A rule reads an event, checks the conditions you set, and takes the actions you chose.',
-      alt: 'The Lynomia Chat automation rule editor, showing an event, its conditions and the actions it runs.',
+      alt: 'The Add Automation Rule dialog in Lynomia Chat: the event that starts a rule, a condition row ' \
+           'and an action row, each waiting for the value to apply it to.',
       link_label: 'How automation rules work', link_target: 'page:feature:automation',
       items: [
         ['Trigger', 'A conversation is created, updated, resolved, or a message comes in.'],
@@ -81,7 +84,8 @@ showcases = {
       kicker: 'الأتمتة',
       heading: 'قل ما ينبغي أن يحدث، دون كتابة شيفرة',
       lede: 'القاعدة تقرأ الحدث، وتتحقق من الشروط التي ضبطتها، وتنفّذ الإجراءات التي اخترتها.',
-      alt: 'محرر قواعد الأتمتة في لينوميا شات، ويظهر فيه الحدث وشروطه والإجراءات التي ينفّذها.',
+      alt: 'نافذة إضافة قاعدة أتمتة في لنوميا شات: الحدث الذي يبدأ القاعدة، وصفّ شرط وصفّ إجراء، ' \
+           'وكلٌّ منهما ينتظر القيمة التي يُطبَّق عليها.',
       link_label: 'كيف تعمل قواعد الأتمتة', link_target: 'page:feature:automation',
       items: [
         ['المُطلِق', 'إنشاء محادثة، أو تحديثها، أو حلّها، أو وصول رسالة.'],
@@ -108,7 +112,7 @@ showcases = {
       kicker: 'التقارير',
       heading: 'اعرف كيف يسير أداء الفريق فعلاً',
       lede: 'حجم المحادثات، وأزمنة الرد والحل، وكيف يتوزّع الحمل على وكلاء الدعم والفرق.',
-      alt: 'شاشة التقارير في لينوميا شات، وتظهر فيها مؤشرات المحادثات خلال مدى زمني محدد.',
+      alt: 'شاشة التقارير في لنوميا شات، وتظهر فيها مؤشرات المحادثات خلال مدى زمني محدد.',
       link_label: 'ماذا تغطّي التقارير', link_target: 'page:feature:analytics',
       items: [
         ['رشّح وقارن', 'بالمدى الزمني أو القناة أو الفريق أو وكيل الدعم أو الوسم.'],
@@ -201,7 +205,7 @@ assist_band = {
 hero_alt = {
   'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open ' \
           'in the middle, and the contact panel beside it.',
-  'ar' => 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
+  'ar' => 'مساحة عمل وكيل الدعم في لنوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
 }
 
 # THE SECTION SKELETONS, hoisted out of the loop. A frozen literal rebuilt on every pass is the same object
@@ -232,8 +236,12 @@ enrichments = []
       key: "home.showcase.#{name}.#{locale}", locale: locale, slug: 'home', after: spec[:after],
       # A `figures/` PREFIX MEANS A CROP, not the whole screen. `docs/screenshots/figures.json` says what
       # each one is a crop of and why; `node tools/visual/crop.mjs` regenerates them and `--check` fails if
-      # one is stale. The inbox showcase is the exception and takes the untouched capture: it is published
-      # across the full measure, where a whole screen is legible and is the point.
+      # one is stale.
+      #
+      # THE INBOX SHOWCASE TOOK THE WHOLE CAPTURE UNTIL THE HOMEPAGE WAS LOOKED AT AS A PAGE. `home.hero-shot`
+      # names the same file, `PageEnrichment.resolve_image` matches an existing attachment by basename, so both
+      # ended up holding ONE attachment id and the homepage published the identical 1440x900 screenshot twice.
+      # The showcase now takes a crop of the half the hero is not about -- the channel sidebar and the list.
       image: { file: if spec[:file].start_with?('figures/')
                        "docs/screenshots/figures/marketing/#{locale}/#{spec[:file].delete_prefix('figures/')}"
                      else
@@ -315,7 +323,7 @@ detail_showcases = {
     'ar' => {
       kicker: 'صندوق واحد', heading: 'كل القنوات في قائمة واحدة',
       lede: 'واتساب ودردشة الموقع والبريد وتيليجرام وغيرها تصل إلى المكان نفسه، بترتيب وصولها، ومعها العميل.',
-      alt: 'قائمة المحادثات في لينوميا تشات إلى جوار محادثة مفتوحة وصندوق الرد.',
+      alt: 'قائمة المحادثات في لنوميا شات إلى جوار محادثة مفتوحة وصندوق الرد.',
       link_label: 'كيف تعمل في صندوق الوارد',
       items: [['قائمة واحدة', 'رشّح بالقناة أو الإسناد أو الحالة أو التصنيف أو الأولوية.'],
               ['سجل واحد', 'كل محادثات جهة الاتصال، على أي قناة، في مكان واحد.'],
@@ -339,7 +347,7 @@ detail_showcases = {
     'ar' => {
       kicker: 'دردشة الموقع', heading: 'فقاعة دردشة على موقعك أنت، بلونك أنت',
       lede: 'وسم برمجي واحد. ينقر الزائر، ويكتب، فتهبط الرسالة في الصندوق الذي يعمل فيه فريقك أصلاً.',
-      alt: 'صفحة متجر وأداة لينوميا تشات مفتوحة في الزاوية، وفيها العنوان الترحيبي وزر "ابدأ المحادثة".',
+      alt: 'صفحة متجر وأداة لنوميا شات مفتوحة في الزاوية، وفيها العنوان الترحيبي وزر "ابدأ المحادثة".',
       link_label: 'جهّز دردشة الموقع',
       items: [['كلماتك', 'العنوان والافتتاحية ووقت الرد كلها تكتبها أنت.'],
               ['هويتك', 'الفقاعة تأخذ لون الموقع الذي تجلس عليه.'],
@@ -352,8 +360,8 @@ detail_showcases = {
     'en' => {
       kicker: 'Automation', heading: 'Say what should happen, without writing code',
       lede: 'An event, some conditions, and the actions to take. The rule dialog is the whole of it.',
-      alt: 'The automation rule dialog: the event that starts it, the conditions it checks, and the ' \
-           'actions it takes.',
+      alt: 'The automation rule dialog: the event that starts it, and the rows where a condition and an ' \
+           'action are built, their values not yet chosen.',
       link_label: 'How automation rules work',
       items: [['On arrival', 'Label, assign, reply or escalate the moment a message lands.'],
               ['On a delay', 'Re-check the conditions when the clock runs out, and act only if they still hold.'],
@@ -362,7 +370,7 @@ detail_showcases = {
     'ar' => {
       kicker: 'الأتمتة', heading: 'قل ما ينبغي أن يحدث، دون كتابة شيفرة',
       lede: 'حدث، وبعض الشروط، والإجراءات التي تُتخذ. ونافذة القاعدة هي كل الأمر.',
-      alt: 'نافذة قاعدة الأتمتة: الحدث الذي يبدؤها، والشروط التي تفحصها، والإجراءات التي تتخذها.',
+      alt: 'نافذة قاعدة الأتمتة: الحدث الذي يبدؤها، والصفوف التي يُبنى فيها الشرط والإجراء، وقيمها لم تُختر بعد.',
       link_label: 'كيف تعمل قواعد الأتمتة',
       items: [['عند الوصول', 'صنّف أو أسند أو ردّ أو صعّد لحظة هبوط الرسالة.'],
               ['بعد تأجيل', 'أعد فحص الشروط حين تنتهي الساعة، ولا تتصرّف إلا إن بقيت قائمة.'],
@@ -407,7 +415,7 @@ detail_showcases = {
               ['An outcome', 'Addressed, sent, delivered, read, failed and skipped, per campaign.']]
     },
     'ar' => {
-      kicker: 'الحملات', heading: 'اصل إلى مجموعة عن قصد، وانظر ماذا حدث',
+      kicker: 'الحملات', heading: 'اختر مجموعة وأرسل إليها عن قصد، وانظر ماذا حدث',
       lede: 'اختر جمهوراً، واختر قالباً معتمداً، وأرسل — ثم اقرأ من استلم ومن لم يستلم.',
       alt: 'قائمة حملات واتساب، وفيها كل حملة وجمهورها وحالتها.',
       link_label: 'كيف تعمل حملات واتساب',

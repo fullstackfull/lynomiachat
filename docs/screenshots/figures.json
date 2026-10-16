@@ -52,6 +52,32 @@
       },
       "why": "The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason.",
       "sourceSha": "86c40c36e1dfe66d0c19184557ab91a955632b40ad421e183be14b43c484ab56"
+    },
+    {
+      "key": "home/inbox-list",
+      "source": "docs/screenshots/sources/marketing/en/conversation-open.png",
+      "out": "docs/screenshots/figures/marketing/en/conversation-list.png",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 680,
+        "height": 620
+      },
+      "why": "The channel sidebar and the conversation list, which is what 'every channel in one list' means: each row says who wrote and which channel it arrived on. The homepage HERO already publishes this same capture whole, and a page that shows one screenshot twice tells a reader the band is decoration -- so the showcase takes the half the hero is not about.",
+      "sourceSha": "3f2a81510195aec9aa6c569f3efd41abc8532c1d3eab70f1f2f0c644a7a84629"
+    },
+    {
+      "key": "home/inbox-list-ar",
+      "source": "docs/screenshots/sources/marketing/ar/conversation-open.png",
+      "out": "docs/screenshots/figures/marketing/ar/conversation-list.png",
+      "crop": {
+        "x": 760,
+        "y": 0,
+        "width": 680,
+        "height": 620
+      },
+      "why": "The channel sidebar and the conversation list, which is what 'every channel in one list' means: each row says who wrote and which channel it arrived on. The homepage HERO already publishes this same capture whole, and a page that shows one screenshot twice tells a reader the band is decoration -- so the showcase takes the half the hero is not about. Mirrored: in Arabic the sidebar and the list are on the right of the window.",
+      "sourceSha": "dfe6841a6f438d5f08b558fa8e81e0a3132126538b3c77d0c872f23a76075e18"
     }
   ]
 }

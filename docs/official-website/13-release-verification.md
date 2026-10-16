@@ -136,6 +136,50 @@ rendered on the default side -- the operator's edit discarded in silence, while 
 walkthrough on the same form was refused. The check now reads the type's own field list, so the next type
 to declare the field is covered without anyone remembering this.
 
+## What the same read found in the corpus, the tooling and the rendered pages
+
+A second and third pass over the branch, by dimension. Everything below is fixed in it.
+
+**Nine Arabic articles had no step lists at all.** They wrote their procedures as `١.` `٢.` `٣.`, and
+CommonMark recognises only ASCII digits as an ordered-list marker — so each list was one run-on paragraph
+with the numerals inline, while the English sibling rendered an `<ol>`. Measured with the repo's own parser:
+`ar/connect-telegram` parsed as 0 lists before and 4 lists / 13 items after, which is what its English
+sibling parses.
+
+**The Arabic chat-bubble screenshot was the English one, byte for byte** — the only identical pair in the
+media tree. The cause was structural rather than careless: the demo shop the widget sits on was hardcoded
+`lang="en"`, and the closed launcher carries no text, so an Arabic capture of it could not differ. The host
+page now takes its language from the capture script, which keeps the install snippet in a single file.
+
+**Three articles described a product that is not this one.** An Articles tab in search, which
+`help_center: enabled: false` removes for every account in this fork; a three-character search minimum that
+`SearchInput.vue` sets at two, with an all-digit exception the article's own search-by-id advice depends on;
+and three toggles placed in Widget features that `Settings.vue` puts in Channel Preferences.
+
+**`crop.mjs --check` could not pass on any machine but the one that generated the figures.** It compared
+modification times, and git records none: a clone writes files at checkout in index order, and `figures/`
+sorts before `sources/`. It is a documented release step. Each figure now carries its source's SHA-256.
+
+**The README promised no source holds a token, and two do.** The install-snippet captures show the seeded
+website token in clear text, because that is the screen the figure is of. The figure redacts it and the
+value authorises nothing beyond a local seed on `localhost:3000` — but the blanket claim is what the next
+reviewer would trust, so it now says what is true.
+
+**The homepage published one screenshot twice.** The hero and the inbox showcase named the same file, and
+`PageEnrichment.resolve_image` matches an existing attachment by basename, so both held one attachment id.
+The showcase now takes a crop of the half the hero is not about — the channel sidebar and the conversation
+list, which is what its first claim is about. Both homepages now render four distinct images.
+
+**Five seeded demo contacts had fabricated local-parts at live mail domains** (`comcast.net`, `home.pl`,
+`ustream.tv`, `narod.ru`, `exblog.jp`), and that screen is published whole on a public marketing page. Moved
+onto the reserved `.test` TLD and re-captured; every address in the published list now ends `.test`.
+
+**Three Arabic strings were wrong rather than merely awkward.** Two spellings of the product name that are
+neither the site's own (`لنوميا شات`, which `marketing.ar.yml` sets and every page title renders); a heading
+whose imperative was written `اصل`, which an Arabic reader parses first as the noun *aṣl*; and alt text on
+the automation figure claiming conditions and actions the picture does not contain — it shows the rows with
+their values unchosen, and the alt now says so.
+
 ## Found, and deliberately not fixed here
 
 **Relative times in the Arabic dashboard are in English.** `dynamicTime` in

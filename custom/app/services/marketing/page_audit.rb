@@ -16,16 +16,21 @@
 # time this runs, so a failed audit must not report the save as failed.
 class Marketing::PageAudit
   AUDIT_EVENT = 'marketing.site_page_changed'
+  # The other way a page changes: `marketing:enrich`, run from a shell, which has no signed-in super admin to
+  # attribute it to. A separate event name is what lets a reader of the trail tell "somebody edited this in
+  # the browser" from "an operator ran the enrichment task", which a null `user` alone does not -- a deleted
+  # super admin leaves a null user too.
+  ENRICH_EVENT = 'marketing.site_page_enriched'
   TRACKED_COLUMNS = %w[status slug title description heading lede meta].freeze
 
   # Call right after a successful save, while `previous_changes` still holds the diff.
-  def self.record(page, actor:)
+  def self.record(page, actor:, event: AUDIT_EVENT)
     changes = page.previous_changes.slice(*TRACKED_COLUMNS)
     changes['sections'] = section_shapes(page) if page.previous_changes.key?('sections')
     return if changes.blank?
 
     Custom::AuditLog.create!(
-      auditable: page, user: actor, action: 'update', comment: AUDIT_EVENT,
+      auditable: page, user: actor, action: 'update', comment: event,
       audited_changes: changes.merge('page' => "#{page.locale}/#{page.kind}/#{page.key}")
     )
   rescue StandardError => e

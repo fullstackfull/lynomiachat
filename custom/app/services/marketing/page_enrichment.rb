@@ -173,6 +173,11 @@ module Marketing::PageEnrichment
       page.sections = updated
       return outcome(enrichment, :refused, page.errors.full_messages.join(', ')) unless page.save
 
+      # THE WEBSITE'S AUDIT TRAIL IS THE WHOLE TRAIL OR IT IS NOT A TRAIL. Every other write to a page --
+      # every save, publish and unpublish in Super Admin -- records who changed what; this one did not, so an
+      # operator reading the log would find sections on a live page that no entry accounts for. There is no
+      # signed-in actor for a rake task, which is exactly why it gets its own event name.
+      Marketing::PageAudit.record(page, actor: nil, event: Marketing::PageAudit::ENRICH_EVENT)
       outcome(enrichment, :added, done)
     end
 

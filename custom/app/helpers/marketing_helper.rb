@@ -193,20 +193,27 @@ module MarketingHelper
     end
   end
 
-  # The social-card image: the first `image` section's attachment on this page, as an absolute URL.
+  # The social-card image: the first picture on this page, as an absolute URL.
   #
   # ABSOLUTE AND APP-OWNED. `og:image` is fetched by a crawler with no referer and no session, so it has to
   # be absolute; and it is served from the marketing media route rather than `/rails/active_storage/...`
   # because robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52) and an ActiveStorage
   # signed id never expires.
+  #
   # THE OPERATOR'S CHOICE FIRST. `meta['og_image_id']` is the SEO field on the page, set on the Super Admin
-  # editor's SEO panel; with nothing set it falls back to the first `image` section, which is what every
-  # seeded page has and what an operator who has not thought about social cards would expect.
+  # editor's SEO panel. With nothing set it falls back to the first picture on the page.
+  #
+  # ANY SECTION THAT CARRIES ONE, not only an `image` section. This used to look for `type == 'image'`, and
+  # the comment claimed that was what every seeded page had -- it was not: no blueprint page declares an
+  # `image` section, so NO PAGE ON THE SITE COULD EMIT AN og:image AT ALL and every share of every URL was a
+  # bare link. Four types hold an `attachment_id` now (hero, image, showcase, walkthrough) and the first in
+  # section order is the right card anyway: on a page that opens with a hero screenshot, that screenshot is
+  # exactly the picture a reader expects to see beside the link.
   def marketing_og_image_url(page)
     return nil if page.nil?
 
     chosen = page.meta['og_image_id'].presence ||
-             Array(page.sections).find { |candidate| candidate['type'] == 'image' }&.fetch('attachment_id', nil)
+             Array(page.sections).filter_map { |candidate| candidate['attachment_id'].presence }.first
     attachment = page.image_for(chosen)
     return nil if attachment.nil?
 

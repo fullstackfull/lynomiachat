@@ -33,7 +33,7 @@ flow_copy = {
 
 showcases = {
   'inbox' => {
-    file: 'conversation-open.png', after: 'flow', position: 'start',
+    file: 'conversation-open.png', after: 'flow', position: 'top',
     'en' => {
       kicker: 'The agent workspace',
       heading: 'Read it, answer it, and see who the customer is — on one screen',

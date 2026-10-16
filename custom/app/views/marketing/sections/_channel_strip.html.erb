@@ -74,7 +74,13 @@
           <% marks.each do |mark| %>
             <% entry = Marketing::Catalog::CHANNELS.find { |c| c.id == mark.id } %>
             <% name = t("marketing.channels.#{mark.id}.name", default: mark.id.to_s.humanize) %>
-            <% href = entry&.detail? ? marketing_target_href("page:detail:#{entry.slug}") : nil %>
+            <%# `marketing_entry_path`, the SAME resolver the channel index uses -- not a `page:` link target.
+                A target string is for an OPERATOR'S link, where the grammar exists so a typed value can be
+                validated; building one in code meant inventing `page:detail:<slug>`, and `detail` is not one
+                of Marketing::LinkTarget's kinds while a slug like `live-chat` fails its `[a-z0-9_]+` key
+                pattern twice over. `marketing_target_href` returned nil for all ten, every mark rendered as
+                a `<div>`, and the whole strip was decoration that looked like navigation. %>
+            <% href = entry&.detail? ? marketing_entry_path(:channels, entry) : nil %>
             <%= content_tag(href && copy.zero? ? :a : :div,
                             href: (href if copy.zero?),
                             tabindex: (copy == 1 ? -1 : nil),

@@ -14,13 +14,9 @@
 # consent change is one more event type on a pipe that exists, with its retries, its signing
 # and its de-duplication already built and already exercised.
 #
-# THE DELIVERY ID IS DERIVED, NOT RANDOM, and this is the one place this feed departs from
-# WebhookListener#deliver_account_webhooks. That method mints `SecureRandom.uuid` per enqueue,
-# which is fine for a conversation event -- re-sending one is harmless. A consent change is
-# not harmless to re-send: a reconciliation sweep, a republish after a deploy or a retry at a
-# higher level would each arrive as a NEW delivery and be processed again. Deriving the id
-# from the decision's own identity and revision makes every one of those a no-op at the
-# receiver, which is the whole point of the receiver having a unique index on it.
+# THE DELIVERY ID IS DERIVED, NOT RANDOM: from the decision's own identity and revision, so a
+# reconciliation sweep or a republish after a deploy is a no-op at the receiver rather than a
+# second decision. Partner::EventFan carries the fan-out and records why.
 #
 # ONE DELIVERY PER INSTALLATION, ADDRESSED IN THE PARTNER'S OWN TERMS. A partner cannot act on
 # a Lynomia contact id, so the payload names the store and the customer id THAT STORE already
@@ -38,8 +34,10 @@ module Consents::ChangeFeed
     return if contact.nil?
 
     links(contact).each do |link|
-      publish(contact.account, payload(link, consent, origin: 'lynomia_native', channel: 'any'),
-              delivery_id: "consent-native-#{consent.id}-#{consent.updated_at.to_i}-#{link.commerce_store_id}")
+      Partner::EventFan.publish(
+        contact.account, EVENT, payload(link, consent, origin: 'lynomia_native', channel: 'any'),
+        delivery_id: "consent-native-#{consent.id}-#{consent.updated_at.to_i}-#{link.commerce_store_id}"
+      )
     end
   end
 
@@ -47,26 +45,8 @@ module Consents::ChangeFeed
   # own write, or that has several installations, converges on what Lynomia actually holds --
   # and so a re-consent refused here does not sit in the partner's UI looking accepted.
   def publish_partner(consent)
-    publish(consent.account, partner_payload(consent),
-            delivery_id: "consent-partner-#{consent.id}-#{consent.revision}")
-  end
-
-  def publish(account, body, delivery_id:)
-    return unless account.api_and_webhooks_enabled?
-
-    account.webhooks.account_type.each do |webhook|
-      next unless webhook.subscriptions.include?(EVENT)
-
-      # AFTER THE TRANSACTION, NOT INSIDE IT. A publisher may run inside one -- a contact
-      # merge wraps its whole relocation in `ActiveRecord::Base.transaction` -- and this
-      # app does not set `enqueue_after_transaction_commit`, so the job went to Redis
-      # immediately. A rollback then left a partner being told about a decision this side
-      # does not hold, which is the one direction consent delivery must never fail in.
-      # Outside a transaction this runs straight away, so nothing else changes.
-      ActiveRecord.after_all_transactions_commit do
-        WebhookJob.perform_later(webhook.url, body, :account_webhook, secret: webhook.secret, delivery_id: delivery_id)
-      end
-    end
+    Partner::EventFan.publish(consent.account, EVENT, partner_payload(consent),
+                              delivery_id: "consent-partner-#{consent.id}-#{consent.revision}")
   end
 
   # Only the installations whose own customer this is. `connected` rather than `active`: a

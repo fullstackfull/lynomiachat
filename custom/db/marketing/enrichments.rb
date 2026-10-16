@@ -33,7 +33,7 @@ flow_copy = {
 
 showcases = {
   'inbox' => {
-    file: 'conversation-open.png', after: 'flow', position: 'top',
+    :file => 'conversation-open.png', :after => 'flow', :position => 'top',
     'en' => {
       kicker: 'The agent workspace',
       heading: 'Read it, answer it, and see who the customer is — on one screen',
@@ -41,8 +41,10 @@ showcases = {
       alt: 'The Lynomia Chat agent workspace: the channel list, a conversation open in the middle, and the customer panel beside it.',
       link_label: 'What the inbox does', link_target: 'page:feature:unified_inbox',
       items: [
-        ['Every channel in one list', 'WhatsApp, Instagram, Messenger, email, website chat and SMS arrive in the same queue, each row saying who wrote and which channel it came from.'],
-        ['The customer beside the reply', 'Their details, earlier conversations, private notes and labels sit next to the message you are writing, not in a second tab.'],
+        ['Every channel in one list',
+         'WhatsApp, Instagram, Messenger, email, website chat and SMS arrive in the same queue, each row saying who wrote and which channel it came from.'],
+        ['The customer beside the reply',
+         'Their details, earlier conversations, private notes and labels sit next to the message you are writing, not in a second tab.'],
         ['One owner, not a committee', 'Give a conversation to a person or a team and mark how urgent it is.']
       ]
     },
@@ -53,14 +55,15 @@ showcases = {
       alt: 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات، ومحادثة مفتوحة في الوسط، ولوحة العميل بجانبها.',
       link_label: 'ماذا يفعل الصندوق الموحّد', link_target: 'page:feature:unified_inbox',
       items: [
-        ['كل القنوات في قائمة واحدة', 'واتساب وإنستغرام وماسنجر والبريد ودردشة الموقع والرسائل النصية تصل إلى الطابور نفسه، ويقول كل صف من كتب ومن أي قناة.'],
+        ['كل القنوات في قائمة واحدة',
+         'واتساب وإنستغرام وماسنجر والبريد ودردشة الموقع والرسائل النصية تصل إلى الطابور نفسه، ويقول كل صف من كتب ومن أي قناة.'],
         ['العميل بجانب الرد', 'بياناته ومحادثاته السابقة وملاحظاتك الخاصة ووسومه بجوار الرسالة التي تكتبها، لا في تبويب ثانٍ.'],
         ['مالك واحد، لا لجنة', 'أعطِ المحادثة لشخص أو لفريق وحدّد مدى إلحاحها.']
       ]
     }
   },
   'automation' => {
-    file: 'automation-editor.png', after: 'showcase', position: 'end',
+    :file => 'figures/automation-rule.png', :after => 'showcase', :position => 'end',
     'en' => {
       kicker: 'Automation',
       heading: 'Say what should happen, without writing code',
@@ -87,7 +90,7 @@ showcases = {
     }
   },
   'analytics' => {
-    file: 'reports.png', after: 'showcase', position: 'start',
+    :file => 'figures/reports-overview.png', :after => 'showcase', :position => 'start',
     'en' => {
       kicker: 'Reporting',
       heading: 'See how the team is actually doing',
@@ -216,7 +219,16 @@ enrichments = []
     copy = spec[locale]
     enrichments << Enrichment.new(
       key: "home.showcase.#{name}.#{locale}", locale: locale, slug: 'home', after: spec[:after],
-      image: { file: "docs/screenshots/sources/marketing/#{locale}/#{spec[:file]}", field: 'attachment_id' },
+      # A `figures/` PREFIX MEANS A CROP, not the whole screen. `docs/screenshots/figures.json` says what each
+      # one is a crop of and why; `node tools/visual/crop.mjs` regenerates them and `--check` fails if one is
+      # stale. The inbox showcase is the exception and takes the untouched capture: it is published across
+      # the full measure, where a whole screen is legible and is the point.
+      image: { file: if spec[:file].start_with?('figures/')
+                       "docs/screenshots/figures/marketing/#{locale}/#{spec[:file].delete_prefix('figures/')}"
+                     else
+                       "docs/screenshots/sources/marketing/#{locale}/#{spec[:file]}"
+                     end,
+               field: 'attachment_id' },
       section: {
         'type' => 'showcase',
         'kicker' => copy[:kicker], 'heading' => copy[:heading], 'lede' => copy[:lede],

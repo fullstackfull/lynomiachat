@@ -33,6 +33,24 @@ def print_enrichment_report(outcomes, verb)
 end
 
 namespace :marketing do
+  # REPLACING A PUBLISHED SCREENSHOT is a different decision from adding content, so it is a different task.
+  # `marketing:enrich` attaches a declared image ONCE, matched by filename; a corrected capture keeps its
+  # name and would never reach the page. These two compare bytes and replace only this repository's own
+  # screenshots -- see Marketing::ScreenshotRefresh for exactly what that excludes.
+  namespace :screenshots do
+    desc 'Show which published screenshots differ from the files in this repository. Writes nothing.'
+    task plan: :environment do
+      outcomes = Marketing::ScreenshotRefresh.plan(only: ENV['ONLY'].presence&.split(',')&.map(&:strip))
+      exit(1) if print_enrichment_report(outcomes, 'planned').positive?
+    end
+  end
+
+  desc 'Replace published screenshots whose file in this repository has changed.'
+  task screenshots: :environment do
+    outcomes = Marketing::ScreenshotRefresh.apply!(only: ENV['ONLY'].presence&.split(',')&.map(&:strip))
+    exit(1) if print_enrichment_report(outcomes, 'applied').positive?
+  end
+
   namespace :enrich do
     desc 'Show what marketing:enrich would add to existing pages. Writes nothing.'
     task plan: :environment do

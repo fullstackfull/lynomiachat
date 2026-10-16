@@ -17,3 +17,15 @@ each one below says which part of which screen it is, and why that part.
 - **file** `docs/screenshots/figures/marketing/en/reports-overview.png`
 - **from** `docs/screenshots/sources/marketing/en/reports.png` at 352,64, 1056x600
 - **why** The live counters and one week of conversation traffic. The page continues with two more heatmaps of the same shape; including them would halve the scale of the numbers to show the reader a third copy of a pattern they have already read.
+
+## `home/automation-ar`
+
+- **file** `docs/screenshots/figures/marketing/ar/automation-rule.png`
+- **from** `docs/screenshots/sources/marketing/ar/automation-editor.png` at 12,8, 768x676
+- **why** The same crop as the English figure, mirrored: under `dir=rtl` the dialog opens against the left edge instead of the right. Same box, so the two pages publish the same picture at the same scale rather than one that happens to be bigger.
+
+## `home/reports-ar`
+
+- **file** `docs/screenshots/figures/marketing/ar/reports-overview.png`
+- **from** `docs/screenshots/sources/marketing/ar/reports.png` at 32,64, 1056x600
+- **why** The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason.

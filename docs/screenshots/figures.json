@@ -5,15 +5,49 @@
       "key": "home/automation",
       "source": "docs/screenshots/sources/marketing/en/automation-editor.png",
       "out": "docs/screenshots/figures/marketing/en/automation-rule.png",
-      "crop": { "x": 660, "y": 8, "width": 768, "height": 676 },
+      "crop": {
+        "x": 660,
+        "y": 8,
+        "width": 768,
+        "height": 676
+      },
       "why": "The section's claim is 'say what should happen, without writing code', and the thing that shows that is the rule dialog: event, conditions, actions. The rule list behind it and the settings sidebar are context the sentence beside the figure already gives, and at the 600px this is published at they cost the dialog a third of its scale."
     },
     {
       "key": "home/reports",
       "source": "docs/screenshots/sources/marketing/en/reports.png",
       "out": "docs/screenshots/figures/marketing/en/reports-overview.png",
-      "crop": { "x": 352, "y": 64, "width": 1056, "height": 600 },
+      "crop": {
+        "x": 352,
+        "y": 64,
+        "width": 1056,
+        "height": 600
+      },
       "why": "The live counters and one week of conversation traffic. The page continues with two more heatmaps of the same shape; including them would halve the scale of the numbers to show the reader a third copy of a pattern they have already read."
+    },
+    {
+      "key": "home/automation-ar",
+      "source": "docs/screenshots/sources/marketing/ar/automation-editor.png",
+      "out": "docs/screenshots/figures/marketing/ar/automation-rule.png",
+      "crop": {
+        "x": 12,
+        "y": 8,
+        "width": 768,
+        "height": 676
+      },
+      "why": "The same crop as the English figure, mirrored: under `dir=rtl` the dialog opens against the left edge instead of the right. Same box, so the two pages publish the same picture at the same scale rather than one that happens to be bigger."
+    },
+    {
+      "key": "home/reports-ar",
+      "source": "docs/screenshots/sources/marketing/ar/reports.png",
+      "out": "docs/screenshots/figures/marketing/ar/reports-overview.png",
+      "crop": {
+        "x": 32,
+        "y": 64,
+        "width": 1056,
+        "height": 600
+      },
+      "why": "The Arabic counters and the same week of traffic. Mirrored from the English box for the same reason."
     }
   ]
 }

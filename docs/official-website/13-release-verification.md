@@ -98,6 +98,44 @@ second time. The named `side` in a spec is still a reading side — `start` is t
 right in Arabic — but the automatic choice is now physical. The four figures that name `side` explicitly are
 unchanged by this; they were written around the defect and still render identically.
 
+## What an adversarial read of the diff found
+
+The branch was read back against itself, file by file, after it was pushed. Five defects it had introduced
+came out of that read; all five are fixed in it.
+
+**A public 500 on any channel page the catalogue does not hold.** The new channel mark reads `entry.id`,
+and a detail page's catalogue entry is OPTIONAL -- `Marketing::EntriesController#show` says so in as many
+words, and `Marketing::Catalog.find` answers nil for a slug an operator created or renamed, which
+`SitePage::RENAMEABLE_KINDS` explicitly allows. Measured by creating a `kind: 'channel'` row at a fresh
+slug: `undefined method 'id' for nil`, HTTP 500 on a public URL. Every other `entry` reference in the same
+file was already guarded; this one was not. Guarded now, and re-measured at 200 with the marked channels
+still showing their marks.
+
+**The screenshot band opened nothing.** The eight detail-page showcases declared `after: 'hero'`, and a
+detail page has no hero section -- its heading is chrome the template draws, and the body is `cards` plus
+an optional `note`. `PageEnrichment#position_for` appends when the named type is absent, so the band landed
+at the BOTTOM of every page, under the bullet cards, while the declaration's own comment said it opens the
+page. `after:` dropped; the plan now reads `inserted at 0` and the rendered page puts the screenshot
+directly under the heading.
+
+**A screenshot replacement could remove a page's social card.** `ScreenshotRefresh#replace` repointed every
+section's `attachment_id` and then purged the old attachment -- but `meta['og_image_id']` holds an
+attachment id too, and `marketing_og_image_url` reads it FIRST and only falls back to a section's image
+when it is blank. A stale-but-present id therefore suppresses the fallback rather than degrading to it, and
+the page stops emitting an `og:image` at all. Repointed with the sections now, and counted in the report.
+
+**A corpus error message prescribed an impossible fix.** `link_problems` told the author of any unresolved
+bare link that it "resolves to another language's article" and to rename it `<target>-<locale>`. In the
+default locale slugs carry no suffix, so `foo-en` is a slug the seeder can never produce: a missing English
+target is a dangling link, and the instruction would only have made a second one. The two cases now read
+differently.
+
+**One field was validated on one of the two types that declare it.** `media_position` was checked only for
+`walkthrough`, so the same word typed into a `showcase` section in Super Admin saved without complaint and
+rendered on the default side -- the operator's edit discarded in silence, while the identical word in a
+walkthrough on the same form was refused. The check now reads the type's own field list, so the next type
+to declare the field is covered without anyone remembering this.
+
 ## Found, and deliberately not fixed here
 
 **Relative times in the Arabic dashboard are in English.** `dynamicTime` in

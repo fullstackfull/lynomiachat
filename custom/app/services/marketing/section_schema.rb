@@ -285,8 +285,14 @@ module Marketing::SectionSchema
         link_errors(section, type, label) + media_position_errors(section, type, label)
     end
 
+    # DERIVED FROM THE TYPE'S OWN FIELD LIST rather than naming the types. `walkthrough` was the only type
+    # that declared `media_position` when this was written, and `showcase` later declared it and read it in
+    # the same three-value vocabulary -- so a hardcoded `== 'walkthrough'` left an operator's showcase value
+    # unvalidated: a typed `right` saved with no error and rendered on the start edge anyway, while the same
+    # word in a walkthrough on the same form was refused. Reading the declaration keeps the next type that
+    # declares the field validated without anyone remembering to come back here.
     def media_position_errors(section, type, label)
-      return [] unless type == 'walkthrough'
+      return [] unless fields_for(type).include?('media_position')
 
       position = section['media_position'].to_s
       return [] if position.blank? || MEDIA_POSITIONS.include?(position)

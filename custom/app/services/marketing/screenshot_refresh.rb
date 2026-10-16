@@ -65,19 +65,40 @@ module Marketing::ScreenshotRefresh
       replace(page, current, path, enrichment)
     end
 
+    # A SECTION IS NOT THE ONLY THING THAT HOLDS AN ATTACHMENT ID. `meta['og_image_id']` holds one too --
+    # SitePage's own comment says so, SitePageMetaField offers it in Super Admin as "Social image" -- and
+    # repointing only the sections left that key naming a blob this method had just purged. The damage is
+    # silent and specific: `marketing_og_image_url` reads the meta key FIRST and only falls back to a
+    # section's image when it is blank, so a stale-but-present id does not degrade to the fallback, it
+    # suppresses it, and the page stops emitting an og:image at all -- the exact failure the rest of this
+    # work exists to fix. Repointed here, before the save, and counted so the report does not under-state
+    # what it changed.
     def replace(page, current, path, enrichment)
       old_id = current.id.to_s
       fresh = Marketing::ImageUpload.new(page: page).attach!(io: path.open('rb'), filename: path.basename.to_s)
-
-      updated = Array(page.sections).deep_dup
-      repointed = updated.count { |section| repoint(section, old_id, fresh.id.to_s) }
-
-      page.sections = updated
+      repointed = repoint_all(page, old_id, fresh.id.to_s)
       return outcome(enrichment, :refused, page.errors.full_messages.join(', ')) unless page.save
 
       Marketing::PageAudit.record(page, actor: nil, event: Marketing::PageAudit::ENRICH_EVENT)
       current.purge
-      outcome(enrichment, :added, "replaced #{path.basename} on #{repointed} section(s)")
+      outcome(enrichment, :added, "replaced #{path.basename} on #{repointed}")
+    end
+
+    # EVERY PLACE A PAGE CAN HOLD AN ATTACHMENT ID, assigned together so none is left behind by the purge
+    # below. Returns what the report says it changed.
+    def repoint_all(page, old_id, new_id)
+      updated = Array(page.sections).deep_dup
+      sections = updated.count { |section| repoint(section, old_id, new_id) }
+      page.sections = updated
+      social = repoint_social_image(page, old_id, new_id)
+      "#{sections} section(s)#{social ? ' and the social image' : ''}"
+    end
+
+    def repoint_social_image(page, old_id, new_id)
+      return false unless page.meta['og_image_id'].to_s == old_id
+
+      page.meta = page.meta.merge('og_image_id' => new_id)
+      true
     end
 
     def repoint(section, old_id, new_id)

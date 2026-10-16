@@ -254,9 +254,23 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
         relative_targets(file.body).filter_map do |target|
           next if slugs.fetch(file.locale, Set.new).include?(target)
 
-          "#{file.source_path}: [..](#{target}) resolves to another language's article. In #{file.locale} the " \
-            "slug is #{target}-#{file.locale}"
+          dangling_or_foreign(file, target)
         end
+      end
+    end
+
+    # TWO DIFFERENT DEFECTS WEAR THE SAME SHAPE, and one message for both sent an operator the wrong way.
+    # In the default locale a slug is the file's basename with nothing added, so `foo-en` is a slug this
+    # seeder can never produce: a bare English target that is not in the set is a link to an article that
+    # does not exist, and telling its author to rename it `foo-en` would only make a second dangling link.
+    # In every other locale the slug IS suffixed, so the same miss is almost always a link into the default
+    # locale's copy -- the defect this check exists for. Said separately.
+    def dangling_or_foreign(file, target)
+      if file.default_locale?
+        "#{file.source_path}: [..](#{target}) names no article in this corpus"
+      else
+        "#{file.source_path}: [..](#{target}) resolves to another language's article. In #{file.locale} the " \
+          "slug is #{target}-#{file.locale}"
       end
     end
 

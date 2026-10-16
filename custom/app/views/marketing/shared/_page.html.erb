@@ -54,8 +54,15 @@
     <header class="<%= measure %> <%= entry && scope ? 'pt-6' : 'pt-16' %>">
       <%# THE CHANNEL'S OWN MARK ABOVE ITS NAME. A reader arriving on /channels/whatsapp has usually come
           looking for one specific app, and the mark confirms they are in the right place before a word of
-          the page is read. Only channels carry one: a feature or a solution is not a brand. %>
-      <% if scope == :channels && Marketing::ChannelBrand.marked?(entry.id) %>
+          the page is read. Only channels carry one: a feature or a solution is not a brand.
+
+          `entry &&` is the whole reason this page still renders. The catalogue entry is OPTIONAL on a
+          detail page -- Marketing::EntriesController#show says so, and Marketing::Catalog.find answers nil
+          for any slug the catalogue does not hold -- so an operator renaming a channel page's slug, which
+          SitePage::RENAMEABLE_KINDS explicitly allows, left `entry.id` raising on a public URL. Measured:
+          a kind:'channel' row at a fresh slug answered 500 with "undefined method 'id' for nil". Every
+          other `entry` reference in this file was already guarded; this one was not. %>
+      <% if scope == :channels && entry && Marketing::ChannelBrand.marked?(entry.id) %>
         <div class="mb-6">
           <%= render 'marketing/shared/channel_mark', id: entry.id, size: 56, labelled: false %>
         </div>

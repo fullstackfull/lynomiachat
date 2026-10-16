@@ -490,7 +490,14 @@ detail_showcases = {
   detail_showcases.each do |slug, spec|
     copy = spec[locale]
     enrichments << Enrichment.new(
-      key: "detail.showcase.#{slug}.#{locale}", locale: locale, slug: slug, after: 'hero',
+      # NO `after:`, WHICH PUTS IT FIRST. `after` names a type to sit behind, and a detail page has no
+      # `hero` section to name: its heading and standfirst are chrome that `_page.html.erb` draws in a
+      # `<header>`, and `Marketing::ContentBlueprint#detail_page` builds the body as `cards` plus an
+      # optional `note`. `PageEnrichment#position_for` appends when the named type is absent, so
+      # `after: 'hero'` -- which this read until the band was looked at on a rendered page -- put the
+      # screenshot at the BOTTOM, under the bullet cards, which is the one place it does not belong.
+      # `after: nil` returns 0, and the band opens the page the way the copy above says it does.
+      key: "detail.showcase.#{slug}.#{locale}", locale: locale, slug: slug,
       image: { file: spec[:file].call(locale), field: 'attachment_id' },
       section: {
         'type' => 'showcase',

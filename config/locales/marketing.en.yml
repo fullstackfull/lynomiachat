@@ -232,6 +232,19 @@ en:
           body: >-
             Both billing intervals and both pricing models are supported, and card payment with an invoice
             portal is available once it is configured for this installation.
+      # THE PLAN GRID. Rendered only when an operator has ticked "Listed on website" on at least one active
+      # plan; until then the page shows the quote form and the dimensions above.
+      plans_title: The plans on this installation
+      plans_lede: >-
+        Every plan below is a real plan on this workspace, published by its operator. What it costs, what it
+        includes and what it is capped at come from the plan itself.
+      plan_channels: Channels included
+      plan_channels_all: Every channel this installation supports
+      plan_cta: Ask about this plan
+      plan_cta_aria: Ask about the %{name} plan
+      plans_note: >-
+        There is no self-service checkout on this page. Tell us which plan fits and we will set the workspace
+        up with you.
       interval:
         month: per month
         year: per year

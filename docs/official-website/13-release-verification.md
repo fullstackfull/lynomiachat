@@ -180,6 +180,21 @@ whose imperative was written `اصل`, which an Arabic reader parses first as th
 the automation figure claiming conditions and actions the picture does not contain — it shows the rows with
 their values unchosen, and the alt now says so.
 
+**The Arabic widget was an Arabic widget with an English heading in it.** The welcome heading, the tagline
+and the greeting are not the widget's chrome: they are three fields an operator types, stored on the
+channel, and sent to every visitor exactly as written. The widget translated everything around them and left
+those three in English, with the tagline's full stop stranded on the wrong end of the line — published under
+a caption saying this is what an Arabic visitor sees. Both sets now live in `tools/visual/widget_copy.rb`,
+the fixture reads the English one from there, and the Arabic figures are taken against the Arabic one.
+
+**Two claims checked and not confirmed.** A review said the preview serves homepage screenshots that are no
+longer in the repository. Measured: `marketing:screenshots:plan` reports all 24 declared images byte-current
+against their files, and every attachment on either homepage has its file on disk. Two per locale
+(`automation-editor.png`, `reports.png`) are attached but named by no declaration and used by no section —
+leftovers of this container's own iterations, not something either page serves. They are left alone: an
+operator's unreferenced upload looks identical from here, and deleting one is not a thing this release's
+tooling is allowed to do.
+
 ## Found, and deliberately not fixed here
 
 **Relative times in the Arabic dashboard are in English.** `dynamicTime` in

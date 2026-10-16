@@ -13,6 +13,8 @@
 # It is idempotent: re-running updates the same records rather than adding more.
 abort "refusing to run in #{Rails.env}" unless Rails.env.development?
 
+require_relative 'widget_copy'
+
 account = Account.first or abort 'no account -- run `rails db:seed` first'
 user    = account.users.first
 inboxes = account.inboxes.to_a
@@ -285,22 +287,11 @@ puts "\nconversations: #{account.conversations.count} over #{WEEK_DAYS} days   "
 # teaches nothing.
 #
 # So the demo shop's channel is set up the way the article tells a reader to set theirs up, and the figures
-# are of that. The values are the demo shop's: PaperLayer is a stationery shop that does not exist
-# (`tools/visual/widget-host/index.html`), and the navy is the one its own page uses, which is the point --
-# the widget takes the colour of the site it sits on.
+# are of that. The three fields an operator types are in `tools/visual/widget_copy.rb`, in both languages,
+# because the Arabic figures are taken against the Arabic set and a second copy here would drift from it.
 website = account.inboxes.find_by(channel_type: 'Channel::WebWidget')
 if website
-  website.channel.update!(
-    widget_color: '#1B2338',
-    welcome_title: 'Talk to PaperLayer',
-    welcome_tagline: 'Questions about an order, a delivery or a product? Start a conversation and ' \
-                     'someone from the shop will answer.',
-    reply_time: :in_a_few_minutes
-  )
-  website.update!(
-    greeting_enabled: true,
-    greeting_message: 'Thanks for getting in touch. Tell us what you need and we will pick it up from here.'
-  )
+  WidgetCopy.apply!(website, 'en')
   # AND IT HAS STAFF. `rails db:seed` creates the web widget inbox with no members at all, and the widget
   # asks the installation which AGENTS OF THIS CHANNEL are online -- `inbox.members`, not the account's
   # users. With none, every visitor is told "We are away at the moment" however many people are signed in,

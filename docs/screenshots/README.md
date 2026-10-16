@@ -84,6 +84,28 @@ section, a numbered list in a documentation article. A number burnt into a PNG c
 screen reader, translated, indexed, or enlarged by a reader who needs larger type. The picture shows
 *where*; the text says *what*.
 
+## The visitor's side of the website channel
+
+`capture-widget.mjs` shoots the widget on a demo shop served from `tools/visual/widget-host/`, so the
+embed is cross-origin exactly as it is on a real site. The widget takes its language from the browser,
+and the shop takes its language from the script — but three things on it are neither: the **welcome
+heading**, the **tagline** and the **greeting** are fields an operator types into the channel, stored
+once and sent to every visitor as written. Capture an Arabic figure against an English channel and you
+publish an Arabic widget with an English heading in it.
+
+So set the channel's copy to the language you are about to shoot, and set it back afterwards:
+
+```
+bundle exec rails runner 'require "./tools/visual/widget_copy"
+  WidgetCopy.apply!(Account.first.inboxes.find_by!(channel_type: "Channel::WebWidget"), "ar")'
+node tools/visual/capture-widget.mjs --locale ar --out docs/screenshots/sources/widget
+```
+
+Both languages' wording is in `tools/visual/widget_copy.rb`, which `synthetic_fixtures.rb` also reads,
+so the fixture and the capture cannot drift apart. The widget must have members and at least one of
+them online, or every figure comes out in the away state — `tools/visual/agent_presence.rb <seconds>`
+holds that open for the length of a run.
+
 ## When a run stops signing in
 
 Each capture signs in through the real form, and the product caps concurrent sessions per user

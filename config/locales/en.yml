@@ -807,6 +807,8 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    partner_integrations:
+      not_found: 'That integration no longer exists.'
     operations:
       case_title: "Operational issue: %{source} %{signal}"
       case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."

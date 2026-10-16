@@ -1,0 +1,140 @@
+<%#
+  One partner integration, in full (P6C).
+
+  The per-workspace block is Operations::IntegrationHealth -- the SAME projection the partner
+  reads through the platform API -- so an operator here and an operator on the partner's side
+  are looking at one set of facts rather than two renderings that can disagree about the same
+  store.
+%>
+<% app = @overview[:app] %>
+<% content_for(:title) do %><%= app.name %><% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title"><%= app.name %></h1>
+</header>
+
+<section class="main-content__body">
+  <p class="text-sm text-slate-600 mb-6">
+    <%= link_to '&larr; All integrations'.html_safe, super_admin_partner_integrations_path,
+                class: 'text-blue-700 underline' %>
+  </p>
+
+  <%# ---- what it is permitted. Counted by type, not listed: a roster of every person an
+       integration may sign in as is not what "what does this hold" is asking for. %>
+  <div class="border border-slate-200 rounded-md p-4 mb-6">
+    <h2 class="text-base font-semibold mb-2">Permissions</h2>
+    <% if @overview[:permissions].empty? %>
+      <p class="text-sm text-slate-500">This integration holds nothing.</p>
+    <% else %>
+      <ul class="text-sm">
+        <% @overview[:permissions].each do |type, count| %>
+          <li><%= type.pluralize %>: <strong><%= count %></strong></li>
+        <% end %>
+      </ul>
+    <% end %>
+    <p class="text-xs text-slate-500 mt-2">
+      Granted through <code>platform_app_permissibles</code>, which is what confines every call this
+      integration makes. Nothing on this page changes it.
+    </p>
+  </div>
+
+  <%# ---- the workspaces it holds, and whether each is working %>
+  <h2 class="text-base font-semibold mb-2">
+    Workspaces
+    <span class="text-sm font-normal text-slate-500">(<%= @overview[:total_accounts] %>)</span>
+  </h2>
+
+  <% if @overview[:truncated] %>
+    <p class="text-sm text-amber-700 mb-3">
+      Showing the first <%= Operations::PartnerOverview::ACCOUNT_LIMIT %> of
+      <%= @overview[:total_accounts] %>. This page reads each workspace in full, so it is capped rather
+      than slow &mdash; and it says so rather than letting a prefix read as the whole set.
+    </p>
+  <% end %>
+
+  <% @overview[:accounts].each do |entry| %>
+    <% health = entry[:health] %>
+    <div class="border border-slate-200 rounded-md p-4 mb-4">
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-medium">
+          <%= link_to entry[:account].name, super_admin_account_path(entry[:account]),
+                      class: 'text-blue-700 underline' %>
+          <span class="text-slate-400 text-sm">#<%= entry[:account].id %></span>
+        </h3>
+        <%= render 'super_admin/operations/status_badge', status: health[:status] %>
+      </div>
+
+      <% if health[:installations].empty? %>
+        <p class="text-sm text-slate-500">No commerce installation in this workspace.</p>
+      <% else %>
+        <table class="w-full text-sm mb-2">
+          <thead class="text-left text-slate-500">
+            <tr>
+              <th class="py-1">Installation</th>
+              <th class="py-1">State</th>
+              <th class="py-1">Provider API</th>
+              <th class="py-1">Webhooks</th>
+              <th class="py-1">Last error</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% health[:installations].each do |install| %>
+              <tr class="border-t border-slate-100">
+                <td class="py-1"><code><%= install[:external_store_id] %></code></td>
+                <td class="py-1"><%= install[:status] %></td>
+                <td class="py-1"><%= install.dig(:health, :api_state) %></td>
+                <td class="py-1"><%= install.dig(:health, :webhook_state) %></td>
+                <td class="py-1 text-slate-600"><%= install.dig(:health, :last_error_reason) || '—' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <p class="text-sm text-slate-600">
+        Open issues: <strong><%= health.dig(:signals, :open) %></strong>
+        &middot; Consent decisions held: <strong><%= health.dig(:consent, :decisions_held) %></strong>
+        (<%= health.dig(:consent, :blocking) %> blocking)
+        &middot; Campaigns blocked: <strong><%= health.dig(:messaging, :blocked) %></strong>
+        &middot; WhatsApp numbers: <strong><%= health.dig(:messaging, :whatsapp_inboxes) %></strong>
+      </p>
+
+      <% if entry[:entitlements].any? %>
+        <p class="text-sm text-slate-600 mt-1">
+          Entitlements granted by this integration:
+          <%= entry[:entitlements].map { |resource, limit| "#{resource} #{limit}" }.join(', ') %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ---- what it has done lately, from the audit trail rather than a log: the trail is the
+       record that survives and the one an operator can be held to. %>
+  <h2 class="text-base font-semibold mb-2">Recent activity</h2>
+  <% if @overview[:recent_activity].empty? %>
+    <p class="text-sm text-slate-500">Nothing recorded for these workspaces yet.</p>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2">When</th>
+          <th class="py-2">What</th>
+          <th class="py-2">Who</th>
+          <th class="py-2">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @overview[:recent_activity].each do |entry| %>
+          <tr class="border-b border-slate-100">
+            <td class="py-2 whitespace-nowrap"><%= entry.created_at.utc.strftime('%Y-%m-%d %H:%M') %></td>
+            <td class="py-2"><%= entry.comment %></td>
+            <td class="py-2"><%= entry.audited_changes['partner_actor'] || entry.user_name || 'system' %></td>
+            <td class="py-2 text-slate-600">
+              <%= entry.audited_changes.slice('transition', 'reason', 'status').values.join(' — ').presence || '—' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

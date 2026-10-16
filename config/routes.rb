@@ -689,6 +689,7 @@ Rails.application.routes.draw do
   draw :whatsapp_templates
   draw :support
   draw :operations
+  draw :partner_integrations
   draw :documentation
   draw :platform_support
   draw :integrations

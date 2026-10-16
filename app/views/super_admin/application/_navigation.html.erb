@@ -44,7 +44,7 @@ as defined by the routes in the `admin/` namespace
           not just its own. So each such controller is excluded by name, and the exclusion ships in the same
           commit as the route and the nav item.
         %>
-        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions"].include?  resource.resource %>
+        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "push_diagnostics", "operations", "platform_support", "platform_support_actions", "partner_integrations"].include?  resource.resource %>
         <% next if resource.resource == "platform_banners" && !ChatwootApp.chatwoot_cloud? %>
         <%= render partial: "nav_item", locals: {
             icon: sidebar_icons[resource.resource.to_sym],
@@ -61,6 +61,12 @@ as defined by the routes in the `admin/` namespace
   <div>
     <ul class="my-4">
       <%= render partial: "nav_item", locals: { icon: 'icon-menu-search-line', url: super_admin_operations_url, label: 'Operations' } %>
+      <%#
+        Partner integrations (P6C). Beside Operations because it answers the same kind of
+        question -- what needs attention -- for the installations a partner holds rather than
+        for the workspace at large.
+      %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-link', url: super_admin_partner_integrations_url, label: 'Partner Integrations' } %>
       <%# The Platform Support Desk: tickets Lynomia's own customers raised about Lynomia
           (docs/platform-support/05-super-admin-operations.md §1). In the lower operator block beside
           Operations, because it is an operator console and not a record type. The icon id must exist in

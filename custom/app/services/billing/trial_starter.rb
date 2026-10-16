@@ -11,7 +11,9 @@ class Billing::TrialStarter
   def self.backfill!
     raise NotConfigured, 'Enable the trial and choose a trial plan in Billing Settings first' unless configured?
 
-    Account.where.missing(:billing_subscription).find_each.count do |account|
+    # `tenant`: the installation's OWN workspace is not a prospect and must not be swept
+    # onto a trial plan meant to be sold (P6D).
+    Account.tenant.where.missing(:billing_subscription).find_each.count do |account|
       new(account, check_usage: false).perform
     end
   end

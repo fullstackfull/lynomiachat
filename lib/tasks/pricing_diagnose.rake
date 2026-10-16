@@ -48,9 +48,14 @@ namespace :pricing do
     end
 
     puts
-    return if published.any?
 
-    puts 'No plan is published, so the pricing page shows its quote form and the sections on the pricing'
-    puts 'row. Nothing is wrong with the page: it is reporting the truth about this installation.'
+    # A PLAIN CONDITIONAL, and `return` would be a bug rather than a style choice. A task's body is a block,
+    # not a method, so `return` here raises LocalJumpError -- and it raises it only once a plan is PUBLISHED,
+    # which is to say on a healthy server, after the whole report has already been printed. The early exit on
+    # the empty case above uses `next`, which is the one form that does work in a block.
+    if published.empty?
+      puts 'No plan is published, so the pricing page shows its quote form and the sections on the pricing'
+      puts 'row. Nothing is wrong with the page: it is reporting the truth about this installation.'
+    end
   end
 end

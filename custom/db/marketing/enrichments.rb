@@ -33,11 +33,11 @@ flow_copy = {
 
 showcases = {
   'inbox' => {
-    :file => 'figures/conversation-list.png', :after => 'flow', :position => 'top',
+    :file => 'figures/conversation-list.png', :after => 'flow', :position => 'start',
     'en' => {
       kicker: 'The agent workspace',
-      heading: 'Read it, answer it, and see who the customer is — on one screen',
-      lede: 'This is the screen your team spends the day in, photographed from the running product.',
+      heading: 'Six places they write from. One queue your team reads.',
+      lede: 'Every message lands in the same list, and the row tells you who wrote and which app they used.',
       alt: 'The Lynomia Chat conversation list: the channels down the side, and a queue whose rows each say ' \
            'who wrote and which channel the message arrived on.',
       link_label: 'What the inbox does', link_target: 'page:feature:unified_inbox',
@@ -45,22 +45,23 @@ showcases = {
         ['Every channel in one list',
          'WhatsApp, Instagram, Messenger, email, website chat and SMS arrive in the same queue, each ' \
          'row saying who wrote and which channel it came from.'],
-        ['The customer beside the reply',
+        ['Open one and the customer is already there',
          'Their details, earlier conversations, private notes and labels sit next to the message you are writing, not in a second tab.'],
         ['One owner, not a committee', 'Give a conversation to a person or a team and mark how urgent it is.']
       ]
     },
     'ar' => {
       kicker: 'مساحة عمل وكيل الدعم',
-      heading: 'اقرأها، وأجب عليها، واعرف من العميل — في شاشة واحدة',
-      lede: 'هذه هي الشاشة التي يقضي فيها فريقك يومه، مُصوَّرة من المنتج وهو يعمل.',
+      heading: 'ستة أماكن يكتبون منها. وطابور واحد يقرأه فريقك.',
+      lede: 'كل رسالة تصل إلى القائمة نفسها، ويقول الصفّ من كتب ومن أي تطبيق.',
       alt: 'قائمة المحادثات في لنوميا شات: القنوات على الجانب، وطابور يقول كل صفّ فيه من كتب ومن أي قناة ' \
            'وصلت الرسالة.',
       link_label: 'ماذا يفعل الصندوق الموحّد', link_target: 'page:feature:unified_inbox',
       items: [
         ['كل القنوات في قائمة واحدة',
          'واتساب وإنستغرام وماسنجر والبريد ودردشة الموقع والرسائل النصية تصل إلى الطابور نفسه، ويقول كل صف من كتب ومن أي قناة.'],
-        ['العميل بجانب الرد', 'بياناته ومحادثاته السابقة وملاحظاتك الخاصة ووسومه بجوار الرسالة التي تكتبها، لا في تبويب ثانٍ.'],
+        ['افتح واحدة فتجد العميل حاضراً',
+         'بياناته ومحادثاته السابقة وملاحظاتك الخاصة ووسومه بجوار الرسالة التي تكتبها، لا في تبويب ثانٍ.'],
         ['مالك واحد، لا لجنة', 'أعطِ المحادثة لشخص أو لفريق وحدّد مدى إلحاحها.']
       ]
     }

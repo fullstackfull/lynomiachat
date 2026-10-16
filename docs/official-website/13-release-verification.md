@@ -19,7 +19,7 @@ Nothing here was run against production. Production is changed only by the steps
 | Every documentation link is in the reader's language | the gate reads every `/docs/` href and checks the `-ar` suffix against the page's locale | pass, after the fix below |
 | Every documentation link resolves | the gate asks the local server for the article each one names | pass |
 | Pricing renders published plans, in both languages | `curl /pricing` and `/en/pricing` | pass — three plans, named limits, named channel chips, the quote form kept as the secondary path |
-| The figures published on the homepage match their sources | `node tools/visual/crop.mjs --check` | pass (4 figures; they were stale against the re-captured sources and were regenerated) |
+| The figures published on the homepage match their sources | `node tools/visual/crop.mjs --check` | pass (6 figures, each carrying its source's SHA-256; four were stale against the re-captured sources and were regenerated, and `home/inbox-list{,-ar}` were added later) |
 | The new detail-page sections apply cleanly | `bundle exec rails marketing:enrich:plan` | pass — 32 declared, 0 with a problem |
 
 ### What the gate caught
@@ -64,7 +64,7 @@ checks every bare relative target against the slugs of the article's **own** loc
 
 | Check | How | Result |
 | --- | --- | --- |
-| Every published figure comes from a real capture | `docs/screenshots/library.json` names the source, the screen, the environment and the command for each | 26 images from 13 captures |
+| Every published figure comes from a real capture | `docs/screenshots/library.json` names the source, the screen, the environment and the command for each | 26 images from 26 source captures of 13 screens, one per language |
 | No credential is published | the install-snippet figure covers the website token with a redaction drawn in the annotation layer; the capture itself is unedited | pass |
 | The Arabic figures are the Arabic interface | captured with `accounts.locale = 'ar'`, not mirrored from English | pass |
 | The widget pair is one real message | the widget capture sends it; the dashboard capture opens the conversation it created, by that conversation's id | pass |
@@ -143,8 +143,10 @@ A second and third pass over the branch, by dimension. Everything below is fixed
 **Nine Arabic articles had no step lists at all.** They wrote their procedures as `١.` `٢.` `٣.`, and
 CommonMark recognises only ASCII digits as an ordered-list marker — so each list was one run-on paragraph
 with the numerals inline, while the English sibling rendered an `<ol>`. Measured with the repo's own parser:
-`ar/connect-telegram` parsed as 0 lists before and 4 lists / 13 items after, which is what its English
-sibling parses.
+`ar/connect-telegram` parsed as 0 ORDERED lists before and 4 ordered lists / 13 items after, which is what
+its English sibling parses. (Counting lists of every kind the same file gives 2 before — the bullet lists,
+which were never affected. All nine files had zero ordered lists before and match their English siblings
+after.)
 
 **The Arabic chat-bubble screenshot was the English one, byte for byte** — the only identical pair in the
 media tree. The cause was structural rather than careless: the demo shop the widget sits on was hardcoded
@@ -171,8 +173,15 @@ The showcase now takes a crop of the half the hero is not about — the channel 
 list, which is what its first claim is about. Both homepages now render four distinct images.
 
 **Five seeded demo contacts had fabricated local-parts at live mail domains** (`comcast.net`, `home.pl`,
-`ustream.tv`, `narod.ru`, `exblog.jp`), and that screen is published whole on a public marketing page. Moved
-onto the reserved `.test` TLD and re-captured; every address in the published list now ends `.test`.
+`ustream.tv`, `narod.ru`, `exblog.jp`), and that screen is published whole on a public marketing page. An
+earlier phase had already moved fifteen of the twenty seeded addresses onto the reserved `.test` TLD and
+missed these five. `lib/seeders/seed_data.yml` now carries all twenty on `.test`, and the figure was
+re-captured; every address in the published list ends `.test`.
+
+An earlier revision of this document said the move had been made when only the database rows had been
+edited and the seed file was untouched — so the published figure was clean but `rails db:seed` would have
+restored the live domains, and so would the next re-capture. The file is the fix; the sentence above is
+what it should have said.
 
 **Three Arabic strings were wrong rather than merely awkward.** Two spellings of the product name that are
 neither the site's own (`لنوميا شات`, which `marketing.ar.yml` sets and every page title renders); a heading
@@ -187,13 +196,32 @@ those three in English, with the tagline's full stop stranded on the wrong end o
 a caption saying this is what an Arabic visitor sees. Both sets now live in `tools/visual/widget_copy.rb`,
 the fixture reads the English one from there, and the Arabic figures are taken against the Arabic one.
 
+**A corrected screenshot on disk is not a corrected screenshot on the site.** Re-capturing the Arabic widget
+fixed the documentation article, which `documentation:content` republishes — and left the MARKETING page
+serving the old blob, because the two are different attachments and only the documentation task had been
+run. `marketing:screenshots:plan` names exactly this: it reported 23 of 24 present and one
+`would_add ... replace host-open.png` for `ar/live-chat`. `marketing:screenshots` applied it, and the page
+now serves the same bytes as the source. Re-capturing a source is half the step; the publishing task is the
+other half, and `docs/official-website/11-publishing-procedure.md` is where the pair is written down.
+
+**The one screenshot on either homepage that was being enlarged rather than reduced.** The inbox showcase
+kept `media_position: 'top'`, which renders full-width — fine for the 1440px capture that used to fill it,
+and wrong for the 680px crop that replaced it, which was being blown up 1.59x while every other image on the
+page is scaled down. It now sits in a side column, which is also its own width, and alternates with the two
+showcases below it.
+
+**The copy beside that crop still described the picture it replaced.** The heading named reading, answering
+and seeing the customer; the lede called it "the screen your team spends the day in"; one bullet was "The
+customer beside the reply". The crop is the channel list and the queue — no composer, no contact panel. All
+three now say what is in the frame, in both languages.
+
 **Two claims checked and not confirmed.** A review said the preview serves homepage screenshots that are no
-longer in the repository. Measured: `marketing:screenshots:plan` reports all 24 declared images byte-current
-against their files, and every attachment on either homepage has its file on disk. Two per locale
-(`automation-editor.png`, `reports.png`) are attached but named by no declaration and used by no section —
-leftovers of this container's own iterations, not something either page serves. They are left alone: an
-operator's unreferenced upload looks identical from here, and deleting one is not a thing this release's
-tooling is allowed to do.
+longer in the repository. Measured: every attachment on either homepage has its file on disk, and an
+independent check found the three attachment ids the claim rested on return 404 and are referenced by none
+of the 96 pages in the sitemap. Two per locale (`automation-editor.png`, `reports.png`) are attached but
+named by no declaration and used by no section — leftovers of this container's own iterations, not something
+either page serves. They are left alone: an operator's unreferenced upload looks identical from here, and
+deleting one is not a thing this release's tooling is allowed to do.
 
 ## Found, and deliberately not fixed here
 

@@ -98,8 +98,15 @@ So set the channel's copy to the language you are about to shoot, and set it bac
 ```
 bundle exec rails runner 'require "./tools/visual/widget_copy"
   WidgetCopy.apply!(Account.first.inboxes.find_by!(channel_type: "Channel::WebWidget"), "ar")'
+
+export WIDGET_TOKEN=$(bundle exec rails runner 'puts Account.first.inboxes
+  .find_by(channel_type: "Channel::WebWidget").channel.website_token')
 node tools/visual/capture-widget.mjs --locale ar --out docs/screenshots/sources/widget
 ```
+
+`WIDGET_TOKEN` is the channel's own `website_token` and the capture refuses to start without it —
+it is what the widget identifies the channel by, and reading it from the database is the only way
+to be sure the figure is of the channel you just configured rather than a stale one.
 
 Both languages' wording is in `tools/visual/widget_copy.rb`, which `synthetic_fixtures.rb` also reads,
 so the fixture and the capture cannot drift apart. The widget must have members and at least one of

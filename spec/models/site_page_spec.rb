@@ -16,9 +16,10 @@ describe SitePage do
       routed = Rails.application.routes.routes.filter_map(&:name)
                     .grep(/\Amarketing_[a-z_]+\z/)
                     .map { |name| name.delete_prefix('marketing_') }
-      # Not standing pages: the four detail routes take a slug, the quote request is a POST, and `media` and
-      # `sitemap` are machine endpoints outside the locale scope.
-      other = %w[feature channel solution integration pricing_request media sitemap]
+      # Not standing pages: the four detail routes take a slug, the quote request is a POST,
+      # `plan_selection` takes a plan id and records a choice rather than rendering anything, and `media`
+      # and `sitemap` are machine endpoints outside the locale scope.
+      other = %w[feature channel solution integration pricing_request plan_selection media sitemap]
       expect((routed - other).uniq.sort).to eq(described_class::STANDING_KEYS.sort)
     end
 

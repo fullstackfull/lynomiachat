@@ -1,0 +1,19 @@
+{
+  "$comment": "Crops of the captures in sources/, published on the marketing site and in the documentation. Regenerate with `node tools/visual/crop.mjs`; check with `--check`. Each entry says WHY its box is the shape it is, because that is the part a reviewer cannot read off the pixels. Coordinates are in the source's own pixels, origin top-left, as an image viewer reports them.",
+  "figures": [
+    {
+      "key": "home/automation",
+      "source": "docs/screenshots/sources/marketing/en/automation-editor.png",
+      "out": "docs/screenshots/figures/marketing/en/automation-rule.png",
+      "crop": { "x": 660, "y": 8, "width": 768, "height": 676 },
+      "why": "The section's claim is 'say what should happen, without writing code', and the thing that shows that is the rule dialog: event, conditions, actions. The rule list behind it and the settings sidebar are context the sentence beside the figure already gives, and at the 600px this is published at they cost the dialog a third of its scale."
+    },
+    {
+      "key": "home/reports",
+      "source": "docs/screenshots/sources/marketing/en/reports.png",
+      "out": "docs/screenshots/figures/marketing/en/reports-overview.png",
+      "crop": { "x": 352, "y": 64, "width": 1056, "height": 600 },
+      "why": "The live counters and one week of conversation traffic. The page continues with two more heatmaps of the same shape; including them would halve the scale of the numbers to show the reader a third copy of a pattern they have already read."
+    }
+  ]
+}

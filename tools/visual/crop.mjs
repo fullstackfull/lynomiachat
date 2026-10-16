@@ -26,7 +26,6 @@
 import { createRequire } from 'node:module';
 import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
 
@@ -88,8 +87,13 @@ if (checkOnly) {
     // The image is laid out at its natural size against nothing, so the clip box is in the source's own
     // pixels -- which is what the crop in the manifest is written in, and what a reader measures off the
     // source in an image viewer.
+    //
+    // A DATA URL, NOT `file://`. `setContent` leaves the page on `about:blank`, and Chromium refuses a
+    // `file://` subresource from any other origin -- the image never loads and the wait for its natural
+    // width times out after thirty seconds with nothing to say about why.
+    const bytes = await readFile(source);
     await page.setContent(
-      `<body style="margin:0"><img id="s" src="${pathToFileURL(source).href}" style="display:block"></body>`
+      `<body style="margin:0"><img id="s" src="data:image/png;base64,${bytes.toString('base64')}" style="display:block"></body>`
     );
     await page.waitForFunction(() => {
       const img = document.getElementById('s');

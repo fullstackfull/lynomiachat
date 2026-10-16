@@ -52,6 +52,14 @@
 
   <% unless lead_hero %>
     <header class="<%= measure %> <%= entry && scope ? 'pt-6' : 'pt-16' %>">
+      <%# THE CHANNEL'S OWN MARK ABOVE ITS NAME. A reader arriving on /channels/whatsapp has usually come
+          looking for one specific app, and the mark confirms they are in the right place before a word of
+          the page is read. Only channels carry one: a feature or a solution is not a brand. %>
+      <% if scope == :channels && Marketing::ChannelBrand.marked?(entry.id) %>
+        <div class="mb-6">
+          <%= render 'marketing/shared/channel_mark', id: entry.id, size: 56, labelled: false %>
+        </div>
+      <% end %>
       <h1 class="text-balance text-[2.5rem] font-bold leading-[1.2] tracking-tight text-lyn-ink sm:text-[3.25rem]">
         <%= page.heading.presence || page.title %>
       </h1>
@@ -112,8 +120,11 @@
             <% entry.channel_ids.each do |channel_id| %>
               <% channel = Marketing::Catalog.channel(channel_id) %>
               <li>
-                <a class="inline-flex min-h-11 items-center rounded-full border border-lyn-line px-4 text-sm font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                <a class="inline-flex min-h-11 items-center gap-2 rounded-full border border-lyn-line py-1 pe-4 ps-1 text-sm font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
                    href="<%= marketing_entry_path(:channels, channel) %>">
+                  <% if Marketing::ChannelBrand.marked?(channel.id) %>
+                    <%= render 'marketing/shared/channel_mark', id: channel.id, size: 28, labelled: false %>
+                  <% end %>
                   <%= t("marketing.channels.#{channel.id}.name") %>
                 </a>
               </li>

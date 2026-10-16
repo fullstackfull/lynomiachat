@@ -207,11 +207,15 @@ end
 
 # rubocop:disable Rails/SkipsModelValidations -- backdating is the whole point: a callback that stamps
 # `updated_at` or fires a notification would undo it, and these rows are development fixtures.
-# A DESK THAT ANSWERS ITS MESSAGES. `first_reply_created_at` is what the Overview counts as "unattended",
-# and clones of the seed arrive with it unset -- so a week of traffic came out as 81 unattended out of 85
-# open, which is a picture of a support desk nobody is running. Nine in ten get a first reply, and the rest
-# are the queue. Assignment is spread over the seeded agents for the same reason: every conversation
-# unassigned is not a product working.
+# A DESK THAT ANSWERS ITS MESSAGES. Nine in ten conversations get a first reply and the rest are the queue;
+# assignment is spread over the seeded agents for the same reason, because every conversation unassigned is
+# not a picture of a product working.
+#
+# BOTH COLUMNS, NOT ONE. `Conversation.unattended` is
+# `where(first_reply_created_at: nil).or(where.not(waiting_since: nil))` (app/models/conversation.rb:95), so
+# a conversation that has been answered but still carries the customer's `waiting_since` counts as
+# unattended anyway. Setting only the first column left 81 of 85 open conversations "unattended" -- a desk
+# nobody is running -- and the figure on the screenshot was the proof.
 agents = account.users.order(:id).to_a
 
 conversations = account.conversations.order(:id).to_a
@@ -219,7 +223,7 @@ conversations.each_with_index do |conversation, index|
   created = slots[index % slots.length]
   replied = index % 10 == 9 ? nil : created + (4 + ((index * 97) % 28)).minutes
   conversation.update_columns(created_at: created, updated_at: created,
-                              first_reply_created_at: replied,
+                              first_reply_created_at: replied, waiting_since: replied ? nil : created,
                               assignee_id: index % 7 == 6 ? nil : agents[index % agents.length]&.id)
   conversation.messages.update_all(created_at: created, updated_at: created)
 end

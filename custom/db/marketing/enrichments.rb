@@ -191,10 +191,13 @@ assist_band = {
   }
 }
 
-HERO_ALT = {
+# A LOCAL, NOT A CONSTANT. This file is `instance_eval`ed, so a constant here is defined on Module and
+# Ruby warns "already initialized constant" the second time the declarations are loaded -- which a spec does
+# on every example that reloads them.
+hero_alt = {
   'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open in the middle, and the contact panel beside it.',
   'ar' => 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
-}.freeze
+}
 
 enrichments = []
 
@@ -262,7 +265,7 @@ end
     key: "home.hero-shot.#{locale}", locale: locale, slug: 'home',
     fill: { type: 'hero' },
     image: { file: "docs/screenshots/sources/marketing/#{locale}/conversation-open.png", field: 'attachment_id' },
-    section: { 'alt' => HERO_ALT[locale] }
+    section: { 'alt' => hero_alt[locale] }
   )
 end
 

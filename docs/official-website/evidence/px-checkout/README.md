@@ -11,6 +11,8 @@ touched production, and no payment was taken.
 | `03-login-after-subscribe-{en,ar}.jpg` | Where **Subscribe now** lands a signed-out visitor: `/app/login`. The plan id is not in the URL; it is in their session. |
 | `04-resume-banner-{en,ar}.png` | After signing in: the subscription page, the plan preselected, the banner naming the plan and the paying workspace, and a link to the other workspace this administrator could pay from. |
 | `05-checkout-attempt-{en,ar}.png` | Pressing **Subscribe** on that page. In this container the Stripe SDK cannot complete a TLS handshake through the egress proxy, so the UI surfaces the billing error rather than failing silently. See the note below. |
+| `09-register-onboarding-hold.png` | A visitor who chose a plan and then **registered**: held at the onboarding wizard a brand-new account is pushed into, with the intention untouched. |
+| `09-register-resume.png` | The same session once onboarding is finished: the subscription page with Scale preselected and "Continue with Scale". |
 | `06-pricing-phone-{en,ar}.png` | The pricing page at a 390px viewport. |
 | `07-comparison-phone-{en,ar}.png` | The comparison at 390px: the columns scroll inside their own wrapper with the row-header column sticky, and the page itself does not scroll sideways (`documentElement.scrollWidth` = 390). |
 | `08-contact-sales-fallback-{en,ar}.png` | The same page with the Stripe settings withdrawn: every card falls back to **Contact sales** / **تواصل معنا** and points at the quote form. |

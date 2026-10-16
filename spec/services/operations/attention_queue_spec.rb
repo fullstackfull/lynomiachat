@@ -91,7 +91,7 @@ RSpec.describe Operations::AttentionQueue do
   describe 'filters and search' do
     let!(:imap) do
       record(source: :email_channel, signal: :authentication_failed, severity: :critical,
-             account: account, subject: inbox, detail: { code: '535' })
+             account: account, subject: inbox, detail: { code: '5.7.8' })
     end
     let!(:webhook) { record(source: :webhook, signal: :delivery_failed, severity: :warning, account: other_account) }
 
@@ -118,8 +118,10 @@ RSpec.describe Operations::AttentionQueue do
       expect(described_class.new(params: { view: 'all_open', q: 'delivery_failed' }).signals).to contain_exactly(webhook)
     end
 
+    # An enhanced status code rather than a bare `535`: the search also matches a term against `account_id`, and
+    # account ids here are three digits, so a numeric code collides with whichever account happens to carry it.
     it 'searches by provider error code out of the detail payload' do
-      expect(described_class.new(params: { view: 'all_open', q: '535' }).signals).to contain_exactly(imap)
+      expect(described_class.new(params: { view: 'all_open', q: '5.7.8' }).signals).to contain_exactly(imap)
     end
 
     it 'searches by account id' do

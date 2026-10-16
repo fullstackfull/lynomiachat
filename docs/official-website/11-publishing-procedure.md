@@ -16,6 +16,7 @@ This document is the whole procedure. Read it before the deploy, not during it.
 | New section TYPES the CMS understands (`channel_strip`, `flow`, `showcase`, `device`, `before_after`) | Any section ON a page — `Marketing::ContentSeeder` never overwrites an existing row |
 | The pricing page's LAYOUT | Which `billing_plans` rows exist, or which are ticked `listed_on_website` |
 | `tools/visual/*` and the committed screenshots under `docs/` | Any attachment on any page |
+| The documentation CORPUS in this repository | The 182 articles in `articles` — `documentation:content` writes them |
 
 So: **a deploy alone makes the homepage render exactly as it does today.** The new sections appear when
 step 3 is run. The pricing grid appears when an operator ticks a plan in Super Admin. That separation is the
@@ -41,10 +42,10 @@ undone in seconds without restoring anything else.
 
 ---
 
-## 3. Adding the new homepage sections to the live pages
+## 3. Adding the new sections to the live pages
 
-`Marketing::ContentSeeder` deliberately never touches a page that exists, so the new homepage blocks reach a
-fresh install and no existing one. `marketing:enrich` is the sanctioned way through. Its guarantees:
+`Marketing::ContentSeeder` deliberately never touches a page that exists, so the new blocks reach a fresh
+install and no existing one. `marketing:enrich` is the sanctioned way through. Its guarantees:
 
 - it only ever **adds a section** or **fills a field that is blank**; no field holding anything is rewritten
 - it is **idempotent** — each section carries a stable key and a second run finds its own work and skips it
@@ -76,6 +77,17 @@ RAILS_ENV=production bundle exec rails marketing:enrich ONLY=home.channel-strip.
 `ONLY=` is also how an operator **permanently declines** an enrichment: leave its key out of the list they
 run. There is no "withdraw" — a section an operator deletes in Super Admin will appear in the next plan as
 something to add, which is why the plan is read first every time.
+
+### 3.3 What the keys are
+
+| Key shape | Page | What it adds |
+| --- | --- | --- |
+| `home.*` | the homepage, both locales | the hero screenshot, the channel strip, the many-to-one flow, the three showcases, the WhatsApp band and the assist band |
+| `detail.showcase.<slug>.<locale>` | the eight feature pages that had only prose | one screenshot band under the hero, carrying the real product shot for that feature in that language and a link to its documentation article |
+
+A `detail.showcase.*` row is a `showcase` section with `media_position: top`, which is the same section
+type the homepage uses. Its link target is a root-relative `/docs/<slug>` — the Arabic row's target carries
+the `-ar` suffix, because that is the Arabic article's slug.
 
 ### 3.3 Verify
 
@@ -115,6 +127,55 @@ holding the replaced attachment's id, writes an audit row, and purges the old bl
 
 Rollback: there is no undo for a purged blob. Restore `active_storage_*` and `site_pages` from the step-2
 dump, or re-upload the previous image in Super Admin.
+
+---
+
+## 3B. Publishing the documentation
+
+This release adds **22 articles per language — 44 in all** — and **26 figures**. None of them reaches a
+reader by being deployed: the corpus is Markdown in this repository, and `Documentation::ContentSeeder`
+is what turns it into articles.
+
+```
+RAILS_ENV=production bundle exec rails documentation:content
+```
+
+Its guarantees, which are why this is safe to run on a live portal:
+
+- **Two phases, and the first writes nothing.** The preflight reads the manifest, every corpus file and
+  every row the run would touch, validates the front matter, the media references and the alt text, and
+  detects two files claiming one slug. On any defect it names **every** offending file and writes nothing.
+- **Upsert by (slug, locale).** Re-running updates; it never duplicates.
+- **An operator's edits survive.** `title`, `description`, `position` and the SEO metadata are written only
+  while the row still holds what the seeder last wrote there. Anything an operator changed in Super Admin
+  is left alone and reported.
+- **`status` is written on create only**, so an article an operator unpublished stays unpublished across a
+  deploy.
+- **Media is content-addressed.** A figure whose bytes have not changed is counted and skipped; a changed
+  one is replaced through the one attach boundary; an attachment the corpus no longer references is purged
+  only if the seeder created it — an operator's own upload has no `content_source_path` and is never
+  touched.
+
+### Verify
+
+```
+curl -sI https://chat.lynomia.com/docs/website-live-chat      | head -1   # 200
+curl -sI https://chat.lynomia.com/docs/website-live-chat-ar   | head -1   # 200
+curl -s  https://chat.lynomia.com/docs/website-live-chat | grep -c 'site-media\|/media/'  # the figures
+```
+
+Then open one of each in a browser. A committed Markdown file is not a published article.
+
+### Rollback
+
+Per article, in Super Admin: unpublish it. Wholesale: restore `articles` plus the two `active_storage_*`
+tables from the step-2 dump — and add `articles` and `categories` to that dump before running this step:
+
+```
+pg_dump --format=custom --table=site_pages --table=articles --table=categories \
+        --table=active_storage_attachments --table=active_storage_blobs --table=billing_plans \
+        "$DATABASE_URL" > /var/backups/lynomia/website-$(date +%Y%m%d-%H%M).dump
+```
 
 ---
 
@@ -173,6 +234,10 @@ bundle exec rspec spec/custom/services/marketing            # the CMS's own rule
 node tools/visual/marketing-gate.mjs                        # 96 renders: 200, dir, lang, one h1, title,
                                                             # no missing translation, no horizontal overflow
 node tools/visual/crop.mjs --check                          # every published figure matches its source
+node tools/visual/build-annotations.mjs                     # every documentation figure rebuilds from its
+                                                            # source and its spec
+bundle exec rails documentation:content                     # on a staging database: the preflight is the
+                                                            # corpus's own check, and it refuses loudly
 RAILS_ENV=production bundle exec rails marketing:screenshots:plan  # exits 0
 RAILS_ENV=production bundle exec rails marketing:enrich:plan  # exits 0
 ```

@@ -15,10 +15,15 @@ RSpec.describe Documentation::ContentSeeder do
     YAML.safe_load(File.read(path)[/\A---\s*\n(.*?)\n---\s*\n/m, 1], permitted_classes: [Date])
   end
 
-  # A file name is the article's stable key: it is what a cross-reference points at, and what the seeder turns into
-  # the public slug.
+  # A file name is the article's stable KEY -- what a contextual-help link in the dashboard points at, and what
+  # ties a translation to its original. It is NOT the published address: every locale but the default suffixes
+  # its slug, exactly as `ContentSeeder::Corpus#read_file` does.
   keys_by_locale = locales.index_with do |locale|
     Dir.glob(root.join(locale, '*', '*.md')).map { |path| File.basename(path, '.md') }.sort
+  end
+  slugs_by_locale = locales.index_with do |locale|
+    suffix = locale == Documentation::Library::DEFAULT_LOCALE ? '' : "-#{locale}"
+    keys_by_locale[locale].map { |key| "#{key}#{suffix}" }
   end
   articles = locales.flat_map { |locale| Dir.glob(root.join(locale, '*', '*.md')).map { |path| [locale, path] } }
 
@@ -28,16 +33,22 @@ RSpec.describe Documentation::ContentSeeder do
 
   describe 'cross-references' do
     articles.each do |locale, path|
-      it "#{locale}/#{File.basename(path, '.md')} links only to articles that exist" do
-        # `[label](target)`, keeping only the bare-key links the corpus uses for its own articles. A URL, an anchor,
+      it "#{locale}/#{File.basename(path, '.md')} links only to articles that exist IN ITS OWN LANGUAGE" do
+        # `[label](target)`, keeping only the bare links the corpus uses for its own articles. A URL, an anchor,
         # a path and a `media:` key are somebody else's to validate -- the media key's grammar, its reserved
         # namespace and the file behind it are all checked by `Documentation::MediaSeeder`, which refuses the whole
         # seed rather than letting a bad one through. The scheme is read from the resolver rather than spelled
         # again here, because that class owns it.
+        #
+        # AGAINST THE SLUGS OF THIS FILE'S OWN LOCALE, and that is a correction. This example compared a bare
+        # target with the KEY set, which every locale shares -- so `[اربط أول قناة](connect-your-first-channel)`
+        # in an Arabic article passed, while the browser resolved it against /docs/connect-your-first-channel and
+        # opened the ENGLISH article. 672 links in 86 files were wrong and this example was green for all of them.
+        # Nothing in the rendered page 404s, which is why only the slug set catches it.
         scheme = Regexp.escape(Documentation::MediaResolver::SCHEME)
         targets = File.read(path).scan(%r{\]\((?!https?:|#{scheme}|#|/)([^)\s]+)\)}).flatten.uniq
 
-        expect(targets - keys_by_locale[locale]).to be_empty
+        expect(targets - slugs_by_locale[locale]).to be_empty
       end
     end
   end

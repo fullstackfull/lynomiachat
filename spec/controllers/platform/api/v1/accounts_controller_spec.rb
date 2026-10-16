@@ -136,6 +136,57 @@ RSpec.describe 'Platform Accounts API', type: :request do
 
         expect(response).to have_http_status(:success)
       end
+
+      # BLOCKER B5, FROM THE PRODUCER SIDE. A partner addresses its platform workspace by a
+      # configured id somebody typed. Without this field it cannot tell that id landed on its
+      # own workspace rather than on a merchant's -- and a partner sending from a merchant's
+      # workspace sends over that merchant's WhatsApp channel, with this installation's
+      # UTILITY-only gate not applying either, because that gate reads this same flag.
+      #
+      # Pinned here because removing the line from the jbuilder breaks the RECEIVER and
+      # nothing on this side: the consumer refuses every notice (correctly -- absent is "could
+      # not say", not "no"), and Lynomia's suite stays green while its partner has gone quiet.
+      it 'tells the partner whether the account it asked about is platform-owned' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get "/platform/api/v1/accounts/#{platform.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response.parsed_body).to include('platform_owned' => true)
+      end
+
+      it 'says so when the account the partner asked about is a merchant\'s' do
+        get "/platform/api/v1/accounts/#{account1.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response.parsed_body).to include('platform_owned' => false)
+      end
+
+      # THE OTHER HALF OF THE RECEIVER'S ANSWER, and it costs nothing because it was already
+      # true: an id that is not this app's comes back 401, not with somebody else's row. So of
+      # the two ways an operator mistypes the workspace id -- a merchant's account of ours, or
+      # an account that is not ours at all -- the flag catches the first and the permissible
+      # check catches the second.
+      it 'refuses an id this app holds no permissible on' do
+        stranger = create(:account, name: 'Somebody else')
+
+        get "/platform/api/v1/accounts/#{stranger.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      # The flag is an OPERATOR's, not a tenant integration's. `permitted_params` omits it, so
+      # an app cannot mark its own workspace as the installation's -- which is the only thing
+      # that would make the field above worth nothing.
+      it 'refuses to let a partner set the flag on itself' do
+        patch "/platform/api/v1/accounts/#{account1.id}",
+              params: { platform_owned: true },
+              headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(account1.reload.platform_owned).to be(false)
+      end
     end
   end
 

@@ -96,6 +96,28 @@ RSpec.describe 'Platform Installation Lifecycle API', type: :request do
       expect(body).to include('status' => 'disabled', 'applied' => false)
     end
 
+    # A PARTNER MUST NOT BE ABLE TO SHUT A DOOR ON THE MERCHANT'S SIDE.
+    #
+    # `disconnect` drops the credentials and leaves the row `disconnected` precisely so the
+    # merchant can reconnect their store, and Commerce::StoreConnection#claim refuses any row
+    # that is NOT disconnected. A suspend aimed at a store the merchant had already
+    # disconnected therefore rewrote it to `disabled` with no credentials, and the merchant
+    # could never reconnect their own store again -- a partner action, taken for an unrelated
+    # reason, closing a door on the far side of the boundary with nothing saying why.
+    #
+    # It is not hypothetical: AccountLinker::revoke pushes `suspend` for every link that has
+    # a Lynomia account, whatever the merchant has done with the store since.
+    it 'leaves a store the merchant disconnected alone, because it is already more stopped' do
+      ask('disconnect')
+      expect(store.reload).to be_disconnected
+
+      ask('suspend')
+
+      expect(response).to have_http_status(:success)
+      expect(body).to include('status' => 'disconnected', 'applied' => false)
+      expect(store.reload).to be_disconnected
+    end
+
     # A resume is not a state write: it asks the provider whether the installation can
     # actually be reached, so one brought back on a dead credential is refused rather than
     # being made active and failing silently on first use.

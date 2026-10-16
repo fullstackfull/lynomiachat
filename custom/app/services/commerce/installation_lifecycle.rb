@@ -68,6 +68,20 @@ class Commerce::InstallationLifecycle
 
   def transition_to(store, target, transition, reason, actor)
     return result(store, applied: false) if store.status.to_sym == target
+    # A DISCONNECTED STORE IS ALREADY MORE STOPPED THAN `suspend` ASKS FOR, and moving it is
+    # not merely redundant -- it is destructive. `disconnect` dropped the credentials and left
+    # the row `disconnected` precisely so the merchant can reconnect it, and
+    # Commerce::StoreConnection#claim refuses any row that is not `disconnected`. So a
+    # partner's suspend aimed at a store the merchant had already disconnected rewrote it to
+    # `disabled` with no credentials, and the merchant could never reconnect their own store
+    # again -- a partner action closing a door on the far side of the boundary, with nothing
+    # on either console saying why.
+    #
+    # The service's own idempotency rule is "asking for a state the store is already in
+    # changes nothing"; this is the same rule read correctly, over states rather than over
+    # one enum value. `resume` is not included: bringing a disconnected store back is a real
+    # request, and `enable` refuses it for the missing credentials with its own reason.
+    return result(store, applied: false) if store.disconnected? && target == :disabled
 
     connection = Commerce::StoreConnection.new(account: @account, user: nil)
     run(connection, store, target)

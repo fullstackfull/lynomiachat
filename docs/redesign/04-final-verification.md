@@ -108,10 +108,27 @@ parent before the change existed; an unrelated PR off `lynomia-custom`; the base
 byte-identical `Gemfile.lock` / `.bundler-audit.yml` / `Gemfile` / workflow blobs at every SHA CI
 built).
 
-Not repeated here, with one pointer worth carrying: the proposed CI patch installs **`libvips`**,
-not `libvips42`. `ubuntu-latest` is now noble, where `libvips42` does not exist — it was renamed
-`libvips42t64` in the 64-bit `time_t` transition. `libvips` is present in both noble and jammy and
-pulls the runtime, so it survives a runner-image bump.
+Not repeated here, with one pointer worth carrying, now checked against the archive rather than
+asserted: **the CI patch must install `libvips`, not `libvips42`.** Fetched from
+`packages.ubuntu.com`:
+
+| | noble (what `ubuntu-latest` is) | jammy |
+| --- | --- | --- |
+| `libvips42` | **"Package not available"** | exists |
+| `libvips42t64` | 8.15.1-1.1build4 (universe) | **does not exist** |
+| `libvips` | virtual, provided by exactly one package — `libvips42t64` | real package |
+
+`libvips42` was renamed in the 64-bit `time_t` transition, so the `libvips42` step proposed in the
+earlier PR comments would fail outright on today's runner. `libvips` is the only one of the three
+names that resolves on both images: apt installs a virtual package when exactly one package provides
+it, and here exactly one does.
+
+And the library really is what is missing rather than an image tool generally. `config/application.rb:39`
+is `config.load_defaults 7.0`, which sets `active_storage.variant_processor = :vips`; nothing in the
+tree overrides it, so ActiveStorage selects the **Vips** analyzer, whose `read_image` rescues
+`LoadError` and returns `{}` — which is why metadata comes back `analyzed: true` with no width or
+height instead of raising. Production has the library (`docker/Dockerfile:130`, `vips`); the workflow
+installs nothing.
 
 Green throughout: `lint-frontend`, `lint-backend`, `frontend-tests`, `Validate PR title`, and backend
 shards 0/2/3/5/9/11/12/15. Shard 1 joins them — see below — and was the one entry on the red list that

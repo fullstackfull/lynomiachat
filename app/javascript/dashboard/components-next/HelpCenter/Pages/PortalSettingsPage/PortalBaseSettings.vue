@@ -179,7 +179,10 @@ const handleAvatarDelete = () => {
 <template>
   <div class="flex flex-col w-full gap-4">
     <div class="flex flex-col w-full gap-2">
-      <label class="mb-0.5 text-sm font-medium text-gray-900 dark:text-gray-50">
+      <!-- `gray` lives under `n` in this config, so both halves of this pair compiled to nothing
+        and the label took whatever colour it inherited. `n-slate-12` is the design system's primary
+        text and already carries its own dark-mode value, so the explicit dark variant goes too. -->
+      <label class="mb-0.5 text-sm font-medium text-n-slate-12">
         {{ t('HELP_CENTER.PORTAL_SETTINGS.FORM.AVATAR.LABEL') }}
       </label>
       <Avatar

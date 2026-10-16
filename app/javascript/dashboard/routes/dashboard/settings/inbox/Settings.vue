@@ -1218,6 +1218,7 @@ export default {
                 <div class="flex flex-col gap-1 items-start">
                   <div class="flex gap-2 pt-2 py-0.5">
                     <input
+                      id="attachments"
                       v-model="selectedFeatureFlags"
                       type="checkbox"
                       value="attachments"
@@ -1229,6 +1230,7 @@ export default {
                   </div>
                   <div class="flex gap-2 py-0.5">
                     <input
+                      id="emoji_picker"
                       v-model="selectedFeatureFlags"
                       type="checkbox"
                       value="emoji_picker"
@@ -1240,6 +1242,7 @@ export default {
                   </div>
                   <div class="flex gap-2 py-0.5">
                     <input
+                      id="end_conversation"
                       v-model="selectedFeatureFlags"
                       type="checkbox"
                       value="end_conversation"
@@ -1251,6 +1254,7 @@ export default {
                   </div>
                   <div class="flex gap-2 py-0.5">
                     <input
+                      id="use_inbox_avatar_for_bot"
                       v-model="selectedFeatureFlags"
                       type="checkbox"
                       value="use_inbox_avatar_for_bot"

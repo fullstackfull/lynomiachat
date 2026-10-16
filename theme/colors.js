@@ -226,7 +226,24 @@ export const colors = {
     },
 
     black: '#000000',
-    brand: '#2781F6',
+    // THE ACCENT EVERY `n-brand` CALL SITE RESOLVES TO -- AND IT IS NOT ONE COLOUR, BECAUSE THE CALL SITES
+    // ARE NOT ONE PRODUCT. This was the literal `#5B5BF0`, which Tailwind inlines at build time, so every
+    // surface compiled from this config got the agent console's new indigo whether or not it was part of
+    // the redesign. Two of them are customer-facing and were not: the embeddable widget, which renders on
+    // the tenant's OWN website, and the Help Center portal, which renders under the tenant's brand. The
+    // 142 call sites include shared components (`shared/components/Button.vue`, `Spinner.vue`,
+    // `CustomerSatisfaction.vue`) that BOTH the console and the widget render, so no per-call-site fix
+    // could have separated them.
+    //
+    // As a variable it resolves per document instead. `_next-colors.scss` sets it to Lynomia's indigo for
+    // the agent console; the widget's own `:root` (widget/assets/scss/woot.scss) and the portal and survey
+    // stylesheets set it back to the Chatwoot blue those surfaces ship today. A shared component now takes
+    // the brand of whichever surface it is mounted in, which is what it always should have done.
+    //
+    // On the console the indigo is also the accessible choice: `#2781F6` is 3.8:1 on white and fails AA
+    // wherever it is used as text, where `#5B5BF0` is 5.0:1. Super Admin is on the `woot` ramp and is
+    // deliberately left alone.
+    brand: 'rgb(var(--brand) / <alpha-value>)',
     portal: 'var(--dynamic-portal-color)',
     'portal-soft': 'var(--dynamic-portal-color-soft)',
     'portal-faint': 'var(--dynamic-portal-color-faint)',

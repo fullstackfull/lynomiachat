@@ -303,7 +303,18 @@
     },
     "MEDIA": {
       "IMAGE_UNAVAILABLE": "This image is no longer available.",
-      "LOADING_FAILED": "Loading failed"
+      "LOADING_FAILED": "Loading failed",
+      "AUDIO": {
+        "PLAY": "Play",
+        "PAUSE": "Pause",
+        "SEEK": "Position in the recording",
+        "SPEED": "Playback speed: {speed}. Change it.",
+        "MUTE": "Mute",
+        "UNMUTE": "Unmute",
+        "DOWNLOAD": "Download the recording"
+      },
+      "OPEN_IMAGE": "Open the image attachment",
+      "OPEN_VIDEO": "Open the video attachment"
     }
   },
   "CONFIRM_EMAIL": "Verifying...",
@@ -445,7 +456,8 @@
     },
     "ANALYTICS_TICKETS": "Support cases",
     "SUPPORT": "Support",
-    "SUPPORT_SLA_POLICIES": "SLA policies"
+    "SUPPORT_SLA_POLICIES": "SLA policies",
+    "TOGGLE_MENU": "Show or hide the main menu"
   },
   "DATA_IMPORTS": {
     "HEADER": "Data",

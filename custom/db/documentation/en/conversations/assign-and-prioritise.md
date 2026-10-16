@@ -64,9 +64,15 @@ sorts by is decoration.
 
 ## Steps
 
-1. Open the conversation.
-2. In the panel beside it, pick an **agent**, a **team**, or both.
-3. Set a **priority** if this one is not ordinary.
+Open the conversation, then:
+
+![The conversation's side panel, open on Conversation Actions, with the assigned agent, the assigned team and the priority ringed and numbered](media:conversations/assign-agent-en.png)
+
+1. **Open the side panel.** The contact button in the conversation header, beside **Resolve** — or `Alt`+`O`. The panel starts closed, and stays open once you have opened it.
+2. **Open Conversation Actions.** It is the first block in the panel, and it is collapsed until you expand it.
+3. **Assigned agent.** Pick a colleague from the list, or take the conversation yourself with **Assign to me**. Picking the current assignee again clears the assignment.
+4. **Assigned team.** The group that owns the question. Remember that this clears an assignee who is not in that team.
+5. **Priority.** None, low, medium, high or urgent.
 
 To do several at once, tick the conversations in the list and use the bar that appears: assign an agent, assign a
 team, change status, snooze, add or remove labels.

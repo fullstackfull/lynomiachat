@@ -559,10 +559,10 @@ provideMessageContext({
 
 <!-- eslint-disable-next-line vue/no-root-v-if -->
 <template>
-  <div
+  <li
     v-if="shouldRenderMessage"
     :id="`message${props.id}`"
-    class="flex w-full mb-2 message-bubble-container"
+    class="flex w-full mb-2 list-none message-bubble-container"
     :data-message-id="props.id"
     :class="[
       flexOrientationClass,
@@ -633,7 +633,7 @@ provideMessageContext({
         @reply-to="handleReplyTo"
       />
     </div>
-  </div>
+  </li>
 </template>
 
 <style lang="scss">

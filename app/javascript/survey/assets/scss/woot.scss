@@ -5,6 +5,14 @@
 @import 'shared/assets/fonts/widget_fonts';
 @import 'dashboard/assets/scss/next-colors';
 
+:root {
+  // THE BRAND THIS SURFACE SHIPS, HELD DELIBERATELY. `theme/colors.js` makes `n-brand` a variable so the
+  // agent console's new indigo does not follow shared components (Button, Spinner, CustomerSatisfaction)
+  // onto a customer-facing surface. This is the Chatwoot blue this surface renders today, unchanged.
+  --brand: 39 129 246;
+}
+
+
 html,
 body {
   font-family: 'Inter', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Tahoma, Arial, sans-serif;

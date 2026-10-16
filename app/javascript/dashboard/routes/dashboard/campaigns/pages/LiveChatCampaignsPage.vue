@@ -1,11 +1,15 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useToggle } from '@vueuse/core';
-import { useStoreGetters, useMapGetter } from 'dashboard/composables/store';
+import {
+  useStore,
+  useStoreGetters,
+  useMapGetter,
+} from 'dashboard/composables/store';
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
+import FetchErrorState from 'dashboard/components-next/FetchErrorState.vue';
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
 import LiveChatCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/LiveChatCampaign/LiveChatCampaignDialog.vue';
 import EditLiveChatCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/LiveChatCampaign/EditLiveChatCampaignDialog.vue';
@@ -13,16 +17,25 @@ import ConfirmDeleteCampaignDialog from 'dashboard/components-next/Campaigns/Pag
 import LiveChatCampaignEmptyState from 'dashboard/components-next/Campaigns/EmptyState/LiveChatCampaignEmptyState.vue';
 
 const { t } = useI18n();
+const store = useStore();
 const getters = useStoreGetters();
 
+const createDialogRef = ref(null);
 const editLiveChatCampaignDialogRef = ref(null);
 const confirmDeleteCampaignDialogRef = ref(null);
 const selectedCampaign = ref(null);
 
 const uiFlags = useMapGetter('campaigns/getUIFlags');
 const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
+// A failed fetch is not an empty account. Without this the page drew its empty state -- sample
+// campaign cards and all -- for a request that never came back.
+const hasFetchError = computed(() => uiFlags.value.hasError);
 
-const [showLiveChatCampaignDialog, toggleLiveChatCampaignDialog] = useToggle();
+const retryFetch = () => store.dispatch('campaigns/get');
+
+// The create flow used to be an absolutely positioned div hung off the header button: no backdrop, no focus
+// trap, no Escape, and on a 900px screen its Create button sat below the fold. It is a real modal now.
+const openCreateDialog = () => createDialogRef.value?.dialogRef?.open();
 
 const liveChatCampaigns = computed(
   () => getters['campaigns/getLiveChatCampaigns'].value
@@ -45,17 +58,11 @@ const handleDelete = campaign => {
 <template>
   <CampaignLayout
     :header-title="t('CAMPAIGN.LIVE_CHAT.HEADER_TITLE')"
+    :header-description="t('CAMPAIGN.LIVE_CHAT.HEADER_DESCRIPTION')"
+    :count="isFetchingCampaigns ? null : liveChatCampaigns.length"
     :button-label="t('CAMPAIGN.LIVE_CHAT.NEW_CAMPAIGN')"
-    @click="toggleLiveChatCampaignDialog()"
-    @close="toggleLiveChatCampaignDialog(false)"
+    @click="openCreateDialog"
   >
-    <template #action>
-      <LiveChatCampaignDialog
-        v-if="showLiveChatCampaignDialog"
-        @close="toggleLiveChatCampaignDialog(false)"
-      />
-    </template>
-
     <div
       v-if="isFetchingCampaigns"
       class="flex justify-center items-center py-10 text-n-slate-11"
@@ -73,10 +80,12 @@ const handleDelete = campaign => {
       @delete="handleDelete"
     />
     <LiveChatCampaignEmptyState
-      v-else
+      v-else-if="!hasFetchError"
       :title="t('CAMPAIGN.LIVE_CHAT.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.LIVE_CHAT.EMPTY_STATE.SUBTITLE')"
     />
+    <FetchErrorState v-else @retry="retryFetch" />
+    <LiveChatCampaignDialog ref="createDialogRef" />
     <EditLiveChatCampaignDialog
       ref="editLiveChatCampaignDialogRef"
       :selected-campaign="selectedCampaign"

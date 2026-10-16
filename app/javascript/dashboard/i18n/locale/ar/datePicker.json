@@ -21,6 +21,7 @@
       "CUSTOM_RANGE": "تحديد نطاق التاريخ"
     },
     "SHOW_EARLIER_DATES": "عرض تواريخ أقدم",
-    "SHOW_LATER_DATES": "عرض تواريخ أحدث"
+    "SHOW_LATER_DATES": "عرض تواريخ أحدث",
+    "INVALID_RANGE": "اختر نطاقاً زمنياً صالحاً"
   }
 }

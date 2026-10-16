@@ -61,7 +61,9 @@ export default {
 </script>
 
 <template>
-  <div class="overflow-hidden text-ellipsis whitespace-nowrap">
+  <!-- `dir="auto"`: without it an English preview inside an Arabic list is truncated from its start, so
+       the row shows the end of a sentence and an ellipsis where its first words should be. -->
+  <div dir="auto" class="overflow-hidden text-ellipsis whitespace-nowrap">
     <template v-if="showMessageType">
       <fluent-icon
         v-if="isMessagePrivate"

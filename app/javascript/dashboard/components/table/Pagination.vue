@@ -121,13 +121,17 @@ onMounted(() => {
           class="[&>button]:text-n-slate-11 [&>button]:hover:text-n-slate-12 [&>button]:h-6"
           :options="pageSizeOptions"
         />
+        <!-- Each arrow is physical, so in Arabic "previous" pointed at the next page and back.
+          `rtl:rotate-180` is the idiom the rest of the product uses for exactly this. The buttons
+          were also icon-only with no name; the strings already existed for the other pager. -->
         <nav class="isolate inline-flex items-center gap-1.5">
           <Button
             icon="i-lucide-chevrons-left"
             ghost
             slate
             sm
-            class="!size-6"
+            :aria-label="t('PAGINATION_FOOTER.FIRST_PAGE')"
+            class="!size-6 rtl:rotate-180"
             :disabled="!table.getCanPreviousPage()"
             @click="table.setPageIndex(0)"
           />
@@ -136,7 +140,8 @@ onMounted(() => {
             ghost
             slate
             sm
-            class="!size-6"
+            :aria-label="t('PAGINATION_FOOTER.PREVIOUS_PAGE')"
+            class="!size-6 rtl:rotate-180"
             :disabled="!table.getCanPreviousPage()"
             @click="table.previousPage()"
           />
@@ -146,6 +151,7 @@ onMounted(() => {
             xs
             outline
             :color="page == currentPage ? 'blue' : 'slate'"
+            :aria-current="page == currentPage ? 'page' : undefined"
             class="!h-6 min-w-6"
             @click="table.setPageIndex(page - 1)"
           >
@@ -161,7 +167,8 @@ onMounted(() => {
             ghost
             slate
             sm
-            class="!size-6"
+            :aria-label="t('PAGINATION_FOOTER.NEXT_PAGE')"
+            class="!size-6 rtl:rotate-180"
             :disabled="!table.getCanNextPage()"
             @click="table.nextPage()"
           />
@@ -170,7 +177,8 @@ onMounted(() => {
             ghost
             slate
             sm
-            class="!size-6"
+            :aria-label="t('PAGINATION_FOOTER.LAST_PAGE')"
+            class="!size-6 rtl:rotate-180"
             :disabled="!table.getCanNextPage()"
             @click="table.setPageIndex(table.getPageCount() - 1)"
           />

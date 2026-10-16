@@ -1,11 +1,19 @@
 <script setup>
+import { computed } from 'vue';
 import Button from 'dashboard/components-next/button/Button.vue';
-defineProps({
+
+const props = defineProps({
   message: {
     type: Object,
     required: true,
   },
 });
+
+// The two buttons were "Call us to order" and "Visit our store": hardcoded English, invented, and
+// bound to nothing, so the preview showed those two labels whatever the Twilio card actually
+// carried. `QuickReplyTemplate` already reads the same shape for the same kind of card, so this
+// reads it the same way rather than inventing a second convention.
+const actions = computed(() => props.message.actions || []);
 </script>
 
 <template>
@@ -22,11 +30,16 @@ defineProps({
         />
       </div>
     </div>
-    <div class="flex justify-center items-center p-3">
-      <Button label="Call us to order" link class="hover:!no-underline" />
-    </div>
-    <div class="flex justify-center items-center p-3">
-      <Button label="Visit our store" link class="hover:!no-underline" />
+    <div
+      v-for="(action, index) in actions"
+      :key="index"
+      class="flex justify-center items-center p-3"
+    >
+      <Button
+        :label="action.title || action.text || 'Button'"
+        link
+        class="hover:!no-underline"
+      />
     </div>
   </div>
 </template>

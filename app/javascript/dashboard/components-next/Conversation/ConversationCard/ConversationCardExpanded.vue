@@ -70,12 +70,12 @@ const selectedModel = computed({
 
 <template>
   <div
-    class="conversation relative cursor-pointer group grid gap-4 items-center px-3 h-12 border-b border-n-slate-3 hover:border-n-surface-1 hover:z-[1] before:content-[none] before:absolute before:-top-px before:inset-x-0 before:h-px before:bg-n-surface-1 before:pointer-events-none hover:before:content-['']"
+    class="conversation relative cursor-pointer group grid gap-4 items-center px-3 h-12 border-b border-n-slate-3 transition-colors duration-150"
     :class="{
-      'active animate-card-select bg-n-alpha-1 dark:bg-n-alpha-3 !border-n-surface-1':
+      'active animate-card-select bg-lyn-indigo/[0.09] before:content-[\'\'] before:absolute before:inset-y-1.5 before:ltr:left-0 before:rtl:right-0 before:w-0.5 before:rounded-full before:bg-lyn-indigo':
         isActiveChat,
-      'selected bg-n-slate-2 dark:bg-n-slate-3 !border-n-surface-1': selected,
-      'hover:bg-n-alpha-1': !isActiveChat && !selected,
+      'selected bg-n-slate-2 dark:bg-n-slate-3': selected && !isActiveChat,
+      'hover:bg-n-alpha-1 dark:hover:bg-n-alpha-3': !isActiveChat && !selected,
       'grid-cols-[minmax(0,2fr)_minmax(0,1fr)]': showLabelsSection,
       'grid-cols-[minmax(0,2fr)_max-content]': !showLabelsSection,
     }"
@@ -158,7 +158,7 @@ const selectedModel = computed({
       />
 
       <h4
-        class="text-heading-3 my-0 capitalize truncate text-n-slate-12 font-medium min-w-24 max-w-56 flex-1"
+        class="text-heading-3 my-0 truncate text-n-slate-12 font-medium min-w-24 max-w-56 flex-1"
       >
         {{ currentContact.name }}
       </h4>
@@ -191,7 +191,7 @@ const selectedModel = computed({
           :conversation-id="chat.id"
           :last-activity-timestamp="chat.timestamp"
           :created-at-timestamp="chat.created_at"
-          class="font-440 !text-xs text-n-slate-11"
+          class="font-440 text-n-slate-11"
         />
       </div>
     </div>

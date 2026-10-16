@@ -76,7 +76,11 @@ export default {
       class="clearfix mx-auto"
     >
       <OnboardingView v-if="isAdmin" />
-      <EmptyStateMessage v-else :message="$t('CONVERSATION.NO_INBOX_AGENT')" />
+      <EmptyStateMessage
+        v-else
+        icon="i-lucide-inbox"
+        :message="$t('CONVERSATION.NO_INBOX_AGENT')"
+      />
     </div>
     <!-- Show empty state images if not loading -->
 
@@ -87,6 +91,7 @@ export default {
       <!-- No conversations available -->
       <EmptyStateMessage
         v-if="!allConversations.length"
+        icon="i-lucide-inbox"
         :message="$t('CONVERSATION.NO_MESSAGE_1')"
       />
       <EmptyStateMessage

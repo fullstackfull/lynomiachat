@@ -56,9 +56,10 @@ const TREE_CONNECTOR =
       :target="href ? '_blank' : undefined"
       :rel="href ? 'noopener noreferrer' : undefined"
       :title="label"
-      class="flex h-8 items-center gap-2 px-2 py-1 rounded-lg ltr:hover:bg-gradient-to-r rtl:hover:bg-gradient-to-l from-transparent via-n-slate-3/70 to-n-slate-3/70 group min-w-0"
+      class="relative flex h-8 items-center gap-2 px-2 py-1 rounded-lg transition-colors duration-150 hover:bg-n-alpha-2 group min-w-0"
       :class="{
-        'text-n-slate-12 bg-n-alpha-2 active': active,
+        'text-n-slate-12 bg-lyn-indigo/15 active before:absolute before:inset-y-1.5 before:ltr:left-0 before:rtl:right-0 before:w-0.5 before:rounded-full before:bg-lyn-indigo':
+          active,
       }"
     >
       <component

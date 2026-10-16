@@ -317,9 +317,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-:deep(.contact--profile) {
-  @apply pb-3 border-b border-solid border-n-weak;
-}
-</style>

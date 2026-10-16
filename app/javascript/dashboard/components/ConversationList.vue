@@ -76,9 +76,9 @@ defineExpose({ conversationListRef });
       <div
         v-for="row in 6"
         :key="`conversation-skeleton-${row}`"
-        class="flex items-start gap-2 px-3 py-3 border-b border-n-slate-3"
+        class="flex items-start gap-3 px-4 py-3"
       >
-        <Skeleton width="w-8" height="h-8" shape="circle" />
+        <Skeleton width="w-9" height="h-9" shape="circle" />
         <div class="flex flex-col flex-1 gap-2 min-w-0 pt-1">
           <Skeleton width="w-24" height="h-3" />
           <Skeleton width="w-full" height="h-3" />
@@ -89,7 +89,6 @@ defineExpose({ conversationListRef });
       ref="virtualListRef"
       v-slot="{ item }"
       :data="conversationList"
-      class="[&>div:has(+_div_.active)>*]:!border-n-surface-1 [&>div:has(+_div_.selected)>*]:!border-n-surface-1"
     >
       <ConversationItem
         :source="item"

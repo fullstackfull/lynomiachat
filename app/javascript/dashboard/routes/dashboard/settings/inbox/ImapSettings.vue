@@ -124,7 +124,7 @@ export default {
     class="[&>div]:!items-start [&>div>label]:mt-1 mb-4"
   >
     <form @submit.prevent="updateInbox">
-      <label for="toggle-imap-enable">
+      <label>
         <input
           v-model="isIMAPEnabled"
           type="checkbox"
@@ -169,7 +169,7 @@ export default {
           type="password"
           @blur="v$.password.$touch"
         />
-        <label for="toggle-enable-ssl">
+        <label>
           <input
             v-model="isSSLEnabled"
             type="checkbox"

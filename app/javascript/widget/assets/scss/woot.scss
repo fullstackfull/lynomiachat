@@ -187,6 +187,11 @@ blockquote {
 @layer base {
   // NEXT COLORS START
   :root {
+    // THE BRAND THIS SURFACE SHIPS, HELD DELIBERATELY. `theme/colors.js` makes `n-brand` a variable so the
+    // agent console's new indigo does not follow shared components (Button, Spinner, CustomerSatisfaction)
+    // onto a customer-facing surface. This is the Chatwoot blue this surface renders today, unchanged.
+    --brand: 39 129 246;
+
     // slate
     --slate-1: 252 252 253;
     --slate-2: 249 249 251;

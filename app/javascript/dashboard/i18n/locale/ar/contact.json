@@ -39,10 +39,10 @@
       },
       "CONVERSATION": {
         "TITLE": "وسوم المحادثة",
-        "ADD_BUTTON": "اضافة تصنيف جديد"
+        "ADD_BUTTON": "إضافة وسوم"
       },
       "LABEL_SELECT": {
-        "TITLE": "اضافة تصنيف جديد",
+        "TITLE": "إضافة وسوم",
         "PLACEHOLDER": "ابحث عن تصنيفات",
         "NO_RESULT": "لم يتم العثور على تصنيفات",
         "CREATE_LABEL": "إنشاء تسمية جديدة"
@@ -495,6 +495,7 @@
     "CARD": {
       "OF": "of",
       "VIEW_DETAILS": "عرض التفاصيل",
+      "TOGGLE_DETAILS": "تفاصيل جهة الاتصال",
       "EDIT_DETAILS_FORM": {
         "TITLE": "تعديل تفاصيل جهة الاتصال",
         "FORM": {
@@ -879,7 +880,10 @@
       },
       "ACTION_BUTTONS": {
         "DISCARD": "Discard",
-        "SEND": "Send ({keyCode})"
+        "SEND": "Send ({keyCode})",
+        "EMOJI": "إدراج رمز تعبيري",
+        "ATTACH": "إرفاق ملف",
+        "SIGNATURE": "إضافة توقيعك إلى هذه الرسالة"
       }
     }
   },

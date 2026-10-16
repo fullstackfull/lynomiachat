@@ -55,12 +55,12 @@ export default {
   <WithLabel
     :label="label"
     :icon="icon"
-    :name="name"
+    :name="id || name"
     :has-error="hasError"
     :error-message="errorMessage"
   >
     <select
-      :id="id"
+      :id="id || name"
       :selected="modelValue"
       :name="name"
       :class="{

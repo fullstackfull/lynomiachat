@@ -33,7 +33,6 @@ export default {
   data() {
     return {
       search: '',
-      createModalVisible: false,
     };
   },
 
@@ -98,11 +97,9 @@ export default {
     },
 
     showCreateModal() {
-      this.createModalVisible = true;
-    },
-
-    hideCreateModal() {
-      this.createModalVisible = false;
+      // A real `<dialog>` now, so it lands in the top layer instead of inside this dropdown's
+      // stacking context, and it brings a focus trap the old modal did not have.
+      this.$refs.addLabelDialog?.open();
     },
   },
 };
@@ -166,15 +163,7 @@ export default {
             @click="showCreateModal"
           />
 
-          <woot-modal
-            v-model:show="createModalVisible"
-            :on-close="hideCreateModal"
-          >
-            <AddLabelModal
-              :prefill-title="parsedSearch"
-              @close="hideCreateModal"
-            />
-          </woot-modal>
+          <AddLabelModal ref="addLabelDialog" :prefill-title="parsedSearch" />
         </div>
       </div>
     </div>

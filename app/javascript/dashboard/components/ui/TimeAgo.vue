@@ -56,6 +56,14 @@ export default {
     tooltipText() {
       return `${this.createdAt}\n${this.lastActivity}`;
     },
+    // Age and freshness are two different facts and both are shown -- but a conversation that has had no
+    // reply since it arrived renders them as the same number twice ("9h • 9h"), which reads as noise and
+    // leaves the reader unable to tell which half is which. The tooltip still carries both exact times.
+    displayTime() {
+      return this.createdAtTime === this.lastActivityTime
+        ? this.lastActivityTime
+        : `${this.createdAtTime} • ${this.lastActivityTime}`;
+    },
   },
   watch: {
     lastActivityTimestamp() {
@@ -112,8 +120,8 @@ export default {
       popperClass: 'whitespace-pre-line',
       delay: { show: 1000, hide: 0 },
     }"
-    class="ms-auto leading-4 text-xxs text-n-slate-10 hover:text-n-slate-11"
+    class="ms-auto leading-4 text-xs tabular-nums text-n-slate-10 hover:text-n-slate-11"
   >
-    <span>{{ `${createdAtTime} • ${lastActivityTime}` }}</span>
+    <span>{{ displayTime }}</span>
   </div>
 </template>

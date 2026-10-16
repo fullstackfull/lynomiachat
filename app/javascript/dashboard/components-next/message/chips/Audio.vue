@@ -178,7 +178,19 @@ const downloadAudio = async () => {
     class="rounded-xl w-full gap-2 p-1.5 bg-n-alpha-white flex flex-col items-center border border-n-container shadow-[0px_2px_8px_0px_rgba(94,94,94,0.06)]"
   >
     <div class="flex gap-1 w-full flex-1 items-center justify-start">
-      <button class="p-0 border-0 size-8" @click="playOrPause">
+      <!-- Every control here was an icon with no text, so a screen reader announced five
+        buttons called nothing. The play/pause and mute pairs name the action they will perform,
+        which is what a toggle built from two glyphs has to do. -->
+      <button
+        class="p-0 border-0 size-8"
+        type="button"
+        :aria-label="
+          isPlaying
+            ? $t('COMPONENTS.MEDIA.AUDIO.PAUSE')
+            : $t('COMPONENTS.MEDIA.AUDIO.PLAY')
+        "
+        @click="playOrPause"
+      >
         <Icon
           v-if="isPlaying"
           class="size-8"
@@ -195,12 +207,18 @@ const downloadAudio = async () => {
           min="0"
           :max="duration"
           :value="currentTime"
+          :aria-label="$t('COMPONENTS.MEDIA.AUDIO.SEEK')"
+          :aria-valuetext="formatTime(currentTime)"
           class="w-full h-1 bg-n-slate-12/40 rounded-lg appearance-none cursor-pointer accent-current"
           @input="seek"
         />
       </div>
       <button
         class="border-0 w-10 h-6 grid place-content-center bg-n-alpha-2 hover:bg-alpha-3 rounded-2xl"
+        type="button"
+        :aria-label="
+          $t('COMPONENTS.MEDIA.AUDIO.SPEED', { speed: playbackSpeedLabel })
+        "
         @click="changePlaybackSpeed"
       >
         <span class="text-xs text-n-slate-11 font-medium">
@@ -209,6 +227,12 @@ const downloadAudio = async () => {
       </button>
       <button
         class="p-0 border-0 size-8 grid place-content-center"
+        type="button"
+        :aria-label="
+          isMuted
+            ? $t('COMPONENTS.MEDIA.AUDIO.UNMUTE')
+            : $t('COMPONENTS.MEDIA.AUDIO.MUTE')
+        "
         @click="toggleMute"
       >
         <Icon v-if="isMuted" class="size-4" icon="i-lucide-volume-off" />
@@ -216,6 +240,8 @@ const downloadAudio = async () => {
       </button>
       <button
         class="p-0 border-0 size-8 grid place-content-center"
+        type="button"
+        :aria-label="$t('COMPONENTS.MEDIA.AUDIO.DOWNLOAD')"
         @click="downloadAudio"
       >
         <Icon class="size-4" icon="i-lucide-download" />

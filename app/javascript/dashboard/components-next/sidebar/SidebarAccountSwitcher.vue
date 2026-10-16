@@ -68,8 +68,8 @@ const emitNewAccount = () => {
         v-else
         id="sidebar-account-switcher"
         :data-account-id="accountId"
-        aria-haspopup="listbox"
-        aria-controls="account-options"
+        aria-haspopup="menu"
+        :aria-expanded="isOpen"
         class="flex items-center gap-2 justify-between w-full rounded-lg px-2"
         :class="[
           isOpen && 'bg-n-alpha-1',
@@ -106,7 +106,7 @@ const emitNewAccount = () => {
           @click="onChangeAccount(account.id)"
         >
           <template #label>
-            <div :for="account.name" class="text-start flex gap-2 items-center">
+            <div class="text-start flex gap-2 items-center">
               <span
                 class="text-n-slate-12 max-w-36 truncate min-w-0"
                 :title="account.name"
@@ -115,7 +115,7 @@ const emitNewAccount = () => {
               </span>
               <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
               <span
-                class="text-n-slate-11 max-w-24 truncate capitalize"
+                class="text-n-slate-11 max-w-24 truncate"
                 :title="account.name"
               >
                 {{

@@ -269,7 +269,11 @@ onMounted(() => {
 
 <style lang="scss">
 ninja-keys {
-  --ninja-accent-color: rgba(39, 129, 246, 1);
+  // #2781F6 was the retired Chatwoot blue, pinned here as a literal, so the command palette kept
+  // accenting itself in it after `--brand` moved to Lynomia's indigo. The variable resolves per
+  // document, which is the whole point of it: the console gets indigo, and the widget and portal
+  // stylesheets that set `--brand` back to blue are untouched by this.
+  --ninja-accent-color: rgb(var(--brand));
   --ninja-font-family: 'Inter';
   z-index: 9999;
 }

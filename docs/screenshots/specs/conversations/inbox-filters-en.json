@@ -1,0 +1,36 @@
+{
+  "source": "docs/screenshots/sources/conversations/inbox-filters-en.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1440,
+  "height": 900,
+  "crop": { "x": 330, "y": 8, "w": 700, "h": 400 },
+  "steps": [
+    {
+      "n": 1,
+      "label": "Mine, Unassigned, All",
+      "side": "end",
+      "x": 50,
+      "y": 18.3,
+      "highlight": { "x": 2.0, "y": 14.5, "w": 45.1, "h": 7.5, "radius": 8 }
+    },
+    {
+      "n": 2,
+      "label": "Status",
+      "side": "end",
+      "x": 66,
+      "y": 32.3,
+      "arrow": { "toX": 29, "toY": 8.0, "bow": 16 },
+      "highlight": { "x": 19.1, "y": 4.0, "w": 9.4, "h": 6.5, "radius": 8 }
+    },
+    {
+      "n": 3,
+      "label": "Sort",
+      "side": "end",
+      "x": 66,
+      "y": 45.3,
+      "arrow": { "toX": 43, "toY": 8.5, "bow": 20 },
+      "highlight": { "x": 39.3, "y": 4.25, "w": 3.6, "h": 6.0, "radius": 6 }
+    }
+  ]
+}

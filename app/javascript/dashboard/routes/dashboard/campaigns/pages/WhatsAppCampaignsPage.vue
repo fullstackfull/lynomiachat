@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onActivated, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useToggle } from '@vueuse/core';
 import {
   useStore,
   useStoreGetters,
@@ -22,6 +21,7 @@ import {
 
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
+import FetchErrorState from 'dashboard/components-next/FetchErrorState.vue';
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
 import WhatsAppCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/WhatsAppCampaign/WhatsAppCampaignDialog.vue';
 import ConfirmDeleteCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmDeleteCampaignDialog.vue';
@@ -35,10 +35,19 @@ const route = useRoute();
 const router = useRouter();
 
 const selectedCampaign = ref(null);
-const [showWhatsAppCampaignDialog, toggleWhatsAppCampaignDialog] = useToggle();
+const createDialogRef = ref(null);
+
+// The create flow used to be an absolutely positioned div hung off the header button: no backdrop, no focus
+// trap, no Escape, and on a 900px screen its Create button sat below the fold. It is a real modal now.
+const openCreateDialog = () => createDialogRef.value?.dialogRef?.open();
 
 const uiFlags = useMapGetter('campaigns/getUIFlags');
 const isFetchingCampaigns = computed(() => uiFlags.value.isFetching);
+// A failed fetch is not an empty account. Without this the page drew its empty state -- sample
+// campaign cards and all -- for a request that never came back.
+const hasFetchError = computed(() => uiFlags.value.hasError);
+
+const retryFetch = () => store.dispatch('campaigns/get');
 
 const confirmDeleteCampaignDialogRef = ref(null);
 const initialSharedAudienceIds = ref([]);
@@ -87,13 +96,12 @@ onActivated(async () => {
     const label = findAccountLabel(accountLabels.value, labelId);
     initialLabelIds.value = label ? [label.id] : [];
   }
-  toggleWhatsAppCampaignDialog(true);
+  openCreateDialog();
 });
 
 // Closing clears the prefill, so the next "New campaign" starts empty. Closing is also the user saying they are
 // finished with this campaign, so the draft goes with it.
 const closeDialog = () => {
-  toggleWhatsAppCampaignDialog(false);
   initialSharedAudienceIds.value = [];
   initialLabelIds.value = [];
   initialDraft.value = null;
@@ -118,20 +126,11 @@ const handleAnalytics = campaign => {
 <template>
   <CampaignLayout
     :header-title="t('CAMPAIGN.WHATSAPP.HEADER_TITLE')"
+    :header-description="t('CAMPAIGN.WHATSAPP.HEADER_DESCRIPTION')"
+    :count="isFetchingCampaigns ? null : WhatsAppCampaigns.length"
     :button-label="t('CAMPAIGN.WHATSAPP.NEW_CAMPAIGN')"
-    @click="toggleWhatsAppCampaignDialog()"
-    @close="closeDialog"
+    @click="openCreateDialog"
   >
-    <template #action>
-      <WhatsAppCampaignDialog
-        v-if="showWhatsAppCampaignDialog"
-        :initial-shared-audience-ids="initialSharedAudienceIds"
-        :initial-label-ids="initialLabelIds"
-        :initial-draft="initialDraft"
-        @close="closeDialog"
-        @create-audience="handleCreateAudience"
-      />
-    </template>
     <div
       v-if="isFetchingCampaigns"
       class="flex items-center justify-center py-10 text-n-slate-11"
@@ -148,9 +147,18 @@ const handleAnalytics = campaign => {
       @analytics="handleAnalytics"
     />
     <WhatsAppCampaignEmptyState
-      v-else
+      v-else-if="!hasFetchError"
       :title="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.SUBTITLE')"
+    />
+    <FetchErrorState v-else @retry="retryFetch" />
+    <WhatsAppCampaignDialog
+      ref="createDialogRef"
+      :initial-shared-audience-ids="initialSharedAudienceIds"
+      :initial-label-ids="initialLabelIds"
+      :initial-draft="initialDraft"
+      @close="closeDialog"
+      @create-audience="handleCreateAudience"
     />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"

@@ -129,7 +129,7 @@ describe('ReportDrilldownCard.vue', () => {
       .find(label => label.includes('Message created at'));
 
     expect(wrapper.text()).toContain('2m');
-    expect(wrapper.text()).not.toContain('4d • 4d');
+    expect(wrapper.text()).not.toContain('4d');
     expect(messageCreatedLabel).toContain('Message created at');
   });
 
@@ -146,10 +146,10 @@ describe('ReportDrilldownCard.vue', () => {
       true
     );
     expect(
-      links.every(link => link.classes().includes('text-n-slate-10'))
+      links.every(link => link.classes().includes('text-n-slate-11'))
     ).toBe(true);
     expect(
-      links.every(link => !link.classes().includes('text-n-blue-11'))
+      links.every(link => !link.classes().includes('text-n-iris-11'))
     ).toBe(true);
     expect(wrapper.find('.i-lucide-contact').exists()).toBe(true);
     expect(wrapper.find('.i-lucide-inbox').exists()).toBe(true);
@@ -171,7 +171,7 @@ describe('ReportDrilldownCard.vue', () => {
     });
 
     expect(wrapper.text()).toContain('Latest reply');
-    expect(wrapper.text()).toContain('4d • 4d');
+    expect(wrapper.text()).toContain('4d');
   });
 
   it('renders event time alongside TimeAgo for event-backed conversation rows', () => {
@@ -190,7 +190,7 @@ describe('ReportDrilldownCard.vue', () => {
       .find(label => label.includes('Event occurred at'));
 
     expect(wrapper.text()).toContain('Latest reply');
-    expect(wrapper.text()).toContain('4d • 4d');
+    expect(wrapper.text()).toContain('4d');
     expect(wrapper.text()).toContain('2m');
     expect(eventOccurredLabel).toContain('Event occurred at');
   });

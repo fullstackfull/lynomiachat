@@ -262,10 +262,20 @@ export const generateAutomationPayload = payload => {
   return automation;
 };
 
+/**
+ * A delay, as a number and the unit it is in -- NOT as a string.
+ *
+ * This used to return '3d', '2h', '45m': English unit letters, built in a helper with no access to
+ * the active locale, dropped straight into a badge that an Arabic reader sees. The caller translates
+ * now, and gets a count it can pluralise.
+ *
+ * @param {number} minutes
+ * @returns {{ value: number, unit: 'DAYS'|'HOURS'|'MINUTES' }}
+ */
 export const formatDelay = minutes => {
-  if (minutes % 1440 === 0) return `${minutes / 1440}d`;
-  if (minutes % 60 === 0) return `${minutes / 60}h`;
-  return `${minutes}m`;
+  if (minutes % 1440 === 0) return { value: minutes / 1440, unit: 'DAYS' };
+  if (minutes % 60 === 0) return { value: minutes / 60, unit: 'HOURS' };
+  return { value: minutes, unit: 'MINUTES' };
 };
 
 export const isCustomAttribute = (attrs, key) => {

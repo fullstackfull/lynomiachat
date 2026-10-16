@@ -92,9 +92,12 @@
         "INSTANT": "Runs instantly",
         "DELAYED": "Runs after a wait"
       },
-      "DELAY_BADGE": "Runs after {delay}",
       "DELAY_DISABLED_BANNER": "Delayed execution is turned off for this account, so the rules below that run after a wait are paused until it is turned back on.",
-      "EMPTY_HINT": "ابدأ من وصفة جاهزة، أو ابنِ قاعدة شرطاً شرطاً. والوصفة تأتي مُطفأة لتقرأها قبل أن تعمل."
+      "EMPTY_HINT": "ابدأ من وصفة جاهزة، أو ابنِ قاعدة شرطاً شرطاً. والوصفة تأتي مُطفأة لتقرأها قبل أن تعمل.",
+      "DELAY_BADGE_DAYS": "يُنفَّذ بعد يوم | يُنفَّذ بعد يومين | يُنفَّذ بعد {count} أيام",
+      "DELAY_BADGE_HOURS": "يُنفَّذ بعد ساعة | يُنفَّذ بعد ساعتين | يُنفَّذ بعد {count} ساعات",
+      "DELAY_BADGE_MINUTES": "يُنفَّذ بعد دقيقة | يُنفَّذ بعد دقيقتين | يُنفَّذ بعد {count} دقائق",
+      "TOGGLE_ARIA_LABEL": "تشغيل أو إيقاف القاعدة «{name}»"
     },
     "DELETE": {
       "TITLE": "حذف قاعدة الأتمتة",

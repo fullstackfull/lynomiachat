@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { messageStamp } from 'shared/helpers/timeHelper';
+import { useI18n } from 'vue-i18n';
 import { formatDelay } from 'dashboard/helper/automationHelper';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ToggleSwitch from 'dashboard/components-next/switch/Switch.vue';
@@ -20,9 +20,33 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle', 'edit', 'delete', 'clone']);
 
-const readableDate = date => messageStamp(new Date(date), 'LLL d, yyyy');
-const readableDateWithTime = date =>
-  messageStamp(new Date(date), 'LLL d, yyyy hh:mm a');
+const { t, locale } = useI18n();
+
+// `created_on` is unix SECONDS -- the serializer emits `created_at.to_i`.
+//
+// This read `messageStamp(new Date(seconds), 'LLL d, yyyy')`, which happens to produce the right
+// instant only because building a Date from seconds-as-milliseconds and then multiplying by 1000
+// cancels out exactly. The value was right by coincidence; the FORMAT was a hardcoded English
+// pattern with no locale, so an Arabic screen read "Oct 15, 2025" in the middle of Arabic text.
+const toDate = seconds => new Date(seconds * 1000);
+
+const readableDate = seconds =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(
+    toDate(seconds)
+  );
+
+const readableDateWithTime = seconds =>
+  new Intl.DateTimeFormat(locale.value, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(toDate(seconds));
+
+// 'Runs after 3d' became 'Runs after 3 days' in whichever language is on, because 'd' is not a word
+// in Arabic and was not one to a lot of English readers either.
+const delayLabel = computed(() => {
+  const { value, unit } = formatDelay(props.automation.execution_delay);
+  return t(`AUTOMATION.LIST.DELAY_BADGE_${unit}`, { count: value });
+});
 
 const automationActive = computed({
   get: () => props.automation.active,
@@ -54,11 +78,7 @@ const automationActive = computed({
               v-if="automation.execution_delay"
               compact
               variant="subtle"
-              :label="
-                $t('AUTOMATION.LIST.DELAY_BADGE', {
-                  delay: formatDelay(automation.execution_delay),
-                })
-              "
+              :label="delayLabel"
             />
           </div>
           <div class="hidden sm:block w-px h-3 rounded-lg bg-n-weak shrink-0" />
@@ -78,7 +98,14 @@ const automationActive = computed({
       </BaseTableCell>
 
       <BaseTableCell>
-        <ToggleSwitch v-model="automationActive" />
+        <!-- Icon-only controls carry their own name: a row of unlabelled switches is a row of
+        "toggle button" to a screen reader, with nothing to say WHICH rule each one turns off. -->
+        <ToggleSwitch
+          v-model="automationActive"
+          :aria-label="
+            t('AUTOMATION.LIST.TOGGLE_ARIA_LABEL', { name: automation.name })
+          "
+        />
       </BaseTableCell>
 
       <BaseTableCell

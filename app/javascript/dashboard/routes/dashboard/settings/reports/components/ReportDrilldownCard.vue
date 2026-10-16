@@ -161,13 +161,13 @@ const metadataAttributes = item => {
 };
 
 const metadataItemClass = item => [
-  'flex min-w-0 items-center gap-1 text-n-slate-10',
-  item.path ? 'group hover:text-n-blue-11 hover:underline' : '',
+  'flex min-w-0 items-center gap-1 text-n-slate-11',
+  item.path ? 'group hover:text-n-iris-11 hover:underline' : '',
 ];
 
 const metadataIconClass = item => [
   'size-3 shrink-0 text-n-slate-9',
-  item.path ? 'group-hover:text-n-blue-11' : '',
+  item.path ? 'group-hover:text-n-iris-11' : '',
 ];
 
 const stopMetadataLinkClick = (event, item) => {
@@ -225,7 +225,7 @@ const openRecord = () => {
         </div>
       </div>
       <div
-        class="ms-2 flex shrink-0 items-center justify-end gap-1 text-end text-xs leading-4 text-n-slate-10"
+        class="ms-2 flex shrink-0 items-center justify-end gap-1 text-end text-xs leading-4 text-n-slate-11"
       >
         <span
           v-if="isMessageRecord"
@@ -241,13 +241,13 @@ const openRecord = () => {
           :conversation-id="conversation.id"
           :last-activity-timestamp="conversation.last_activity_at"
           :created-at-timestamp="conversation.created_at"
-          class="font-440 !text-xs !text-n-slate-10"
+          class="font-440 !text-xs !text-n-slate-11"
         />
         <span
           v-if="isEventBackedConversationRecord"
           v-tooltip.left="eventOccurredTooltip"
           :aria-label="eventOccurredTooltip"
-          class="whitespace-nowrap rounded bg-n-alpha-2 px-1 py-0.5 text-[11px] leading-4 text-n-slate-10"
+          class="whitespace-nowrap rounded bg-n-alpha-2 px-1 py-0.5 text-[11px] leading-4 text-n-slate-11"
         >
           {{ compactTimestamp(record.occurred_at) }}
         </span>

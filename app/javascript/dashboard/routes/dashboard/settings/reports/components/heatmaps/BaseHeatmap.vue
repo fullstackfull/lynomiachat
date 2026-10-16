@@ -23,8 +23,8 @@ const props = defineProps({
   },
   colorScheme: {
     type: String,
-    default: 'blue',
-    validator: value => ['blue', 'green'].includes(value),
+    default: 'indigo',
+    validator: value => ['indigo', 'green'].includes(value),
   },
   ariaLabel: {
     type: String,
@@ -58,15 +58,18 @@ const columns = Array.from({ length: 24 }, (_, hour) => ({
 
 const QUANTILES = [0.2, 0.4, 0.6, 0.8, 0.9, 0.99];
 
+// Two schemes because the Overview page stacks two heatmaps that measure different things -- traffic and
+// resolutions -- and they have to be told apart at a glance. `indigo` was the retired Chatwoot blue
+// (`--blue-9` is #2781F6); on the brand ramp it still reads as clearly distinct from teal.
 const COLOR_SCHEMES = {
-  blue: [
-    'rgb(var(--blue-3))',
-    'rgb(var(--blue-5))',
-    'rgb(var(--blue-7))',
-    'rgb(var(--blue-8))',
-    'rgb(var(--blue-9))',
-    'rgb(var(--blue-10))',
-    'rgb(var(--blue-11))',
+  indigo: [
+    'rgb(var(--iris-3))',
+    'rgb(var(--iris-5))',
+    'rgb(var(--iris-7))',
+    'rgb(var(--iris-8))',
+    'rgb(var(--iris-9))',
+    'rgb(var(--iris-10))',
+    'rgb(var(--iris-11))',
   ],
   green: [
     'rgb(var(--teal-3))',
@@ -101,7 +104,7 @@ const heatmapColors = computed(() => COLOR_SCHEMES[props.colorScheme]);
 const colorSchemeClass = computed(() => {
   return props.colorScheme === 'green'
     ? '[--cw-viz-heatmap-focus-color:rgb(var(--teal-9))]'
-    : '[--cw-viz-heatmap-focus-color:rgb(var(--blue-9))]';
+    : '[--cw-viz-heatmap-focus-color:rgb(var(--iris-9))]';
 });
 </script>
 

@@ -201,7 +201,9 @@ watch(
   { immediate: true }
 );
 
-defineExpose({ prepareCampaignDetails, isSubmitDisabled });
+// `prepareCampaignDetails` is what the edit dialog reads; `handleSubmit` is what the create dialog's footer
+// calls, so the form's own validation still runs before anything is sent.
+defineExpose({ prepareCampaignDetails, handleSubmit, isSubmitDisabled });
 </script>
 
 <template>

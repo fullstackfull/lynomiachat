@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import Button from 'dashboard/components-next/button/Button.vue';
 import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 
@@ -13,6 +14,7 @@ defineProps({
 
 const emit = defineEmits(['toggle']);
 
+const { t } = useI18n();
 const route = useRoute();
 
 const isConversationRoute = computed(() => {
@@ -51,6 +53,8 @@ const toggleSidebar = () => {
     >
       <Button
         icon="i-lucide-menu"
+        :aria-label="t('SIDEBAR.TOGGLE_MENU')"
+        :aria-expanded="isMobileSidebarOpen"
         no-animation
         class="!rounded-full !bg-n-solid-3 dark:!bg-n-alpha-2 !text-n-slate-12 text-xl transition-all duration-200 ease-out hover:brightness-110"
         lg

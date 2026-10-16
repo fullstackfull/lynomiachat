@@ -104,10 +104,7 @@ onMounted(() => {
         {{ $t('CONTACT_PANEL.CONVERSATIONS.NO_RECORDS_FOUND') }}
       </span>
     </div>
-    <div
-      v-else
-      class="contact-conversation--list [&>.conversation:last-child]:!border-b-0 [&>.conversation:last-child:hover]:!border-b-0 [&>.conversation:last-child]:!rounded-b-lg"
-    >
+    <div v-else class="contact-conversation--list">
       <ConversationCard
         v-for="conversation in previousConversations"
         :key="conversation.id"

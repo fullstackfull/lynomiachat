@@ -18,8 +18,10 @@ const { filteredCurrentChatAttachments } = useMessageContext();
 </script>
 
 <template>
-  <div
-    class="size-[72px] overflow-hidden contain-content rounded-xl cursor-pointer relative group"
+  <button
+    type="button"
+    class="size-[72px] p-0 border-0 overflow-hidden contain-content rounded-xl cursor-pointer relative group focus-ring"
+    :aria-label="$t('COMPONENTS.MEDIA.OPEN_VIDEO')"
     @click="showGallery = true"
   >
     <video
@@ -40,13 +42,12 @@ const { filteredCurrentChatAttachments } = useMessageContext();
         />
       </div>
     </div>
-  </div>
+  </button>
   <GalleryView
     v-if="showGallery"
     v-model:show="showGallery"
     :attachment="useSnakeCase(attachment)"
     :all-attachments="filteredCurrentChatAttachments"
-    @error="onError"
     @close="() => (showGallery = false)"
   />
 </template>

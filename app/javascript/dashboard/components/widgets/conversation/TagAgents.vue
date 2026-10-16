@@ -207,7 +207,7 @@ const onSelect = item => emit('selectAgent', item.record);
             <span class="text-n-slate-10">
               {{ t('CONVERSATION.PICKER.MENTION.AVAILABILITY') }}
             </span>
-            <span class="capitalize text-n-slate-12">
+            <span class="text-n-slate-12">
               {{ availabilityLabel(item.record.availability_status) }}
             </span>
           </div>
@@ -215,9 +215,7 @@ const onSelect = item => emit('selectAgent', item.record);
             <span class="text-n-slate-10">
               {{ t('CONVERSATION.PICKER.MENTION.ROLE') }}
             </span>
-            <span class="capitalize text-n-slate-12">{{
-              item.record.role
-            }}</span>
+            <span class="text-n-slate-12">{{ item.record.role }}</span>
           </div>
         </div>
         <div v-else class="flex flex-col gap-2 text-xs">

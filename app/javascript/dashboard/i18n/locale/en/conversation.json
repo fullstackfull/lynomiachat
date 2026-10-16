@@ -7,20 +7,24 @@
       "WELCOME_MESSAGE_LABEL": "Pre-filled message: ",
       "REPLIED_BELOW": "Customer replied below"
     },
-    "SELECT_A_CONVERSATION": "Please select a conversation from left pane",
+    "SELECT_A_CONVERSATION": "Choose a conversation from the list to read and reply",
     "CSAT_REPLY_MESSAGE": "Please rate the conversation",
     "404": "Sorry, we cannot find the conversation. Please try again",
     "SWITCH_VIEW_LAYOUT": "Switch the layout",
     "DASHBOARD_APP_TAB_MESSAGES": "Messages",
     "UNVERIFIED_SESSION": "The identity of this user is not verified",
-    "NO_MESSAGE_1": "Uh oh! Looks like there are no messages from customers in your inbox.",
+    "NO_MESSAGE_1": "No customer messages yet. New conversations arrive here as they come in.",
     "NO_MESSAGE_2": " to send a message to your page!",
     "NO_INBOX_1": "Hola! Looks like you haven't added any inboxes yet.",
     "NO_INBOX_2": " to get started",
-    "NO_INBOX_AGENT": "Uh Oh! Looks like you are not part of any inbox. Please contact your administrator",
+    "NO_INBOX_AGENT": "You are not part of any inbox yet. Ask an administrator to add you to one.",
     "SEARCH_MESSAGES": "Search for messages in conversations",
     "VIEW_ORIGINAL": "View original",
     "VIEW_TRANSLATED": "View translated",
+    "DATE_SEPARATOR": {
+      "TODAY": "Today",
+      "YESTERDAY": "Yesterday"
+    },
     "EMPTY_STATE": {
       "CMD_BAR": "to open command menu",
       "KEYBOARD_SHORTCUTS": "to view keyboard shortcuts"
@@ -294,6 +298,7 @@
     "REPLYBOX": {
       "REPLY": "Reply",
       "PRIVATE_NOTE": "Private Note",
+      "MODE_SWITCHER": "Reply mode",
       "SEND": "Send",
       "CREATE": "Add Note",
       "INSERT_READ_MORE": "Read more",

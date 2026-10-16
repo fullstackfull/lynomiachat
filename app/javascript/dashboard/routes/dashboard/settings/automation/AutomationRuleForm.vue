@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useBranding } from 'shared/composables/useBranding';
 import { useAccount } from 'dashboard/composables/useAccount';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
 import SidePanel from 'dashboard/components-next/side-panel/SidePanel.vue';
 import {
   generateAutomationPayload,
@@ -296,24 +297,24 @@ defineExpose({ open, close });
 <template>
   <SidePanel ref="panelRef" width="3xl" :title="$t(titleKey)">
     <div v-if="automation" class="flex flex-col w-full gap-6">
-      <div class="flex flex-col">
-        <woot-input
+      <!-- The last two `woot-input`s in this panel; everything around them was already on the design system,
+      so these two were the only controls here with their own label type, focus ring and error treatment. -->
+      <div class="flex flex-col gap-4">
+        <Input
           v-model="automation.name"
           :label="$t('AUTOMATION.ADD.FORM.NAME.LABEL')"
-          type="text"
-          :class="{ error: errors.name }"
-          :error="errors.name ? $t('AUTOMATION.ADD.FORM.NAME.ERROR') : ''"
           :placeholder="$t('AUTOMATION.ADD.FORM.NAME.PLACEHOLDER')"
+          :message="errors.name ? $t('AUTOMATION.ADD.FORM.NAME.ERROR') : ''"
+          :message-type="errors.name ? 'error' : 'info'"
         />
-        <woot-input
+        <Input
           v-model="automation.description"
           :label="$t('AUTOMATION.ADD.FORM.DESC.LABEL')"
-          type="text"
-          :class="{ error: errors.description }"
-          :error="
+          :placeholder="$t('AUTOMATION.ADD.FORM.DESC.PLACEHOLDER')"
+          :message="
             errors.description ? $t('AUTOMATION.ADD.FORM.DESC.ERROR') : ''
           "
-          :placeholder="$t('AUTOMATION.ADD.FORM.DESC.PLACEHOLDER')"
+          :message-type="errors.description ? 'error' : 'info'"
         />
       </div>
       <AutomationRunTypeSelector

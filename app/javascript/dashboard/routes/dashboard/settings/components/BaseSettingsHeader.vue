@@ -75,7 +75,7 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
     >
       <p
         v-if="description || $slots.description"
-        class="mb-0 line-clamp-5 sm:line-clamp-none max-w-3xl text-body-main"
+        class="mb-0 line-clamp-5 sm:line-clamp-none max-w-prose text-body-main"
       >
         <slot name="description">{{ description }}</slot>
       </p>
@@ -84,12 +84,14 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
         :href="helpURL"
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-blue-11 hover:underline mb-2"
+        class="inline-flex items-center gap-1 text-sm font-medium w-fit text-n-iris-11 hover:underline mb-2 rounded-sm focus-ring"
       >
         {{ linkText }}
-        <Icon
-          icon="i-lucide-chevron-right"
-          class="flex-shrink-0 text-n-blue-11 size-4"
+        <!-- A bare span, not `Icon`: `Icon` renders `h('span', { class })` and forwards nothing
+          else, so `aria-hidden` on it never reaches the DOM. The link's own text names it. -->
+        <span
+          aria-hidden="true"
+          class="i-lucide-chevron-right flex-shrink-0 text-n-iris-11 size-4 rtl:rotate-180"
         />
       </a>
       <slot name="meta" />
@@ -104,10 +106,17 @@ const helpURL = computed(() => getHelpUrlForFeature(props.featureName));
       class="flex items-center gap-3 min-w-0 w-full sm:w-auto"
     >
       <slot name="tabs" />
+      <!-- The placeholder was this field's ONLY name, on all eight settings pages that pass one.
+        A placeholder is not an accessible name: it is absent from the control until it is read, and
+        it disappears the moment anything is typed, so the field loses what it was called halfway
+        through the task it exists for. The design has no room for a visible label beside a 56-unit
+        search box, so the name is carried as `aria-label` instead -- the same already-translated
+        string, reaching the input because `Input` binds `$attrs` onto the control itself. -->
       <Input
         v-if="searchPlaceholder"
         v-model="searchQuery"
         :placeholder="searchPlaceholder"
+        :aria-label="searchPlaceholder"
         class="group w-full sm:w-56 min-w-0 flex [&>input]:ltr:!pl-8 [&>input]:rtl:!pr-8 [&>input]:!rounded-[0.625rem]"
         size="sm"
         type="search"

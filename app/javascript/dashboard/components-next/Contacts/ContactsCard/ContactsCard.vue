@@ -117,7 +117,7 @@ const handleAvatarHover = isHovered => {
         'outline-n-weak !bg-n-slate-3 dark:!bg-n-solid-3': isSelected,
       }"
     >
-      <div class="flex items-center justify-start flex-1 gap-4">
+      <div class="flex items-center justify-start flex-1 gap-3 min-w-0">
         <div
           class="relative"
           @mouseenter="handleAvatarHover(true)"
@@ -126,7 +126,7 @@ const handleAvatarHover = isHovered => {
           <Avatar
             :name="name"
             :src="thumbnail"
-            :size="42"
+            :size="36"
             :status="availabilityStatus"
             hide-offline-status
           >
@@ -144,9 +144,9 @@ const handleAvatarHover = isHovered => {
             </template>
           </Avatar>
         </div>
-        <div class="flex flex-col gap-0.5 flex-1">
+        <div class="flex flex-col gap-0.5 flex-1 min-w-0">
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span class="text-base font-medium truncate text-n-slate-12">
+            <span class="text-sm font-medium truncate text-n-slate-12">
               {{ name }}
             </span>
             <span class="inline-flex items-center gap-1">
@@ -193,8 +193,13 @@ const handleAvatarHover = isHovered => {
         </div>
       </div>
 
+      <!-- The only control that opens the editor inside the row, and it is a bare chevron: without a name
+           a screen reader announces it as "button", and `aria-expanded` is what says whether the row it
+           belongs to is already open. -->
       <Button
         icon="i-lucide-chevron-down"
+        :aria-label="t('CONTACTS_LAYOUT.CARD.TOGGLE_DETAILS')"
+        :aria-expanded="isExpanded"
         variant="ghost"
         color="slate"
         size="xs"

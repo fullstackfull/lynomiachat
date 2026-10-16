@@ -52,6 +52,23 @@ module Marketing::SectionSchema
     # corpus Markdown and metadata is an unqueryable text column -- neither constraint applies to a row an
     # operator edits in a form (custom/app/services/documentation/media_resolver.rb:30-34).
     'image' => { fields: %w[attachment_id alt caption] },
+    # A product walkthrough: ONE GENUINE SCREENSHOT of the running application, and the numbered steps
+    # the markers drawn on it point at.
+    #
+    # THE STEPS ARE ROWS, NOT PIXELS, and that is the whole reason this is a type of its own rather than an
+    # `image` with a `cards` block under it. A number burnt into a PNG is not text: a screen reader cannot
+    # read it, a translator cannot translate it, a search engine cannot index it, and a reader who enlarges
+    # their type gets a bigger blurry number rather than a bigger sentence. So the picture carries the
+    # markers and the markup carries the words, the two are numbered in step, and the explanation survives
+    # with the image switched off.
+    #
+    # `media_position` is what lets consecutive walkthroughs alternate the screenshot left and right down a
+    # page instead of stacking into a column of identical slabs. It is presentation only -- the step list is
+    # always the same markup in the same order, so the reading order never depends on it.
+    'walkthrough' => {
+      fields: %w[heading lede attachment_id alt media_position],
+      items: %w[title body]
+    },
     # A block the CODE fills from the verified catalogue: the channel strip, the feature grid, an index's
     # cards. The operator owns its copy and nothing else -- a feature's availability state and its
     # prerequisite are product facts and are not editable here, which is the rule doc 02 exists to protect.
@@ -73,6 +90,12 @@ module Marketing::SectionSchema
   # changes presentation and never content -- which is what lets the home page's two consecutive catalogue
   # blocks look like two sections rather than one long field of identical cards.
   STYLES = %w[cards chips list].freeze
+
+  # Where a walkthrough's screenshot sits. `start`/`end` rather than left/right because the page is rendered
+  # in both directions and a walkthrough whose image is pinned to the physical left would sit on the wrong
+  # side of the Arabic page; `top` puts it across the content width above the steps, which is the only one of
+  # the three a screenshot of a WHOLE SCREEN stays readable in.
+  MEDIA_POSITIONS = %w[start end top].freeze
 
   # The only metrics a stat may read. A metric nobody implemented would render blank.
   METRICS = %w[channel_count feature_count locale_count].freeze
@@ -182,7 +205,16 @@ module Marketing::SectionSchema
       return ["#{label} has an unknown type #{type.presence || '(blank)'}"] unless type?(type)
 
       source_errors(section, type, label) + metric_errors(section, type, label) +
-        link_errors(section, type, label)
+        link_errors(section, type, label) + media_position_errors(section, type, label)
+    end
+
+    def media_position_errors(section, type, label)
+      return [] unless type == 'walkthrough'
+
+      position = section['media_position'].to_s
+      return [] if position.blank? || MEDIA_POSITIONS.include?(position)
+
+      ["#{label} puts its screenshot on an unknown side #{position}"]
     end
 
     def source_errors(section, type, label)

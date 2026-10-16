@@ -124,6 +124,10 @@
     --solid-3: 255 255 255;
     --solid-active: 255 255 255;
     --solid-amber: 255 228 181;
+    // THE AGENT CONSOLE'S BRAND. `n-brand` resolves to this, and only this document defines it as the
+    // indigo -- the widget, the portal and the survey set it back to the blue they ship today, because they
+    // render on the tenant's own site under the tenant's brand and were never part of this redesign.
+    --brand: 91 91 240;
     --solid-blue: 218 236 255;
     --solid-blue-2: 251 253 255;
     --solid-iris: 230 231 255;

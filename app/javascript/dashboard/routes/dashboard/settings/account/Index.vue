@@ -154,7 +154,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col w-full max-w-2xl ltr:mr-auto rtl:ml-auto">
+  <div class="flex flex-col w-full max-w-2xl mx-auto">
     <BaseSettingsHeader :title="$t('GENERAL_SETTINGS.TITLE')" />
     <div class="flex-grow flex-shrink min-w-0 mt-3">
       <SectionLayout
@@ -174,6 +174,7 @@ export default {
             :error-message="$t('GENERAL_SETTINGS.FORM.NAME.ERROR')"
           >
             <NextInput
+              id="account-name"
               v-model="name"
               type="text"
               class="w-full"
@@ -187,7 +188,7 @@ export default {
             :label="$t('GENERAL_SETTINGS.FORM.LANGUAGE.LABEL')"
             :error-message="$t('GENERAL_SETTINGS.FORM.LANGUAGE.ERROR')"
           >
-            <select v-model="locale" class="!mb-0 text-sm">
+            <select id="site-language" v-model="locale" class="!mb-0 text-sm">
               <option
                 v-for="lang in languagesSortedByCode"
                 :key="lang.iso_639_1_code"

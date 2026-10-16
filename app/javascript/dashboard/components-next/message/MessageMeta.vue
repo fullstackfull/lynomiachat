@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { fromUnixTime } from 'date-fns';
 import { messageTimestamp } from 'shared/helpers/timeHelper';
 import { useExactTimestamp } from 'shared/composables/useExactTimestamp';
 
@@ -35,11 +36,19 @@ const {
   contentAttributes,
 } = useMessageContext();
 
+// The day is stated once, on the separator above each day's run of messages, so repeating it on every
+// stamp spent seven characters to say what the rule overhead already said -- and crowded the one part of
+// this line that does change per message. `messageTimestamp` still escalates to a full 'LLL d y, h:mm a'
+// for a message from another year, and the exact date and time stay in the hover tooltip below.
 const readableTime = computed(() =>
-  messageTimestamp(createdAt.value, 'LLL d, h:mm a')
+  messageTimestamp(createdAt.value, 'h:mm a')
 );
 
 const exactTime = computed(() => exactTimestamp(createdAt.value));
+
+// `<time>` without `datetime` is just a span to a parser: the visible text is a localised, abbreviated
+// 12-hour clock, so this carries the machine-readable instant the element is actually about.
+const machineTime = computed(() => fromUnixTime(createdAt.value).toISOString());
 
 const showStatusIndicator = computed(() => {
   if (isPrivate.value) return false;
@@ -151,13 +160,24 @@ const statusToShow = computed(() => {
           content: exactTime,
           delay: { show: 500, hide: 0 },
         }"
+        :datetime="machineTime"
+        dir="ltr"
         class="inline"
       >
         {{ readableTime }}
       </time>
     </div>
-    <Icon v-if="isPrivate" icon="i-lucide-lock-keyhole" class="size-3" />
+    <template v-if="isPrivate">
+      <Icon
+        icon="i-lucide-lock-keyhole"
+        class="size-3"
+        aria-hidden="true"
+        role="presentation"
+      />
+      <span class="sr-only">
+        {{ $t('CONVERSATION.REPLYBOX.PRIVATE_NOTE') }}
+      </span>
+    </template>
     <MessageStatus v-if="showStatusIndicator" :status="statusToShow" />
   </div>
 </template>
-`

@@ -11,6 +11,10 @@ export const state = {
   uiFlags: {
     isFetching: false,
     isCreating: false,
+    // Whether the LAST fetch failed. Without it an empty `records` means two different things --
+    // "this account has no campaigns" and "we could not find out" -- and the page drew the first
+    // for both, telling people they had none when the request had actually failed.
+    hasError: false,
   },
 };
 
@@ -55,12 +59,14 @@ export const getters = {
 
 export const actions = {
   get: async function getCampaigns({ commit }) {
-    commit(types.SET_CAMPAIGN_UI_FLAG, { isFetching: true });
+    commit(types.SET_CAMPAIGN_UI_FLAG, { isFetching: true, hasError: false });
     try {
       const response = await CampaignsAPI.get();
       commit(types.SET_CAMPAIGNS, response.data);
     } catch (error) {
-      // Ignore error
+      // Recorded rather than ignored. The list has no other way to tell the difference between an
+      // account with no campaigns and a request that never came back.
+      commit(types.SET_CAMPAIGN_UI_FLAG, { hasError: true });
     } finally {
       commit(types.SET_CAMPAIGN_UI_FLAG, { isFetching: false });
     }

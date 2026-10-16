@@ -44,6 +44,16 @@ sections:
       name: الجماهير والحملات
       description: الوصول إلى مجموعة من العملاء بشكل مقصود.
 
+  - slug: channels
+    position: 45
+    icon: i-lucide-inbox
+    en:
+      name: Channels
+      description: Every way a customer can reach you, and how to connect each one.
+    ar:
+      name: القنوات
+      description: كل طريقة يمكن للعميل أن يصل بها إليك، وكيفية ربط كل واحدة منها.
+
   - slug: whatsapp
     position: 50
     icon: i-lucide-message-circle
@@ -74,6 +84,16 @@ sections:
       name: الأتمتة والروبوتات
       description: اترك لينوميا تشات يقوم بالعمل المتكرر.
 
+  - slug: analytics
+    position: 65
+    icon: i-lucide-bar-chart-3
+    en:
+      name: Analytics and reports
+      description: What the numbers mean, and which screen answers which question.
+    ar:
+      name: التحليلات والتقارير
+      description: ماذا تعني الأرقام، وأي شاشة تجيب عن أي سؤال.
+
   - slug: commerce
     position: 70
     icon: i-lucide-shopping-bag
@@ -83,6 +103,16 @@ sections:
     ar:
       name: المتجر
       description: اطّلع على مشتريات العميل من داخل المحادثة.
+
+  - slug: support
+    position: 75
+    icon: i-lucide-clipboard-list
+    en:
+      name: Support cases
+      description: Work that needs tracking beyond a single conversation.
+    ar:
+      name: حالات الدعم
+      description: عمل يحتاج متابعة تتجاوز محادثة واحدة.
 
   - slug: workspace
     position: 80

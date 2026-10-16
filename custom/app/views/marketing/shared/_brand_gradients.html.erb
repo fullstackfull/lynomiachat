@@ -1,0 +1,21 @@
+<%# The gradient definitions every channel mark on the page shares.
+
+  An SVG <rect> cannot take a CSS gradient as its fill -- it needs a <linearGradient> with an id, referenced
+  as `url(#id)`. Declaring one per mark would emit the same three gradients a dozen times on a page that
+  draws the strip and the catalogue; declaring them once here, in a zero-size svg at the top of the body,
+  means every mark on the page points at the same definition.
+
+  ZERO SIZE AND `position: absolute`, not `display: none`: a `display: none` ancestor makes a referenced
+  gradient fail to paint in WebKit, which is the browser most of this site's mobile traffic uses.
+%>
+<svg width="0" height="0" aria-hidden="true" focusable="false" class="absolute" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <% Marketing::ChannelBrand::GRADIENTS.each do |id, stops| %>
+      <linearGradient id="<%= id %>" x1="0%" y1="0%" x2="100%" y2="100%">
+        <% stops.each do |offset, colour| %>
+          <stop offset="<%= offset %>" stop-color="<%= colour %>"/>
+        <% end %>
+      </linearGradient>
+    <% end %>
+  </defs>
+</svg>

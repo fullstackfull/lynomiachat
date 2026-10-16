@@ -23,6 +23,15 @@
 <article class="<%= class_names('flex flex-col overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper',
                                'group relative transition-all duration-200 hover:-translate-y-0.5 hover:border-lyn-royal/40 hover:shadow-[0_20px_44px_-28px_rgba(10,23,51,0.5)]' => links) %>">
   <div class="flex grow flex-col p-6">
+    <%# THE CHANNEL'S OWN MARK, above its name. The channel index was nine cards of pure text, which is the
+        hardest possible way to answer the only question a reader brings to it -- "is the app I use on this
+        list?". A logo answers it before the name is read. Only channels have marks; a feature, a solution
+        and an integration card are unchanged. %>
+    <% if scope == :channels && Marketing::ChannelBrand.marked?(entry.id) %>
+      <div class="mb-4">
+        <%= render 'marketing/shared/channel_mark', id: entry.id, size: 40, labelled: false %>
+      </div>
+    <% end %>
     <%= content_tag heading_level, class: 'flex flex-wrap items-center gap-2 text-lg font-semibold text-lyn-ink' do %>
       <% if links %>
         <a class="transition-colors after:absolute after:inset-0 group-hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"

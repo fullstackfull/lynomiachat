@@ -32,7 +32,11 @@ module Marketing::SectionSchema
     # it on the one coloured block the page is allowed, which is how the headline gets a focal point without
     # the operator writing markup -- and the heading stays one plain, escaped string.
     'hero' => {
-      fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target]
+      # `attachment_id`/`alt`: the hero's product screenshot. It replaced a hand-built panel of invented
+      # customers -- see the partial. With no attachment the hero renders as text alone rather than falling
+      # back to a drawing of a dashboard.
+      fields: %w[kicker highlight primary_label primary_target secondary_label secondary_target
+                 attachment_id alt]
     },
     # A heading and a paragraph -- the plainest section there is, and the one the About page opens with.
     'prose' => { fields: %w[heading body] },
@@ -79,7 +83,51 @@ module Marketing::SectionSchema
     # The question list, filled from site_faq_entries. Like `catalogue`, the operator owns the block's own
     # copy and the rows are edited where they live -- which is also what lets the FAQPage structured data in
     # W5 be generated from the same rows the reader sees.
-    'faq' => { fields: %w[heading] }
+    'faq' => { fields: %w[heading] },
+    # THE MOVING CHANNEL STRIP. Operator copy only: the marks themselves come from
+    # Marketing::ChannelBrand, keyed by the Marketing::Catalog channel ids, for the same reason the
+    # catalogue's states are not editable -- a logo is a product fact, and an operator should not be able
+    # to edit WhatsApp's mark onto the LINE entry.
+    'channel_strip' => { fields: %w[heading lede] },
+    # ONE GENUINE PRODUCT SCREENSHOT BESIDE THE CLAIM IT EVIDENCES, alternating down the page.
+    #
+    # It is not `walkthrough`: a walkthrough's picture carries numbered markers and its items ARE those
+    # markers, so the two must agree. A showcase's picture carries nothing, its items are the capability's
+    # own points, and its job is to show the reader the screen they will actually be working in. Trying to
+    # serve both from one type meant either numbering points that nothing on the image pointed at, or
+    # shipping a figure with no explanation beside it.
+    'showcase' => {
+      fields: %w[kicker heading lede attachment_id alt media_position link_label link_target],
+      items: %w[title body]
+    },
+    # How the channels converge: sources on one side, the one inbox on the other, drawn rather than
+    # described. The operator owns the labels; which channels appear comes from the catalogue. The three
+    # `items` are what the inbox does to a conversation once it arrives -- they fall back to the locale
+    # file, so a flow block added with no items still reads.
+    'flow' => { fields: %w[heading lede inbox_label outbox_label], items: %w[title] },
+    # THE CHANNEL AS THE CUSTOMER SEES IT. Every other picture on this site is a screenshot of the agent's
+    # screen; this is the only one of the other end of the conversation, and no capture of the dashboard can
+    # be it -- the customer's phone is not ours to photograph.
+    #
+    # SO IT IS DRAWN, AND IT SAYS WHAT IT DRAWS. The message in it is the shape of a real WhatsApp template
+    # as this product builds and validates one (HEADER, BODY, FOOTER and QUICK_REPLY buttons --
+    # custom/app/services/whatsapp/templates/validator.rb:23-25), not an invented screen of a product that
+    # does not exist. `note` is where the section says so in the reader's own language.
+    #
+    # The preview's own words are in the locale file rather than in the operator's fields: it is an
+    # illustration of a message format, and an operator editing it into a claim about delivery times or
+    # prices would be writing copy into a picture nobody reviews.
+    'device' => {
+      fields: %w[kicker heading lede note link_label link_target],
+      items: %w[title]
+    },
+    # A capability shown by what it does to a message, in the page's own language. Three columns, each a
+    # before and an after. It carries `note` for the same reason `device` does: every one of these is gated
+    # on something, and the gate belongs beside the claim rather than in a footnote.
+    'before_after' => {
+      fields: %w[kicker heading lede note link_label link_target],
+      items: %w[title before after]
+    }
   }.freeze
 
   # The only values `catalogue.source` may take: the catalogue's own collections.
@@ -109,7 +157,10 @@ module Marketing::SectionSchema
   # `stats` is the exception and keeps the ink field: on the home page it follows the hero and is that hero's
   # evidence. Keying that off the TYPE rather than off the position means a page that opens some other way
   # still gets a coherent band.
-  INK_TYPES = %w[stats].freeze
+  # `before_after` joins it for a different reason than `stats`: not because it is a hero's evidence, but
+  # because a pair of plates reads as a demonstration on a dark field and as two more white cards on a white
+  # one -- and because a page of nothing but paper and mist is the flatness the redesign set out to fix.
+  INK_TYPES = %w[stats before_after].freeze
 
   BANDS = { ink: 'bg-lyn-ink', paper: 'bg-lyn-paper', mist: 'bg-lyn-mist' }.freeze
 
@@ -164,12 +215,38 @@ module Marketing::SectionSchema
       return nil unless type?(type)
 
       base = { 'type' => type }
-      fields_for(type).each do |field|
-        value = clamp(section[field], field)
-        base[field] = value if value.present?
-      end
+      key = enrichment_key(section)
+      base['key'] = key if key
+      base.merge!(coerce_fields(section, type))
       base['items'] = coerce_items(section['items'], type) if itemised?(type)
       base
+    end
+
+    # Only the fields this type declares, clamped, and only those that hold something. A field a type does
+    # not declare is dropped here rather than rejected: an operator who switches a section's type keeps the
+    # section instead of being handed a validation error about a key they never typed.
+    def coerce_fields(section, type)
+      fields_for(type).each_with_object({}) do |field, acc|
+        value = clamp(section[field], field)
+        acc[field] = value if value.present?
+      end
+    end
+
+    # THE ENRICHMENT MARKER, allowed on every type rather than listed per type.
+    #
+    # `Marketing::PageEnrichment` adds a section to a page that ALREADY EXISTS -- which the content seeder
+    # deliberately will not do, because it never overwrites an operator's row. Running that safely, twice, on
+    # a live site needs one thing: a way to recognise a section this repository added, so a second run leaves
+    # it alone instead of adding it again. That is this key, and it survives `coerce` for the same reason
+    # `type` does.
+    #
+    # It is NOT operator copy and nothing renders it. An operator who removes an enriched section removes its
+    # key with it, which is the correct outcome: the enrichment is applied only while the section is on the
+    # page, and a deliberate deletion is not something for the next run to undo. An operator who has decided
+    # against one for good leaves its key out of the `ONLY=` list they run.
+    def enrichment_key(section)
+      key = section['key'].to_s.strip
+      key if key.present? && key.length <= 120
     end
 
     def coerce_items(items, type)
@@ -208,8 +285,14 @@ module Marketing::SectionSchema
         link_errors(section, type, label) + media_position_errors(section, type, label)
     end
 
+    # DERIVED FROM THE TYPE'S OWN FIELD LIST rather than naming the types. `walkthrough` was the only type
+    # that declared `media_position` when this was written, and `showcase` later declared it and read it in
+    # the same three-value vocabulary -- so a hardcoded `== 'walkthrough'` left an operator's showcase value
+    # unvalidated: a typed `right` saved with no error and rendered on the start edge anyway, while the same
+    # word in a walkthrough on the same form was refused. Reading the declaration keeps the next type that
+    # declares the field validated without anyone remembering to come back here.
     def media_position_errors(section, type, label)
-      return [] unless type == 'walkthrough'
+      return [] unless fields_for(type).include?('media_position')
 
       position = section['media_position'].to_s
       return [] if position.blank? || MEDIA_POSITIONS.include?(position)

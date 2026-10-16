@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/app/en/inbox-new.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 344,
+    "y": 78,
+    "w": 1072,
+    "h": 672
+  }
+}

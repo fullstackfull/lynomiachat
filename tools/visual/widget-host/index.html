@@ -1,0 +1,117 @@
+<!doctype html>
+<!--
+  A HOST PAGE FOR PHOTOGRAPHING THE WIDGET.
+
+  WHY IT EXISTS. Every other screenshot in this repository is of the agent's screen, which is ours to
+  photograph. The website chat widget is the other end: it lives on the CUSTOMER'S site, and documentation
+  that says "this is what your visitor sees" has to show it on a page. `/widget_tests` serves the widget on
+  an empty white document, which proves the widget works and shows a reader nothing about where it sits.
+
+  WHAT IS REAL HERE AND WHAT IS NOT. The SCRIPT is real: it is the snippet `Channel::WebWidget#web_widget_script`
+  generates, with the website token of a seeded inbox substituted at capture time, loading this
+  installation's own `sdk.js`. Everything the widget does in a screenshot taken here -- its launcher, its
+  pre-chat form, the message it sends, the conversation that appears in the agent's inbox -- is the product
+  running. The PAGE AROUND IT is a demo storefront for a shop that does not exist, named after the seeded
+  demo account so that nobody mistakes it for a customer of ours.
+
+  IT IS NOT SERVED BY THE APPLICATION. `tools/visual/capture.mjs` serves this directory on its own port for
+  the length of a capture run, so the widget is embedded cross-origin exactly as it is on a real site. There
+  is no route to it and it ships nowhere.
+
+  THE TOKEN IS A PLACEHOLDER. `__WEBSITE_TOKEN__` and `__BASE_URL__` are substituted by the capture script
+  from the database, so this file does not go stale when the seed is rebuilt.
+
+  SO IS THE LANGUAGE. Every word a reader sees, plus `lang` and `dir`, is a placeholder the capture script
+  fills from its own per-locale table. ONE file rather than one per language, because the snippet below is
+  quoted verbatim in the article and a second copy of it is a second thing to keep in step. It also makes
+  the Arabic figure honest: the shop around the widget reads right to left, instead of an English page with
+  an Arabic caption under it.
+-->
+<html lang="__LANG__" dir="__DIR__">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>__TITLE__</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: __FONT__;
+      color: #1b2338;
+      background: #fff;
+    }
+    header {
+      display: flex; align-items: center; gap: 2rem;
+      padding: 1.1rem 2.5rem; border-bottom: 1px solid #e8eaf2;
+      position: sticky; top: 0; background: rgba(255,255,255,.9); backdrop-filter: blur(8px);
+    }
+    .logo { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .logo span { color: #6b6f80; font-weight: 500; }
+    nav { display: flex; gap: 1.5rem; font-size: .92rem; color: #4b5167; }
+    .cart { margin-inline-start: auto; font-size: .92rem; color: #4b5167; }
+    .hero { padding: 4.5rem 2.5rem 3rem; max-width: 72rem; margin: 0 auto; }
+    .hero h1 { font-size: 2.9rem; line-height: 1.1; letter-spacing: -0.03em; margin: 0 0 1rem; max-width: 22ch; }
+    .hero p { font-size: 1.08rem; line-height: 1.7; color: #4b5167; margin: 0 0 2rem; max-width: 48ch; }
+    .buy { display: inline-block; background: #1b2338; color: #fff; padding: .85rem 1.6rem;
+           border-radius: .7rem; font-weight: 600; text-decoration: none; font-size: .98rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+            max-width: 72rem; margin: 0 auto; padding: 1rem 2.5rem 6rem; }
+    .card { border: 1px solid #e8eaf2; border-radius: 1rem; overflow: hidden; }
+    .swatch { height: 11rem; }
+    .card div.meta { padding: 1rem 1.15rem 1.3rem; }
+    .card h2 { font-size: 1rem; margin: 0 0 .3rem; }
+    .card p { margin: 0; color: #6b6f80; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">PaperLayer <span>· __DEMO__</span></div>
+    <nav><span>__NAV1__</span><span>__NAV2__</span><span>__NAV3__</span><span>__NAV4__</span></nav>
+    <div class="cart">__CART__</div>
+  </header>
+
+  <section class="hero">
+    <h1>__H1__</h1>
+    <p>
+      __LEDE__
+    </p>
+    <a class="buy" href="#">__CTA__</a>
+  </section>
+
+  <section class="grid">
+    <article class="card">
+      <div class="swatch" style="background: linear-gradient(135deg,#eef1fb,#d8def4)"></div>
+      <div class="meta"><h2>__P1__</h2><p>__P1META__</p></div>
+    </article>
+    <article class="card">
+      <div class="swatch" style="background: linear-gradient(135deg,#fdeef1,#f3d6de)"></div>
+      <div class="meta"><h2>__P2__</h2><p>__P2META__</p></div>
+    </article>
+    <article class="card">
+      <div class="swatch" style="background: linear-gradient(135deg,#eaf6ef,#cfe8da)"></div>
+      <div class="meta"><h2>__P3__</h2><p>__P3META__</p></div>
+    </article>
+  </section>
+
+  <!-- THE SNIPPET, COPIED VERBATIM from what `Channel::WebWidget#web_widget_script` (app/models/channel/
+       web_widget.rb:64-82) produces, with only the token and base URL substituted. Not reformatted: the
+       article quotes this block, and a reader comparing it with the one their own dashboard gives them
+       should find the same characters. -->
+  <script>
+    (function(d,t) {
+      var BASE_URL="__BASE_URL__";
+      var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+      g.src=BASE_URL+"/packs/js/sdk.js";
+      g.async = true;
+      s.parentNode.insertBefore(g,s);
+      g.onload=function(){
+        window.chatwootSDK.run({
+          websiteToken: '__WEBSITE_TOKEN__',
+          baseUrl: BASE_URL
+        })
+      }
+    })(document,"script");
+  </script>
+</body>
+</html>

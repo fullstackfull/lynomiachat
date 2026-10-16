@@ -93,6 +93,11 @@ Metrics/BlockLength:
     - 'config/routes/*.rb'
     - 'config/environments/*'
     - db/schema.rb
+    # The approved marketing content, declared as content: one pass per locale that assembles that locale's
+    # page from the copy tables above it. Splitting it into shorter blocks means several loops over the same
+    # two locales, which Style/CombinableLoops rejects and which is genuinely harder to read -- the order of
+    # the statements inside this one block IS the order the sections land on the page.
+    - 'custom/db/marketing/*.rb'
 
 Metrics/ModuleLength:
   Exclude:

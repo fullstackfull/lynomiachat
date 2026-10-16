@@ -22,6 +22,32 @@ frame. The source stays the whole screen that was photographed, because that is 
 — and a 1440-wide screenshot published whole is 358px on a phone, which is where documentation is
 read and where its annotations stop being legible.
 
+## Measured geometry, and the one thing that is covered
+
+Two numbers in a spec used to be eyeballed off the PNG: where a ring goes, and where a marker's dot
+sits. They are now read off the live page instead. A page in `tools/visual/capture.mjs` may declare
+
+```js
+measure: { 'status-filter': 'button:has(.i-lucide-filter)' }
+```
+
+and the capture writes `<name>.boxes.json` beside the shot, holding each named control's bounding box
+in the shot's own pixels. A spec then says `"box": "status-filter"` instead of a coordinate, and
+`"crop": { "around": ["header", "kpis"], "pad": 16 }` instead of a rectangle. The payoff is not
+tidiness: it is that **one spec crops the same thing in both reading directions**, because under
+`dir=rtl` the sidebar moves to the other side and every x in the screenshot shifts by the sidebar's
+width.
+
+`extendBottom` carries the frame past anything measured, for the chart under a header that has no
+stable handle to measure.
+
+**A redaction covers a credential without editing the capture.** The widget's install snippet contains
+a real website token, which belongs in the screenshot's composition and must not be published. A spec
+may carry `"redact": [{ "box": "token", "label": "your website token" }]`, drawn into the annotation
+layer over the capture — so the source keeps the pixels that were photographed, the figure never
+carries the secret, and nobody has to retouch an image. It is a solid block rather than a blur,
+because a blurred credential still looks like something a reader should go and find.
+
 ## Where the outputs go
 
 They go wherever that consumer's own pipeline requires, because the two systems are different:
@@ -58,6 +84,35 @@ section, a numbered list in a documentation article. A number burnt into a PNG c
 screen reader, translated, indexed, or enlarged by a reader who needs larger type. The picture shows
 *where*; the text says *what*.
 
+## The visitor's side of the website channel
+
+`capture-widget.mjs` shoots the widget on a demo shop served from `tools/visual/widget-host/`, so the
+embed is cross-origin exactly as it is on a real site. The widget takes its language from the browser,
+and the shop takes its language from the script — but three things on it are neither: the **welcome
+heading**, the **tagline** and the **greeting** are fields an operator types into the channel, stored
+once and sent to every visitor as written. Capture an Arabic figure against an English channel and you
+publish an Arabic widget with an English heading in it.
+
+So set the channel's copy to the language you are about to shoot, and set it back afterwards:
+
+```
+bundle exec rails runner 'require "./tools/visual/widget_copy"
+  WidgetCopy.apply!(Account.first.inboxes.find_by!(channel_type: "Channel::WebWidget"), "ar")'
+
+export WIDGET_TOKEN=$(bundle exec rails runner 'puts Account.first.inboxes
+  .find_by(channel_type: "Channel::WebWidget").channel.website_token')
+node tools/visual/capture-widget.mjs --locale ar --out docs/screenshots/sources/widget
+```
+
+`WIDGET_TOKEN` is the channel's own `website_token` and the capture refuses to start without it —
+it is what the widget identifies the channel by, and reading it from the database is the only way
+to be sure the figure is of the channel you just configured rather than a stale one.
+
+Both languages' wording is in `tools/visual/widget_copy.rb`, which `synthetic_fixtures.rb` also reads,
+so the fixture and the capture cannot drift apart. The widget must have members and at least one of
+them online, or every figure comes out in the away state — `tools/visual/agent_presence.rb <seconds>`
+holds that open for the length of a run.
+
 ## When a run stops signing in
 
 Each capture signs in through the real form, and the product caps concurrent sessions per user
@@ -73,6 +128,15 @@ bundle exec rails runner 'u = User.find(1); u.tokens = {}; u.save!; u.user_sessi
 ## Privacy
 
 Every capture is taken against the local seeded database (`rails db:seed`, the `acme.inc` demo
-account). There is no real customer conversation, contact, phone number, address or token in any of
-them. Before a source is committed it is looked at. A screenshot that would need blurring is
-re-captured with different data instead.
+account). There is no real customer conversation, contact, phone number or address in any of them.
+Before a source is committed it is looked at. A screenshot that would need blurring is re-captured
+with different data instead.
+
+**One exception, and it is deliberate: a source can hold a website token.** The install-snippet
+captures (`sources/app/{en,ar}/website-script.png`) show the seeded website channel's token in clear
+text, because that is the screen -- the whole point of the figure is the snippet an administrator
+copies. It is a value `rails db:seed` generated for an inbox whose `BASE_URL` is
+`http://localhost:3000`; it authorises nothing anywhere else, and it is replaced the next time the
+seed is rebuilt. The PUBLISHED figure covers it: the spec carries a `redact` box over the token, and
+that is what the article shows. Treat the uncropped source as dev-only, and never point a `redact`
+at a capture taken against anything but a local seed.

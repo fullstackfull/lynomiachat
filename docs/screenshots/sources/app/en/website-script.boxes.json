@@ -1,0 +1,27 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "deviceScaleFactor": 1
+  },
+  "boxes": {
+    "preview": {
+      "x": 904,
+      "y": 245,
+      "width": 512,
+      "height": 720
+    },
+    "tabs": {
+      "x": 916,
+      "y": 257,
+      "width": 157,
+      "height": 32
+    },
+    "token": {
+      "x": 1099,
+      "y": 514,
+      "width": 188,
+      "height": 14
+    }
+  }
+}

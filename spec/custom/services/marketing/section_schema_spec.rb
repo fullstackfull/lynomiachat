@@ -52,9 +52,17 @@ describe Marketing::SectionSchema do
   # A page an operator saves through the form goes through the model, so the model is where the refusal has
   # to land for the editor to be safe.
   describe 'a page an operator tries to save' do
+    # THE EXISTING ROW, NOT A SECOND ONE. `key` and `slug` are unique per locale, so on any database where the
+    # marketing content has been seeded -- a developer's, after one `rails marketing:content` -- a brand-new
+    # `en/standing/home` is invalid for a reason that has nothing to do with the target being tested, and the
+    # allowed-target example fails while the refused-target example passes for the wrong reason.
     let(:page) do
-      SitePage.new(locale: 'en', kind: 'standing', key: 'home', title: 'Home',
-                   sections: [{ 'type' => 'hero', 'primary_label' => 'Start', 'primary_target' => target }])
+      SitePage.find_or_initialize_by(locale: 'en', kind: 'standing', key: 'home').tap do |row|
+        row.assign_attributes(
+          title: 'Home',
+          sections: [{ 'type' => 'hero', 'primary_label' => 'Start', 'primary_target' => target }]
+        )
+      end
     end
 
     context 'with an allowed target' do

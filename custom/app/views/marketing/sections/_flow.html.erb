@@ -1,0 +1,107 @@
+<%# The product's whole premise, drawn: many channels in, one inbox out.
+
+  WHY A DRAWING AND NOT A SCREENSHOT. This is the one claim on the site that no single screen can evidence
+  -- a screenshot of the inbox shows the destination but not the convergence, which is the part a visitor is
+  trying to understand. So it is drawn, honestly, from the real channel marks: every logo on the left is a
+  channel this installation actually supports, read from Marketing::Catalog, so the diagram cannot promise a
+  channel the product does not have.
+
+  IT MIRRORS. The curves are an SVG that flips with `rtl:-scale-x-100`, and the columns are ordinary grid
+  cells in DOM order, so under Arabic the sources sit on the right and the flow runs right-to-left -- which
+  is the direction the sentence beside it is read in.
+
+  IT COLLAPSES RATHER THAN SHRINKS. Below `lg` the three columns become a vertical stack with a downward
+  arrow: a 3-column diagram squeezed into 390px is a diagram nobody can read, and the relationship it
+  expresses survives being drawn top-to-bottom.
+%>
+<% sources = %i[whatsapp instagram facebook_messenger live_chat telegram email]
+     .select { |id| Marketing::ChannelBrand.marked?(id) } %>
+
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
+    <% if section['heading'].present? || section['lede'].present? %>
+      <div class="mx-auto mb-14 max-w-2xl text-center">
+        <% if section['heading'].present? %>
+          <h2 class="text-balance text-3xl font-semibold tracking-tight text-lyn-ink sm:text-4xl">
+            <%= section['heading'] %>
+          </h2>
+        <% end %>
+        <% if section['lede'].present? %>
+          <p class="mt-4 text-lg leading-relaxed text-lyn-ink-soft"><%= section['lede'] %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# A NOTE FOR THE NEXT PERSON WHO SCREENSHOTS A NEW SECTION AND FINDS IT UNSTYLED. The Vite dev server's
+        Tailwind pass does not rescan `content` when an ERB file is CREATED -- only when the config changes
+        -- so a brand-new partial renders with none of its classes generated and the page looks structurally
+        broken for a reason that is not in the markup. `touch tailwind.config.js` forces the rebuild. A
+        production build scans from scratch and never sees this. %>
+    <div class="grid items-center gap-8 lg:grid-cols-[1fr_7rem_1fr] lg:gap-0">
+      <%# THE SOURCES %>
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
+        <% sources.each do |id| %>
+          <li class="flex items-center gap-3 rounded-2xl border border-lyn-line bg-lyn-paper px-4 py-3">
+            <%= render 'marketing/shared/channel_mark', id: id, size: 32, labelled: false %>
+            <span class="truncate text-sm font-medium text-lyn-ink">
+              <%= t("marketing.channels.#{id}.name", default: id.to_s.humanize) %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+
+      <%# THE CONNECTOR. Decoration: it carries no information the two columns either side do not already
+          carry in text, so it is hidden from assistive technology entirely. %>
+      <div aria-hidden="true" class="flex items-center justify-center">
+        <svg viewBox="0 0 112 180" class="hidden h-44 w-28 text-lyn-indigo/35 lg:block rtl:-scale-x-100"
+             fill="none" stroke="currentColor" stroke-width="1.75" focusable="false">
+          <path d="M0 18c44 0 44 72 108 72"/>
+          <path d="M0 58c30 0 30 32 108 32"/>
+          <path d="M0 90h108"/>
+          <path d="M0 122c30 0 30-32 108-32"/>
+          <path d="M0 162c44 0 44-72 108-72"/>
+          <circle cx="108" cy="90" r="3.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <svg viewBox="0 0 24 40" class="h-10 w-6 text-lyn-indigo/40 lg:hidden"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+          <path d="M12 2v30m0 0-7-7m7 7 7-7"/>
+        </svg>
+      </div>
+
+      <%# THE DESTINATION %>
+      <div class="rounded-3xl bg-lyn-ink p-7 text-white shadow-[0_28px_70px_-30px_rgba(10,23,51,0.7)] sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">
+          <%= section['outbox_label'].presence || t('marketing.brand.name') %>
+        </p>
+        <p class="mt-2.5 text-2xl font-semibold tracking-tight sm:text-3xl">
+          <%= section['inbox_label'].presence || t('marketing.nav.docs') %>
+        </p>
+        <%# INLINE SVG RATHER THAN `i-lucide-*`. The marketing stylesheet compiles against
+            tailwind.marketing.config.js, which deliberately loads NO icon collections -- the site uses four
+            icons and the dashboard's collections are what made the old stylesheet 1.5 MB. An `i-lucide-tag`
+            here generates no rule and renders an empty 16px gap, which is what the first screenshot of this
+            section showed: three bullets with a hole where the mark should be. %>
+        <% glyphs = [
+             'M16 19.2a4.6 4.6 0 0 0-8 0M12 11.4a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6.5 1.1 1.6 1.6 3-3',
+             'M11 3.6H5.4A1.8 1.8 0 0 0 3.6 5.4V11a1.8 1.8 0 0 0 .53 1.27l7.6 7.6a1.8 1.8 0 0 0 2.54 0l6.2-6.2a1.8 1.8 0 0 0 0-2.54l-7.6-7.6A1.8 1.8 0 0 0 11 3.6Zm-3.4 4.3h.01',
+             'M12 7.5V12l2.6 1.6M20.4 12a8.4 8.4 0 1 1-16.8 0 8.4 8.4 0 0 1 16.8 0Z'
+           ] %>
+        <ul class="mt-7 space-y-3.5">
+          <% 3.times do |i| %>
+            <% label = Array(section['items'])[i]&.fetch('title', nil).presence ||
+                         t("marketing.flow.default.#{i}", default: '') %>
+            <% next if label.blank? %>
+            <li class="flex items-center gap-3 rounded-xl bg-white/[0.07] px-4 py-3">
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"
+                   class="size-4 flex-none text-lyn-blue" fill="none" stroke="currentColor"
+                   stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="<%= glyphs[i] %>"/>
+              </svg>
+              <span class="text-sm text-white/85"><%= label %></span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

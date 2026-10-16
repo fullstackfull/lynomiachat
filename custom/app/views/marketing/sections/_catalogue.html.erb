@@ -34,17 +34,17 @@
   <% entries = entries.first(limit) if limit.positive? %>
   <% index_href = marketing_target_href("page:standing:#{source}") %>
 
-  <%# NEUTRAL GLYPHS, NOT THE CHANNELS' OWN LOGOS -- the same rule the hero panel is held to: the channel is
-      named in text beside the mark, which is clearer, needs no trademark, and keeps the section to one
-      colour. They are WRITTEN HERE rather than stored on the catalogue entry, because Tailwind's icon plugin
-      emits a rule only for a class it can see in a scanned file, and an icon name that lived in a Ruby
-      constant or a YAML string would be purged and render as an empty square. An entry with no mark of its
-      own falls back to the generic one rather than leaving a hole in the grid. %>
-  <% channel_glyphs = { whatsapp: 'i-lucide-message-circle', live_chat: 'i-lucide-message-square',
-                        email: 'i-lucide-mail', sms: 'i-lucide-smartphone', telegram: 'i-lucide-send',
-                        line: 'i-lucide-messages-square', facebook_messenger: 'i-lucide-messages-square',
-                        instagram: 'i-lucide-camera', api_channel: 'i-lucide-code',
-                        tiktok: 'i-lucide-video' } %>
+  <%# THE CHANNELS' OWN MARKS, from Marketing::ChannelBrand.
+      This used to be a hash of ten `i-lucide-*` names under a rule that said the channel is named in text
+      beside the mark, so a neutral glyph is clearer and needs no trademark. The result was nine recognisable
+      logos rendered as nine grey outlines -- three of them the SAME outline, because Lucide has no Messenger
+      and no LINE -- and it is the single largest reason the site reads as less alive than the page it
+      replaced. A brand mark used to name the brand it belongs to is nominative use; it is also simply what a
+      reader is looking for when they scan a list of channels for the one they use.
+
+      MARKED CHANNELS ONLY. `marked?` is false for a scope that is not channels and for an id with no mark,
+      and an entry without one renders with no tile rather than with a stand-in: a meaningless glyph repeated
+      down a column is worse than a column of text. %>
 
   <section class="<%= tone %>">
     <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -54,7 +54,10 @@
       <% when 'chips' %>
         <ul class="mt-10 flex flex-wrap gap-2.5">
           <% entries.each do |entry| %>
-            <li class="inline-flex items-center gap-2 rounded-full border border-lyn-line bg-lyn-paper px-4 py-2.5 text-sm font-medium text-lyn-ink">
+            <li class="inline-flex items-center gap-2 rounded-full border border-lyn-line bg-lyn-paper py-1.5 pe-4 ps-1.5 text-sm font-medium text-lyn-ink">
+              <% if scope == :channels && Marketing::ChannelBrand.marked?(entry.id) %>
+                <%= render 'marketing/shared/channel_mark', id: entry.id, size: 28, labelled: false %>
+              <% end %>
               <%= t("marketing.#{scope}.#{entry.id}.name") %>
               <%= render 'marketing/shared/state_badge', state: entry.state %>
             </li>
@@ -65,9 +68,11 @@
         <ul class="mt-12 grid gap-x-12 gap-y-10 lg:grid-cols-2">
           <% entries.each do |entry| %>
             <li class="flex items-start gap-4">
-              <span class="mt-0.5 grid size-11 shrink-0 place-items-center rounded-xl bg-lyn-royal/[0.07] text-lyn-royal" aria-hidden="true">
-                <span class="<%= channel_glyphs.fetch(entry.id, 'i-lucide-message-circle') %> size-5"></span>
-              </span>
+              <% if scope == :channels && Marketing::ChannelBrand.marked?(entry.id) %>
+                <div class="mt-0.5 shrink-0">
+                  <%= render 'marketing/shared/channel_mark', id: entry.id, size: 44, labelled: false %>
+                </div>
+              <% end %>
               <div class="min-w-0">
                 <%= content_tag item_heading, class: 'flex flex-wrap items-center gap-2 text-lg font-semibold text-lyn-ink' do %>
                   <% if entry.detail? %>

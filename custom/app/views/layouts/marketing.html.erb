@@ -20,6 +20,9 @@
     system stack -- `Tahoma, Arial` -- so the primary market's language was set in whatever the visitor's
     operating system happened to ship. %>
   <body class="bg-lyn-paper font-lyn text-lyn-ink antialiased">
+    <%# The channel marks' gradients, declared once for the whole document. See the partial for why an SVG
+        gradient cannot be a CSS background. %>
+    <%= render 'marketing/shared/brand_gradients' %>
     <a href="#main"
        class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:rounded-lg focus:bg-lyn-indigo focus:px-4 focus:py-2 focus:text-white">
       <%= t('marketing.skip_to_content') %>

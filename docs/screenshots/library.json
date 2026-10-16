@@ -97,6 +97,534 @@
       "usedBy": [
         "documentation article ar/conversations/work-in-the-inbox"
       ]
+    },
+    {
+      "key": "channels/website-script-en",
+      "shows": "The website channel's settings with the preview panel switched to Script: the install snippet, with the website token covered",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → the website channel → the preview panel → Script",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/website-script.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-script-en.json",
+          "out": "custom/db/documentation/media/channels/website-script-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-bubble-en",
+      "shows": "The chat bubble in the corner of a demo shop, before anyone clicks it",
+      "app": "widget",
+      "screen": "a customer's own website, with the widget installed",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1280x860",
+      "captured": {
+        "environment": "local dev server, the seeded PaperLayer Website channel, a demo shop served on :4173",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture-widget.mjs --out docs/screenshots/sources/widget"
+      },
+      "source": "docs/screenshots/sources/widget/en/host-closed.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-bubble-en.json",
+          "out": "custom/db/documentation/media/channels/website-bubble-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-widget-open-en",
+      "shows": "The widget open on its welcome heading, tagline, availability and Start Conversation button",
+      "app": "widget",
+      "screen": "a customer's own website, widget open",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1280x860",
+      "captured": {
+        "environment": "local dev server, the seeded PaperLayer Website channel, a demo shop served on :4173",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture-widget.mjs --out docs/screenshots/sources/widget"
+      },
+      "source": "docs/screenshots/sources/widget/en/host-open.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-widget-open-en.json",
+          "out": "custom/db/documentation/media/channels/website-widget-open-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-arrival-en",
+      "shows": "The message that widget sent, open in the agent's inbox on the website channel",
+      "app": "widget",
+      "screen": "Conversations → the conversation the widget created",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set dashboard --only widget-arrival --viewports desktop"
+      },
+      "source": "docs/screenshots/sources/widget/en/agent-arrival.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-arrival-en.json",
+          "out": "custom/db/documentation/media/channels/website-arrival-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "analytics/analytics-overview-en",
+      "shows": "The Analytics overview: the date range, the grouping, and the eight counters",
+      "app": "dashboard",
+      "screen": "Analytics → Overview",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/analytics-overview.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/analytics-overview-en.json",
+          "out": "custom/db/documentation/media/analytics/analytics-overview-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/analytics/analytics-overview"
+      ]
+    },
+    {
+      "key": "analytics/reports-overview-en",
+      "shows": "The Reports overview: the live counters and one week of conversation traffic by day and hour",
+      "app": "dashboard",
+      "screen": "Reports → Overview",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/reports-overview.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/reports-overview-en.json",
+          "out": "custom/db/documentation/media/analytics/reports-overview-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/analytics/reports"
+      ]
+    },
+    {
+      "key": "support/support-cases-en",
+      "shows": "The support case list: references, subjects, statuses, priorities, owners and SLA states",
+      "app": "dashboard",
+      "screen": "Support cases",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/support-cases.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/support/support-cases-en.json",
+          "out": "custom/db/documentation/media/support/support-cases-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/support/support-cases"
+      ]
+    },
+    {
+      "key": "channels/website-script-ar",
+      "shows": "The website channel's settings with the preview panel switched to Script: the install snippet, with the website token covered",
+      "app": "dashboard",
+      "screen": "الإعدادات ← قنوات التواصل ← قناة الموقع ← لوحة المعاينة ← النص",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/website-script.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-script-ar.json",
+          "out": "custom/db/documentation/media/channels/website-script-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-bubble-ar",
+      "shows": "The chat bubble in the corner of a demo shop, before anyone clicks it",
+      "app": "widget",
+      "screen": "a customer's own website, with the widget installed",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1280x860",
+      "captured": {
+        "environment": "local dev server, the seeded PaperLayer Website channel, a demo shop served on :4173",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture-widget.mjs --out docs/screenshots/sources/widget --locale ar"
+      },
+      "source": "docs/screenshots/sources/widget/ar/host-closed.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-bubble-ar.json",
+          "out": "custom/db/documentation/media/channels/website-bubble-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-widget-open-ar",
+      "shows": "The widget open on its welcome heading, tagline, availability and Start Conversation button",
+      "app": "widget",
+      "screen": "a customer's own website, widget open",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1280x860",
+      "captured": {
+        "environment": "local dev server, the seeded PaperLayer Website channel, a demo shop served on :4173",
+        "revision": "8e3fbe73",
+        "command": "bundle exec rails runner 'require \"./tools/visual/widget_copy\"; WidgetCopy.apply!(Account.first.inboxes.find_by!(channel_type: \"Channel::WebWidget\"), \"ar\")' && node tools/visual/capture-widget.mjs --out docs/screenshots/sources/widget --locale ar"
+      },
+      "source": "docs/screenshots/sources/widget/ar/host-open.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-widget-open-ar.json",
+          "out": "custom/db/documentation/media/channels/website-widget-open-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-arrival-ar",
+      "shows": "The message that widget sent, open in the agent's inbox on the website channel",
+      "app": "widget",
+      "screen": "Conversations → the conversation the widget created",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "8e3fbe73",
+        "command": "bundle exec rails runner 'require \"./tools/visual/widget_copy\"; WidgetCopy.apply!(Account.first.inboxes.find_by!(channel_type: \"Channel::WebWidget\"), \"ar\")' && node tools/visual/capture.mjs --set dashboard --only widget-arrival --viewports desktop --locale ar"
+      },
+      "source": "docs/screenshots/sources/widget/ar/agent-arrival.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-arrival-ar.json",
+          "out": "custom/db/documentation/media/channels/website-arrival-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "analytics/analytics-overview-ar",
+      "shows": "The Analytics overview: the date range, the grouping, and the eight counters",
+      "app": "dashboard",
+      "screen": "التحليلات ← نظرة عامة",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/analytics-overview.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/analytics-overview-ar.json",
+          "out": "custom/db/documentation/media/analytics/analytics-overview-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/analytics/analytics-overview"
+      ]
+    },
+    {
+      "key": "analytics/reports-overview-ar",
+      "shows": "The Reports overview: the live counters and one week of conversation traffic by day and hour",
+      "app": "dashboard",
+      "screen": "التقارير ← نظرة عامة",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/reports-overview.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/reports-overview-ar.json",
+          "out": "custom/db/documentation/media/analytics/reports-overview-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/analytics/reports"
+      ]
+    },
+    {
+      "key": "support/support-cases-ar",
+      "shows": "The support case list: references, subjects, statuses, priorities, owners and SLA states",
+      "app": "dashboard",
+      "screen": "حالات الدعم",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/support-cases.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/support/support-cases-ar.json",
+          "out": "custom/db/documentation/media/support/support-cases-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/support/support-cases"
+      ]
+    },
+    {
+      "key": "channels/inbox-new-en",
+      "shows": "The channel picker when adding an inbox, with the channels this installation has not configured greyed out",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → add an inbox",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/inbox-new.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/inbox-new-en.json",
+          "out": "custom/db/documentation/media/channels/inbox-new-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/getting-started/connect-your-first-channel"
+      ]
+    },
+    {
+      "key": "channels/inbox-new-ar",
+      "shows": "The channel picker when adding an inbox, with the channels this installation has not configured greyed out",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → add an inbox",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/inbox-new.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/inbox-new-ar.json",
+          "out": "custom/db/documentation/media/channels/inbox-new-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/getting-started/connect-your-first-channel"
+      ]
+    },
+    {
+      "key": "channels/website-prechat-en",
+      "shows": "The pre-chat form tab: whether it is on, the message above it, and which fields are asked for",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → the website channel → Pre Chat Form",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/website-prechat.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-prechat-en.json",
+          "out": "custom/db/documentation/media/channels/website-prechat-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-prechat-ar",
+      "shows": "The pre-chat form tab: whether it is on, the message above it, and which fields are asked for",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → the website channel → Pre Chat Form",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/website-prechat.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-prechat-ar.json",
+          "out": "custom/db/documentation/media/channels/website-prechat-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-configuration-en",
+      "shows": "The website channel's Configuration tab: allowed domains, mobile web views, and identity validation with its key masked",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → the website channel → Configuration",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/website-configuration.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-configuration-en.json",
+          "out": "custom/db/documentation/media/channels/website-configuration-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "channels/website-configuration-ar",
+      "shows": "The website channel's Configuration tab: allowed domains, mobile web views, and identity validation with its key masked",
+      "app": "dashboard",
+      "screen": "Settings → Inboxes → the website channel → Configuration",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/website-configuration.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/channels/website-configuration-ar.json",
+          "out": "custom/db/documentation/media/channels/website-configuration-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/channels/website-live-chat"
+      ]
+    },
+    {
+      "key": "analytics/analytics-tickets-en",
+      "shows": "Support case analytics: the counters, and the note that says a zero breach count is not the same as nothing being late",
+      "app": "dashboard",
+      "screen": "Analytics → Support cases",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/en/analytics-tickets.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/analytics-tickets-en.json",
+          "out": "custom/db/documentation/media/analytics/analytics-tickets-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/analytics/support-case-analytics"
+      ]
+    },
+    {
+      "key": "analytics/analytics-tickets-ar",
+      "shows": "Support case analytics: the counters, and the note that says a zero breach count is not the same as nothing being late",
+      "app": "dashboard",
+      "screen": "Analytics → Support cases",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + tools/visual/synthetic_fixtures.rb, acme.inc demo account, accounts.locale = ar",
+        "revision": "cfa85cff",
+        "command": "node tools/visual/capture.mjs --set docs --locale ar --viewports desktop --out docs/screenshots/sources/app"
+      },
+      "source": "docs/screenshots/sources/app/ar/analytics-tickets.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/analytics/analytics-tickets-ar.json",
+          "out": "custom/db/documentation/media/analytics/analytics-tickets-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/analytics/support-case-analytics"
+      ]
     }
   ]
 }

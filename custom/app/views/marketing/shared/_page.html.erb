@@ -52,6 +52,21 @@
 
   <% unless lead_hero %>
     <header class="<%= measure %> <%= entry && scope ? 'pt-6' : 'pt-16' %>">
+      <%# THE CHANNEL'S OWN MARK ABOVE ITS NAME. A reader arriving on /channels/whatsapp has usually come
+          looking for one specific app, and the mark confirms they are in the right place before a word of
+          the page is read. Only channels carry one: a feature or a solution is not a brand.
+
+          `entry &&` is the whole reason this page still renders. The catalogue entry is OPTIONAL on a
+          detail page -- Marketing::EntriesController#show says so, and Marketing::Catalog.find answers nil
+          for any slug the catalogue does not hold -- so an operator renaming a channel page's slug, which
+          SitePage::RENAMEABLE_KINDS explicitly allows, left `entry.id` raising on a public URL. Measured:
+          a kind:'channel' row at a fresh slug answered 500 with "undefined method 'id' for nil". Every
+          other `entry` reference in this file was already guarded; this one was not. %>
+      <% if scope == :channels && entry && Marketing::ChannelBrand.marked?(entry.id) %>
+        <div class="mb-6">
+          <%= render 'marketing/shared/channel_mark', id: entry.id, size: 56, labelled: false %>
+        </div>
+      <% end %>
       <h1 class="text-balance text-[2.5rem] font-bold leading-[1.2] tracking-tight text-lyn-ink sm:text-[3.25rem]">
         <%= page.heading.presence || page.title %>
       </h1>
@@ -94,12 +109,17 @@
 
   <%= render 'marketing/shared/sections', sections: body_sections, page: page %>
 
-  <% if entry&.docs || entry&.channel_ids&.any? || entry&.related_ids&.any? %>
+  <%# THE DOCUMENTATION LINK RESOLVES TO THE READER'S OWN LANGUAGE. `entry.docs` names the article's
+      locale-independent key, not its slug -- see MarketingHelper#marketing_docs_article -- so it is resolved
+      here and the block is drawn only when a published article answers it. %>
+  <% docs_article = entry&.docs && marketing_docs_article(entry.docs) %>
+
+  <% if docs_article || entry&.channel_ids&.any? || entry&.related_ids&.any? %>
     <div class="<%= measure %> py-16">
-      <% if entry&.docs %>
+      <% if docs_article %>
         <p>
           <a class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-lyn-line px-5 py-2.5 text-sm font-semibold text-lyn-ink transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
-             href="<%= lynomia_docs_article_path(entry.docs) %>">
+             href="<%= lynomia_docs_article_path(docs_article.slug) %>">
             <%= t('marketing.read_docs') %>
           </a>
         </p>
@@ -112,8 +132,11 @@
             <% entry.channel_ids.each do |channel_id| %>
               <% channel = Marketing::Catalog.channel(channel_id) %>
               <li>
-                <a class="inline-flex min-h-11 items-center rounded-full border border-lyn-line px-4 text-sm font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                <a class="inline-flex min-h-11 items-center gap-2 rounded-full border border-lyn-line py-1 pe-4 ps-1 text-sm font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
                    href="<%= marketing_entry_path(:channels, channel) %>">
+                  <% if Marketing::ChannelBrand.marked?(channel.id) %>
+                    <%= render 'marketing/shared/channel_mark', id: channel.id, size: 28, labelled: false %>
+                  <% end %>
                   <%= t("marketing.channels.#{channel.id}.name") %>
                 </a>
               </li>

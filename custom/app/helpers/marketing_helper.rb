@@ -109,6 +109,21 @@ module MarketingHelper
     marketing_entry_path(scope, entry)
   end
 
+  # THE DOCUMENTATION LINK ON A DETAIL PAGE, IN THE READER'S OWN LANGUAGE. `entry.docs` is the article's
+  # `doc_key` -- the corpus file's basename, which is deliberately the same string in both locales -- while the
+  # row's `slug` is locale-specific: every locale but the default suffixes it, so the Arabic article for
+  # `connect-whatsapp` is published at /docs/connect-whatsapp-ar. Handing the key straight to the route helper
+  # therefore sent every Arabic reader of all eleven detail pages that declare a `docs` slug to the ENGLISH
+  # article. `Documentation::Library.article_for` is the resolver the contextual-help links already use, and it
+  # falls back to the default locale when a language has no translation yet.
+  #
+  # Returns nil when no published article answers the key, and the caller then prints no link rather than one
+  # into a 404. An article's `status` is the operator's column and not the corpus's (the seeder sets it on
+  # create only), so an unpublished article is a state an operator can reach from Super Admin at any time.
+  def marketing_docs_article(doc_key, locale: marketing_locale)
+    Documentation::Library.article_for(doc_key, locale: locale)
+  end
+
   # The published address on the page today. It is rendered as a real mailto: -- the old page printed it as
   # plain text inside a <span>, so the only contact detail on the site was not clickable.
   SUPPORT_EMAIL = 'info@lynomia.com'.freeze
@@ -193,20 +208,27 @@ module MarketingHelper
     end
   end
 
-  # The social-card image: the first `image` section's attachment on this page, as an absolute URL.
+  # The social-card image: the first picture on this page, as an absolute URL.
   #
   # ABSOLUTE AND APP-OWNED. `og:image` is fetched by a crawler with no referer and no session, so it has to
   # be absolute; and it is served from the marketing media route rather than `/rails/active_storage/...`
   # because robots.txt disallows `/rails/` (app/controllers/robots_controller.rb:52) and an ActiveStorage
   # signed id never expires.
+  #
   # THE OPERATOR'S CHOICE FIRST. `meta['og_image_id']` is the SEO field on the page, set on the Super Admin
-  # editor's SEO panel; with nothing set it falls back to the first `image` section, which is what every
-  # seeded page has and what an operator who has not thought about social cards would expect.
+  # editor's SEO panel. With nothing set it falls back to the first picture on the page.
+  #
+  # ANY SECTION THAT CARRIES ONE, not only an `image` section. This used to look for `type == 'image'`, and
+  # the comment claimed that was what every seeded page had -- it was not: no blueprint page declares an
+  # `image` section, so NO PAGE ON THE SITE COULD EMIT AN og:image AT ALL and every share of every URL was a
+  # bare link. Four types hold an `attachment_id` now (hero, image, showcase, walkthrough) and the first in
+  # section order is the right card anyway: on a page that opens with a hero screenshot, that screenshot is
+  # exactly the picture a reader expects to see beside the link.
   def marketing_og_image_url(page)
     return nil if page.nil?
 
     chosen = page.meta['og_image_id'].presence ||
-             Array(page.sections).find { |candidate| candidate['type'] == 'image' }&.fetch('attachment_id', nil)
+             Array(page.sections).filter_map { |candidate| candidate['attachment_id'].presence }.first
     attachment = page.image_for(chosen)
     return nil if attachment.nil?
 

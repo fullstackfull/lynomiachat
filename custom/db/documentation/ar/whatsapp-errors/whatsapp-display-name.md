@@ -15,7 +15,7 @@ seo_description: "ماذا يعني عدم اعتماد الاسم المعرو�
 شركتك.
 
 وهذه كلفة حقيقية — فالرقم المجهول أرجح أن يُهمَل أو يُحجب، وذلك يغذّي
-[تقييم الجودة](whatsapp-quality-and-limits) — لكنها ليست انقطاعاً، ولا شيء هنا يحتاج إعادة ربط.
+[تقييم الجودة](whatsapp-quality-and-limits-ar) — لكنها ليست انقطاعاً، ولا شيء هنا يحتاج إعادة ربط.
 
 ## لماذا يُرفض اسم
 
@@ -47,6 +47,6 @@ seo_description: "ماذا يعني عدم اعتماد الاسم المعرو�
 
 ## مواضيع ذات صلة
 
-- [ماذا تعني حالة الرقم](whatsapp-number-status)
-- [تقييم الجودة وحدود الإرسال](whatsapp-quality-and-limits)
-- [اربط واتساب](connect-whatsapp)
+- [ماذا تعني حالة الرقم](whatsapp-number-status-ar)
+- [تقييم الجودة وحدود الإرسال](whatsapp-quality-and-limits-ar)
+- [اربط واتساب](connect-whatsapp-ar)

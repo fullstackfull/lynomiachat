@@ -183,4 +183,35 @@ module Marketing::Catalog
 
   def self.feature(id) = FEATURES.find { |entry| entry.id == id }
   def self.channel(id) = CHANNELS.find { |entry| entry.id == id }
+
+  # THE BILLING SIDE'S NAME FOR A CHANNEL, TRANSLATED INTO THIS CATALOGUE'S.
+  #
+  # `billing_plans.channel_entitlements` holds Rails class names -- `Channel::Whatsapp`, `Channel::WebWidget`
+  # -- validated against Channels::Capability::BY_CHANNEL_TYPE, which knows twelve of them. This catalogue
+  # knows the TEN the website sells, under its own ids. The two lists are deliberately different sizes:
+  # `Channel::TwilioSms` is the SMS entry's second provider rather than a second channel, and
+  # `Channel::TwitterProfile` is a model with no connect path, which the verified inventory refuses to list
+  # as a product at all.
+  #
+  # A type with no entry here returns nil, and the pricing page renders nothing for it rather than inventing
+  # a name: a plan that sells a channel this site does not describe is a fact for the operator to resolve,
+  # not for a public page to paper over.
+  CHANNEL_TYPES = {
+    'Channel::Whatsapp' => :whatsapp,
+    'Channel::WebWidget' => :live_chat,
+    'Channel::Email' => :email,
+    'Channel::Sms' => :sms,
+    'Channel::TwilioSms' => :sms,
+    'Channel::Telegram' => :telegram,
+    'Channel::Line' => :line,
+    'Channel::FacebookPage' => :facebook_messenger,
+    'Channel::Instagram' => :instagram,
+    'Channel::Api' => :api_channel,
+    'Channel::Tiktok' => :tiktok
+  }.freeze
+
+  def self.channel_for_type(channel_type)
+    id = CHANNEL_TYPES[channel_type.to_s]
+    channel(id) if id
+  end
 end

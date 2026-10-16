@@ -8,25 +8,24 @@ en:
   marketing:
     site_name: Lynomia Chat
     skip_to_content: Skip to content
-    hero_panel:
-      title: Shared inbox
-      live: Live
-      composer: Write your reply…
-      badges:
-        assigned: Assigned automatically
-      rows:
-        one:
-          name: Noura
-          channel: WhatsApp
-          message: Has my order 4821 shipped yet?
-        two:
-          name: Fahad
-          channel: Instagram
-          message: Do you have this in a large?
-        three:
-          name: Latifa
-          channel: Website chat
-          message: I need a tax invoice for my last order
+    flow:
+      default:
+        '0': Assigned to the right person or team
+        '1': Labelled, so it can be found again
+        '2': Prioritised when it cannot wait
+    # THE WHATSAPP PREVIEW's own words. They are here rather than in the operator's section fields because
+    # the preview is an illustration of a message FORMAT -- header, body, footer, quick replies -- and an
+    # operator editing a delivery promise or a price into a picture would be publishing an unreviewed claim.
+    device:
+      whatsapp:
+        account: Business account
+        header: 'Order #4382'
+        body: 'Hi Saeed — your order #4382 is out for delivery and arrives today before 6pm.'
+        footer: Reply STOP to unsubscribe
+        buttons:
+          - Track my order
+          - Talk to the team
+        reply: Got it, thank you
     read_docs: Read the documentation
     breadcrumb: Breadcrumb
     detail:
@@ -233,6 +232,19 @@ en:
           body: >-
             Both billing intervals and both pricing models are supported, and card payment with an invoice
             portal is available once it is configured for this installation.
+      # THE PLAN GRID. Rendered only when an operator has ticked "Listed on website" on at least one active
+      # plan; until then the page shows the quote form and the dimensions above.
+      plans_title: The plans on this installation
+      plans_lede: >-
+        Every plan below is a real plan on this workspace, published by its operator. What it costs, what it
+        includes and what it is capped at come from the plan itself.
+      plan_channels: Channels included
+      plan_channels_all: Every channel this installation supports
+      plan_cta: Ask about this plan
+      plan_cta_aria: Ask about the %{name} plan
+      plans_note: >-
+        There is no self-service checkout on this page. Tell us which plan fits and we will set the workspace
+        up with you.
       interval:
         month: per month
         year: per year

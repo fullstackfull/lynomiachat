@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/app/ar/support-cases.png",
+  "locale": "ar",
+  "dir": "rtl",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 135,
+    "y": 8,
+    "w": 975,
+    "h": 780
+  }
+}

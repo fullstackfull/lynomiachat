@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_16_120400) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1613,6 +1613,138 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "odoo_customer_mappings", force: :cascade do |t|
+    t.bigint "odoo_destination_profile_id", null: false
+    t.integer "account_id", null: false
+    t.string "stripe_customer_id"
+    t.integer "odoo_partner_id"
+    t.string "source_reference", null: false
+    t.integer "state", default: 0, null: false
+    t.string "matched_by"
+    t.string "review_reason"
+    t.datetime "last_synced_at"
+    t.string "last_error_class"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["odoo_destination_profile_id", "account_id"], name: "uniq_odoo_customer_mapping_per_account", unique: true
+    t.index ["odoo_destination_profile_id", "odoo_partner_id"], name: "uniq_odoo_customer_mapping_per_partner", unique: true, where: "(odoo_partner_id IS NOT NULL)"
+    t.index ["odoo_destination_profile_id", "stripe_customer_id"], name: "uniq_odoo_customer_mapping_per_stripe_customer", unique: true, where: "(stripe_customer_id IS NOT NULL)"
+    t.index ["source_reference"], name: "index_odoo_customer_mappings_on_source_reference"
+    t.index ["state", "updated_at"], name: "index_odoo_customer_mappings_on_state"
+  end
+
+  create_table "odoo_destination_profiles", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "source_app", default: "LYNOMIA_CHAT", null: false
+    t.string "environment", null: false
+    t.string "base_url", null: false
+    t.string "database", null: false
+    t.string "username", null: false
+    t.text "credentials"
+    t.string "odoo_version"
+    t.jsonb "odoo_version_info", default: {}, null: false
+    t.string "transport"
+    t.integer "company_id"
+    t.string "company_name"
+    t.integer "journal_id"
+    t.string "journal_name"
+    t.integer "payment_journal_id"
+    t.string "payment_journal_name"
+    t.integer "analytic_account_id"
+    t.string "analytic_account_name"
+    t.integer "default_product_id"
+    t.string "default_product_name"
+    t.boolean "sync_enabled", default: false, null: false
+    t.boolean "post_invoices", default: false, null: false
+    t.boolean "register_payments", default: false, null: false
+    t.datetime "last_connection_test_at"
+    t.jsonb "last_connection_result", default: {}, null: false
+    t.datetime "last_capability_proof_at"
+    t.jsonb "last_capability_proof", default: {}, null: false
+    t.string "blocked_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_odoo_destination_profiles_on_name", unique: true
+    t.index ["source_app", "environment"], name: "uniq_enabled_odoo_destination_per_environment", unique: true, where: "sync_enabled"
+  end
+
+  create_table "odoo_document_mappings", force: :cascade do |t|
+    t.bigint "odoo_destination_profile_id", null: false
+    t.bigint "odoo_customer_mapping_id"
+    t.integer "account_id"
+    t.string "provider", default: "stripe", null: false
+    t.string "provider_object_type", null: false
+    t.string "provider_object_id", null: false
+    t.datetime "occurred_at"
+    t.string "document_kind", null: false
+    t.string "odoo_model"
+    t.integer "odoo_record_id"
+    t.string "odoo_document_reference"
+    t.string "odoo_state"
+    t.string "odoo_payment_state"
+    t.datetime "odoo_state_read_at"
+    t.bigint "amount_minor"
+    t.string "currency"
+    t.string "source_reference", null: false
+    t.string "idempotency_key", null: false
+    t.integer "state", default: 0, null: false
+    t.string "needs_review_reason"
+    t.string "last_error_class"
+    t.datetime "posted_at"
+    t.datetime "last_synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "occurred_at"], name: "index_odoo_document_mappings_on_account"
+    t.index ["idempotency_key"], name: "uniq_odoo_document_mapping_idempotency_key", unique: true
+    t.index ["odoo_customer_mapping_id"], name: "index_odoo_document_mappings_on_odoo_customer_mapping_id"
+    t.index ["odoo_destination_profile_id", "provider", "provider_object_id"], name: "index_odoo_document_mappings_on_provider_object"
+    t.index ["source_reference"], name: "index_odoo_document_mappings_on_source_reference"
+    t.index ["state", "occurred_at"], name: "index_odoo_document_mappings_on_state"
+  end
+
+  create_table "odoo_sync_attempts", force: :cascade do |t|
+    t.bigint "odoo_sync_event_id", null: false
+    t.integer "attempt_number", null: false
+    t.string "outcome", null: false
+    t.string "odoo_model"
+    t.string "odoo_method"
+    t.integer "odoo_record_id"
+    t.string "error_class"
+    t.string "error_code"
+    t.string "reason", limit: 500
+    t.integer "duration_ms"
+    t.datetime "started_at", null: false
+    t.datetime "created_at", null: false
+    t.index ["odoo_sync_event_id", "attempt_number"], name: "uniq_odoo_sync_attempt_per_event", unique: true
+    t.index ["outcome", "created_at"], name: "index_odoo_sync_attempts_on_outcome"
+  end
+
+  create_table "odoo_sync_events", force: :cascade do |t|
+    t.bigint "odoo_destination_profile_id", null: false
+    t.integer "account_id"
+    t.string "provider", default: "stripe", null: false
+    t.string "provider_event_id"
+    t.string "event_type", null: false
+    t.string "provider_object_type", null: false
+    t.string "provider_object_id", null: false
+    t.string "origin", null: false
+    t.integer "state", default: 0, null: false
+    t.integer "attempts_count", default: 0, null: false
+    t.datetime "run_after"
+    t.datetime "claimed_at"
+    t.datetime "completed_at"
+    t.string "last_error_class"
+    t.string "blocked_reason"
+    t.string "dedup_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_odoo_sync_events_on_account"
+    t.index ["dedup_key"], name: "uniq_odoo_sync_event_dedup_key", unique: true
+    t.index ["odoo_destination_profile_id", "created_at"], name: "index_odoo_sync_events_on_profile"
+    t.index ["state", "run_after"], name: "index_odoo_sync_events_on_state_and_run_after"
+    t.index ["updated_at"], name: "index_odoo_sync_events_on_unhealthy", where: "(state = ANY (ARRAY[4, 5, 6]))"
+  end
+
   create_table "operations_signal_events", force: :cascade do |t|
     t.bigint "operations_signal_id", null: false
     t.string "event_type", null: false
@@ -2211,6 +2343,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
   add_foreign_key "flow_versions", "users", column: "published_by_id", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "mobile_auth_identities", "users", on_delete: :cascade
+  add_foreign_key "odoo_customer_mappings", "odoo_destination_profiles"
+  add_foreign_key "odoo_document_mappings", "odoo_customer_mappings"
+  add_foreign_key "odoo_document_mappings", "odoo_destination_profiles"
+  add_foreign_key "odoo_sync_attempts", "odoo_sync_events"
+  add_foreign_key "odoo_sync_events", "odoo_destination_profiles"
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify

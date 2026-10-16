@@ -97,8 +97,10 @@ module Marketing::SectionSchema
       items: %w[title body]
     },
     # How the channels converge: sources on one side, the one inbox on the other, drawn rather than
-    # described. The operator owns the labels; which channels appear comes from the catalogue.
-    'flow' => { fields: %w[heading lede inbox_label outbox_label] }
+    # described. The operator owns the labels; which channels appear comes from the catalogue. The three
+    # `items` are what the inbox does to a conversation once it arrives -- they fall back to the locale
+    # file, so a flow block added with no items still reads.
+    'flow' => { fields: %w[heading lede inbox_label outbox_label], items: %w[title] }
   }.freeze
 
   # The only values `catalogue.source` may take: the catalogue's own collections.
@@ -183,6 +185,20 @@ module Marketing::SectionSchema
       return nil unless type?(type)
 
       base = { 'type' => type }
+      # THE ENRICHMENT MARKER, allowed on every type rather than listed per type.
+      #
+      # `Marketing::PageEnrichment` adds a section to a page that ALREADY EXISTS -- which the content seeder
+      # deliberately will not do, because it never overwrites an operator's row. Being able to run that
+      # safely, twice, on a live site needs one thing: a way to recognise a section this repository added, so
+      # a second run can leave it alone instead of adding it again. That is this key, and it survives `coerce`
+      # for the same reason `type` does.
+      #
+      # It is NOT operator copy and nothing renders it. An operator who removes an enriched section removes
+      # its key with it, which is the correct outcome: the enrichment is declared applied only while the
+      # section is on the page, and a deliberate deletion is not something to undo on the next deploy -- see
+      # the `--readd` flag, which is how an operator asks for it back on purpose.
+      key = section['key'].to_s.strip
+      base['key'] = key if key.present? && key.length <= 120
       fields_for(type).each do |field|
         value = clamp(section[field], field)
         base[field] = value if value.present?

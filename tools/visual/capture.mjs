@@ -296,6 +296,32 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
           await page.waitForTimeout(2500);
         }
 
+        // LAZY IMAGES DO NOT LOAD FOR A FULL-PAGE SCREENSHOT UNLESS THE PAGE IS SCROLLED.
+        //
+        // `fullPage` resizes the capture viewport, it does not visit the page: an `<img loading="lazy">`
+        // below the fold never enters the viewport, never fetches, and lands in the PNG as an empty box.
+        // The first marketing page to carry real product screenshots came out with three blank grey
+        // rectangles where the product was -- evidence that looked like a rendering bug and was in fact the
+        // camera. Everything on this site that matters is a lazy image, so this runs for every page.
+        //
+        // Scroll to the bottom in viewport-sized steps, wait for every `<img>` to report complete, then
+        // return to the top so the shot still starts where the reader does.
+        await page.evaluate(async () => {
+          const step = window.innerHeight;
+          for (let y = 0; y < document.body.scrollHeight; y += step) {
+            window.scrollTo(0, y);
+            await new Promise(resolve => setTimeout(resolve, 120));
+          }
+          window.scrollTo(0, 0);
+        });
+        await page
+          .waitForFunction(
+            () => [...document.images].every(img => img.complete),
+            { timeout: 15000 }
+          )
+          .catch(() => {});
+        await page.waitForTimeout(400);
+
         await page.screenshot({ path: file, fullPage: !set.signIn });
         captured += 1;
         process.stdout.write(`${file}\n`);

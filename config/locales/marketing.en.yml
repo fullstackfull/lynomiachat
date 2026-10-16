@@ -27,6 +27,11 @@ en:
           name: Latifa
           channel: Website chat
           message: I need a tax invoice for my last order
+    flow:
+      default:
+        '0': Assigned to the right person or team
+        '1': Labelled, so it can be found again
+        '2': Prioritised when it cannot wait
     read_docs: Read the documentation
     breadcrumb: Breadcrumb
     detail:

@@ -100,10 +100,10 @@ seo_description: "مسودة ومُرسَل وقيد المراجعة ومواف
 
 ## مواضيع ذات صلة
 
-- [قوالب واتساب](whatsapp-templates)
-- [نافذة الـ24 ساعة في واتساب](the-whatsapp-24-hour-window)
-- [حملات واتساب](whatsapp-campaigns)
-- [حين لا يعمل واتساب](whatsapp-troubleshooting)
+- [قوالب واتساب](whatsapp-templates-ar)
+- [نافذة الـ24 ساعة في واتساب](the-whatsapp-24-hour-window-ar)
+- [حملات واتساب](whatsapp-campaigns-ar)
+- [حين لا يعمل واتساب](whatsapp-troubleshooting-ar)
 
 ## إذا لم ينجح الأمر
 

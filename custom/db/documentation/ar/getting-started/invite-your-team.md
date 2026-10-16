@@ -83,9 +83,9 @@ seo_description: أضف أشخاصاً إلى لينوميا تشات، واخت
 
 ## مواضيع ذات صلة
 
-- [اربط أول قناة](connect-your-first-channel)
-- [الأدوار والصلاحيات](roles-and-permissions)
-- [الفرق ووكلاء الدعم](teams-and-agents)
+- [اربط أول قناة](connect-your-first-channel-ar)
+- [الأدوار والصلاحيات](roles-and-permissions-ar)
+- [الفرق ووكلاء الدعم](teams-and-agents-ar)
 
 ## إذا لم ينجح الأمر
 

@@ -144,7 +144,7 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
     # identity collisions that only a set comparison can see.
     def problems
       files = sections.flat_map(&:files)
-      @unparsed + files.flat_map { |file| file_problems(file) } + slug_problems(files)
+      @unparsed + files.flat_map { |file| file_problems(file) } + slug_problems(files) + link_problems(files)
     end
 
     private
@@ -235,6 +235,41 @@ class Documentation::ContentSeeder # rubocop:disable Metrics/ClassLength
       reserved + files.group_by(&:slug).select { |_slug, claimants| claimants.size > 1 }.map do |slug, claimants|
         "#{slug.inspect} is the slug of #{claimants.map(&:source_path).join(' and ')}: articles.slug is globally " \
           'unique, so these files cannot both be seeded'
+      end
+    end
+
+    # A CROSS-LINK THAT LEAVES THE READER'S LANGUAGE. An article links to another with a bare slug --
+    # `[Connect WhatsApp](connect-whatsapp)` -- and the browser resolves that against the article's own URL,
+    # `/docs/<slug>`. Every locale but the default SUFFIXES its slug, so the same bare target written in an
+    # Arabic article resolves to `/docs/connect-whatsapp`: the ENGLISH article, silently, with no 404 to notice.
+    # Measured on the corpus this check was written for: 672 links in 86 Arabic articles, every one of them
+    # landing in English.
+    #
+    # Nothing downstream can catch it. The link is valid, the target exists, and the page it opens is a real
+    # page -- just not the one the reader is reading in. So it is caught here, against the slugs this run is
+    # actually seeding, and the fix is in the corpus rather than in a renderer that would have to guess.
+    def link_problems(files)
+      slugs = files.group_by(&:locale).transform_values { |group| group.to_set(&:slug) }
+      files.flat_map do |file|
+        relative_targets(file.body).filter_map do |target|
+          next if slugs.fetch(file.locale, Set.new).include?(target)
+
+          "#{file.source_path}: [..](#{target}) resolves to another language's article. In #{file.locale} the " \
+            "slug is #{target}-#{file.locale}"
+        end
+      end
+    end
+
+    # Only the bare ones. A target with a scheme, a slash or a fragment is an address the author chose, and an
+    # external link is nobody's business here. Parsed rather than scanned, for the reason the media walk is.
+    def relative_targets(body)
+      CommonMarker.render_doc(body, :DEFAULT, [:table]).walk.filter_map do |node|
+        next unless node.type == :link
+
+        url = node.url.to_s
+        next unless url.match?(/\A[a-z0-9][a-z0-9\-]*\z/)
+
+        url
       end
     end
 

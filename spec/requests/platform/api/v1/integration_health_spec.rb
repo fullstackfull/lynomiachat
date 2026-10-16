@@ -96,6 +96,30 @@ RSpec.describe 'Platform Integration Health API', type: :request do
         .to include('source' => 'commerce_store', 'signal' => 'connection_failed', 'severity' => 'critical')
     end
 
+    # THE COUNT IS THE COUNT, NOT THE LENGTH OF THE LIST.
+    #
+    # `recent` is capped at SIGNAL_LIMIT so a page does not render thirty rows. `open` used to
+    # be that capped list's size, so it saturated at 20 while `by_source` -- in the same
+    # payload, about the same installation -- went on summing to the real number. Both
+    # consoles render `open` as "open issues", so an operator was shown a figure that
+    # contradicted the one beside it precisely when an installation was worst off.
+    it 'counts every open signal even though it lists only the most recent' do
+      over = Operations::IntegrationHealth::SIGNAL_LIMIT + 3
+
+      over.times do |i|
+        Operations::SignalRecorder.new(source: 'commerce_store', account: account,
+                                       subject: create(:commerce_store, account: account,
+                                                                        external_store_id: "overflow-#{i}"))
+                                  .record('connection_failed', severity: :critical, reason: 'provider refused')
+      end
+
+      get url, headers: headers
+
+      expect(body['signals']['open']).to eq(over)
+      expect(body['signals']['by_source']['commerce_store']).to eq(over)
+      expect(body['signals']['recent'].size).to eq(Operations::IntegrationHealth::SIGNAL_LIMIT)
+    end
+
     # A workspace problem that is not this integration's is Lynomia's business with the
     # merchant, not the partner's.
     it 'leaves out a signal about something the partner cannot act on' do

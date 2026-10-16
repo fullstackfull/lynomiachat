@@ -82,6 +82,38 @@ RSpec.describe 'Super Admin Partner Integrations', type: :request do
       end
     end
 
+    # THE ACTIVITY TABLE, WITH A ROW IN IT.
+    #
+    # Every example above renders this page with an EMPTY recent_activity, so the loop that
+    # renders each row never ran and a method that does not exist on the entry was never
+    # called -- which is how `entry.user_name` shipped. The column on `audits` is `username`.
+    #
+    # The row here is deliberately one Commerce wrote for itself rather than one a partner
+    # asked for: a partner-initiated transition carries `partner_actor`, and `||` would have
+    # short-circuited past the broken call. Commerce's own rows carry no such key, and they
+    # are the ordinary case -- a connection, a credential rotation, a provider failure.
+    it 'names who acted on an activity row that no partner asked for' do
+      Commerce::AuditTrail.record('commerce.credentials_rotated', auditable: store, user: nil,
+                                                                  changes: { 'status' => 'rotated' })
+
+      get "/super_admin/partner_integrations/app?id=#{partner_app.id}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('commerce.credentials_rotated')
+      expect(response.body).to include('rotated')
+    end
+
+    it 'prefers the partner that asked over the trail own actor name' do
+      Commerce::AuditTrail.record('commerce.installation_lifecycle', auditable: store, user: nil,
+                                                                     changes: { 'partner_actor' => 'ops@storesyria.test',
+                                                                                'transition' => 'suspend' })
+
+      get "/super_admin/partner_integrations/app?id=#{partner_app.id}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include('ops@storesyria.test')
+    end
+
     it 'shows an open issue against one of the integration workspaces' do
       Operations::SignalRecorder.new(source: 'commerce_store', account: account, subject: store)
                                 .record('connection_failed', severity: :critical, reason: 'provider refused')

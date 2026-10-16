@@ -197,6 +197,9 @@ en:
         # P6E. The installation's own workspace may send operational notices only.
         platform_promotional_refused: 'Not sent: the platform workspace may send operational templates only. Meta classifies this template as something else.'
         platform_allowance_exhausted: 'Not sent: the platform workspace has used its message allowance for this period.'
+        # A setup error, not a state the product reaches on its own: the platform plan must set
+        # campaign_sends, and provisioning refuses one that does not. Somebody removed it afterwards.
+        platform_allowance_unset: 'Not sent: the platform workspace plan no longer sets a message allowance, so platform sending is not counted. An operator must restore it.'
       contact_info_request:
         unsupported_provider: 'Contact information requests are currently available only for WhatsApp Cloud inboxes.'
         phone_already_available: 'This contact already has a phone number.'

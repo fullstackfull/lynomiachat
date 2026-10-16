@@ -31,8 +31,9 @@ class Operations::IntegrationHealth
   # merchant's business with Lynomia, not Store Syria's.
   SOURCES = %w[commerce_store campaign webhook queue].freeze
 
-  # Enough to diagnose, few enough to stay one query. An installation with more open incidents
-  # than this has one problem, not thirty.
+  # How many of the open signals are LISTED. The count beside them is the real total: a reader
+  # who is shown twenty rows and told there are twenty has been told the wrong thing when there
+  # are fifty.
   SIGNAL_LIMIT = 20
 
   def initialize(account, platform_app)
@@ -47,7 +48,7 @@ class Operations::IntegrationHealth
       account: { id: @account.id, name: @account.name },
       status: Operations::Health.worst(components),
       installations: installations,
-      signals: { open: open_signals.size, by_source: signals_by_source, recent: recent_signals },
+      signals: { open: open_signal_count, by_source: signals_by_source, recent: recent_signals },
       consent: consent,
       messaging: messaging,
       generated_at: Time.current.utc.iso8601
@@ -101,19 +102,27 @@ class Operations::IntegrationHealth
     store.health&.health_status || Operations::Health::UNKNOWN
   end
 
+  # THE COUNT IS COUNTED, NOT MEASURED OFF THE LIST.
+  #
+  # `recent` is capped at SIGNAL_LIMIT because a page does not need thirty rows. `open` is how
+  # many there are, and taking it from the capped list made it saturate at 20 while
+  # `by_source`, in the same payload, went on summing to the real number -- two figures about
+  # one installation disagreeing, in a projection whose whole purpose is that the two consoles
+  # read the same facts. Both consoles render `open` as "open issues".
+  def open_signal_count
+    @open_signal_count ||= open_scope.count
+  end
+
   def open_signals
-    @open_signals ||= Operations::Signal.open_signals
-                                        .where(account_id: @account.id, source: SOURCES)
-                                        .recent_first
-                                        .limit(SIGNAL_LIMIT)
-                                        .to_a
+    @open_signals ||= open_scope.recent_first.limit(SIGNAL_LIMIT).to_a
+  end
+
+  def open_scope
+    Operations::Signal.open_signals.where(account_id: @account.id, source: SOURCES)
   end
 
   def signals_by_source
-    Operations::Signal.open_signals
-                      .where(account_id: @account.id, source: SOURCES)
-                      .group(:source)
-                      .count
+    open_scope.group(:source).count
   end
 
   # The categorisation an operator acts on: where it came from, what was observed, how bad,

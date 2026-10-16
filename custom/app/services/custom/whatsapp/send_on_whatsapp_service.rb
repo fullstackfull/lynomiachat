@@ -40,8 +40,22 @@
 # unconditionally, so a shopper typing STOP writes a `withdrawn` row in any account at all,
 # and a withdrawal blocks either way.
 module Custom::Whatsapp::SendOnWhatsappService
+  # THE ORDER IS THE DESIGN, AND THE ALLOWANCE COMES LAST.
+  #
+  #   category   what the platform workspace may say at all. First, because `consent_purpose`
+  #              answers nil for a promotional template in an account with no commerce
+  #              feature -- and the platform workspace has no commerce store -- so consent
+  #              alone would let a MARKETING template through to anybody who had not
+  #              explicitly refused.
+  #   consent    what this person agreed to. Applies to every account, platform or not.
+  #   allowance  taking a unit. LAST, because `Billing::MeteredUsage.consume` INCREMENTS the
+  #              counter: running it before consent spent a unit of the platform's period on
+  #              a message that was then refused and never handed to a provider. The meter
+  #              counts attempts on purpose -- a message given to the provider is spent
+  #              whatever becomes of it -- but a message the system itself refused was never
+  #              an attempt.
   def send_template_message
-    refusal = platform_refusal || consent_refusal
+    refusal = category_refusal || consent_refusal || allowance_refusal
     return message.update!(status: :failed, external_error: I18n.t("errors.whatsapp.consent.#{refusal}")) if refusal
 
     super
@@ -71,10 +85,34 @@ module Custom::Whatsapp::SendOnWhatsappService
   # AND IT IS METERED HERE. P6D requires the platform plan to set `campaign_sends` precisely
   # so platform sending is counted, but that meter lives on the campaign path and this is the
   # conversation path, which would otherwise bypass it entirely -- an unmetered, unrecorded
-  # channel out of a workspace whose whole point was that its sending is bounded.
-  def platform_refusal
-    return nil unless conversation.account.platform_owned?
-    return :platform_promotional_refused unless template_category == 'UTILITY'
+  # channel out of a workspace whose whole point was that its sending is bounded. The unit is
+  # taken after consent, not before: see `send_template_message` for why that order matters.
+  def platform_workspace? = conversation.account.platform_owned?
+
+  def category_refusal
+    return nil unless platform_workspace?
+
+    :platform_promotional_refused unless template_category == 'UTILITY'
+  end
+
+  # NO CEILING IS A REFUSAL HERE, AND NOWHERE ELSE IN THE PRODUCT.
+  #
+  # `Billing::MeteredUsage.consume` returns immediately on a nil limit WITHOUT writing a
+  # counter row -- correct for a merchant, whose plan may simply not meter sends, and the
+  # reason that feature could ship inert. For the platform workspace it is the opposite:
+  # P6D refuses to provision it on a plan that does not set `campaign_sends`, precisely so
+  # its sending is bounded and recorded. Nothing holds that true afterwards. An operator
+  # editing the plan, or the partner's own token through the billing plans endpoint, can
+  # remove the limit from under a live workspace, and `consume` would then wave every send
+  # through uncounted -- the unmetered channel the provisioning check exists to prevent,
+  # arrived at by a different door.
+  #
+  # So the absence of a ceiling is a refusal for this account. It is a setup error, it can
+  # only be the result of somebody editing the plan, and failing loudly is what the operator
+  # needs: a workspace that quietly stops counting looks exactly like one that is working.
+  def allowance_refusal
+    return nil unless platform_workspace?
+    return :platform_allowance_unset if Billing::Entitlements.limit(conversation.account, 'campaign_sends').nil?
 
     Billing::MeteredUsage.consume(conversation.account) ? :platform_allowance_exhausted : nil
   end

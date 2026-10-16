@@ -128,7 +128,7 @@
           <tr class="border-b border-slate-100">
             <td class="py-2 whitespace-nowrap"><%= entry.created_at.utc.strftime('%Y-%m-%d %H:%M') %></td>
             <td class="py-2"><%= entry.comment %></td>
-            <td class="py-2"><%= entry.audited_changes['partner_actor'] || entry.user_name || 'system' %></td>
+            <td class="py-2"><%= entry.audited_changes['partner_actor'] || entry.username || 'system' %></td>
             <td class="py-2 text-slate-600">
               <%= entry.audited_changes.slice('transition', 'reason', 'status').values.join(' — ').presence || '—' %>
             </td>

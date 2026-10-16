@@ -92,6 +92,40 @@ RSpec.describe 'sending from the platform workspace', type: :model do
       expect { send_template('new_feature') }
         .not_to(change { BillingUsageCounter.where(account_id: account.id).sum(:used) })
     end
+
+    # A PLAN THAT STOPPED METERING IS A REFUSAL, NOT A FREE PASS.
+    #
+    # Billing::PlatformWorkspace refuses to provision this workspace on a plan with no
+    # `campaign_sends`, so that its sending is bounded and recorded. Nothing holds that true
+    # afterwards: an operator editing the plan -- or the partner's own token through the
+    # billing plans endpoint, since the platform account is one of its permissibles -- can
+    # remove the limit from under a live workspace. `MeteredUsage.consume` returns nil on a
+    # nil limit without writing a counter, which is right for a merchant and is the unmetered
+    # channel the provisioning check exists to prevent for this account.
+    it 'refuses to send at all once the plan stops setting an allowance' do
+      plan.update!(limits: plan.limits.except('campaign_sends'))
+
+      message = send_template('integration_broken')
+
+      expect(message.status).to eq('failed')
+      expect(message.external_error).to include('no longer sets a message allowance')
+      expect(BillingUsageCounter.where(account_id: account.id).sum(:used)).to eq(0)
+    end
+
+    # NOR DOES A CONSENT REFUSAL, and that is the ordering this pins. `consume` INCREMENTS
+    # the counter, so taking the unit before asking about consent spent a unit of the
+    # platform's period on a message the system itself then refused and never handed to a
+    # provider. The meter counts attempts deliberately -- a message given to Meta is spent
+    # whatever becomes of it -- but this was never an attempt.
+    it 'does not spend the allowance on a notice the recipient refused' do
+      Commerce::MessagingConsents.record(
+        account: account, contact: merchant,
+        decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+      )
+
+      expect { send_template('integration_broken') }
+        .not_to(change { BillingUsageCounter.where(account_id: account.id).sum(:used) })
+    end
   end
 
   # The rules above are the PLATFORM workspace's. A merchant's workspace is unaffected --

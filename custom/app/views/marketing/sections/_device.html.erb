@@ -1,0 +1,152 @@
+<%# THE CHANNEL AS THE CUSTOMER SEES IT.
+
+  WHY THIS IS DRAWN AND EVERY OTHER PICTURE ON THE SITE IS PHOTOGRAPHED. The rest of the page shows the
+  agent's screen, and those are real captures because that screen is ours to photograph. This is the other
+  end of the conversation -- a customer's own phone -- and there is no honest screenshot of it to take. So it
+  is drawn, and the section says in the reader's language exactly what it is drawing: the shape of an
+  approved WhatsApp template, which this product builds, validates and sends.
+
+  AND THE SHAPE IS NOT INVENTED. A template is HEADER / BODY / FOOTER / BUTTONS, buttons are QUICK_REPLY, URL,
+  PHONE_NUMBER or COPY_CODE, and there may be up to ten of them -- Whatsapp::Templates::Validator:20-25. The
+  preview shows an image header, a body with a variable filled in, a footer and two quick replies, because
+  that is a template this product can actually produce.
+
+  THE WORDS IN THE PHONE ARE IN THE LOCALE FILE, not in the operator's fields. It is an illustration of a
+  message format; an operator editing a delivery time or a price into it would be writing an unreviewed claim
+  into a picture. The operator owns the heading, the standfirst, the four points and the link.
+
+  THE BRAND MARK IS NOMINATIVE. WhatsApp's own mark names the channel this is a message on, from the one
+  place every channel mark on this site lives, so the preview cannot show a logo for a channel the
+  installation does not support.
+%>
+<% mark = Marketing::ChannelBrand.marked?(:whatsapp) %>
+<% link = marketing_target_href(section['link_target']) %>
+<% points = Array(section['items']).filter_map { |item| item['title'].presence }.first(4) %>
+
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
+    <div class="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-20">
+      <div>
+        <% if section['kicker'].present? %>
+          <p class="text-sm font-semibold uppercase tracking-[0.12em] text-lyn-royal"><%= section['kicker'] %></p>
+        <% end %>
+        <% if section['heading'].present? %>
+          <h2 class="mt-3 text-balance text-3xl font-semibold tracking-tight text-lyn-ink sm:text-4xl">
+            <%= section['heading'] %>
+          </h2>
+        <% end %>
+        <% if section['lede'].present? %>
+          <p class="mt-5 max-w-xl text-lg leading-relaxed text-lyn-ink-soft"><%= section['lede'] %></p>
+        <% end %>
+
+        <% if points.any? %>
+          <ul class="mt-8 grid gap-3 sm:grid-cols-2">
+            <% points.each do |point| %>
+              <li class="flex items-start gap-3">
+                <%# The tick is the only mark in this list and it is decoration: the sentence beside it is the
+                    content, so it is hidden rather than labelled nine times over. %>
+                <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"
+                     class="mt-0.5 size-5 flex-none text-lyn-indigo" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m20 6-11 11-5-5"/>
+                </svg>
+                <span class="text-[0.95rem] leading-relaxed text-lyn-ink"><%= point %></span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <% if link.present? && section['link_label'].present? %>
+          <a href="<%= link %>"
+             class="mt-8 inline-flex min-h-11 items-center gap-2 text-base font-semibold text-lyn-royal transition-colors hover:text-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+            <%= section['link_label'] %>
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="size-4 rtl:-scale-x-100"
+                 fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h13m0 0-5-5m5 5-5 5"/>
+            </svg>
+          </a>
+        <% end %>
+      </div>
+
+      <%# THE PHONE.
+
+          `dir="ltr"` IS DELIBERATE AND NOT A BUG. A WhatsApp thread puts the other party's messages on the
+          left and yours on the right in both writing directions -- the app does not mirror its thread -- so
+          mirroring this preview under Arabic would be drawing a screen the reader has never seen. The Arabic
+          TEXT inside it still reads right-to-left, because each bubble carries the paragraph direction of its
+          own content.
+
+          THE WHOLE DEVICE IS `aria-hidden`. It is an illustration of a message format; the points beside it
+          carry the meaning, and reading a drawing of a phone aloud -- chrome, timestamps, tick marks -- tells
+          a screen-reader user nothing they are not already being told in a sentence. %>
+      <div class="mx-auto w-full max-w-[20rem]">
+        <%# `aria-hidden` SITS ON THE DEVICE AND NOT ON THIS COLUMN, because the note below it is the one
+            sentence a reader who cannot see the picture needs -- and `aria-hidden` on an ancestor cannot be
+            undone by a descendant, so a note inside the device would have been hidden with it. %>
+        <div class="rounded-[2.25rem] bg-lyn-ink p-2.5 shadow-[0_40px_80px_-30px_rgba(10,23,51,0.55)]"
+             aria-hidden="true" dir="ltr">
+          <div class="overflow-hidden rounded-[1.75rem] bg-[#ECE5DD]">
+            <div class="flex items-center gap-2.5 bg-lyn-ink px-4 py-3 text-lyn-paper">
+              <% if mark %>
+                <%= render 'marketing/shared/channel_mark', id: :whatsapp, size: 28, labelled: false %>
+              <% end %>
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold"><%= "#{t('marketing.brand.name')} #{t('marketing.brand.suffix')}" %></p>
+                <p class="truncate text-[0.7rem] text-lyn-paper/60"><%= t('marketing.device.whatsapp.account') %></p>
+              </div>
+            </div>
+
+            <div class="space-y-2 px-3 py-4">
+              <div class="max-w-[90%] rounded-2xl rounded-ss-sm bg-white p-2.5 shadow-sm">
+                <%# THE IMAGE HEADER, drawn as the placeholder it is rather than as a stock photograph: a
+                    template's header is whatever media the sender attaches, and inventing a product shot here
+                    would be inventing a customer's catalogue. %>
+                <div class="flex h-20 items-center justify-center rounded-xl bg-gradient-to-br from-lyn-royal to-lyn-indigo text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-white/90">
+                  <%= t('marketing.device.whatsapp.header') %>
+                </div>
+                <p class="mt-2.5 text-[0.82rem] leading-relaxed text-lyn-ink" dir="auto">
+                  <%= t('marketing.device.whatsapp.body') %>
+                </p>
+                <p class="mt-2 text-[0.68rem] text-lyn-ink-soft/70" dir="auto">
+                  <%= t('marketing.device.whatsapp.footer') %>
+                </p>
+                <p class="mt-1 text-end text-[0.62rem] text-lyn-ink-soft/60">10:30</p>
+              </div>
+
+              <%# THE QUICK REPLIES, drawn as the buttons WhatsApp renders under a template rather than as
+                  controls: nothing here is operable, and a <button> in a picture is a tab stop that does
+                  nothing when it is reached. %>
+              <div class="max-w-[90%] space-y-1">
+                <% t('marketing.device.whatsapp.buttons').each do |label| %>
+                  <p class="rounded-xl bg-white py-2 text-center text-[0.78rem] font-medium text-[#1d8aed] shadow-sm" dir="auto">
+                    <%= label %>
+                  </p>
+                <% end %>
+              </div>
+
+              <div class="ms-auto flex max-w-[85%] items-end gap-1.5 rounded-2xl rounded-ee-sm bg-[#D9FDD3] p-2.5 shadow-sm">
+                <p class="text-[0.82rem] leading-relaxed text-lyn-ink" dir="auto">
+                  <%= t('marketing.device.whatsapp.reply') %>
+                </p>
+                <span class="flex flex-none items-center gap-0.5 self-end pb-0.5 text-[0.62rem] text-lyn-ink-soft/60">
+                  10:32
+                  <svg viewBox="0 0 20 14" class="size-3.5 text-[#53bdeb]" fill="none" stroke="currentColor"
+                       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    <path d="M1 7.6 4.4 11 11 3.4"/>
+                    <path d="M8.4 7.9 10.6 11 19 1.6"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <% if section['note'].present? %>
+          <p class="mt-4 text-center text-[0.8rem] leading-relaxed text-lyn-ink-soft" dir="auto">
+            <%= section['note'] %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

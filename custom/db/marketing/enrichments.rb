@@ -115,6 +115,82 @@ showcases = {
   }
 }
 
+# THE WHATSAPP BAND. The product's headline draw is the official WhatsApp Business API and the homepage had
+# it as one row of a ten-row text index. The four points are the ones
+# docs/official-website/02-verified-feature-inventory.md:34-37, 245, 249 actually supports -- Cloud API with
+# your own credentials or Embedded Signup, a template manager, template campaigns behind their flag, and the
+# same inbox as every other channel. Nothing here claims a reply bot, a delivery guarantee or an uptime
+# figure.
+whatsapp_band = {
+  'en' => {
+    kicker: 'WhatsApp Business API',
+    heading: 'The official WhatsApp Business API, not a phone on a desk',
+    lede: 'Connect your business number through the official Cloud API. Your customers message the number ' \
+          'they already have, and every message lands in the same inbox as the rest.',
+    note: 'The preview is the shape of an approved template: an image header, a body carrying your ' \
+          'variables, a footer and up to ten quick-reply buttons.',
+    link_label: 'How WhatsApp works here', link_target: 'page:channel:whatsapp',
+    items: [
+      'The official Cloud API — your own credentials, or connect through Meta in the browser',
+      'Build message templates, submit them and watch their approval without leaving the dashboard',
+      'Send an approved template to a saved audience as a campaign, with delivery reported per recipient',
+      'Replies arrive in the shared inbox beside every other channel, with the contact attached'
+    ]
+  },
+  'ar' => {
+    kicker: 'واجهة واتساب للأعمال',
+    heading: 'واجهة واتساب الرسمية للأعمال، لا هاتف على المكتب',
+    lede: 'اربط رقم شركتك عبر واجهة واتساب السحابية الرسمية. يراسلك عملاؤك على الرقم الذي يعرفونه، وتصل كل ' \
+          'رسالة إلى الصندوق نفسه مع بقية القنوات.',
+    note: 'المعاينة هي شكل قالب معتمد: ترويسة بصورة، ونص يحمل متغيّراتك، وتذييل، وحتى عشرة أزرار رد سريع.',
+    link_label: 'كيف يعمل واتساب هنا', link_target: 'page:channel:whatsapp',
+    items: [
+      'الواجهة السحابية الرسمية — ببياناتك أنت، أو بالربط عبر ميتا من المتصفح',
+      'أنشئ قوالب الرسائل وأرسلها للاعتماد وتابع حالتها دون مغادرة لوحة التحكم',
+      'أرسل قالبًا معتمدًا إلى جمهور محفوظ كحملة، مع تقرير تسليم لكل مستلم',
+      'الردود تصل إلى الصندوق المشترك بجانب كل قناة أخرى، ومعها بطاقة جهة الاتصال'
+    ]
+  }
+}
+
+# THE ASSIST BAND, written against docs/official-website/02-verified-feature-inventory.md:129-130 -- the one
+# sentence that programme concluded may honestly be said about AI here: five agent-assist actions, available
+# when the account connects its own OpenAI key, and nothing sent to a customer without an agent pressing
+# send. `note` carries that gate inside the band rather than in a footnote.
+assist_band = {
+  'en' => {
+    kicker: 'Assistance for your agents',
+    heading: 'Help your team write — they still press send',
+    lede: 'Five actions inside the composer: rewrite a reply, summarise a long thread, suggest a reply, ' \
+          'suggest labels, and refine a follow-up.',
+    note: 'Off until your account connects its own OpenAI key. Nothing is ever sent to a customer ' \
+          'automatically.',
+    link_label: 'What the assist actions do', link_target: 'page:feature:ai_assist',
+    items: [
+      ['Rewrite a reply', 'cant refund it, policy is 14 days',
+       'I am sorry — our returns window is 14 days, so I cannot refund this order. Here is what I can do.'],
+      ['Summarise a thread', 'Thirty-one messages across four days',
+       'Charged twice on 3 March. Refund approved; waiting on the payment provider.'],
+      ['Suggest labels', 'A new conversation, nothing on it yet', 'billing · refund · urgent']
+    ]
+  },
+  'ar' => {
+    kicker: 'مساعدة لوكلاء الدعم',
+    heading: 'ساعد فريقك على الكتابة — ويبقى الإرسال بيده',
+    lede: 'خمسة إجراءات داخل صندوق الرد: إعادة صياغة الرد، وتلخيص محادثة طويلة، واقتراح رد، واقتراح وسوم، ' \
+          'وصياغة رسالة متابعة.',
+    note: 'معطّلة حتى يربط حسابك مفتاح OpenAI الخاص به. ولا تُرسَل أي رسالة إلى عميل تلقائيًا.',
+    link_label: 'ماذا تفعل إجراءات المساعدة', link_target: 'page:feature:ai_assist',
+    items: [
+      ['إعادة صياغة الرد', 'ما ينفع نرجّع المبلغ، السياسة ١٤ يوم',
+       'آسف — مدة الإرجاع لدينا أربعة عشر يومًا، ولذلك لا أستطيع استرجاع قيمة هذا الطلب. وهذا ما يمكنني فعله.'],
+      ['تلخيص المحادثة', 'إحدى وثلاثون رسالة على مدى أربعة أيام',
+       'خُصم المبلغ مرتين في ٣ مارس. ووُفِق على الاسترجاع، وبانتظار مزوّد الدفع.'],
+      ['اقتراح الوسوم', 'محادثة جديدة لا وسم عليها بعد', 'الفوترة · استرجاع · عاجل']
+    ]
+  }
+}
+
 HERO_ALT = {
   'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open in the middle, and the contact panel beside it.',
   'ar' => 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
@@ -147,6 +223,35 @@ enrichments = []
       }
     )
   end
+end
+
+%w[en ar].each do |locale|
+  # THE TWO BANDS THE OLD SITE HAD AND THIS ONE DID NOT. `after` names a TYPE, and `position_for` takes the
+  # LAST section of that type, so the WhatsApp band lands below all three showcases and the assist band below
+  # the WhatsApp band -- whatever order an operator has put the showcases in.
+  copy = whatsapp_band[locale]
+  enrichments << Enrichment.new(
+    key: "home.whatsapp.#{locale}", locale: locale, slug: 'home', after: 'showcase',
+    section: {
+      'type' => 'device',
+      'kicker' => copy[:kicker], 'heading' => copy[:heading], 'lede' => copy[:lede], 'note' => copy[:note],
+      'link_label' => copy[:link_label], 'link_target' => copy[:link_target],
+      'items' => copy[:items].map { |title| { 'title' => title } }
+    }
+  )
+
+  copy = assist_band[locale]
+  enrichments << Enrichment.new(
+    key: "home.assist.#{locale}", locale: locale, slug: 'home', after: 'device',
+    section: {
+      'type' => 'before_after',
+      'kicker' => copy[:kicker], 'heading' => copy[:heading], 'lede' => copy[:lede], 'note' => copy[:note],
+      'link_label' => copy[:link_label], 'link_target' => copy[:link_target],
+      'items' => copy[:items].map do |title, before, after|
+        { 'title' => title, 'before' => before, 'after' => after }
+      end
+    }
+  )
 end
 
 %w[en ar].each do |locale|

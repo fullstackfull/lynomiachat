@@ -10,44 +10,40 @@
 #
 # `ONLY` narrows both tasks to named keys, which is also how an operator permanently declines one: leave it
 # out of the list they run.
-namespace :marketing do
-  STATUS_ORDER = %i[added would_add present invalid refused image_missing missing_page].freeze
 
-  def print_enrichment_report(outcomes, verb)
-    by_status = outcomes.group_by(&:status)
+# The order outcomes are printed in: what was done first, what needs attention last. A status this list does
+# not know sorts to the end rather than being dropped, so a new one cannot go unseen.
+MARKETING_ENRICH_ORDER = %i[added would_add present invalid refused image_missing missing_page].freeze
 
-    STATUS_ORDER.each do |status|
-      rows = by_status[status]
-      next if rows.blank?
+# The statuses that make a run a failure. A plan that cannot apply cleanly should fail a pipeline that runs
+# it as a check, which is what the non-zero exit is for.
+MARKETING_ENRICH_PROBLEMS = %i[invalid refused image_missing missing_page].freeze
 
-      puts "#{status} (#{rows.size}):"
-      rows.each { |row| puts "  #{row.locale}/#{row.slug}  #{row.key}  -- #{row.detail}" }
+def print_enrichment_report(outcomes, verb)
+  outcomes
+    .sort_by { |outcome| [MARKETING_ENRICH_ORDER.index(outcome.status) || MARKETING_ENRICH_ORDER.size, outcome.key] }
+    .each do |o|
+      puts format('  %<status>-14s %<locale>s/%<slug>-18s %<key>-28s %<detail>s',
+                  status: o.status, locale: o.locale, slug: o.slug, key: o.key, detail: o.detail)
     end
 
-    unknown = by_status.keys - STATUS_ORDER
-    unknown.each { |status| by_status[status].each { |row| puts "#{status}: #{row.key} -- #{row.detail}" } }
+  problems = outcomes.count { |outcome| MARKETING_ENRICH_PROBLEMS.include?(outcome.status) }
+  puts "\n#{verb}: #{outcomes.size} declared, #{problems} with a problem"
+  problems
+end
 
-    problems = outcomes.count { |o| %i[invalid refused image_missing missing_page].include?(o.status) }
-    puts "\n#{verb}: #{outcomes.size} declared, #{problems} with a problem"
-    problems
-  end
-
+namespace :marketing do
   namespace :enrich do
     desc 'Show what marketing:enrich would add to existing pages. Writes nothing.'
     task plan: :environment do
-      only = ENV['ONLY'].presence&.split(',')&.map(&:strip)
-      outcomes = Marketing::PageEnrichment.plan(only: only)
-      problems = print_enrichment_report(outcomes, 'planned')
-      # A plan that cannot be applied cleanly should fail a pipeline that runs it as a check.
-      exit(1) if problems.positive?
+      outcomes = Marketing::PageEnrichment.plan(only: ENV['ONLY'].presence&.split(',')&.map(&:strip))
+      exit(1) if print_enrichment_report(outcomes, 'planned').positive?
     end
   end
 
   desc 'Add approved sections and screenshots to existing marketing pages. Idempotent; never overwrites.'
   task enrich: :environment do
-    only = ENV['ONLY'].presence&.split(',')&.map(&:strip)
-    outcomes = Marketing::PageEnrichment.apply!(only: only)
-    problems = print_enrichment_report(outcomes, 'applied')
-    exit(1) if problems.positive?
+    outcomes = Marketing::PageEnrichment.apply!(only: ENV['ONLY'].presence&.split(',')&.map(&:strip))
+    exit(1) if print_enrichment_report(outcomes, 'applied').positive?
   end
 end

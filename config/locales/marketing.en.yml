@@ -13,6 +13,19 @@ en:
         '0': Assigned to the right person or team
         '1': Labelled, so it can be found again
         '2': Prioritised when it cannot wait
+    # THE WHATSAPP PREVIEW's own words. They are here rather than in the operator's section fields because
+    # the preview is an illustration of a message FORMAT -- header, body, footer, quick replies -- and an
+    # operator editing a delivery promise or a price into a picture would be publishing an unreviewed claim.
+    device:
+      whatsapp:
+        account: Business account
+        header: 'Order #4382'
+        body: 'Hi Saeed — your order #4382 is out for delivery and arrives today before 6pm.'
+        footer: Reply STOP to unsubscribe
+        buttons:
+          - Track my order
+          - Talk to the team
+        reply: Got it, thank you
     read_docs: Read the documentation
     breadcrumb: Breadcrumb
     detail:

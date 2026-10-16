@@ -136,7 +136,8 @@ module Marketing::ChannelBrand
 
   GENERIC = Mark.new(
     id: :generic, kind: :first_party, tile: '#2A3A5C', ink: '#FFFFFF',
-    body: '<path fill="currentColor" d="M12 3.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4Zm0 3.1a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Zm1.4 9.7h-2.8v-5.4h2.8Z"/>'
+    body: '<path fill="currentColor" d="M12 3.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4Zm0 3.1a1.3 1.3 0 1 1 0 2.6 ' \
+          '1.3 1.3 0 0 1 0-2.6Zm1.4 9.7h-2.8v-5.4h2.8Z"/>'
   )
 
   class << self

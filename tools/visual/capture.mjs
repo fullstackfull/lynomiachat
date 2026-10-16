@@ -172,6 +172,23 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
   });
   const page = await context.newPage();
 
+  // DEV CHROME MUST NOT BE IN THE EVIDENCE. `rack-mini-profiler` paints a timing badge into the top
+  // corner of every development response -- "167.2 ms", "17052.8 ms x32" -- and it was being
+  // photographed into committed screenshots that go on the marketing site and into documentation.
+  // It does not exist in production. Hidden at the browser rather than switched off in the app, so
+  // the capture is of the same page a developer sees and nothing in the application changes.
+  await page.addStyleTag({ content: '.profiler-results, #profiler-results { display: none !important; }' })
+    .catch(() => {});
+  await page.addInitScript(() => {
+    const hide = () => {
+      const s = document.createElement('style');
+      s.textContent = '.profiler-results,#profiler-results{display:none !important}';
+      document.documentElement.appendChild(s);
+    };
+    if (document.documentElement) hide();
+    else document.addEventListener('DOMContentLoaded', hide);
+  });
+
   if (set.signIn) await signIn(page, set.signIn);
 
   for (const [locale, prefix] of Object.entries(set.locales)) {

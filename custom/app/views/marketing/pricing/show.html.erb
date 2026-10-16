@@ -45,89 +45,21 @@
           heights reads as three unfinished cards. %>
       <div class="mt-14 grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
         <% @plans.each do |plan| %>
-          <% channels = marketing_plan_channels(plan) %>
-          <article class="flex h-full flex-col rounded-3xl border border-lyn-line bg-lyn-paper p-7 shadow-[0_24px_60px_-40px_rgba(10,23,51,0.45)] transition-shadow hover:shadow-[0_28px_70px_-36px_rgba(10,23,51,0.55)]">
-            <h3 class="text-xl font-semibold tracking-tight text-lyn-ink"><%= plan.name %></h3>
-
-            <%# THE PRICE IS THE CARD'S ONE LOUD THING. `tabular-nums` because a column of prices whose
-                digits are different widths does not line up, and `dir="ltr"` because a currency code before
-                a figure is read left-to-right in both languages. %>
-            <p class="mt-5 flex flex-wrap items-baseline gap-x-2 gap-y-1" dir="ltr">
-              <span class="text-[2.5rem] font-bold leading-none tracking-tight tabular-nums text-lyn-ink">
-                <%= marketing_plan_price(plan) %>
-              </span>
-            </p>
-            <p class="mt-2 text-sm text-lyn-ink-soft">
-              <%= t("marketing.pricing.interval.#{plan.interval}") %><%= " · #{t('marketing.pricing.per_agent')}" if plan.pricing_type == 'per_agent' %>
-            </p>
-
-            <% if plan.description.present? %>
-              <p class="mt-5 text-[0.95rem] leading-[1.8] text-lyn-ink-soft"><%= plan.description %></p>
-            <% end %>
-
-            <% if plan.limits.any? %>
-              <ul class="mt-6 space-y-2.5 border-t border-lyn-line pt-6">
-                <%# IN THE MODEL'S OWN ORDER, not the jsonb's. A limits hash keeps the order its keys were
-                    written in, so two plans edited on different days listed agents/inboxes/stores and
-                    agents/stores/inboxes -- three cards side by side whose rows do not line up. %>
-                <% BillingPlan::LIMIT_KEYS.each do |key| %>
-                  <% value = plan.limits[key] %>
-                  <% next if value.blank? %>
-                  <li class="flex items-start gap-2.5 text-[0.95rem] leading-relaxed text-lyn-ink">
-                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"
-                         class="mt-1 size-4 flex-none text-lyn-indigo" fill="none" stroke="currentColor"
-                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="m20 6-11 11-5-5"/>
-                    </svg>
-                    <%= t("marketing.pricing.limits.#{key}", count: value) %>
-                  </li>
-                <% end %>
-              </ul>
-            <% end %>
-
-            <%# WHICH CHANNELS THE PLAN SELLS, in their own marks. This is the one thing on a pricing card a
-                buyer scans for, and it was not on the card at all. An empty entitlement list means every
-                channel -- the model's rule -- and that is said in a sentence rather than drawn as ten marks
-                that would read as a limit. %>
-            <div class="mt-6 border-t border-lyn-line pt-6">
-              <p class="text-xs font-semibold uppercase tracking-[0.12em] text-lyn-ink-soft/70">
-                <%= t('marketing.pricing.plan_channels') %>
-              </p>
-              <% if channels.any? %>
-                <%# NAMED, NOT JUST MARKED. A row of bare plates is a logo quiz: at this size the reader has
-                    to recognise each one, and the two first-party marks (website chat, email) are not
-                    brands anybody recognises at all. The mark is `labelled: false` because the name is
-                    right beside it and a screen reader would otherwise say "WhatsApp WhatsApp". %>
-                <ul class="mt-3 flex flex-wrap gap-2">
-                  <% channels.each do |channel| %>
-                    <li class="inline-flex items-center gap-2 rounded-full border border-lyn-line bg-lyn-mist py-1 pe-3 ps-1 text-sm font-medium text-lyn-ink">
-                      <%= render 'marketing/shared/channel_mark', id: channel.id, size: 24, labelled: false %>
-                      <%= t("marketing.channels.#{channel.id}.name") %>
-                    </li>
-                  <% end %>
-                </ul>
-              <% else %>
-                <p class="mt-2 text-[0.95rem] leading-relaxed text-lyn-ink"><%= t('marketing.pricing.plan_channels_all') %></p>
-              <% end %>
-            </div>
-
-            <%# `mt-auto` on the WRAPPER, not on the button. On the button it pushes the control to the foot
-                of the card correctly and then any padding added for breathing room lands INSIDE it, so the
-                label sits low in a taller box. The gap belongs above the button. %>
-            <div class="mt-auto pt-7">
-              <a href="#quote"
-                 aria-label="<%= t('marketing.pricing.plan_cta_aria', name: plan.name) %>"
-                 class="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-lyn-ink px-6 text-base font-semibold text-lyn-paper transition-colors hover:bg-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
-                <%= t('marketing.pricing.plan_cta') %>
-              </a>
-            </div>
-          </article>
+          <%= render 'marketing/pricing/plan_card', plan: plan %>
         <% end %>
       </div>
 
-      <p class="mt-8 max-w-2xl text-[0.95rem] leading-[1.8] text-lyn-ink-soft"><%= t('marketing.pricing.plans_note') %></p>
+      <%# THE NOTE UNDER THE GRID TELLS THE TRUTH ABOUT THIS INSTALLATION. When at least one card can take
+          money it describes the checkout; when none can it says so and points at the form. Saying "no
+          self-service checkout" above three Subscribe buttons, or the reverse, is the kind of small lie a
+          pricing page is judged on. %>
+      <p class="mt-8 max-w-2xl text-[0.95rem] leading-[1.8] text-lyn-ink-soft">
+        <%= @plans.any? { |plan| Billing::PlanOffer.new(plan).purchasable? } ? t('marketing.pricing.plans_note') : t('marketing.pricing.plans_note_contact') %>
+      </p>
     </div>
   </section>
+
+  <%= render 'marketing/pricing/comparison', plans: @plans %>
 <% else %>
   <%# No plan is published, so the page says what a quote is based on. Those cards are sections on the row,
       so an operator can reword them; what they describe is in the schema (ceilings on agents, inboxes and

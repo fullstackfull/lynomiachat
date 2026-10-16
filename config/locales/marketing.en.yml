@@ -293,6 +293,12 @@ en:
         agents: Up to %{count} agents
         inboxes: Up to %{count} inboxes
         stores: Up to %{count} connected stores
+      # The same three ceilings as bare column labels. The sentences above belong on a card; a comparison
+      # row is already in a table that says what the number means.
+      limit_names:
+        agents: Agents
+        inboxes: Inboxes
+        stores: Connected stores
       form_title: Request a quote
       form_lede: >-
         Tell us which channels you need and roughly how many people will be answering, and we will come back

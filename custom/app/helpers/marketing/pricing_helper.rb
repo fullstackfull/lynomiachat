@@ -4,6 +4,11 @@
 # methods on the whole site that read the billing tables. Rails includes every helper under app/ and
 # custom/app/ (config/application.rb), so nothing has to ask for it.
 module Marketing::PricingHelper
+  # How many capabilities a card prints before it stops and offers the rest behind a disclosure. Five is
+  # enough to show what KIND of plan this is while leaving three cards the same height to scan; the count of
+  # the remainder is stated beside it, so nothing is hidden silently.
+  CARD_CAPABILITIES = 5
+
   # A PLAN'S PRICE, IN ITS OWN CURRENCY, IN EITHER LANGUAGE.
   #
   # `number_to_currency(plan.price, unit: 'USD ')` was the only money formatter on the site, and under the

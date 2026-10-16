@@ -1,0 +1,133 @@
+<%# THE HERO: heading, standfirst, actions and a picture of the product, composed as one block on the one
+  dark field the page opens with.
+
+  WHY DARK. The page used to open on paper and stay there: brand colour reached nothing but the buttons
+  until the closing band 4,000px further down, and the product panel -- the only picture of the thing being
+  sold -- was a white card on a white field, so it had no edge to separate it. On `lyn-ink` the panel is the
+  brightest object on the screen without any decoration drawn around it, and the page gains the first beat of
+  a rhythm it did not have: ink, then paper, then mist, then ink again at the close.
+
+  THE EMPHASIS IS THE ONE HOT COLOUR ON THE PAGE. `highlight` is a phrase out of the heading that a
+  translator may move to wherever their sentence actually turns. It was a magenta block on the original site;
+  a redesign pass replaced it with a thin blue underline and `lyn-magenta` then appeared nowhere but a
+  validation error, which is how the page lost its only accent. It is a magenta block again --
+  docs/redesign/00-visual-baseline.md:52 named it a strength, and theme/colors.js:323 has already
+  contrast-checked white type on it at 4.9:1. It is upright, not rotated: the tilt was the dated part, not
+  the colour. `whitespace-nowrap` keeps the marked phrase from breaking across two lines, where one block
+  would read as two unrelated marks.
+
+  THE PANEL IS A PHOTOGRAPH OF THE PRODUCT, not a drawing of one -- see the note above the figure.
+%>
+<% primary = marketing_target_href(section['primary_target']) %>
+<% secondary = marketing_target_href(section['secondary_target']) %>
+<% heading = (page.heading.presence || page.title).to_s %>
+<% highlight = section['highlight'].to_s %>
+<% hero_shot = page&.image_for(section['attachment_id']) %>
+
+<section class="relative isolate overflow-hidden bg-lyn-ink">
+  <%# THE FIELD. Two soft pools of brand colour rather than a flat slab -- indigo behind the panel, royal
+      low and wide behind the heading -- so the band has depth without anything drawn on it. They are
+      `-z-10` inside this isolated section, and `overflow-hidden` is what keeps a pool from putting a
+      horizontal scrollbar on a narrow screen. %>
+  <span class="absolute -right-40 -top-56 -z-10 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(91,91,240,0.42),transparent_62%)]" aria-hidden="true"></span>
+  <span class="absolute -bottom-72 -left-32 -z-10 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(29,63,168,0.38),transparent_64%)]" aria-hidden="true"></span>
+
+  <%# THE SCREENSHOT RUNS OFF THE EDGE OF THE PAGE, and that is the point of this grid.
+      The product shot is a 1440x900 capture of a four-column agent workspace. Sized to fit a tidy half of
+      a 72rem container it renders about 460px wide, every label in it turns to grey mush, and the one
+      picture of the product on the site says nothing about the product. Here the text column is fixed at
+      30rem and the figure is given 68rem regardless of what is left, so it overruns its cell, crosses the
+      container edge and is cut off by the viewport: about three quarters of the capture at three quarters
+      of its own scale, which is the size at which a conversation list reads as a conversation list.
+
+      A too-wide block overflows at its INLINE-END edge, so this works in both directions without a rule of
+      its own -- rightwards in English, leftwards in Arabic, where the figure sits on the left. The section
+      carries `overflow-hidden`, so the overrun is clipped at the viewport and cannot put a horizontal
+      scrollbar on the document; that is checked at 390, 820 and 1440 by tools/visual/marketing-gate.mjs. %>
+  <div class="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[31rem_minmax(0,1fr)] lg:gap-16 lg:py-28">
+    <div class="motion-safe:animate-fade-in-up">
+      <% if section['kicker'].present? %>
+        <p class="inline-flex items-center gap-2 rounded-full border border-lyn-line-dark bg-lyn-ink/40 py-1.5 pe-4 ps-3 text-sm font-medium text-lyn-paper/80">
+          <%# THE DOT IS ALIVE AGAIN. The ring is a second span that expands out of the dot and fades, so the
+              dot keeps its box and the label beside it never moves. `motion-safe` on the ring alone: a
+              reader who asked for stillness gets the plain dot, which is what the badge needs anyway. %>
+          <span class="relative flex size-2 flex-none" aria-hidden="true">
+            <span class="absolute inset-0 rounded-full bg-lyn-blue motion-safe:animate-live-ring"></span>
+            <span class="relative size-2 rounded-full bg-lyn-blue"></span>
+          </span>
+          <%= section['kicker'] %>
+        </p>
+      <% end %>
+
+      <%# ONE H1, built from the row's own heading. The highlight is a literal phrase out of that string, so
+          the two cannot disagree; a phrase that is not in the heading simply does not match and the heading
+          renders whole. `split` on a literal needs no escaping of the needle, and every part is escaped by
+          ERB on the way out.
+
+          LEADING IS 1.16 AND NOT TIGHTER. This headline is set in IBM Plex Sans Arabic half the time, where
+          the marks above and below the line need the room; display leading tuned on the Latin cut alone
+          collides them. The highlight block needs a little more again, which is what `leading-[1.3]` and
+          the negative inline margin on the block do: the lozenge is padded, and without the pull the padded
+          line would sit wider than the unmarked ones. %>
+      <h1 class="mt-6 text-balance text-[2.6rem] font-bold leading-[1.16] tracking-tight text-lyn-paper sm:text-[3rem] lg:text-[3.05rem]">
+        <% if highlight.present? && heading.include?(highlight) %>
+          <% before, after = heading.split(highlight, 2) %>
+          <%= before %><span class="-mx-[0.12em] inline-block whitespace-nowrap rounded-lg bg-lyn-magenta px-[0.12em] py-[0.02em] text-lyn-paper"><%= highlight %></span><%= after %>
+        <% else %>
+          <%= heading %>
+        <% end %>
+      </h1>
+
+      <% if page.lede.present? %>
+        <p class="mt-7 max-w-xl text-lg leading-[1.8] text-lyn-paper/70"><%= page.lede %></p>
+      <% end %>
+
+      <% if primary.present? || secondary.present? %>
+        <div class="mt-10 flex flex-wrap items-center gap-3">
+          <% if primary.present? && section['primary_label'].present? %>
+            <a href="<%= primary %>"
+               class="inline-flex min-h-12 items-center rounded-xl bg-lyn-indigo px-7 text-base font-semibold text-lyn-paper shadow-[0_14px_38px_-12px_rgba(91,91,240,0.85)] transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['primary_label'] %>
+            </a>
+          <% end %>
+          <% if secondary.present? && section['secondary_label'].present? %>
+            <a href="<%= secondary %>"
+               class="inline-flex min-h-12 items-center rounded-xl border border-lyn-line-dark px-7 text-base font-semibold text-lyn-paper/90 transition-colors hover:border-lyn-blue hover:text-lyn-blue focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['secondary_label'] %>
+            </a>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# THE PRODUCT, PHOTOGRAPHED -- not a drawing of it.
+
+        WHAT WAS HERE BEFORE. A hand-built panel: a fake "Shared inbox" header, three invented customers
+        with invented messages in `marketing.hero_panel.rows`, a fake composer and a fake "Assigned
+        automatically" pill. It was the first thing every visitor saw and it was a picture of a product that
+        does not look like that, with customers who do not exist. The owner's instruction is explicit -- a
+        meaningful preview of the real product, not a fabricated dashboard -- and this is where that rule
+        bites hardest, because the hero is the one image everybody sees.
+
+        IF THERE IS NO SCREENSHOT, THERE IS NO PICTURE. No placeholder, no fallback to the old panel: a
+        fallback that fabricates is still fabricating. The text column simply takes the full measure, which
+        is a perfectly good hero, and `marketing:enrich` is how the capture gets attached.
+
+        `rise-in` IS THE ONE ORCHESTRATED MOMENT on the page -- the element the page is about, settling in
+        once. It respects reduced motion through `motion-safe`, so a reader who asked for stillness is given
+        the screenshot already in place rather than an animation they cannot stop. %>
+    <% if hero_shot.present? %>
+      <div class="relative mx-auto w-full max-w-xl lg:mx-0 lg:w-[68rem] lg:max-w-none">
+        <figure class="overflow-hidden rounded-2xl ring-1 ring-white/15 shadow-[0_44px_90px_-32px_rgba(0,0,0,0.75)] motion-safe:animate-rise-in">
+          <img src="<%= marketing_media_path(id: hero_shot.id) %>"
+               alt="<%= section['alt'].to_s %>"
+               <%= "width=#{hero_shot.blob.metadata['width']} height=#{hero_shot.blob.metadata['height']}".html_safe if hero_shot.blob.metadata['width'].present? %>
+               <%# THE ONE IMAGE ON THE SITE THAT IS NOT LAZY. It is the largest contentful paint: deferring
+                   it is deferring the moment the page appears to have loaded. %>
+               loading="eager" fetchpriority="high" decoding="async"
+               class="block w-full">
+        </figure>
+      </div>
+    <% end %>
+  </div>
+</section>

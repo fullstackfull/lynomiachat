@@ -1,0 +1,37 @@
+<%#
+  One section or item field, rendered by what it is rather than by a switch at every call site:
+  SitePageSectionsField#input_kind decides, from the field's name, which of five inputs this is.
+%>
+<div class="mb-2">
+  <label class="block text-xs font-medium" for="<%= "#{prefix}[#{name}]" %>"><%= name.humanize %></label>
+
+  <% case field.input_kind(name) %>
+  <% when :choice %>
+    <select name="<%= prefix %>[<%= name %>]" id="<%= "#{prefix}[#{name}]" %>">
+      <option value="">— none —</option>
+      <% field.choices_for(name).each do |choice| %>
+        <option value="<%= choice %>" <%= 'selected' if value.to_s == choice %>><%= choice %></option>
+      <% end %>
+    </select>
+  <% when :number %>
+    <input type="number" step="1" min="0" class="w-20"
+           name="<%= prefix %>[<%= name %>]" id="<%= "#{prefix}[#{name}]" %>" value="<%= value %>">
+  <% when :image %>
+    <select name="<%= prefix %>[<%= name %>]" id="<%= "#{prefix}[#{name}]" %>">
+      <option value="">— none —</option>
+      <% field.image_options.each do |filename, id| %>
+        <option value="<%= id %>" <%= 'selected' if value.to_s == id.to_s %>><%= filename %></option>
+      <% end %>
+    </select>
+  <% when :long %>
+    <textarea rows="4" class="w-full" maxlength="<%= field.limit_for(name) %>"
+              name="<%= prefix %>[<%= name %>]" id="<%= "#{prefix}[#{name}]" %>"><%= value %></textarea>
+  <% else %>
+    <input type="text" class="w-full" maxlength="<%= field.limit_for(name) %>"
+           name="<%= prefix %>[<%= name %>]" id="<%= "#{prefix}[#{name}]" %>" value="<%= value %>">
+  <% end %>
+
+  <% if field.hint_for(name).present? %>
+    <p class="text-xs text-n-slate-11"><%= field.hint_for(name) %></p>
+  <% end %>
+</div>

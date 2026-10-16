@@ -139,13 +139,14 @@ Those 11 "to update" are people you already had. They keep their names and gain 
   **administrators** receive an email, with the rejected rows attached as a CSV — your original row plus an
   `errors` column saying why.
 - The per-import breakdown of counts lives on that import's own page under **Settings → Data**, which needs the
-  Data import feature enabled for your account.
+  Data import feature enabled for your account — see [the record of your imports](data-imports).
 - A row with a name and nothing else is created but never appears in the contacts list. The preview counts it
   under **No way to reach**.
 
 ## Related
 
 - [Contacts](contacts)
+- [The record of your imports](data-imports)
 - [Custom attributes](custom-attributes)
 - [Bulk actions on contacts](bulk-actions)
 - [Labels](labels)

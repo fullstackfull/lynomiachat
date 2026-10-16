@@ -1,10 +1,12 @@
 <script setup>
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'dashboard/composables/store';
+import { useMapGetter, useStore } from 'dashboard/composables/store';
 import { useAlert, useTrack } from 'dashboard/composables';
 import { CAMPAIGN_TYPES } from 'shared/constants/campaign.js';
 import { CAMPAIGNS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events.js';
 
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import SMSCampaignForm from 'dashboard/components-next/Campaigns/Pages/CampaignPage/SMSCampaign/SMSCampaignForm.vue';
 
 defineProps({
@@ -17,6 +19,13 @@ const emit = defineEmits(['close', 'createAudience']);
 
 const store = useStore();
 const { t } = useI18n();
+
+const dialogRef = ref(null);
+const formRef = ref(null);
+
+const uiFlags = useMapGetter('campaigns/getUIFlags');
+const isCreating = computed(() => uiFlags.value.isCreating);
+const isInvalidForm = computed(() => formRef.value?.isSubmitDisabled);
 
 const addCampaign = async campaignDetails => {
   try {
@@ -36,27 +45,36 @@ const addCampaign = async campaignDetails => {
   }
 };
 
-const handleSubmit = campaignDetails => {
-  addCampaign(campaignDetails);
-};
+// The footer's button submits; the form validates and emits back what it built.
+const handleConfirm = () => formRef.value?.handleSubmit();
 
-const handleClose = () => emit('close');
+defineExpose({ dialogRef });
 </script>
 
 <template>
-  <div
-    class="w-[25rem] z-50 min-w-0 absolute top-10 ltr:right-0 rtl:left-0 bg-n-alpha-3 backdrop-blur-panel p-6 rounded-xl border border-n-weak shadow-md flex flex-col gap-6"
+  <Dialog
+    ref="dialogRef"
+    type="edit"
+    width="xl"
+    position="top"
+    scroll-body
+    :title="t('CAMPAIGN.SMS.CREATE.TITLE')"
+    :confirm-button-label="t('CAMPAIGN.SMS.CREATE.FORM.BUTTONS.CREATE')"
+    :cancel-button-label="t('CAMPAIGN.SMS.CREATE.FORM.BUTTONS.CANCEL')"
+    :is-loading="isCreating"
+    :disable-confirm-button="isCreating || isInvalidForm"
+    @confirm="handleConfirm"
+    @close="emit('close')"
   >
-    <h3 class="text-base font-medium text-n-slate-12">
-      {{ t(`CAMPAIGN.SMS.CREATE.TITLE`) }}
-    </h3>
     <SMSCampaignForm
+      ref="formRef"
       :initial-shared-audience-ids="initialSharedAudienceIds"
       :initial-label-ids="initialLabelIds"
       :initial-draft="initialDraft"
-      @submit="handleSubmit"
-      @cancel="handleClose"
+      :show-action-buttons="false"
+      @submit="addCampaign"
+      @cancel="dialogRef?.close()"
       @create-audience="draft => emit('createAudience', draft)"
     />
-  </div>
+  </Dialog>
 </template>

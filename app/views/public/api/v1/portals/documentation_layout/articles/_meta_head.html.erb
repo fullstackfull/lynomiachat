@@ -7,7 +7,13 @@
 <% canonical_url = portal_canonical_url(portal, article) %>
 <% meta_title = article.meta["title"].presence || article.title %>
 <% meta_description = article.meta["description"].presence || article.description.presence %>
-<title><%= article.title %> | <%= portal.display_title(article.locale) %></title>
+<%#
+  `meta_title`, not `article.title`. The SEO title was already honoured by `meta name="title"`, `og:title` and
+  `twitter:title` below while the one tag a search engine actually shows as the result heading ignored it, so an
+  operator who set an SEO title saw it everywhere except where it matters. The brand suffix stays, because it is
+  what every other documentation page's title carries (`documentation_layout/categories/_meta_head.html.erb:9`).
+%>
+<title><%= meta_title %> | <%= portal.display_title(article.locale) %></title>
 <link rel="canonical" href="<%= canonical_url %>">
 
 <%#

@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/app/en/website-prechat.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 344,
+    "y": 150,
+    "w": 1072,
+    "h": 720
+  }
+}

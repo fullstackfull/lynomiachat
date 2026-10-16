@@ -1,0 +1,99 @@
+<%# THE MOVING CHANNEL STRIP.
+
+  What it says, in one glance and without reading: the apps your customers already message you on all arrive
+  here. The previous site had a strip like this and the redesign dropped it; the page lost the one element
+  that communicated the product's whole premise before a word was read.
+
+  HOW THE LOOP IS SEAMLESS. The track holds the same row of marks twice -- the second copy `aria-hidden`,
+  because a screen reader should hear ten channels, not twenty -- and travels exactly -50% of its own width.
+  At the end of the pass the second copy occupies the pixel the first started on, so the restart is
+  invisible. This is why the figure is a percentage and not a pixel count: the row's width changes with the
+  viewport, the font and the locale, and a hard-coded distance would show a jump at every width but one.
+
+  BOTH DIRECTIONS. `ltr:animate-marquee-ltr rtl:animate-marquee-rtl` -- under RTL the row travels the way
+  Arabic reads. A strip that scrolls backwards for the primary market is worse than no strip.
+
+  REDUCED MOTION IS A FULL STOP, NOT A SLOWER LOOP. `motion-reduce:animate-none` leaves the first copy
+  exactly where it starts, so a reader who has asked for stillness gets a legible static row of logos rather
+  than a decoration they cannot switch off.
+
+  PAUSE ON HOVER AND ON FOCUS. `focus-within` matters more than `hover` here: the marks are links, and a
+  keyboard reader tabbing into a moving row would otherwise be chasing a target that is sliding away.
+
+  NO LAYOUT SHIFT. The track's height is fixed by the mark size, the marks are inline SVG with no network
+  request, and `overflow-hidden` on a `w-full` parent means the doubled track cannot widen the document --
+  which is the usual way a marquee gives a page a horizontal scrollbar.
+%>
+<% marks = Marketing::ChannelBrand.strip_marks %>
+<% return if marks.empty? %>
+
+<section class="<%= tone %> overflow-hidden">
+  <div class="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+    <% if section['heading'].present? || section['lede'].present? %>
+      <div class="mx-auto max-w-2xl text-center">
+        <% if section['heading'].present? %>
+          <h2 class="text-balance text-2xl font-semibold tracking-tight text-lyn-ink sm:text-3xl">
+            <%= section['heading'] %>
+          </h2>
+        <% end %>
+        <% if section['lede'].present? %>
+          <p class="mt-3 text-base leading-relaxed text-lyn-ink-soft"><%= section['lede'] %></p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# The mask is what stops the row ending in a hard vertical edge at the viewport boundary: the marks fade
+      out into the band's own colour at both ends, so the row reads as continuing past the screen rather than
+      being cut off by it. `mask-image` is an arbitrary property rather than bespoke CSS -- the repository's
+      rule is Tailwind only, and an arbitrary value is Tailwind. %>
+  <div class="group relative mt-10 w-full overflow-hidden pb-16
+              [mask-image:linear-gradient(to_right,transparent,black_6rem,black_calc(100%-6rem),transparent)]
+              motion-reduce:[mask-image:none]">
+    <%# `motion-safe:` RATHER THAN `motion-reduce:animate-none`, and the difference is a defect this was
+        measured doing. Tailwind orders the direction variants AFTER `motion-reduce`, so a
+        `ltr:animate-marquee-ltr` beside a `motion-reduce:animate-none` wins on source order and the row kept
+        moving for a reader who had asked the operating system for stillness -- confirmed by reading
+        `animationName` out of the live page under an emulated `prefers-reduced-motion: reduce`. Emitting the
+        animation only INSIDE the no-preference query cannot be overridden by anything, because under reduced
+        motion the declaration does not exist.
+
+        AND THE ROW BECOMES A WRAPPED GRID, not a frozen clipped line. A stopped marquee still has eight of
+        its ten marks outside an `overflow-hidden` box with no way to reach them; wrapping shows the reader
+        every channel at once, which is what the section is for. %>
+    <div class="flex w-max gap-3
+                motion-safe:ltr:animate-marquee-ltr motion-safe:rtl:animate-marquee-rtl
+                motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center
+                group-hover:[animation-play-state:paused]
+                group-focus-within:[animation-play-state:paused]">
+      <% 2.times do |copy| %>
+        <%# The second copy is scenery: it exists so the loop has somewhere to go, and a screen reader that
+            read it would hear the channel list twice. With the animation off it has no job at all. %>
+        <div class="flex shrink-0 gap-3 <%= 'motion-reduce:hidden' if copy == 1 %>"
+             <%= 'aria-hidden=true'.html_safe if copy == 1 %>>
+          <% marks.each do |mark| %>
+            <% entry = Marketing::Catalog::CHANNELS.find { |c| c.id == mark.id } %>
+            <% name = t("marketing.channels.#{mark.id}.name", default: mark.id.to_s.humanize) %>
+            <%# `marketing_entry_path`, the SAME resolver the channel index uses -- not a `page:` link target.
+                A target string is for an OPERATOR'S link, where the grammar exists so a typed value can be
+                validated; building one in code meant inventing `page:detail:<slug>`, and `detail` is not one
+                of Marketing::LinkTarget's kinds while a slug like `live-chat` fails its `[a-z0-9_]+` key
+                pattern twice over. `marketing_target_href` returned nil for all ten, every mark rendered as
+                a `<div>`, and the whole strip was decoration that looked like navigation. %>
+            <% href = entry&.detail? ? marketing_entry_path(:channels, entry) : nil %>
+            <%= content_tag(href && copy.zero? ? :a : :div,
+                            href: (href if copy.zero?),
+                            tabindex: (copy == 1 ? -1 : nil),
+                            class: 'inline-flex items-center gap-3 rounded-2xl border border-lyn-line ' \
+                                   'bg-lyn-paper px-5 py-3.5 transition-colors hover:border-lyn-indigo/40 ' \
+                                   'focus-visible:outline focus-visible:outline-2 ' \
+                                   'focus-visible:outline-offset-2 focus-visible:outline-lyn-blue') do %>
+              <%= render 'marketing/shared/channel_mark', id: mark.id, size: 36, labelled: false %>
+              <span class="whitespace-nowrap text-sm font-medium text-lyn-ink"><%= name %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

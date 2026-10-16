@@ -68,9 +68,9 @@ seo_description: "اربط متجر Shopify بلينوميا تشات: نطاق 
 
 ## مواضيع ذات صلة
 
-- [ما تدعمه كل منصة](commerce-provider-support)
-- [ما يمنحك ربط المتجر](commerce-overview)
-- [عرض العميل الشامل](customer-360)
+- [ما تدعمه كل منصة](commerce-provider-support-ar)
+- [ما يمنحك ربط المتجر](commerce-overview-ar)
+- [عرض العميل الشامل](customer-360-ar)
 
 ## إذا لم ينجح الأمر
 

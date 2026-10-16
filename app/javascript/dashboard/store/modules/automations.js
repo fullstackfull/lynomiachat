@@ -10,6 +10,9 @@ export const state = {
     isCreating: false,
     isDeleting: false,
     isUpdating: false,
+    // See the note in campaigns.js: an empty list and a failed fetch are not the same thing, and the
+    // rule list drew "no automation rules found" for both.
+    hasError: false,
   },
 };
 
@@ -24,12 +27,12 @@ export const getters = {
 
 export const actions = {
   get: async function getAutomations({ commit }) {
-    commit(types.SET_AUTOMATION_UI_FLAG, { isFetching: true });
+    commit(types.SET_AUTOMATION_UI_FLAG, { isFetching: true, hasError: false });
     try {
       const response = await AutomationAPI.get();
       commit(types.SET_AUTOMATIONS, response.data.payload);
     } catch (error) {
-      // Ignore error
+      commit(types.SET_AUTOMATION_UI_FLAG, { hasError: true });
     } finally {
       commit(types.SET_AUTOMATION_UI_FLAG, { isFetching: false });
     }

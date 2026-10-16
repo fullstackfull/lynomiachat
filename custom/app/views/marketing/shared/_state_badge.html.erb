@@ -1,0 +1,21 @@
+<%# Availability, shown rather than hidden.
+
+  The inventory classifies every capability as available, conditional or beta, and a conditional feature needs
+  a named prerequisite before a reader can use it. Rendering the state beside the name is what stops this site
+  repeating the old one's six over-claims; an available feature needs no badge, so only the exceptions carry one.
+
+  BOTH STATES ARE SET IN THE LYN RAMP, AND THE SIZE COMES OFF THE TYPE SCALE. These were a yellow pill and a
+  violet pill at an arbitrary 11px off the type scale -- two hues from no ramp on this site, inside the <h1> of
+  every detail page, which is the one place a stray colour is unmissable. Conditional is now the quiet state
+  (hairline on mist, soft ink) and beta borrows the link accent, so the badge reads as part of the page rather
+  than as a status chip lifted out of an admin screen.
+%>
+<% if state == :conditional %>
+  <span class="rounded-full border border-lyn-line bg-lyn-mist px-2 py-0.5 text-xs font-medium text-lyn-ink-soft">
+    <%= t('marketing.state.conditional') %>
+  </span>
+<% elsif state == :beta %>
+  <span class="rounded-full border border-lyn-royal/30 bg-lyn-paper px-2 py-0.5 text-xs font-medium text-lyn-royal">
+    <%= t('marketing.state.beta') %>
+  </span>
+<% end %>

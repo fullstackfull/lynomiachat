@@ -21,6 +21,7 @@
       "CUSTOM_RANGE": "Custom date range"
     },
     "SHOW_EARLIER_DATES": "Show earlier dates",
-    "SHOW_LATER_DATES": "Show later dates"
+    "SHOW_LATER_DATES": "Show later dates",
+    "INVALID_RANGE": "Please select a valid time range"
   }
 }

@@ -1,0 +1,53 @@
+// IBM Plex Sans Arabic, the Arabic face of the marketing site.
+//
+// THE ARABIC SUBSET ONLY, which is what makes one font stack serve both locales. `unicode-range` tells the
+// browser to reach for this file for Arabic codepoints and for the next family in the stack -- Inter --
+// everywhere else, so an Arabic page sets `واتساب` in Plex and `WhatsApp` in Inter from the same CSS, and
+// an English page never downloads these four files at all.
+//
+// WHY A SECOND FAMILY AT ALL. Inter has no Arabic coverage, so until now every Arabic page on this site fell
+// through to `Tahoma, Arial` -- the system stack in tailwind.config.js. The primary market's language was
+// being set in whatever the operating system happened to have, which is why the Arabic headline reads like a
+// document rather than a product.
+//
+// Provenance, read from the binaries' own `name` table rather than from memory: IBM Plex Sans Arabic
+// Version 1.101, Copyright 2019 IBM Corp, SIL Open Font License 1.1. See NOTICE.md beside this file.
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/IBMPlexSansArabic-400.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F,
+    U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/IBMPlexSansArabic-500.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F,
+    U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/IBMPlexSansArabic-600.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F,
+    U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/IBMPlexSansArabic-700.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F,
+    U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}

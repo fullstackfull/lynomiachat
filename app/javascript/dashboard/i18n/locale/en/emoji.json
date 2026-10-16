@@ -5,6 +5,7 @@
     "REMOVE": "Remove"
   },
   "EMOJI_ICON_PICKER": {
+    "ARIA_LABEL": "Emoji and icon picker",
     "TABS": {
       "ICONS": "Icons",
       "EMOJIS": "Emojis"

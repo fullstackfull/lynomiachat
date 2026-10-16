@@ -8,6 +8,9 @@ import campaign from 'dashboard/i18n/locale/en/campaign.json';
 import WhatsAppCampaignsPage from '../WhatsAppCampaignsPage.vue';
 
 const dispatch = vi.fn();
+// The create dialog is a real modal now, opened through its exposed `dialogRef`, so "did the page open it"
+// is this spy rather than a boolean on the page.
+const openCreateDialog = vi.fn();
 const query = ref({});
 const contactViews = ref([]);
 const accountLabels = ref([]);
@@ -65,7 +68,12 @@ const mountPage = async () => {
           },
           CampaignList: true,
           WhatsAppCampaignEmptyState: true,
-          WhatsAppCampaignDialog: true,
+          WhatsAppCampaignDialog: {
+            setup(_, { expose }) {
+              expose({ dialogRef: { open: openCreateDialog } });
+            },
+            template: '<div />',
+          },
           ConfirmDeleteCampaignDialog: {
             setup(_, { expose }) {
               expose({ dialogRef: { open: vi.fn() } });
@@ -88,6 +96,7 @@ describe('WhatsAppCampaignsPage', () => {
   beforeEach(() => {
     dispatch.mockReset();
     dispatch.mockResolvedValue(undefined);
+    openCreateDialog.mockReset();
     query.value = {};
     contactViews.value = [
       { id: 7, name: 'VIP buyers', shared: true },
@@ -103,7 +112,7 @@ describe('WhatsAppCampaignsPage', () => {
     const wrapper = await mountPage();
 
     expect(dispatch).not.toHaveBeenCalled();
-    expect(page(wrapper).showWhatsAppCampaignDialog).toBeFalsy();
+    expect(openCreateDialog).not.toHaveBeenCalled();
     expect(page(wrapper).initialSharedAudienceIds).toEqual([]);
   });
 
@@ -112,7 +121,7 @@ describe('WhatsAppCampaignsPage', () => {
     const wrapper = await mountPage();
 
     expect(dispatch).toHaveBeenCalledWith('customViews/get', 'contact');
-    expect(page(wrapper).showWhatsAppCampaignDialog).toBe(true);
+    expect(openCreateDialog).toHaveBeenCalled();
     expect(page(wrapper).initialSharedAudienceIds).toEqual([7]);
   });
 

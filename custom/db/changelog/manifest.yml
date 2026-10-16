@@ -3,7 +3,7 @@
 sections:
   - slug: releases
     position: 10
-    icon: sparkles
+    icon: i-lucide-sparkles
     en:
       name: Releases
       description: What changed in Lynomia Chat, newest first.

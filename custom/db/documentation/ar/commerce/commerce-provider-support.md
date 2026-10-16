@@ -73,7 +73,7 @@ seo_description: "دعم المتجر لكل منصة في لينوميا تشا
 | **إجراءات الطلبات في Salla وZid وShopify** | محجوزة حتى يُتحقَّق من عمليات الكتابة لكل منصة على متجر حقيقي. ولا تُستخدم إلا إجراءات **WooCommerce**. وليس في متجر سوريا منها شيء بحكم التصميم. |
 | **السلات المتروكة** | تُقرأ في **متجر سوريا** وحده، بوصفها قائمة استرداد للقراءة فقط للمديرين. ومحجوزة في Salla وZid وShopify؛ وWooCommerce لا يملك واجهة للسلات المتروكة على مستوى المتجر أصلاً. |
 
-ولا توجد كذلك حملة للسلات المتروكة ولا حملة متكررة — راجع [حملات واتساب](whatsapp-campaigns) للنوعين
+ولا توجد كذلك حملة للسلات المتروكة ولا حملة متكررة — راجع [حملات واتساب](whatsapp-campaigns-ar) للنوعين
 الموجودين.
 
 ## أي المنصات تستطيع ربطها أصلاً
@@ -99,7 +99,7 @@ seo_description: "دعم المتجر لكل منصة في لينوميا تشا
 
 ## مواضيع ذات صلة
 
-- [ما يمنحك ربط المتجر](commerce-overview)
-- [ربط WooCommerce](connect-woocommerce) · [Salla](connect-salla) · [Zid](connect-zid) ·
-  [Shopify](connect-shopify) · [متجر سوريا](connect-store-syria)
-- [عرض العميل الشامل](customer-360)
+- [ما يمنحك ربط المتجر](commerce-overview-ar)
+- [ربط WooCommerce](connect-woocommerce-ar) · [Salla](connect-salla-ar) · [Zid](connect-zid-ar) ·
+  [Shopify](connect-shopify-ar) · [متجر سوريا](connect-store-syria-ar)
+- [عرض العميل الشامل](customer-360-ar)

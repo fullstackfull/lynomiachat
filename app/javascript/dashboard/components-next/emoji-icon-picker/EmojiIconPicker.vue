@@ -143,8 +143,11 @@ const selectEmoji = emoji => {
 </script>
 
 <template>
+  <!-- `role="dialog"` with no name announces "dialog" and nothing else, on all four
+    surfaces that open this panel. -->
   <div
     role="dialog"
+    :aria-label="t('EMOJI_ICON_PICKER.ARIA_LABEL')"
     class="absolute z-20 flex flex-col overflow-hidden shadow-xl w-[22rem] bg-n-surface-2 backdrop-blur-panel rounded-2xl outline outline-1 outline-n-weak dark:outline-n-strong/50"
   >
     <div v-if="showHeader" class="flex items-center justify-between gap-2 p-2">

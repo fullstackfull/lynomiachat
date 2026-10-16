@@ -39,9 +39,17 @@ defineProps({
     <div
       class="relative w-full max-w-5xl mx-auto overflow-hidden h-full max-h-[28rem]"
     >
+      <!-- Decoration, not content: these are hardcoded sample records that show what the surface looks
+      like when it has some. `pointer-events-none` stopped the mouse but left them in the tab order and in
+      the accessibility tree, so a keyboard user tabbed through three campaigns that do not exist and a
+      screen reader read them out as real. `inert` removes both. The mask fades the cards to nothing
+      before the message starts, instead of relying on the overlay gradient to cover them -- which it did
+      not: the third card still showed through the headline. -->
       <div
         v-if="showBackdrop"
-        class="w-full h-full space-y-4 overflow-y-hidden opacity-50 pointer-events-none"
+        inert
+        aria-hidden="true"
+        class="w-full h-full space-y-4 overflow-y-hidden opacity-50 pointer-events-none [mask-image:linear-gradient(to_bottom,black_0%,black_18%,transparent_48%)]"
       >
         <slot name="empty-state-item" />
       </div>
@@ -65,9 +73,9 @@ defineProps({
             <slot name="icon">
               <span
                 v-if="icon"
-                class="grid place-items-center rounded-overlay size-12 bg-n-alpha-2 text-n-slate-11"
+                class="grid place-items-center rounded-overlay size-14 bg-lyn-indigo/10 text-lyn-indigo ring-1 ring-inset ring-lyn-indigo/20"
               >
-                <span :class="icon" class="size-6" />
+                <span :class="icon" class="size-7" />
               </span>
             </slot>
             <h2

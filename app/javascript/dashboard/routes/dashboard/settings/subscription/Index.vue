@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { format } from 'date-fns';
 
 import BillingSubscriptionAPI from 'dashboard/api/billingSubscription';
+import PendingPlanAPI from 'dashboard/api/pendingPlan';
 import SettingsLayout from '../SettingsLayout.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import BillingCard from '../billing/components/BillingCard.vue';
@@ -56,6 +57,11 @@ const TEXT = {
     CHECKOUT_SUCCESS:
       'Payment received. Your subscription will be active in a few seconds.',
     CHECKOUT_CANCELED: 'Checkout was canceled. No payment was made.',
+    RESUME_TITLE: 'Continue with {plan}',
+    RESUME_BODY:
+      'You chose this plan on our pricing page. Review it below and subscribe when you are ready — nothing has been charged.',
+    RESUME_WORKSPACE: 'Paying as {account}.',
+    RESUME_CHOOSE: 'Subscribe from a different workspace:',
     ACTION_ERROR: 'Something went wrong, please try again.',
     CONFIRM_TITLE: 'Change plan to {plan}?',
     CONFIRM_CHARGE:
@@ -110,6 +116,11 @@ const TEXT = {
     ADMIN_ONLY: 'فقط مسؤولو الحساب يمكنهم إدارة الاشتراك.',
     CHECKOUT_SUCCESS: 'تم استلام الدفع. سيتفعّل اشتراكك خلال ثوانٍ.',
     CHECKOUT_CANCELED: 'تم إلغاء عملية الدفع. لم يتم خصم أي مبلغ.',
+    RESUME_TITLE: 'أكمل الاشتراك في {plan}',
+    RESUME_BODY:
+      'اخترت هذه الباقة من صفحة الأسعار. راجعها بالأسفل واشترك متى كنت جاهزاً — لم يُخصم أي مبلغ بعد.',
+    RESUME_WORKSPACE: 'الدفع باسم {account}.',
+    RESUME_CHOOSE: 'اشترك من مساحة عمل أخرى:',
     ACTION_ERROR: 'حدث خطأ، حاول مرة أخرى.',
     CONFIRM_TITLE: 'تغيير الخطة إلى {plan}؟',
     CONFIRM_CHARGE:
@@ -148,8 +159,29 @@ const pendingChange = ref(null); // { plan, preview }
 const isChangingPlan = ref(false);
 
 const checkoutResult = computed(() => route.query.checkout);
+
 const subscription = computed(() => billing.value?.subscription || null);
 const plans = computed(() => billing.value?.plans || []);
+
+// THE PLAN A VISITOR PICKED ON THE PUBLIC PRICING PAGE, if they arrived here by that route.
+//
+// It reaches this page as `?plan=` put there by the resume redirect, NOT by the browser: the id was held
+// server-side in the Rails session from the moment it was clicked, and was validated there before this
+// page was ever named. The query parameter is a hint for the UI -- it decides which card to point at, and
+// nothing else. Every write below still goes through the authorized endpoints, which re-read the plan.
+const resumePlanId = computed(() => Number(route.query.plan) || null);
+const resumePlan = computed(
+  () => plans.value.find(plan => plan.id === resumePlanId.value) || null
+);
+// Other workspaces this person administers, offered only when there is more than one -- paying from the
+// wrong workspace is an expensive mistake to make by accident.
+const resumeAccounts = ref([]);
+const otherResumeAccounts = computed(() =>
+  resumeAccounts.value.filter(
+    account => account.id !== Number(route.params.accountId)
+  )
+);
+
 const isAdmin = computed(() => !!billing.value?.is_admin);
 // { agents: { used, limit }, inboxes: {...}, stores: {...} } -- the count and the ceiling the server
 // actually enforces, including any override the operator granted this account.
@@ -342,6 +374,20 @@ onMounted(async () => {
   await fetchBilling();
   // The webhook may arrive a few seconds after Stripe redirects back
   if (checkoutResult.value === 'success') setTimeout(fetchBilling, 4000);
+
+  // Arrived from the pricing page: find out which workspaces could pay, then clear the intention. It is
+  // cleared HERE rather than when it was read, so that a refresh on the way through onboarding does not
+  // lose it -- by this point the plan is on screen and the URL carries it.
+  if (resumePlanId.value) {
+    try {
+      const { data } = await PendingPlanAPI.get();
+      resumeAccounts.value = data?.accounts || [];
+      await PendingPlanAPI.clear();
+    } catch {
+      // A missing or expired intention is not an error: the plan is already named in the URL and the
+      // page below works exactly as it does for anyone else.
+    }
+  }
 });
 </script>
 
@@ -358,6 +404,37 @@ onMounted(async () => {
 
     <template #body>
       <section class="grid gap-4">
+        <!-- Arrived from the public pricing page. Names the plan, names the workspace that would pay,
+             and offers the others. It is a signpost, not a purchase: the Subscribe button on the card
+             below is still the only thing that starts a payment. -->
+        <div
+          v-if="resumePlan && !hasPaidSubscription"
+          class="px-4 py-3 text-sm rounded-lg bg-n-brand/10 text-n-slate-12"
+        >
+          <p class="font-medium">
+            {{ t('RESUME_TITLE', { plan: resumePlan.name }) }}
+          </p>
+          <p class="mt-1 text-n-slate-11">{{ t('RESUME_BODY') }}</p>
+          <p v-if="otherResumeAccounts.length" class="mt-2 text-n-slate-11">
+            {{ t('RESUME_CHOOSE') }}
+          </p>
+          <!-- A wrapped row of links rather than a comma-separated sentence: the separator would be raw
+               text in the template, and a gap says the same thing in both reading directions. -->
+          <span
+            v-if="otherResumeAccounts.length"
+            class="inline-flex flex-wrap gap-x-3 gap-y-1 mt-1"
+          >
+            <a
+              v-for="account in otherResumeAccounts"
+              :key="account.id"
+              class="underline text-n-slate-11 hover:text-n-slate-12"
+              :href="`/app/accounts/${account.id}/settings/subscription?plan=${resumePlanId}`"
+            >
+              {{ account.name }}
+            </a>
+          </span>
+        </div>
+
         <!-- messages -->
         <div
           v-if="checkoutResult === 'success'"
@@ -491,7 +568,7 @@ onMounted(async () => {
             :key="plan.id"
             class="flex flex-col gap-4 p-5 rounded-xl outline outline-1 bg-n-solid-2"
             :class="
-              plan.id === subscription?.plan_id
+              plan.id === subscription?.plan_id || plan.id === resumePlanId
                 ? 'outline-n-brand'
                 : 'outline-n-container'
             "

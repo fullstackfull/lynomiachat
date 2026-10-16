@@ -1,0 +1,115 @@
+<%# A capability, shown rather than described: one genuine screenshot of the running product beside the two
+  or three things that screen actually does.
+
+  WHY THIS IS NOT `walkthrough`. A walkthrough's picture carries numbered markers and its items ARE those
+  markers, so the two must agree or the figure lies. A showcase's picture carries no markers, its items are
+  the capability's own points, and its job is to put the reader inside the screen they would be working in.
+  Serving both from one type meant either numbering points that nothing on the image pointed at, or shipping
+  a figure with no explanation beside it -- which is how the home page ended up with nine identical text
+  cards and no product in sight.
+
+  ALTERNATING, AND THAT IS THE POINT. `media_position` is `start` or `end`, and consecutive showcases down a
+  page alternate, so the eye crosses the measure instead of running down one rail of identical slabs. The
+  DOM order is always picture-then-text whichever side the picture is drawn on, so the order a screen reader
+  and a keyboard follow never depends on the decoration.
+
+  AND `top` EXISTS BECAUSE SOME SCREENS DO NOT FIT IN A COLUMN. A 1440px capture of a four-column agent
+  workspace rendered into half of a 72rem measure is about 516px wide: every label in it is grey mush, and a
+  showcase whose whole argument is "this is the screen you will work in" has shown the reader nothing. `top`
+  gives the picture the full measure and lays the points out in a row beneath it, which is 1152px of
+  screenshot -- four fifths of life size -- and, incidentally, the one shape in this type that does not look
+  like the two either side of it.
+
+  THE COLUMN SPLIT IS NOT EVEN. Where the picture does sit beside the text it takes the larger share: text
+  reads perfectly well at 470px and a screenshot does not.
+
+  THE SCREENSHOT IS A REAL CAPTURE OR THE SECTION DOES NOT RENDER. There is no placeholder and no drawn
+  mock-up: `page.image_for` returns nil for a missing attachment and the figure is simply absent, which
+  leaves an honest text block rather than a fabricated dashboard. The hero's old hand-built "Shared inbox"
+  panel is exactly what this rule exists to prevent.
+
+  WIDTH AND HEIGHT COME FROM THE BLOB, for the reason _image.html.erb gives: a screenshot is the largest
+  thing in the band and a missing intrinsic size is the one that shifts the layout under the reader as it
+  lands. Emitted only when the blob was analysed, because a guess would be worse than none.
+%>
+<% attachment = page&.image_for(section['attachment_id']) %>
+<% points = Array(section['items']) %>
+<% position = section['media_position'].to_s %>
+<% media_end = position == 'end' %>
+<% media_top = position == 'top' %>
+
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-24">
+    <%# THE HEAD IS ITS OWN BLOCK IN `top`, so the reader is told what the screen is before being shown it.
+        Beside the picture it stays with the points, where the column it heads is the whole text column. %>
+    <% if media_top %>
+      <div class="mx-auto max-w-2xl text-center">
+        <%= render 'marketing/sections/showcase_head', section: section %>
+      </div>
+    <% end %>
+
+    <%# THE WIDE TRACK FOLLOWS THE PICTURE. `lg:order-last` moves the figure into the SECOND track, so a
+        grid whose first track is always the wide one gives the screenshot the narrow half on every other
+        showcase -- which is how the automation shot came out smaller than the one above it, not larger. %>
+    <% wide_first = 'lg:grid-cols-[minmax(0,1.22fr)_minmax(0,1fr)]' %>
+    <% wide_last = 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)]' %>
+    <div class="<%= media_top ? 'mt-12' : "grid items-center gap-10 lg:gap-16 #{media_end ? wide_last : wide_first}" %>">
+      <% if attachment.present? %>
+        <figure class="<%= 'lg:order-last' if media_end %>">
+          <%# The plate under the screenshot: a soft indigo wash and a ring, so a light screenshot on a light
+              band still reads as a separate object rather than bleeding into the page. %>
+          <div class="relative rounded-3xl bg-gradient-to-br from-lyn-indigo/10 via-lyn-blue/5 to-transparent p-2 sm:p-3">
+            <div class="overflow-hidden rounded-2xl ring-1 ring-lyn-line shadow-[0_24px_60px_-24px_rgba(10,23,51,0.45)]">
+              <img src="<%= marketing_media_path(id: attachment.id) %>"
+                   alt="<%= section['alt'].to_s %>"
+                   <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
+                   loading="lazy" decoding="async"
+                   class="block w-full">
+            </div>
+          </div>
+        </figure>
+      <% end %>
+
+      <div class="<%= media_top ? 'mt-12' : '' %><%= ' lg:order-first' if media_end %>">
+        <% unless media_top %>
+          <%= render 'marketing/sections/showcase_head', section: section %>
+        <% end %>
+
+        <% if points.any? %>
+          <ul class="<%= media_top ? 'grid gap-8 sm:grid-cols-3' : 'mt-8 space-y-5' %>">
+            <% points.each do |point| %>
+              <li class="flex gap-3.5">
+                <%# `aria-hidden` on the tick: it is punctuation for the eye, and a screen reader announcing
+                    "check mark" before every item in a list it already knows is a list is noise. %>
+                <span aria-hidden="true"
+                      class="mt-0.5 grid size-6 flex-none place-content-center rounded-full bg-lyn-indigo/10 text-lyn-indigo">
+                  <svg viewBox="0 0 16 16" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.4"
+                       stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m3.5 8.5 3 3 6-7"/></svg>
+                </span>
+                <div class="min-w-0">
+                  <% if point['title'].present? %>
+                    <p class="text-base font-semibold text-lyn-ink"><%= point['title'] %></p>
+                  <% end %>
+                  <% if point['body'].present? %>
+                    <p class="mt-1 text-base leading-relaxed text-lyn-ink-soft"><%= point['body'] %></p>
+                  <% end %>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <% if section['link_label'].present? && section['link_target'].present? %>
+          <% href = marketing_target_href(section['link_target']) %>
+          <% if href %>
+            <a href="<%= href %>"
+               class="mt-8 inline-flex min-h-11 items-center gap-1.5 text-base font-semibold text-lyn-royal transition-colors hover:text-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+              <%= section['link_label'] %>
+              <span aria-hidden="true" class="rtl:-scale-x-100">&rarr;</span>
+            </a>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

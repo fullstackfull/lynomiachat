@@ -33,7 +33,9 @@
   "THUMBNAIL": {
     "AUTHOR": {
       "NOT_AVAILABLE": "Author is not available"
-    }
+    },
+    "UPLOAD": "Upload avatar",
+    "DELETE": "Delete avatar"
   },
   "BREADCRUMB": {
     "ARIA_LABEL": "Breadcrumb"
@@ -42,7 +44,8 @@
     "TOGGLE": "Toggle switch"
   },
   "LABEL": {
-    "TAG_BUTTON": "tag"
+    "TAG_BUTTON": "tag",
+    "REMOVE": "Remove the label “{name}”"
   },
   "FEATURE_SPOTLIGHT": {
     "LEARN_MORE": "Learn more",
@@ -76,7 +79,7 @@
     "TAB_EMBED": "Embed link",
     "TAB_UPLOAD": "Upload",
     "PLACEHOLDER": "Paste a video link",
-    "HINT": "Works with YouTube, Vimeo, Loom, Arcade, Bunny, CodePen, GuideJar and mp4 links",
+    "HINT": "Works with YouTube, Vimeo, Loom, Arcade, Bunny, GuideJar and mp4 links",
     "ERROR": "That doesn't look like a supported video link",
     "UPLOAD_LABEL": "Choose a video file",
     "UPLOAD_HINT": "MP4 · up to {size}MB · or drop it here",

@@ -4,10 +4,12 @@ import VueDOMPurifyHTML from 'vue-dompurify-html';
 
 import PlaygroundIndex from '../superadmin_pages/views/playground/Index.vue';
 import DashboardIndex from '../superadmin_pages/views/dashboard/Index.vue';
+import DocumentationArticleEditor from '../super_admin/documentation/ArticleEditor.vue';
 
 const ComponentMapping = {
   PlaygroundIndex: PlaygroundIndex,
   DashboardIndex: DashboardIndex,
+  DocumentationArticleEditor: DocumentationArticleEditor,
 };
 
 const renderComponent = (componentName, props) => {

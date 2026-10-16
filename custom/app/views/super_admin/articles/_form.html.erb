@@ -1,0 +1,63 @@
+<%#
+  Administrate's own form partial (administrate-0.20.1/app/views/administrate/application/_form.html.erb) with
+  ONE branch added: the `content` attribute renders the documentation editor instead of a bare textarea. Every
+  other attribute still goes through `render_field`, so the portal, category, title, locale, status, position and
+  metadata fields are unchanged and keep their field classes.
+
+  Overriding the resource's form rather than introducing a new Administrate field class keeps the editor out of
+  the global field lookup: `Field::Text` still means a plain textarea everywhere else in Super Admin, and only
+  this one resource gets the editor.
+%>
+<%= form_for([namespace, page.resource], html: { class: "form" }) do |f| %>
+  <% if page.resource.errors.any? %>
+    <div id="error_explanation">
+      <h2>
+        <%= t(
+          "administrate.form.errors",
+          pluralized_errors: pluralize(page.resource.errors.count, t("administrate.form.error")),
+          resource_name: display_resource_name(page.resource_name, singular: true)
+        ) %>
+      </h2>
+
+      <ul>
+        <% page.resource.errors.full_messages.each do |message| %>
+          <li class="flash-error"><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% page.attributes(controller.action_name).each do |title, attributes| -%>
+    <fieldset class="<%= "field-unit--nested" if title.present? %>">
+      <% if title.present? %>
+        <legend><%= t "helpers.label.#{f.object_name}.#{title}", default: title %></legend>
+      <% end %>
+
+      <% attributes.each do |attribute| %>
+        <div class="field-unit field-unit--<%= attribute.html_class %> field-unit--<%= requireness(attribute) %>">
+          <% if attribute.attribute.to_s == "content" %>
+            <div class="field-unit__label">
+              <%= f.label attribute.attribute %>
+            </div>
+            <div class="field-unit__field">
+              <%= render "super_admin/articles/content_editor", f: f, article: page.resource %>
+            </div>
+          <% else %>
+            <%= render_field attribute, f: f %>
+          <% end %>
+
+          <% hint_key = "administrate.field_hints.#{page.resource_name}.#{attribute.name}" %>
+          <% if I18n.exists?(hint_key) -%>
+            <div class="field-unit__hint">
+              <%= I18n.t(hint_key) %>
+            </div>
+          <% end -%>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end -%>
+
+  <div class="form-actions">
+    <%= f.submit %>
+  </div>
+<% end %>

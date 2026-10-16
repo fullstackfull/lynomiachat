@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<%# The marketing layout.
+
+  lang and dir come from the locale the controller resolved from the URL, not from JavaScript. The old page
+  set them in a click handler that fired on every load, so an Arabic visitor was flipped to English before
+  they read a word (docs/official-website/01-current-state-audit.md section 3.3).
+
+  The marketing entrypoint is its own: the dashboard bundle emits a 15.9 MB icon chunk and has no business on
+  a marketing page (docs/official-website/05-design-and-content-spec.md section 5).
+%>
+<html lang="<%= marketing_locale %>" dir="<%= marketing_dir %>">
+  <head>
+    <%= render 'marketing/shared/head' %>
+    <%= vite_client_tag %>
+    <%= vite_javascript_tag 'marketing' %>
+  </head>
+    <%# `font-lyn` is the one type decision the whole site inherits: Arabic resolves to IBM Plex Sans Arabic
+    and everything else to Inter, decided per codepoint by `unicode-range` rather than by a locale branch
+    (app/javascript/marketing/fonts/plex-arabic.scss). Before this the Arabic pages fell through to the
+    system stack -- `Tahoma, Arial` -- so the primary market's language was set in whatever the visitor's
+    operating system happened to ship. %>
+  <body class="bg-lyn-paper font-lyn text-lyn-ink antialiased">
+    <%# The channel marks' gradients, declared once for the whole document. See the partial for why an SVG
+        gradient cannot be a CSS background. %>
+    <%= render 'marketing/shared/brand_gradients' %>
+    <a href="#main"
+       class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-4 focus:rounded-lg focus:bg-lyn-indigo focus:px-4 focus:py-2 focus:text-white">
+      <%= t('marketing.skip_to_content') %>
+    </a>
+
+    <%= render 'marketing/shared/header' %>
+
+    <%# SCROLL MARGIN ON THE SKIP-LINK TARGET. The header is `sticky top-0`, so jumping to `#main` put the
+        first heading underneath it: about 130px of chrome on a phone, where the navigation row sits below
+        the brand row, and about 70px from `md` up, where it does not. Without this the one control the
+        keyboard-only reader is offered lands them on content they cannot see. %>
+    <main id="main" class="scroll-mt-36 md:scroll-mt-20">
+      <%= yield %>
+    </main>
+
+    <%= render 'marketing/shared/footer' %>
+  </body>
+</html>

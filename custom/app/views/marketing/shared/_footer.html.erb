@@ -1,0 +1,36 @@
+<%# The footer.
+
+  The old footer promised four legal documents and a live chat, and delivered four empty anchors plus a widget
+  that sent nothing (docs/official-website/01-current-state-audit.md sections 2 and 3.2). Here every entry is
+  either a route that exists, a documentation address that is live, or a mailto: that works -- and the legal
+  column links the operator's own published documents rather than text invented inside this application.
+%>
+<footer class="border-t border-lyn-line bg-lyn-mist">
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-lyn-ink"><%= t('marketing.footer.product') %></h2>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_product' %>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-lyn-ink"><%= t('marketing.footer.resources') %></h2>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_resources' %>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-lyn-ink"><%= t('marketing.footer.support') %></h2>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_support' %>
+      </div>
+
+      <div>
+        <h2 class="mb-3 text-sm font-semibold text-lyn-ink"><%= t('marketing.footer.company') %></h2>
+        <%= render 'marketing/shared/footer_column', placement: 'footer_company' %>
+      </div>
+    </div>
+
+    <p class="mt-10 border-t border-lyn-line pt-6 text-xs text-lyn-ink-soft">
+      <%= t('marketing.footer.rights', year: Time.current.year) %>
+    </p>
+  </div>
+</footer>

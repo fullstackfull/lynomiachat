@@ -1,0 +1,28 @@
+<%# A section's heading and standfirst, set the same way everywhere.
+
+  WHY THIS EXISTS. `cards`, `catalogue` and `faq` each printed their own `h2` and `p` with their own classes,
+  so the page's section rhythm depended on three partials agreeing by coincidence. They did not: the home
+  page's three sections opened at the same size with the same gap, and nothing told a reader where one ended
+  and the next began. One partial, one measure for the standfirst.
+
+  THE RULE IS GONE AND THE BAND IS THE BOUNDARY. This used to draw a `border-t` above every heading, because
+  a hairline was the only thing separating one section from the next in a single column of paper. Sections
+  now alternate fields (shared/_sections.html.erb), so the boundary is a change of surface; keeping the rule
+  as well would draw a line along a colour change that already reads as one.
+
+  THE HEADING IS BIGGER THAN A CARD TITLE BY MORE THAN A STEP. It was `text-2xl sm:text-3xl` against an
+  `h1` of `sm:text-5xl` and a body of `text-base` -- three sizes doing four jobs, which is why the page read
+  as one long document at one scale.
+%>
+<% if heading.present? || lede.present? %>
+  <div class="max-w-3xl">
+    <% if heading.present? %>
+      <h2 class="text-balance text-3xl font-bold leading-[1.25] tracking-tight text-lyn-ink sm:text-[2.5rem]">
+        <%= heading %>
+      </h2>
+    <% end %>
+    <% if lede.present? %>
+      <p class="mt-4 max-w-2xl text-lg leading-[1.8] text-lyn-ink-soft"><%= lede %></p>
+    <% end %>
+  </div>
+<% end %>

@@ -6,6 +6,7 @@ import store from 'dashboard/store';
 import { validateLoggedInRoutes } from '../helper/routeHelpers';
 import { isOnOnboardingView } from 'v3/helpers/RouteHelper';
 import AnalyticsHelper from '../helper/AnalyticsHelper';
+import { pendingSubscriptionTarget } from '../helper/pendingSubscription';
 
 const ONBOARDING_STEPS = ['account_details', 'enrichment', 'inbox_setup'];
 const routes = [...dashboard.routes];
@@ -57,6 +58,22 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
   }
   if (!needsOnboarding && isOnOnboardingView(to)) {
     return next(frontendURL(`accounts/${routeAccountId}/dashboard`));
+  }
+
+  // A PURCHASE THAT STARTED ON THE PUBLIC PRICING PAGE RESUMES HERE.
+  //
+  // AFTER the onboarding branches, and `!needsOnboarding` as well -- which is not the same thing, and the
+  // difference was measured on a freshly registered account. Those branches only redirect somebody who is
+  // in the wrong place, so an administrator moving BETWEEN steps of the wizard falls through to here. The
+  // resume then sent them to the subscription page, the branch above bounced them straight back to
+  // onboarding, and because the resume is a one-shot the plan was gone. Waiting until the wizard is
+  // finished costs nothing: the intention is on the server for an hour and the next navigation picks it up.
+  //
+  // Asked once per app boot, and only when the person is not already on the page it would send them to,
+  // so re-entering settings does not loop.
+  if (!needsOnboarding && to.name !== 'subscription_settings_index') {
+    const resume = await pendingSubscriptionTarget(routeAccountId);
+    if (resume) return next(resume);
   }
 
   const nextRoute = validateLoggedInRoutes(to, store.getters.getCurrentUser);

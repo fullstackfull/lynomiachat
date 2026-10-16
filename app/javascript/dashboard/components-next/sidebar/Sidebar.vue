@@ -12,7 +12,7 @@ import { usePlatformSupportUnread } from 'dashboard/routes/dashboard/help/platfo
 import { vOnClickOutside } from '@vueuse/components';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import { useBranding } from 'shared/composables/useBranding';
-import { useWindowSize, useEventListener } from '@vueuse/core';
+import { useWindowSize, useEventListener, useScroll } from '@vueuse/core';
 
 import Button from 'dashboard/components-next/button/Button.vue';
 import SidebarGroup from './SidebarGroup.vue';
@@ -45,6 +45,42 @@ const emit = defineEmits([
   'showCreateAccountModal',
   'closeMobileSidebar',
 ]);
+
+// THE NAVIGATION'S FADE IS A SCROLL AFFORDANCE, SO IT ONLY APPEARS WHERE THERE IS SOMETHING TO SCROLL TO.
+//
+// It used to be one unconditional `mask-image` fading the first and last 12px of the scroll box, whether or
+// not either end had anything beyond it. Measured in the browser at 1440x900 on an account whose navigation
+// fits: scrollHeight 726, clientHeight 714, scrollTop 0 -- so the box "overflows" by 12px that are entirely
+// its own `pb-5`, and a fade was drawn over the foot of a list that had nothing below it.
+//
+// WHAT THIS DOES NOT FIX, because it was measured and it is not this: the last item ("Settings") renders
+// dimmer than its siblings in both the old and the new build -- peak glyph luminance (124,131,144) before
+// and (121,131,144) after, against (176,180,186) for "Help & Support". That is the item's own colour, not
+// the mask. This change is about the affordance being honest, not about that item.
+//
+// `offset.bottom` is the padding, so "arrived at the bottom" means "nothing but padding is left"; the two
+// ends are then independent, and a nav that does not scroll carries no mask at all (verified: computed
+// `mask-image` is now `none` on that account, where it was the gradient). The three values are written as
+// whole literal strings because Tailwind generates a rule only for a class it can see in a scanned file,
+// and a mask assembled from fragments at runtime would be purged.
+const navRef = ref(null);
+const { arrivedState: navArrived } = useScroll(navRef, {
+  offset: { bottom: 20 },
+});
+
+const NAV_FADE_TOP =
+  '[mask-image:linear-gradient(to_bottom,transparent_0,#000_12px)]';
+const NAV_FADE_BOTTOM =
+  '[mask-image:linear-gradient(to_bottom,#000_calc(100%-12px),transparent_100%)]';
+const NAV_FADE_BOTH =
+  '[mask-image:linear-gradient(to_bottom,transparent_0,#000_12px,#000_calc(100%-12px),transparent_100%)]';
+
+const navFadeClass = computed(() => {
+  if (navArrived.top && navArrived.bottom) return '';
+  if (navArrived.top) return NAV_FADE_BOTTOM;
+  if (navArrived.bottom) return NAV_FADE_TOP;
+  return NAV_FADE_BOTH;
+});
 
 const { accountScopedRoute, isOnChatwootCloud } = useAccount();
 const store = useStore();
@@ -1038,30 +1074,23 @@ const menuItems = computed(() => {
         ],
       },
     ]"
-    class="sidebar-shell flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[332px] max-w-[92vw] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0"
+    class="dark isolate bg-lyn-ink text-n-slate-12 border-e border-white/[0.07] flex flex-col text-sm pb-px fixed top-0 ltr:left-0 rtl:right-0 h-full z-40 w-[332px] max-w-[92vw] md:w-auto md:relative md:flex-shrink-0 md:ltr:translate-x-0 md:rtl:translate-x-0"
     :class="[
       {
         'shadow-2xl md:shadow-none': isMobileSidebarOpen,
         'ltr:-translate-x-full rtl:translate-x-full': !isMobileSidebarOpen,
         'transition-transform duration-300 ease-out md:transition-[width]':
           !isResizing,
-        'sidebar-expanded': !isCollapsed,
       },
     ]"
     :style="isMobile ? undefined : { width: `${sidebarWidth}px` }"
   >
-    <div
-      class="sidebar-aurora"
-      aria-hidden="true"
-      :style="isEffectivelyCollapsed ? { display: 'none' } : undefined"
-    />
-
     <section
-      class="sidebar-header grid relative z-10"
+      class="grid relative z-10"
       :class="isEffectivelyCollapsed ? 'mt-3 mb-6 gap-4' : 'mt-0 mb-4 gap-3'"
     >
       <div
-        class="sidebar-account flex gap-2 items-center min-w-0"
+        class="flex gap-2 items-center min-h-16 min-w-0"
         :class="{
           'justify-center px-1 pt-2': isEffectivelyCollapsed,
           'px-3 pt-3': !isEffectivelyCollapsed,
@@ -1076,7 +1105,7 @@ const menuItems = computed(() => {
             <button
               v-if="!isMobile"
               type="button"
-              class="sidebar-toggle-btn hidden md:flex items-center justify-center size-8 rounded-xl"
+              class="hidden md:flex items-center justify-center size-8 rounded-lg text-n-slate-11 transition-colors duration-150 hover:bg-white/10 hover:text-n-slate-12 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
               :title="t('SIDEBAR.EXPAND_SIDEBAR')"
               @click="toggleSidebar"
             >
@@ -1086,18 +1115,18 @@ const menuItems = computed(() => {
         </template>
         <template v-else>
           <div
-            class="sidebar-logo grid flex-shrink-0 place-content-center size-10"
+            class="grid flex-shrink-0 place-content-center size-10 rounded-xl bg-white/[0.06] ring-1 ring-inset ring-white/10"
           >
             <Logo class="size-5" />
           </div>
           <SidebarAccountSwitcher
-            class="sidebar-account-switcher flex-grow min-w-0"
+            class="flex-grow min-w-0 rounded-lg transition-colors duration-150 hover:bg-white/[0.06]"
             @show-create-account-modal="emit('showCreateAccountModal')"
           />
           <button
             v-if="!isMobile"
             type="button"
-            class="sidebar-toggle-btn hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-xl"
+            class="hidden md:flex flex-shrink-0 items-center justify-center size-8 rounded-lg text-n-slate-11 transition-colors duration-150 hover:bg-white/10 hover:text-n-slate-12 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
             :title="t('SIDEBAR.COLLAPSE_SIDEBAR')"
             @click="toggleSidebar"
           >
@@ -1107,22 +1136,20 @@ const menuItems = computed(() => {
       </div>
 
       <div
-        class="sidebar-actions flex gap-2"
+        class="flex gap-2"
         :class="isEffectivelyCollapsed ? 'flex-col items-center' : 'px-3'"
       >
         <RouterLink
           v-if="!isEffectivelyCollapsed"
           :to="{ name: 'search' }"
-          class="sidebar-search group flex gap-2 items-center px-3 py-2 w-full h-9 rounded-xl transition-all duration-300 ease-out"
+          class="group flex gap-2 items-center px-3 py-2 w-full h-9 rounded-lg bg-white/[0.06] text-n-slate-11 ring-1 ring-inset ring-white/10 transition-colors duration-150 hover:bg-white/[0.1] hover:text-n-slate-12 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
         >
-          <span
-            class="sidebar-search-icon flex-shrink-0 i-lucide-search size-4"
-          />
+          <span class="flex-shrink-0 i-lucide-search size-4" />
           <span class="flex-grow text-start truncate">
             {{ t('COMBOBOX.SEARCH_PLACEHOLDER') }}
           </span>
           <span
-            class="sidebar-shortcut tracking-wide pointer-events-none select-none"
+            class="pointer-events-none select-none rounded px-1.5 py-0.5 text-xxs leading-4 text-n-slate-11 ring-1 ring-inset ring-white/10"
           >
             {{ searchShortcut }}
           </span>
@@ -1131,7 +1158,7 @@ const menuItems = computed(() => {
         <RouterLink
           v-else
           :to="{ name: 'search' }"
-          class="sidebar-search sidebar-icon-button flex items-center justify-center size-9 rounded-xl transition-all duration-300 ease-out"
+          class="flex items-center justify-center size-9 rounded-lg bg-white/[0.06] text-n-slate-11 ring-1 ring-inset ring-white/10 transition-colors duration-150 hover:bg-white/[0.1] hover:text-n-slate-12 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
           :title="t('COMBOBOX.SEARCH_PLACEHOLDER')"
         >
           <span class="i-lucide-search size-4" />
@@ -1144,10 +1171,10 @@ const menuItems = computed(() => {
               :aria-label="t('SIDEBAR.COMPOSE_CONVERSATION')"
               color="slate"
               size="sm"
-              class="sidebar-compose"
+              class="!rounded-lg !border-0 !bg-lyn-indigo !text-white transition-colors duration-150 hover:!bg-lyn-indigo-deep"
               :class="[
                 isEffectivelyCollapsed ? '!size-9' : '!h-9 !px-3',
-                { 'sidebar-compose-active': isOpen },
+                { '!bg-lyn-indigo-deep': isOpen },
               ]"
             />
           </template>
@@ -1156,8 +1183,9 @@ const menuItems = computed(() => {
     </section>
 
     <nav
-      class="sidebar-nav relative z-10 grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"
-      :class="isEffectivelyCollapsed ? 'px-1.5' : 'px-3'"
+      ref="navRef"
+      class="relative z-10 grid overflow-y-scroll flex-grow gap-2 pb-5 no-scrollbar min-w-0"
+      :class="[isEffectivelyCollapsed ? 'px-1.5' : 'px-3', navFadeClass]"
     >
       <ul
         class="flex flex-col gap-1.5 m-0 list-none min-w-0"
@@ -1172,10 +1200,10 @@ const menuItems = computed(() => {
     </nav>
 
     <section
-      class="sidebar-footer flex relative flex-col flex-shrink-0 gap-1 justify-between items-center z-10"
+      class="flex relative flex-col flex-shrink-0 gap-1 justify-between items-center z-10"
     >
       <div
-        class="sidebar-bottom-fade pointer-events-none absolute inset-x-0 -top-10 h-10"
+        class="pointer-events-none absolute inset-x-0 -top-10 h-10 bg-gradient-to-t from-lyn-ink to-transparent"
       />
 
       <SidebarChangelogCard
@@ -1194,7 +1222,7 @@ const menuItems = computed(() => {
       />
 
       <div
-        class="sidebar-profile px-1.5 py-2 flex-shrink-0 flex w-full z-50 gap-2 items-center"
+        class="px-1.5 py-2 flex-shrink-0 flex w-full z-50 gap-2 items-center border-t border-white/[0.07]"
         :class="isEffectivelyCollapsed ? 'justify-center' : 'justify-between'"
       >
         <SidebarProfileMenu
@@ -1205,596 +1233,16 @@ const menuItems = computed(() => {
     </section>
 
     <div
-      class="sidebar-resize hidden md:block absolute top-0 h-full w-1.5 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
+      class="hidden md:block absolute top-0 h-full w-1.5 cursor-col-resize z-40 ltr:right-0 rtl:left-0 group"
       :title="t('SIDEBAR.RESIZE_SIDEBAR')"
       @mousedown="onResizeStart"
       @touchstart="onResizeStart"
       @dblclick="onResizeHandleDoubleClick"
     >
       <div
-        class="sidebar-resize-line absolute top-0 h-full w-px ltr:right-0 rtl:left-0 transition-all duration-300"
-        :class="{ 'is-resizing': isResizing }"
+        class="absolute top-0 h-full w-px ltr:right-0 rtl:left-0 bg-transparent transition-colors duration-150 group-hover:w-0.5 group-hover:bg-lyn-blue"
+        :class="{ '!w-0.5 !bg-lyn-blue': isResizing }"
       />
     </div>
   </aside>
 </template>
-
-<style scoped>
-.sidebar-shell {
-  --sb-bg: #071225;
-  --sb-blue: #2f6fe4;
-  --sb-blue-glow: rgba(64, 122, 240, 0.5);
-  --sb-pink: #db2777;
-  --sb-pink-soft: rgba(219, 39, 119, 0.16);
-  --sb-pink-border: rgba(219, 39, 119, 0.3);
-  --sb-pink-text: #f8b8d4;
-  --sb-text: #ffffff;
-  --sb-muted: #d6e3fb;
-
-  isolation: isolate;
-  overflow: hidden;
-  color: var(--sb-text);
-  border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
-  background: radial-gradient(
-      circle at 14% 5%,
-      rgba(47, 111, 228, 0.34),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 88% 24%,
-      rgba(219, 39, 119, 0.16),
-      transparent 30%
-    ),
-    linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
-  box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.035),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5),
-    18px 0 48px rgba(2, 9, 22, 0.28);
-}
-
-.sidebar-shell::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.2;
-  background-image: linear-gradient(
-    112deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.045) 46%,
-    transparent 55%
-  );
-  background-size: 230% 100%;
-  animation: sidebar-shimmer 11s linear infinite;
-}
-
-.sidebar-aurora {
-  position: absolute;
-  z-index: 0;
-  top: -7rem;
-  left: -5rem;
-  width: 19rem;
-  height: 19rem;
-  pointer-events: none;
-  border-radius: 9999px;
-  opacity: 0.38;
-  filter: blur(70px);
-  background: conic-gradient(
-    from 115deg,
-    rgba(47, 111, 228, 0.95),
-    rgba(219, 39, 119, 0.68),
-    rgba(47, 111, 228, 0.9)
-  );
-  animation: sidebar-aurora 15s ease-in-out infinite alternate;
-}
-
-.sidebar-header {
-  padding-top: 0;
-}
-
-.sidebar-account {
-  min-height: 4rem;
-  gap: 0.75rem;
-}
-
-.sidebar-toggle-btn {
-  color: var(--sb-muted);
-  border: 1px solid rgba(93, 142, 239, 0.24);
-  background: rgba(47, 111, 228, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 4px 12px rgba(0, 0, 0, 0.12);
-  backdrop-filter: blur(14px);
-  cursor: pointer;
-  transition: all 200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sidebar-toggle-btn:hover {
-  color: var(--sb-pink-text);
-  border-color: var(--sb-pink-border);
-  background: var(--sb-pink-soft);
-  transform: translateY(-1px) scale(1.05);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 18px -4px rgba(219, 39, 119, 0.4);
-}
-
-.sidebar-toggle-btn:active {
-  transform: translateY(0) scale(0.96);
-}
-
-.sidebar-logo {
-  position: relative;
-  border: 1px solid rgba(111, 157, 248, 0.36);
-  border-radius: 0.95rem;
-  color: #fff;
-  background: linear-gradient(
-      145deg,
-      rgba(47, 111, 228, 0.42),
-      rgba(47, 111, 228, 0.18)
-    ),
-    rgba(255, 255, 255, 0.05);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5);
-}
-
-.sidebar-logo::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  z-index: -1;
-  border-radius: 1.05rem;
-  opacity: 0.32;
-  background: linear-gradient(
-    135deg,
-    rgba(47, 111, 228, 0.78),
-    rgba(219, 39, 119, 0.32)
-  );
-  filter: blur(10px);
-  transition:
-    opacity 220ms ease,
-    transform 220ms ease;
-}
-
-.sidebar-account:hover .sidebar-logo::after {
-  opacity: 0.58;
-  transform: scale(1.04);
-}
-
-.sidebar-account-switcher {
-  padding: 0.3rem 0.4rem;
-  border: 1px solid transparent;
-  border-radius: 0.9rem;
-  color: #fff;
-  transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
-}
-
-.sidebar-account-switcher:hover {
-  border-color: rgba(47, 111, 228, 0.2);
-  background: rgba(47, 111, 228, 0.09);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.sidebar-search {
-  position: relative;
-  overflow: hidden;
-  color: #f1f5ff;
-  border: 1px solid rgba(93, 142, 239, 0.24);
-  outline: none;
-  background: rgba(47, 111, 228, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 20px rgba(0, 0, 0, 0.14);
-  backdrop-filter: blur(14px);
-}
-
-.sidebar-search::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -45%;
-  width: 34%;
-  pointer-events: none;
-  transform: skewX(-20deg);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.15),
-    transparent
-  );
-  transition: left 520ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sidebar-search:hover {
-  color: var(--sb-pink-text);
-  border-color: var(--sb-pink-border);
-  background: var(--sb-pink-soft);
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5);
-}
-
-.sidebar-search:hover::before {
-  left: 125%;
-}
-
-.sidebar-search-icon {
-  color: #9fc0ff;
-  filter: drop-shadow(0 0 7px rgba(47, 111, 228, 0.32));
-  transition:
-    color 180ms ease,
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sidebar-search:hover .sidebar-search-icon {
-  color: var(--sb-pink-text);
-  transform: rotate(-8deg) scale(1.08);
-}
-
-.sidebar-shortcut {
-  padding: 0.12rem 0.42rem;
-  border: 1px solid rgba(135, 166, 225, 0.2);
-  border-radius: 0.45rem;
-  color: #d4e1fb;
-  background: rgba(4, 12, 27, 0.32);
-  font-size: 0.65rem;
-  line-height: 1rem;
-}
-
-.sidebar-compose {
-  color: #fff !important;
-  border: 1px solid rgba(47, 111, 228, 0.34) !important;
-  border-radius: 0.8rem !important;
-  outline: none !important;
-  background: linear-gradient(
-    135deg,
-    rgba(47, 111, 228, 0.78),
-    rgba(47, 111, 228, 0.48)
-  ) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5) !important;
-  transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 220ms ease,
-    border-color 220ms ease,
-    background 220ms ease !important;
-}
-
-.sidebar-compose:hover,
-.sidebar-compose-active {
-  color: var(--sb-pink-text) !important;
-  transform: translateY(-1px) scale(1.015);
-  border-color: var(--sb-pink-border) !important;
-  background: var(--sb-pink-soft) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5) !important;
-}
-
-.sidebar-nav {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 12px,
-    #000 calc(100% - 12px),
-    transparent 100%
-  );
-}
-
-.sidebar-nav :deep(a),
-.sidebar-nav :deep(button) {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 0.82rem;
-  color: #eef4ff;
-  background: rgba(47, 111, 228, 0.035);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
-  transition:
-    color 180ms ease,
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 240ms ease;
-}
-
-.sidebar-nav :deep(a::before),
-.sidebar-nav :deep(button::before) {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  opacity: 0;
-  background: linear-gradient(
-    100deg,
-    rgba(219, 39, 119, 0.16),
-    rgba(47, 111, 228, 0.12)
-  );
-  transition: opacity 180ms ease;
-}
-
-.sidebar-nav :deep(a::after),
-.sidebar-nav :deep(button::after) {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: 18%;
-  bottom: 18%;
-  inset-inline-start: 0;
-  width: 3px;
-  border-radius: 99px;
-  opacity: 0;
-  transform: scaleY(0.35);
-  background: linear-gradient(to bottom, #79a6ff, #db2777);
-  box-shadow: 0 0 14px rgba(64, 122, 240, 0.58);
-  transition:
-    opacity 180ms ease,
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sidebar-nav :deep(a:hover),
-.sidebar-nav :deep(button:hover) {
-  color: var(--sb-pink-text);
-  border-color: var(--sb-pink-border);
-  background: var(--sb-pink-soft);
-  transform: translateX(3px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5);
-}
-
-.sidebar-nav :deep(a:hover::before),
-.sidebar-nav :deep(button:hover::before) {
-  opacity: 1;
-}
-
-.sidebar-nav :deep(a:hover::after),
-.sidebar-nav :deep(button:hover::after),
-.sidebar-nav :deep(a.router-link-active::after),
-.sidebar-nav :deep(a.router-link-exact-active::after),
-.sidebar-nav :deep(a[aria-current='page']::after) {
-  opacity: 1;
-  transform: scaleY(1);
-}
-
-.sidebar-nav :deep(a.router-link-active),
-.sidebar-nav :deep(a.router-link-exact-active),
-.sidebar-nav :deep(a[aria-current='page']) {
-  color: #fff;
-  border-color: rgba(89, 140, 240, 0.42);
-  background: linear-gradient(
-    100deg,
-    rgba(47, 111, 228, 0.25),
-    rgba(219, 39, 119, 0.12)
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5);
-}
-
-.sidebar-nav :deep([class*='i-lucide-']),
-.sidebar-nav :deep([class*='i-woot-']) {
-  color: #b9d0ff;
-  filter: drop-shadow(0 0 5px rgba(47, 111, 228, 0.18));
-  transition:
-    color 180ms ease,
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 180ms ease;
-}
-
-.sidebar-nav :deep(a:hover [class*='i-lucide-']),
-.sidebar-nav :deep(button:hover [class*='i-lucide-']),
-.sidebar-nav :deep(a:hover [class*='i-woot-']),
-.sidebar-nav :deep(button:hover [class*='i-woot-']) {
-  color: var(--sb-pink-text);
-  transform: scale(1.08) rotate(-3deg);
-  filter: drop-shadow(0 0 7px rgba(219, 39, 119, 0.34));
-}
-
-.sidebar-nav :deep([class*='badge']),
-.sidebar-nav :deep([data-badge]) {
-  border: 1px solid var(--sb-pink-border);
-  background: var(--sb-pink-soft);
-  color: var(--sb-pink-text);
-  box-shadow: 0 5px 14px -8px rgba(219, 39, 119, 0.8);
-}
-
-.sidebar-bottom-fade {
-  background: linear-gradient(to top, var(--sb-bg) 8%, transparent);
-}
-
-.sidebar-profile {
-  border-top: 1px solid rgba(87, 132, 220, 0.18);
-  background: linear-gradient(
-    180deg,
-    rgba(7, 18, 37, 0.74),
-    rgba(5, 12, 25, 0.96)
-  );
-  box-shadow: 0 -10px 28px rgba(3, 10, 24, 0.2);
-  backdrop-filter: blur(16px);
-}
-
-/* Only style the profile TRIGGER */
-.sidebar-profile :deep(.relative.min-w-0 > button) {
-  color: #f5f8ff;
-  border-radius: 0.78rem;
-  transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 180ms ease;
-}
-
-.sidebar-profile :deep(.relative.min-w-0 > button:hover) {
-  color: var(--sb-pink-text);
-  background: var(--sb-pink-soft);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px -8px rgba(64, 122, 240, 0.5);
-}
-
-/* Profile trigger text only */
-.sidebar-profile :deep(.relative.min-w-0 > button .text-n-slate-12) {
-  color: rgb(255 119 224) !important;
-}
-
-.sidebar-profile :deep(.relative.min-w-0 > button .text-n-slate-11) {
-  color: #ffffff !important;
-}
-
-.sidebar-resize-line {
-  background: transparent;
-}
-
-.sidebar-resize:hover .sidebar-resize-line,
-.sidebar-resize-line.is-resizing {
-  width: 2px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    #2f6fe4,
-    #db2777,
-    transparent
-  );
-  box-shadow: 0 0 14px rgba(64, 122, 240, 0.7);
-}
-
-/* Vue compiles `:global(X) …` to `X` alone: the ancestor selector must stay plain, or every [dir=rtl] element moves. */
-[dir='rtl'] .sidebar-nav :deep(a:hover),
-[dir='rtl'] .sidebar-nav :deep(button:hover) {
-  transform: translateX(-3px);
-}
-
-@keyframes sidebar-aurora {
-  0% {
-    transform: translate3d(-6%, -8%, 0) rotate(0deg) scale(0.94);
-  }
-  55% {
-    transform: translate3d(42%, 18%, 0) rotate(100deg) scale(1.04);
-  }
-  100% {
-    transform: translate3d(18%, 58%, 0) rotate(205deg) scale(0.96);
-  }
-}
-
-@keyframes sidebar-shimmer {
-  to {
-    background-position: -230% 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidebar-shell::after,
-  .sidebar-aurora {
-    animation: none;
-  }
-
-  .sidebar-search,
-  .sidebar-compose,
-  .sidebar-toggle-btn,
-  .sidebar-nav :deep(a),
-  .sidebar-nav :deep(button),
-  .sidebar-nav :deep([class*='i-lucide-']),
-  .sidebar-nav :deep([class*='i-woot-']) {
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Custom font overrides */
-.sidebar-shell.text-sm {
-  font-size: 1.1rem !important;
-}
-
-.sidebar-shell :deep(.text-sm) {
-  font-size: 1.1rem !important;
-}
-
-.sidebar-shell .sidebar-logo {
-  background: #ffffff9c !important;
-  width: 3.5rem !important;
-  height: 3.5rem !important;
-  padding: 2px !important;
-}
-
-.sidebar-shell .sidebar-logo :deep(svg),
-.sidebar-shell .sidebar-logo :deep(img),
-.sidebar-shell .sidebar-logo img {
-  width: 99% !important;
-  height: 99% !important;
-  max-width: none !important;
-  max-height: none !important;
-}
-
-.sidebar-nav :deep(.text-n-slate-9),
-.sidebar-nav :deep(.text-n-slate-10),
-.sidebar-nav :deep(.text-n-slate-11) {
-  color: rgba(255, 255, 255, 0.88) !important;
-}
-
-.sidebar-nav :deep(.text-n-slate-12) {
-  color: rgb(255 119 224) !important;
-}
-
-.sidebar-nav :deep(a:hover .text-n-slate-9),
-.sidebar-nav :deep(a:hover .text-n-slate-10),
-.sidebar-nav :deep(a:hover .text-n-slate-11),
-.sidebar-nav :deep(button:hover .text-n-slate-9),
-.sidebar-nav :deep(button:hover .text-n-slate-10),
-.sidebar-nav :deep(button:hover .text-n-slate-11) {
-  color: #ffffff !important;
-}
-
-.sidebar-nav :deep(li .text-n-slate-12) {
-  color: rgb(255 119 224) !important;
-}
-
-.sidebar-shell :deep(#sidebar-account-switcher span) {
-  color: #f2478d !important;
-  font-size: 1.5rem !important;
-  font-weight: 700 !important;
-}
-.sidebar-shell {
-  --sb-bg: #071225;
-  --sb-blue: #2f6fe4;
-  --sb-blue-glow: rgba(64, 122, 240, 0.5);
-  --sb-pink: #db2777;
-  --sb-pink-soft: rgba(219, 39, 119, 0.16);
-  --sb-pink-border: rgba(219, 39, 119, 0.3);
-  --sb-pink-text: #f8b8d4;
-  --sb-text: #ffffff;
-  --sb-muted: #d6e3fb;
-
-  isolation: isolate;
-  overflow: visible; /* collapsed: let tooltips and popovers overflow the sidebar */
-  color: var(--sb-text);
-  border-inline-end: 1px solid rgba(47, 111, 228, 0.28);
-  background: radial-gradient(
-      circle at 14% 5%,
-      rgba(47, 111, 228, 0.34),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 88% 24%,
-      rgba(219, 39, 119, 0.16),
-      transparent 30%
-    ),
-    linear-gradient(165deg, #0d2148 0%, #09172f 36%, #071225 68%, #07101f 100%);
-  box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.035),
-    0 10px 22px -8px rgba(64, 122, 240, 0.5),
-    18px 0 48px rgba(2, 9, 22, 0.28);
-}
-
-/* expanded: clip the decorative background inside the sidebar */
-.sidebar-shell.sidebar-expanded {
-  overflow: hidden;
-}
-</style>

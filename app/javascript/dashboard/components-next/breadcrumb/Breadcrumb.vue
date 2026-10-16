@@ -1,7 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 
-import Icon from 'dashboard/components-next/icon/Icon.vue';
 import EmojiIcon from 'dashboard/components-next/emoji-icon-picker/EmojiIcon.vue';
 
 defineProps({
@@ -32,10 +31,14 @@ const onClick = (item, index) => {
         class="flex items-center"
         :class="{ 'min-w-0 flex-1': index === items.length - 1 }"
       >
-        <Icon
+        <!-- A separator that does not mirror points back up the trail in Arabic. It is also
+          decoration the <ol> already expresses, so it stays out of the reading order -- which needs a
+          bare span: `Icon` renders `h('span', { class })` and forwards no other attribute, so
+          `aria-hidden` on it would never reach the DOM. Same shape as Sidebar.vue:1106. -->
+        <span
           v-if="index > 0"
-          icon="i-lucide-chevron-right"
-          class="flex-shrink-0 mx-2 size-4 text-n-slate-11 dark:text-n-slate-11"
+          aria-hidden="true"
+          class="i-lucide-chevron-right flex-shrink-0 mx-2 size-4 text-n-slate-11 dark:text-n-slate-11 rtl:rotate-180"
         />
 
         <!-- Render as button for all except the last item -->

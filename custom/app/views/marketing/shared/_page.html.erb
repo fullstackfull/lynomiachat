@@ -1,0 +1,167 @@
+<%# Every marketing page, rendered from its row.
+
+  ONE WRAPPER FOR ALL 48 PAGES. The standing pages and the catalogue detail pages differ in exactly one way:
+  a detail page has a catalogue entry beside it, which contributes the availability badge, the prerequisite
+  callout, the documentation link and the neighbours. Everything else -- heading, standfirst, sections -- is
+  the row. Two templates would be two places to fix the next time the chrome changes.
+
+  WHAT COMES FROM THE OPERATOR AND WHAT DOES NOT, visible in one screen: `page.heading`, `page.lede` and
+  `page.sections` are the row; `entry.state`, the `requires` line, the docs slug and the related ids are
+  Marketing::Catalog. An operator cannot edit a feature's availability, because it was never theirs.
+
+  THE SECTIONS ARE NOT INSIDE A MEASURED COLUMN ANY MORE, and that is the change this page's rhythm hangs
+  on. Every block used to sit in one `max-w-6xl` article on one colour, so a nine-section page was a single
+  column of hairline-separated text with no way to tell a subject from the next. Each section is now a
+  full-bleed band that carries its own field and its own measure (shared/_sections.html.erb), and what is
+  left here is the page chrome: the breadcrumb, the heading, the prerequisite, and the catalogue's own
+  footer blocks. They keep the same `max-w-6xl` and the same gutters as a band's interior, so every left
+  edge on the page still lines up.
+%>
+<% entry = local_assigns[:entry] %>
+<% scope = local_assigns[:scope] %>
+<% measure = 'mx-auto max-w-6xl px-4 sm:px-6' %>
+
+<%# A PAGE THAT OPENS WITH A HERO LETS THE HERO CARRY ITS HEADING.
+
+    The heading and the standfirst are still the row's own columns and there is still exactly one H1 -- the
+    only question is which template prints it. When the first section is a `hero`, printing it here would put
+    the eyebrow below the standfirst and leave the actions floating away from the sentence they belong to,
+    which is what the old homepage did. So a leading hero is rendered first, full-bleed, and it prints the
+    heading itself; every other page keeps the header below and renders every section inside the article. %>
+<% sections = Array(page.sections) %>
+<% lead_hero = sections.first if sections.first&.fetch('type', nil) == 'hero' %>
+<% body_sections = lead_hero ? sections.drop(1) : sections %>
+
+<article>
+  <% if lead_hero %>
+    <%= render 'marketing/sections/hero', section: lead_hero, page: page %>
+  <% end %>
+
+  <% if entry && scope %>
+    <div class="<%= measure %> pt-8">
+      <% trail = marketing_breadcrumb(scope, t("marketing.#{scope}.#{entry.id}.name")) %>
+      <%= render 'marketing/shared/breadcrumb', trail: trail %>
+      <%# The machine-readable half of the SAME trail, built from the same array, so a search result's
+          breadcrumb shows what the page shows. `content_for` because it belongs in the head, and the
+          template renders before the layout. %>
+      <% content_for :structured_data do %>
+        <%= marketing_structured_data(marketing_breadcrumb_schema(trail, marketing_url(marketing_page))) %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% unless lead_hero %>
+    <header class="<%= measure %> <%= entry && scope ? 'pt-6' : 'pt-16' %>">
+      <%# THE CHANNEL'S OWN MARK ABOVE ITS NAME. A reader arriving on /channels/whatsapp has usually come
+          looking for one specific app, and the mark confirms they are in the right place before a word of
+          the page is read. Only channels carry one: a feature or a solution is not a brand.
+
+          `entry &&` is the whole reason this page still renders. The catalogue entry is OPTIONAL on a
+          detail page -- Marketing::EntriesController#show says so, and Marketing::Catalog.find answers nil
+          for any slug the catalogue does not hold -- so an operator renaming a channel page's slug, which
+          SitePage::RENAMEABLE_KINDS explicitly allows, left `entry.id` raising on a public URL. Measured:
+          a kind:'channel' row at a fresh slug answered 500 with "undefined method 'id' for nil". Every
+          other `entry` reference in this file was already guarded; this one was not. %>
+      <% if scope == :channels && entry && Marketing::ChannelBrand.marked?(entry.id) %>
+        <div class="mb-6">
+          <%= render 'marketing/shared/channel_mark', id: entry.id, size: 56, labelled: false %>
+        </div>
+      <% end %>
+      <h1 class="text-balance text-[2.5rem] font-bold leading-[1.2] tracking-tight text-lyn-ink sm:text-[3.25rem]">
+        <%= page.heading.presence || page.title %>
+      </h1>
+
+      <%# THE AVAILABILITY BADGE SITS BESIDE THE TITLE, NOT INSIDE IT. It used to be a flex child of the H1,
+          which was survivable while the heading was 30px and is not now that it is 52px: `items-center`
+          hung a 12px chip in the middle of a display headline. It is also not part of the page's NAME,
+          which is what an H1 states -- it is a fact about the thing the page is about.
+
+          `capture` rather than a second copy of "which states render": an available entry renders nothing
+          at all, and whitespace is blank, so the row is drawn only when the badge has something to say.
+          The partial stays the one place that decides what that is. %>
+      <% badge = entry ? capture { render 'marketing/shared/state_badge', state: entry.state } : nil %>
+      <% if badge.present? %>
+        <p class="mt-5"><%= badge %></p>
+      <% end %>
+      <% if page.lede.present? %>
+        <p class="mt-5 max-w-2xl text-lg leading-[1.8] text-lyn-ink-soft"><%= page.lede %></p>
+      <% end %>
+    </header>
+  <% end %>
+
+  <%# The prerequisite, which is what makes the sentences above it true. From the catalogue, never the row.
+
+      MARKED LIKE AN ASIDE IN A DOCUMENT, NOT A TINTED SLAB IN AN ADMIN SCREEN. This was a tinted box in
+      a colour from outside the ramp -- the one off-system colour field on the page, and exactly the
+      treatment sections/_note.html.erb rejects for the same reason. It now takes that partial's rule on the
+      start edge and the catalogue card's inline label, so the sentence that decides whether a reader can
+      use this feature today does not get two incompatible looks depending on which page they met it on. %>
+  <% if entry && t("marketing.#{scope}.#{entry.id}.requires", default: nil).present? %>
+    <div class="<%= measure %> mt-10">
+      <p class="max-w-2xl border-s-2 border-lyn-royal/30 ps-5 text-base leading-[1.8] text-lyn-ink-soft">
+        <span class="font-semibold text-lyn-ink">
+          <%= t(scope == :channels ? 'marketing.state.you_supply' : 'marketing.state.requires') %>
+        </span>
+        <%= t("marketing.#{scope}.#{entry.id}.requires") %>
+      </p>
+    </div>
+  <% end %>
+
+  <%= render 'marketing/shared/sections', sections: body_sections, page: page %>
+
+  <%# THE DOCUMENTATION LINK RESOLVES TO THE READER'S OWN LANGUAGE. `entry.docs` names the article's
+      locale-independent key, not its slug -- see MarketingHelper#marketing_docs_article -- so it is resolved
+      here and the block is drawn only when a published article answers it. %>
+  <% docs_article = entry&.docs && marketing_docs_article(entry.docs) %>
+
+  <% if docs_article || entry&.channel_ids&.any? || entry&.related_ids&.any? %>
+    <div class="<%= measure %> py-16">
+      <% if docs_article %>
+        <p>
+          <a class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-lyn-line px-5 py-2.5 text-sm font-semibold text-lyn-ink transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+             href="<%= lynomia_docs_article_path(docs_article.slug) %>">
+            <%= t('marketing.read_docs') %>
+          </a>
+        </p>
+      <% end %>
+
+      <% if entry&.channel_ids&.any? %>
+        <section class="mt-12">
+          <h2 class="text-xl font-bold text-lyn-ink"><%= t('marketing.detail.works_with') %></h2>
+          <ul class="mt-4 flex flex-wrap gap-2">
+            <% entry.channel_ids.each do |channel_id| %>
+              <% channel = Marketing::Catalog.channel(channel_id) %>
+              <li>
+                <a class="inline-flex min-h-11 items-center gap-2 rounded-full border border-lyn-line py-1 pe-4 ps-1 text-sm font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                   href="<%= marketing_entry_path(:channels, channel) %>">
+                  <% if Marketing::ChannelBrand.marked?(channel.id) %>
+                    <%= render 'marketing/shared/channel_mark', id: channel.id, size: 28, labelled: false %>
+                  <% end %>
+                  <%= t("marketing.channels.#{channel.id}.name") %>
+                </a>
+              </li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+
+      <% if entry&.related_ids&.any? %>
+        <section class="mt-12">
+          <h2 class="text-xl font-bold text-lyn-ink"><%= t('marketing.detail.read_next') %></h2>
+          <div class="mt-5 grid gap-4 sm:grid-cols-3">
+            <% entry.related_ids.each do |feature_id| %>
+              <% feature = Marketing::Catalog.feature(feature_id) %>
+              <a class="group rounded-2xl border border-lyn-line p-5 transition-all hover:-translate-y-0.5 hover:border-lyn-royal/40 hover:shadow-[0_18px_40px_-26px_rgba(10,23,51,0.45)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+                 href="<%= marketing_entry_path(:features, feature) %>">
+                <span class="block text-base font-semibold text-lyn-ink"><%= t("marketing.features.#{feature.id}.name") %></span>
+                <span class="mt-1.5 block text-sm leading-[1.8] text-lyn-ink-soft"><%= t("marketing.features.#{feature.id}.summary") %></span>
+              </a>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+    </div>
+  <% end %>
+</article>
+
+<%= render 'marketing/shared/cta' %>

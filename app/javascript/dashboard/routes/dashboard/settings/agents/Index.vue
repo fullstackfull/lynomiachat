@@ -222,7 +222,7 @@ const confirmDeletion = () => {
               hide-offline-status
             />
             <div class="flex flex-col gap-1.5 items-start">
-              <span class="block text-heading-3 text-n-slate-12 capitalize">
+              <span class="block text-heading-3 text-n-slate-12">
                 {{ agent.name }}
               </span>
               <div class="flex flex-wrap items-center gap-2">

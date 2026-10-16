@@ -10,11 +10,31 @@
 # 2. Define the regex pattern with named capture groups: (?<name>pattern)
 # 3. Create an HTML template using %{name} placeholders matching the capture groups
 #
-# NO TEMPLATE HERE MAY EMIT A <script> TAG. Every template below renders an <iframe> or a <video>, which the
-# browser isolates in its own origin. A <script src> runs third-party code with this product's origin, on a
-# public page, chosen by whoever wrote the article. `wistia` and `github_gist` were removed for exactly that
+# NO TEMPLATE HERE MAY EMIT A <script> TAG. A <script src> runs third-party code with THIS product's origin, on
+# a public page, chosen by whoever wrote the article. `wistia` and `github_gist` were removed for exactly that
 # reason (docs/documentation-v2/08-orchestrator-rulings.md R1.3); Gist content is attacker-authored and Wistia's
 # template pulled two remote scripts. A spec asserts this file stays script-free.
+#
+# AN EARLIER VERSION OF THIS COMMENT ALSO CLAIMED THE REMAINING TEMPLATES ARE SAFE BECAUSE AN <iframe> IS
+# "isolated in its own origin". THAT IS TRUE AND IT IS NOT A SUFFICIENT SAFETY ARGUMENT, so it is corrected here
+# rather than deleted. Origin isolation stops a frame reading this page's DOM or cookies. It does NOT stop the
+# frame navigating the TOP-LEVEL page, because none of these templates sets `sandbox`, and it does not make the
+# FRAMED CONTENT non-executable.
+#
+# `codepen` was the live case and the owner removed it (K18, decided): a CodePen embed RUNS the pen's own HTML,
+# CSS and JavaScript, and the pen is named by path segments taken from the author's markdown link -- so the
+# provider put author-controlled JavaScript in an un-sandboxed cross-origin frame on a public, unauthenticated
+# page, with no `frame-src` in the live CSP to fall back on. Removing an unused provider was chosen over
+# shipping a `sandbox` policy whose tokens are not yet browser-verified per provider. Same rationale as R1.3,
+# and the corpus uses zero embeds, so the content cost is nil.
+#
+# NOTE: the "Open in CodePen" button on the widget install snippet (app/javascript/dashboard/components/Code.vue)
+# is a DIFFERENT thing -- a form POST to codepen.io/pen/define from the dashboard, not an embed on a public
+# page -- and is deliberately untouched.
+#
+# WHAT REMAINS UNRESOLVED FOR THE PROVIDERS STILL HERE: none of them sets `sandbox`, so each is trusted on the
+# strength of its vendor rendering media rather than author code. Tightening that is the deferred
+# `frame-src`/`script-src` CSP item (ruling R1.5) plus per-provider browser verification.
 
 youtube:
   regex: 'https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)(?<video_id>[^&/?]+)'
@@ -101,23 +121,6 @@ bunny:
         style="border: 0; position: absolute; top: 0; height: 100%; width: 100%;"
         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
         allowfullscreen>
-      </iframe>
-    </div>
-
-codepen:
-  regex: 'https?://(?:www\.)?codepen\.io/(?<user>[^/]+)/pen/(?<pen_id>[^/?]+)'
-  template: |
-    <div style="height: 400px; box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
-      <iframe
-        height="400"
-        style="width: 100%;"
-        scrolling="no"
-        title="CodePen Embed"
-        src="https://codepen.io/%{user}/embed/%{pen_id}?default-tab=result"
-        frameborder="no"
-        loading="lazy"
-        allowtransparency="true"
-        allowfullscreen="true">
       </iframe>
     </div>
 

@@ -104,8 +104,11 @@ watch(
             v-if="hasVideo"
             class="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
+            <!-- `bg-black/50` compiled to nothing -- `black` is a 50-900 scale in this config, so
+              the bare class has no value and the scrim behind the play glyph was never painted,
+              leaving white-on-thumbnail. `n-black` is the single #000 the config does define. -->
             <span
-              class="size-12 rounded-full bg-black/50 flex items-center justify-center"
+              class="size-12 rounded-full bg-n-black/50 flex items-center justify-center"
             >
               <span class="i-lucide-play size-6 text-white" />
             </span>

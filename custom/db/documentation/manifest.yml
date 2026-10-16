@@ -6,7 +6,7 @@
 sections:
   - slug: getting-started
     position: 10
-    icon: rocket
+    icon: i-lucide-rocket
     en:
       name: Getting started
       description: Set up Lynomia Chat and handle your first conversation.
@@ -16,7 +16,7 @@ sections:
 
   - slug: conversations
     position: 20
-    icon: messages-square
+    icon: i-lucide-messages-square
     en:
       name: Conversations
       description: Working in the inbox day to day.
@@ -26,7 +26,7 @@ sections:
 
   - slug: contacts
     position: 30
-    icon: users
+    icon: i-lucide-users
     en:
       name: Contacts
       description: Who your customers are, and how to organise them.
@@ -36,7 +36,7 @@ sections:
 
   - slug: audiences-and-campaigns
     position: 40
-    icon: megaphone
+    icon: i-lucide-megaphone
     en:
       name: Audiences and campaigns
       description: Reaching a group of customers on purpose.
@@ -44,9 +44,19 @@ sections:
       name: الجماهير والحملات
       description: الوصول إلى مجموعة من العملاء بشكل مقصود.
 
+  - slug: channels
+    position: 45
+    icon: i-lucide-inbox
+    en:
+      name: Channels
+      description: Every way a customer can reach you, and how to connect each one.
+    ar:
+      name: القنوات
+      description: كل طريقة يمكن للعميل أن يصل بها إليك، وكيفية ربط كل واحدة منها.
+
   - slug: whatsapp
     position: 50
-    icon: message-circle
+    icon: i-lucide-message-circle
     en:
       name: WhatsApp
       description: Connecting WhatsApp, and the rules WhatsApp sets.
@@ -56,7 +66,7 @@ sections:
 
   - slug: whatsapp-errors
     position: 55
-    icon: alert-triangle
+    icon: i-lucide-alert-triangle
     en:
       name: WhatsApp errors
       description: What WhatsApp's refusals mean, and which ones you can do something about.
@@ -66,7 +76,7 @@ sections:
 
   - slug: automation
     position: 60
-    icon: workflow
+    icon: i-lucide-workflow
     en:
       name: Automation and bots
       description: Letting Lynomia Chat do the repetitive work.
@@ -74,9 +84,19 @@ sections:
       name: الأتمتة والروبوتات
       description: اترك لينوميا تشات يقوم بالعمل المتكرر.
 
+  - slug: analytics
+    position: 65
+    icon: i-lucide-bar-chart-3
+    en:
+      name: Analytics and reports
+      description: What the numbers mean, and which screen answers which question.
+    ar:
+      name: التحليلات والتقارير
+      description: ماذا تعني الأرقام، وأي شاشة تجيب عن أي سؤال.
+
   - slug: commerce
     position: 70
-    icon: shopping-bag
+    icon: i-lucide-shopping-bag
     en:
       name: Commerce
       description: Seeing what a customer bought, inside the conversation.
@@ -84,9 +104,19 @@ sections:
       name: المتجر
       description: اطّلع على مشتريات العميل من داخل المحادثة.
 
+  - slug: support
+    position: 75
+    icon: i-lucide-clipboard-list
+    en:
+      name: Support cases
+      description: Work that needs tracking beyond a single conversation.
+    ar:
+      name: حالات الدعم
+      description: عمل يحتاج متابعة تتجاوز محادثة واحدة.
+
   - slug: workspace
     position: 80
-    icon: building
+    icon: i-lucide-building
     en:
       name: Workspace and team
       description: Inboxes, teams, and who can do what.
@@ -96,7 +126,7 @@ sections:
 
   - slug: integrations
     position: 90
-    icon: plug
+    icon: i-lucide-plug
     en:
       name: Integrations
       description: Connecting Lynomia Chat to the rest of your tools.
@@ -106,7 +136,7 @@ sections:
 
   - slug: administration
     position: 100
-    icon: shield
+    icon: i-lucide-shield
     en:
       name: Administration
       description: What happened in your account, and who did it.
@@ -116,7 +146,7 @@ sections:
 
   - slug: troubleshooting
     position: 110
-    icon: life-buoy
+    icon: i-lucide-life-buoy
     en:
       name: Troubleshooting
       description: When something is not working.

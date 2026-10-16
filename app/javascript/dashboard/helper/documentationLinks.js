@@ -31,6 +31,8 @@ export const DOC_ARTICLES = Object.freeze({
   sharedAudiences: 'shared-audiences',
   labelsOrAudiences: 'labels-or-shared-audiences',
   campaigns: 'whatsapp-campaigns',
+  liveChatCampaigns: 'live-chat-campaigns',
+  campaignsOrAutomation: 'campaigns-or-automation',
   // whatsapp
   whatsapp: 'connect-whatsapp',
   whatsappCoexistence: 'whatsapp-business-coexistence',
@@ -60,6 +62,7 @@ export const DOC_ARTICLES = Object.freeze({
   flows: 'flow-builder',
   automationOrFlows: 'automation-or-flow-builder',
   agentBots: 'agent-bots',
+  autoResolve: 'auto-resolve',
   // commerce
   commerce: 'commerce-overview',
   commerceProviders: 'commerce-provider-support',
@@ -84,7 +87,10 @@ export const DOC_ARTICLES = Object.freeze({
   // platform
   integrations: 'integrations',
   webhooks: 'webhooks',
+  slack: 'slack',
+  dashboardApps: 'dashboard-apps',
   auditLogs: 'audit-logs',
+  dataImports: 'data-imports',
   troubleshooting: 'troubleshooting',
   // Platform Support Desk. One article, in the troubleshooting section, because that is where a stuck reader
   // already is (docs/platform-support/12-refresh-against-product-refinement.md §7). The three tenant surfaces

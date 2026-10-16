@@ -379,4 +379,116 @@ describe CustomMarkdownRenderer do
       expect(output).not_to include('vbscript:')
     end
   end
+
+  # R2. A documentation image is a `media:` key resolved against the portal being rendered, never a URL, a blob
+  # id or a signed id. The resolver is passed in, which is what keeps an article with twenty images at two
+  # queries, and it is nil everywhere else -- the message path, and every existing caller and spec.
+  describe 'a media: key' do
+    let(:resolved) do
+      Documentation::MediaResolver::Image.new(
+        key: 'whatsapp/connect-number/step-2.png', blob: nil,
+        path: '/hc/lynomia-docs/articles/connect-whatsapp/media/whatsapp/connect-number/step-2.png',
+        content_type: 'image/png', byte_size: 184_320, width: 1280, height: 720
+      )
+    end
+    let(:media) { instance_double(Documentation::MediaResolver) }
+    let(:renderer) { described_class.new(media: media) }
+
+    it 'emits the app-owned path, the intrinsic dimensions and the lazy hints' do
+      allow(media).to receive(:resolve).with('whatsapp/connect-number/step-2.png').and_return(resolved)
+
+      output = render_markdown('![Step two: paste the token](media:whatsapp/connect-number/step-2.png)')
+
+      expect(output).to include(%(<img src="#{resolved.path}"))
+      expect(output).to include('alt="Step two: paste the token"')
+      expect(output).to include('width="1280" height="720"')
+      expect(output).to include('loading="lazy" decoding="async"')
+    end
+
+    # Section 2.5: there is no author-chosen width for a media key, so no inline style and no `?cw_image_width`.
+    it 'emits no inline width style, because the displayed width is the content column' do
+      allow(media).to receive(:resolve).and_return(resolved)
+
+      expect(render_markdown('![Alt](media:whatsapp/connect-number/step-2.png)')).not_to include('style=')
+    end
+
+    it 'omits the dimensions when the host could not measure them' do
+      allow(media).to receive(:resolve).and_return(
+        Documentation::MediaResolver::Image.new(key: 'a/b.png', blob: nil, path: '/x', content_type: 'image/png',
+                                                byte_size: 1, width: nil, height: nil)
+      )
+
+      output = render_markdown('![Alt](media:a/b.png)')
+
+      expect(output).to include('loading="lazy"')
+      expect(output).not_to include('width=')
+    end
+
+    # An unresolved key is a corpus defect the seed boundary should already have refused, so the runtime only has
+    # to be inert and diagnosable. No src="" -- an empty src re-requests the current page in several browsers.
+    it 'emits an inert comment, not an empty src, for a key it cannot resolve' do
+      allow(media).to receive(:resolve).and_return(nil)
+
+      output = render_markdown('![Alt](media:whatsapp/absent.png)')
+
+      expect(output).to include('<!-- media: unresolved key whatsapp/absent.png -->')
+      expect(output).not_to include('<img')
+    end
+
+    it 'cannot close its own diagnostic comment with a hostile key' do
+      allow(media).to receive(:resolve).and_return(nil)
+
+      output = described_class.new(media: media).render(CommonMarker.render_doc('![a](media:x--><script>y)', :DEFAULT))
+
+      expect(output).not_to include('--><script>')
+      expect(output).to include('&gt;')
+    end
+
+    it 'resolves nothing when no resolver was passed, which is every non-article caller' do
+      output = described_class.new.render(CommonMarker.render_doc('![Alt](media:a/b.png)', :DEFAULT))
+
+      expect(output).to include('<!-- media: unresolved key a/b.png -->')
+    end
+  end
+
+  # The data:image closure, scoped to the ARTICLE renderer only. The owner's "no universal sanitizer" ruling is
+  # why this is an override on this class rather than an edit to MarkdownRendererUrlSanitizer, and
+  # spec/lib/base_markdown_renderer_spec.rb:85-89 staying green and unmodified is the containment proof.
+  describe 'the data:image closure' do
+    it 'blanks a data:image/png source, which the message path still permits' do
+      output = render_markdown('![Alt](data:image/png;base64,iVBORw0KGgo=)')
+
+      expect(output).to include('<img src=""')
+      expect(output).not_to include('data:image/png')
+    end
+
+    %w[gif jpeg webp svg+xml].each do |subtype|
+      it "blanks a data:image/#{subtype} source" do
+        expect(render_markdown("![Alt](data:image/#{subtype};base64,AAAA)")).to include('<img src=""')
+      end
+    end
+
+    # 065's F5: the exception was a prefix match applied to <a href> as well as <img src>, which is an
+    # unnecessary exception on the wrong element. The closure shuts that for the article path too.
+    it 'blanks a data:image URL in a LINK href as well' do
+      output = render_markdown("\n\n[click](data:image/png;base64,iVBORw0KGgo=)\n\n")
+
+      expect(output).to include('href=""')
+      expect(output).not_to include('data:image/png')
+    end
+
+    it 'still blanks the other dangerous schemes, which were never re-permitted' do
+      %w[javascript:alert(1) vbscript:alert(1) file:///etc/passwd].each do |url|
+        expect(render_markdown("![Alt](#{url})")).to include('<img src=""')
+      end
+    end
+
+    # Containment, asserted here rather than only in the message renderer's own untouched file.
+    it 'does not change the message renderer, which keeps the exception' do
+      message = BaseMarkdownRenderer.new
+                                    .render(CommonMarker.render_doc('![Alt](data:image/png;base64,AAAA)', :DEFAULT))
+
+      expect(message).to include('src="data:image/png;base64,AAAA"')
+    end
+  end
 end

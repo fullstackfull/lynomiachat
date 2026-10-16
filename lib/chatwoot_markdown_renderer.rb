@@ -10,8 +10,10 @@ class ChatwootMarkdownRenderer
     render_as_html_safe(html)
   end
 
-  def render_article
-    markdown_renderer = CustomMarkdownRenderer.new
+  # `media:` keeps every existing caller and spec working unchanged; only the article controller passes a
+  # resolver, because only a documentation portal has media to resolve.
+  def render_article(media: nil)
+    markdown_renderer = CustomMarkdownRenderer.new(media: media)
     doc = CommonMarker.render_doc(@content, :DEFAULT, [:table])
     html = markdown_renderer.render(doc)
 

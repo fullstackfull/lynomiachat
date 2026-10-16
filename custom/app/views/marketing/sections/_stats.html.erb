@@ -1,0 +1,33 @@
+<%# Figures.
+
+  A `metric` IS READ AT RENDER TIME, a `value` is a literal the operator typed. That is what keeps "nine
+  channels" correct on the day a tenth is connected -- the number is not stored anywhere an edit could make
+  it stale. A metric nobody implemented renders nothing rather than a blank figure with a label.
+
+  THE PROOF BELONGS TO THE HERO, so it is set on the hero's own field and divided from it by a hairline
+  rather than by a change of paper. It used to be a specification row in small type on white, three sizes
+  below the headline above it and the first thing a reader met after the opening: the page's evidence,
+  whispered. It is the one place on the site where a figure gets display size, and it gets it because there
+  are three of them and they are the shortest true thing the page can say.
+%>
+<% items = Array(section['items']).filter_map do |item|
+     figure = item['metric'].present? ? marketing_metric(item['metric']) : item['value']
+     next if figure.blank?
+
+     { figure: figure, label: item['label'] }
+   end %>
+
+<% if items.any? %>
+  <section class="<%= tone %>">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <dl class="grid grid-cols-1 gap-x-10 gap-y-8 border-t border-lyn-line-dark py-14 sm:grid-cols-3">
+        <% items.each do |item| %>
+          <div class="flex flex-col gap-2">
+            <dt class="text-4xl font-bold tracking-tight text-lyn-paper sm:text-5xl"><%= item[:figure] %></dt>
+            <dd class="max-w-xs text-base leading-[1.7] text-lyn-paper/60"><%= item[:label] %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+  </section>
+<% end %>

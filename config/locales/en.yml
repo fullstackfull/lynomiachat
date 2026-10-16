@@ -78,6 +78,40 @@ en:
     super_admin:
       published: Article published. It is now public.
       unpublished: Article unpublished. It is no longer public.
+      editor:
+        heading_2: Heading
+        heading_3: Subheading
+        bold: Bold
+        italic: Italic
+        inline_code: Code
+        bullet_list: Bulleted list
+        ordered_list: Numbered list
+        blockquote: Quote
+        code_block: Code block
+        table: Table
+        link: Link
+        insert_image: Insert image
+        replace_image: Replace image
+        uploading: Uploading…
+        show_preview: Show preview
+        hide_preview: Hide preview
+        preview_title: Preview
+        preview_updating: Updating preview…
+        alt_required: Describe this image. Alt text is required.
+        alt_hint: It is read aloud to anyone who cannot see the image, and it is the text that appears in public
+          search results, so describe what the image shows rather than naming the file.
+        alt_confirm: Insert
+        alt_cancel: Cancel
+        missing_alt: 'An image has no alt text. Add one before saving — lines:'
+        data_image_found: 'An image is pasted in as data, which cannot be published. Replace it with an uploaded
+          image — lines:'
+        blocked_submit: This article cannot be saved yet. Fix the problems listed above the editor.
+        unsupported_type: That file type cannot be published. Use a PNG, JPEG, GIF or WebP image.
+        choose_portal_first: Choose the portal first. Images belong to one portal's media library.
+        data_image_refused: That image was pasted in as data. Use the Insert image button so it is stored as
+          documentation media.
+        no_image_at_caret: Put the cursor on the image you want to replace first.
+        replaced_image: 'Replaced the image behind this key, and every article using it:'
   errors:
     account:
       not_authorized: You are not authorized to access this account
@@ -815,6 +849,28 @@ en:
   super_admin:
     partner_integrations:
       not_found: 'That integration no longer exists.'
+    # The website's one sales setting. The console has no locale switch, so the field carries both of the names
+    # the owner gave it -- `label` in English and `label_ar` in Arabic -- and shows them together rather than
+    # guessing which language the operator reads.
+    marketing_settings:
+      label: 'Sales Quote Notification Email'
+      label_ar: 'بريد استقبال طلبات عروض الأسعار'
+      flash:
+        saved: 'Saved. Quote requests are now emailed to %{detail}.'
+        cleared: 'Cleared. No email is sent for new quote requests; they are still stored and listed here.'
+        unchanged: 'That is already the stored address, so nothing changed.'
+        invalid: 'That is not a valid email address, so nothing was saved. Enter one address, or empty the field to send no notification.'
+        too_long: 'That address is too long, so nothing was saved.'
+        not_configured: 'There is no address to send a test to. Save one first.'
+        test_sent: 'A test email was accepted by the mail server for %{detail}. Check that it arrives.'
+        test_failed: 'The test email could not be sent: %{detail}'
+    site_pages:
+      published: 'This page is now published.'
+      unpublished: 'This page is now unpublished. Visitors get a 404 until it is published again.'
+      no_public_address: 'This page has no public address, so there is nothing to preview.'
+      image_uploaded: 'Uploaded. Its image id is %{id} — choose it in an image section or on the SEO panel.'
+      image_missing: 'That image is not on this page.'
+      image_removed: 'The image was removed. Any section still naming it renders nothing.'
     operations:
       case_title: "Operational issue: %{source} %{signal}"
       case_intro: "Recorded operational issue %{source}/%{signal} at severity %{severity}."

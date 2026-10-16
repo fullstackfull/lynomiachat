@@ -1,10 +1,12 @@
 <script setup>
 import { computed, reactive } from 'vue';
 import Message from './Message.vue';
+import DateSeparator from './DateSeparator.vue';
 import { MESSAGE_TYPES } from './constants.js';
 import { useCamelCase } from 'dashboard/composables/useTransformKeys';
 import { useMapGetter } from 'dashboard/composables/store.js';
 import MessageApi from 'dashboard/api/inbox/message.js';
+import { fromUnixTime, isSameDay } from 'date-fns';
 
 /**
  * Props definition for the component
@@ -99,6 +101,23 @@ const fetchReplyMessage = async (messageId, conversationId) => {
  * @param {Array} searchList - Array of messages to check
  * @returns {Boolean} - Whether the message should be grouped with next
  */
+// A conversation can run for weeks, and the timeline had no day marker of any kind -- only the unread
+// separator -- so it read as one undifferentiated column of bubbles and you had to open a timestamp to
+// learn when anything happened. The first message carries one too, so the thread always opens dated.
+const startsNewDay = (index, searchList) => {
+  const current = searchList[index];
+  if (!current?.createdAt) return false;
+  if (index === 0) return true;
+
+  const previous = searchList[index - 1];
+  if (!previous?.createdAt) return false;
+
+  return !isSameDay(
+    fromUnixTime(current.createdAt),
+    fromUnixTime(previous.createdAt)
+  );
+};
+
 const shouldGroupWithNext = (index, searchList) => {
   if (index === searchList.length - 1) return false;
 
@@ -169,6 +188,10 @@ const getInReplyToMessage = parentMessage => {
   <ul class="px-4 bg-n-surface-1">
     <slot name="beforeAll" />
     <template v-for="(message, index) in allMessages" :key="message.id">
+      <DateSeparator
+        v-if="startsNewDay(index, allMessages)"
+        :timestamp="message.createdAt"
+      />
       <slot
         v-if="firstUnreadId && message.id === firstUnreadId"
         name="unreadBadge"

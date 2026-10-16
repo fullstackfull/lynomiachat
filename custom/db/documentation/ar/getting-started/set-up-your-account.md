@@ -80,9 +80,9 @@ seo_description: اسم العمل، ولغة الحساب، والمنطقة ا
 
 ## مواضيع ذات صلة
 
-- [ادعُ فريقك](invite-your-team)
-- [اربط أول قناة](connect-your-first-channel)
-- [الأدوار والصلاحيات](roles-and-permissions)
+- [ادعُ فريقك](invite-your-team-ar)
+- [اربط أول قناة](connect-your-first-channel-ar)
+- [الأدوار والصلاحيات](roles-and-permissions-ar)
 
 ## إذا لم ينجح الأمر
 

@@ -15,6 +15,10 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     features: BillingPlanFeaturesField,
     channel_entitlements: BillingPlanChannelsField,
     active: Field::Boolean,
+    # Whether the public pricing page may publish this plan. Separate from `active`, which means "a customer
+    # may subscribe": an operator needs plans live for a migration or a negotiated customer long before -- or
+    # without ever -- wanting them on a public page.
+    listed_on_website: Field::Boolean,
     position: Field::Number,
     subscriptions: CountField,
     stripe_product_id: Field::String,
@@ -31,6 +35,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     interval
     pricing_type
     active
+    listed_on_website
     subscriptions
   ].freeze
 
@@ -46,6 +51,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     features
     channel_entitlements
     active
+    listed_on_website
     position
     subscriptions
     stripe_product_id
@@ -65,6 +71,7 @@ class BillingPlanDashboard < Administrate::BaseDashboard
     features
     channel_entitlements
     active
+    listed_on_website
     position
   ].freeze
 

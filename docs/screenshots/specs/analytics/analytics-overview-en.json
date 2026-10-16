@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/app/en/analytics-overview.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 352,
+    "y": 16,
+    "w": 1056,
+    "h": 384
+  }
+}

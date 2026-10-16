@@ -30,8 +30,16 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp unless Rails.env.test?
   config.action_mailer.smtp_settings = smtp_settings
 
-  # Use sendmail if using postfix for email
-  config.action_mailer.delivery_method = :sendmail if ENV['SMTP_ADDRESS'].blank?
+  # Use sendmail if using postfix for email.
+  #
+  # `unless Rails.env.test?` for the same reason as the :smtp line above it, which this line was missing:
+  # config/environments/test.rb sets `delivery_method = :test` so a spec can assert on
+  # ActionMailer::Base.deliveries, and an initializer runs after the environment file -- so in a test run with
+  # no SMTP_ADDRESS (which is every test run) this reassigned it to :sendmail. With `raise_delivery_errors`
+  # also true, `deliver_now` in a spec raised Errno::ENOENT for /usr/sbin/sendmail and nothing was ever
+  # recorded as delivered. Nothing outside the test environment changes: production still falls back to
+  # sendmail when no SMTP relay is configured.
+  config.action_mailer.delivery_method = :sendmail if ENV['SMTP_ADDRESS'].blank? && !Rails.env.test?
 
   # You can use letter opener for your local development by setting the environment variable
   config.action_mailer.delivery_method = :letter_opener if Rails.env.development? && ENV['LETTER_OPENER']

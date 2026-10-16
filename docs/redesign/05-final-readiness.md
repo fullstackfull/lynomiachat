@@ -1,0 +1,229 @@
+# Final readiness
+
+What is ready, what is not, and the order to merge it in. Every number here was measured in this
+container; where something could not be measured, it says so and says why.
+
+## 1. The three pull requests
+
+| | What it is | Branch | Base |
+| --- | --- | --- | --- |
+| **#29** | The marketing website redesign, 96 pages, both locales | `claude/practical-thompson-9xfqed` | `lynomia-custom` |
+| **#30** | The agent dashboard redesign, plus the product screenshots it makes possible | `claude/lynomia-dashboard-redesign` | **#29's branch** |
+| **Flutter #1** | The mobile app redesign | `claude/practical-thompson-9xfqed` | `main` |
+
+**#31 (Dyte IDOR) stays separate and stays independent.** Its base is `lynomia-custom` and it shares
+no file with either redesign branch, so it can merge before or after them in any order.
+
+## 2. Merge and retarget sequence
+
+```
+1. Merge #29 into lynomia-custom.
+2. GitHub retargets #30 to lynomia-custom automatically when #29 merges from the same
+   repository. CONFIRM it did: #30's base must read `lynomia-custom`, not a deleted branch.
+3. Merge #30 into lynomia-custom.
+4. Merge Flutter #1 into main, in its own repository, at any time.
+5. #31 whenever its own review completes.
+```
+
+Then, on the server, once #30 is deployed:
+
+```
+bundle exec rails documentation:content     # publishes the article and attaches its screenshot
+```
+
+That step is **required**: a file in `custom/db/documentation/media/` is not published until the
+seeder runs, and until it does the article renders an HTML comment where the image should be. The
+seeder is idempotent and digest-guarded — a second run against a populated database reports every
+article unchanged and replaces only a file whose bytes actually differ.
+
+One thing the deploy **cannot** do, and that is deliberate: putting the product screenshot on the two
+`unified-inbox` marketing pages is an operator action in Super Admin, once per locale, because the
+seeder never overwrites a page that already exists. `docs/screenshots/marketing-walkthroughs.md` is
+the procedure and the copy is already written in both languages.
+
+Nothing in this stack is merged or deployed. That decision is the owner's.
+
+## 3. What was measured
+
+### Feature preservation — the gate for the whole dashboard redesign
+
+`bin/dashboard-route-inventory` run against the **pre-redesign base `236b3dd8`** and against the
+current head produces **byte-identical output**: 136 named routes, 137 lines, no line added, changed
+or removed. Not a claim about the diff — the same tool over both trees.
+
+### Blast radius, counted rather than described
+
+Across both pull requests, from the pre-redesign base to the current head:
+
+| | |
+| --- | --- |
+| Migrations, `db/schema.rb` | **0** |
+| `Gemfile`, `Gemfile.lock`, `package.json`, `pnpm-lock.yaml` | **0** |
+| `config/routes.rb` and `config/routes/` | **0** |
+| Ruby files outside specs | **5** — `custom/app/controllers/marketing/base_controller.rb`, `custom/app/helpers/marketing_helper.rb`, `custom/app/services/marketing/{content_blueprint,section_schema}.rb`, and one capture tool |
+| Documentation corpus | four articles, four images — two English, two Arabic |
+
+No model, no policy, no job, no API controller, no Enterprise file. A redesign of this size that
+touches no server-side domain code is the shape it should be, and it is what makes the route
+inventory a sufficient gate rather than a comforting one.
+
+### The dashboard, the website and the documentation, rendered
+
+| Gate | Result |
+| --- | --- |
+| `tools/visual/marketing-gate.mjs` | **64 page renders clean** — 16 pages × 2 locales × 2 widths: HTTP 200, correct `dir` and `lang`, exactly one `h1`, a non-empty `<title>`, no "Translation missing", nothing wider than the viewport |
+| `spec/custom/services/documentation/` | **481 examples, 0 failures** |
+| `rails documentation:content` | 138 articles; the Arabic pass reports **2 updated, 136 unchanged, 2 media attached, 0 without dimensions**, and a re-run reports nothing changed |
+| The four figures, fetched from the running server | HTTP 200, `image/png`, each `<img>` carrying its intrinsic `width` and `height` |
+| The acceptance screenshot set, `docs/redesign/evidence/final/` | **162 captures** — the dashboard at 36 screens × English light, English dark and Arabic RTL, each at phone and desktop width, plus the marketing walkthrough in both locales and the published documentation pages |
+
+### The visual documentation exists in both languages, not just English
+
+| | English | Arabic |
+| --- | --- | --- |
+| Illustrated articles | `conversations/assign-and-prioritise`, `conversations/work-in-the-inbox` | the same two |
+| Annotated figures | `conversations/assign-agent-en`, `conversations/inbox-filters-en` | `…-ar`, `…-ar` |
+| Marketing walkthrough on `unified-inbox` | built and photographed | built and photographed |
+
+The Arabic figures are **not mirrored copies of the English ones**. The dashboard was re-captured
+with the account set to `ar`, so the panel is on the left, the labels are Arabic and the list reads
+right-to-left; the ring positions were then measured against that capture, because the panel's
+vertical rhythm is not the same in the two locales, and each ring was checked against the control it
+claims to point at. The spec's `side` values are logical (`start` / `end`), so the renderer puts
+every label on the reading-start side in both directions.
+
+Both Arabic articles were fetched from the running server after seeding and carry their figure with
+intrinsic dimensions, and the Arabic marketing page renders the walkthrough with its three numbered
+points as real markup in right-to-left order.
+
+### What looking at the screens found
+
+Two defects came out of reading the screenshots rather than the code, and both are fixed here:
+
+- **The side-panel toggle reported no state.** `aria-pressed` was bound to a key absent from a new
+  user's `ui_settings`, and Vue omits an attribute bound to `undefined` — so on every account that
+  had never opened the panel, a toggle rendered as a bare icon told a screen reader nothing. Verified
+  in the live DOM before (`null`) and after (`"false"`).
+- **The contacts list's expand control had no name.** It is the only control that opens the editor
+  inside a contact row, and it is a bare chevron: a screen reader announced "button". It now carries
+  a translated name and `aria-expanded`. This one also explains a capture failure — the sidebar's
+  account switcher carries the same icon and comes first in the document, so the selector addressing
+  "the first chevron button" had been clicking the account menu.
+
+### The mobile app
+
+Re-verified in this container from a fresh checkout and a fresh SDK (Flutter stable `abaf9c5237`,
+Dart 3.13.5):
+
+| Gate | Result |
+| --- | --- |
+| `flutter test` | **99 tests, all pass** |
+| `flutter analyze` | **0 errors**; 499 issues total, against **543 on `main`** — measured by running the analyzer on both |
+
+## 4. What is red, and whose it is
+
+### `security-scan` — red, inherited, deferred on purpose
+
+`bundle-audit` fails on two gems, neither touched by any of this work:
+
+| Gem | Advisory | Fix |
+| --- | --- | --- |
+| `ruby_llm` 1.15.0 | three High ReDoS CVEs (CVE-2026-67987, -67989, -67991) | `>= 2.0.0.rc1` — a major release that removes APIs this application calls |
+| `rack-proxy` 0.7.7 | GHSA-42qh-8mx8-7wqm, HTTP response smuggling | `>= 1.0.3` |
+
+Both need an isolated, tested dependency pull request. `docs/redesign/02-deferred-dependency-upgrade.md`
+carries the detail. **Suppressing them in `.bundler-audit.yml` would be the wrong fix** — they are
+real, unfixed advisories, and the check is telling the truth.
+
+### `backend-tests` — seven shards were red for one missing package, now fixed
+
+ActiveStorage analyses images with the VIPS analyzer (`config/application.rb:39` is
+`load_defaults 7.0`, which sets `variant_processor = :vips`). That analyzer's `read_image` rescues
+`LoadError` and returns `{}`, so with no library a blob is marked analysed and carries no width and
+no height — silently. The media specs assert those dimensions, got `nil`, and failed. Production has
+the library (`docker/Dockerfile:130`); the workflow installed nothing.
+
+Fixed on #29's branch by one step installing `libvips` — the only one of the three candidate package
+names that resolves on both noble and jammy, checked against packages.ubuntu.com rather than assumed.
+It is on #29 rather than #30 so it turns **both** PRs green at once.
+
+**Measured, not predicted.** On PR #29, the run against `8eee3686` (the libvips step, and nothing
+else, on top of `c73ea9e1`):
+
+| | before | after |
+| --- | --- | --- |
+| `backend-tests` | 7 of 16 shards failing | **16 of 16 success** |
+| `lint-backend`, `lint-frontend`, `frontend-tests`, `Validate PR title` | success | success |
+| `security-scan` | failure | failure, unchanged — see above |
+
+### One shard was ours, and is fixed
+
+Adding the first image to the documentation corpus turned shard 3 red: the corpus spec's
+cross-reference check treats every `](target)` as a link to another article, and an image's
+`media:` destination is not one. The media key's grammar, its reserved namespace and the file behind
+it are all validated by `Documentation::MediaSeeder`, which refuses the whole seed rather than
+letting a bad one through — so the scheme is now excluded from that check, reading it from
+`Documentation::MediaResolver::SCHEME` rather than spelling it a second time.
+
+### Arabic, counted
+
+Every key the English catalogue has and the pre-redesign base did not was checked against its Arabic
+sibling. **Twenty-six had none** — most of them the aria-labels this redesign's accessibility work
+added — and all twenty-six are now translated. An accessibility pass that names every control and
+then names them in English is half a pass in a product whose primary market reads Arabic.
+
+Looking at the Arabic screenshots then found five more that the key comparison could not: three
+accordion titles in the conversation side panel carried the English string as their Arabic value
+(`Contact Notes`, `Attachments`, `Linked Linear Issues`), and two label buttons had an orthography
+error and an inconsistent term. All five are corrected. The one key this final pass adds — the
+contacts row's expand control — ships in both catalogues in the same commit.
+
+**The Arabic screenshots show this gap, and they are meant to.** Open
+`docs/redesign/evidence/final/dashboard-ar-rtl/` and English strings are visible on several screens —
+"Update contact", "Select country", "Showing 1 - 15 of 20 contacts", "My Inbox". The layout mirrors
+correctly and every control this redesign touched is in Arabic; what is left in English is the
+upstream catalogue, below.
+
+The wider picture, which is not this stack's to fix: **3,091 of 8,403 dashboard keys carry the
+English string in the Arabic catalogue** — 37% of the interface. It concentrates in upstream
+Chatwoot surfaces (integrations 617, inbox management 470, settings 425, help centre 355), which
+`CLAUDE.md` routes through Crowdin and the community rather than through product pull requests. It
+is the single largest remaining gap between the two languages and it deserves a plan of its own.
+
+### The mobile repository has no CI at all
+
+`fullstackfull/lynomia-chat-app98` has no `.github/workflows` directory, so **PR #1 has no automated
+gate**: nothing runs `flutter analyze`, nothing runs the 99 tests, and a pull request that broke both
+would look exactly like one that did not. The numbers above were measured by hand in this container.
+
+A workflow doing `flutter pub get`, `flutter analyze` and `flutter test` on every pull request would
+close that, and it is three lines of YAML. It is not in this pull request because adding CI to a
+repository is an owner's decision — runner minutes, which branches it gates, whether it becomes
+required — rather than part of a redesign.
+
+## 5. Limitations, stated precisely
+
+- **No emulator, so no device screenshots of the Flutter app.** `/dev/kvm` is absent and
+  `grep -cE 'vmx|svm' /proc/cpuinfo` is 0, so no Android or iOS emulator can run here. The Flutter
+  evidence is Flutter's own golden files: the real production widgets, laid out by the real engine at
+  390×844, written to PNG. They are labelled as goldens everywhere they appear and are never
+  described as device screenshots. Where a golden and a device disagree, the device is right.
+- **A walkthrough on an existing marketing page is an operator action, not a deploy.**
+  `Marketing::ContentSeeder` never overwrites a page that already exists, and a walkthrough's image is
+  an attachment id on that page's own row — so a section added to the blueprint reaches a fresh
+  install and no existing one. The section type, its renderer, its validation and the images all ship
+  in the repository; putting one on a live page is three minutes in Super Admin, per page and per
+  locale. `docs/screenshots/marketing-walkthroughs.md` is that procedure, with the copy already
+  written in both languages and both finished pages photographed under
+  `docs/redesign/evidence/final/marketing-walkthrough/`.
+- **`dio 4.0.6` in the Flutter app is under CVE-2021-31402** (CRLF injection when the attacker
+  controls the HTTP method string; CVSS 7.5; fixed in 5.0.0). That precondition does not exist in
+  this codebase — all 38 call sites use a fixed verb, and there is no `_dio.request(...)` and no
+  `Options(method:)` taking a value from data. The upgrade is a breaking major and belongs in a
+  dependency PR of its own, not in a redesign.
+- **The product screenshots use the standard seeded demo account.** Everything in them comes from
+  `rails db:seed` and `Seeders::AccountSeeder` — the `acme.inc` workspace, `PaperLayer` inboxes, and
+  contacts at reserved `.test` addresses. There is no customer conversation, contact, phone number,
+  address or token in any of them. Before the marketing site goes live, the owner may prefer to
+  re-shoot them from a demo account carrying Lynomia's own sample branding; the pipeline makes that a
+  re-capture, not a redraw.

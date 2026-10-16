@@ -155,6 +155,32 @@ RSpec.describe 'Public Articles API', type: :request do
       expect(response).to have_http_status(:success)
       expect(response.body).to include('lang="es"')
     end
+
+    # THE TAB TITLE, on the classic tenant page. `articles/_meta_head.html.erb` is shared between this page and
+    # the plain variant Super Admin Preview lands on, and it took `<title>` from `article.title` while taking
+    # `title`, `og:title` and `twitter:title` from `meta['title']` -- so a tenant who set an SEO title got it in
+    # every head tag but the one the browser shows. Both directions are pinned here because this page is
+    # crawler-visible, unlike the preview variant: a change to the shared partial is a tenant-visible product
+    # change and must not be silently regressed.
+    it 'puts the SEO title in <title> when the tenant set one' do
+      article.update!(meta: article.meta.to_h.merge('title' => 'How refunds work'))
+
+      get "/hc/#{portal.slug}/articles/#{article.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("<title>How refunds work | #{portal.display_title(article.locale)}</title>")
+      # The discriminator: the heading is still the article title, so this fails if <title> ignores the override.
+      expect(response.body).not_to include("<title>#{article.title} | ")
+    end
+
+    it 'falls back to the article title in <title> when no SEO title is set' do
+      article.update!(meta: article.meta.to_h.except('title'))
+
+      get "/hc/#{portal.slug}/articles/#{article.slug}"
+
+      expect(response).to have_http_status(:success)
+      expect(response.body).to include("<title>#{article.title} | #{portal.display_title(article.locale)}</title>")
+    end
   end
 
   describe 'GET /public/api/v1/portals/:slug/articles/:slug.md (markdown)' do

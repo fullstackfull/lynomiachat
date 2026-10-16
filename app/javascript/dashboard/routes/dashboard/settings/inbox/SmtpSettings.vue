@@ -176,7 +176,7 @@ export default {
     class="[&>div]:!items-start [&>div>label]:mt-1 mb-4"
   >
     <form @submit.prevent="updateInbox">
-      <label for="toggle-enable-smtp">
+      <label>
         <input
           v-model="isSMTPEnabled"
           type="checkbox"

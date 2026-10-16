@@ -160,7 +160,7 @@ const saveReviewNotes = async () => {
               content: exactTimestamp(response.review_notes_updated_at),
               delay: { show: 500, hide: 0 },
             }"
-            class="text-sm text-n-slate-10"
+            class="text-sm text-n-slate-11"
           >
             {{ dynamicTime(response.review_notes_updated_at) }}
           </span>

@@ -1,157 +1,142 @@
-<script>
-/* eslint no-console: 0 */
+<script setup>
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { useAlert } from 'dashboard/composables';
-import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
-import NextButton from 'dashboard/components-next/button/Button.vue';
-import Modal from '../../../../components/Modal.vue';
+import { useStore } from 'dashboard/composables/store';
 
-export default {
-  components: {
-    NextButton,
-    Modal,
-    WootMessageEditor,
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
+import WootMessageEditor from 'dashboard/components/widgets/WootWriter/Editor.vue';
+
+const props = defineProps({
+  id: { type: Number, default: null },
+  edcontent: { type: String, default: '' },
+  edshortCode: { type: String, default: '' },
+});
+
+const emit = defineEmits(['close']);
+
+const { t } = useI18n();
+const store = useStore();
+
+const dialogRef = ref(null);
+const isUpdating = ref(false);
+
+const shortCode = ref('');
+const content = ref('');
+
+const v$ = useVuelidate(
+  {
+    shortCode: { required, minLength: minLength(2) },
+    content: { required },
   },
-  props: {
-    id: { type: Number, default: null },
-    edcontent: { type: String, default: '' },
-    edshortCode: { type: String, default: '' },
-    onClose: { type: Function, default: () => {} },
-  },
-  setup() {
-    return { v$: useVuelidate() };
-  },
-  data() {
-    return {
-      editCanned: {
-        showAlert: false,
-        showLoading: false,
-      },
-      shortCode: this.edshortCode,
-      content: this.edcontent,
-      show: true,
-    };
-  },
-  validations: {
-    shortCode: {
-      required,
-      minLength: minLength(2),
-    },
-    content: {
-      required,
-    },
-  },
-  computed: {
-    pageTitle() {
-      return `${this.$t('CANNED_MGMT.EDIT.TITLE')} - ${this.edshortCode}`;
-    },
-  },
-  methods: {
-    setPageName({ name }) {
-      this.v$.content.$touch();
-      this.content = name;
-    },
-    resetForm() {
-      this.shortCode = '';
-      this.content = '';
-      this.v$.shortCode.$reset();
-      this.v$.content.$reset();
-    },
-    editCannedResponse() {
-      // Show loading on button
-      this.editCanned.showLoading = true;
-      // Make API Calls
-      this.$store
-        .dispatch('updateCannedResponse', {
-          id: this.id,
-          short_code: this.shortCode,
-          content: this.content,
-        })
-        .then(() => {
-          // Reset Form, Show success message
-          this.editCanned.showLoading = false;
-          useAlert(this.$t('CANNED_MGMT.EDIT.API.SUCCESS_MESSAGE'));
-          this.resetForm();
-          setTimeout(() => {
-            this.onClose();
-          }, 10);
-        })
-        .catch(error => {
-          this.editCanned.showLoading = false;
-          const errorMessage =
-            error?.message || this.$t('CANNED_MGMT.EDIT.API.ERROR_MESSAGE');
-          useAlert(errorMessage);
-        });
-    },
-  },
+  { shortCode, content }
+);
+
+// `$touch` on its own changes nothing a user can see. `Input` draws the red outline and the
+// message from `message` + `message-type`, so the touched state has to reach it.
+const shortCodeError = computed(() =>
+  v$.value.shortCode.$error ? t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.ERROR') : ''
+);
+
+const isInvalid = computed(
+  () => v$.value.shortCode.$invalid || v$.value.content.$invalid
+);
+
+const dialogTitle = computed(
+  () => `${t('CANNED_MGMT.EDIT.TITLE')} - ${props.edshortCode}`
+);
+
+// The dialog is reused between openings now, so the fill follows the props and runs again on open:
+// picking a different response refills it, and re-opening the same one after abandoning an edit
+// does not keep the abandoned edit.
+const fillFromProps = () => {
+  shortCode.value = props.edshortCode;
+  content.value = props.edcontent;
+  v$.value.$reset();
 };
+
+watch(() => [props.id, props.edshortCode, props.edcontent], fillFromProps, {
+  immediate: true,
+});
+
+const open = () => {
+  fillFromProps();
+  dialogRef.value?.open();
+};
+
+const handleClose = () => emit('close');
+
+const editCannedResponse = async () => {
+  if (isInvalid.value) return;
+  isUpdating.value = true;
+  try {
+    await store.dispatch('updateCannedResponse', {
+      id: props.id,
+      short_code: shortCode.value,
+      content: content.value,
+    });
+    useAlert(t('CANNED_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+    dialogRef.value?.close();
+  } catch (error) {
+    useAlert(error?.message || t('CANNED_MGMT.EDIT.API.ERROR_MESSAGE'));
+  } finally {
+    isUpdating.value = false;
+  }
+};
+
+defineExpose({ open, dialogRef });
 </script>
 
 <template>
-  <Modal v-model:show="show" :on-close="onClose">
-    <div class="flex flex-col h-auto overflow-auto">
-      <woot-modal-header :header-title="pageTitle" />
-      <form class="flex flex-col w-full" @submit.prevent="editCannedResponse()">
-        <div class="w-full">
-          <label :class="{ error: v$.shortCode.$error }">
-            {{ $t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.LABEL') }}
-            <input
-              v-model="shortCode"
-              type="text"
-              :placeholder="$t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.PLACEHOLDER')"
-              @input="v$.shortCode.$touch"
-            />
-          </label>
-        </div>
+  <Dialog
+    ref="dialogRef"
+    type="edit"
+    width="xl"
+    :title="dialogTitle"
+    :confirm-button-label="t('CANNED_MGMT.EDIT.FORM.SUBMIT')"
+    :cancel-button-label="t('CANNED_MGMT.EDIT.CANCEL_BUTTON_TEXT')"
+    :is-loading="isUpdating"
+    :disable-confirm-button="isInvalid || isUpdating"
+    @confirm="editCannedResponse"
+    @close="handleClose"
+  >
+    <Input
+      v-model="shortCode"
+      :label="t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.LABEL')"
+      :placeholder="t('CANNED_MGMT.EDIT.FORM.SHORT_CODE.PLACEHOLDER')"
+      :message="shortCodeError"
+      :message-type="shortCodeError ? 'error' : 'info'"
+      @input="v$.shortCode.$touch"
+    />
 
-        <div class="w-full">
-          <label :class="{ error: v$.content.$error }">
-            {{ $t('CANNED_MGMT.EDIT.FORM.CONTENT.LABEL') }}
-          </label>
-          <div class="editor-wrap">
-            <WootMessageEditor
-              v-model="content"
-              class="message-editor [&>div]:px-1"
-              :class="{ editor_warning: v$.content.$error }"
-              channel-type="Context::Default"
-              enable-variables
-              :enable-canned-responses="false"
-              :placeholder="$t('CANNED_MGMT.EDIT.FORM.CONTENT.PLACEHOLDER')"
-              @blur="v$.content.$touch"
-            />
-          </div>
-        </div>
-        <div class="flex flex-row justify-end w-full gap-2 px-0 py-2">
-          <NextButton
-            faded
-            slate
-            type="reset"
-            :label="$t('CANNED_MGMT.EDIT.CANCEL_BUTTON_TEXT')"
-            @click.prevent="onClose"
-          />
-          <NextButton
-            type="submit"
-            :label="$t('CANNED_MGMT.EDIT.FORM.SUBMIT')"
-            :disabled="
-              v$.content.$invalid ||
-              v$.shortCode.$invalid ||
-              editCanned.showLoading
-            "
-            :is-loading="editCanned.showLoading"
-          />
-        </div>
-      </form>
+    <!-- A group, not a `label for`: `WootMessageEditor`'s root is a div, and `for` binds only to a
+      labelable element, so an id on it associates with nothing. Same shape as the colour row in the
+      label dialogs. -->
+    <div
+      role="group"
+      aria-labelledby="canned-edit-content-label"
+      class="flex flex-col gap-1"
+    >
+      <span
+        id="canned-edit-content-label"
+        class="text-sm font-medium text-n-slate-12"
+      >
+        {{ t('CANNED_MGMT.EDIT.FORM.CONTENT.LABEL') }}
+      </span>
+      <!-- Arbitrary variants in place of the scoped SCSS `:deep()` block this file used to carry. -->
+      <WootMessageEditor
+        v-model="content"
+        class="message-editor [&>div]:px-1 [&_.ProseMirror-menubar]:!hidden [&_.ProseMirror-woot-style]:min-h-[12.5rem]"
+        :class="{ editor_warning: v$.content.$error }"
+        channel-type="Context::Default"
+        enable-variables
+        :enable-canned-responses="false"
+        :placeholder="t('CANNED_MGMT.EDIT.FORM.CONTENT.PLACEHOLDER')"
+        @blur="v$.content.$touch"
+      />
     </div>
-  </Modal>
+  </Dialog>
 </template>
-
-<style scoped lang="scss">
-:deep(.ProseMirror-menubar) {
-  @apply hidden;
-}
-
-:deep(.ProseMirror-woot-style) {
-  @apply min-h-[12.5rem];
-}
-</style>

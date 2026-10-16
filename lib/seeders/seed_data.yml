@@ -300,7 +300,7 @@ contacts:
             sender: michael_scott@paperlayer.test
             content: Sorry for the inconvenience. Can you please provide me with the specific information you're trying to update and the error message you're receiving?
     - name: "Klaus Crawley"
-      email: "kcrawley6@narod.ru"
+      email: "kcrawley6@narod.test"
       gender: 'male'
       conversations:
         - channel: Channel::WebWidget
@@ -322,7 +322,7 @@ contacts:
             sender: michael_scott@paperlayer.test
             content: I'm sorry to hear that. Can you please provide me with your order number and I'll see if I can cancel it for you?
     - name: "Claus Jira"
-      email: "cjira8@comcast.net"
+      email: "cjira8@comcast.test"
       gender: 'male'
       conversations:
         - channel: Channel::Whatsapp
@@ -346,7 +346,7 @@ contacts:
             sender: michael_scott@paperlayer.test
             content: Sure! Can you please provide me with your username or email address and I'll send you a password reset link?
     - name: "Coreen Mewett"
-      email: "cmewetta@home.pl"
+      email: "cmewetta@home.test"
       gender: 'female'
       conversations:
         - channel: Channel::FacebookPage
@@ -357,7 +357,7 @@ contacts:
             sender: michael_scott@paperlayer.test
             content: I'm sorry to hear that. Please change your password immediately and enable two-factor authentication if you haven't already done so. I can also assist you in reviewing your account activity if needed.
     - name: "Benyamin Janeway"
-      email: "bjanewayb@ustream.tv"
+      email: "bjanewayb@ustream.test"
       gender: 'male'
       conversations:
         - channel: Channel::Line
@@ -427,7 +427,7 @@ contacts:
             - message_type: incoming
               content: "Hey \n I didn't get the product delivered, but it shows it is delivered to my address. Please check"
     - name: "Willy Castelot"
-      email: "wcasteloth@exblog.jp"
+      email: "wcasteloth@exblog.test"
       gender: 'male'
       conversations:
         - channel: Channel::WebWidget

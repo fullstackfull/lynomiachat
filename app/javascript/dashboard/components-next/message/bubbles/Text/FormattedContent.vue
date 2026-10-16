@@ -24,5 +24,11 @@ const formattedContent = computed(() => {
 </script>
 
 <template>
-  <span v-dompurify-html="formattedContent" class="prose prose-bubble" />
+  <!-- `dir="auto"`: a customer writing English into an Arabic workspace (or the reverse) otherwise gets
+       their message laid out against its own script, with the punctuation thrown to the wrong end. -->
+  <span
+    v-dompurify-html="formattedContent"
+    dir="auto"
+    class="prose prose-bubble"
+  />
 </template>

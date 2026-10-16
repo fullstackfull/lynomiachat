@@ -214,7 +214,7 @@ watch(
 
     <div
       v-else-if="!hasRecords"
-      class="flex h-40 items-center justify-center text-sm text-n-slate-10"
+      class="flex h-40 items-center justify-center text-sm text-n-slate-11"
     >
       {{ $t('REPORT.DRILLDOWN.EMPTY') }}
     </div>

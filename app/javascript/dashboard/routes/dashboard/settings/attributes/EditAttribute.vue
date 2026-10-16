@@ -150,9 +150,6 @@ export default {
         useAlert(this.alertMessage);
       }
     },
-    toggleRegexEnabled() {
-      this.regexEnabled = !this.regexEnabled;
-    },
   },
 };
 </script>
@@ -233,14 +230,19 @@ export default {
             {{ $t('ATTRIBUTES_MGMT.ADD.FORM.TYPE.LIST.ERROR') }}
           </label>
         </div>
-        <div v-if="isAttributeTypeText">
-          <input
-            v-model="regexEnabled"
-            type="checkbox"
-            @input="toggleRegexEnabled"
-          />
+        <!-- The checkbox and its text were siblings, not a label and its control: the box
+          announced no name, and the words next to it did not toggle it. Wrapping is the
+          association here -- a `for` pointing at an id this input does not have would
+          override the wrapping and leave the label attached to nothing. `v-model` already
+          writes the boolean, so the extra `@input` handler that flipped it a second time
+          is gone with it. -->
+        <label
+          v-if="isAttributeTypeText"
+          class="flex items-center gap-2 w-fit mb-0 text-sm font-normal cursor-pointer text-n-slate-12"
+        >
+          <input v-model="regexEnabled" type="checkbox" class="mt-0 mb-0" />
           {{ $t('ATTRIBUTES_MGMT.ADD.FORM.ENABLE_REGEX.LABEL') }}
-        </div>
+        </label>
         <woot-input
           v-if="isAttributeTypeText && isRegexEnabled"
           v-model="regexPattern"

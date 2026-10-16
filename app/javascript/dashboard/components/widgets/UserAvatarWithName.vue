@@ -27,7 +27,7 @@ defineProps({
       hide-offline-status
       rounded-full
     />
-    <span class="my-0 truncate text-capitalize" :class="textClass">
+    <span class="my-0 truncate" :class="textClass">
       {{ user.name }}
     </span>
   </div>

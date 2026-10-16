@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/widget/en/host-open.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1280,
+  "height": 860,
+  "crop": {
+    "x": 824,
+    "y": 92,
+    "w": 456,
+    "h": 768
+  }
+}

@@ -1,0 +1,82 @@
+<%# A product walkthrough: one genuine screenshot of the running application beside the numbered steps
+  its markers point at.
+
+  THE PICTURE IS THE ILLUSTRATION, THE LIST IS THE CONTENT. The markers drawn on the screenshot are
+  numbered, and so is this `<ol>`, with the same numbers in the same order -- so a reader using a screen
+  reader, a translator, a search engine and a reader with images switched off all get the instructions.
+  The image's `alt` describes what the screenshot SHOWS; it deliberately does not repeat the steps,
+  because they are already on the page as text and a screen reader would read them twice.
+
+  THE SCREENSHOT IS SERVED FROM THE MARKETING MEDIA ROUTE, not /rails/active_storage/..., for the reason
+  `_image.html.erb` gives: robots.txt disallows /rails/, and a signed id never expires.
+
+  WIDTH AND HEIGHT COME FROM THE BLOB. A screenshot is the largest thing on the page, so a missing
+  intrinsic size is the one that would shift the layout under the reader as it lands. They are emitted
+  only when the blob was analysed -- a host without libvips records none, and a wrong guess would be
+  worse than none.
+%>
+<% attachment = page&.image_for(section['attachment_id']) %>
+<% steps = Array(section['items']) %>
+<% position = section['media_position'].to_s %>
+<%# `top` is for a screenshot of a whole screen. Beside the steps it is a quarter of the page wide and
+  the product in it stops being readable, which defeats the point of photographing it; across the
+  content width it is a 1.25x reduction of a 1440px capture and every control in it can be read. %>
+<% media_top = position == 'top' %>
+<% media_end = position == 'end' %>
+
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <% if section['heading'].present? || section['lede'].present? %>
+      <div class="mx-auto mb-12 max-w-2xl text-center">
+        <% if section['heading'].present? %>
+          <h2 class="text-balance text-3xl font-semibold tracking-tight text-lyn-ink sm:text-4xl">
+            <%= section['heading'] %>
+          </h2>
+        <% end %>
+        <% if section['lede'].present? %>
+          <p class="mt-4 text-lg leading-relaxed text-lyn-ink-soft"><%= section['lede'] %></p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="<%= media_top ? 'space-y-12' : 'grid items-center gap-10 lg:grid-cols-2 lg:gap-16' %>">
+      <% if attachment.present? %>
+        <%# `order` moves the picture, never the list: the DOM order is always picture-then-steps, so the
+          reading order a screen reader and a keyboard follow does not depend on which side it is drawn. %>
+        <figure class="<%= media_end ? 'lg:order-last' : '' %>">
+          <div class="overflow-hidden rounded-2xl border border-lyn-line bg-lyn-paper shadow-[0_18px_50px_-20px_rgba(10,23,51,0.35)]">
+            <img src="<%= marketing_media_path(id: attachment.id) %>"
+                 alt="<%= section['alt'].to_s %>"
+                 <%= "width=#{attachment.blob.metadata['width']} height=#{attachment.blob.metadata['height']}".html_safe if attachment.blob.metadata['width'].present? %>
+                 loading="lazy" decoding="async"
+                 class="block w-full">
+          </div>
+        </figure>
+      <% end %>
+
+      <% if steps.any? %>
+        <ol class="<%= media_top ? 'grid gap-8 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-6' %>">
+          <% steps.each_with_index do |step, index| %>
+            <li class="flex gap-4">
+              <%# The same number, in the same indigo, as the marker on the screenshot. `aria-hidden`
+                because the `<ol>` already numbers itself for assistive technology, and hearing "one, one"
+                is worse than hearing it once. %>
+              <span aria-hidden="true"
+                    class="mt-0.5 grid size-8 flex-none place-content-center rounded-full bg-lyn-indigo text-sm font-bold tabular-nums text-white">
+                <%= index + 1 %>
+              </span>
+              <div class="min-w-0">
+                <% if step['title'].present? %>
+                  <p class="text-base font-semibold text-lyn-ink"><%= step['title'] %></p>
+                <% end %>
+                <% if step['body'].present? %>
+                  <p class="mt-1 text-base leading-relaxed text-lyn-ink-soft"><%= step['body'] %></p>
+                <% end %>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      <% end %>
+    </div>
+  </div>
+</section>

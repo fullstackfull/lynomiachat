@@ -18,7 +18,7 @@ seo_description: "الاشتراك في أحداث لينوميا تشات، و�
 - **لإرسال رسائل أو تغيير أي شيء.** فالـ Webhook صادر فقط. استخدم الواجهة البرمجية للكتابة.
 - **للرد على محادثة فوراً.** فما يعيده رابطك يُهمَل. ولا شيء يعيده يدخل المحادثة.
 - **لقاعدة واحدة بعينها.** إن أردت طلب POST عند تحقّق شرط معيّن فقط، فإجراء الـ Webhook داخل
-  [قاعدة أتمتة](automation-rules) أو [تدفق](flow-builder) أضيق وأرخص من الاشتراك بكل رسالة في الحساب.
+  [قاعدة أتمتة](automation-rules-ar) أو [تدفق](flow-builder-ar) أضيق وأرخص من الاشتراك بكل رسالة في الحساب.
 
 ## ما تحتاجه أولاً
 
@@ -106,7 +106,7 @@ sha256=HMAC_SHA256(secret, "<timestamp>.<raw body>")
 ## من يستطيع ذلك
 
 المديرون وحدهم. فقائمة صلاحيات الدور المخصص لا تحتوي بنداً للـ Webhook، فلا يمكن تفويضه — راجع
-[الأدوار والصلاحيات](roles-and-permissions).
+[الأدوار والصلاحيات](roles-and-permissions-ar).
 
 ## الحدود
 
@@ -126,16 +126,16 @@ sha256=HMAC_SHA256(secret, "<timestamp>.<raw body>")
 | يرسله | `event` في الجسم | موقَّع |
 |---|---|---|
 | اشتراك Webhook | الحدث الذي اشتركت به | نعم، بسِرّ الـ Webhook |
-| إجراء الـ Webhook في [قاعدة أتمتة](automation-rules) | `automation_event.<trigger>`، ومعه كتلة `commerce` على مُطلِق المتجر | لا |
-| إجراء الـ Webhook في [ماكروس](macros) | `macro.executed` | لا |
-| عقدة الـ Webhook في [تدفق](flow-builder) | `flow_webhook`، ومعه التدفق والجلسة والقيم التي جمعها | نعم، بسِرّ روبوت التدفق |
+| إجراء الـ Webhook في [قاعدة أتمتة](automation-rules-ar) | `automation_event.<trigger>`، ومعه كتلة `commerce` على مُطلِق المتجر | لا |
+| إجراء الـ Webhook في [ماكروس](macros-ar) | `macro.executed` | لا |
+| عقدة الـ Webhook في [تدفق](flow-builder-ar) | `flow_webhook`، ومعه التدفق والجلسة والقيم التي جمعها | نعم، بسِرّ روبوت التدفق |
 
 ## مواضيع ذات صلة
 
-- [خيارات الربط](integrations)
-- [قواعد الأتمتة](automation-rules) · [ماكروس](macros) · [منشئ التدفقات](flow-builder)
-- [الأدوار والصلاحيات](roles-and-permissions)
-- [عندما لا يعمل شيء](troubleshooting)
+- [خيارات الربط](integrations-ar)
+- [قواعد الأتمتة](automation-rules-ar) · [ماكروس](macros-ar) · [منشئ التدفقات](flow-builder-ar)
+- [الأدوار والصلاحيات](roles-and-permissions-ar)
+- [عندما لا يعمل شيء](troubleshooting-ar)
 
 ## إن لم ينجح الأمر
 

@@ -27,6 +27,8 @@ show you.
 | Instagram | an Instagram account's direct messages |
 | API | your own application, through Lynomia Chat's API |
 
+![The channel picker when adding an inbox, with the channels this installation has not configured greyed out](media:channels/inbox-new-en.png)
+
 Some of these depend on how your installation is configured, and you will see them greyed out rather than hidden.
 Facebook and Instagram need a Meta app set up on the installation itself. TikTok appears only where it has been
 configured. Voice and WhatsApp calling are marked beta and depend on being switched on for your account. If a

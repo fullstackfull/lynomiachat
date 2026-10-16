@@ -1,0 +1,68 @@
+<%#
+  The quote request list, with two additions to Administrate's default index: the current notification state,
+  and a link to the screen that changes it.
+
+  WHY IT IS HERE AND NOT ONLY IN THE DOCS. MARKETING_QUOTE_NOTIFICATION_EMAIL has no fallback of any kind
+  (custom/app/mailers/marketing/quote_notification.rb), so while it is unset the mailer sends nothing at all
+  and this page is the ONLY place a lead arrives. An operator who believes they are emailed about new
+  requests, and is not, stops checking this page -- which is the failure the banner prevents. It is the same
+  statement, for the same reason, as the one on the Platform Support desk
+  (app/views/super_admin/platform_support/show.html.erb:27-38).
+
+  THE STATE COMES FROM Marketing::QuoteSettings.status, the same method the settings screen renders, so the
+  two pages cannot disagree about whether notifications are working.
+
+  The rest of the file is Administrate's own index template, unchanged, so the search bar, table and
+  pagination keep working as the gem updates them.
+%>
+<%=
+  render("index_header",
+    resources: resources,
+    search_term: search_term,
+    page: page,
+    show_search_bar: show_search_bar)
+%>
+
+<section class="main-content__body main-content__body--flush">
+  <% case Marketing::QuoteSettings.status %>
+  <% when :unconfigured %>
+    <div class="border border-yellow-300 bg-yellow-50 rounded-md px-3 py-2 mb-5 text-sm text-yellow-900">
+      <strong>No quote notification address is configured</strong>, so nobody is emailed when a visitor
+      submits the form on the pricing page. Every submission is still saved and listed here &mdash; this page
+      is the only place they arrive.
+      <%= link_to 'Set the address in Website Sales Settings', super_admin_marketing_settings_path,
+                  class: 'underline font-semibold' %>.
+    </div>
+  <% when :failing %>
+    <div class="border border-red-300 bg-red-50 rounded-md px-3 py-2 mb-5 text-sm text-red-900">
+      <strong>The last quote notification could not be delivered</strong>, so the lead below may not have
+      reached anybody by email. The requests themselves are safe.
+      <%= link_to 'See what the mail server said', super_admin_marketing_settings_path,
+                  class: 'underline font-semibold' %>.
+    </div>
+  <% end %>
+
+  <%# The settings link is here whatever the state. The owner's brief asks for the address to be reachable
+      from this screen rather than from an undocumented configuration key, and a link that appears only when
+      something is wrong is not where an operator looks to CHANGE a working address. %>
+  <p class="text-sm text-slate-600 mb-5">
+    Quote requests are emailed to
+    <% if Marketing::QuoteSettings.configured? %>
+      <code><%= Marketing::QuoteSettings.address %></code>.
+    <% else %>
+      nobody yet.
+    <% end %>
+    <%= link_to 'Website Sales Settings', super_admin_marketing_settings_path,
+                class: 'text-woot-700 underline' %>
+  </p>
+
+  <%= render(
+    "collection",
+    collection_presenter: page,
+    collection_field_name: resource_name,
+    page: page,
+    resources: resources,
+    table_title: "page-title") %>
+
+  <%= render("pagination", resources: resources) %>
+</section>

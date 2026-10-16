@@ -1,0 +1,15 @@
+<%# The honesty paragraph: what the page is NOT claiming. A rule on the start edge rather than a tinted slab,
+  because on this site it is content rather than a disclaimer to be hidden -- which is how an aside is marked
+  in a document rather than in an admin screen.
+
+  ITS BAND IS SHORTER THAN A SECTION'S. Every other type opens a subject and gets the full section step; this
+  one qualifies the subject above it, so it keeps the field it was given and takes about half the air.
+%>
+<section class="<%= tone %>">
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div class="max-w-2xl border-s-2 border-lyn-royal/30 ps-5">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-lyn-ink"><%= t('marketing.detail.note_title') %></h2>
+      <p class="mt-2 text-base leading-[1.8] text-lyn-ink-soft"><%= section['body'] %></p>
+    </div>
+  </div>
+</section>

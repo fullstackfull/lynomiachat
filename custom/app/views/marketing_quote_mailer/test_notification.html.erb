@@ -1,0 +1,12 @@
+<%# The test message the quote settings screen sends.
+
+  It says what it is and who asked for it, and nothing else: a test that looked like a real lead would be
+  answered like one.
+%>
+<p><%= t('marketing.quote_mailer.test_heading', address: @address) %></p>
+
+<p>
+  <%= @requested_by.present? ? t('marketing.quote_mailer.test_requested_by', actor: @requested_by) : t('marketing.quote_mailer.test_requested') %>
+</p>
+
+<p><%= t('marketing.quote_mailer.test_footer') %></p>

@@ -1,0 +1,41 @@
+<%# One channel mark: the brand's own plate with its own glyph on it.
+
+  LOCALS
+    id        a Marketing::Catalog::CHANNELS id (:whatsapp, :live_chat, ...)
+    size      the plate's edge in px. 40 is the strip, 48 the catalogue, 32 an inline chip.
+    labelled  true  -> the mark carries its own accessible name, for a strip with no text beside it
+              false -> aria-hidden, because the channel is named in text right next to it and a screen
+                       reader would otherwise say "WhatsApp WhatsApp"
+
+  WHY THE PLATE IS THE BRAND'S COLOUR AND NOT ONE HOUSE COLOUR. The instruction is explicit: do not put every
+  company logo inside an identical generic coloured circle. WhatsApp green, Messenger's blue-violet ramp and
+  Instagram's warm-to-violet ramp are the thing a visitor recognises at 40px without reading a word. What IS
+  held constant is the plate itself -- same edge, same radius, same inner padding, same soft shadow -- so ten
+  different brand colours still read as one row rather than a ransom note.
+
+  THE RADIUS IS 28% OF THE EDGE, which is the squircle ratio the platforms' own app icons use. At 40px that
+  is 11px; hard-coding 11px would go wrong the moment the mark is drawn at 64.
+%>
+<% mark = Marketing::ChannelBrand.mark_for(id) %>
+<% size = (defined?(size) && size) || 40 %>
+<% labelled = defined?(labelled) ? labelled : false %>
+<% name = t("marketing.channels.#{mark.id}.name", default: mark.id.to_s.humanize) %>
+<% gradient = Marketing::ChannelBrand::GRADIENTS.key?(mark.tile) %>
+
+<span class="relative inline-flex flex-none items-center justify-center shadow-[0_1px_2px_rgba(10,23,51,0.16),0_6px_16px_-8px_rgba(10,23,51,0.3)]"
+      style="width: <%= size %>px; height: <%= size %>px; border-radius: <%= (size * 0.28).round %>px; background: <%= gradient ? "url(##{mark.tile})" : mark.tile %>;"
+      <%= 'aria-hidden=true'.html_safe unless labelled %>>
+  <%# The gradient plates cannot be a CSS background, so they are painted by a <rect> in their own svg
+      underneath the glyph. One extra element on two of the ten marks, rather than a second code path. %>
+  <% if gradient %>
+    <svg class="absolute inset-0 h-full w-full" style="border-radius: inherit;" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect width="24" height="24" fill="url(#<%= mark.tile %>)"/>
+    </svg>
+  <% end %>
+  <svg class="relative" viewBox="0 0 24 24"
+       style="width: <%= (size * 0.62).round %>px; height: <%= (size * 0.62).round %>px; color: <%= mark.ink %>;"
+       <% if labelled %>role="img"<% else %>aria-hidden="true"<% end %> focusable="false">
+    <% if labelled %><title><%= name %></title><% end %>
+    <%= mark.body.html_safe %>
+  </svg>
+</span>

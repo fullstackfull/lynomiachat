@@ -1,0 +1,37 @@
+<%# The closing call to action, shared by the home page and every detail page.
+
+  TWO DESTINATIONS, BOTH REAL. Account creation goes to the application's own registration path, and the
+  second action is the published address rendered as a mailto: -- the old page's equivalent band offered a
+  trial that cannot start (no plan row exists, and the trial plan id defaults to nil) beside a live-chat
+  button that opened nothing (docs/official-website/02-verified-feature-inventory.md section 6).
+
+  THE PAGE DOES NOT CLOSE ON THE FIELD IT OPENED ON. This was `bg-lyn-ink`, which was the right answer while
+  it was the one dark field on an otherwise white page; now that the hero carries that field, an identical
+  band at the foot made the page look like it had looped. The close is the brand's own gradient -- royal into
+  indigo, the two colours the hero only pools behind its panel -- so the last thing a reader sees is the
+  loudest thing on the page, and it is loud exactly once.
+
+  THE BAND OWNS ITS OWN DISTANCE AND NOTHING ABOVE IT ADDS ANY. It carried an `mt-16` on top of the padding
+  its caller already put under the last section; every section is now a band with its own vertical step, so
+  a margin here would be a second, unreadable spacing stacked on a first.
+%>
+<section class="bg-lyn-royal bg-[linear-gradient(115deg,#1D3FA8_0%,#4038C9_52%,#5B5BF0_100%)]">
+  <div class="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:py-24">
+    <div>
+      <h2 class="max-w-xl text-balance text-3xl font-bold leading-[1.25] tracking-tight text-lyn-paper sm:text-[2.5rem]">
+        <%= t('marketing.cta.title') %>
+      </h2>
+      <p class="mt-4 max-w-xl text-lg leading-[1.8] text-lyn-paper/75"><%= t('marketing.cta.lede') %></p>
+    </div>
+    <div class="flex shrink-0 flex-wrap gap-3">
+      <a href="/app/register"
+         class="inline-flex min-h-12 items-center rounded-xl bg-lyn-paper px-7 text-base font-semibold text-lyn-royal transition-colors hover:bg-lyn-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-paper">
+        <%= t('marketing.cta.primary') %>
+      </a>
+      <a href="<%= marketing_support_email_url %>"
+         class="inline-flex min-h-12 items-center rounded-xl border border-lyn-paper/35 px-7 text-base font-semibold text-lyn-paper transition-colors hover:border-lyn-paper hover:bg-lyn-paper/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-paper">
+        <%= t('marketing.cta.email') %>
+      </a>
+    </div>
+  </div>
+</section>

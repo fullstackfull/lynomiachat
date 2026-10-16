@@ -1,0 +1,28 @@
+<%# One footer column, from the operator's navigation rows.
+
+  A link whose target does not resolve -- an unpublished page, a deleted one -- is dropped by
+  `marketing_nav` rather than rendered as a dead anchor. That is the mechanism behind the rule this rebuild
+  started from: the old footer advertised four legal documents and a live chat and delivered four empty
+  anchors.
+
+  AN EXTERNAL LINK NOW SAYS SO, AND SAYS IT THROUGH THE ANCHOR'S OWN OPTIONS. The four links to the
+  operator's published legal documents opened a new tab with nothing to announce it, and `target` and `rel`
+  were spliced in as an `html_safe` literal -- a string that bypasses escaping in the one place an operator's
+  data meets markup. They are tag options now, so `nil` simply omits the attribute, and the suffix is
+  `sr-only` because the new tab is only news to someone who cannot see it happen.
+%>
+<ul class="space-y-2 text-sm text-lyn-ink-soft">
+  <% marketing_nav(placement).each do |item| %>
+    <li>
+      <%= link_to item[:href],
+                  class: 'rounded-lg hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue',
+                  target: ('_blank' if item[:external]),
+                  rel: ('noopener' if item[:external]) do %>
+        <%= item[:label] %>
+        <% if item[:external] %>
+          <span class="sr-only"><%= t('marketing.footer.opens_new_tab') %></span>
+        <% end %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

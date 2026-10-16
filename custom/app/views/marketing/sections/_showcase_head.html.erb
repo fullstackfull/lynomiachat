@@ -1,0 +1,14 @@
+<%# A showcase's kicker, heading and standfirst. One partial because `top` puts them above the picture,
+  centred on the measure, and the side-by-side layouts keep them with the points -- and two copies of the
+  same three tags is how the two drift apart. %>
+<% if section['kicker'].present? %>
+  <p class="text-sm font-semibold tracking-wide text-lyn-indigo"><%= section['kicker'] %></p>
+<% end %>
+<% if section['heading'].present? %>
+  <h2 class="mt-2 text-balance text-3xl font-semibold tracking-tight text-lyn-ink sm:text-4xl">
+    <%= section['heading'] %>
+  </h2>
+<% end %>
+<% if section['lede'].present? %>
+  <p class="mt-4 text-lg leading-relaxed text-lyn-ink-soft"><%= section['lede'] %></p>
+<% end %>

@@ -51,8 +51,16 @@ class Documentation::Library
     # that language has no translation yet, and finally treating the key as a literal slug.
     # `articles.slug` is globally unique, so one key cannot be the slug in more than one locale -- the key lives in
     # `meta` instead (docs/global-documentation/12-contextual-help.md).
+    #
+    # ORDERED BY ID, so the answer is the same every time. One `doc_key` can legitimately be claimed by two
+    # published rows: renaming a corpus file makes the seeder's `find_or_initialize_by(slug:)` miss the existing
+    # row and create a second one, which keeps the old slug, the old `doc_key` and its `published` status forever
+    # (P2-SOURCE-OF-TRUTH-CONTRACT.md D4). Without an `ORDER BY`, which article a product help link opens is
+    # whatever the planner returns -- so it can change between two requests with no write in between. `:id`
+    # ascending picks the OLDER row, which is the one already indexed under its public URL and the one a reader
+    # arriving from a search result will land on; a help link and a search result then agree.
     def article_for(key, locale: nil)
-      by_key = articles.where("articles.meta->>'doc_key' = ?", key)
+      by_key = articles.where("articles.meta->>'doc_key' = ?", key).order(:id)
       by_key.find_by(locale: locale) || by_key.find_by(locale: DEFAULT_LOCALE) || by_key.first || article(key)
     end
 

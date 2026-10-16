@@ -1,0 +1,43 @@
+<%#
+  The page's SEO overrides. Every field here is optional and empty is the normal state: the canonical, the
+  social title, the social description and the social image all have correct defaults built from the page
+  itself (marketing/shared/_head.html.erb), so a blank panel is a configured page.
+%>
+<div class="field-unit__label">
+  <%= f.label field.attribute, 'SEO' %>
+</div>
+<div class="field-unit__field">
+  <% SitePageMetaField::STRING_KEYS.each do |key| %>
+    <div class="mb-3">
+      <label class="block text-xs font-medium" for="site_page_meta_<%= key %>">
+        <%= field.label(key) %>
+      </label>
+      <% if key == 'og_image_id' %>
+        <select id="site_page_meta_<%= key %>" name="<%= f.object_name %>[<%= field.attribute %>][<%= key %>]">
+          <option value="">— the first image section —</option>
+          <% field.image_options.each do |filename, id| %>
+            <option value="<%= id %>" <%= 'selected' if field.value_for(key) == id.to_s %>><%= filename %></option>
+          <% end %>
+        </select>
+      <% else %>
+        <input type="text" class="w-full" id="site_page_meta_<%= key %>"
+               name="<%= f.object_name %>[<%= field.attribute %>][<%= key %>]"
+               value="<%= field.value_for(key) %>">
+      <% end %>
+      <p class="text-xs text-n-slate-11"><%= field.hint(key) %></p>
+    </div>
+  <% end %>
+
+  <%# A hidden companion so an unticked box posts "0" rather than nothing, which is what lets an operator
+      clear the flag -- the same arrangement Rails' own check_box helper makes. %>
+  <div class="mb-1">
+    <input type="hidden" name="<%= f.object_name %>[<%= field.attribute %>][noindex]" value="0">
+    <label class="text-xs" for="site_page_meta_noindex">
+      <input type="checkbox" id="site_page_meta_noindex" value="1"
+             name="<%= f.object_name %>[<%= field.attribute %>][noindex]"
+             <%= 'checked' if field.noindex? %>>
+      <%= field.label('noindex') %>
+    </label>
+    <p class="text-xs text-n-slate-11"><%= field.hint('noindex') %></p>
+  </div>
+</div>

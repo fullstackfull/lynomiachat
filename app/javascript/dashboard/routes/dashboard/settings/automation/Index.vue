@@ -20,6 +20,7 @@ import TabBar from 'dashboard/components-next/tabbar/TabBar.vue';
 import { BaseTable } from 'dashboard/components-next/table';
 import RecipeDialog from 'dashboard/components-next/recipes/RecipeDialog.vue';
 import EmptyState from 'dashboard/components-next/empty-state/EmptyState.vue';
+import FetchErrorState from 'dashboard/components-next/FetchErrorState.vue';
 import { audienceIdFromQuery } from 'dashboard/helper/audienceHelper';
 import { AUTOMATION_RECIPES } from 'dashboard/recipes/automationRecipes';
 import { SETUP_RECIPES } from 'dashboard/recipes/setupRecipes';
@@ -455,6 +456,7 @@ const tableHeaders = computed(() => {
             <Button
               :label="$t('AUTOMATION.HEADER_BTN_TXT')"
               size="sm"
+              data-test-id="automation-add-button"
               @click="openAddPopup"
             />
           </div>
@@ -472,8 +474,12 @@ const tableHeaders = computed(() => {
       >
         {{ $t('AUTOMATION.LIST.DELAY_DISABLED_BANNER') }}
       </div>
+      <FetchErrorState
+        v-if="uiFlags.hasError"
+        @retry="store.dispatch('automations/get')"
+      />
       <EmptyState
-        v-if="!records.length && !uiFlags.isFetching"
+        v-else-if="!records.length && !uiFlags.isFetching"
         icon="i-lucide-repeat"
         :title="$t('AUTOMATION.LIST.404')"
         :description="$t('AUTOMATION.LIST.EMPTY_HINT')"

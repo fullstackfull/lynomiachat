@@ -32,7 +32,7 @@ seo_description: "ربط واتساب بلينوميا تشات: ما هو حس�
 
 ولا تظهر بطاقة **WhatsApp Business** إلا إذا كان لتنصيبك تطبيق Meta مهيّأ لها. فإن رأيت WhatsApp Cloud وTwilio
 فقط، فذلك إعداد على مستوى التنصيب لا تستطيع تغييره من حسابك. راجع
-[تطبيق WhatsApp Business ولينوميا تشات على رقم واحد](whatsapp-business-coexistence).
+[تطبيق WhatsApp Business ولينوميا تشات على رقم واحد](whatsapp-business-coexistence-ar).
 
 ## ما تحتاجه أولاً
 
@@ -88,10 +88,10 @@ seo_description: "ربط واتساب بلينوميا تشات: ما هو حس�
 
 ## مواضيع ذات صلة
 
-- [نافذة الـ24 ساعة في واتساب](the-whatsapp-24-hour-window)
-- [تطبيق WhatsApp Business ولينوميا تشات على رقم واحد](whatsapp-business-coexistence)
-- [قوالب واتساب](whatsapp-templates)
-- [حين لا يعمل واتساب](whatsapp-troubleshooting)
+- [نافذة الـ24 ساعة في واتساب](the-whatsapp-24-hour-window-ar)
+- [تطبيق WhatsApp Business ولينوميا تشات على رقم واحد](whatsapp-business-coexistence-ar)
+- [قوالب واتساب](whatsapp-templates-ar)
+- [حين لا يعمل واتساب](whatsapp-troubleshooting-ar)
 
 ## إذا لم ينجح الأمر
 

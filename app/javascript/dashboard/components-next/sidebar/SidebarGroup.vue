@@ -270,9 +270,10 @@ watch(
           :is="linkTo ? 'router-link' : 'button'"
           :to="linkTo"
           type="button"
-          class="flex items-center justify-center size-10 rounded-lg"
+          class="flex items-center justify-center size-10 rounded-lg transition-colors duration-150"
           :class="{
-            'text-n-slate-12 bg-n-alpha-2': isActive || hasActiveChild,
+            'text-n-slate-12 bg-lyn-indigo/20 ring-1 ring-inset ring-lyn-indigo/30':
+              isActive || hasActiveChild,
             'text-n-slate-11 hover:bg-n-alpha-2': !isActive && !hasActiveChild,
           }"
           :title="label"

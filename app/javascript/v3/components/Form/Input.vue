@@ -73,6 +73,7 @@ const currentInputType = computed(() => {
     </template>
     <input
       v-bind="$attrs"
+      :id="name"
       v-model="model"
       :name="name"
       :type="currentInputType"

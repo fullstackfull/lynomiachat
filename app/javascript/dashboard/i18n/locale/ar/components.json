@@ -33,7 +33,9 @@
   "THUMBNAIL": {
     "AUTHOR": {
       "NOT_AVAILABLE": "Author is not available"
-    }
+    },
+    "UPLOAD": "تحميل الصورة الرمزية",
+    "DELETE": "حذف الصورة الرمزية"
   },
   "BREADCRUMB": {
     "ARIA_LABEL": "Breadcrumb"
@@ -42,7 +44,8 @@
     "TOGGLE": "Toggle switch"
   },
   "LABEL": {
-    "TAG_BUTTON": "tag"
+    "TAG_BUTTON": "tag",
+    "REMOVE": "إزالة الوسم «{name}»"
   },
   "FEATURE_SPOTLIGHT": {
     "LEARN_MORE": "اعرف المزيد",

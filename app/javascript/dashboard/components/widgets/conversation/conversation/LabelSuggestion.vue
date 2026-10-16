@@ -16,6 +16,14 @@ import { LocalStorage } from 'shared/helpers/localStorage';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { CAPTAIN_EVENTS } from '../../../../helper/AnalyticsHelper/events';
 
+// The selected suggestion was tinted with a raw `#2781F6` -- the Chatwoot blue this project retired
+// when `--brand` became Lynomia's indigo. It cannot be `rgb(var(--brand))` like every other call
+// site: `woot-label` runs this exact string through `getContrastingTextColor` to pick the chip's
+// text colour, and that helper parses hex, not a CSS variable reference. So the console's brand
+// value is named here, and this component is console-only -- the widget and portal, which keep
+// `--brand` blue, never mount it.
+const SELECTED_LABEL_COLOR = '#5B5BF0';
+
 export default {
   name: 'LabelSuggestion',
   components: {
@@ -47,6 +55,9 @@ export default {
     };
   },
   computed: {
+    SELECTED_LABEL_COLOR() {
+      return SELECTED_LABEL_COLOR;
+    },
     ...mapGetters({
       allLabels: 'labels/getLabels',
       currentAccountId: 'getCurrentAccountId',
@@ -182,7 +193,9 @@ export default {
             <woot-label
               variant="dashed"
               v-bind="label"
-              :bg-color="selectedLabels.includes(label.title) ? '#2781F6' : ''"
+              :bg-color="
+                selectedLabels.includes(label.title) ? SELECTED_LABEL_COLOR : ''
+              "
             />
           </button>
           <NextButton

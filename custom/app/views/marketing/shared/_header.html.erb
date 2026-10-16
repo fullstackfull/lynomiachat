@@ -1,0 +1,75 @@
+<%# The header.
+
+  Two rules the old page broke. First, every link points at a page that exists: the navigation is built from
+  MarketingHelper::NAV_SECTIONS filtered to routes that are actually defined, so a section that has not
+  shipped yet cannot appear as a dead link. Second, the language control is a LINK to the sibling URL, not a
+  button that rewrites the DOM -- language is a URL decision (D5).
+
+  EVERY TARGET IN HERE IS 44px TALL AND CARRIES A FOCUS RING. The rows measured 30-36px, under the tap floor
+  on the phone this site is mostly read on, and `lyn-blue` -- whose one job in the ramp is the focus ring --
+  never reached the chrome at all. The height is `min-h-11` rather than a step off the `control-*` ladder in
+  tailwind.config.js because that ladder tops out at `control-lg`, 2.5rem, which is the 40px floor it was
+  written against and is not 44.
+%>
+<header class="sticky top-0 z-40 border-b border-lyn-line bg-lyn-paper/85 backdrop-blur">
+  <%
+    # ONE CLASS LIST FOR BOTH NAVIGATIONS. They had drifted apart: the desktop row had a hover state and the
+    # mobile row had neither hover nor focus, so at the width that carries most of the traffic there was no
+    # feedback on a navigation item at all. The current page is marked twice over -- `aria-current` for a
+    # screen reader, the mist plate for everyone else -- because either alone leaves half the readers out.
+    nav_link_class = 'inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm ' \
+                     'transition-colors hover:bg-lyn-mist hover:text-lyn-ink focus-visible:outline ' \
+                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue'
+  %>
+  <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+    <%# `dir="ltr"` ON THE WORDMARK. "Lynomia" and "Chat" are Latin, and inside the RTL header they were
+        laid out right-to-left -- so the Arabic homepage printed the brand as "Chat Lynomia" while the same
+        page's <title> read "لنوميا شات". A Latin brand name keeps its own direction; the rest of the header
+        keeps the page's. %>
+    <a href="<%= marketing_path(:home) %>" dir="ltr"
+       class="flex min-h-11 items-center gap-1.5 text-lg font-semibold tracking-tight text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+      <span><%= t('marketing.brand.name') %></span>
+      <span class="text-lyn-royal"><%= t('marketing.brand.suffix') %></span>
+    </a>
+
+    <nav class="hidden items-center gap-1 lg:flex" aria-label="<%= t('marketing.nav.label') %>">
+      <% marketing_nav('header').each do |item| %>
+        <%= link_to item[:label], item[:href],
+                    class: class_names(nav_link_class,
+                                       'bg-lyn-mist text-lyn-ink' => item[:current],
+                                       'text-lyn-ink-soft' => !item[:current]),
+                    aria: { current: ('page' if item[:current]) } %>
+      <% end %>
+      <%= link_to t('marketing.nav.docs'), lynomia_docs_path, class: "#{nav_link_class} text-lyn-ink-soft" %>
+    </nav>
+
+    <div class="ms-auto flex items-center gap-2">
+      <a href="<%= marketing_path(marketing_page, locale: marketing_other_locale) %>"
+         class="inline-flex min-h-11 items-center rounded-lg border border-lyn-line px-3 text-xs font-medium text-lyn-ink-soft transition-colors hover:border-lyn-royal hover:text-lyn-royal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue"
+         lang="<%= marketing_other_locale %>"
+         hreflang="<%= marketing_other_locale %>">
+        <%= t('marketing.nav.other_locale') %>
+      </a>
+      <a href="/app/login"
+         class="hidden min-h-11 items-center rounded-lg px-3 text-sm font-medium text-lyn-ink-soft transition-colors hover:text-lyn-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue sm:inline-flex">
+        <%= t('marketing.nav.sign_in') %>
+      </a>
+      <a href="/app/register"
+         class="inline-flex min-h-11 items-center rounded-lg bg-lyn-indigo px-4 text-sm font-semibold text-lyn-paper transition-colors hover:bg-lyn-indigo-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyn-blue">
+        <%= t('marketing.nav.get_started') %>
+      </a>
+    </div>
+  </div>
+
+  <nav class="flex gap-1 overflow-x-auto border-t border-lyn-line px-4 py-2 lg:hidden"
+       aria-label="<%= t('marketing.nav.label') %>">
+    <% marketing_nav('header').each do |item| %>
+      <%= link_to item[:label], item[:href],
+                  class: class_names(nav_link_class,
+                                     'bg-lyn-mist text-lyn-ink' => item[:current],
+                                     'text-lyn-ink-soft' => !item[:current]),
+                  aria: { current: ('page' if item[:current]) } %>
+    <% end %>
+    <%= link_to t('marketing.nav.docs'), lynomia_docs_path, class: "#{nav_link_class} text-lyn-ink-soft" %>
+  </nav>
+</header>

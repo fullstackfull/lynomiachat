@@ -207,11 +207,16 @@ useEventListener(document, 'paste', onPaste);
         v-on-click-outside="() => (isEmojiPickerOpen = false)"
         class="relative"
       >
+        <!-- The composer's three icon buttons carried no text at all, so the new-conversation
+          form offered three controls announced only as "button". -->
         <Button
           icon="i-lucide-smile-plus"
           color="slate"
           size="sm"
           class="!w-10"
+          :aria-label="t('COMPOSE_NEW_CONVERSATION.FORM.ACTION_BUTTONS.EMOJI')"
+          aria-haspopup="dialog"
+          :aria-expanded="isEmojiPickerOpen"
           @click="isEmojiPickerOpen = !isEmojiPickerOpen"
         />
         <EmojiIconPicker
@@ -241,14 +246,21 @@ useEventListener(document, 'paste', onPaste);
           color="slate"
           size="sm"
           class="!w-10 relative"
+          :aria-label="t('COMPOSE_NEW_CONVERSATION.FORM.ACTION_BUTTONS.ATTACH')"
         />
       </FileUpload>
+      <!-- A toggle keeps one name and reports its state through `aria-pressed`, rather than
+        renaming itself between "add" and "remove". -->
       <Button
         v-if="shouldShowSignatureButton"
         icon="i-lucide-signature"
         color="slate"
         size="sm"
         class="!w-10"
+        :aria-label="
+          t('COMPOSE_NEW_CONVERSATION.FORM.ACTION_BUTTONS.SIGNATURE')
+        "
+        :aria-pressed="sendWithSignature"
         @click="toggleMessageSignature"
       />
     </div>

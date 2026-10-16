@@ -1,0 +1,13 @@
+{
+  "source": "docs/screenshots/sources/widget/en/agent-arrival.png",
+  "locale": "en",
+  "dir": "ltr",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 330,
+    "y": 8,
+    "w": 1086,
+    "h": 640
+  }
+}

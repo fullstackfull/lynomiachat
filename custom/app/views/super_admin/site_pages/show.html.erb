@@ -1,0 +1,137 @@
+<%#
+  One page of the website, with the three things Administrate's default show page cannot give it: the status
+  controls, a link to the real page before it is published, and the images the page's sections can name.
+
+  THE UPLOAD FORM IS HERE AND NOT ON THE EDIT FORM, deliberately. An upload that fails -- wrong type, too
+  large -- must not take an operator's unsaved prose with it, and an image has to exist before a section can
+  select it. So images are managed on the record and chosen in the editor.
+
+  The rest of the file is Administrate's own show template, unchanged, so the attribute list keeps working as
+  the gem updates it.
+%>
+<% content_for(:title) { t('administrate.actions.show_resource', name: page.page_title) } %>
+<% site_page = page.resource %>
+
+<header class="main-content__header">
+  <h1 class="main-content__page-title"><%= content_for(:title) %></h1>
+
+  <div>
+    <%= link_to 'Edit', [:edit, namespace, site_page], class: 'button' %>
+
+    <% if site_page.public_path.present? %>
+      <%= link_to 'Preview', preview_super_admin_site_page_path(site_page), class: 'button', target: '_blank',
+                  rel: 'noopener' %>
+    <% end %>
+
+    <% if site_page.status_published? %>
+      <%= button_to 'Unpublish', unpublish_super_admin_site_page_path(site_page), method: :post,
+                    data: { confirm: 'Unpublish this page? Visitors get a 404 until it is published again.' },
+                    class: 'button' %>
+    <% else %>
+      <%= button_to 'Publish', publish_super_admin_site_page_path(site_page), method: :post, class: 'button' %>
+    <% end %>
+
+    <%= link_to t('administrate.actions.destroy'), [namespace, site_page], class: 'button button--danger',
+                method: :delete, data: { confirm: t('administrate.actions.confirm') } %>
+  </div>
+</header>
+
+<section class="main-content__body">
+  <div class="border border-slate-100 rounded-md p-4 mb-6 text-sm">
+    <p>
+      <strong>
+        <%= site_page.status_published? ? 'Published' : site_page.status.humanize %>
+      </strong>
+      <% if site_page.public_path.present? %>
+        &middot; <code><%= site_page.public_path %></code>
+      <% else %>
+        &middot; no public address
+      <% end %>
+      <% if site_page.noindex? %>
+        &middot; <span class="text-y-800">asked not to be indexed</span>
+      <% end %>
+    </p>
+    <p class="text-xs text-n-slate-11 mt-1">
+      <% unless site_page.status_published? %>
+        A page that is not published answers 404 to visitors and is left out of the sitemap. Preview shows it
+        to you as a signed-in super admin, with <code>noindex</code> in its head.
+      <% end %>
+      <% if site_page.translation.present? %>
+        The <%= site_page.translation.locale %> version of this page is
+        <%= site_page.translation.status %>; the two are paired by kind and key, and hreflang links them only
+        while both are published.
+      <% else %>
+        There is no version of this page in the other locale, so it carries no hreflang pair.
+      <% end %>
+    </p>
+  </div>
+
+  <%# The images this page's `image` sections and SEO panel can name. %>
+  <div class="border border-slate-100 rounded-md p-4 mb-6">
+    <h2 class="text-base font-semibold mb-2">Images</h2>
+    <% images = site_page.marketing_images.includes(:blob) %>
+    <% if images.any? %>
+      <table class="w-full text-sm mb-3">
+        <thead>
+          <tr class="text-left text-xs text-n-slate-11">
+            <th class="pb-1">Image id</th><th class="pb-1">File</th><th class="pb-1">Size</th>
+            <th class="pb-1">Preview</th><th class="pb-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% images.each do |attachment| %>
+            <tr class="border-t border-slate-50">
+              <td class="py-2 font-mono"><%= attachment.id %></td>
+              <td class="py-2"><%= attachment.blob.filename %></td>
+              <td class="py-2 text-xs">
+                <%= attachment.blob.metadata['width'] %>&times;<%= attachment.blob.metadata['height'] %>
+                &middot; <%= number_to_human_size(attachment.blob.byte_size) %>
+              </td>
+              <td class="py-2">
+                <%= image_tag marketing_media_path(id: attachment.id), class: 'h-10', alt: '' %>
+              </td>
+              <td class="py-2 text-right">
+                <%= button_to 'Remove',
+                              destroy_image_super_admin_site_page_path(site_page, attachment_id: attachment.id),
+                              method: :delete,
+                              data: { confirm: 'Remove this image? Any section naming it renders nothing.' },
+                              class: 'button button--danger' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-n-slate-11 mb-3">No images are attached to this page.</p>
+    <% end %>
+
+    <%= form_with url: upload_image_super_admin_site_page_path(site_page), method: :post, local: true do |form| %>
+      <%= form.file_field :file, accept: Marketing::ImageUpload::CONTENT_TYPES.join(',') %>
+      <%= form.submit 'Upload', class: 'button' %>
+      <p class="text-xs text-n-slate-11 mt-2">
+        PNG, JPEG, GIF or WebP, up to <%= number_to_human_size(Marketing::ImageUpload::MAX_BYTES) %>. No SVG.
+        The type is read from the file's contents, not from its name. Once uploaded, choose it in an
+        <code>image</code> section or as the social card on the SEO panel &mdash; by the image id shown above.
+      </p>
+    <% end %>
+  </div>
+
+  <dl>
+    <% page.attributes.each do |title, attributes| %>
+      <fieldset class="<%= 'field-unit--nested' if title.present? %>">
+        <% if title.present? %>
+          <legend><%= t "helpers.label.#{page.resource_name}.#{title}", default: title %></legend>
+        <% end %>
+
+        <% attributes.each do |attribute| %>
+          <dt class="attribute-label" id="<%= attribute.name %>">
+            <%= t("helpers.label.#{resource_name}.#{attribute.name}",
+                  default: page.resource.class.human_attribute_name(attribute.name)) %>
+          </dt>
+          <dd class="attribute-data attribute-data--<%= attribute.html_class %>"
+              ><%= render_field attribute, page: page %></dd>
+        <% end %>
+      </fieldset>
+    <% end %>
+  </dl>
+</section>

@@ -36,6 +36,7 @@ const specPath = arg('spec');
 if (!specPath) throw new Error('--spec <file.json> is required');
 
 const spec = JSON.parse(await readFile(specPath, 'utf8'));
+const specSource = spec.source;
 
 // ── The Lynomia annotation palette ────────────────────────────────────────────────────────────────
 // Indigo is the product's action colour, so a marker reads as "this is the thing to act on". Magenta
@@ -92,6 +93,31 @@ function highlightHtml(step) {
        border-color:${tone}; border-radius:${h.radius ?? 10}px; ${dimming}"></div>`;
 }
 
+// COVERING SOMETHING THAT MUST NOT BE PUBLISHED.
+//
+// A screenshot of a real screen sometimes contains a real credential -- the website token in the widget's
+// install snippet is the clearest case: it is on the screen, it belongs in the picture's composition, and
+// it must not go into a published figure. The alternative to this is editing the screenshot, which is the
+// one thing this pipeline does not do, or faking the screen, which is worse.
+//
+// So a redaction is drawn as part of the ANNOTATION LAYER, over the capture, with the source left
+// untouched: a solid block in the ink colour carrying the word that says what was covered. It is visibly a
+// redaction rather than a blur, because a blurred credential still looks like a credential a reader should
+// go looking for.
+//
+// In SOURCE pixels, like the crop, because the thing being covered is at a place on the screen rather than
+// at a place in the composition.
+function redactionHtml(redaction, frame) {
+  const x = ((redaction.x - frame.x) / frame.w) * 100;
+  const y = ((redaction.y - frame.y) / frame.h) * 100;
+  const w = (redaction.w / frame.w) * 100;
+  const h = (redaction.h / frame.h) * 100;
+  return `
+  <div class="redaction" style="left:${pc(x)};top:${pc(y)};width:${pc(w)};height:${pc(h)}">
+    ${redaction.label ? escapeHtml(redaction.label) : ''}
+  </div>`;
+}
+
 function arrowSvg(steps, w, h) {
   const paths = steps
     .filter(s => s.arrow)
@@ -135,15 +161,99 @@ function escapeHtml(s) {
   );
 }
 
+// ── Resolving a spec against measured geometry ────────────────────────────────────────────────────
+//
+// `capture.mjs` writes `<shot>.boxes.json` beside any capture whose page declared `measure`, holding the
+// bounding box of each named control in the shot's own pixels. A spec that carries `"box": "status-filter"`
+// is resolved against it here, which is why these files are short and why none of their numbers were
+// eyeballed off a PNG. A spec with no `box` anywhere never reads the file and keeps working exactly as it
+// did -- the four figures written before this existed are unchanged by it.
+const boxesPath =
+  spec.boxes || specSource.replace(/\.png$/, '.boxes.json');
+
+async function loadBoxes() {
+  try {
+    return JSON.parse(await readFile(boxesPath, 'utf8')).boxes || {};
+  } catch {
+    return null;
+  }
+}
+
+const needsBoxes =
+  (spec.crop && spec.crop.around) || (spec.steps || []).some(step => step.box);
+const boxes = needsBoxes ? await loadBoxes() : null;
+if (needsBoxes && !boxes) {
+  throw new Error(
+    `${specPath} names measured boxes but ${boxesPath} is not there. Re-capture the source with a ` +
+      '`measure` block on its page in tools/visual/capture.mjs.'
+  );
+}
+
+function boxOf(name) {
+  const box = boxes[name];
+  if (!box) {
+    throw new Error(`${specPath}: no measured box named ${JSON.stringify(name)} in ${boxesPath}`);
+  }
+  return box;
+}
+
+/** The union of several measured boxes, grown by `pad` and clamped to the source, in source pixels. */
+function around(names, pad = 24) {
+  const all = names.map(boxOf);
+  const left = Math.min(...all.map(b => b.x)) - pad;
+  const top = Math.min(...all.map(b => b.y)) - pad;
+  const right = Math.max(...all.map(b => b.x + b.width)) + pad;
+  const bottom = Math.max(...all.map(b => b.y + b.height)) + pad;
+  return {
+    x: Math.max(0, Math.round(left)),
+    y: Math.max(0, Math.round(top)),
+    w: Math.min(spec.width, Math.round(right)) - Math.max(0, Math.round(left)),
+    h: Math.min(spec.height, Math.round(bottom)) - Math.max(0, Math.round(top)),
+  };
+}
+
+
+// A step's `box` becomes the ring it already understood, plus a default position for its marker: the dot
+// sits just outside the control on the reading-end side, which is where a hand would point at it. `at`
+// overrides that for a control at the frame's edge.
+function resolveStep(step, frame) {
+  if (!step.box) return step;
+
+  const box = boxOf(step.box);
+  const pad = step.pad ?? 6;
+  const x = ((box.x - pad - frame.x) / frame.w) * 100;
+  const y = ((box.y - pad - frame.y) / frame.h) * 100;
+  const w = ((box.width + pad * 2) / frame.w) * 100;
+  const h = ((box.height + pad * 2) / frame.h) * 100;
+
+  const at = step.at || 'end';
+  const anchors = {
+    start: { x: isRtl ? x + w : x, y: y + h / 2 },
+    end: { x: isRtl ? x : x + w, y: y + h / 2 },
+    top: { x: x + w / 2, y },
+    bottom: { x: x + w / 2, y: y + h },
+    center: { x: x + w / 2, y: y + h / 2 },
+  };
+  const anchor = anchors[at] || anchors.end;
+
+  return {
+    ...step,
+    x: step.x ?? anchor.x,
+    y: step.y ?? anchor.y,
+    highlight: step.highlight ?? { x, y, w, h, radius: step.radius ?? 10 },
+  };
+}
+
 // A CROP IS NOT AN EDIT. The source stays the whole screen, because that is what was photographed; the crop
 // lives here so the published figure can be the part a reader needs. Without it a 1440-wide screenshot is
 // 358px on a phone and its annotations are unreadable, which is the usual reason documentation screenshots
 // are useless on the device most people read them on. In SOURCE pixels; the markers and rings are then
 // percentages of the CROPPED frame.
-const crop = spec.crop;
+const crop = spec.crop?.around ? around(spec.crop.around, spec.crop.pad) : spec.crop;
 const W = crop ? crop.w : spec.width;
 const H = crop ? crop.h : spec.height;
-const steps = spec.steps || [];
+const frame = crop ? { ...crop } : { x: 0, y: 0, w: spec.width, h: spec.height };
+const steps = (spec.steps || []).map(step => resolveStep(step, frame));
 
 // The screenshot is referenced by path so nothing is re-encoded on the way in: the pixels under the
 // annotations are the captured pixels. The layer is written to a real file beside nothing in
@@ -166,6 +276,12 @@ const html = `<!doctype html>
           width: ${spec.width}px; height: ${spec.height}px; max-width: none; }
   .ring {
     position: absolute; border: 3px solid; z-index: 2; pointer-events: none;
+  }
+  .redaction {
+    position: absolute; z-index: 5; background: ${TOKENS.ink}; color: ${TOKENS.paper};
+    border-radius: 4px; display: grid; place-content: center;
+    font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    overflow: hidden; white-space: nowrap;
   }
   .arrows { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
   .arrows path { fill: none; stroke-width: 3; stroke-linecap: round;
@@ -197,6 +313,7 @@ const html = `<!doctype html>
 <body>
   <div class="stage">
     <img class="shot" src="${sourceUrl}" alt="">
+    ${(spec.redact || []).map(r => redactionHtml(r, frame)).join('\n')}
     ${steps.map(highlightHtml).join('\n')}
     ${arrowSvg(steps, W, H)}
     ${steps.map(markerHtml).join('\n')}

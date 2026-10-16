@@ -194,8 +194,14 @@ slots = []
   end
 end
 
-# Reuse the seeded rows first, then clone from them. A clone keeps its contact, inbox and messages pointer,
-# which is all these charts read; `display_id` and `uuid` are cleared so the model assigns fresh ones.
+# Reuse the seeded rows first, then clone from them. `display_id` and `uuid` are cleared so the model
+# assigns fresh ones.
+#
+# THE MESSAGES ARE CLONED TOO, and the first version of this did not do that. `dup` copies one row: the
+# clones arrived with no messages at all, and 235 of 255 conversations showed "No Messages" in the list --
+# which is the screenshot that goes on the homepage. A conversation with nothing in it is not a picture of
+# a support desk, it is a picture of a bug. `source_id` is the provider's own id for a message and is unique
+# per inbox, so it is dropped rather than duplicated.
 while account.conversations.count < slots.length
   source = seed_conversations[account.conversations.count % seed_conversations.length]
   copy = source.dup
@@ -203,6 +209,13 @@ while account.conversations.count < slots.length
   copy.uuid = nil
   copy.identifier = nil
   copy.save!
+
+  source.messages.order(:id).each do |message|
+    line = message.dup
+    line.conversation_id = copy.id
+    line.source_id = nil
+    line.save!
+  end
 end
 
 # rubocop:disable Rails/SkipsModelValidations -- backdating is the whole point: a callback that stamps
@@ -261,3 +274,107 @@ end
 
 puts "\nconversations: #{account.conversations.count} over #{WEEK_DAYS} days   " \
      "reporting events: #{ReportingEvent.where(account_id: account.id).count}"
+
+# ---------------------------------------------------------------------------------------------------------
+# THE WEBSITE CHANNEL, CONFIGURED, because the documentation photographs both ends of it.
+#
+# `rails db:seed` creates the web widget inbox with nothing filled in: no welcome heading, no tagline, no
+# greeting, and the stock blue. That is a legitimate state -- it is what a channel looks like one second
+# after it is created -- and it is useless as the illustration for an article whose whole subject is what
+# those fields do. A reader shown an empty widget cannot tell the heading from the tagline, and the figure
+# teaches nothing.
+#
+# So the demo shop's channel is set up the way the article tells a reader to set theirs up, and the figures
+# are of that. The values are the demo shop's: PaperLayer is a stationery shop that does not exist
+# (`tools/visual/widget-host/index.html`), and the navy is the one its own page uses, which is the point --
+# the widget takes the colour of the site it sits on.
+website = account.inboxes.find_by(channel_type: 'Channel::WebWidget')
+if website
+  website.channel.update!(
+    widget_color: '#1B2338',
+    welcome_title: 'Talk to PaperLayer',
+    welcome_tagline: 'Questions about an order, a delivery or a product? Start a conversation and ' \
+                     'someone from the shop will answer.',
+    reply_time: :in_a_few_minutes
+  )
+  website.update!(
+    greeting_enabled: true,
+    greeting_message: 'Thanks for getting in touch. Tell us what you need and we will pick it up from here.'
+  )
+  # AND IT HAS STAFF. `rails db:seed` creates the web widget inbox with no members at all, and the widget
+  # asks the installation which AGENTS OF THIS CHANNEL are online -- `inbox.members`, not the account's
+  # users. With none, every visitor is told "We are away at the moment" however many people are signed in,
+  # so every screenshot of the widget came out in the away state. Three members, because the figure shows
+  # avatars and one is not a team.
+  staff = account.users.order(:id).first(3)
+  staff.each { |agent| InboxMember.find_or_create_by!(inbox: website, user: agent) }
+
+  puts "\nwebsite channel: #{website.name} configured (#{website.channel.widget_color}), " \
+       "#{website.members.count} member(s)"
+end
+
+# ---------------------------------------------------------------------------------------------------------
+# SUPPORT CASES AND THE POLICIES THEY ARE HELD TO.
+#
+# The support desk ships with no rows, and an empty case list is a picture of a feature nobody uses rather
+# than a picture of the feature. The documentation needs the list, the detail, the SLA states and the case
+# analytics, and all four are the same handful of records.
+#
+# Opened through `Support::Tickets::Create`, not `create!`, because that service is what applies the SLA
+# clock and writes the event trail -- a row inserted behind it would have no history to photograph and no
+# due time, which is exactly what the articles are about.
+policies = [
+  { name: 'Standard support', description: 'Everything that is not urgent, during working hours.',
+    first_response_time_threshold: 4.hours.to_i, resolution_time_threshold: 2.days.to_i,
+    only_during_business_hours: true },
+  { name: 'Priority customers', description: 'Accounts on a priority agreement. The clock never stops.',
+    first_response_time_threshold: 30.minutes.to_i, resolution_time_threshold: 8.hours.to_i,
+    only_during_business_hours: false }
+].map do |attributes|
+  policy = Support::SlaPolicy.find_or_initialize_by(account: account, name: attributes[:name])
+  policy.update!(attributes.except(:name))
+  policy
+end
+
+# Each case is a piece of work a conversation could not hold: the category, the status and the age are what
+# make the list worth photographing, so no two rows share a shape. The two overdue ones are deliberate --
+# "Overdue" is a view in the product and an empty view teaches nothing.
+cases = [
+  ['Refund not received after seven days', 'billing', :high, :waiting_on_internal, 0, 6.days],
+  ['Shopify stock count disagrees with the store', 'commerce', :medium, :in_progress, 1, 3.days],
+  ['WhatsApp template rejected twice', 'whatsapp', :high, :open, nil, 2.days],
+  ['Customer asked to delete their data', 'account', :urgent, :in_progress, 2, 1.day],
+  ['Delivery promised Tuesday, arrived Friday', 'other', :medium, :waiting_on_customer, 3, 4.days],
+  ['Campaign sent to the wrong audience', 'campaign', :urgent, :resolved, 1, 9.days],
+  ['Webhook retries filling the log', 'integration', :low, :open, nil, 5.days],
+  ['Automation rule fired twice on one conversation', 'automation', :medium, :resolved, 0, 11.days],
+  ['IMAP mailbox stopped collecting on Tuesday', 'operational', :high, :in_progress, 2, 8.hours]
+]
+
+agents = account.users.order(:id).to_a
+cases.each_with_index do |(title, category, priority, status, agent_index, age), index|
+  next if Support::Ticket.exists?(account: account, title: title)
+
+  ticket = Support::Tickets::Create.new(
+    account: account, user: agents.first,
+    attributes: {
+      title: title, category: category, priority: priority,
+      description: 'Opened from a conversation. See the linked thread for what the customer said.',
+      assignee: agent_index && agents[agent_index],
+      sla_policy: policies[index.even? ? 0 : 1]
+    }
+  ).perform
+
+  # Backdated after the fact for the same reason the conversations are: the service stamps `now`, and a case
+  # list where every row says "a few seconds ago" shows none of the ageing the views sort by.
+  # rubocop:disable Rails/SkipsModelValidations -- backdating is the point; a callback would undo it.
+  opened = age.ago
+  ticket.update_columns(created_at: opened, updated_at: opened, last_activity_at: opened,
+                        status: Support::Ticket.statuses[status],
+                        resolution_due_at: opened + (policies[index.even? ? 0 : 1].resolution_time_threshold || 0),
+                        resolved_at: %i[resolved closed].include?(status) ? opened + 6.hours : nil)
+  # rubocop:enable Rails/SkipsModelValidations
+end
+
+puts "\nsupport: #{Support::Ticket.where(account: account).count} case(s), " \
+     "#{Support::SlaPolicy.where(account: account).count} SLA policies"

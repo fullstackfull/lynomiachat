@@ -34,15 +34,16 @@ class Billing::PlatformWorkspace
     Account.platform_owned.first
   end
 
-  def self.provision!(name:, plan:)
+  def self.provision!(name:, plan:, platform_app:)
     raise Refused, 'A platform workspace already exists on this installation' if current.present?
 
-    new(name: name, plan: plan).perform
+    new(name: name, plan: plan, platform_app: platform_app).perform
   end
 
-  def initialize(name:, plan:)
+  def initialize(name:, plan:, platform_app:)
     @name = name
     @plan = plan
+    @platform_app = platform_app
   end
 
   def perform
@@ -53,12 +54,44 @@ class Billing::PlatformWorkspace
       account = Account.create!(name: @name, platform_owned: true)
       account.create_billing_subscription!(status: 'active', source: 'manual', plan: @plan, quantity: 1)
       Billing::FeatureSync.new(account, @plan).perform
+      grant_access(account)
       audit(account)
       account
     end
   end
 
   private
+
+  # WHAT MAKES THE WORKSPACE USABLE, and why it is here rather than left to a later step.
+  #
+  # Store Syria reaches a workspace through the ACCOUNT api, because there is no platform
+  # messaging endpoint -- the platform namespace has users, accounts, grants and consents and
+  # nothing for contacts, conversations or messages. To mint the scoped token that reaches it,
+  # Platform::Api::V1::UsersController#authorized_account_for_scope requires BOTH that the app
+  # holds a permissible on the account AND that the sender is an account_user of it. A
+  # workspace provisioned without the pair looks fine and cannot send a thing, which is the
+  # kind of half-built state that is discovered much later and from the wrong end.
+  #
+  # THE SENDER IS A SERVICE IDENTITY, NOT A PERSON. Its address is in a reserved domain that
+  # cannot receive mail, so it can never collide with a real user and nobody can be signed in
+  # as it by accident -- the same reasoning AccountProvisioner uses for a merchant workspace's
+  # service address. `administrator`, because the surfaces this sender has to reach are
+  # administrator-gated.
+  def grant_access(account)
+    sender = User.create!(
+      name: "#{@name} notifications",
+      email: "platform-notifications-#{account.id}@storesyria.invalid",
+      # Nobody ever signs in as this identity -- Store Syria reaches the workspace with a
+      # scoped token minted through the platform API, never with a password -- but the
+      # policy applies to every User, so it is satisfied with a random value that is
+      # discarded the moment it is written.
+      password: "#{SecureRandom.alphanumeric(32)}aA1!",
+      confirmed_at: Time.current
+    )
+    AccountUser.create!(account: account, user: sender, role: :administrator)
+    @platform_app.platform_app_permissibles.find_or_create_by!(permissible: account)
+    @platform_app.platform_app_permissibles.find_or_create_by!(permissible: sender)
+  end
 
   def refuse_sellable_plan!
     return unless @plan.active? && @plan.stripe_price_id.present?

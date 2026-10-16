@@ -13,8 +13,10 @@ RSpec.describe Billing::PlatformWorkspace, type: :model do
                           limits: { 'campaign_sends' => 5000 })
   end
 
+  let(:partner_app) { create(:platform_app, name: 'Store Syria') }
+
   def provision(name: 'Store Syria Platform')
-    described_class.provision!(name: name, plan: plan)
+    described_class.provision!(name: name, plan: plan, platform_app: partner_app)
   end
 
   describe 'provisioning' do
@@ -46,7 +48,7 @@ RSpec.describe Billing::PlatformWorkspace, type: :model do
       sellable = create(:billing_plan, active: true, stripe_price_id: 'price_123',
                                        limits: { 'campaign_sends' => 10 })
 
-      expect { described_class.provision!(name: 'X', plan: sellable) }
+      expect { described_class.provision!(name: 'X', plan: sellable, platform_app: partner_app) }
         .to raise_error(described_class::Refused, /sellable/)
     end
 
@@ -56,7 +58,7 @@ RSpec.describe Billing::PlatformWorkspace, type: :model do
     it 'refuses a plan that does not meter sending' do
       unmetered = create(:billing_plan, active: false, stripe_price_id: nil, limits: {})
 
-      expect { described_class.provision!(name: 'X', plan: unmetered) }
+      expect { described_class.provision!(name: 'X', plan: unmetered, platform_app: partner_app) }
         .to raise_error(described_class::Refused, /campaign_sends/)
     end
   end
@@ -138,6 +140,33 @@ RSpec.describe Billing::PlatformWorkspace, type: :model do
       spend(merchant, 2)
 
       expect(BillingUsageCounter.where(account_id: platform.id).sum(:used)).to eq(0)
+    end
+  end
+
+  # WITHOUT BOTH OF THESE THE WORKSPACE CANNOT SEND A THING. There is no platform messaging
+  # endpoint, so Store Syria reaches the workspace through the account API with a scoped
+  # token -- and minting one requires the app to hold a permissible on the account AND the
+  # sender to be an account_user of it. A workspace provisioned without the pair looks fine
+  # and is useless.
+  describe 'what makes it usable' do
+    let!(:account) { provision }
+
+    it 'grants the partner app a permissible on the workspace' do
+      expect(partner_app.platform_app_permissibles.exists?(permissible: account)).to be true
+    end
+
+    it 'creates a sender the partner may mint a scoped token for' do
+      sender = account.account_users.first&.user
+
+      expect(sender).to be_present
+      expect(account.account_users.first.role).to eq('administrator')
+      expect(partner_app.platform_app_permissibles.exists?(permissible: sender)).to be true
+    end
+
+    # A reserved domain that cannot receive mail: it can never collide with a real person's
+    # address, and nobody can be signed in as it by accident.
+    it 'gives the sender a service address nobody can hold' do
+      expect(account.account_users.first.user.email).to end_with('@storesyria.invalid')
     end
   end
 

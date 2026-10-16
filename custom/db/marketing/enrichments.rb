@@ -42,7 +42,8 @@ showcases = {
       link_label: 'What the inbox does', link_target: 'page:feature:unified_inbox',
       items: [
         ['Every channel in one list',
-         'WhatsApp, Instagram, Messenger, email, website chat and SMS arrive in the same queue, each row saying who wrote and which channel it came from.'],
+         'WhatsApp, Instagram, Messenger, email, website chat and SMS arrive in the same queue, each ' \
+         'row saying who wrote and which channel it came from.'],
         ['The customer beside the reply',
          'Their details, earlier conversations, private notes and labels sit next to the message you are writing, not in a second tab.'],
         ['One owner, not a committee', 'Give a conversation to a person or a team and mark how urgent it is.']
@@ -198,31 +199,41 @@ assist_band = {
 # Ruby warns "already initialized constant" the second time the declarations are loaded -- which a spec does
 # on every example that reloads them.
 hero_alt = {
-  'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open in the middle, and the contact panel beside it.',
+  'en' => 'The Lynomia Chat agent workspace: the channel list on one side, a customer conversation open ' \
+          'in the middle, and the contact panel beside it.',
   'ar' => 'مساحة عمل وكيل الدعم في لينوميا شات: قائمة القنوات في جانب، ومحادثة عميل مفتوحة في الوسط، ولوحة جهة الاتصال بجانبها.'
 }
 
+# THE SECTION SKELETONS, hoisted out of the loop. A frozen literal rebuilt on every pass is the same object
+# every time, and `merge` returns a new hash anyway -- so building them here costs nothing and keeps the
+# loop reading as "one page's worth of content" rather than as hash construction.
+strip_skeleton = { 'type' => 'channel_strip' }.freeze
+flow_skeleton = { 'type' => 'flow' }.freeze
+
 enrichments = []
 
+# ONE PASS PER LOCALE, IN THE ORDER THE SECTIONS LAND. `after` names a TYPE and `position_for` takes the
+# LAST section of that type, so the order inside this block is what puts the WhatsApp band below all three
+# showcases and the assist band below the WhatsApp band -- whatever order an operator has put them in.
 %w[en ar].each do |locale|
   enrichments << Enrichment.new(
     key: "home.channel-strip.#{locale}", locale: locale, slug: 'home', after: 'hero',
-    section: { 'type' => 'channel_strip' }.merge(whatsapp_strip[locale].transform_keys(&:to_s))
+    section: strip_skeleton.merge(whatsapp_strip[locale].transform_keys(&:to_s))
   )
 
   enrichments << Enrichment.new(
     key: "home.flow.#{locale}", locale: locale, slug: 'home', after: 'stats',
-    section: { 'type' => 'flow' }.merge(flow_copy[locale].transform_keys(&:to_s))
+    section: flow_skeleton.merge(flow_copy[locale].transform_keys(&:to_s))
   )
 
   showcases.each do |name, spec|
     copy = spec[locale]
     enrichments << Enrichment.new(
       key: "home.showcase.#{name}.#{locale}", locale: locale, slug: 'home', after: spec[:after],
-      # A `figures/` PREFIX MEANS A CROP, not the whole screen. `docs/screenshots/figures.json` says what each
-      # one is a crop of and why; `node tools/visual/crop.mjs` regenerates them and `--check` fails if one is
-      # stale. The inbox showcase is the exception and takes the untouched capture: it is published across
-      # the full measure, where a whole screen is legible and is the point.
+      # A `figures/` PREFIX MEANS A CROP, not the whole screen. `docs/screenshots/figures.json` says what
+      # each one is a crop of and why; `node tools/visual/crop.mjs` regenerates them and `--check` fails if
+      # one is stale. The inbox showcase is the exception and takes the untouched capture: it is published
+      # across the full measure, where a whole screen is legible and is the point.
       image: { file: if spec[:file].start_with?('figures/')
                        "docs/screenshots/figures/marketing/#{locale}/#{spec[:file].delete_prefix('figures/')}"
                      else
@@ -238,12 +249,7 @@ enrichments = []
       }
     )
   end
-end
 
-%w[en ar].each do |locale|
-  # THE TWO BANDS THE OLD SITE HAD AND THIS ONE DID NOT. `after` names a TYPE, and `position_for` takes the
-  # LAST section of that type, so the WhatsApp band lands below all three showcases and the assist band below
-  # the WhatsApp band -- whatever order an operator has put the showcases in.
   copy = whatsapp_band[locale]
   enrichments << Enrichment.new(
     key: "home.whatsapp.#{locale}", locale: locale, slug: 'home', after: 'showcase',
@@ -267,16 +273,16 @@ end
       end
     }
   )
-end
 
-%w[en ar].each do |locale|
   # THE HERO'S SCREENSHOT IS A FILL, NOT AN INSERT: every page already has a hero, and what it needed was a
   # picture of the product in place of the hand-built panel the template used to draw. It is written only
-  # when the hero carries no image, so an operator who has chosen their own keeps it.
+  # when the hero carries no image, so an operator who has chosen their own keeps it. It takes the untouched
+  # capture rather than a crop, for the reason the inbox showcase does.
   enrichments << Enrichment.new(
     key: "home.hero-shot.#{locale}", locale: locale, slug: 'home',
     fill: { type: 'hero' },
-    image: { file: "docs/screenshots/sources/marketing/#{locale}/conversation-open.png", field: 'attachment_id' },
+    image: { file: "docs/screenshots/sources/marketing/#{locale}/conversation-open.png",
+             field: 'attachment_id' },
     section: { 'alt' => hero_alt[locale] }
   )
 end

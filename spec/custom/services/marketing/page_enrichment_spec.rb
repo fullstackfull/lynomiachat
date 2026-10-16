@@ -232,7 +232,7 @@ describe Marketing::PageEnrichment do
       expect(declarations).to be_present
       expect(declarations.map(&:key).uniq.length).to eq(declarations.length)
       declarations.each do |declaration|
-        expect(%w[en ar]).to include(declaration.locale)
+        expect(declaration.locale).to be_in(%w[en ar])
         next if declaration.fill
 
         errors = Marketing::SectionSchema.errors([declaration.section])

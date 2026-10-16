@@ -193,8 +193,13 @@ const handleAvatarHover = isHovered => {
         </div>
       </div>
 
+      <!-- The only control that opens the editor inside the row, and it is a bare chevron: without a name
+           a screen reader announces it as "button", and `aria-expanded` is what says whether the row it
+           belongs to is already open. -->
       <Button
         icon="i-lucide-chevron-down"
+        :aria-label="t('CONTACTS_LAYOUT.CARD.TOGGLE_DETAILS')"
+        :aria-expanded="isExpanded"
         variant="ghost"
         color="slate"
         size="xs"

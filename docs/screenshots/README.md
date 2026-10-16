@@ -58,6 +58,18 @@ section, a numbered list in a documentation article. A number burnt into a PNG c
 screen reader, translated, indexed, or enlarged by a reader who needs larger type. The picture shows
 *where*; the text says *what*.
 
+## When a run stops signing in
+
+Each capture signs in through the real form, and the product caps concurrent sessions per user
+(`DeviseOverrides::SessionsController#enforce_session_limit_for_password_login`). Once a few runs
+have accumulated, the next sign-in answers **409** with a session picker rather than a token, and the
+harness waits for a navigation that never happens. That is the product working; the fix is to clear
+the container's own stale capture sessions first:
+
+```
+bundle exec rails runner 'u = User.find(1); u.tokens = {}; u.save!; u.user_sessions.destroy_all'
+```
+
 ## Privacy
 
 Every capture is taken against the local seeded database (`rails db:seed`, the `acme.inc` demo

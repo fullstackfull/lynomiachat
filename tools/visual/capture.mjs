@@ -129,7 +129,12 @@ const SETS = {
       // show it, and "it still exists" is the whole point of capturing it.
       'contact-expanded': {
         path: '/app/accounts/1/contacts',
-        click: ['button:has(.i-lucide-chevron-down) >> nth=0'],
+        // Every card's expand control is a bare chevron, and so is the sidebar's account switcher --
+        // which comes first in the document. Excluding it by id is locale-stable; the button's own name is
+        // translated, so it is not an address.
+        click: [
+          'button:not(#sidebar-account-switcher):has(.i-lucide-chevron-down) >> nth=0',
+        ],
       },
       'settings-inboxes': '/app/accounts/1/settings/inboxes',
       'settings-labels': '/app/accounts/1/settings/labels',
@@ -176,9 +181,12 @@ const failures = [];
 // The dashboard is a single-page app behind a session, so a set that declares `signIn` signs in through the
 // real form once per browser context and reuses the cookie for the rest of its pages.
 async function signIn(page, credentials) {
+  // The same generous budget as a page: signing in is a navigation into the dashboard bundle, and on a
+  // development server that bundle is built on first request -- a 45s budget was timing out on a cold
+  // route while Vite was still compiling it.
   await page.goto(`${BASE}/app/login`, {
     waitUntil: 'networkidle',
-    timeout: 45000,
+    timeout: PAGE_TIMEOUT_MS,
   });
   await page.fill('[data-testid="email_input"]', credentials.email);
   await page.fill('[data-testid="password_input"]', credentials.password);
@@ -187,7 +195,7 @@ async function signIn(page, credentials) {
   // never fires and waiting for it times out on a page that is already there.
   await page.waitForURL(/\/app\/accounts\//, {
     waitUntil: 'commit',
-    timeout: 45000,
+    timeout: PAGE_TIMEOUT_MS,
   });
 }
 

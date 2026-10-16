@@ -495,6 +495,7 @@
     "CARD": {
       "OF": "of",
       "VIEW_DETAILS": "عرض التفاصيل",
+      "TOGGLE_DETAILS": "تفاصيل جهة الاتصال",
       "EDIT_DETAILS_FORM": {
         "TITLE": "تعديل تفاصيل جهة الاتصال",
         "FORM": {

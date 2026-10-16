@@ -49,6 +49,54 @@
       "usedBy": [
         "documentation article en/conversations/work-in-the-inbox"
       ]
+    },
+    {
+      "key": "conversations/assign-agent-ar",
+      "shows": "Assigning a conversation to an agent, a team and a priority, in Arabic",
+      "app": "dashboard",
+      "screen": "المحادثات ← محادثة ← اللوحة الجانبية ← إجراءات المحادثة",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + Seeders::AccountSeeder, acme.inc demo account, accounts.locale = ar",
+        "revision": "1b9965eb",
+        "command": "node tools/visual/capture.mjs --set dashboard --locale ar --only conversation-assignment --viewports desktop"
+      },
+      "source": "docs/screenshots/sources/conversations/assign-agent-ar.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/conversations/assign-agent-ar.json",
+          "out": "custom/db/documentation/media/conversations/assign-agent-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/conversations/assign-and-prioritise"
+      ]
+    },
+    {
+      "key": "conversations/inbox-filters-ar",
+      "shows": "Narrowing the conversation list: the assignment tabs, the status filter and the sort control, in Arabic",
+      "app": "dashboard",
+      "screen": "المحادثات ← ترويسة القائمة",
+      "locale": "ar",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + Seeders::AccountSeeder, acme.inc demo account, accounts.locale = ar",
+        "revision": "1b9965eb",
+        "command": "node tools/visual/capture.mjs --set dashboard --locale ar --only conversation-list --viewports desktop"
+      },
+      "source": "docs/screenshots/sources/conversations/inbox-filters-ar.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/conversations/inbox-filters-ar.json",
+          "out": "custom/db/documentation/media/conversations/inbox-filters-ar.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article ar/conversations/work-in-the-inbox"
+      ]
     }
   ]
 }

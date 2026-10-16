@@ -1,0 +1,67 @@
+{
+  "source": "docs/screenshots/sources/conversations/inbox-filters-ar.png",
+  "locale": "ar",
+  "dir": "rtl",
+  "width": 1440,
+  "height": 900,
+  "crop": {
+    "x": 410,
+    "y": 8,
+    "w": 700,
+    "h": 400
+  },
+  "steps": [
+    {
+      "n": 1,
+      "label": "محادثاتي، غير معيَّن، الكل",
+      "side": "end",
+      "x": 50,
+      "y": 18.3,
+      "highlight": {
+        "x": 54.4,
+        "y": 14.5,
+        "w": 43.6,
+        "h": 7.5,
+        "radius": 8
+      }
+    },
+    {
+      "n": 2,
+      "label": "الحالة",
+      "side": "end",
+      "x": 34,
+      "y": 32.3,
+      "arrow": {
+        "toX": 80.0,
+        "toY": 8.0,
+        "bow": 16
+      },
+      "highlight": {
+        "x": 80.3,
+        "y": 4.0,
+        "w": 7.0,
+        "h": 6.5,
+        "radius": 8
+      }
+    },
+    {
+      "n": 3,
+      "label": "الترتيب",
+      "side": "end",
+      "x": 34,
+      "y": 45.3,
+      "arrow": {
+        "toX": 57,
+        "toY": 8.5,
+        "bow": 20
+      },
+      "highlight": {
+        "x": 57.1,
+        "y": 4.25,
+        "w": 3.6,
+        "h": 6.0,
+        "radius": 6
+      }
+    }
+  ]
+}

@@ -7,8 +7,13 @@ import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
 const { updateUISettings } = useUISettings();
 
 const { uiSettings } = useUISettings();
+// `!!`, because the key is ABSENT from a new user's ui_settings until they first use this button, and
+// Vue omits an attribute bound to undefined. So `aria-pressed` was missing on every account that had
+// never opened the panel -- which is every account at the moment it matters, and which tells a screen
+// reader nothing about the state of a toggle rendered as a bare icon. `useUISettings` coerces the same
+// way for the panel's own accordions (`isContactSidebarItemOpen`).
 const isContactSidebarOpen = computed(
-  () => uiSettings.value.is_contact_sidebar_open
+  () => !!uiSettings.value.is_contact_sidebar_open
 );
 
 const handleConversationSidebarToggle = () => {

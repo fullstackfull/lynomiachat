@@ -8,9 +8,7 @@ account_users = account_users.includes(:custom_role)
 # workspace is still handed its name, status, the person's role in it and their permissions there. The scope
 # cannot be read from a view, so the controller passes it in; nil, which is every ordinary login, means no
 # filtering and the payload is byte-identical to before.
-if @sso_account_scope.present?
-  account_users = account_users.select { |account_user| account_user.account_id == @sso_account_scope.to_i }
-end
+account_users = account_users.select { |au| au.account_id == @sso_account_scope.to_i } if @sso_account_scope.present?
 # full-precision timestamps, nils last, matching ORDER BY active_at DESC NULLS LAST
 active_account_user = account_users.max_by { |account_user| [account_user.active_at ? 1 : 0, account_user.active_at || Time.at(0).utc] }
 

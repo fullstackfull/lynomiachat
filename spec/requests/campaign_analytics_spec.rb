@@ -24,21 +24,19 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
   # renders `json.id resource.display_id` and never renders the primary key, so display_id is
   # the only campaign id any client holds; this endpoint used to look the campaign up by
   # primary key and therefore answered about a different campaign.
-  it 'addresses a campaign by the id the API hands out, not by its primary key' do
-    create_list(:campaign, 2, account: account, inbox: inbox, campaign_type: :one_off)
-    later = create(:campaign, account: account, inbox: inbox, campaign_type: :one_off)
-    expect(later.display_id).not_to eq(later.id)
-
-    get "/api/v1/accounts/#{account.id}/campaigns/#{later.display_id}/analytics/metrics",
-        headers: admin.create_new_auth_token, as: :json
-    expect(response).to have_http_status(:success)
-
-    get "/api/v1/accounts/#{account.id}/campaigns/#{later.id}/analytics/metrics",
-        headers: admin.create_new_auth_token, as: :json
-    expect(response).to have_http_status(:not_found)
+  let!(:recipients) do
+    position = 0
+    state_mix.flat_map do |state, count|
+      Array.new(count) do
+        position += 1
+        CampaignRecipient.create!(
+          account: account, campaign: campaign, inbox: inbox, status: state,
+          contact: create(:contact, account: account, name: "Alqattan #{position}", phone_number: format('+9655%06d', position)),
+          **outcome(state, position)
+        )
+      end
+    end
   end
-  let(:message_body) { 'Your parcel PARCEL-SECRET-7 is out for delivery' }
-
   # A mirrored second tenant: the same shape of data under another account, so a missing account predicate shows
   # up as that account's recipient appearing rather than as nothing at all.
   let(:other) do
@@ -52,19 +50,20 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
                               sent_at: 1.hour.ago, message_content: 'Their own parcel is on its way')
     { account: other_account, campaign: other_campaign, contact: other_contact }
   end
+  let(:message_body) { 'Your parcel PARCEL-SECRET-7 is out for delivery' }
 
-  let!(:recipients) do
-    position = 0
-    state_mix.flat_map do |state, count|
-      Array.new(count) do
-        position += 1
-        CampaignRecipient.create!(
-          account: account, campaign: campaign, inbox: inbox, status: state,
-          contact: create(:contact, account: account, name: "Alqattan #{position}", phone_number: format('+9655%06d', position)),
-          **outcome(state, position)
-        )
-      end
-    end
+  it 'addresses a campaign by the id the API hands out, not by its primary key' do
+    create_list(:campaign, 2, account: account, inbox: inbox, campaign_type: :one_off)
+    later = create(:campaign, account: account, inbox: inbox, campaign_type: :one_off)
+    expect(later.display_id).not_to eq(later.id)
+
+    get "/api/v1/accounts/#{account.id}/campaigns/#{later.display_id}/analytics/metrics",
+        headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:success)
+
+    get "/api/v1/accounts/#{account.id}/campaigns/#{later.id}/analytics/metrics",
+        headers: admin.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:not_found)
   end
 
   # What each state's row has to carry for the counters to be readable off it. A `read` row deliberately has NO

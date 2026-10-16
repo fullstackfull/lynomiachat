@@ -16,7 +16,10 @@
 # no test transaction around it. Eleven request specs then failed on `PartnerConsent.count`
 # -- passing alone, failing in a suite -- and the cause was this script, not the code under
 # test. A generator that leaves rows behind poisons every later run on that database.
-ActiveRecord::Base.transaction do
+# The fixtures, out of the transaction block so the block stays inside Metrics/BlockLength.
+# They are rolled back with everything else -- `build_samples` only creates rows, and its
+# caller owns the transaction.
+def build_samples
   account = Account.create!(name: 'Contract WS')
   store = Commerce::Store.create!(account: account, provider: 'storesyria',
                                   external_store_id: "contract-#{SecureRandom.hex(4)}",
@@ -28,14 +31,19 @@ ActiveRecord::Base.transaction do
                                                state: :withdrawn, source: 'shopper_keyword',
                                                decided_at: Time.utc(2026, 10, 20, 12, 0, 0),
                                                evidence: { 'keyword' => 'stop' })
-  native = Consents::ChangeFeed.payload(link, consent, origin: 'lynomia_native', channel: 'any')
 
   partner_row = PartnerConsent.create!(platform_app: PlatformApp.create!(name: 'Contract App'), account: account,
                                        commerce_store: store, contact: contact, external_subject_id: 'cust-77',
                                        purpose: :promotional, channel: :whatsapp, state: :granted,
                                        source: 'checkout_optin', policy_version: 'v3',
                                        captured_at: Time.utc(2026, 10, 20, 13, 0, 0), revision: 10_001)
-  partner = Consents::ChangeFeed.partner_payload(partner_row)
+
+  [Consents::ChangeFeed.payload(link, consent, origin: 'lynomia_native', channel: 'any'),
+   Consents::ChangeFeed.partner_payload(partner_row)]
+end
+
+ActiveRecord::Base.transaction do
+  native, partner = build_samples
 
   # The only values normalised: they differ between any two installations and are not part of
   # the agreement. Everything else is verbatim producer output.

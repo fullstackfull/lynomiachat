@@ -21,7 +21,9 @@ RSpec.describe Commerce::Providers::Storesyria do
 
   def stub_store(body)
     stub_request(:get, 'https://storesyria.test/api/lynomia/commerce/v1/store')
-      .to_return(status: 200, body: body.to_json, headers: { 'Content-Type' => 'application/json' })
+      .to_return(status: 200,
+                 body: body.to_json,
+                 headers: { 'Content-Type' => 'application/json' })
   end
 
   describe 'registration' do
@@ -117,7 +119,8 @@ RSpec.describe Commerce::Providers::Storesyria do
     # the identifier that was asked for is dropped rather than shown against the conversation.
     it 'drops a candidate that does not carry the identifier it asked for' do
       stub_request(:post, "#{api}/customers/lookup")
-        .to_return(status: 200, body: { data: [{ 'id' => '4', 'name' => 'Someone Else', 'emails' => ['other@example.com'], 'phones' => [] }] }.to_json,
+        .to_return(status: 200,
+                   body: { data: [{ 'id' => '4', 'name' => 'Someone Else', 'emails' => ['other@example.com'], 'phones' => [] }] }.to_json,
                    headers: { 'Content-Type' => 'application/json' })
 
       expect(provider.find_customers(email: 'omar@example.com')).to be_empty
@@ -142,14 +145,18 @@ RSpec.describe Commerce::Providers::Storesyria do
 
     it 'reads a customer\'s orders within the limit the contract allows' do
       stub_request(:get, "#{api}/customers/4/orders").with(query: { limit: '20' })
-        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+                                                     .to_return(status: 200,
+                                                                body: { data: [order_row] }.to_json,
+                                                                headers: { 'Content-Type' => 'application/json' })
 
       expect(provider.list_customer_orders('4', limit: 20).map(&:order_number)).to eq(['A-1'])
     end
 
     it 'escapes a guest reference rather than building a path out of it' do
       stub_request(:get, "#{api}/customers/guest:91/orders").with(query: hash_including({}))
-        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+                                                            .to_return(status: 200,
+                                                                       body: { data: [order_row] }.to_json,
+                                                                       headers: { 'Content-Type' => 'application/json' })
 
       expect(provider.list_customer_orders('guest:91', limit: 5).length).to eq(1)
     end
@@ -158,7 +165,9 @@ RSpec.describe Commerce::Providers::Storesyria do
     # keep it if the number matches" would never find one.
     it 'searches orders by the number the store printed' do
       stub_request(:get, "#{api}/orders").with(query: { number: 'A-1' })
-        .to_return(status: 200, body: { data: [order_row] }.to_json, headers: { 'Content-Type' => 'application/json' })
+                                         .to_return(status: 200,
+                                                    body: { data: [order_row] }.to_json,
+                                                    headers: { 'Content-Type' => 'application/json' })
 
       expect(provider.find_orders('A-1').map(&:external_order_id)).to eq(['55'])
     end
@@ -177,8 +186,9 @@ RSpec.describe Commerce::Providers::Storesyria do
 
     it 'reads abandoned carts and asks for one customer\'s when it has one' do
       stub_request(:get, "#{api}/carts/abandoned").with(query: { limit: '5', customer: '4' })
-        .to_return(status: 200, body: { data: [{ 'id' => 'c:4', 'total' => '700.00', 'items' => [] }] }.to_json,
-                   headers: { 'Content-Type' => 'application/json' })
+                                                  .to_return(status: 200,
+                                                             body: { data: [{ 'id' => 'c:4', 'total' => '700.00', 'items' => [] }] }.to_json,
+                                                             headers: { 'Content-Type' => 'application/json' })
 
       carts = provider.abandoned_carts(customer_reference: '4', limit: 5)
 
@@ -190,7 +200,9 @@ RSpec.describe Commerce::Providers::Storesyria do
     # credential names the store, so there is nothing here for a caller to tamper with.
     it 'never sends a store identifier on any read' do
       stub_request(:get, "#{api}/orders/55")
-        .to_return(status: 200, body: order_row.to_json, headers: { 'Content-Type' => 'application/json' })
+        .to_return(status: 200,
+                   body: order_row.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
       provider.get_order('55')
 
       expect(a_request(:get, "#{api}/orders/55").with(headers: { 'Authorization' => 'Bearer lsc_4_1_deadbeef' })).to have_been_made

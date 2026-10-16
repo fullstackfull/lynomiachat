@@ -62,11 +62,16 @@ export const validateAuthenticateRoutePermission = async (to, next) => {
 
   // A PURCHASE THAT STARTED ON THE PUBLIC PRICING PAGE RESUMES HERE.
   //
-  // Deliberately AFTER the onboarding branches above: a newly registered administrator is pushed through
-  // the wizard first, and a resume placed before it would be bounced straight back out and the plan lost.
+  // AFTER the onboarding branches, and `!needsOnboarding` as well -- which is not the same thing, and the
+  // difference was measured on a freshly registered account. Those branches only redirect somebody who is
+  // in the wrong place, so an administrator moving BETWEEN steps of the wizard falls through to here. The
+  // resume then sent them to the subscription page, the branch above bounced them straight back to
+  // onboarding, and because the resume is a one-shot the plan was gone. Waiting until the wizard is
+  // finished costs nothing: the intention is on the server for an hour and the next navigation picks it up.
+  //
   // Asked once per app boot, and only when the person is not already on the page it would send them to,
   // so re-entering settings does not loop.
-  if (to.name !== 'subscription_settings_index') {
+  if (!needsOnboarding && to.name !== 'subscription_settings_index') {
     const resume = await pendingSubscriptionTarget(routeAccountId);
     if (resume) return next(resume);
   }

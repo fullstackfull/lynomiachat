@@ -126,6 +126,7 @@ settings in the development database. Nothing was run against production and no 
 | Choosing a plan while signed out records it and goes to sign-in | browser | redirect to `/app/login`; the plan id is not in the Location header |
 | The pending-plan endpoint refuses an anonymous caller | browser, same session | `401` |
 | Signing in resumes on the chosen plan | browser | `/app/accounts/1/dashboard` → `/app/accounts/1/settings/subscription?plan=14` |
+| Registering resumes on the chosen plan | browser: choose Scale signed out → public signup → confirm email → onboarding → finish | held at the wizard with the plan intact, then `/app/accounts/110/settings/subscription?plan=15`, "Continue with Scale" |
 | The banner names the plan, the paying workspace and the alternatives | browser | EN "Continue with Growth … Subscribe from a different workspace: Acme Org"; AR "أكمل الاشتراك في Growth …" |
 | An administrator of two workspaces is offered both | browser | one other-workspace link, to account 2 |
 | Pressing Subscribe calls the authorized endpoint | browser | `POST /api/v1/accounts/1/billing/checkout` |
@@ -140,7 +141,22 @@ settings in the development database. Nothing was run against production and no 
 
 Screenshots: `evidence/px-checkout/`, with a per-file index in that folder's `README.md`.
 
-### One defect this verification found, and the fix
+### Two defects this verification found, and their fixes
+
+#### A resume that fired in the middle of the onboarding wizard
+
+A visitor with no account who picks a plan, registers and confirms their email arrives as the administrator
+of a brand-new account, which the dashboard pushes into the onboarding wizard. The wizard's redirects only
+catch somebody who is in the **wrong** place, so an administrator moving between steps of the wizard reached
+the resume, which sent them to the subscription page — and the onboarding guard bounced them straight back.
+The resume is a one-shot, so by then the plan was gone.
+
+The resume now also waits for the wizard to finish. It costs nothing: the intention is on the server for an
+hour, and the next navigation after onboarding picks it up. Walked in the browser end to end: choose Scale
+signed out, register, confirm, be held at the wizard with nothing consumed, finish onboarding, and the next
+navigation lands on `/settings/subscription?plan=15` with "Continue with Scale".
+
+#### A clear that lost a race
 
 The subscription page clears the pending intention once it has shown it. In the browser that `DELETE`
 answered `204` and the next read still had the plan. Issuing the same call with nothing else in flight

@@ -1,0 +1,132 @@
+<%# THE FULL COMPARISON, BUILT FROM THE PLANS THEMSELVES.
+
+  Rows are the union of what the listed plans actually sell, so the table never shows forty capabilities
+  that are blank in every column. Columns are the plans, in their own order.
+
+  IT DOES NOT MANUFACTURE A DIFFERENCE. If two plans carry the same features, their columns are identical
+  here and that is the correct answer -- the honest differences between them are the price, the interval,
+  the ceilings and the channels, which is why those are rows too and why they come first. A pricing page
+  that invents a premium capability to justify a premium price is the specific lie this table exists to
+  avoid.
+
+  RESPONSIVE BY SCROLLING THE COLUMNS, NOT THE PAGE. The wrapper scrolls on its own axis and the row-header
+  column is sticky, so on a phone a reader swipes the plans past a capability name that stays put. The page
+  itself never scrolls sideways. A second stacked rendering of the same data was the alternative and was
+  rejected: two markups of one table drift, and the one that drifts is the one nobody looks at.
+
+  ACCESSIBILITY. Real <th> with scope, a <caption> that names the table, category headings as full-width row
+  headers inside their own <tbody>, and every mark carries sr-only text -- in a card the tick sits beside a
+  label, but here the mark IS the cell's content and a screen reader would otherwise read an empty cell.
+%>
+<% rows = Marketing::PlanFeatures.comparison_rows(plans, locale: marketing_locale) %>
+<% channels = marketing_comparison_channels(plans) %>
+
+<section class="bg-lyn-mist" id="compare">
+  <div class="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <%= render 'marketing/shared/section_head', heading: t('marketing.pricing.comparison_title'),
+                                                lede: t('marketing.pricing.comparison_lede') %>
+
+    <%# `relative` IS LOAD-BEARING, and the reason is not obvious. Tailwind's `sr-only` is
+        `position: absolute`, and this table carries 115 of them -- one per comparison cell, plus the
+        caption. With no positioned ancestor their containing block is the INITIAL one, so each span was
+        laid out at its static position inside a table 640px wide and escaped the scroller entirely: the
+        page measured 566px wide at a 390px viewport while `body` measured 390, because the overflow was on
+        <html>. Making the scroller a containing block clips them with the table they belong to.
+        Measured: 566 -> 390 at 390px, with the sr-only text still read aloud. %>
+    <div class="relative mt-12 overflow-x-auto rounded-3xl border border-lyn-line bg-lyn-paper">
+      <table class="w-full min-w-[40rem] border-collapse text-start text-sm">
+        <caption class="sr-only"><%= t('marketing.pricing.comparison_title') %></caption>
+
+        <thead>
+          <tr class="border-b border-lyn-line">
+            <th scope="col" class="sticky start-0 z-10 bg-lyn-paper p-4 text-start text-xs font-semibold uppercase tracking-[0.12em] text-lyn-ink-soft/70">
+              <%= t('marketing.pricing.comparison_plan') %>
+            </th>
+            <% plans.each do |plan| %>
+              <th scope="col" class="p-4 text-start align-bottom">
+                <span class="block text-base font-semibold text-lyn-ink"><%= plan.name %></span>
+                <span class="mt-1 block text-sm font-normal tabular-nums text-lyn-ink-soft" dir="ltr">
+                  <%= marketing_plan_price(plan) %>
+                </span>
+                <span class="mt-0.5 block text-xs font-normal text-lyn-ink-soft">
+                  <%= t("marketing.pricing.interval.#{plan.interval}") %><%= " · #{t('marketing.pricing.per_agent')}" if plan.pricing_type == 'per_agent' %>
+                </span>
+              </th>
+            <% end %>
+          </tr>
+        </thead>
+
+        <%# CEILINGS FIRST. They are the difference most plans actually differ on, and the one a buyer can
+            act on without knowing the product's vocabulary. A missing key is unlimited, not zero. %>
+        <tbody class="border-b border-lyn-line">
+          <tr>
+            <th scope="colgroup" colspan="<%= plans.length + 1 %>"
+                class="bg-lyn-mist/60 p-3 text-start text-xs font-semibold uppercase tracking-[0.12em] text-lyn-ink-soft">
+              <%= t('marketing.pricing.comparison_limits') %>
+            </th>
+          </tr>
+          <% BillingPlan::LIMIT_KEYS.each do |key| %>
+            <tr class="border-t border-lyn-line/60">
+              <th scope="row" class="sticky start-0 z-10 bg-lyn-paper p-4 text-start font-medium text-lyn-ink">
+                <%= t("marketing.pricing.limit_names.#{key}") %>
+              </th>
+              <% plans.each do |plan| %>
+                <td class="p-4 tabular-nums text-lyn-ink"><%= marketing_plan_limit(plan, key) %></td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+
+        <%# CHANNELS. A plan with an empty entitlement list sells every channel, which
+            `marketing_plan_sells_channel?` answers the same way the model does. %>
+        <% if channels.any? %>
+          <tbody class="border-b border-lyn-line">
+            <tr>
+              <th scope="colgroup" colspan="<%= plans.length + 1 %>"
+                  class="bg-lyn-mist/60 p-3 text-start text-xs font-semibold uppercase tracking-[0.12em] text-lyn-ink-soft">
+                <%= t('marketing.pricing.comparison_channels') %>
+              </th>
+            </tr>
+            <% channels.each do |channel| %>
+              <tr class="border-t border-lyn-line/60">
+                <th scope="row" class="sticky start-0 z-10 bg-lyn-paper p-4 text-start font-medium text-lyn-ink">
+                  <%= t("marketing.channels.#{channel.id}.name") %>
+                </th>
+                <% plans.each do |plan| %>
+                  <td class="p-4">
+                    <%= render 'marketing/pricing/cell', included: marketing_plan_sells_channel?(plan, channel) %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
+
+        <%# CAPABILITIES, grouped the way the cards group them, so a reader who opened "View all features"
+            on a card meets the same headings in the same order here. %>
+        <% rows.each do |category, capabilities| %>
+          <tbody class="border-b border-lyn-line last:border-b-0">
+            <tr>
+              <th scope="colgroup" colspan="<%= plans.length + 1 %>"
+                  class="bg-lyn-mist/60 p-3 text-start text-xs font-semibold uppercase tracking-[0.12em] text-lyn-ink-soft">
+                <%= Marketing::PlanFeatures.category_label(category, locale: marketing_locale) %>
+              </th>
+            </tr>
+            <% capabilities.each do |capability| %>
+              <tr class="border-t border-lyn-line/60">
+                <th scope="row" class="sticky start-0 z-10 bg-lyn-paper p-4 text-start font-medium text-lyn-ink">
+                  <%= capability.label %>
+                </th>
+                <% plans.each do |plan| %>
+                  <td class="p-4">
+                    <%= render 'marketing/pricing/cell', included: plan.feature_included?(capability.name) %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
+      </table>
+    </div>
+  </div>
+</section>

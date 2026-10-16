@@ -225,10 +225,94 @@ ar:
         كل خطة أدناه خطة حقيقية في هذه المساحة، نشرها مشغّلها. وسعرها وما تشمله وحدودها تأتي من الخطة نفسها.
       plan_channels: القنوات المشمولة
       plan_channels_all: كل قناة يدعمها هذا التثبيت
-      plan_cta: اسأل عن هذه الخطة
-      plan_cta_aria: اسأل عن خطة %{name}
+      plan_cta: اشترك الآن
+      plan_cta_aria: اشترك في باقة %{name}
+      plan_cta_contact: تواصل معنا
+      plan_cta_contact_aria: اسأل عن باقة %{name}
       plans_note: >-
-        لا يوجد دفع ذاتي على هذه الصفحة. أخبرنا أي خطة تناسبك وسنهيّئ لك مساحة العمل معك.
+        اختيار الباقة ينقلك إلى تسجيل الدخول، والدفع يتم بأمان عبر Stripe. ويمكنك التغيير أو الإلغاء من
+        إعدادات مساحة عملك بعد ذلك.
+      plans_note_contact: >-
+        هذه الباقات غير مهيّأة للدفع بالبطاقة على هذا التثبيت بعد. أخبرنا أيها يناسبك وسنهيّئ لك مساحة العمل معك.
+      included_features: المميزات المشمولة
+      more_features:
+        zero: ولا ميزة أخرى
+        one: وميزة أخرى
+        two: وميزتان أخريان
+        few: و%{count} مميزات أخرى
+        many: و%{count} ميزة أخرى
+        other: و%{count} ميزة أخرى
+      view_all_features: عرض جميع المميزات
+      comparison_title: مقارنة الباقات
+      comparison_lede: >-
+        كل صفّ في الجدول مقروء من الباقة نفسها. وحين تتطابق باقتان في صفّ، فهما متطابقتان فعلاً — لا نحجب
+        شيئاً لنصنع فرقاً.
+      comparison_plan: الباقة
+      comparison_limits: الحدود والسقوف
+      comparison_channels: القنوات
+      comparison_price: السعر
+      included: مشمول في الباقة
+      not_included: غير مشمول
+      unlimited: غير محدود
+      feature_categories:
+        conversations: المحادثات وصندوق الوارد
+        channels: القنوات والمراسلة
+        automation: الأتمتة والإنتاجية
+        contacts: العملاء وجهات الاتصال
+        campaigns: الحملات
+        analytics: التقارير والتحليلات
+        team: إدارة الفرق
+        security: الأمان والصلاحيات
+        integrations: التكاملات وواجهة البرمجة
+        commerce: المتجر والتجارة
+        support: الدعم ومركز المساعدة
+        branding: البريد والهوية البصرية
+        other: مميزات إضافية
+      # أسماء المميزات بالعربية. المفتاح هو اسم الراية في config/features.yml، والاسم الإنجليزي يأتي من
+      # display_name هناك — فلا تُكرَّر الإنجليزية هنا. راية بلا مدخل عربي تظهر باسمها الإنجليزي بدل أن تختفي.
+      features:
+        inbox_management: إدارة صناديق الوارد
+        labels: وسوم المحادثات
+        canned_responses: الردود الجاهزة
+        macros: الماكرو
+        voice_recorder: تسجيل الرسائل الصوتية
+        auto_resolve_conversations: إغلاق المحادثات تلقائياً
+        custom_attributes: الحقول المخصّصة
+        channel_email: قناة البريد الإلكتروني
+        channel_website: قناة دردشة الموقع
+        channel_facebook: قناة فيسبوك ماسنجر
+        channel_instagram: قناة إنستغرام
+        channel_tiktok: قناة تيك توك
+        inbound_emails: استقبال البريد الوارد
+        email_continuity_on_api_channel: متابعة المحادثة بالبريد في قناة API
+        whatsapp_embedded_signup_inbox_creation: ربط واتساب بالتسجيل المدمج
+        whatsapp_manual_transfer: النقل اليدوي لرقم واتساب
+        automations: قواعد الأتمتة
+        delayed_automations: الأتمتة المؤجَّلة
+        agent_bots: روبوتات المحادثة
+        captain_tasks: مهام المساعد الذكي
+        lynomia_flow_builder: مصمّم المسارات
+        crm: ملف العميل الموحّد
+        lynomia_unified_identity: الهوية الموحّدة للعميل
+        data_import: استيراد البيانات
+        ip_lookup: تحديد موقع الزائر
+        campaigns: الحملات
+        whatsapp_campaign: حملات واتساب
+        reports: التقارير
+        agent_management: إدارة الوكلاء
+        team_management: إدارة الفرق
+        custom_roles: الأدوار والصلاحيات المخصّصة
+        integrations: التكاملات
+        api_and_webhooks: واجهة البرمجة و Webhooks
+        linear_integration: تكامل Linear
+        crm_integration: تكامل أنظمة CRM
+        notion_integration: تكامل Notion
+        lynomia_commerce: وحدة التجارة
+        help_center: مركز المساعدة
+        lynomia_support_tickets: تذاكر الدعم
+        custom_reply_email: عنوان ردّ مخصّص
+        custom_reply_domain: نطاق ردّ مخصّص
+        branded_email_templates: قوالب بريد بهويتك
       interval:
         month: شهريًا
         year: سنويًا
@@ -237,6 +321,10 @@ ar:
         agents: حتى %{count} وكيل
         inboxes: حتى %{count} صندوق وارد
         stores: حتى %{count} متجر موصول
+      limit_names:
+        agents: الوكلاء
+        inboxes: صناديق الوارد
+        stores: المتاجر المرتبطة
       form_title: اطلب عرض سعر
       form_lede: >-
         أخبرنا بالقنوات التي تحتاجها وبعدد من سيجيبون تقريبًا، ونعود إليك بسعر. يقرأ هذا شخص؛ لا شيء مؤتمت.

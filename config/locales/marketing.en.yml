@@ -240,11 +240,51 @@ en:
         includes and what it is capped at come from the plan itself.
       plan_channels: Channels included
       plan_channels_all: Every channel this installation supports
-      plan_cta: Ask about this plan
-      plan_cta_aria: Ask about the %{name} plan
+      # TWO CTAs, AND WHICH ONE A CARD GETS IS A FACT ABOUT THE PLAN, NOT A TONE OF VOICE. Billing::PlanOffer
+      # answers whether this installation can actually take money for this plan; a card that cannot offers
+      # the quote form instead, because a Subscribe button that dead-ends is worse than no button.
+      plan_cta: Subscribe now
+      plan_cta_aria: Subscribe to the %{name} plan
+      plan_cta_contact: Contact sales
+      plan_cta_contact_aria: Ask about the %{name} plan
       plans_note: >-
-        There is no self-service checkout on this page. Tell us which plan fits and we will set the workspace
-        up with you.
+        Choosing a plan takes you to sign in, and payment is taken securely by Stripe. You can change or
+        cancel from your workspace settings afterwards.
+      plans_note_contact: >-
+        These plans are not set up for card payment on this installation yet. Tell us which one fits and we
+        will set the workspace up with you.
+      included_features: What's included
+      more_features:
+        one: and 1 more capability
+        other: and %{count} more capabilities
+      view_all_features: View all features
+      comparison_title: Compare the plans
+      comparison_lede: >-
+        Every row below is read from the plan itself. Where two plans look the same on a row, they are the
+        same — nothing is withheld to make a difference appear.
+      comparison_plan: Plan
+      comparison_limits: Limits and ceilings
+      comparison_channels: Channels
+      comparison_price: Price
+      included: Included
+      not_included: Not included
+      unlimited: Unlimited
+      # Headings for the capability groups. Only groups that real feature flags fall into exist; there is no
+      # "Advanced" bucket invented to make a plan look fuller.
+      feature_categories:
+        conversations: Conversations and inbox
+        channels: Channels and messaging
+        automation: Automation and productivity
+        contacts: Customers and contacts
+        campaigns: Campaigns
+        analytics: Analytics and reports
+        team: Team management
+        security: Security and permissions
+        integrations: Integrations and API
+        commerce: Commerce
+        support: Support and help centre
+        branding: Email branding
+        other: Additional capabilities
       interval:
         month: per month
         year: per year
@@ -253,6 +293,12 @@ en:
         agents: Up to %{count} agents
         inboxes: Up to %{count} inboxes
         stores: Up to %{count} connected stores
+      # The same three ceilings as bare column labels. The sentences above belong on a card; a comparison
+      # row is already in a table that says what the number means.
+      limit_names:
+        agents: Agents
+        inboxes: Inboxes
+        stores: Connected stores
       form_title: Request a quote
       form_lede: >-
         Tell us which channels you need and roughly how many people will be answering, and we will come back

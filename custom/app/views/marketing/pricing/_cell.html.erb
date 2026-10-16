@@ -1,0 +1,26 @@
+<%# ONE COMPARISON CELL: included, or genuinely not.
+
+  The mark carries sr-only text because here it IS the cell's content -- unlike the card's tick, which sits
+  beside a label. An unmarked "not included" cell would read as a cell nobody filled in, which is a
+  different claim from a capability this plan does not sell.
+
+  The excluded mark is a line rather than a cross: at this size a cross reads as an error, and a plan not
+  including something is not one.
+%>
+<% if included %>
+  <span class="inline-flex items-center text-lyn-indigo">
+    <span class="sr-only"><%= t('marketing.pricing.included') %></span>
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="size-5" fill="none"
+         stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m20 6-11 11-5-5"/>
+    </svg>
+  </span>
+<% else %>
+  <span class="inline-flex items-center text-lyn-ink-soft/40">
+    <span class="sr-only"><%= t('marketing.pricing.not_included') %></span>
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" class="size-5" fill="none"
+         stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+      <path d="M6 12h12"/>
+    </svg>
+  </span>
+<% end %>

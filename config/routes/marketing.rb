@@ -77,6 +77,15 @@ scope '(:locale)', locale: /en/, module: 'marketing', as: 'marketing' do
   get 'pricing', to: 'pricing#show', as: 'pricing'
   post 'pricing/request', to: 'pricing#create', as: 'pricing_request'
 
+  # CHOOSING A PLAN TO BUY. A GET, because it is a link on a page that loads no JavaScript, and because it
+  # writes nothing a repeat would duplicate -- it records an intention in the visitor's own session and sends
+  # them to sign in. The purchase itself is a POST, authenticated, inside the account, and is not this route.
+  #
+  # The plan travels as an ID in the path and is re-read from the database on the other side; nothing about
+  # the price, the name or the eligibility comes from the browser.
+  get 'pricing/subscribe/:plan_id', to: 'plan_selections#create', as: 'plan_selection',
+                                    constraints: { plan_id: /\d+/ }
+
   get 'about', to: 'pages#about', as: 'about'
   get 'contact', to: 'pages#contact', as: 'contact'
   get 'faq', to: 'pages#faq', as: 'faq'

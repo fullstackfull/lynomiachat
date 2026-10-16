@@ -46,6 +46,22 @@ Nothing in this stack is merged or deployed. That decision is the owner's.
 current head produces **byte-identical output**: 136 named routes, 137 lines, no line added, changed
 or removed. Not a claim about the diff — the same tool over both trees.
 
+### Blast radius, counted rather than described
+
+Across both pull requests, from the pre-redesign base to the current head:
+
+| | |
+| --- | --- |
+| Migrations, `db/schema.rb` | **0** |
+| `Gemfile`, `Gemfile.lock`, `package.json`, `pnpm-lock.yaml` | **0** |
+| `config/routes.rb` and `config/routes/` | **0** |
+| Ruby files outside specs | **5** — `custom/app/controllers/marketing/base_controller.rb`, `custom/app/helpers/marketing_helper.rb`, `custom/app/services/marketing/{content_blueprint,section_schema}.rb`, and one capture tool |
+| Documentation corpus | one article, one image |
+
+No model, no policy, no job, no API controller, no Enterprise file. A redesign of this size that
+touches no server-side domain code is the shape it should be, and it is what makes the route
+inventory a sufficient gate rather than a comforting one.
+
 ### The dashboard, the website and the documentation, rendered
 
 | Gate | Result |

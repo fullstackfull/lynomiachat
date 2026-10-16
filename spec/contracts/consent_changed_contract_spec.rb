@@ -28,12 +28,12 @@ require 'rails_helper'
 RSpec.describe 'consent_changed contract', type: :model do
   include_context 'with commerce encryption'
 
-  CONTRACT_PATH = Rails.root.join('docs/partner-consent/contract/consent_changed.v1.json')
+  let(:contract_path) { Rails.root.join('docs/partner-consent/contract/consent_changed.v1.json') }
   # Asserted identically in the consumer repository. Changing the artifact means changing
-  # this constant in BOTH places, which is the point.
-  CONTRACT_SHA256 = '05183533cbc234b9dc1a9e24f54a41e6f3010f17d9653018252ea4afb7bb8373'.freeze
+  # this digest in BOTH places, which is the point.
+  let(:contract_sha256) { '05183533cbc234b9dc1a9e24f54a41e6f3010f17d9653018252ea4afb7bb8373' }
 
-  let(:artifact) { JSON.parse(CONTRACT_PATH.read) }
+  let(:artifact) { JSON.parse(contract_path.read) }
   let(:account) { create(:account) }
   let(:store) do
     create(:commerce_store, account: account, provider: 'storesyria',
@@ -59,7 +59,7 @@ RSpec.describe 'consent_changed contract', type: :model do
   end
 
   it 'is the artifact the consumer repository holds, byte for byte' do
-    expect(Digest::SHA256.hexdigest(CONTRACT_PATH.read)).to eq(CONTRACT_SHA256),
+    expect(Digest::SHA256.hexdigest(contract_path.read)).to eq(contract_sha256),
                                                             'the contract artifact changed; copy it to ' \
                                                             'storesyria/tests/Contract/lynomia/ and update ' \
                                                             'CONTRACT_SHA256 in both repositories'

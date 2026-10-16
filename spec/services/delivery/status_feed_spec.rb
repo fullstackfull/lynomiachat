@@ -102,6 +102,17 @@ RSpec.describe Delivery::StatusFeed do
       expect { message.update!(status: :delivered) }.not_to have_enqueued_job(WebhookJob)
     end
 
+    # A SUCCESSFUL SUBMISSION DOES NOT TOUCH `status`. Whatsapp::SendOnWhatsappService writes
+    # `update!(source_id:)` and leaves the row at the `sent` it defaulted to on INSERT, so on
+    # status alone the provider accepting a message is invisible -- and the partner's first
+    # news would be a delivery receipt that may be hours away or never come.
+    it 'is sent when the provider accepts, which changes no status' do
+      message = outgoing
+
+      expect { message.update!(source_id: 'wamid.HBgMOTYz') }.to have_enqueued_job(WebhookJob)
+      expect(described_class.outcome_of(message.reload)).to eq(described_class::PROVIDER_ACCEPTED)
+    end
+
     it 'says nothing about an incoming message' do
       incoming = create(:message, conversation: conversation, account: account, inbox: channel.inbox,
                                   message_type: :incoming)
@@ -131,6 +142,44 @@ RSpec.describe Delivery::StatusFeed do
       ids = Array.new(2) { "delivery-#{message.id}-#{described_class.occurred_at_us(message)}" }
 
       expect(ids.uniq.size).to eq(1)
+    end
+  end
+
+  # THE LITERALS THAT CROSS THE GAP, WRITTEN DOWN ON THIS SIDE.
+  #
+  # There is no shared code with the receiver, so a rename here is silent over there: Store
+  # Syria's ingress would stop recognising anything and every notice would fall through to its
+  # reconciliation sweep, which looks like a slow feed rather than a broken one. Store Syria
+  # carries the mirror of this (tests/Feature/Lynomia/LynomiaDeliveryOutcomeTest), so a rename
+  # on either side fails against its own recorded contract even though neither can see the
+  # other.
+  #
+  # WHAT THIS DOES NOT PROVE, and the reason blocker A1 stays open: both suites run against a
+  # fake of the other system. That is agreement between two expressions of one reading of the
+  # contract, not evidence the reading is right.
+  describe 'the wire contract' do
+    it 'publishes the event name and the six outcome words the receiver maps' do
+      expect(described_class::EVENT).to eq('message_delivery_status')
+
+      expect(
+        [described_class::QUEUED, described_class::PROVIDER_ACCEPTED, described_class::DELIVERED,
+         described_class::READ, described_class::FAILED, described_class::REFUSED]
+      ).to eq(%w[queued provider_accepted delivered read failed refused])
+    end
+
+    it 'publishes exactly the keys the receiver reads, and the ordering key as an integer' do
+      payload = described_class.payload(outgoing(source_id: 'wamid.HBg', status: :delivered))
+
+      expect(payload.keys).to eq(
+        %i[event account message status outcome reason_code occurred_at occurred_at_us]
+      )
+      expect(payload[:occurred_at_us]).to be_a(Integer)
+      # An identifier, never a quantity: Meta's codes are integers and the eligibility reasons
+      # are words, and a field that is sometimes one and sometimes the other is a field every
+      # consumer has to guess at.
+      refused = outgoing(status: :failed,
+                         content_attributes: { external_error: I18n.t('errors.whatsapp.consent.consent_withdrawn') })
+      expect(described_class.reason_code(refused)).to be_a(String)
     end
   end
 

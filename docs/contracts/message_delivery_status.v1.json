@@ -1,0 +1,88 @@
+{
+  "contract": "message_delivery_status",
+  "version": 1,
+  "producer": "lynomia/custom/app/services/delivery/status_feed.rb",
+  "consumer": "storesyria/packages/workdo/LynomiaChat/src/app/Http/Controllers/PlatformEventIngressController.php",
+  "samples": {
+    "queued": {
+      "event": "message_delivery_status",
+      "account": {
+        "id": 7001
+      },
+      "message": {
+        "id": 4242,
+        "source_id": null,
+        "conversation_id": 77
+      },
+      "status": "sent",
+      "outcome": "queued",
+      "reason_code": null,
+      "occurred_at": "2026-10-20T12:00:00.000000Z",
+      "occurred_at_us": 1792195200000000
+    },
+    "provider_accepted": {
+      "event": "message_delivery_status",
+      "account": {
+        "id": 7001
+      },
+      "message": {
+        "id": 4242,
+        "source_id": "wamid.HBgMOTYz",
+        "conversation_id": 77
+      },
+      "status": "sent",
+      "outcome": "provider_accepted",
+      "reason_code": null,
+      "occurred_at": "2026-10-20T12:00:00.000000Z",
+      "occurred_at_us": 1792195200000000
+    },
+    "delivered": {
+      "event": "message_delivery_status",
+      "account": {
+        "id": 7001
+      },
+      "message": {
+        "id": 4242,
+        "source_id": "wamid.HBgMOTYz",
+        "conversation_id": 77
+      },
+      "status": "delivered",
+      "outcome": "delivered",
+      "reason_code": null,
+      "occurred_at": "2026-10-20T12:00:00.000000Z",
+      "occurred_at_us": 1792195200000000
+    },
+    "policy_refusal": {
+      "event": "message_delivery_status",
+      "account": {
+        "id": 7001
+      },
+      "message": {
+        "id": 4242,
+        "source_id": null,
+        "conversation_id": 77
+      },
+      "status": "failed",
+      "outcome": "refused",
+      "reason_code": "consent_withdrawn",
+      "occurred_at": "2026-10-20T12:00:00.000000Z",
+      "occurred_at_us": 1792195200000000
+    },
+    "provider_failure": {
+      "event": "message_delivery_status",
+      "account": {
+        "id": 7001
+      },
+      "message": {
+        "id": 4242,
+        "source_id": "wamid.HBgMOTYz",
+        "conversation_id": 77
+      },
+      "status": "failed",
+      "outcome": "failed",
+      "reason_code": "131026",
+      "occurred_at": "2026-10-20T12:00:00.000000Z",
+      "occurred_at_us": 1792195200000000
+    }
+  }
+}

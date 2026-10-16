@@ -25,6 +25,30 @@
       "usedBy": [
         "documentation article en/conversations/assign-and-prioritise"
       ]
+    },
+    {
+      "key": "conversations/inbox-filters-en",
+      "shows": "Narrowing the conversation list: the assignment tabs, the status filter and the sort control",
+      "app": "dashboard",
+      "screen": "Conversations → the list header",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + Seeders::AccountSeeder, acme.inc demo account",
+        "revision": "aa54c679",
+        "command": "node tools/visual/capture.mjs --set dashboard --only conversation-list --viewports desktop"
+      },
+      "source": "docs/screenshots/sources/conversations/inbox-filters-en.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/conversations/inbox-filters-en.json",
+          "out": "custom/db/documentation/media/conversations/inbox-filters-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/conversations/work-in-the-inbox"
+      ]
     }
   ]
 }

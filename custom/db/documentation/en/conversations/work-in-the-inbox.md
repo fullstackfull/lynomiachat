@@ -30,9 +30,11 @@ customer brings it back. If the customer never writes, it stays snoozed indefini
 
 Three controls stack on top of each other, and they are independent:
 
-- **Mine / Unassigned / All** — who the conversation is assigned to.
-- **Status** — open, pending, snoozed, resolved, or all of them.
-- **Sort** — last activity, created date, priority, longest waiting, or unread count.
+![The top of the conversation list, with the assignment tabs, the status filter and the sort control ringed and numbered](media:conversations/inbox-filters-en.png)
+
+1. **Mine / Unassigned / All** — who the conversation is assigned to.
+2. **Status** — open, pending, snoozed, resolved, or all of them.
+3. **Sort** — last activity, created date, priority, longest waiting, or unread count.
 
 The sidebar adds views that are not filters you build:
 

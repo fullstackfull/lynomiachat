@@ -92,10 +92,18 @@ const SETS = {
       // opens it: `is_contact_sidebar_open` is absent from a new user's ui_settings and absent is false
       // (components-next/Conversation/SidepanelSwitch.vue:9-12). So the one screen the assignment
       // documentation is about does not exist in a shot of the conversation alone. This opens it through the
-      // real control, addressed by its icon rather than its label, so the same line works in Arabic.
+      // real control, addressed by its icon rather than its label, so the same line works in Arabic -- and
+      // then opens the Conversation Actions accordion, which holds the assignee, the team and the priority
+      // and is collapsed too. `.conversation--actions` is also the participants item's class, so the first
+      // one is addressed by position; it is first in the panel's default order.
       'conversation-assignment': {
         path: '/app/accounts/1/dashboard',
-        click: [ALL_TAB, '.conversations-list div.conversation', SIDEPANEL_SWITCH],
+        click: [
+          ALL_TAB,
+          '.conversations-list div.conversation',
+          SIDEPANEL_SWITCH,
+          '.conversation--actions button >> nth=0',
+        ],
       },
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',

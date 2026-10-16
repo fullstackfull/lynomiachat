@@ -1,5 +1,30 @@
 {
   "$comment": "The index of every product screenshot. See README.md. Edit this, not the generated outputs.",
   "version": 1,
-  "assets": []
+  "assets": [
+    {
+      "key": "conversations/assign-agent-en",
+      "shows": "Assigning a conversation to an agent, a team and a priority",
+      "app": "dashboard",
+      "screen": "Conversations → a conversation → side panel → Conversation Actions",
+      "locale": "en",
+      "theme": "light",
+      "viewport": "1440x900",
+      "captured": {
+        "environment": "local dev server, rails db:seed + Seeders::AccountSeeder, acme.inc demo account",
+        "revision": "aa54c679",
+        "command": "node tools/visual/capture.mjs --set dashboard --only conversation-assignment --viewports desktop"
+      },
+      "source": "docs/screenshots/sources/conversations/assign-agent-en.png",
+      "annotations": [
+        {
+          "spec": "docs/screenshots/specs/conversations/assign-agent-en.json",
+          "out": "custom/db/documentation/media/conversations/assign-agent-en.png"
+        }
+      ],
+      "usedBy": [
+        "documentation article en/conversations/assign-and-prioritise"
+      ]
+    }
+  ]
 }

@@ -69,6 +69,9 @@ function markerHtml(step, index) {
   const x = Math.min(94, Math.max(6, step.x));
   const y = Math.min(96, Math.max(4, step.y));
 
+  // The DOT is what sits on (x, y) -- it is the thing pointing at the control -- and the label hangs off it.
+  // Centring the whole row on the point instead pushed the dot sideways by half the label's width, which put
+  // every marker next to the control rather than on it.
   return `
   <div class="marker" style="left:${pc(x)};top:${pc(y)}">
     <div class="dot" style="background:${tone}">${n}</div>
@@ -132,8 +135,14 @@ function escapeHtml(s) {
   );
 }
 
-const W = spec.width;
-const H = spec.height;
+// A CROP IS NOT AN EDIT. The source stays the whole screen, because that is what was photographed; the crop
+// lives here so the published figure can be the part a reader needs. Without it a 1440-wide screenshot is
+// 358px on a phone and its annotations are unreadable, which is the usual reason documentation screenshots
+// are useless on the device most people read them on. In SOURCE pixels; the markers and rings are then
+// percentages of the CROPPED frame.
+const crop = spec.crop;
+const W = crop ? crop.w : spec.width;
+const H = crop ? crop.h : spec.height;
 const steps = spec.steps || [];
 
 // The screenshot is referenced by path so nothing is re-encoded on the way in: the pixels under the
@@ -153,32 +162,37 @@ const html = `<!doctype html>
     position: relative; width: ${W}px; height: ${H}px; overflow: hidden;
     font-family: 'Inter', 'IBM Plex Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;
   }
-  .shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top ${isRtl ? 'right' : 'left'}; }
+  .shot { position: absolute; left: ${crop ? -crop.x : 0}px; top: ${crop ? -crop.y : 0}px;
+          width: ${spec.width}px; height: ${spec.height}px; max-width: none; }
   .ring {
     position: absolute; border: 3px solid; z-index: 2; pointer-events: none;
   }
   .arrows { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
   .arrows path { fill: none; stroke-width: 3; stroke-linecap: round;
                  filter: drop-shadow(0 1px 2px rgba(10,23,51,.35)); }
-  .marker { position: absolute; z-index: 4; transform: translate(-50%, -50%); display: flex;
-            align-items: center; gap: 10px; }
+  /* A zero-size anchor at the point itself: the dot centres on it and the label hangs to one side, so the
+     label's width can never move the dot off the control it is pointing at. */
+  .marker { position: absolute; z-index: 4; width: 0; height: 0; }
   .dot {
-    width: 34px; height: 34px; border-radius: 999px; color: #fff; flex: none;
+    position: absolute; transform: translate(-50%, -50%);
+    width: 34px; height: 34px; border-radius: 999px; color: #fff;
     display: grid; place-content: center; font-weight: 700; font-size: 17px;
     border: 3px solid rgba(255,255,255,.95);
     box-shadow: 0 2px 10px rgba(10,23,51,.35);
     font-variant-numeric: tabular-nums;
   }
   .label {
+    position: absolute; top: 0; transform: translateY(-50%);
     background: ${TOKENS.paper}; color: ${TOKENS.ink};
     border: 1px solid rgba(10,23,51,.10);
     border-${isRtl ? 'right' : 'left'}: 4px solid var(--tone);
     padding: 7px 12px; border-radius: 9px; font-size: 15px; font-weight: 600;
-    line-height: 1.35; max-width: 290px; white-space: pre-wrap;
+    line-height: 1.35; width: max-content; max-width: 290px; white-space: pre-wrap;
     box-shadow: 0 4px 16px rgba(10,23,51,.18);
   }
-  /* The label swaps sides by reordering the flex row, so it never runs off the frame. */
-  .label-left { order: -1; }
+  /* 27px clears the dot's 17px radius plus a 10px gap, whichever side the label is on. */
+  .label-left { right: 27px; }
+  .label-right { left: 27px; }
 </style></head>
 <body>
   <div class="stage">

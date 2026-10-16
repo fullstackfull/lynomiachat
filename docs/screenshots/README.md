@@ -7,14 +7,20 @@ theme preview or a drawing of what a screen might look like.
 ## The three stages
 
 ```
-sources/<key>.png          a genuine capture, unannotated      <- the source of truth
-specs/<key>.<locale>.json  what the annotations say and where
-<consumer>/<key>.png       the annotated output                <- generated, never edited by hand
+sources/<key>.png      a genuine capture of the whole screen   <- the source of truth
+specs/<key>.json       what the annotations say, where, and which part of the frame to show
+<consumer>/<key>.png   the annotated output                    <- generated, never edited by hand
 ```
 
 A source is never edited. When a screen is redesigned you re-capture the source, run the build, and
 every annotated output that uses it is regenerated with its markers still in place. That is the whole
 reason the annotations live in a spec rather than being painted into the PNG once.
+
+**A crop is in the spec, not in the file.** `crop: {x, y, w, h}`, in source pixels, says which part of
+the capture the published figure shows; the markers and rings are then percentages of that cropped
+frame. The source stays the whole screen that was photographed, because that is what was photographed
+— and a 1440-wide screenshot published whole is 358px on a phone, which is where documentation is
+read and where its annotations stop being legible.
 
 ## Where the outputs go
 

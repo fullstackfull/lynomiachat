@@ -19,6 +19,11 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 
 const BASE = process.env.CAPTURE_BASE_URL || 'http://localhost:3000';
 
+// Generous, because this runs against a DEVELOPMENT server: Vite builds each dashboard route's chunk the
+// first time that route is asked for, and the reports screen pulls the chart library with it. The default
+// 30s is a production figure and was timing the first visit out.
+const PAGE_TIMEOUT_MS = Number(process.env.CAPTURE_TIMEOUT_MS || 150000);
+
 // Phone, tablet and desktop. The marketing site's own breakpoints are Tailwind's, so these sit either side
 // of `sm` (640), `md` (768) and `lg` (1024) rather than on them.
 const VIEWPORTS = {
@@ -34,6 +39,11 @@ const VIEWPORTS = {
 // The conversation list's assignee tabs are the third item in their own list; addressed by position rather
 // than by label so the same shot can be taken in Arabic, where the label is not "All".
 const ALL_TAB = '.conversations-list-wrap ul > li:nth-child(3) button';
+
+// The conversation header's side-panel toggle, addressed by the icon it carries rather than by its
+// `aria-label`, which is translated. Three other buttons on this screen also expose `aria-pressed`
+// (the composer's reply/note toggle and its quoted-reply button), so that attribute is not an address.
+const SIDEPANEL_SWITCH = 'button:has(.i-lucide-user-round)';
 
 const SETS = {
   marketing: {
@@ -77,6 +87,15 @@ const SETS = {
       'conversation-chat': {
         path: '/app/accounts/1/dashboard',
         click: [ALL_TAB, '.conversations-list div.conversation >> nth=3'],
+      },
+      // The side panel -- assignee, team, priority, labels, the contact's details -- is CLOSED until an agent
+      // opens it: `is_contact_sidebar_open` is absent from a new user's ui_settings and absent is false
+      // (components-next/Conversation/SidepanelSwitch.vue:9-12). So the one screen the assignment
+      // documentation is about does not exist in a shot of the conversation alone. This opens it through the
+      // real control, addressed by its icon rather than its label, so the same line works in Arabic.
+      'conversation-assignment': {
+        path: '/app/accounts/1/dashboard',
+        click: [ALL_TAB, '.conversations-list div.conversation', SIDEPANEL_SWITCH],
       },
       contacts: '/app/accounts/1/contacts',
       reports: '/app/accounts/1/reports/overview',
@@ -212,39 +231,47 @@ for (const [viewportName, viewport] of Object.entries(VIEWPORTS)) {
       );
       await mkdir(path.dirname(file), { recursive: true });
 
-      const response = await page.goto(url, {
-        waitUntil: set.signIn ? 'domcontentloaded' : 'networkidle',
-        timeout: 45000,
-      });
-      if (!response || !response.ok()) {
-        failures.push(
-          `${url} -> ${response ? response.status() : 'no response'}`
-        );
-        continue;
-      }
+      // ONE SLOW PAGE MUST NOT COST THE WHOLE RUN. A dev server compiles the dashboard's route chunks on
+      // first request, so the first visit to a heavy screen can take minutes, and a throw here used to
+      // discard every shot already taken. A page that fails is recorded and the run moves on; the exit
+      // status at the end still reports it, so a missing shot cannot pass unnoticed.
+      try {
+        const response = await page.goto(url, {
+          waitUntil: set.signIn ? 'domcontentloaded' : 'networkidle',
+          timeout: PAGE_TIMEOUT_MS,
+        });
+        if (!response || !response.ok()) {
+          failures.push(
+            `${url} -> ${response ? response.status() : 'no response'}`
+          );
+          continue;
+        }
 
-      // A single-page app paints after its first data fetch, which `networkidle` can precede. The dashboard
-      // makes several in sequence -- account, inboxes, then the conversation list -- and a shot taken before
-      // the last one lands shows skeletons, which is not what the screen looks like.
-      if (set.signIn) {
-        await page.waitForTimeout(1000);
-        await page
-          .waitForFunction(
-            () => !document.body.innerText.includes('Loading inboxes'),
-            { timeout: 20000 }
-          )
-          .catch(() => {});
-        await page.waitForTimeout(3500);
-      }
+        // A single-page app paints after its first data fetch, which `networkidle` can precede. The dashboard
+        // makes several in sequence -- account, inboxes, then the conversation list -- and a shot taken before
+        // the last one lands shows skeletons, which is not what the screen looks like.
+        if (set.signIn) {
+          await page.waitForTimeout(1000);
+          await page
+            .waitForFunction(
+              () => !document.body.innerText.includes('Loading inboxes'),
+              { timeout: 20000 }
+            )
+            .catch(() => {});
+          await page.waitForTimeout(3500);
+        }
 
-      for (const selector of click) {
-        await page.click(selector, { timeout: 15000 });
-        await page.waitForTimeout(2500);
-      }
+        for (const selector of click) {
+          await page.click(selector, { timeout: 15000 });
+          await page.waitForTimeout(2500);
+        }
 
-      await page.screenshot({ path: file, fullPage: !set.signIn });
-      captured += 1;
-      process.stdout.write(`${file}\n`);
+        await page.screenshot({ path: file, fullPage: !set.signIn });
+        captured += 1;
+        process.stdout.write(`${file}\n`);
+      } catch (error) {
+        failures.push(`${url} -> ${error.name}: ${error.message.split('\n')[0]}`);
+      }
     }
   }
 

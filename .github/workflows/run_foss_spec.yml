@@ -4,6 +4,14 @@ permissions:
 on:
   push:
     branches:
+      # THE REAL DEFAULT BRANCH OF THIS FORK. Upstream's `develop`/`master` are carried over from
+      # chatwoot/chatwoot and no commit ever lands on either here, so until this line existed a
+      # push to the branch this project actually ships from ran NO workflow at all -- measured, not
+      # inferred: the Actions API reports `event=push` total_count 0 for this repository's entire
+      # history, and every run recorded against `lynomia-custom` is a scheduled lock/stale/nightly
+      # job that concluded `skipped`. A regression merged to the default branch therefore had
+      # nothing to fail.
+      - lynomia-custom
       - develop
       - master
   pull_request:

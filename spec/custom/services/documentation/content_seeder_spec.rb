@@ -402,13 +402,25 @@ describe Documentation::ContentSeeder do
       statements = []
       recorder = ->(*args) { statements << args.last[:sql] if args.last[:sql].match?(/\A\s*(INSERT|UPDATE|DELETE)\b/i) }
 
+      # A DELTA, NOT A GLOBAL COUNT. The claim is that the PREFLIGHT writes nothing, which is a statement about what
+      # CHANGED -- so it is measured as what changed. Asserting these four counts were globally zero made this
+      # example depend on every other spec sharing its process, and that is not a theoretical fragility: CI run
+      # 39024646651 went red here on `got: [0, 0, 0, 1]`, an ActiveStorage::Blob left behind by an earlier file in
+      # the same 16-way shard, with nothing wrong in this seeder at all. (The merge report had recorded that the
+      # sharding could not put the leaking and asserting files in one process. It can: shard 15 holds 61 files and
+      # this is the 15th of them, behind two that create blobs.)
+      #
+      # The delta form is also strictly STRONGER than what it replaces, because it still catches a write made
+      # against a database that did not start empty -- which the global-zero form could not tell from a dirty start.
+      before = [Article.count, Category.count, ActiveStorage::Attachment.count, ActiveStorage::Blob.count]
+
       ActiveSupport::Notifications.subscribed(recorder, 'sql.active_record') do
         expect { seed }.to raise_error(described_class::PreflightError)
       end
 
       expect(statements).to be_empty
       expect([Article.count, Category.count, ActiveStorage::Attachment.count, ActiveStorage::Blob.count])
-        .to eq([0, 0, 0, 0])
+        .to eq(before)
     end
 
     # Locale-asymmetric, which is why the file name alone cannot answer it: `search.md` is `search` in English and

@@ -41,6 +41,10 @@ RSpec.describe Odoo::InvoiceExport do
     allow(accounting).to receive(:create_invoice).and_return(4242)
     allow(accounting).to receive(:read_move).and_return(odoo_move)
     allow(accounting).to receive(:read_move_lines).and_return(odoo_lines)
+    # The analytic ledger Odoo builds at posting. One row per revenue line is the proof that the distribution
+    # produced attribution rather than merely being stored.
+    allow(accounting).to receive(:read_analytic_lines).and_return([{ 'id' => 8001, 'amount' => 149.0,
+                                                                     'move_line_id' => [5001, 'Growth plan'] }])
     allow(accounting).to receive(:post_move).and_return(odoo_move(state: 'posted', name: 'INV/2026/0007'))
   end
 
@@ -147,6 +151,33 @@ RSpec.describe Odoo::InvoiceExport do
       expect(result.state).to eq(:needs_review)
       expect(result.reason).to eq('attribution_partial')
       expect(accounting).not_to have_received(:post_move)
+    end
+
+    # THE SILENT-DROP CASE. If the distribution names an analytic account that has since been archived or
+    # deleted, Odoo stores it, posts the invoice, creates NO analytic line and raises nothing -- so the
+    # revenue is posted attributed to nobody. The stored distribution cannot show this; only the ledger can.
+    it 'refuses to call a posted invoice synchronized when Odoo created no analytic line from it' do
+      allow(accounting).to receive(:read_analytic_lines).and_return([])
+
+      result = export.call('in_test1')
+
+      expect(result.state).to eq(:needs_review)
+      expect(result.reason).to eq('analytic_lines_not_created')
+      # The invoice IS posted -- a posted document is reversed, never withdrawn -- and that is recorded
+      # honestly rather than hidden.
+      expect(result.mapping.odoo_state).to eq('posted')
+      expect(result.mapping.attribution_verified_at).to be_nil
+    end
+
+    it 'does not look for an analytic ledger in the dedicated-income-account mode, which has none' do
+      profile.update!(attribution_mode: Odoo::Attribution::INCOME_ACCOUNT, analytic_account_id: nil,
+                      income_account_id: 700)
+      allow(accounting).to receive(:read_move_lines)
+        .and_return([{ 'id' => 5001, 'display_type' => 'product', 'balance' => -149.0,
+                       'account_id' => [700, 'Revenue'], 'analytic_distribution' => false }])
+
+      expect(export.call('in_test1').state).to eq(:synchronized)
+      expect(accounting).not_to have_received(:read_analytic_lines)
     end
 
     # The total gate runs FIRST, because a wrong amount is the more consequential of the two and an operator

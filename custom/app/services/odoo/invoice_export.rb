@@ -122,7 +122,45 @@ class Odoo::InvoiceExport
     return review(mapping, verdict.reason) unless verdict.ok?
     return synchronized(mapping, move) unless @profile.may_post? && move['state'] == 'draft'
 
-    synchronized(mapping, @accounting.post_move(move['id']))
+    posted = @accounting.post_move(move['id'])
+    # THE POSTED FACTS ARE RECORDED BEFORE THE LEDGER IS CHECKED. The document is posted whatever that check
+    # says, and a mapping that still read `draft` while Odoo held a numbered invoice would be the integration
+    # lying about the ledger it is meant to describe.
+    record_odoo_state(mapping, posted)
+    ledger = verify_analytic_ledger(mapping, posted)
+    return review(mapping, ledger) if ledger
+
+    synchronized(mapping, posted)
+  end
+
+  def record_odoo_state(mapping, move)
+    mapping.update!(odoo_record_id: move['id'], odoo_state: move['state'],
+                    odoo_payment_state: move['payment_state'],
+                    odoo_document_reference: move['name'].presence || mapping.odoo_document_reference,
+                    odoo_state_read_at: Time.current,
+                    posted_at: move['state'] == 'posted' ? Time.current : mapping.posted_at)
+  end
+
+  # AFTER POSTING, the one check that could not be made before it. Odoo creates `account.analytic.line` rows
+  # from the distribution when the move leaves draft -- and if the distribution names an analytic account that
+  # has since been archived or deleted, it creates NONE, raises NOTHING, and the revenue is posted attributed
+  # to nobody. A stored distribution is therefore not evidence of an attributed ledger; the analytic lines are.
+  #
+  # The invoice is already posted and is not un-posted: a posted document is reversed, never withdrawn. What
+  # this does is refuse to call it synchronized, with a reason an operator can act on -- re-pointing the
+  # profile at a live analytic account and re-writing the distribution on the posted line, which Odoo allows
+  # and which recreates the analytic items.
+  #
+  # `nil` means nothing to report. Only the analytic mode has an analytic ledger to check.
+  def verify_analytic_ledger(mapping, move)
+    return nil unless @attribution.analytic?
+
+    revenue = @accounting.read_move_lines(move['id'])
+                         .select { |line| line['display_type'] == Odoo::Attribution::REVENUE_DISPLAY_TYPE }
+    return nil if @accounting.read_analytic_lines(revenue.pluck('id')).any?
+
+    mapping.update!(attribution_verified_at: nil)
+    'analytic_lines_not_created'
   end
 
   # Reads the move's journal items and checks this project's attribution against them. `attribution_verified_at`

@@ -158,18 +158,30 @@ class Odoo::Diagnostics
     shape = client.fields_get(model: 'account.move.line', fields: %w[analytic_distribution])
     return not_configured('analytic_distribution_unsupported') unless shape.is_a?(Hash) && shape.key?('analytic_distribution')
 
+    # `active_test: false` so an ARCHIVED account is FOUND and refused by name rather than reported as
+    # missing. Archiving is the silent-drop case: the distribution stores perfectly well, and posting then
+    # produces no analytic line at all -- the revenue reaches Odoo attributed to nothing.
     row = one('account.analytic.account', [['id', '=', @profile.analytic_account_id]],
-              %w[id name company_id plan_id])
-    # `company_id` false means the analytic account is SHARED across every company and is usable here. An id
-    # belonging to another company is not: Odoo's own _check_company_auto on account.analytic.line raises at
-    # POSTING time, which is exactly the late failure this probe exists to pull forward.
-    account_company = Array(row['company_id']).first
-    usable = account_company.blank? || account_company == @profile.company_id
-    return mismatch('analytic_account_company', Array(row['company_id']).last) unless usable
+              %w[id name company_id plan_id active], context_extra: { 'active_test' => false })
+    unusable_analytic_account(row) || analytic_account_ok(row)
+  end
 
+  # `company_id` false means the analytic account is SHARED across every company and is usable here. An id
+  # belonging to another company is not: Odoo's own _check_company_auto on account.analytic.line raises at
+  # POSTING time, which is exactly the late failure this probe exists to pull forward.
+  def unusable_analytic_account(row)
+    return mismatch('analytic_account_archived', row['name']) unless row['active']
+
+    company = Array(row['company_id']).first
+    return nil if company.blank? || company == @profile.company_id
+
+    mismatch('analytic_account_company', Array(row['company_id']).last)
+  end
+
+  def analytic_account_ok(row)
     { 'ok' => true, 'mode' => Odoo::Attribution::ANALYTIC, 'account' => row['name'],
       'plan_id' => Array(row['plan_id']).first, 'plan' => Array(row['plan_id']).last,
-      'shared_across_companies' => account_company.blank? }
+      'shared_across_companies' => Array(row['company_id']).first.blank? }
   end
 
   # The configured fallback. It has to be an INCOME account the configured company can use, and the type check
@@ -233,8 +245,9 @@ class Odoo::Diagnostics
       'attribution' => { 'ok' => verdict.ok?, 'reason' => verdict.reason, 'detail' => verdict.detail }.compact }
   end
 
-  def one(model, domain, fields)
-    row = client.search_read(model: model, domain: domain, fields: fields, limit: 1, context: Odoo::SourceStamp.new(@profile).call_context).first
+  def one(model, domain, fields, context_extra: {})
+    context = Odoo::SourceStamp.new(@profile).call_context.merge(context_extra)
+    row = client.search_read(model: model, domain: domain, fields: fields, limit: 1, context: context).first
     raise Odoo::Error.new('NOT_FOUND', reason: model.tr('.', '_')) if row.nil?
 
     row

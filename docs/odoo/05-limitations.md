@@ -140,3 +140,58 @@ person.
 - **External API availability on Odoo Online.** Odoo's own documentation states that External API access is
   not available on the One App Free and Standard plans. A destination on one of those plans cannot be reached
   at all, and the connection test will say so at the `authenticate` stage.
+
+## 16. What "project-level reporting isolation" actually looks like depends on your Odoo edition
+
+The analytic distribution this integration writes produces `account.analytic.line` rows — the analytic ledger —
+and that is what an analytic report reads. **Odoo Community ships no Profit & Loss, Balance Sheet or General
+Ledger report at all**: the dynamic report engine (`account_reports`) is an Enterprise module. So:
+
+- on **Enterprise**, the owner gets an analytic filter and analytic columns in the standard financial reports,
+  which is the full guarantee;
+- on **Community**, "this project's revenue, separately" means the **analytic items** list and pivot
+  (Accounting → Reporting → Analytic Items, filtered by analytic account) plus analytic-account grouping of
+  journal items — not a P&L report, because there is no P&L report to filter.
+
+Ticking **Analytic Accounting** in Odoo's settings also flags the Enterprise module `account_accountant` for
+installation, which does not exist in Community. Enabling the setting still grants the group the integration
+needs; it does not give a Community database Enterprise reports.
+
+**The operator's own verification query**, in either edition — list this project's journal items directly:
+
+```
+account.move.line, filter: Analytic Distribution contains <your analytic account>
+```
+
+Over the API the equivalent domain is `[['analytic_distribution', 'in', [<id>]]]`. Note the operator `in` with
+a **list of ids**: `=` with a name resolves through the account's display name and is not a reliable check.
+
+## 17. A distribution model in your Odoo can still reach lines we do not author
+
+`account.analytic.distribution.model` records match on partner, partner category, company, account prefix and
+product category, and Odoo consults them when computing `analytic_distribution`. Two consequences this
+integration cannot prevent:
+
+- a model configured for one of your **other** projects, matching the same partner or the same account prefix,
+  can replace the distribution we send. This integration defends against it the only way available — it writes
+  the distribution in the **same `create` call** as `account_id`, `partner_id` and `product_id` (which is what
+  protects it from the compute), never writes those fields afterwards, and **reads every document back** to
+  confirm. A replaced distribution is caught and the document is not posted;
+- a model whose account prefix matches your **receivable or bank** accounts can stamp a distribution on
+  **payment** lines, which this integration never touches. Odoo does not do that itself on an invoice — the
+  compute is guarded to `display_type == 'product'` there — but a payment is not an invoice, so the guard does
+  not apply. If your project's analytic total looks inflated by settled amounts, look for a distribution model
+  matching those accounts.
+
+## 18. The company and analytic account pairing is effectively immutable after the first post
+
+Odoo blocks changing an analytic account's company once it carries analytic items. So the
+(company, analytic account) pairing has to be right **before** the first invoice posts. That is one of the
+reasons activation is gated on the attribution probe rather than on a tick, and why the probe refuses an
+account belonging to another company rather than letting Odoo refuse it later at posting time.
+
+An analytic account belonging to a **parent** company is accepted by Odoo from 17.0 (`parent_of`), but this
+integration's probe will report it as not found: the read is scoped by `allowed_company_ids`, so Odoo's own
+record rule filters it out. For a single-company installation this cannot arise; if you ever run this against
+a parent/child company tree, use an account on the invoicing company itself or a shared one
+(`company_id` false).

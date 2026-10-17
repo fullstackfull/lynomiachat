@@ -174,6 +174,26 @@ class Odoo::Accounting
                         context: @stamp.call_context, domain: [['move_id', '=', move_id]])
   end
 
+  # THE ANALYTIC LEDGER Odoo built from the distribution, which is the only evidence that attribution reached
+  # the records an analytic report actually reads. `account.analytic.line` rows are created at POSTING, by
+  # `_create_analytic_lines`, and they do not exist for a draft.
+  #
+  # Only existence is asked for, not which column holds the account: a root plan owns a distinct column on the
+  # analytic line (`account_id` for the plan named by the `analytic.project_plan` parameter and
+  # `x_plan<id>_id` for the others), and guessing it wrong would be a false alarm. The distribution has
+  # already been verified to name this project and nothing else, so one analytic line per revenue line IS the
+  # proof.
+  #
+  # Scoped by the company context deliberately: `account.analytic.line` is hard-scoped to the activated
+  # companies with no shared-company escape, so a read without it comes back empty and would look like a
+  # failure.
+  def read_analytic_lines(move_line_ids)
+    return [] if move_line_ids.blank?
+
+    @client.search_read(model: 'account.analytic.line', fields: %w[id amount move_line_id],
+                        context: @stamp.call_context, domain: [['move_line_id', 'in', Array(move_line_ids)]])
+  end
+
   # Writes this project's attribution onto lines Odoo authored. Used for ONE case: a credit note that
   # `reverse_moves` created without copying the source invoice's distribution. Confined to a DRAFT -- a posted
   # move's journal items are a legal record and are reversed, never edited -- and confined to the revenue

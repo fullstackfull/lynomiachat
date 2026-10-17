@@ -94,6 +94,18 @@ So the invoice sequence gained a fifth step:
 6 post, only if posting is enabled AND both gates passed
 ```
 
+**And one more check, after posting.** A stored distribution is still not an attributed ledger: if it names an
+analytic account that has since been archived or deleted, Odoo stores it, posts the invoice, creates **no**
+`account.analytic.line` and raises nothing — the revenue is posted attributed to nobody. So after a successful
+post the analytic ledger is read (`Odoo::Accounting#read_analytic_lines`) and a document with none is marked
+`analytic_lines_not_created`. The invoice stays posted, because a posted document is reversed and never
+withdrawn; what changes is that the integration does not call it synchronized, and the reason tells an operator
+what to fix. Only existence is asked for, not which column holds the account: each root plan owns a distinct
+column on the analytic line (`account_id` for the plan named by the `analytic.project_plan` parameter,
+`x_plan<id>_id` for the rest), and the distribution has already been verified to name this project and nothing
+else. The probe also reads the configured analytic account with `active_test: false`, so an **archived**
+account is found and refused by name (`analytic_account_archived`) instead of being reported as missing.
+
 `odoo_document_mappings.attribution_verified_at` is stamped only on a pass, and a partial index lists exactly
 the documents that reached Odoo without it. The mapping also records `attribution_mode` and
 `odoo_analytic_account_id` **per document**, so an operator who later repoints the profile at a different

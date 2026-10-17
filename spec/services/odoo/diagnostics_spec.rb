@@ -15,7 +15,9 @@ RSpec.describe Odoo::Diagnostics do
   let(:client) { instance_double(Odoo::Client) }
   let(:accounting) { instance_double(Odoo::Accounting) }
   # An analytic account shared across companies (company_id false), which is how most installations hold one.
-  let(:analytic_row) { { 'id' => 41, 'name' => 'Lynomia Chat', 'company_id' => false, 'plan_id' => [1, 'Projects'] } }
+  let(:analytic_row) do
+    { 'id' => 41, 'name' => 'Lynomia Chat', 'company_id' => false, 'plan_id' => [1, 'Projects'], 'active' => true }
+  end
   let(:income_account_row) { { 'id' => 700, 'name' => 'Subscription revenue', 'code' => '4000', 'account_type' => 'income' } }
   let(:move_shape) do
     { 'move_type' => { 'selection' => [%w[entry Entry], %w[out_invoice Invoice]] },
@@ -183,6 +185,25 @@ RSpec.describe Odoo::Diagnostics do
         result = diagnostics.probe_capability
 
         expect(result['probes']['attribution_setup']['error']['reason']).to eq('analytic_distribution_unsupported')
+        expect(result['ok']).to be(false)
+      end
+
+      # ARCHIVING IS THE SILENT-DROP CASE: the distribution stores perfectly well and posting produces no
+      # analytic line at all. The probe reads with `active_test: false` so it FINDS the archived account and
+      # names the real problem instead of reporting it as missing.
+      it 'fails by name when the analytic account has been archived' do
+        allow(client).to receive(:search_read) do |model:, domain:, **|
+          case model
+          when 'res.company' then [{ 'id' => 3, 'name' => 'Lynomia FZ', 'currency_id' => [2, 'USD'] }]
+          when 'account.journal' then [journal_for(domain)].compact
+          when 'account.analytic.account' then [analytic_row.merge('active' => false)]
+          else [{ 'id' => 1, 'name' => 'Row' }]
+          end
+        end
+
+        result = diagnostics.probe_capability
+
+        expect(result['probes']['attribution_setup']['error']['reason']).to eq('analytic_account_archived')
         expect(result['ok']).to be(false)
       end
 

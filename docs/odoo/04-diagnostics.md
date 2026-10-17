@@ -83,12 +83,14 @@ reversible by deleting it.
 | `sale_journal` → `journal_type` | the id names something that is not a sales journal | find the right id |
 | `sale_journal` → `journal_company` | the journal belongs to a company other than the one configured | **stop**; the invoice would be written into the wrong legal entity |
 | `attribution_setup` → `attribution_not_configured` | no analytic account (or dedicated income account) names this project | name it on the Settings tab; nothing is exported until it is set |
+| `attribution_setup` → `PERMISSION_DENIED` | the API user lacks the Analytic Accounting group, which is a real ACL on `account.analytic.account` and friends | enable **Analytic Accounting** in Odoo's Settings and grant the group to this user. Without it, posting raises too — Odoo creates the analytic items as the calling user, with no `sudo` |
 | `attribution_setup` → `analytic_distribution_unsupported` | this Odoo's `account.move.line` has no `analytic_distribution` field | configure the dedicated-income-account fallback, or use an Odoo that supports analytic accounting |
 | `attribution_setup` → `analytic_account_company` | the analytic account belongs to a different company | find the right id; a shared account (`company_id` false) is fine |
 | `attribution_setup` → `income_account_type` | the account named for the fallback is not an income account | find an income account; a receivable one would silently turn every revenue line into a payment term |
 | `attribution` → `attribution_missing` | the draft's revenue line came back with no distribution | a distribution model in your Odoo is probably clearing it; check `account.analytic.distribution.model` |
 | `attribution` → `attribution_foreign_analytic_account` | the draft came back attributed to an account that is not this project's | **stop**; this is the isolation failure. Check the analytic account id and your distribution models |
 | `attribution` → `attribution_on_receivable_line` | the distribution landed on the receivable as well | **stop**; posting it would create an opposite-signed analytic line that cancels the revenue |
+| `attribution_setup` ok with `distribution_models` above zero | your Odoo has rules that can add or replace an attribution this integration did not write — including on a **payment's** receivable line, because a payment is not an invoice and Odoo's compute guard falls through | not a failure. Check those rules against your receivable and revenue accounts; see limitation 17 |
 | `attribution` ok with `tax_lines_carry_attribution` | your sales tax carries Odoo's `analytic` flag, so the tax is in the project's analytic total too | a configuration decision in your Odoo; see limitation 12 |
 | `draft_create` → `PERMISSION_DENIED` | the user may not write `account.move` | grant Billing or Accountant rights |
 | `draft_create` → `BUSINESS_RULE` | Odoo refused the payload; `detail` says why | usually a journal or currency setting |

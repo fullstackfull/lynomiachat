@@ -127,12 +127,26 @@ Both cases end up attributed to the same project as the invoice they credit, by 
 A reversal is tied to our invoice by **`reversed_entry_id`**, not by its company: Odoo writes its own
 "Reversal of: …" into the credit note's `ref`, so our stamp is not there to match exactly.
 
-### Payments carry no attribution, deliberately
+### This integration writes no attribution on a payment — but Odoo may
 
 A customer payment's journal items are the **receivable** and the bank or outstanding-receipts account: the
 customer's debt being settled and the cash arriving. Neither is this project's income — the income was
 recognised on the invoice, which is where the distribution sits. Attributing the receivable as well would book
-the same money into the project's analytic accounts twice.
+the same money into the project's analytic accounts twice, with the opposite sign.
+
+**And Odoo can still stamp one, which this integration cannot prevent.** `account.payment` and
+`account.payment.register` contain no analytic code at all — but `_compute_analytic_distribution` lives on
+`account.move.line`, and its guard is `display_type == 'product'` **OR NOT** `move.is_invoice(...)`. A
+payment's move is created with `move_type: 'entry'`, so `is_invoice?` is false, the **second** disjunct fires,
+and the compute runs for **every** line of a payment move, consulting
+`account.analytic.distribution.model`. A destination whose distribution model matches the receivable or
+outstanding account prefix will therefore attribute the payment's receivable line by itself, understating this
+project's analytic total.
+
+That is the owner's own configuration, it is not reachable from here, and refusing every payment over it would
+be noise rather than safety. So it is **reported rather than guarded**: `attribution_setup` counts the
+distribution models in the company, and [05-limitations.md](05-limitations.md) §17 says where to look. This is
+a decision, recorded as one — not an oversight.
 
 ---
 
@@ -142,7 +156,7 @@ The capability probe gained two checks and the funnel gained a state:
 
 | probe | what it establishes |
 |---|---|
-| `attribution_setup` | this server **has** `analytic_distribution` on `account.move.line`; the configured analytic account exists and is usable by this company (`company_id` false = shared, which is fine; another company's is not); which plan it belongs to |
+| `attribution_setup` | this server **has** `analytic_distribution` on `account.move.line`; the configured analytic account exists, is **active** and is usable by this company (`company_id` false = shared, which is fine; another company's is not); which plan it belongs to; and **how many `account.analytic.distribution.model` rules** in the company could add or replace an attribution we did not write |
 | `attribution` | the attribution we **sent** came back on the draft's revenue line at 100%, nowhere it should not be, and not pointing at another project |
 
 `attribution` **never reports `skipped`**, and `Odoo::DestinationProfile#capability_proven?` requires it **by

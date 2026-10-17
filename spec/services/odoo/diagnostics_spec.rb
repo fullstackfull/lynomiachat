@@ -19,6 +19,9 @@ RSpec.describe Odoo::Diagnostics do
     { 'id' => 41, 'name' => 'Lynomia Chat', 'company_id' => false, 'plan_id' => [1, 'Projects'], 'active' => true }
   end
   let(:income_account_row) { { 'id' => 700, 'name' => 'Subscription revenue', 'code' => '4000', 'account_type' => 'income' } }
+  # The rules in the destination that can change an attribution this integration did not write. None by
+  # default; an example below gives the destination some.
+  let(:distribution_model_rows) { [] }
   let(:move_shape) do
     { 'move_type' => { 'selection' => [%w[entry Entry], %w[out_invoice Invoice]] },
       'state' => { 'selection' => [%w[draft Draft]] },
@@ -44,6 +47,7 @@ RSpec.describe Odoo::Diagnostics do
       when 'account.journal' then [journal_for(domain)].compact
       when 'account.analytic.account' then [analytic_row]
       when 'account.account' then [income_account_row]
+      when 'account.analytic.distribution.model' then distribution_model_rows
       else [{ 'id' => 1, 'name' => 'Row' }]
       end
     end
@@ -165,6 +169,25 @@ RSpec.describe Odoo::Diagnostics do
         expect(result['probes']['attribution_setup']['plan']).to eq('Projects')
         expect(result['probes']['attribution']).to include('ok' => true)
         expect(result['ok']).to be(true)
+      end
+
+      # THE ONE REMAINING PATH by which the owner's own configuration can add or replace an attribution,
+      # including on a PAYMENT's receivable line -- a payment is not an invoice, so Odoo's compute guard falls
+      # through and runs for every line of its move. Counted, never refused: refusing a destination for having
+      # distribution models would refuse most real installations.
+      it 'reports how many distribution models could interfere, without refusing them' do
+        expect(diagnostics.probe_capability['probes']['attribution_setup']['distribution_models']).to eq(0)
+      end
+
+      context 'when the destination has distribution models' do
+        let(:distribution_model_rows) { [{ 'id' => 1 }, { 'id' => 2 }] }
+
+        it 'counts them and still passes' do
+          result = diagnostics.probe_capability
+
+          expect(result['probes']['attribution_setup']).to include('ok' => true, 'distribution_models' => 2)
+          expect(result['ok']).to be(true)
+        end
       end
 
       it 'fails rather than skips when no analytic account names this project' do

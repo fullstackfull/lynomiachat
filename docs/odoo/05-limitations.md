@@ -130,13 +130,20 @@ with `auto_post` `at_date` — the credit note is left as it is and the mapping 
 journal item is a legal record: it is reversed, never edited. Correcting it is an accounting decision for a
 person.
 
-## 15. Two Odoo preconditions this integration cannot check for you
+## 15. Three Odoo preconditions this integration cannot check for you
 
 - **`analytic.project_plan`** (Odoo 17 and later). Posting any journal item that carries an analytic
   distribution requires this system parameter to name a valid root analytic plan, or Odoo raises a `UserError`.
   Reading `ir.config_parameter` usually needs rights the integration's API user does not have, so no probe is
   attempted: the go-live sequence in [06-runbook.md](06-runbook.md) has the operator confirm it, and the first
   invoice posted by hand would surface it anyway.
+- **The Analytic Accounting group on the API user.** It is a real access rule rather than a view gate:
+  `addons/analytic/security/ir.model.access.csv` grants `account.analytic.account`,
+  `account.analytic.line` and `account.analytic.plan` to `analytic.group_analytic_accounting` and to no other
+  group. Without it the capability probe reports `PERMISSION_DENIED` on `attribution_setup` — which blocks
+  activation, so nothing unattributed is exported — and posting would raise an `AccessError` anyway, because
+  Odoo creates the analytic items at post time as the calling user with no `sudo`. The probe surfaces it; it
+  cannot grant it.
 - **External API availability on Odoo Online.** Odoo's own documentation states that External API access is
   not available on the One App Free and Standard plans. A destination on one of those plans cannot be reached
   at all, and the connection test will say so at the `authenticate` stage.

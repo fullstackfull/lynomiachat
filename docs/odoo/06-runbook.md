@@ -28,11 +28,18 @@ Super Admin → **Odoo Accounting** (the lower operator block in the sidebar, be
      projects' in your own reports. Create one if you have not already (Accounting → Configuration → Analytic
      Accounts), under whichever analytic plan you use for projects. An account with no company
      (`company_id` false) is shared across companies and is fine.
-4. **If your Odoo is 17 or newer**, check that the system parameter `analytic.project_plan` names a valid root
+4. **Give the API user the Analytic Accounting group.** `addons/analytic/security/ir.model.access.csv` grants
+   `account.analytic.account`, `account.analytic.line` and `account.analytic.plan` to
+   `analytic.group_analytic_accounting` and to **no other group** — it is a real access rule, not just a view
+   gate. Without it: the capability probe cannot read your analytic account (it reports
+   `PERMISSION_DENIED`), and **posting raises an AccessError**, because Odoo creates the analytic items at
+   post time as the calling user with no `sudo`. Enable **Analytic Accounting** in Odoo's Settings and confirm
+   the integration's user has the group.
+5. **If your Odoo is 17 or newer**, check that the system parameter `analytic.project_plan` names a valid root
    analytic plan (Settings → Technical → System Parameters). Odoo refuses to post **any** journal item
    carrying an analytic distribution when it does not, and this integration cannot check it for you — reading
    `ir.config_parameter` needs rights an API user normally lacks. See limitation 15.
-5. **If you are on Odoo Online:** External API access is **not available on the One App Free and Standard
+6. **If you are on Odoo Online:** External API access is **not available on the One App Free and Standard
    plans**, and the user needs a local password set before it can authenticate at all.
 
 > **Use a test database first if you have one.** Set the destination's environment to `test`, and nothing

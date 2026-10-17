@@ -12,11 +12,23 @@
 # would claim to be paid and then stop claiming it. The payment is registered through
 # `account.payment.register`, which is what Odoo intends, and the resulting state is READ rather than asserted.
 #
-# IT CARRIES NO ANALYTIC ATTRIBUTION, and that is correct rather than an omission. A customer payment's
-# journal items are the RECEIVABLE and the bank or outstanding-receipts account: the customer's debt being
-# settled and the cash arriving. Neither is this project's income -- the income was recognised on the invoice,
-# which is where the analytic distribution sits. Attributing the receivable as well would book the same money
-# into the project's analytic accounts twice. See Odoo::Attribution.
+# THIS INTEGRATION WRITES NO ANALYTIC ATTRIBUTION ON A PAYMENT, and that is correct rather than an omission.
+# A customer payment's journal items are the RECEIVABLE and the bank or outstanding-receipts account: the
+# customer's debt being settled and the cash arriving. Neither is this project's income -- the income was
+# recognised on the invoice, which is where the distribution sits. Attributing the receivable as well would
+# book the same money into the project's analytic accounts twice, with the opposite sign.
+#
+# ODOO MAY STILL STAMP ONE, AND WE CANNOT STOP IT. `account.payment` and `account.payment.register` contain no
+# analytic code at all, but `_compute_analytic_distribution` lives on account.move.line and its guard is
+# `display_type == 'product' OR NOT move.is_invoice(...)`. A payment's move is created with
+# `move_type: 'entry'`, so `is_invoice?` is false, the SECOND disjunct fires, and the compute runs for every
+# line of the payment move -- consulting `account.analytic.distribution.model` keyed on partner, partner
+# category, account prefix and company. A destination whose distribution model matches the receivable or
+# outstanding account prefix will therefore attribute the payment's receivable line by itself, understating
+# this project's analytic total. That is the owner's own configuration, it is not reachable from here, and
+# refusing every payment over it would be noise rather than safety -- so it is reported rather than guarded:
+# the capability probe counts the distribution models in the company, and
+# docs/odoo/05-limitations.md §17 says where to look. See Odoo::Attribution.
 #
 # A PARTIAL PAYMENT IS NOT A PROBLEM. `amount_paid` below the invoice total is passed through as the amount,
 # and Odoo's own computation reports `partial`. Nothing here rounds that up to paid.

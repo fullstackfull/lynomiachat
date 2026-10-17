@@ -181,7 +181,26 @@ class Odoo::Diagnostics
   def analytic_account_ok(row)
     { 'ok' => true, 'mode' => Odoo::Attribution::ANALYTIC, 'account' => row['name'],
       'plan_id' => Array(row['plan_id']).first, 'plan' => Array(row['plan_id']).last,
-      'shared_across_companies' => Array(row['company_id']).first.blank? }
+      'shared_across_companies' => Array(row['company_id']).first.blank?,
+      'distribution_models' => distribution_model_count }
+  end
+
+  # HOW MANY RULES IN THIS COMPANY CAN CHANGE AN ATTRIBUTION WE DID NOT WRITE. An
+  # `account.analytic.distribution.model` row matches on partner, partner category, account prefix and
+  # company, and Odoo consults it whenever it computes `analytic_distribution` -- which includes every line of
+  # a PAYMENT move, because a payment is not an invoice and the compute's guard therefore falls through.
+  #
+  # A COUNT, NOT A VERDICT. Matching Odoo's prefix semantics here would be guesswork, and a probe that refused
+  # a destination because the owner has distribution models would refuse most real installations. Zero means
+  # nothing can interfere; any other number tells an operator to read docs/odoo/05-limitations.md §17 and
+  # check those rules against their receivable and revenue accounts.
+  def distribution_model_count
+    client.search_read(model: 'account.analytic.distribution.model', fields: %w[id],
+                       domain: [['company_id', 'in', [false, @profile.company_id]]],
+                       context: Odoo::SourceStamp.new(@profile).call_context).length
+  rescue Odoo::Error
+    # Not knowing is not a failure of attribution: the round trip below still proves what Odoo stored.
+    nil
   end
 
   # The configured fallback. It has to be an INCOME account the configured company can use, and the type check

@@ -20,13 +20,18 @@ class Odoo::Client
 
   # Always pass `fields` explicitly. account.move overrides `read` and `search_read` to substitute its own
   # default field list when `fields` is omitted, so a bare read silently returns a different set.
-  def search_read(model:, domain:, fields:, limit: nil, order: nil)
-    named = { domain: domain, fields: fields, limit: limit, order: order }.compact
-    Array(@transport.call(model: model, method: 'search_read', named: named))
+  # No `order`: nothing in this integration sorts an Odoo search. The historical import orders by Stripe's own
+  # listing, and a lookup by stamp expects at most one row, so a sort would be a parameter nobody passes.
+  def search_read(model:, domain:, fields:, limit: nil, context: {})
+    named = { domain: domain, fields: fields, limit: limit }.compact
+    Array(@transport.call(model: model, method: 'search_read', named: named, context: context))
   end
 
-  def read(model:, ids:, fields:)
-    Array(@transport.call(model: model, method: 'read', ids: Array(ids), named: { fields: fields }))
+  # Reads carry the company context too. It is not a substitute for scoping -- a read by id returns whatever
+  # that id is, in any company the API user can see -- which is why Odoo::Accounting#read_move checks the row
+  # it gets back. The context is here so a record rule that DOES narrow by company is given the chance to.
+  def read(model:, ids:, fields:, context: {})
+    Array(@transport.call(model: model, method: 'read', ids: Array(ids), named: { fields: fields }, context: context))
   end
 
   # Returns the new record's id. Odoo 17+ takes `vals_list`, and a recordset comes back from JSON-2 as its id

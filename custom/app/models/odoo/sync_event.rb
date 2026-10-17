@@ -29,6 +29,9 @@ class Odoo::SyncEvent < ApplicationRecord
 
   belongs_to :destination_profile, class_name: 'Odoo::DestinationProfile',
                                    foreign_key: :odoo_destination_profile_id, inverse_of: :sync_events
+  # Optional, and often nil at enqueue time: a Stripe customer this installation has never written is a
+  # customer it does not account for, and that is a state to show rather than a reason to drop the row.
+  belongs_to :account, optional: true
   has_many :attempts, -> { order(:attempt_number) }, class_name: 'Odoo::SyncAttempt', dependent: :destroy,
                                                      foreign_key: :odoo_sync_event_id, inverse_of: :sync_event
 

@@ -76,6 +76,34 @@ jobs:
       - name: Run frontend tests
         run: pnpm run test:coverage
 
+      - name: Production build -- BLOCKING
+        # CI DID NOT BUILD THE FRONTEND AT ALL, so a production build that cannot complete
+        # passed every gate in this file. `deployment/deploy.sh` runs this exact command at
+        # stage 6 and then asserts the manifest exists, which means a broken build was
+        # discoverable only during a deploy.
+        #
+        # THE COMMAND IS `pnpm vite build`, NOT `pnpm run build`. package.json has no `build`
+        # script at all -- `pnpm run build` fails instantly with ERR_PNPM_NO_SCRIPT -- so a
+        # step written that way would have been a no-op that looked like coverage.
+        #
+        # THE HEAP SETTING IS MEASURED, and it is 6144 rather than deploy.sh's historical 4096
+        # for a reason. Measured on node 24.13.0, the version this job pins:
+        #   default heap (2240 MB)   exit 1, SIGABRT after "4928 modules transformed"
+        #   2048 MB                  exit 1 -- below the default, so it can never work
+        #   4096 MB                  exit 0 on 3/3 runs, but PEAK RSS 3.81-4.05 GB against the
+        #                            4096 cap: between 1% and 7% headroom
+        #   6144 MB                  exit 0, peak 4.47 GB, and NO wall-time penalty (82s vs 76s)
+        # A gate sitting 1% from OOM is a gate that goes red on an unrelated dependency bump, so
+        # it is set where the measurement says it is stable. deploy.sh is raised to match.
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          pnpm vite build
+          # The same assertion deploy.sh makes, for the same reason: vite can exit 0 having
+          # written nothing useful, and the manifest is what Rails resolves every asset through.
+          test -s public/vite/.vite/manifest.json || {
+            echo "::error::vite build produced no public/vite/.vite/manifest.json"; exit 1; }
+
   # Backend tests with parallelization
   backend-tests:
     runs-on: ubuntu-latest

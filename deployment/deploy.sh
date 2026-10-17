@@ -281,7 +281,11 @@ as_app 'RAILS_ENV=production bundle exec rails runner "
 # ---------------------------------------------------------------------------
 log "6. Frontend build"
 
-as_app 'NODE_OPTIONS=--max-old-space-size=4096 pnpm vite build'
+# 6144, not 4096. MEASURED on node 24.13.0: the build succeeds at 4096 but peaks at
+# 3.81-4.05 GB against that cap -- 1% to 7% headroom -- so any growth in the bundle turns
+# a deploy into an OOM at stage 6. At 6144 it peaks at 4.47 GB with no wall-time penalty.
+# build:sdk below is left at 4096: it peaks at 316 MB and has three decimal orders of room.
+as_app 'NODE_OPTIONS=--max-old-space-size=6144 pnpm vite build'
 as_app 'test -s public/vite/.vite/manifest.json' || fail "vite build produced no manifest"
 
 # Missing from the old script: the embed script customers load from their own sites.

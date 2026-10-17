@@ -1,0 +1,79 @@
+<%#
+  The Overview (the brief, §11). Four answers in the order an operator needs them: is it on, is anything
+  stuck, what has it done, and when did it last do anything.
+
+  The standing caveat is said once and always, because it is true whether or not anything is currently wrong:
+  this integration started recording when it was deployed and reconstructs nothing from before that.
+%>
+<% content_for(:title) do %>Odoo Accounting<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <div class="border border-slate-100 rounded-md p-4 mb-6">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div>
+        <h2 class="text-base font-semibold mb-1">Destination</h2>
+        <%= render 'status_badge', status: @overview[:status], explain: true %>
+      </div>
+      <div class="flex gap-2">
+        <% if @profile&.sync_enabled? %>
+          <%= button_to 'Turn synchronisation off', disable_super_admin_odoo_accounting_path,
+                        class: 'px-3 py-2 text-sm rounded border border-red-200 text-red-700 hover:bg-red-25' %>
+        <% elsif @profile.present? %>
+          <%= button_to 'Turn synchronisation on', enable_super_admin_odoo_accounting_path,
+                        class: 'px-3 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+        <% else %>
+          <%= link_to 'Configure a destination', settings_super_admin_odoo_accounting_path,
+                      class: 'px-3 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+        <% end %>
+      </div>
+    </div>
+    <% if @profile&.blocked_reason.present? %>
+      <p class="text-sm text-red-700 mt-3">Blocked: <code><%= @profile.blocked_reason %></code></p>
+    <% end %>
+    <% if @profile.present? %>
+      <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+        <div><dt class="text-slate-500">Odoo server</dt><dd class="font-medium"><%= @profile.odoo_version.presence || 'not detected' %></dd></div>
+        <div><dt class="text-slate-500">Transport</dt><dd class="font-medium"><%= @profile.transport.presence || 'not detected' %></dd></div>
+        <div><dt class="text-slate-500">Company</dt><dd class="font-medium"><%= @profile.company_name.presence || @profile.company_id || 'not chosen' %></dd></div>
+        <div><dt class="text-slate-500">Sales journal</dt><dd class="font-medium"><%= @profile.journal_name.presence || @profile.journal_id || 'not chosen' %></dd></div>
+      </dl>
+      <p class="text-sm text-slate-600 mt-3">
+        Automatic posting is <strong><%= @profile.may_post? ? 'on' : 'off' %></strong> and payment registration
+        is <strong><%= @profile.may_register_payments? ? 'on' : 'off' %></strong>. Both are separate switches and
+        both require the capability probe to have passed.
+      </p>
+    <% end %>
+  </div>
+
+  <p class="text-sm text-slate-600 mb-6">
+    <strong>Recording started when this integration was deployed</strong> and reconstructs nothing from before
+    it, so an empty page means nothing has been exported &mdash; not that nothing was billed. Past invoices are
+    brought in deliberately from the Historical import tab.
+  </p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="border border-slate-100 rounded-md p-4">
+      <h3 class="text-sm font-semibold mb-2">Queue</h3>
+      <%= render 'counts', counts: @overview[:queue], empty_message: 'Nothing queued.' %>
+    </div>
+    <div class="border border-slate-100 rounded-md p-4">
+      <h3 class="text-sm font-semibold mb-2">Documents in Odoo</h3>
+      <%= render 'counts', counts: @overview[:documents], empty_message: 'No document has been exported yet.' %>
+    </div>
+    <div class="border border-slate-100 rounded-md p-4">
+      <h3 class="text-sm font-semibold mb-2">Customers</h3>
+      <%= render 'counts', counts: @overview[:customers], empty_message: 'No customer has been mapped yet.' %>
+    </div>
+  </div>
+
+  <p class="text-sm text-slate-600 mt-6">
+    Last successful export:
+    <strong><%= @overview[:last_synchronized_at].present? ? l(@overview[:last_synchronized_at], format: :long) : 'never' %></strong>
+  </p>
+</section>

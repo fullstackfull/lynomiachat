@@ -26,3 +26,28 @@ en:
                 cannot be stored because this installation has no Active Record encryption keys. Set
                 ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY, ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY and
                 ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT, then save again.
+  super_admin:
+    odoo:
+      flash:
+        saved: Saved.
+        key_cleared: The API key has been cleared. Synchronisation cannot run without one.
+        connection_ok: >-
+          Connected. This proves the API key authenticates and the user can read account.move — it does NOT
+          prove an invoice can be created or posted. Run the capability probe for that.
+        connection_failed: Could not connect. The Diagnostics page says at which stage and why.
+        capability_ok: >-
+          Capability probe passed: a draft invoice was created in the configured journal, read back and
+          deleted. Posting is still unproven — see the Diagnostics page.
+        capability_failed: The capability probe failed. Each probe reports separately on the Diagnostics page.
+        enabled: Synchronisation is on. New Stripe invoices will be exported from now.
+        disabled: Synchronisation is off. Queued work is kept and stays blocked until it is turned back on.
+        not_ready: >-
+          This destination is not ready. Finish the connection test, choose the company and journals, and run
+          the capability probe first.
+        stripe_not_configured: Stripe is not configured on this installation, so there are no invoices to read.
+        import_queued:
+          zero: Nothing new to import — every invoice in that window is already exported or has no matching customer.
+          one: One invoice queued for import.
+          other: "%{count} invoices queued for import."
+        event_requeued: Queued for another attempt.
+        event_not_found: That queued item no longer exists.

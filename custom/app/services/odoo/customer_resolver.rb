@@ -88,8 +88,12 @@ class Odoo::CustomerResolver
     account.administrators.first&.email
   end
 
+  # `odoo_partner_id` IS CLEARED, and that is the whole point of the row: this mapping does not own that
+  # partner. Leaving the conflicting id assigned would also make this very update fail the same unique index
+  # again -- and an exception raised inside a rescue clause is not caught by its siblings, so the conflict
+  # would escape as a PG::UniqueViolation nobody can read.
   def flag(mapping, reason)
-    mapping&.update(state: :needs_review, review_reason: reason)
+    mapping&.update(odoo_partner_id: nil, state: :needs_review, review_reason: reason)
     raise Conflict, reason
   end
 end

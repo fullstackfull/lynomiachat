@@ -6,10 +6,16 @@
 # accounting credential in the wrong shape to a wrong endpoint. So the version is read from the one call Odoo
 # answers WITHOUT authentication, `common.version` on `/jsonrpc`, and the transport is chosen from the answer.
 #
-# WHAT IT RETURNS. Odoo answers with server_version ("19.0"), server_version_info ([19, 0, 0, "final", 0, ""]),
-# server_serie and protocol_version. `server_version_info[0]` is the major number and is what the branch below
-# is made from; `server_version` is a display string and is NOT parsed, because a string like "saas~18.3" does
-# not have the shape a parser would expect.
+# WHAT IT RETURNS. Odoo answers with server_version, server_version_info, server_serie and protocol_version.
+#
+# `server_version_info[0]` IS NOT ALWAYS AN INTEGER, and assuming it is would refuse every real Odoo Online
+# tenant. Odoo's own release.py says "during release, the MAJOR version can become an arbitrary string
+# (saas~xx)", and a live call to www.odoo.com answers:
+#
+#   server_version_info => ["saas~19", 3, 0, "final", 0, "e"]        server_version => "saas~19.3+e"
+#
+# So the major is read as the first run of digits in whatever is there, which gives 19 for both `19` and
+# `"saas~19"`. `server_version` is kept only for display.
 class Odoo::VersionProbe
   # Odoo 19 is where the External JSON-2 API appears. Below it there is only the legacy endpoint.
   JSON2_FROM_MAJOR = 19
@@ -32,8 +38,8 @@ class Odoo::VersionProbe
     info = Odoo::Transport::JsonRpc.new(@profile).version
     return failure('INVALID_RESPONSE', 'no_version_info') unless info.is_a?(Hash)
 
-    major = Array(info['server_version_info']).first
-    return failure('INVALID_RESPONSE', 'no_major_version') unless major.is_a?(Integer)
+    major = major_from(info)
+    return failure('INVALID_RESPONSE', 'no_major_version') if major.nil?
     return failure('INVALID_REQUEST', "unsupported_major_#{major}") if major < MINIMUM_MAJOR
 
     Result.new(ok: true, major: major, version: info['server_version'].to_s, info: info, transport: transport_for(major))
@@ -42,6 +48,14 @@ class Odoo::VersionProbe
   end
 
   private
+
+  # An integer on self-hosted and Odoo.sh; a string like "saas~19" on Odoo Online. Both answer 19.
+  def major_from(info)
+    raw = Array(info['server_version_info']).first
+    return raw if raw.is_a?(Integer)
+
+    raw.to_s[/\d+/]&.to_i
+  end
 
   def transport_for(major)
     major >= JSON2_FROM_MAJOR ? Odoo::Transport::Json2::NAME : Odoo::Transport::JsonRpc::NAME

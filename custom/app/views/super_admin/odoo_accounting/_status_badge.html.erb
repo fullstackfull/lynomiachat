@@ -1,0 +1,22 @@
+<%#
+  One of the nine configuration and activation states, in the words an operator can act on.
+  Odoo::DestinationProfile#status derives it; nothing is stored, so this badge cannot disagree with the record.
+%>
+<%
+  copy = {
+    not_configured: ['No destination', 'bg-slate-100 text-slate-700', 'Nothing is configured, so nothing is exported.'],
+    credentials_missing: ['API key missing', 'bg-amber-100 text-amber-800', 'A destination exists but has no API key.'],
+    connection_untested: ['Never tested', 'bg-amber-100 text-amber-800', 'Credentials are stored but have never been used.'],
+    connection_failed: ['Connection failed', 'bg-red-100 text-red-800', 'The last connection test did not succeed.'],
+    scope_incomplete: ['Scope incomplete', 'bg-amber-100 text-amber-800', 'The company and journals have not all been chosen.'],
+    capability_unproven: ['Capability unproven', 'bg-amber-100 text-amber-800', 'No draft invoice has ever been created and read back.'],
+    ready_disabled: ['Ready, switched off', 'bg-sky-100 text-sky-800', 'Everything checks out. Synchronisation is not running.'],
+    active: ['Active', 'bg-green-100 text-green-800', 'New Stripe invoices are being exported.'],
+    error: ['Error', 'bg-red-100 text-red-800', 'Synchronisation is refusing to run; the reason is below.']
+  }
+  label, classes, explanation = copy.fetch(status, ['Unknown', 'bg-slate-100 text-slate-700', ''])
+%>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= classes %>"><%= label %></span>
+<% if local_assigns.fetch(:explain, false) && explanation.present? %>
+  <p class="text-sm text-slate-600 mt-2"><%= explanation %></p>
+<% end %>

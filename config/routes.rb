@@ -676,4 +676,5 @@ Rails.application.routes.draw do
   draw :documentation
   draw :platform_support
   draw :marketing
+  draw :odoo
 end

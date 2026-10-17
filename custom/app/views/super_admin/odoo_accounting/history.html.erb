@@ -1,0 +1,21 @@
+<% content_for(:title) do %>Odoo sync history<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-4">
+    Every piece of accounting work this installation has recorded, newest first. A Stripe webhook's whole
+    contribution is one row here &mdash; nothing in that request talks to Odoo.
+  </p>
+
+  <% if @events.blank? %>
+    <%= render 'empty_state', message: 'Nothing has been queued yet.' %>
+  <% else %>
+    <%= render 'event_table', events: @events %>
+    <div class="mt-4"><%= paginate @events %></div>
+  <% end %>
+</section>

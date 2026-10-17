@@ -81,6 +81,21 @@ RSpec.describe ApplicationRecord do
                   attribute: :twitter_access_token_secret,
                   value: 'twitter-secret-secret'
 
+  # The Odoo destination's API key. Not an `it_behaves_like` because `credentials` is a JSON column rather
+  # than a string attribute, so the shared example's single-value comparison does not apply -- the assertion
+  # is the same one, against the serialized payload.
+  it 'encrypts the Odoo destination API key at rest' do
+    skip('encryption keys missing; see run_mfa_spec workflow') unless Chatwoot.encryption_configured?
+
+    profile = create(:odoo_destination_profile, credentials: { 'api_key' => 'odoo-at-rest-secret' })
+
+    raw_stored_value = profile.reload.read_attribute_before_type_cast(:credentials).to_s
+    expect(raw_stored_value).to be_present
+    expect(raw_stored_value).not_to include('odoo-at-rest-secret')
+    expect(profile.api_key).to eq('odoo-at-rest-secret')
+    expect(profile.encrypted_attribute?(:credentials)).to be(true)
+  end
+
   context 'when backfilling legacy plaintext' do
     before do
       skip('encryption keys missing; see run_mfa_spec workflow') unless Chatwoot.encryption_configured?

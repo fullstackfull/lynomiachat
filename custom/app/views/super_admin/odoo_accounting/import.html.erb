@@ -1,0 +1,83 @@
+<%#
+  Historical import (the brief, §10). Preview first, then confirm, and never on deployment.
+
+  The preview WRITES NOTHING: it reads Stripe invoices in the window and counts what an import would do. The
+  confirm enqueues ordinary sync events with the same dedup keys live synchronisation uses, so importing a
+  period that has already been synchronised produces no second document.
+%>
+<% content_for(:title) do %>Odoo historical import<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <% if @profile.nil? %>
+    <%= render 'empty_state', message: '' %>
+  <% else %>
+    <p class="text-sm text-slate-600 mb-4 max-w-3xl">
+      Nothing is imported until you confirm it, and nothing is ever imported by a deploy. The preview below
+      reads your Stripe invoices and writes nothing at all. Importing a period that has already been
+      synchronised is harmless: it reuses the same idempotency keys, so an invoice already exported is not
+      exported again.
+    </p>
+
+    <%= form_with url: import_super_admin_odoo_accounting_path, method: :get, class: 'flex flex-wrap items-end gap-3 mb-6' do |form| %>
+      <label class="block text-sm">
+        <span class="text-slate-600">From</span>
+        <%= form.date_field :from, value: params[:from].presence || 30.days.ago.to_date,
+                                   class: 'mt-1 border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">To</span>
+        <%= form.date_field :to, value: params[:to].presence || Date.current,
+                                 class: 'mt-1 border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <%= form.submit 'Preview', class: 'px-4 py-2 text-sm rounded border border-slate-200 text-slate-700 hover:bg-slate-25' %>
+    <% end %>
+
+    <% if @preview.present? %>
+      <div class="border border-slate-100 rounded-md p-4 max-w-3xl mb-4">
+        <h2 class="text-base font-semibold mb-3">
+          What an import would do, <%= l(@preview.from.to_date) %> to <%= l(@preview.to.to_date) %>
+        </h2>
+        <dl class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm mb-4">
+          <div><dt class="text-slate-500">Stripe invoices read</dt><dd class="font-medium text-lg"><%= @preview.total %></dd></div>
+          <div><dt class="text-slate-500">Would be exported</dt><dd class="font-medium text-lg text-green-700"><%= @preview.exportable %></dd></div>
+          <div><dt class="text-slate-500">Already exported</dt><dd class="font-medium text-lg"><%= @preview.already_exported %></dd></div>
+          <div><dt class="text-slate-500">Zero amount</dt><dd class="font-medium text-lg"><%= @preview.zero_amount %></dd></div>
+          <div><dt class="text-slate-500">No matching customer</dt><dd class="font-medium text-lg text-amber-700"><%= @preview.unknown_customer %></dd></div>
+        </dl>
+
+        <% if @preview.by_currency.any? %>
+          <p class="text-sm text-slate-700 mb-2">Totals that would be invoiced:</p>
+          <ul class="text-sm mb-4">
+            <% @preview.by_currency.each do |currency, minor| %>
+              <li><strong><%= currency %> <%= Odoo::Money.to_major(minor, currency).to_s('F') %></strong></li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <p class="text-xs text-slate-500 mb-4">
+          A zero-amount invoice is not exported: Stripe issues them for trials and fully discounted periods, and
+          there is no revenue to record. An invoice with no matching customer belongs to a Stripe customer this
+          installation never created, so it is not one of ours to account for.
+          <% if @preview.truncated %>
+            <strong>This window holds more invoices than one preview reads, so the counts are a floor rather
+            than a total.</strong> Narrow the window for an exact figure.
+          <% end %>
+        </p>
+
+        <% if @preview.exportable.positive? %>
+          <%= button_to "Queue #{@preview.exportable} invoices for import",
+                        start_import_super_admin_odoo_accounting_path(from: params[:from], to: params[:to]),
+                        class: 'px-4 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+        <% else %>
+          <p class="text-sm text-slate-600">Nothing in this window would be exported, so there is nothing to confirm.</p>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+</section>

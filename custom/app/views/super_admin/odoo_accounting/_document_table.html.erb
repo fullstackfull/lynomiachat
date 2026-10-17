@@ -1,0 +1,62 @@
+<%#
+  Shared by the Invoices and Transactions tabs: the same record with the same columns, filtered differently.
+
+  `Odoo state` and `Payment state` are what Odoo LAST TOLD US, read back after each write, not what this
+  integration assumes. Payment state in particular is Odoo's own computed field and is never written by us.
+%>
+<table class="w-full text-sm">
+  <thead class="text-left text-slate-500 border-b border-slate-100">
+    <tr>
+      <th class="py-2 pe-4">Date</th>
+      <th class="py-2 pe-4">Account</th>
+      <th class="py-2 pe-4">Stripe object</th>
+      <th class="py-2 pe-4">Amount</th>
+      <th class="py-2 pe-4">Odoo document</th>
+      <th class="py-2 pe-4">Odoo state</th>
+      <th class="py-2">Sync state</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% mappings.each do |mapping| %>
+      <tr class="border-b border-slate-50">
+        <td class="py-2 pe-4"><%= mapping.occurred_at.present? ? l(mapping.occurred_at.to_date) : '—' %></td>
+        <td class="py-2 pe-4">
+          <% if mapping.account_id.present? %>
+            <%= link_to "##{mapping.account_id}", super_admin_account_path(mapping.account_id), class: 'text-woot-500' %>
+          <% else %>
+            <span class="text-slate-400">unmatched</span>
+          <% end %>
+        </td>
+        <td class="py-2 pe-4">
+          <div><%= mapping.document_kind.humanize %></div>
+          <code class="text-xs text-slate-500"><%= mapping.provider_object_id %></code>
+        </td>
+        <td class="py-2 pe-4">
+          <% if mapping.amount_minor.present? %>
+            <%= mapping.currency.to_s.upcase %> <%= Odoo::Money.to_major(mapping.amount_minor, mapping.currency).to_s('F') %>
+          <% else %>
+            —
+          <% end %>
+        </td>
+        <td class="py-2 pe-4">
+          <div><%= mapping.odoo_document_reference.presence || (mapping.odoo_record_id.present? ? "id #{mapping.odoo_record_id}" : '—') %></div>
+          <% if mapping.odoo_record_id.present? && mapping.odoo_document_reference.blank? %>
+            <span class="text-xs text-slate-500">a draft has no number until it is posted</span>
+          <% end %>
+        </td>
+        <td class="py-2 pe-4">
+          <div><%= mapping.odoo_state.presence || '—' %></div>
+          <% if mapping.odoo_payment_state.present? %>
+            <span class="text-xs text-slate-500">payment: <%= mapping.odoo_payment_state %></span>
+          <% end %>
+        </td>
+        <td class="py-2">
+          <%= render 'state_badge', state: mapping.state %>
+          <% if mapping.needs_review_reason.present? %>
+            <div class="text-xs text-slate-500 mt-1"><code><%= mapping.needs_review_reason %></code></div>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

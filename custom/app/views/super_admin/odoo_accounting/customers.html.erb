@@ -1,0 +1,55 @@
+<%#
+  Customer mapping (the brief, §4 and §11). One row per Lynomia account that has been exported, with the Odoo
+  partner it became and how that was decided.
+
+  `Matched by` matters: "created" means this integration made the partner, "source reference" means it found a
+  partner it had made earlier, and "operator" means a person settled a conflict. Nothing is ever matched by
+  name or email, which is what keeps two accounts sharing a billing address from becoming one customer.
+%>
+<% content_for(:title) do %>Odoo customers<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <% if @mappings.blank? %>
+    <%= render 'empty_state', message: 'No customer has been mapped yet. A mapping is created the first time an account\'s invoice is exported.' %>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b border-slate-100">
+        <tr>
+          <th class="py-2 pe-4">Lynomia account</th>
+          <th class="py-2 pe-4">Stripe customer</th>
+          <th class="py-2 pe-4">Odoo partner</th>
+          <th class="py-2 pe-4">Matched by</th>
+          <th class="py-2 pe-4">State</th>
+          <th class="py-2">Last synchronised</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @mappings.each do |mapping| %>
+          <tr class="border-b border-slate-50">
+            <td class="py-2 pe-4">
+              <%= link_to mapping.account&.name.presence || "##{mapping.account_id}",
+                          super_admin_account_path(mapping.account_id), class: 'text-woot-500' %>
+            </td>
+            <td class="py-2 pe-4"><code class="text-xs"><%= mapping.stripe_customer_id.presence || '—' %></code></td>
+            <td class="py-2 pe-4"><%= mapping.odoo_partner_id.presence || '—' %></td>
+            <td class="py-2 pe-4"><%= mapping.matched_by.to_s.humanize.presence || '—' %></td>
+            <td class="py-2 pe-4">
+              <%= render 'state_badge', state: mapping.state %>
+              <% if mapping.review_reason.present? %>
+                <div class="text-xs text-slate-500 mt-1"><code><%= mapping.review_reason %></code></div>
+              <% end %>
+            </td>
+            <td class="py-2"><%= mapping.last_synced_at.present? ? l(mapping.last_synced_at, format: :short) : '—' %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <div class="mt-4"><%= paginate @mappings %></div>
+  <% end %>
+</section>

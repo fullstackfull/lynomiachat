@@ -118,8 +118,8 @@ RSpec.describe Operations::AttentionQueue do
       expect(described_class.new(params: { view: 'all_open', q: 'delivery_failed' }).signals).to contain_exactly(webhook)
     end
 
-    # An enhanced status code rather than a bare `535`: the search also matches a term against `account_id`, and
-    # account ids here are three digits, so a numeric code collides with whichever account happens to carry it.
+    # An enhanced status code rather than a bare `535`: `#search` matches an all-digit term against `account_id`
+    # and `subject_id` too (the `/\A\d+\z/` guard), so any numeric code can pull in an unrelated account's row.
     it 'searches by provider error code out of the detail payload' do
       expect(described_class.new(params: { view: 'all_open', q: '5.7.8' }).signals).to contain_exactly(imap)
     end

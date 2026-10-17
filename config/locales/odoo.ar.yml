@@ -1,0 +1,23 @@
+# تكامل المحاسبة مع أودو، العربية.
+#
+# أسماء أودو التقنية لا تُترجم: res.partner و account.move و account.journal و analytic_distribution و
+# action_post معرّفات تقرأها الآلة، وترجمتها تكسر التكامل وتُربك من يفتح أودو ليقارن.
+#
+# ولا تقول أي رسالة هنا إن شيئًا نجح وهو لم يتعدَّ الإعداد: "متصل" تعني أن تسجيل الدخول نجح، ولا تعني أن
+# إنشاء فاتورة ممكن.
+ar:
+  activerecord:
+    errors:
+      models:
+        odoo/destination_profile:
+          attributes:
+            base_url:
+              must_be_https: يجب أن يبدأ بـ https:// — بيانات المحاسبة لا تُرسل عبر HTTP غير المشفّر
+              must_have_host: يجب أن يتضمّن اسم مضيف خادم أودو
+              must_not_carry_credentials: يجب ألا يحتوي على اسم مستخدم أو كلمة مرور؛ أدخل مفتاح الـ API في خانته الخاصة
+              invalid: ليس رابطًا صحيحًا
+            credentials:
+              encryption_not_configured: >-
+                لا يمكن تخزينها لأن هذا التثبيت بلا مفاتيح تشفير Active Record. اضبط
+                ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY و ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY و
+                ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT ثم احفظ مرة أخرى.

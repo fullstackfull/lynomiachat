@@ -1,0 +1,23 @@
+<% content_for(:title) do %>Odoo transactions<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-4">
+    Payments and credit notes. A payment is registered for the amount Stripe reports as paid; a full refund is
+    a reversal of the invoice, and a partial refund is a credit note that still needs reconciling in Odoo by
+    hand. Stripe's own processing fees are <strong>not</strong> exported: they are an expense on the balance
+    transaction rather than negative revenue, and booking them automatically would misclassify them.
+  </p>
+
+  <% if @mappings.blank? %>
+    <%= render 'empty_state', message: 'No payment or credit note has been exported yet.' %>
+  <% else %>
+    <%= render 'document_table', mappings: @mappings %>
+    <div class="mt-4"><%= paginate @mappings %></div>
+  <% end %>
+</section>

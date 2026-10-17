@@ -53,6 +53,14 @@ RSpec.describe 'Campaign recipient analytics', type: :request do
   let(:message_body) { 'Your parcel PARCEL-SECRET-7 is out for delivery' }
 
   it 'addresses a campaign by the id the API hands out, not by its primary key' do
+    # The two numbers have to DIVERGE or this example proves nothing, and they do not diverge on their own:
+    # `campaigns.id` is a global sequence that a transactional rollback never rewinds, while `display_id`
+    # counts per account. So whenever this is the first campaign-creating example in its process, the account's
+    # fourth campaign is also the fourth row in the table, both numbers read 4, and the primary-key lookup
+    # below would 404 for the wrong reason. One campaign under ANOTHER account spends a primary key without
+    # spending one of this account's display_ids, which puts the two apart for good however the suite is
+    # ordered or sharded.
+    create(:campaign)
     create_list(:campaign, 2, account: account, inbox: inbox, campaign_type: :one_off)
     later = create(:campaign, account: account, inbox: inbox, campaign_type: :one_off)
     expect(later.display_id).not_to eq(later.id)

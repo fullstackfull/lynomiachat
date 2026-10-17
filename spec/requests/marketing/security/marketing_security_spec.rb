@@ -241,11 +241,16 @@ RSpec.describe 'Marketing security', type: :request do
   describe 'rate limiting the public form' do
     let(:client_ip) { '203.0.113.42' }
 
+    # TIME IS FROZEN, for the same reason as in
+    # spec/requests/platform_support/security/abuse_protection_spec.rb: Rack::Attack buckets its counter by
+    # `Time.now.to_i / period`, this throttle's period is an HOUR, and a loop of limit+1 submissions that
+    # straddles an hour boundary starts a fresh bucket part-way through -- so the submission that should be
+    # refused answers 200 instead. Fewer requests than the platform-support loop makes it rarer, not safe.
     around do |example|
       previous_store = Rack::Attack.cache.store
       Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
       Rack::Attack.enabled = true
-      example.run
+      freeze_time { example.run }
     ensure
       Rack::Attack.enabled = false
       Rack::Attack.cache.store = previous_store

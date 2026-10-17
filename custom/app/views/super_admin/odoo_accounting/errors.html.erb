@@ -1,0 +1,60 @@
+<%#
+  Everything that needs a human (the brief, §11). Three lists, because three different things can be stuck and
+  the fix is different for each: queued work, a document, or a customer mapping.
+
+  `retrying` is deliberately NOT here. It is self-healing, and a page that showed rows about to fix themselves
+  would train an operator to ignore it.
+%>
+<% content_for(:title) do %>Odoo errors<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-6">
+    Failed, blocked and needs-review only. Work that is <em>retrying</em> is not listed: it has a next attempt
+    time and will fix itself or arrive here.
+  </p>
+
+  <h2 class="text-base font-semibold mb-2">Queued work</h2>
+  <% if @events.blank? %>
+    <p class="text-sm text-slate-600 mb-6">Nothing queued is stuck.</p>
+  <% else %>
+    <div class="mb-6">
+      <%= render 'event_table', events: @events, retryable: true %>
+      <div class="mt-4"><%= paginate @events %></div>
+    </div>
+  <% end %>
+
+  <h2 class="text-base font-semibold mb-2">Documents</h2>
+  <% if @documents.blank? %>
+    <p class="text-sm text-slate-600 mb-6">No exported document is stuck.</p>
+  <% else %>
+    <div class="mb-6"><%= render 'document_table', mappings: @documents %></div>
+  <% end %>
+
+  <h2 class="text-base font-semibold mb-2">Customer mappings</h2>
+  <% if @customers.blank? %>
+    <p class="text-sm text-slate-600">No customer mapping needs attention.</p>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b border-slate-100">
+        <tr><th class="py-2 pe-4">Account</th><th class="py-2 pe-4">Odoo partner</th><th class="py-2">Reason</th></tr>
+      </thead>
+      <tbody>
+        <% @customers.each do |mapping| %>
+          <tr class="border-b border-slate-50">
+            <td class="py-2 pe-4">
+              <%= link_to "##{mapping.account_id}", super_admin_account_path(mapping.account_id), class: 'text-woot-500' %>
+            </td>
+            <td class="py-2 pe-4"><%= mapping.odoo_partner_id.presence || '—' %></td>
+            <td class="py-2"><code class="text-xs"><%= mapping.review_reason.presence || mapping.state %></code></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

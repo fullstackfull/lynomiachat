@@ -1,0 +1,15 @@
+<%# One of the seven Odoo::SyncState values, used by every list on this surface. %>
+<%
+  classes = {
+    'pending' => 'bg-slate-100 text-slate-700',
+    'processing' => 'bg-sky-100 text-sky-800',
+    'synchronized' => 'bg-green-100 text-green-800',
+    'retrying' => 'bg-amber-100 text-amber-800',
+    'failed' => 'bg-red-100 text-red-800',
+    'blocked' => 'bg-slate-200 text-slate-800',
+    'needs_review' => 'bg-purple-100 text-purple-800'
+  }.fetch(state.to_s, 'bg-slate-100 text-slate-700')
+%>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= classes %>">
+  <%= state.to_s.humanize %>
+</span>

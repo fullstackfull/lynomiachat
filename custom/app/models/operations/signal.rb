@@ -19,7 +19,11 @@ class Operations::Signal < ApplicationRecord
   # source-agnostic, so this is one entry rather than a second dashboard.
   # `campaign` added by DECISION 6: a scheduled campaign that could not send is an operations problem with a
   # different subject from a channel's, and a reader must be able to tell them apart without parsing `signal`.
-  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue billing campaign].freeze
+  # `accounting_sync` added by the Odoo integration: an accounting export that cannot complete is an
+  # operations problem an operator must see, and the Operations Center is where they already look. One entry
+  # rather than a second dashboard, the same reasoning as `billing` above.
+  SOURCES = %w[email_channel whatsapp_channel channel commerce_store webhook queue billing campaign
+               accounting_sync].freeze
 
   # What was observed. Allow-listed so a typo becomes a validation failure rather than a row nobody will ever
   # find again.

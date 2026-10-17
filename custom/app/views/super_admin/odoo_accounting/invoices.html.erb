@@ -1,0 +1,21 @@
+<% content_for(:title) do %>Odoo invoices<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <p class="text-sm text-slate-600 mb-4">
+    Customer invoices exported from real Stripe invoices. Amounts come from the Stripe invoice, never from a
+    plan's list price, and an invoice is only posted once Odoo's own computed total agrees with Stripe's.
+  </p>
+
+  <% if @mappings.blank? %>
+    <%= render 'empty_state', message: 'No invoice has been exported yet.' %>
+  <% else %>
+    <%= render 'document_table', mappings: @mappings %>
+    <div class="mt-4"><%= paginate @mappings %></div>
+  <% end %>
+</section>

@@ -1,0 +1,83 @@
+<%#
+  Diagnostics (the brief, §11 and §12). The page whose whole job is to be honest about the difference between
+  "a credential works" and "an invoice can be created and posted".
+
+  Both buttons are POSTs. The connection test authenticates against a third-party server; the capability probe
+  creates a document in it. Neither is something a link somebody pastes should be able to do.
+%>
+<% content_for(:title) do %>Odoo diagnostics<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <% if @profile.nil? %>
+    <%= render 'empty_state', message: '' %>
+  <% else %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div class="border border-slate-100 rounded-md p-4">
+        <h2 class="text-base font-semibold mb-1">1. Connection test</h2>
+        <p class="text-sm text-slate-600 mb-3">
+          Reads the server version <em>without</em> credentials, then makes one authenticated read. It proves
+          the API key is valid and the user can see <code>account.move</code>.
+          <strong>It does not prove an invoice can be created or posted.</strong>
+        </p>
+        <p class="text-sm mb-3">
+          Last run:
+          <strong><%= @profile.last_connection_test_at.present? ? l(@profile.last_connection_test_at, format: :long) : 'never' %></strong>
+        </p>
+        <% if @profile.last_connection_result.present? %>
+          <pre class="text-xs bg-slate-25 border border-slate-100 rounded p-3 overflow-x-auto mb-3"><%= JSON.pretty_generate(@profile.last_connection_result) %></pre>
+        <% end %>
+        <%= button_to 'Run connection test', test_connection_super_admin_odoo_accounting_path,
+                      class: 'px-3 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+      </div>
+
+      <div class="border border-slate-100 rounded-md p-4">
+        <h2 class="text-base font-semibold mb-1">2. Capability probe</h2>
+        <p class="text-sm text-slate-600 mb-3">
+          Seven independent checks: the shape of <code>account.move</code> on this server, the company, the
+          sales journal's type and company, the payment journal, <strong>whether this server can attribute
+          revenue to your Lynomia Chat analytic account at all</strong>, <strong>one draft invoice created in
+          the configured journal, read back, and deleted</strong>, and finally <strong>whether that draft's
+          revenue line actually came back carrying 100% to your analytic account</strong>. A draft has no
+          sequence number, so deleting it leaves no accounting trace and no gap in your numbering.
+        </p>
+        <p class="text-sm text-slate-600 mb-3">
+          The attribution check is the one that cannot be skipped. Your Odoo company hosts several unrelated
+          projects, so an invoice that posts correctly but carries no analytic distribution has put Lynomia
+          Chat's revenue somewhere your own reports cannot separate. If this server cannot do analytic
+          accounting, this probe fails and <strong>synchronisation stays switched off</strong> until you
+          configure the dedicated-income-account fallback on the Settings tab and it passes.
+        </p>
+        <p class="text-sm mb-3">
+          Last run:
+          <strong><%= @profile.last_capability_proof_at.present? ? l(@profile.last_capability_proof_at, format: :long) : 'never' %></strong>
+        </p>
+        <% if @profile.last_capability_proof.present? %>
+          <pre class="text-xs bg-slate-25 border border-slate-100 rounded p-3 overflow-x-auto mb-3"><%= JSON.pretty_generate(@profile.last_capability_proof) %></pre>
+        <% end %>
+        <%= button_to 'Run capability probe', run_capability_probe_super_admin_odoo_accounting_path,
+                      class: 'px-3 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+      </div>
+    </div>
+
+    <div class="border border-amber-200 bg-amber-25 rounded-md p-4 max-w-3xl">
+      <h2 class="text-base font-semibold mb-1">3. Posting is not proven, and is not claimed to be</h2>
+      <p class="text-sm text-slate-700">
+        Posting an invoice gives it a permanent number from your journal's sequence and cannot be undone
+        &mdash; a posted invoice is reversed, never deleted. There is therefore no way to probe posting without
+        leaving a real document in your books, so this integration does not try, and does not pretend the
+        probe above covers it.
+      </p>
+      <p class="text-sm text-slate-700 mt-2">
+        What that means in practice: leave <strong>Post invoices automatically</strong> off until you have
+        exported a few real invoices as drafts and posted one yourself in Odoo. The first invoice that posts
+        successfully is the real test. Until then every export is a draft, which is reversible by deleting it.
+      </p>
+    </div>
+  <% end %>
+</section>

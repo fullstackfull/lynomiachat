@@ -1,0 +1,173 @@
+<%#
+  Connection and accounting configuration (the brief, §2 tabs 1 and 2).
+
+  THE SECRET IS NEVER RENDERED. The API key field is always empty and its hint is `masked_api_key`, which
+  shows a prefix and a suffix only when doing so still hides at least half the value and otherwise says
+  nothing but that one is set. Leaving the field empty keeps the stored key.
+%>
+<% content_for(:title) do %>Odoo connection and settings<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Odoo Accounting</h1>
+</header>
+
+<section class="main-content__body">
+  <%= render 'tabs' %>
+
+  <%= form_with url: settings_super_admin_odoo_accounting_path, method: :patch, class: 'max-w-3xl' do |form| %>
+    <h2 class="text-base font-semibold mb-1">Connection</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      The Odoo server, the database on it, and the user this integration acts as. HTTPS only: an accounting
+      credential is never sent over plain HTTP, and the form refuses a URL that is not https or that carries a
+      username or password in it.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <label class="block text-sm">
+        <span class="text-slate-600">Name for this destination</span>
+        <%= form.text_field :name, value: @profile&.name, required: true, placeholder: 'Lynomia Chat — live',
+                                   class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">Environment</span>
+        <%= form.select :environment, Odoo::DestinationProfile::ENVIRONMENTS.map { |e| [e, e] },
+                        { selected: @profile&.environment || 'test' },
+                        class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+        <span class="text-xs text-slate-500">Only a <code>live</code> destination receives production invoices.</span>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">Odoo URL</span>
+        <%= form.url_field :base_url, value: @profile&.base_url, required: true, placeholder: 'https://odoo.example.com',
+                                      class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">Database</span>
+        <%= form.text_field :database, value: @profile&.database, required: true,
+                                       class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">Odoo user (login)</span>
+        <%= form.text_field :username, value: @profile&.username, required: true,
+                                       class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-600">API key</span>
+        <%= form.password_field :api_key, value: nil, autocomplete: 'off',
+                                          class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+        <span class="text-xs text-slate-500">
+          <% if @profile&.credentials_present? %>
+            Stored: <code><%= @profile.masked_api_key %></code>. Leave empty to keep it.
+          <% else %>
+            Not set. Create one in Odoo under Preferences &rarr; Account Security.
+          <% end %>
+        </span>
+      </label>
+    </div>
+
+    <h2 class="text-base font-semibold mb-1">Accounting destination</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      <strong>Where documents are written &mdash; your existing Odoo company.</strong> Nothing here creates a
+      company; enter the one you already use. In an Odoo where several unrelated projects share one legal
+      company, these ids say where a document lands and nothing about whose it is &mdash; that is the
+      attribution section below. Find the ids in Odoo under Accounting &rarr; Configuration. Read-only
+      confirmation of each is on the Diagnostics tab.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <% [[:company_id, 'Company id (res.company) &mdash; your existing company', true],
+          [:journal_id, 'Sales journal id (account.journal, type sale)', true],
+          [:payment_journal_id, 'Payment journal id (bank or cash)', true],
+          [:default_product_id, 'Default product id for invoice lines (optional)', false]].each do |field, label, required| %>
+        <label class="block text-sm">
+          <span class="text-slate-600"><%= label.html_safe %></span>
+          <%= form.number_field field, value: @profile&.public_send(field), required: required,
+                                       class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+        </label>
+      <% end %>
+    </div>
+
+    <h2 class="text-base font-semibold mb-1">Project attribution</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      <strong>This is the isolation that matters.</strong> The company above is shared with your other
+      projects, and Odoo's financial reports do not read the reference this integration stamps on each record.
+      So every Lynomia Chat revenue line carries an <strong>analytic distribution</strong>, 100% to the
+      analytic account you name here &mdash; which is how Odoo separates one project's profit and loss inside
+      one legal company. It is applied to revenue lines only, never to the receivable or the tax.
+      <strong>Synchronisation cannot be switched on until the capability probe has read this attribution back
+      out of a real draft invoice on your server.</strong>
+    </p>
+
+    <div class="mb-4">
+      <label class="block text-sm">
+        <span class="text-slate-600">Attribution mechanism</span>
+        <%= form.select :attribution_mode,
+                        [['Analytic account (recommended)', Odoo::Attribution::ANALYTIC],
+                         ['Dedicated income account (only if this Odoo cannot do analytic accounting)',
+                          Odoo::Attribution::INCOME_ACCOUNT]],
+                        { selected: @profile&.attribution_mode || Odoo::Attribution::ANALYTIC },
+                        class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+      <% [[:analytic_account_id, 'Analytic account id (account.analytic.account) &mdash; the Lynomia Chat project'],
+          [:analytic_plan_id, 'Analytic plan id (optional, for your own reference)'],
+          [:income_account_id, 'Dedicated income account id &mdash; only for the fallback mechanism']].each do |field, label| %>
+        <label class="block text-sm">
+          <span class="text-slate-600"><%= label.html_safe %></span>
+          <%= form.number_field field, value: @profile&.public_send(field),
+                                       class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+        </label>
+      <% end %>
+    </div>
+    <p class="text-sm text-slate-600 mb-6">
+      Current state:
+      <strong><%= (@profile&.attribution_state || :not_configured).to_s.humanize %></strong>.
+      The fallback segregates this project's revenue on its own profit-and-loss line rather than analytically,
+      which is a narrower guarantee &mdash; see the limitations note in <code>docs/odoo/05-limitations.md</code>.
+      Attribution is never skipped: if neither mechanism is configured and proven, nothing is exported.
+    </p>
+
+    <h2 class="text-base font-semibold mb-1">What it is allowed to do</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      Both are off by default and both stay unavailable until the capability probe has passed. A successful
+      connection test proves a credential, not a journal &mdash; see Diagnostics.
+    </p>
+    <div class="space-y-3 mb-6">
+      <label class="flex items-start gap-2 text-sm">
+        <%= form.check_box :post_invoices, { checked: @profile&.post_invoices?, class: 'mt-1' }, '1', '0' %>
+        <span>
+          <strong>Post invoices automatically.</strong> Without this, every exported invoice stays a draft in
+          Odoo for a person to post. A posted invoice takes a number from the journal sequence and cannot be
+          deleted, only reversed.
+        </span>
+      </label>
+      <label class="flex items-start gap-2 text-sm">
+        <%= form.check_box :register_payments, { checked: @profile&.register_payments?, class: 'mt-1' }, '1', '0' %>
+        <span>
+          <strong>Register payments automatically.</strong> Requires posting. The payment is registered through
+          Odoo's own wizard for the amount Stripe reports as paid; the invoice's payment status is then read
+          back from Odoo and never written.
+        </span>
+      </label>
+    </div>
+
+    <div class="flex gap-2">
+      <%= form.submit 'Save', class: 'px-4 py-2 text-sm rounded bg-woot-500 text-white hover:bg-woot-600' %>
+      <%= link_to 'Run connection test', diagnostics_super_admin_odoo_accounting_path,
+                  class: 'px-4 py-2 text-sm rounded border border-slate-200 text-slate-700 hover:bg-slate-25' %>
+    </div>
+  <% end %>
+
+  <% if @profile&.credentials_present? %>
+    <div class="max-w-3xl mt-8 border-t border-slate-100 pt-4">
+      <h2 class="text-base font-semibold mb-1">Clear the API key</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Removes the stored key. Synchronisation cannot run without one, so this stops the export as surely as
+        turning it off &mdash; and queued work is kept.
+      </p>
+      <%= button_to 'Clear the stored API key', clear_api_key_super_admin_odoo_accounting_path,
+                    class: 'px-3 py-2 text-sm rounded border border-red-200 text-red-700 hover:bg-red-25' %>
+    </div>
+  <% end %>
+</section>

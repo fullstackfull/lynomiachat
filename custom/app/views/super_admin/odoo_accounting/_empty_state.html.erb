@@ -1,0 +1,9 @@
+<%# Why a list is empty, which is more useful than a blank table. %>
+<div class="border border-slate-100 rounded-md p-6 text-sm text-slate-600">
+  <% if @profile.nil? %>
+    No Odoo destination is configured, so nothing has been exported.
+    <%= link_to 'Configure one', settings_super_admin_odoo_accounting_path, class: 'text-woot-500' %>.
+  <% else %>
+    <%= message %>
+  <% end %>
+</div>

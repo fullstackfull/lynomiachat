@@ -83,10 +83,14 @@ Verified on this container: libvips 8.15.1, `ruby-vips` 2.3.0, Rails boots.
 
 ### 1.3 GHSA-42qh-8mx8-7wqm, `rack-proxy` 0.7.7 — NOT APPLICABLE *(superseded — now FIXED)*
 
-> **Superseded.** `vite_ruby` 3.10.6 relaxed the `~> 0.6` pin this section calls unfixable, so `rack-proxy` moved
-> 0.7.7 → 2.0.1 and the finding is closed. The reading below that the installed code "is not the vulnerable
-> code" was also one step too strong: the advisory says 0.x was *not assessed*, which is not the same as
-> unaffected. See `docs/pre-deploy/06-security-remediation.md` §2.
+> **Superseded, and the verdict below is wrong.** `vite_ruby` 3.10.6 relaxed the `~> 0.6` pin this section
+> calls unfixable, so `rack-proxy` moved 0.7.7 → 2.0.1 and the finding is closed. More importantly, the claim
+> that "the installed code is not the vulnerable code" does not survive reading 0.7.7's `lib/rack/proxy.rb`:
+> it strips `Transfer-Encoding` as hop-by-hop at :163 while retaining the backend's `Content-Length` from
+> :157 over an already-dechunked body, with no ambiguous-framing guard anywhere in the file. That is the
+> defect the advisory describes. 0.x being "not assessed" was never a reprieve. Exposure was still low
+> because the proxy is development-only, but this was a real flaw, not a scanner artefact.
+> See `docs/pre-deploy/06-security-remediation.md` §2.
 
 The scanner reports this. The installed code is not the vulnerable code, and the advisory's own text says so.
 

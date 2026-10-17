@@ -16,7 +16,7 @@ advisories as open. No `brakeman.ignore` was created.
 
 | finding | gem, before → after | verdict |
 |---|---|---|
-| GHSA-42qh-8mx8-7wqm | `rack-proxy` 0.7.7 → **2.0.1** | **FIXED** — unblocked by `vite_ruby` 3.10.6 |
+| GHSA-42qh-8mx8-7wqm | `rack-proxy` 0.7.7 → **2.0.1** | **FIXED** — a real defect in 0.7.7, not a false positive (§2) |
 | CVE-2026-67987 | `ruby_llm` 1.15.0 → **2.0.0** | **FIXED** — vulnerable code removed upstream |
 | CVE-2026-67989 | `ruby_llm` 1.15.0 → **2.0.0** | **FIXED** — was unreachable; now also absent |
 | CVE-2026-67991 | `ruby_llm` 1.15.0 → **2.0.0** | **FIXED** — named site was never present in 1.15.0 |
@@ -27,11 +27,12 @@ Full dependency delta, both commits combined:
 | gem | before | after |
 |---|---|---|
 | `rack-proxy` | 0.7.7 | 2.0.1 |
-| `vite_ruby` | 3.10.2 | 3.11.1 |
+| `vite_ruby` | 3.10.2 | 3.10.6 (held below 3.11.1 — see §2.1) |
 | `ruby_llm` | 1.15.0 | 2.0.0 |
 | `ai-agents` | 0.12.0 | 0.13.0 |
 | `ruby_llm-schema` | 0.3.0 | 1.0.0 |
 | `schematist` | — | 1.1.0 (new, transitive) |
+| `dry-cli` | 1.1.0 | 1.4.1 (transitive of `vite_ruby`; used only by the `vite` CLI) |
 
 `vite_rails` stays on 3.10.0. Both resolves used `--conservative`, so no other gem in the lockfile moves — in
 particular the five collateral bumps an unconstrained `ruby_llm` resolve pulls in (`json`, `zeitwerk`,
@@ -51,9 +52,31 @@ particular the five collateral bumps an unconstrained `ruby_llm` resolve pulls i
 > Confirmed affected: rack-proxy 1.0.0, 1.0.1, and 1.0.2. Fixed in the 1.x series: 1.0.3 … Versions before
 > 1.0.0 were not assessed for this advisory; **they are not asserted to be unaffected.**
 
-§1.3 of `00-security-audits.md` read this as "the installed code is not the vulnerable code". That is one
-reading too strong: *unassessed* is not *safe*. The finding was genuinely unresolvable from the advisory text
-alone, which is a reason to move off the line rather than to argue about it.
+§1.3 of `00-security-audits.md` read this as "the installed code is not the vulnerable code". **That is
+wrong, and it was checked rather than assumed.** Reading `rack-proxy` 0.7.7's own
+`lib/rack/proxy.rb`, the defect the advisory describes is present verbatim:
+
+```ruby
+HOP_BY_HOP_HEADERS = { ... 'transfer-encoding' => true, ... }.freeze   # :10-19
+
+headers = self.class.normalize_headers(... target_response.to_hash)   # :157 keeps backend Content-Length
+body    = target_response.body || [""]                                 # :158 already dechunked by Net::HTTP
+headers.reject! { |k| HOP_BY_HOP_HEADERS[k.downcase] }                 # :163 strips TE, keeps Content-Length
+```
+
+There is **no ambiguous-framing guard anywhere in 0.7.7**. The 1.0.3 fix adds exactly that guard before the
+hop-by-hop strip:
+
+```ruby
+if headers.key?("Transfer-Encoding") && headers.key?("Content-Length")
+  target_response.close if target_response.respond_to?(:close)
+  return [502, {}, []]
+end
+```
+
+So the advisory's "versions before 1.0.0 were not assessed" is not a reprieve: the vulnerable code shape is in
+the installed version, in both streaming and `streaming: false` modes. This was a real defect, not a scanner
+artefact — which makes the upgrade a fix rather than a way of quieting a false positive.
 
 ### Why it is fixable now and was not before
 
@@ -79,6 +102,38 @@ unless backend_allowed?(backend)   # defaults to true
 `ViteRuby::DevServerProxy#forward_to_vite_dev_server` assigns `env["rack.backend"] = URI(config.origin)`
 before calling `super`, so `backend` is non-nil and the guard never fires. The subclassed API —
 `initialize`, `call`, `rewrite_env`, `rewrite_response`, `perform_request` — is unchanged in 2.0.1.
+
+### 2.1 Why `vite_ruby` is held at 3.10.6 and not the latest
+
+The first attempt took `vite_ruby` to 3.11.1, the newest release. **That breaks Rails boot in every
+environment**, and CI caught it:
+
+```
+ArgumentError: vite-plugin-ruby@^5.2.1 might not be compatible with vite_ruby-3.11.1
+  vite_ruby-3.11.1/lib/vite_ruby/compatibility_check.rb:24
+  vite_rails-3.10.0/lib/vite_rails/engine.rb:38
+  config/environment.rb:5
+Tasks: TOP => db:create => db:load_config => environment
+```
+
+3.11.1 raised `DEFAULT_PLUGIN_VERSION` from `^5.2.0` to `^5.2.5`, while `package.json:152` declares
+`vite-plugin-ruby "^5.2.1"` and `skipCompatibilityCheck` is set nowhere (gem default `false`).
+`ViteRuby::CompatibilityCheck.verify_plugin_version` reads the **declared range**, not what pnpm installed,
+so `pnpm install` cannot fix it — `package.json` would have to change. `vite_rails/engine.rb:38` calls
+`ViteRuby.config` unguarded, so the raise aborts `rails server`, `rails console`, `rspec`, `rake db:create`
+and `rake assets:precompile`, including the production Docker build.
+
+**Note how it presents in CI:** `security-scan` went **green** (neither Brakeman nor bundle-audit boots
+Rails) while all 16 `backend-tests` shards went red. A green security job is not evidence that a dependency
+bump is safe.
+
+3.10.6 is the narrowest version that solves the original problem: it keeps `DEFAULT_PLUGIN_VERSION` at
+`^5.2.0`, and it already carries the relaxed `rack-proxy (>= 0.6.1)` constraint. 3.11.0 would also work, but
+3.10.6 is a patch-level move from the installed 3.10.2 and avoids 3.11.0's dev-server-detection rewrite.
+
+`Gemfile` therefore gains one explicit constraint, `gem 'vite_ruby', '~> 3.10.6'`, with a comment recording
+why, so a later `bundle update` cannot silently reintroduce the break. Lift it together with a
+`vite-plugin-ruby` bump in `package.json`.
 
 ### Exposure
 

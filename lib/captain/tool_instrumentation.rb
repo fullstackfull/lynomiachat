@@ -46,13 +46,19 @@ module Captain::ToolInstrumentation
       apply_current_langfuse_attributes(span)
       span.set_attribute(ATTR_GEN_AI_PROVIDER, 'openai')
       span.set_attribute(ATTR_GEN_AI_REQUEST_MODEL, model)
-      span.set_attribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, message.tokens.input)
-      span.set_attribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, message.tokens.output) if message.respond_to?(:tokens)
+      set_generation_usage_attributes(span, message)
       span.set_attribute(ATTR_LANGFUSE_OBSERVATION_INPUT, format_chat_messages(chat))
       span.set_attribute(ATTR_LANGFUSE_OBSERVATION_OUTPUT, message.content.to_s) if message.respond_to?(:content)
     end
   rescue StandardError => e
     Rails.logger.warn "Failed to record generation: #{e.message}"
+  end
+
+  def set_generation_usage_attributes(span, message)
+    return unless message.respond_to?(:tokens)
+
+    span.set_attribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, message.tokens.input)
+    span.set_attribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, message.tokens.output)
   end
 
   def format_chat_messages(chat)

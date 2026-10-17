@@ -81,7 +81,12 @@ restart into an outage with no rollback of its own. Two things were added for it
 
 Verified on this container: libvips 8.15.1, `ruby-vips` 2.3.0, Rails boots.
 
-### 1.3 GHSA-42qh-8mx8-7wqm, `rack-proxy` 0.7.7 — NOT APPLICABLE
+### 1.3 GHSA-42qh-8mx8-7wqm, `rack-proxy` 0.7.7 — NOT APPLICABLE *(superseded — now FIXED)*
+
+> **Superseded.** `vite_ruby` 3.10.6 relaxed the `~> 0.6` pin this section calls unfixable, so `rack-proxy` moved
+> 0.7.7 → 2.0.1 and the finding is closed. The reading below that the installed code "is not the vulnerable
+> code" was also one step too strong: the advisory says 0.x was *not assessed*, which is not the same as
+> unaffected. See `docs/pre-deploy/06-security-remediation.md` §2.
 
 The scanner reports this. The installed code is not the vulnerable code, and the advisory's own text says so.
 
@@ -109,7 +114,14 @@ It is also unfixable as reported: `rack-proxy` is transitive via
 true today and might not be after an upstream metadata fix. It stays visible in scan output and is explained
 here. Recommended follow-up, outside this branch: report the missing `unaffected_versions` to `ruby-advisory-db`.
 
-### 1.4 CVE-2026-67987, CVE-2026-67989, CVE-2026-67991, `ruby_llm` 1.15.0 — OPEN SECURITY ADVISORY
+### 1.4 CVE-2026-67987, CVE-2026-67989, CVE-2026-67991, `ruby_llm` 1.15.0 — OPEN SECURITY ADVISORY *(superseded — now FIXED)*
+
+> **Superseded.** The `ruby_llm` 2.x migration this section recommends as follow-up has been done:
+> `ruby_llm` 1.15.0 → 2.0.0 with `ai-agents` 0.12.0 → 0.13.0. Three corrections to what follows — the migration
+> table below is missing two call sites (`lib/captain/tool_instrumentation.rb:49`,
+> `lib/integrations/llm_instrumentation_spans.rb:108-109`); the Captain endpoints run **synchronously in the
+> request thread**, not in a Sidekiq worker; and CVE-2026-67991's named site (`Utils.underscore`) is **absent**
+> from 1.15.0 entirely. See `docs/pre-deploy/06-security-remediation.md` §3.
 
 All three are **open and unpatched in this release.** They appear in scan output on purpose.
 
@@ -396,8 +408,8 @@ make from a summary table, and because the same shape of error is corrected agai
 | 2 | The ten removed suppressions re-verified | **PASS** — nine did not reappear |
 | 3 | CVE-2026-66066 (`activestorage`) | **FIXED** — Rails 7.2.3.2; 13 gems moved, nothing else |
 | 4 | The libvips precondition the fix introduces | **FIXED in the gem, GUARDED on the host** — `ruby-vips` 2.3.0; `deploy.sh` stage 4b; runbook §0.1 |
-| 5 | GHSA-42qh-8mx8-7wqm (`rack-proxy`) | **NOT APPLICABLE** — flaw introduced in 1.0.0, advisory lacks `unaffected_versions`. Not suppressed |
-| 6 | CVE-2026-67987 / 67989 / 67991 (`ruby_llm`) | **OPEN SECURITY ADVISORY** — see §1.4. Visible in scan output; the one suppression that existed was removed |
+| 5 | GHSA-42qh-8mx8-7wqm (`rack-proxy`) | **FIXED** (was NOT APPLICABLE) — `rack-proxy` 0.7.7 → 2.0.1 once `vite_ruby` 3.10.6 lifted the `~> 0.6` pin. Still not suppressed. See `06-security-remediation.md` §2 |
+| 6 | CVE-2026-67987 / 67989 / 67991 (`ruby_llm`) | **FIXED** (was OPEN) — `ruby_llm` 1.15.0 → 2.0.0, `ai-agents` 0.12.0 → 0.13.0. Still nothing suppressed. See `06-security-remediation.md` §3 |
 | 7 | JavaScript advisory scan run against the real lockfile | **PASS** — run; 126 → 68 records, 140 → 77 paths |
 | 8 | Browser-runtime JavaScript advisories | **FIXED** — 12 packages, all inside their major line |
 | 9 | Build and development JavaScript advisories | **OPEN, dev/build only** — 68 records in 26 packages, every entry point named in §2.3 |

@@ -71,6 +71,9 @@ module SallaSim
 
   def json(status, body) = { status: status, body: body.to_json, headers: { 'Content-Type' => 'application/json' } }
 
+  # Increments a Redis hash field. Brakeman reports the interpolated callers of this as "Possible SQL
+  # injection" because the method is named `count`; there is no SQL here, and `name` is a HINCRBY field
+  # sent as a RESP bulk string, never concatenated into a query. See docs/pre-deploy/06-security-remediation.md.
   def count(name) = redis.hincrby("#{PREFIX}::REQUESTS", name, 1)
 
   def requests = redis.hgetall("#{PREFIX}::REQUESTS").transform_values(&:to_i)

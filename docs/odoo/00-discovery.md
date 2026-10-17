@@ -251,8 +251,8 @@ The adapter is therefore **JSON-only**, built on the same `SsrfFilter` + `Net::H
 ## 10. Conventions that bind this change
 
 - **Layout.** Fork-specific code lives in `custom/app/**` (in `eager_load_paths`, so `zeitwerk:check` covers it)
-  with views in `custom/app/views`. Enterprise overlay is `enterprise/`; this feature has no OSS counterpart to
-  override, so it is Lynomia-only under `custom/`.
+  with views in `custom/app/views`. Upstream Chatwoot's Enterprise overlay (`enterprise/`) is not vendored in
+  this fork at all, and this feature has no OSS counterpart to override, so it is Lynomia-only under `custom/`.
 - **Migrations.** Recent Lynomia tables went to `db/migrate` (`create_platform_support_*`,
   `create_commerce_store_health`), even though `custom/db/migrate` is also a migration path. New tables follow
   `db/migrate`. Style: timestamped `YYYYMMDDHHMMSS_verb_noun.rb`, `ActiveRecord::Migration[7.2]`, `change`-based
@@ -265,13 +265,15 @@ The adapter is therefore **JSON-only**, built on the same `SsrfFilter` + `Net::H
   `frontend-tests`, 16 `backend-tests` shards, `security-scan`, and a node-0-only step running
   `bundle exec rake -T | grep -q '^rake documentation:content'` and `bundle exec rake zeitwerk:check`.
   A PR title must be Conventional Commits.
-  **`security-scan` is red on the base branch already** — `.bundler-audit.yml` carries `ruby_llm` and
-  `rack-proxy` as deliberately unsuppressed open advisories, documented in
-  `docs/pre-deploy/00-security-audits.md`.
+  **`security-scan` was red on the base branch while this work started** — `ruby_llm` and `rack-proxy` carried
+  open advisories that `.bundler-audit.yml` deliberately did not suppress. Both were fixed on `lynomia-custom`
+  (`ruby_llm` 1.15.0 -> 2.0.0, `rack-proxy` 0.7.7 -> 2.0.1; see `docs/pre-deploy/06-security-remediation.md`),
+  and after merging that base in, `bundle exec bundle-audit check` reports no vulnerabilities, so the gate is
+  expected to pass.
   **Shard hazard:** shards are assigned round-robin over `find spec -name '*_spec.rb' | sort`, so adding any
-  spec file moves every later file into a different shard. A pre-existing latent id collision in
-  `spec/services/operations/attention_queue_spec.rb` (a search for `'535'` also matching `account_id: 535`)
-  surfaces or hides depending on that split.
+  spec file moves every later file into a different shard. One latent id collision this could have surfaced --
+  `spec/services/operations/attention_queue_spec.rb` searching for `'535'`, which also matched
+  `account_id: 535` -- was fixed on the base before this branch added specs; the search term is now `'5.7.8'`.
 - **Rubocop** 150-character lines. **No bare strings** in user-facing templates — i18n under
   `config/locales/en.yml` (`super_admin:` at line 819) and `en.json` for the frontend; only English is edited
   by hand, the rest comes through Crowdin.

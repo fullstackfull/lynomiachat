@@ -21,11 +21,21 @@ RSpec.describe 'Platform Support abuse protection', type: :request do
   let(:ticket) { create(:platform_support_ticket, account: account, reporter: reporter) }
   let(:base) { "/api/v1/accounts/#{account.id}/platform_support" }
 
+  # TIME IS FROZEN FOR THE WHOLE EXAMPLE, and that is a correctness fix rather than tidiness. Rack::Attack
+  # buckets a throttle counter by `Time.now.to_i / period`, and the message limit's period is an HOUR. Every
+  # example below posts `limit + 1` requests in a loop; a loop that happens to straddle an hour boundary
+  # starts a fresh bucket part-way through, so the request that should have been refused is counted as the
+  # first of the new window and answers 201. That is a property of the wall clock, not of the throttle, and it
+  # made this file fail roughly whenever CI happened to run it across the hour -- which is exactly what
+  # happened on shard 8 of run 38992882204, between 01:55 and 02:00 UTC.
+  #
+  # Frozen, every request in an example shares one bucket. Nothing is weakened: each example still sends
+  # `limit + 1` requests and still requires the refusal.
   around do |example|
     previous_store = Rack::Attack.cache.store
     Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
     Rack::Attack.enabled = true
-    example.run
+    freeze_time { example.run }
   ensure
     Rack::Attack.enabled = false
     Rack::Attack.cache.store = previous_store

@@ -1,0 +1,53 @@
+<%#
+  The queue, as it is. `Origin` separates live synchronisation from a historical import, which the brief
+  requires to be impossible to confuse. `Next attempt` is the real schedule: Odoo::SyncJob is `retry: false`
+  precisely so that this column is the whole truth rather than one of two competing schedules.
+%>
+<table class="w-full text-sm">
+  <thead class="text-left text-slate-500 border-b border-slate-100">
+    <tr>
+      <th class="py-2 pe-4">Recorded</th>
+      <th class="py-2 pe-4">Event</th>
+      <th class="py-2 pe-4">Origin</th>
+      <th class="py-2 pe-4">Account</th>
+      <th class="py-2 pe-4">Attempts</th>
+      <th class="py-2 pe-4">State</th>
+      <th class="py-2">Next attempt</th>
+      <% if local_assigns.fetch(:retryable, false) %><th class="py-2"></th><% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% events.each do |event| %>
+      <tr class="border-b border-slate-50">
+        <td class="py-2 pe-4"><%= l(event.created_at, format: :short) %></td>
+        <td class="py-2 pe-4">
+          <div><%= event.event_type %></div>
+          <code class="text-xs text-slate-500"><%= event.provider_object_id %></code>
+        </td>
+        <td class="py-2 pe-4"><%= event.origin %></td>
+        <td class="py-2 pe-4">
+          <% if event.account_id.present? %>
+            <%= link_to "##{event.account_id}", super_admin_account_path(event.account_id), class: 'text-woot-500' %>
+          <% else %>
+            <span class="text-slate-400">unmatched</span>
+          <% end %>
+        </td>
+        <td class="py-2 pe-4"><%= event.attempts_count %> / <%= Odoo::SyncEvent::MAX_ATTEMPTS %></td>
+        <td class="py-2 pe-4">
+          <%= render 'state_badge', state: event.state %>
+          <% reason = event.blocked_reason.presence || event.last_error_class.presence %>
+          <% if reason.present? %>
+            <div class="text-xs text-slate-500 mt-1"><code><%= reason %></code></div>
+          <% end %>
+        </td>
+        <td class="py-2"><%= event.run_after.present? ? l(event.run_after, format: :short) : '—' %></td>
+        <% if local_assigns.fetch(:retryable, false) %>
+          <td class="py-2">
+            <%= button_to 'Retry now', retry_event_super_admin_odoo_accounting_path(id: event.id),
+                          class: 'px-2 py-1 text-xs rounded border border-slate-200 text-slate-700 hover:bg-slate-25' %>
+          </td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

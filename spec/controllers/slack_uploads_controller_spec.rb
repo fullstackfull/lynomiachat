@@ -3,8 +3,14 @@ require 'rails_helper'
 RSpec.describe SlackUploadsController do
   describe 'GET #show' do
     context 'when a valid blob key is provided' do
-      file = Rack::Test::UploadedFile.new('spec/assets/avatar.png', 'image/png')
-      blob = ActiveStorage::Blob.create_and_upload! io: file, filename: 'avatar.png'
+      # A `let`, because the body of a `context` is evaluated when RSpec DEFINES the group -- before any
+      # example, and so outside the per-example transaction. Creating the blob there committed a row that
+      # survived the whole run and the database after it, which any example asserting on a global
+      # `ActiveStorage::Blob.count` then read as a write of its own.
+      let(:blob) do
+        ActiveStorage::Blob.create_and_upload!(io: Rack::Test::UploadedFile.new('spec/assets/avatar.png', 'image/png'),
+                                               filename: 'avatar.png')
+      end
 
       it 'redirects to the blob service URL' do
         get :show, params: { blob_key: blob.key }

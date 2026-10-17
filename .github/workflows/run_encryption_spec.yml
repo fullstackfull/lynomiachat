@@ -1,0 +1,141 @@
+#
+# ACTIVE RECORD ENCRYPTION, PROVEN IN THIS FORK.
+#
+# `run_foss_spec.yml` sets no `ACTIVE_RECORD_ENCRYPTION_*` keys, so every example guarded by
+# `Chatwoot.encryption_configured?` reports PENDING there -- including the at-rest proof for every external
+# credential this installation stores. The workflow that does set those keys, `run_mfa_spec.yml`, gates its
+# job on `github.repository == 'chatwoot/chatwoot'`, which is false here. The result is that in this fork
+# nothing ever actually executed those assertions: they were neither passing nor failing.
+#
+# This workflow closes that. It is deliberately NOT a copy of run_mfa_spec.yml -- that one also runs MFA,
+# session and user specs, and widening its gate would pull in work unrelated to credential storage. This runs
+# the credential-encryption specs and nothing else.
+#
+# ON SECRETS. The three keys are generated per run with `openssl rand -hex 32`, registered with
+# `::add-mask::` so any later occurrence in a log is redacted, and exported inside the single step that needs
+# them. They are never written to `$GITHUB_ENV`, never stored as repository secrets, never echoed, and never
+# committed. They are throwaway values for one ephemeral Postgres container, and they are NOT the production
+# keys: this workflow neither reads nor writes any configured secret, so production key material is untouched
+# and cannot be reached from here.
+#
+name: Run encryption spec
+permissions:
+  contents: read
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  encryption-at-rest:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ''
+          POSTGRES_DB: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --mount type=tmpfs,destination=/var/lib/postgresql/data
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --entrypoint redis-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      # Mirrors the backend-tests job: `rails_helper` boots the whole application, and the JS toolchain is
+      # part of that boot in this repository.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - name: Install pnpm dependencies
+        run: pnpm i
+
+      - name: Create database
+        run: bundle exec rake db:create
+
+      # Same route as the rest of CI: a from-scratch `db:migrate` fails on a 2023 upstream migration
+      # (`AddCachedLabelsList`) on every branch, so the schema is loaded rather than migrated.
+      - name: Load schema
+        run: bundle exec rake db:schema:load
+
+      - name: Verify credentials are encrypted at rest
+        env:
+          RAILS_ENV: test
+        run: |
+          set -euo pipefail
+          mkdir -p tmp
+
+          # Generated here, masked, and scoped to this step. See the note at the top of this file.
+          for key_name in ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY \
+                          ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY \
+                          ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT; do
+            key_value="$(openssl rand -hex 32)"
+            echo "::add-mask::$key_value"
+            export "$key_name=$key_value"
+          done
+
+          bundle exec rspec --format progress --format json --out tmp/encryption_rspec.json \
+            spec/security/odoo_credentials_encryption_spec.rb \
+            spec/models/application_record_external_credentials_encryption_spec.rb
+
+      # THE POINT OF THIS WORKFLOW. Both spec files skip themselves when the keys are absent, which is what
+      # keeps them harmless in the sharded run -- and is exactly how this coverage went unnoticed. A skipped
+      # example exits 0, so rspec's own status cannot tell us the assertions ran. This reads the summary and
+      # refuses a pending example or a shrunken suite, so the job cannot go green for the wrong reason.
+      - name: Refuse a skipped or vanished example
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, sys
+
+          report = 'tmp/encryption_rspec.json'
+          if not os.path.exists(report):
+              sys.exit('rspec wrote no JSON report: the run did not reach the examples at all.')
+
+          summary = json.load(open(report))['summary']
+          ran = summary['example_count']
+          pending = summary['pending_count']
+          failures = summary['failure_count']
+
+          # 5 in spec/security/odoo_credentials_encryption_spec.rb + 16 in the shared-credential spec.
+          # Raise it when examples are added; lowering it is a deliberate act, which is the intent.
+          EXPECTED_MINIMUM = 21
+
+          print(f'examples={ran} failures={failures} pending={pending}')
+
+          problems = []
+          if failures:
+              problems.append(f'{failures} example(s) failed')
+
+          if pending:
+              problems.append(
+                  f'{pending} example(s) were PENDING -- the encryption keys did not reach them, '
+                  'so nothing was actually proven'
+              )
+          if ran < EXPECTED_MINIMUM:
+              problems.append(f'only {ran} example(s) ran, expected at least {EXPECTED_MINIMUM}')
+
+          if problems:
+              sys.exit('Encryption verification did not hold: ' + '; '.join(problems))
+
+          print(f'All {ran} encryption examples executed and passed; none skipped.')
+          PY

@@ -88,7 +88,13 @@ class Billing::Settings
     # value, and otherwise say nothing about it beyond that it is set. The bullet count is fixed, so a short
     # value does not disclose its length either.
     def masked(key)
-      value = get(key)
+      mask(get(key))
+    end
+
+    # The rule itself, on a value rather than a key, because a second surface needs it: the Odoo destination's
+    # API key lives in an encrypted column rather than an installation config (Odoo::DestinationProfile), and a
+    # second copy of a secret-masking rule is how one of the two copies eventually leaks more than it should.
+    def mask(value)
       return nil if value.blank?
       return SHORT_VALUE_MASK if value.length < REVEALED_CHARACTERS * 2
 

@@ -7,6 +7,10 @@
 # every non-2xx and documents that it may deliver an event more than once of its own accord, so this is an
 # ordinary occurrence rather than a hypothetical.
 #
+# ACCOUNTING EVENTS (invoice.*, charge.refunded, charge.dispute.created) are accepted here too, since the
+# Odoo integration, but they are only ENQUEUED -- see #handle_accounting_event. Nothing in this request talks
+# to Odoo.
+#
 # A failure is recorded AND re-raised. The raise is what makes Stripe retry; the row and the operations signal
 # are what make a repeated failure visible to an operator, which is what P11.44 asks for and what there was
 # previously nothing to read.
@@ -55,7 +59,29 @@ class Billing::WebhookHandler
     case @event.type
     when 'checkout.session.completed' then handle_checkout_completed
     when *SUBSCRIPTION_EVENTS then sync(object)
+    else handle_accounting_event
     end
+  end
+
+  # ACCOUNTING EXPORT, ENQUEUED AND NOT PERFORMED. Stripe expects an answer in milliseconds and retries
+  # anything that is not a 2xx, so a synchronous call to the owner's Odoo here would turn one slow accounting
+  # server into a storm of redeliveries -- which is why the Odoo brief forbids it. Odoo::EventRecorder inserts
+  # one row per object and returns; Odoo::SyncJob does the work.
+  #
+  # EVERY RECORDED ROW IS ENQUEUED, not just the first. One `charge.refunded` notification carries every
+  # refund the charge has ever had, so Odoo::EventRecorder returns one row per refund -- and a customer
+  # refunded twice needs two credit notes. Enqueueing only the first left the second row `pending` with
+  # nothing scheduled to pick it up, so the second refund was recorded and never exported.
+  #
+  # Returns the FIRST row so `#process` can mark the receipt processed and name the account, or nil when there
+  # is no Odoo destination configured -- in which case this installation behaves exactly as it did before the
+  # integration existed.
+  def handle_accounting_event
+    return nil unless Odoo::EventRecorder.handled?(@event.type)
+
+    events = Odoo::EventRecorder.new.record_webhook(@event)
+    events.each { |row| Odoo::SyncJob.perform_later(row.id) }
+    events.first
   end
 
   def ignored_reason
@@ -64,8 +90,11 @@ class Billing::WebhookHandler
     'no account matched'
   end
 
+  # Kept in step with `#dispatch` by construction: both ask the same three questions, so an event type added
+  # to one cannot be accepted and then silently dropped by the other.
   def handled_type?
-    @event.type == 'checkout.session.completed' || SUBSCRIPTION_EVENTS.include?(@event.type)
+    @event.type == 'checkout.session.completed' || SUBSCRIPTION_EVENTS.include?(@event.type) ||
+      Odoo::EventRecorder.handled?(@event.type)
   end
 
   def object

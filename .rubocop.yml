@@ -28,6 +28,13 @@ Metrics/MethodLength:
     - 'custom/db/migrate/20260926100100_create_billing_subscriptions.rb'
     - 'custom/db/migrate/20261001100000_create_commerce_action_runs.rb'
     - 'custom/db/migrate/20261006100000_create_commerce_carts.rb'
+    # The Odoo accounting tables. Each is ONE `create_table` declaration plus its indexes, and the length is
+    # the column count -- splitting a table definition across private methods would separate a column from the
+    # index that guarantees something about it, which is the part worth reading.
+    - 'db/migrate/20261016120000_create_odoo_destination_profiles.rb'
+    - 'db/migrate/20261016120100_create_odoo_customer_mappings.rb'
+    - 'db/migrate/20261016120200_create_odoo_document_mappings.rb'
+    - 'db/migrate/20261016120300_create_odoo_sync_events.rb'
     - 'app/controllers/super_admin/app_configs_controller.rb'
 
 RSpec/ExampleLength:
@@ -190,6 +197,10 @@ Metrics/AbcSize:
   Max: 26
   Exclude:
     - 'app/controllers/concerns/auth_helper.rb'
+
+    # Table definitions: the branch count is the column and index count. See Metrics/MethodLength above.
+    - 'db/migrate/20261016120000_create_odoo_destination_profiles.rb'
+    - 'db/migrate/20261016120200_create_odoo_document_mappings.rb'
 
     - 'app/models/integrations/hook.rb'
     - 'app/models/canned_response.rb'

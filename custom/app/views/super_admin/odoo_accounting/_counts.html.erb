@@ -1,0 +1,13 @@
+<%# A state histogram. Shows every state that has rows and says so when none do. %>
+<% if counts.blank? %>
+  <p class="text-sm text-slate-600"><%= empty_message %></p>
+<% else %>
+  <div class="flex flex-wrap gap-2">
+    <% counts.sort_by { |state, _| Odoo::SyncState::STATES.fetch(state.to_sym, 99) }.each do |state, count| %>
+      <span class="inline-flex items-center gap-1 text-sm">
+        <%= render 'state_badge', state: state %>
+        <span class="text-slate-700 font-medium"><%= count %></span>
+      </span>
+    <% end %>
+  </div>
+<% end %>

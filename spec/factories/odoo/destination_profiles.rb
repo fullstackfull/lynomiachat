@@ -19,10 +19,26 @@ FactoryBot.define do
     journal_name { 'Customer Invoices' }
     payment_journal_id { 12 }
     payment_journal_name { 'Bank' }
+    # The project inside the shared company. A destination with no attribution is `attribution_incomplete`,
+    # which is a state an example asks for by clearing this rather than the default every other example needs.
+    attribution_mode { Odoo::Attribution::ANALYTIC }
+    analytic_account_id { 41 }
+    analytic_account_name { 'Lynomia Chat' }
     last_connection_test_at { 1.hour.ago }
     last_connection_result { { 'ok' => true } }
     last_capability_proof_at { 1.hour.ago }
-    last_capability_proof { { 'ok' => true } }
+    # `probes.attribution.ok` is required BY NAME by #capability_proven?, so a proof without it is not a
+    # proof -- see Odoo::DestinationProfile::ATTRIBUTION_PROBE.
+    last_capability_proof { { 'ok' => true, 'probes' => { 'attribution' => { 'ok' => true } } } }
+
+    # The explicitly configured fallback for an Odoo that cannot do analytic accounting.
+    trait :income_account_attribution do
+      attribution_mode { Odoo::Attribution::INCOME_ACCOUNT }
+      analytic_account_id { nil }
+      analytic_account_name { nil }
+      income_account_id { 700 }
+      income_account_name { 'Lynomia Chat subscription revenue' }
+    end
 
     trait :enabled do
       sync_enabled { true }

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-# The Odoo destination: its credential handling, its validations, and the nine states it derives
+# The Odoo destination: its credential handling, its validations, and the ten states it derives
 # (custom/app/models/odoo/destination_profile.rb).
 RSpec.describe Odoo::DestinationProfile do
   include_context 'with commerce encryption'
@@ -71,7 +71,7 @@ RSpec.describe Odoo::DestinationProfile do
     end
   end
 
-  describe 'the nine configuration and activation states' do
+  describe 'the ten configuration and activation states' do
     let(:profile) { build(:odoo_destination_profile) }
 
     it 'answers not_configured at the class level when no destination exists' do
@@ -84,13 +84,20 @@ RSpec.describe Odoo::DestinationProfile do
     # separate examples would each pass while the sequence they describe was wrong, which is the only way this
     # can actually break: a reordered funnel tells an operator to fix the wrong thing next.
     it 'walks the funnel, naming the next thing an operator must do' do
+      proven = { 'ok' => true, 'probes' => { 'attribution' => { 'ok' => true } } }
       steps = [
         [{ credentials: {} }, :credentials_missing],
         [{ api_key: 'odoo-key', last_connection_test_at: nil }, :connection_untested],
         [{ last_connection_test_at: Time.current, last_connection_result: { 'ok' => false } }, :connection_failed],
         [{ last_connection_result: { 'ok' => true }, journal_id: nil }, :scope_incomplete],
-        [{ journal_id: 11, last_capability_proof: { 'ok' => false } }, :capability_unproven],
-        [{ last_capability_proof: { 'ok' => true } }, :ready_disabled],
+        # ATTRIBUTION COMES BEFORE THE CAPABILITY PROOF, because an operator who has not said which project
+        # inside the shared company this destination is for cannot usefully run a probe that checks it.
+        [{ journal_id: 11, analytic_account_id: nil }, :attribution_incomplete],
+        [{ analytic_account_id: 41, last_capability_proof: { 'ok' => false } }, :capability_unproven],
+        # A proof that does not NAME the attribution probe is not a proof: `probe_capability` counts a skipped
+        # probe as passing, so a stored proof without this key would otherwise read as fully proven.
+        [{ last_capability_proof: { 'ok' => true } }, :capability_unproven],
+        [{ last_capability_proof: proven }, :ready_disabled],
         [{ sync_enabled: true }, :active],
         [{ blocked_reason: 'journal_missing' }, :error]
       ]

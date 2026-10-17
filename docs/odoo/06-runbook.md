@@ -16,14 +16,24 @@ Super Admin → **Odoo Accounting** (the lower operator block in the sidebar, be
    shown **once**. A manually created key lasts at most three months, so put its expiry in your calendar —
    see §G.
    If the user has two-factor authentication enabled, an API key is the only way it can be used over RPC.
-3. **Write down four ids**, from *Accounting → Configuration*:
-   - the **company** id (`res.company`) these books belong to;
-   - the **sales journal** id (`account.journal`, type `sale`) — the one Lynomia Chat invoices should land in,
-     which should be its own journal and not shared with another business;
+3. **Write down these ids**, from *Accounting → Configuration*:
+   - the **company** id (`res.company`) — **your existing company**. Nothing here creates one, and Lynomia
+     Chat does not need one of its own;
+   - the **sales journal** id (`account.journal`, type `sale`) — a dedicated journal is easier to read and to
+     filter, but sharing one with your other projects is fine: the journal is not what keeps the projects
+     apart;
    - a **bank or cash journal** id for registering payments;
-   - optionally an **analytic account** id, if you track this project analytically.
-4. **If you are on Odoo Online:** external API access is restricted to Custom plans, and the user needs a local
-   password set before it can authenticate at all.
+   - the **analytic account** id (`account.analytic.account`) that identifies the Lynomia Chat project inside
+     that company. **This is required**, and it is what separates this project's revenue from your other
+     projects' in your own reports. Create one if you have not already (Accounting → Configuration → Analytic
+     Accounts), under whichever analytic plan you use for projects. An account with no company
+     (`company_id` false) is shared across companies and is fine.
+4. **If your Odoo is 17 or newer**, check that the system parameter `analytic.project_plan` names a valid root
+   analytic plan (Settings → Technical → System Parameters). Odoo refuses to post **any** journal item
+   carrying an analytic distribution when it does not, and this integration cannot check it for you — reading
+   `ir.config_parameter` needs rights an API user normally lacks. See limitation 15.
+5. **If you are on Odoo Online:** External API access is **not available on the One App Free and Standard
+   plans**, and the user needs a local password set before it can authenticate at all.
 
 > **Use a test database first if you have one.** Set the destination's environment to `test`, and nothing
 > production touches it: in production the integration only ever looks for the `live` destination.
@@ -36,8 +46,15 @@ Super Admin → **Odoo Accounting** (the lower operator block in the sidebar, be
 2. Environment: `live` for the real books, `test` for a sandbox.
 3. Odoo URL — **https only**. The form refuses plain HTTP and refuses a URL carrying a username or password.
 4. Database, Odoo user login, API key. Save.
-5. Fill in the four ids from §A.3. Leave **Post invoices automatically** and **Register payments
-   automatically** switched **off**. They are off by default and you should leave them off until §D.
+5. Fill in the destination ids from §A.3 — company, sales journal, payment journal.
+6. **Project attribution.** Leave the mechanism on **Analytic account** and enter the analytic account id from
+   §A.3. Read what the page says: your company is shared with your other projects, and Odoo's financial
+   reports do not read the reference this integration stamps on each record, so this is the setting that keeps
+   Lynomia Chat's revenue separable in your own books. Use **Dedicated income account** only if the capability
+   probe tells you this server cannot do analytic accounting — and read limitation 13 first, because it is a
+   narrower guarantee.
+7. Leave **Post invoices automatically** and **Register payments automatically** switched **off**. They are
+   off by default and you should leave them off until §D.
 
 Leaving the API key field empty on a later edit keeps the stored key — you never have to re-paste it to change
 a journal.
@@ -50,12 +67,21 @@ not prove.
 1. **Run connection test.** It should report the Odoo version and the transport it chose. If it fails, the page
    names the stage (`version` means unreachable or wrong URL; `authenticate` means the key, database or user is
    wrong).
-2. **Run capability probe.** Six probes, each reported separately. **Every one must be green or skipped**
-   before you go further. The one to look hardest at is `sale_journal`: if it reports `journal_company`, the
-   journal id you entered belongs to a **different company** — stop and find the right one, because that is
-   exactly the isolation failure this integration exists to prevent.
-3. The probe creates one draft invoice in your journal, reads it back, and deletes it. A draft has no number,
-   so nothing is left behind and no sequence gap is created.
+2. **Run capability probe.** Seven probes, each reported separately. **Every one must be green** before you
+   go further. Two to look hardest at:
+   - `attribution` — this is the one that matters most. It creates a real draft invoice and reads back whether
+     its revenue line actually carries 100% to your analytic account. If it reports
+     `attribution_foreign_analytic_account`, **stop**: the draft came back attributed to an account that is
+     not this project's, which is the isolation failure this integration exists to prevent. If it reports
+     `attribution_missing`, a distribution model in your Odoo is probably clearing what we send — check
+     `account.analytic.distribution.model`.
+   - `sale_journal` → `journal_company` means the journal id belongs to a company other than the one you
+     configured, so the invoice would be written into the wrong legal entity.
+3. **Synchronisation cannot be switched on until `attribution` has passed.** That is deliberate: an Odoo that
+   cannot attribute this project's revenue blocks, rather than exporting revenue you cannot tell apart from
+   your other projects'.
+4. The probe creates one draft invoice in your journal, reads it back (both its totals and its journal items),
+   and deletes it. A draft has no number, so nothing is left behind and no sequence gap is created.
 
 ## D. Go live, in this order
 

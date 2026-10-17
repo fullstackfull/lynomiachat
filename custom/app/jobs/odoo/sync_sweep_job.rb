@@ -9,11 +9,22 @@
 #      `retrying`. Released rather than retried on the spot, so it goes through the normal attempt accounting.
 #   3. Nothing else. This sweep does not create work, does not import history and does not touch a document.
 #
-# It is deliberately NOT registered as a recurring job by this change. The brief forbids anything that starts
-# synchronising on deployment, and a cron entry that drains a queue the operator has not switched on would do
-# exactly that. docs/odoo/06-runbook.md gives the one line to add once a destination is live.
+# IT RUNS EVERY FIVE MINUTES, from config/schedule.yml. An earlier version of this file left it unscheduled so
+# that nothing could start synchronising on deployment -- but that made the retry schedule a record of intent
+# rather than something that happens: a row that failed transiently got a `run_after`, and nothing ever came
+# back to read it. The deployment concern it was protecting against does not arise, and nothing about this
+# sweep can start an export on its own:
+#
+#   * it creates no work. Rows exist only because Odoo::EventRecorder recorded one, and that returns [] unless
+#     Odoo::DestinationProfile.active finds an ENABLED destination. A fresh installation has no profile, so
+#     the sweep's query matches nothing on every run.
+#   * it decides nothing. Each row it finds goes to Odoo::SyncJob, and Odoo::SyncRunner blocks the row with
+#     `destination_not_enabled` if synchronisation has since been switched off.
 class Odoo::SyncSweepJob < ApplicationJob
-  queue_as :low
+  # `scheduled_jobs`, matching the queue config/schedule.yml pushes it onto, so a sweep enqueued by hand from
+  # a console behaves the same way as the scheduled one. The export work itself stays on `low`
+  # (Odoo::SyncJob): finding the work is cheap, doing it is what must not compete with a conversation.
+  queue_as :scheduled_jobs
   sidekiq_options retry: false
 
   # Bounded so one sweep cannot monopolise a worker on an installation with a long backlog; the next sweep

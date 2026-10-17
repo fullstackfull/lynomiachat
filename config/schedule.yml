@@ -114,3 +114,13 @@ audit_trail_retention_job:
   cron: '15 3 * * *'
   class: 'AuditTrail::RetentionJob'
   queue: housekeeping
+
+# executed every 5 minutes
+# picks up Odoo accounting exports whose retry backoff has expired and releases claims abandoned by a worker
+# that died mid-flight. Without it, a row that failed transiently keeps its `run_after` and nothing ever reads
+# it -- the retry schedule would be a record of intent rather than something that runs
+# (docs/odoo/08-project-attribution.md §6)
+odoo_sync_sweep_job:
+  cron: '*/5 * * * *'
+  class: 'Odoo::SyncSweepJob'
+  queue: scheduled_jobs

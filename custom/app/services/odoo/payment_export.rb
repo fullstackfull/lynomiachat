@@ -12,6 +12,12 @@
 # would claim to be paid and then stop claiming it. The payment is registered through
 # `account.payment.register`, which is what Odoo intends, and the resulting state is READ rather than asserted.
 #
+# IT CARRIES NO ANALYTIC ATTRIBUTION, and that is correct rather than an omission. A customer payment's
+# journal items are the RECEIVABLE and the bank or outstanding-receipts account: the customer's debt being
+# settled and the cash arriving. Neither is this project's income -- the income was recognised on the invoice,
+# which is where the analytic distribution sits. Attributing the receivable as well would book the same money
+# into the project's analytic accounts twice. See Odoo::Attribution.
+#
 # A PARTIAL PAYMENT IS NOT A PROBLEM. `amount_paid` below the invoice total is passed through as the amount,
 # and Odoo's own computation reports `partial`. Nothing here rounds that up to paid.
 class Odoo::PaymentExport
@@ -63,7 +69,7 @@ class Odoo::PaymentExport
   # that something is ours, the document goes to a person -- one confirmation is cheaper than one double
   # payment in a real ledger.
   def settled?(invoice_mapping)
-    move = @accounting.read_move(invoice_mapping.odoo_record_id)
+    move = @accounting.read_move(invoice_mapping.odoo_record_id, reference: invoice_mapping.source_reference)
     %w[paid in_payment partial].include?(move['payment_state'])
   end
 
@@ -107,7 +113,7 @@ class Odoo::PaymentExport
   # The invoice's payment status, read back from Odoo now that something has been reconciled against it. This
   # is the only way this integration ever learns that an invoice is paid: by asking.
   def refresh_invoice_payment_state(invoice_mapping)
-    move = @accounting.read_move(invoice_mapping.odoo_record_id)
+    move = @accounting.read_move(invoice_mapping.odoo_record_id, reference: invoice_mapping.source_reference)
     invoice_mapping.update!(odoo_payment_state: move['payment_state'], odoo_state: move['state'],
                             odoo_state_read_at: Time.current)
   rescue Odoo::Error => e

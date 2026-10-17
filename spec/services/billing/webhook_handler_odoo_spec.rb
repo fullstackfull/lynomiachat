@@ -93,6 +93,21 @@ RSpec.describe Billing::WebhookHandler do
       expect(Odoo::SyncEvent.pluck(:provider_object_id)).to contain_exactly('rf_1', 'rf_2')
       expect(Odoo::SyncEvent.pluck(:provider_object_type)).to all(eq('refund'))
     end
+
+    # THE SECOND REFUND USED TO BE RECORDED AND NEVER EXPORTED. The handler enqueued only `events.first`, so
+    # row two sat `pending` with nothing scheduled to pick it up -- a customer refunded twice got one credit
+    # note. Recording the work is not doing it; one job per row is.
+    it 'enqueues a worker for EVERY refund, not just the first' do
+      refusing_odoo
+      charge = stripe_charge(refunds: [stripe_refund(id: 'rf_1', amount: 5000).to_hash,
+                                       stripe_refund(id: 'rf_2', amount: 2000).to_hash])
+
+      expect { described_class.new(stripe_event('charge.refunded', charge)).perform }
+        .to have_enqueued_job(Odoo::SyncJob).twice
+
+      queued = Odoo::SyncEvent.pluck(:id)
+      queued.each { |id| expect(Odoo::SyncJob).to have_been_enqueued.with(id) }
+    end
   end
 
   describe 'a dispute' do

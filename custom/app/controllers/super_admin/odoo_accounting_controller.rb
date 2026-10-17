@@ -136,7 +136,7 @@ class SuperAdmin::OdooAccountingController < SuperAdmin::ApplicationController
 
   # There is at most one destination, and `find_or_initialize` would make an empty row the moment somebody
   # opened the page. So a missing profile stays missing and every view handles it: `not_configured` is one of
-  # the nine states and the most important one to show honestly.
+  # the ten states and the most important one to show honestly.
   def load_profile
     @profile = Odoo::DestinationProfile.order(:id).first
   end

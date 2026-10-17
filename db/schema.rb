@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_16_120400) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_17_010000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1664,6 +1664,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_120400) do
     t.string "blocked_reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "attribution_mode", default: "analytic", null: false
+    t.integer "analytic_plan_id"
+    t.string "analytic_plan_name"
+    t.integer "income_account_id"
+    t.string "income_account_name"
     t.index ["name"], name: "index_odoo_destination_profiles_on_name", unique: true
     t.index ["source_app", "environment"], name: "uniq_enabled_odoo_destination_per_environment", unique: true, where: "sync_enabled"
   end
@@ -1694,9 +1699,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_16_120400) do
     t.datetime "last_synced_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "attribution_mode"
+    t.integer "odoo_analytic_account_id"
+    t.integer "odoo_income_account_id"
+    t.datetime "attribution_verified_at"
     t.index ["account_id", "occurred_at"], name: "index_odoo_document_mappings_on_account"
     t.index ["idempotency_key"], name: "uniq_odoo_document_mapping_idempotency_key", unique: true
     t.index ["odoo_customer_mapping_id"], name: "index_odoo_document_mappings_on_odoo_customer_mapping_id"
+    t.index ["odoo_destination_profile_id", "occurred_at"], name: "index_odoo_documents_on_unverified_attribution", where: "((attribution_verified_at IS NULL) AND (odoo_record_id IS NOT NULL))"
     t.index ["odoo_destination_profile_id", "provider", "provider_object_id"], name: "index_odoo_document_mappings_on_provider_object"
     t.index ["source_reference"], name: "index_odoo_document_mappings_on_source_reference"
     t.index ["state", "occurred_at"], name: "index_odoo_document_mappings_on_state"

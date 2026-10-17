@@ -39,10 +39,19 @@
       <div class="border border-slate-100 rounded-md p-4">
         <h2 class="text-base font-semibold mb-1">2. Capability probe</h2>
         <p class="text-sm text-slate-600 mb-3">
-          Six independent checks: the shape of <code>account.move</code> on this server, the company, the sales
-          journal's type and company, the payment journal, the analytic account if one is configured, and
-          finally <strong>one draft invoice created in the configured journal, read back, and deleted</strong>.
-          A draft has no sequence number, so deleting it leaves no accounting trace and no gap in your numbering.
+          Seven independent checks: the shape of <code>account.move</code> on this server, the company, the
+          sales journal's type and company, the payment journal, <strong>whether this server can attribute
+          revenue to your Lynomia Chat analytic account at all</strong>, <strong>one draft invoice created in
+          the configured journal, read back, and deleted</strong>, and finally <strong>whether that draft's
+          revenue line actually came back carrying 100% to your analytic account</strong>. A draft has no
+          sequence number, so deleting it leaves no accounting trace and no gap in your numbering.
+        </p>
+        <p class="text-sm text-slate-600 mb-3">
+          The attribution check is the one that cannot be skipped. Your Odoo company hosts several unrelated
+          projects, so an invoice that posts correctly but carries no analytic distribution has put Lynomia
+          Chat's revenue somewhere your own reports cannot separate. If this server cannot do analytic
+          accounting, this probe fails and <strong>synchronisation stays switched off</strong> until you
+          configure the dedicated-income-account fallback on the Settings tab and it passes.
         </p>
         <p class="text-sm mb-3">
           Last run:

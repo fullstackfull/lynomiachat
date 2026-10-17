@@ -15,6 +15,19 @@
 # cannot make correctly on behalf of a ledger it does not own. So the credit note is created and posted, and
 # the mapping is handed to an operator with the reason saying exactly what is left to do.
 #
+# A CREDIT NOTE IS ATTRIBUTED TO THE SAME PROJECT AS THE INVOICE IT CREDITS, and the two cases need different
+# work to guarantee it. The PARTIAL case authors its own lines, so it carries the attribution the way an
+# invoice does and is verified the same way before it is posted. The FULL case is authored by Odoo, which
+# copies the source invoice's lines -- so the attribution is READ BACK rather than assumed, and when it did
+# not come across the reversal is repaired while it is still a draft. A reversal Odoo already auto-posted
+# cannot be edited (a posted journal item is a legal record, reversed and never rewritten), so one that is
+# posted without attribution goes to a person with the reason saying so.
+#
+# A REVERSAL IS TIED TO OUR INVOICE BY `reversed_entry_id`, NOT BY ITS COMPANY. Odoo writes its own
+# "Reversal of: ..." into the credit note's `ref`, so our stamp is not there to match exactly -- and in a
+# company shared with sibling projects, "it is in the right company and journal" identifies nothing. The id of
+# the move it reverses is an exact link to the invoice this integration created, so that is what is checked.
+#
 # A DISPUTE IS NOT A REFUND and is not exported as one. A chargeback's accounting treatment differs by
 # jurisdiction and by the owner's own policy -- a provision, a write-off, a bank fee, or all three -- so
 # guessing one would misstate the ledger. A dispute is recorded for review and nothing is written to Odoo.
@@ -29,6 +42,7 @@ class Odoo::RefundExport
     @source = source || Odoo::StripeSource.new
     @accounting = accounting || Odoo::Accounting.new(profile)
     @stamp = Odoo::SourceStamp.new(profile)
+    @attribution = Odoo::Attribution.new(profile)
   end
 
   # `stripe_refund_id` keys the document, so each refund against one invoice is its own credit note: a customer
@@ -69,9 +83,36 @@ class Odoo::RefundExport
 
     # NOT assumed to be posted: Odoo creates a reversal dated in the future with auto_post 'at_date', so the
     # state is read rather than asserted.
+    move = @accounting.read_move(credit_id)
+    reversed = Array(move['reversed_entry_id']).first
+    raise Odoo::Error.new('CONFLICT', reason: 'reversal_not_linked_to_our_invoice') unless reversed == invoice_mapping.odoo_record_id
+
+    verdict = carry_attribution(move)
+    return review(mapping, verdict.reason) unless verdict.ok?
+
     settle(mapping, @accounting.read_move(credit_id), full: true)
   end
 
+  # ODOO AUTHORED THESE LINES, so the attribution is checked and, if it did not come across the reversal,
+  # written on -- but only while the credit note is a DRAFT. A posted move's journal items are the legal
+  # record; editing one is not a thing this integration does, so a reversal Odoo already posted without
+  # attribution is reported rather than rewritten.
+  def carry_attribution(move)
+    lines = @accounting.read_move_lines(move['id'])
+    verdict = @attribution.verify(lines)
+    return verdict if verdict.ok? || move['state'] != 'draft'
+
+    @accounting.apply_attribution(revenue_line_ids(lines))
+    @attribution.verify(@accounting.read_move_lines(move['id']))
+  end
+
+  def revenue_line_ids(lines)
+    lines.select { |line| line['display_type'] == Odoo::Attribution::REVENUE_DISPLAY_TYPE }.pluck('id')
+  end
+
+  # Posted only once the attribution has been verified on the draft. An unattributed credit note that is
+  # already posted cannot be corrected, so the order here is create, check, then post -- never the other way
+  # round.
   def partial_credit_note(refund, invoice_mapping, mapping)
     draft = Odoo::Accounting::Draft.new(
       partner_id: invoice_mapping.customer_mapping&.odoo_partner_id, reference: mapping.source_reference,
@@ -80,8 +121,10 @@ class Odoo::RefundExport
                 price_unit: Odoo::Money.to_major(refund.amount, refund.currency) }]
     )
     credit_id = @accounting.create_partial_credit_note(draft, reversed_entry_id: invoice_mapping.odoo_record_id)
-    posted = @accounting.post_move(credit_id)
-    settle(mapping, posted, full: false)
+    verdict = @attribution.verify(@accounting.read_move_lines(credit_id))
+    return review(mapping, verdict.reason) unless verdict.ok?
+
+    settle(mapping, @accounting.post_move(credit_id), full: false)
   end
 
   def claim(refund, invoice_mapping)
@@ -97,8 +140,29 @@ class Odoo::RefundExport
     ) || Odoo::DocumentMapping.find_by!(idempotency_key: key)
   end
 
+  # A credit note a previous attempt recorded, re-read rather than re-created. OWNERSHIP IS ASSERTED
+  # EXPLICITLY, because "it is in our company and our journal" identifies nothing in a company shared with
+  # sibling projects. There are exactly two ways a credit note can be ours, matching the two ways one is
+  # made: we authored it and its `ref` is our stamp, or Odoo authored it as the reversal of an invoice this
+  # integration created and `reversed_entry_id` says so.
   def adopt(mapping)
-    settle(mapping, @accounting.read_move(mapping.odoo_record_id), full: nil)
+    move = @accounting.read_move(mapping.odoo_record_id)
+    raise Odoo::Error.new('CONFLICT', reason: 'credit_note_not_ours') unless ours?(move, mapping)
+
+    settle(mapping, move, full: nil)
+  end
+
+  def ours?(move, mapping)
+    return true if move['ref'] == mapping.source_reference
+
+    reversed = Array(move['reversed_entry_id']).first
+    reversed.present? && @profile.document_mappings.invoices.exists?(odoo_record_id: reversed)
+  end
+
+  def review(mapping, reason)
+    mapping.update!(state: :needs_review, needs_review_reason: reason, attribution_verified_at: nil,
+                    **@attribution.mapping_values)
+    Result.new(mapping: mapping, state: :needs_review, reason: reason)
   end
 
   # A full reversal is finished when Odoo says it is posted. A partial credit note is a document that exists
@@ -108,7 +172,8 @@ class Odoo::RefundExport
     mapping.update!(odoo_record_id: move['id'], odoo_state: move['state'],
                     odoo_document_reference: move['name'].presence, odoo_state_read_at: Time.current,
                     posted_at: move['state'] == 'posted' ? Time.current : nil, last_synced_at: Time.current,
-                    last_error_class: nil, **settled_state(full))
+                    last_error_class: nil, attribution_verified_at: Time.current,
+                    **@attribution.mapping_values, **settled_state(full))
     Result.new(mapping: mapping, state: mapping.state.to_sym, reason: mapping.needs_review_reason)
   end
 

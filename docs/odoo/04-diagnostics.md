@@ -23,7 +23,7 @@ reason from our own vocabulary. Never a credential, never Odoo's traceback.
 
 ## Step 2 — Capability probe
 
-Six independent probes. Each is reported separately, because an operator fixing a misconfiguration wants the
+Seven independent probes. Each is reported separately, because an operator fixing a misconfiguration wants the
 whole list rather than the first line of it.
 
 | Probe | Asks | Fails when |
@@ -32,11 +32,24 @@ whole list rather than the first line of it.
 | `company` | the configured `res.company` exists | the id is wrong |
 | `sale_journal` | the journal is `type = sale` **and in the configured company** | either is wrong |
 | `payment_journal` | the journal is bank, cash or credit, in the same company | either is wrong |
-| `analytic_account` | the account exists — **skipped** when none is configured | the id is wrong |
+| `attribution_setup` | this server **has** `analytic_distribution` on `account.move.line`, and the configured analytic account exists and is usable by this company — or, in the fallback mode, that the income account exists and is an **income** account | attribution is unconfigured, unsupported, or points somewhere unusable |
 | `draft_create` | **one draft invoice created in the configured journal, read back, and deleted** | the write is refused |
+| `attribution` | whether the attribution we **sent** came back on that draft's revenue line, at 100%, to this project's account and nowhere it should not be | it did not land, landed in part, or landed on another project's account |
 
-The journal-company check is the one that matters most: a journal in the wrong company would post Lynomia's
-revenue into another business's books, which is the exact failure this integration exists to prevent.
+**`attribution` is the probe that matters most, and it is never skipped.** The destination company hosts
+several unrelated projects, so an invoice that posts perfectly but carries no analytic distribution has put
+this project's revenue somewhere the owner's own reports cannot separate.
+`Odoo::DestinationProfile#capability_proven?` requires this probe **by name** — not merely counted in the
+proof's `ok`, because a skipped probe counts as passing — so synchronisation cannot be switched on until it
+has passed. See [08-project-attribution.md](08-project-attribution.md).
+
+`sale_journal` → `journal_company` still matters: a journal in another company would write the invoice into
+the wrong legal entity. It is not, however, what separates this project from its siblings — nothing about a
+company is.
+
+**One write, read twice.** `draft_create` and `attribution` share a single draft: the round trip is memoised
+including its failure, so a server that refuses the write is not written to twice and both probes report on
+the same document.
 
 `model_shape` also reports the `payment_state` selection this server actually has. Odoo 18 added `blocked` to
 it, so that selection **is** the version branch — read from the server rather than inferred from a number.
@@ -68,7 +81,15 @@ reversible by deleting it.
 | connection failed at `version` | wrong URL, wrong network, or https refused | check the URL and the firewall |
 | connection failed at `authenticate` | key, database or user is wrong | re-create the key in Odoo |
 | `sale_journal` → `journal_type` | the id names something that is not a sales journal | find the right id |
-| `sale_journal` → `journal_company` | the journal belongs to another company | **stop**; this is the isolation failure |
+| `sale_journal` → `journal_company` | the journal belongs to a company other than the one configured | **stop**; the invoice would be written into the wrong legal entity |
+| `attribution_setup` → `attribution_not_configured` | no analytic account (or dedicated income account) names this project | name it on the Settings tab; nothing is exported until it is set |
+| `attribution_setup` → `analytic_distribution_unsupported` | this Odoo's `account.move.line` has no `analytic_distribution` field | configure the dedicated-income-account fallback, or use an Odoo that supports analytic accounting |
+| `attribution_setup` → `analytic_account_company` | the analytic account belongs to a different company | find the right id; a shared account (`company_id` false) is fine |
+| `attribution_setup` → `income_account_type` | the account named for the fallback is not an income account | find an income account; a receivable one would silently turn every revenue line into a payment term |
+| `attribution` → `attribution_missing` | the draft's revenue line came back with no distribution | a distribution model in your Odoo is probably clearing it; check `account.analytic.distribution.model` |
+| `attribution` → `attribution_foreign_analytic_account` | the draft came back attributed to an account that is not this project's | **stop**; this is the isolation failure. Check the analytic account id and your distribution models |
+| `attribution` → `attribution_on_receivable_line` | the distribution landed on the receivable as well | **stop**; posting it would create an opposite-signed analytic line that cancels the revenue |
+| `attribution` ok with `tax_lines_carry_attribution` | your sales tax carries Odoo's `analytic` flag, so the tax is in the project's analytic total too | a configuration decision in your Odoo; see limitation 12 |
 | `draft_create` → `PERMISSION_DENIED` | the user may not write `account.move` | grant Billing or Accountant rights |
 | `draft_create` → `BUSINESS_RULE` | Odoo refused the payload; `detail` says why | usually a journal or currency setting |
 | every probe green, `posting: unproven` | as good as it gets before going live | follow the go-live sequence |

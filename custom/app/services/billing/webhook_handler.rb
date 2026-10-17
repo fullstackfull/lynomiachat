@@ -68,14 +68,20 @@ class Billing::WebhookHandler
   # server into a storm of redeliveries -- which is why the Odoo brief forbids it. Odoo::EventRecorder inserts
   # one row per object and returns; Odoo::SyncJob does the work.
   #
-  # Returns the queued row so `#process` can mark the receipt processed and name the account, or nil when
-  # there is no Odoo destination configured -- in which case this installation behaves exactly as it did
-  # before the integration existed.
+  # EVERY RECORDED ROW IS ENQUEUED, not just the first. One `charge.refunded` notification carries every
+  # refund the charge has ever had, so Odoo::EventRecorder returns one row per refund -- and a customer
+  # refunded twice needs two credit notes. Enqueueing only the first left the second row `pending` with
+  # nothing scheduled to pick it up, so the second refund was recorded and never exported.
+  #
+  # Returns the FIRST row so `#process` can mark the receipt processed and name the account, or nil when there
+  # is no Odoo destination configured -- in which case this installation behaves exactly as it did before the
+  # integration existed.
   def handle_accounting_event
     return nil unless Odoo::EventRecorder.handled?(@event.type)
 
     events = Odoo::EventRecorder.new.record_webhook(@event)
-    events.first.tap { |row| Odoo::SyncJob.perform_later(row.id) if row }
+    events.each { |row| Odoo::SyncJob.perform_later(row.id) }
+    events.first
   end
 
   def ignored_reason

@@ -14,16 +14,25 @@ RSpec.describe Odoo::Diagnostics do
   let(:payment_journal_row) { { 'id' => 12, 'name' => 'Bank', 'type' => 'bank', 'code' => 'BNK', 'company_id' => [3, 'Lynomia FZ'] } }
   let(:client) { instance_double(Odoo::Client) }
   let(:accounting) { instance_double(Odoo::Accounting) }
+  # An analytic account shared across companies (company_id false), which is how most installations hold one.
+  let(:analytic_row) { { 'id' => 41, 'name' => 'Lynomia Chat', 'company_id' => false, 'plan_id' => [1, 'Projects'] } }
+  let(:income_account_row) { { 'id' => 700, 'name' => 'Subscription revenue', 'code' => '4000', 'account_type' => 'income' } }
+  let(:move_shape) do
+    { 'move_type' => { 'selection' => [%w[entry Entry], %w[out_invoice Invoice]] },
+      'state' => { 'selection' => [%w[draft Draft]] },
+      'payment_state' => { 'selection' => [%w[not_paid Unpaid], %w[paid Paid], %w[blocked Blocked]] },
+      'ref' => {}, 'journal_id' => {}, 'company_id' => {}, 'invoice_line_ids' => {} }
+  end
 
   before do
     allow(Odoo::Client).to receive(:new).and_return(client)
     allow(Odoo::Accounting).to receive(:new).and_return(accounting)
-    allow(client).to receive(:fields_get).and_return(
-      'move_type' => { 'selection' => [%w[entry Entry], %w[out_invoice Invoice]] },
-      'state' => { 'selection' => [%w[draft Draft]] },
-      'payment_state' => { 'selection' => [%w[not_paid Unpaid], %w[paid Paid], %w[blocked Blocked]] },
-      'ref' => {}, 'journal_id' => {}, 'company_id' => {}, 'invoice_line_ids' => {}
-    )
+    # Answered PER MODEL: the shape probe asks account.move about its own fields, while the attribution probe
+    # asks account.move.line whether this server has `analytic_distribution` at all. One answer for both would
+    # have the attribution probe reading the invoice's field list.
+    allow(client).to receive(:fields_get) do |model:, **|
+      model == 'account.move.line' ? { 'analytic_distribution' => { 'type' => 'json' } } : move_shape
+    end
     # Answers per journal ID, because the sales journal and the payment journal are different records with
     # different types -- a stub that returned one row for both would have the payment probe checking the
     # sales journal.
@@ -31,13 +40,24 @@ RSpec.describe Odoo::Diagnostics do
       case model
       when 'res.company' then [{ 'id' => 3, 'name' => 'Lynomia FZ', 'currency_id' => [2, 'USD'] }]
       when 'account.journal' then [journal_for(domain)].compact
+      when 'account.analytic.account' then [analytic_row]
+      when 'account.account' then [income_account_row]
       else [{ 'id' => 1, 'name' => 'Row' }]
       end
     end
     allow(accounting).to receive(:create_invoice).and_return(4242)
     allow(accounting).to receive(:read_move).and_return({ 'id' => 4242, 'state' => 'draft',
                                                           'journal_id' => [11, 'Customer Invoices'] })
+    allow(accounting).to receive(:read_move_lines).and_return(probe_lines)
     allow(accounting).to receive(:unlink_draft_move).and_return(true)
+  end
+
+  # The probe's own draft, as Odoo hands its journal items back: the revenue line carrying this project's
+  # analytic account at 100%. This is the only honest proof that attribution works on this server.
+  def probe_lines(analytic: profile.analytic_account_id)
+    [{ 'id' => 7001, 'display_type' => 'product', 'name' => 'probe', 'balance' => -1.0,
+       'account_id' => [700, 'Revenue'],
+       'analytic_distribution' => analytic.nil? ? false : { analytic.to_s => 100.0 } }]
   end
 
   def journal_for(domain)
@@ -132,13 +152,110 @@ RSpec.describe Odoo::Diagnostics do
       expect(result['probes']['sale_journal']['found']).to eq('Another Business')
     end
 
-    # Analytic accounting is not in every Odoo edition and version, so requiring one would make the
-    # integration unusable where there is nothing to pick.
-    it 'skips the analytic account when none is configured, rather than failing' do
-      result = diagnostics.probe_capability
+    # THE PROBE THAT CANNOT BE SKIPPED. In a company shared with sibling projects, an invoice that posts
+    # perfectly but carries no analytic distribution puts this project's revenue where the owner's own reports
+    # cannot separate it -- so an Odoo that cannot attribute blocks activation instead.
+    describe 'attribution' do
+      it 'proves attribution by reading it back off the probe draft' do
+        result = diagnostics.probe_capability
 
-      expect(result['probes']['analytic_account']).to include('skipped' => true)
-      expect(result['ok']).to be(true)
+        expect(result['probes']['attribution_setup']).to include('ok' => true, 'mode' => 'analytic')
+        expect(result['probes']['attribution_setup']['plan']).to eq('Projects')
+        expect(result['probes']['attribution']).to include('ok' => true)
+        expect(result['ok']).to be(true)
+      end
+
+      it 'fails rather than skips when no analytic account names this project' do
+        profile.update!(analytic_account_id: nil)
+
+        result = diagnostics.probe_capability
+
+        expect(result['probes']['attribution_setup']['error']['reason']).to eq('attribution_not_configured')
+        expect(result['probes']['attribution']['ok']).to be(false)
+        expect(result['ok']).to be(false)
+      end
+
+      it 'fails when this server has no analytic_distribution field at all' do
+        allow(client).to receive(:fields_get) do |model:, **|
+          model == 'account.move.line' ? {} : move_shape
+        end
+
+        result = diagnostics.probe_capability
+
+        expect(result['probes']['attribution_setup']['error']['reason']).to eq('analytic_distribution_unsupported')
+        expect(result['ok']).to be(false)
+      end
+
+      it 'fails when the analytic account belongs to a different company' do
+        allow(client).to receive(:search_read) do |model:, domain:, **|
+          case model
+          when 'res.company' then [{ 'id' => 3, 'name' => 'Lynomia FZ', 'currency_id' => [2, 'USD'] }]
+          when 'account.journal' then [journal_for(domain)].compact
+          when 'account.analytic.account' then [analytic_row.merge('company_id' => [9, 'Another Business'])]
+          else [{ 'id' => 1, 'name' => 'Row' }]
+          end
+        end
+
+        result = diagnostics.probe_capability
+
+        expect(result['probes']['attribution_setup']['error']['reason']).to eq('analytic_account_company')
+        expect(result['probes']['attribution_setup']['found']).to eq('Another Business')
+      end
+
+      # The round trip is the part no configuration read can replace: it catches a distribution model in the
+      # destination database replacing ours, and a revenue line reaching Odoo with nothing on it.
+      it 'fails when the probe draft came back with the attribution missing' do
+        allow(accounting).to receive(:read_move_lines).and_return(probe_lines(analytic: nil))
+
+        result = diagnostics.probe_capability
+
+        expect(result['probes']['attribution_setup']['ok']).to be(true)
+        expect(result['probes']['attribution']['error']['reason']).to eq('attribution_missing')
+        expect(result['ok']).to be(false)
+      end
+
+      it 'creates exactly one draft, which both the write probe and the attribution verdict read' do
+        diagnostics.probe_capability
+
+        expect(accounting).to have_received(:create_invoice).once
+        expect(accounting).to have_received(:unlink_draft_move).once
+      end
+
+      context 'with the dedicated income account fallback' do
+        let(:profile) do
+          create(:odoo_destination_profile, :income_account_attribution, last_capability_proof: {},
+                                                                         last_capability_proof_at: nil)
+        end
+
+        it 'accepts an income account and proves it on the draft' do
+          allow(accounting).to receive(:read_move_lines)
+            .and_return([{ 'id' => 7001, 'display_type' => 'product', 'balance' => -1.0,
+                           'account_id' => [700, 'Subscription revenue'], 'analytic_distribution' => false }])
+
+          result = diagnostics.probe_capability
+
+          expect(result['probes']['attribution_setup']).to include('ok' => true, 'mode' => 'income_account')
+          expect(result['probes']['attribution']['ok']).to be(true)
+        end
+
+        # A receivable account on a product line makes Odoo's _compute_display_type convert it into a payment
+        # term: the invoice still posts and the revenue has silently vanished.
+        it 'refuses an account whose type is not income' do
+          allow(client).to receive(:search_read) do |model:, domain:, **|
+            case model
+            when 'res.company' then [{ 'id' => 3, 'name' => 'Lynomia FZ', 'currency_id' => [2, 'USD'] }]
+            when 'account.journal' then [journal_for(domain)].compact
+            when 'account.account' then [income_account_row.merge('account_type' => 'asset_receivable')]
+            else [{ 'id' => 1, 'name' => 'Row' }]
+            end
+          end
+
+          result = diagnostics.probe_capability
+
+          expect(result['probes']['attribution_setup']['error']['reason']).to eq('income_account_type')
+          expect(result['probes']['attribution_setup']['found']).to eq('asset_receivable')
+        end
+      end
     end
 
     it 'reports each probe separately so one failure does not hide the rest' do

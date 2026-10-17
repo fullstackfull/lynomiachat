@@ -57,18 +57,43 @@ credentials exist, with the answer to expect.
 | B32 | A lost answer (Odoo killed mid-create) is recovered by stamp search, not re-created | one document |
 | B33 | A historical import over a period live sync covered queues nothing | zero queued |
 | B34 | Two unrelated accounts sharing a billing email get two partners | two ids |
-| B35 | An invoice is never visible to, or matched against, another company in the same database | nothing matches |
+| B35 | An invoice is never matched against another company's in the same database | nothing matches |
+
+### Project attribution inside the one shared company (B36–B44)
+
+These are the probes the architecture correction added. Every one of them needs the owner's real Odoo, because
+every one is a question about how **that** server behaves, not about this code.
+
+| # | Probe | Expected answer |
+|---|---|---|
+| B36 | `account.move.line` on this server has `analytic_distribution` | the field is present (Odoo 16+) |
+| B37 | The configured analytic account exists and is usable by the configured company | `attribution_setup` green, naming the account and its plan |
+| B38 | A draft invoice's revenue line comes back carrying 100% to that account | `attribution` green |
+| B39 | The receivable line comes back **without** that account | no `attribution_on_receivable_line` |
+| B40 | Whether the destination's sales tax carries Odoo's `analytic` flag | `tax_lines_carry_attribution` present or absent — either is valid, and it tells the owner whether the project's analytic total includes tax |
+| B41 | `analytic.project_plan` names a valid root plan (Odoo 17+) | posting a distribution-bearing line succeeds rather than raising `UserError`. **Check this before enabling posting**: `ir.config_parameter` is usually unreadable by an API user, so no probe attempts it |
+| B42 | `validate_analytic: true` on `action_post` surfaces as an error to an API caller | a refused posting rather than a silently unattributed one. Odoo raises `RedirectWarning` instead of `ValidationError` when the validation spans more than one move, which cannot happen here — posting is one move per call — but the API-visible shape was read in the source, not executed |
+| B43 | A posted invoice produced `account.analytic.line` rows against this project's account, and only this project's | analytic lines equal to the revenue, nothing on another project's account |
+| B44 | The owner's own analytic profit-and-loss report shows Lynomia Chat separately from the sibling projects | **this is the whole point of the integration's reporting side, and it is the one answer only the owner's Odoo can give** |
 
 ## What IS tested, without a server
 
-235 examples, 0 failures. In particular:
+295 examples, 0 failures (the Odoo suite plus the schedule and credential gates it touches). In particular:
 
-- the nine configuration states as an ordered funnel, and the DB-enforced one-enabled-destination rule;
+- the ten configuration states as an ordered funnel, and the DB-enforced one-enabled-destination rule;
 - the credential encrypted at rest, excluded from serialization, never rendered into the settings form, and
   preserved when the field is submitted empty;
 - the exact payloads the adapter sends — `move_type` set, no `name`, no `state`, no `account_id` on a product
   line, literal x2many triples, `allowed_company_ids` on every call, `payment_state` in no write;
-- the destination-scope check refusing another company's move by id;
+- the destination-scope AND stamp checks refusing a sibling project's move by id, in the same company and the
+  same journal (spec/security/odoo_project_isolation_spec.rb);
+- the analytic distribution on every authored revenue line, its string key and numeric value, and its absence
+  from the move header, the receivable and every payment payload;
+- the read-back verification refusing a document attributed to another project, attributed in part, or not
+  attributed at all, and accepting an analytic tax line Odoo filled itself;
+- a credit note carrying the same project attribution as the invoice it credits, repaired while draft and
+  reported when already posted;
+- activation refused when the attribution probe has not passed or no analytic account names this project;
 - the total comparison refusing to post a mismatch, with the tolerance scaled for KWD;
 - the idempotency key, the stamp-search recovery, and the two-matches conflict;
 - the unknown-outcome guard refusing a second payment against an invoice Odoo already reads as paid;

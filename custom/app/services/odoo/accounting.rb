@@ -22,6 +22,14 @@
 #   * `payment_state` IS NEVER WRITTEN. It is a stored computed field with no inverse, derived from
 #     reconciliation rows. Odoo's ORM would most likely accept the write and then overwrite it on the next
 #     recompute, which is worse than a refusal: the ledger would briefly claim to be paid and then stop.
+#   * EVERY REVENUE LINE CARRIES THIS PROJECT'S ATTRIBUTION. The destination company hosts several unrelated
+#     projects, so revenue written without an analytic distribution (or, in the configured fallback, without
+#     the dedicated income account) is revenue the owner cannot tell apart from a sibling project's. The
+#     attribution is merged in by Odoo::Attribution at the one place lines are built, so no exporter can
+#     forget it. It goes on product lines ONLY -- never on the receivable or the tax, which Odoo authors.
+#   * A RECORD IS OURS BY ITS STAMP, NEVER BY ITS COMPANY. In a shared company, company and journal say only
+#     where a document lives. Every lookup therefore goes through Odoo::SourceStamp#ownership_domain, which
+#     will not build a search without an exact stamp, and every read by id is checked the same way.
 #
 # NOTHING HERE IS ATOMIC WITH ANYTHING ELSE. Odoo runs each external call in its own SQL transaction and
 # documents that chaining calls inside one is impossible. So a create that succeeds followed by a post that
@@ -30,8 +38,10 @@
 class Odoo::Accounting
   # What a read-back of a move asks for. Explicit because account.move overrides `read` and `search_read` to
   # substitute its own default field list when `fields` is omitted.
+  # `reversed_entry_id` is read so a credit note Odoo authored can be tied back to OUR invoice exactly, rather
+  # than trusted because it is in the right company.
   MOVE_FIELDS = %w[id name ref state payment_state move_type amount_total amount_residual currency_id date
-                   invoice_date journal_id company_id partner_id].freeze
+                   invoice_date journal_id company_id partner_id reversed_entry_id].freeze
   PARTNER_FIELDS = %w[id name ref email vat company_id].freeze
   PAYMENT_FIELDS = %w[id name ref state amount date journal_id company_id].freeze
 
@@ -53,21 +63,24 @@ class Odoo::Accounting
     @profile = profile
     @client = client || Odoo::Client.new(profile)
     @stamp = Odoo::SourceStamp.new(profile)
+    @attribution = Odoo::Attribution.new(profile)
   end
 
   # ---- partners
 
-  # Scope AND stamp, never the stamp alone and never a name or an email. Returns the matching rows so the
-  # caller can tell none from one from several.
+  # Scope AND an exact stamp, never the scope alone and never a name or an email -- the sibling projects in
+  # this company have partners with the same names and the same billing emails as ours. Returns the matching
+  # rows so the caller can tell none from one from several.
   def find_partners(reference)
     @client.search_read(model: 'res.partner', fields: PARTNER_FIELDS, limit: MATCH_LIMIT, context: @stamp.call_context,
-                        domain: @stamp.scope_domain(model: 'res.partner') + [['ref', '=', reference]])
+                        domain: @stamp.ownership_domain(model: 'res.partner', reference: reference))
   end
 
-  # `company_id` is set deliberately. A partner with no company is SHARED across every company in that Odoo
-  # database, which is how most installations hold their customers -- and sharing is precisely what must not
-  # happen here, because this partner belongs to Lynomia Chat's books and to no other business in the
-  # database. The cost is that our partners are invisible to the owner's other companies, which is the point.
+  # `company_id` is set so the partner belongs to the configured legal entity rather than being shared across
+  # every company in the database. It is NOT what keeps this partner apart from the sibling projects in the
+  # same company -- nothing about a company could be, and `ref` is what does it. Two projects invoicing the
+  # same real customer will therefore each hold their own partner record for it, which is duplication rather
+  # than leakage and is recorded as a known limitation (docs/odoo/05-limitations.md).
   def create_partner(name:, reference:, email: nil, vat: nil)
     @client.create(model: 'res.partner', context: @stamp.call_context,
                    values: { 'name' => name, 'ref' => reference, 'email' => email, 'vat' => vat,
@@ -89,8 +102,8 @@ class Odoo::Accounting
 
   def find_moves(reference:, move_type:)
     @client.search_read(model: 'account.move', fields: MOVE_FIELDS, limit: MATCH_LIMIT, context: @stamp.call_context,
-                        domain: @stamp.scope_domain(model: 'account.move') +
-                                [['move_type', '=', move_type], ['ref', '=', reference]])
+                        domain: @stamp.ownership_domain(model: 'account.move', reference: reference) +
+                                [['move_type', '=', move_type]])
   end
 
   # A DRAFT customer invoice. `draft.lines` are plain hashes; the x2many triples are built here so no caller
@@ -110,24 +123,66 @@ class Odoo::Accounting
 
   # Posting. Returns the move as Odoo holds it AFTERWARDS, because that is the only place the legal number
   # lives and because posting can move the date into the next open period.
+  #
+  # `validate_analytic` IS PASSED, and it is the only way to get Odoo's own analytic validation. Odoo's
+  # mandatory-100%-distribution check sits inside `if not self.env.context.get('validate_analytic')`, and the
+  # ONLY caller that sets it is the web UI's Confirm button -- so `action_post` over the External API posts an
+  # invoice that breaches a mandatory analytic plan SILENTLY. In a company shared with sibling projects that
+  # is the worst available outcome: a permanently numbered document whose revenue nobody can attribute. With
+  # the key set, a destination whose analytic plans demand more than this integration knows how to supply
+  # refuses the posting instead, and the draft is left for a person.
+  #
+  # Odoo raises a RedirectWarning rather than a ValidationError when the validation covers more than one move,
+  # which cannot happen here: posting is one move per call.
   def post_move(move_id)
-    @client.call_method(model: 'account.move', method: 'action_post', ids: [move_id], context: @stamp.call_context)
+    @client.call_method(model: 'account.move', method: 'action_post', ids: [move_id],
+                        context: @stamp.call_context.merge('validate_analytic' => true))
     read_move(move_id)
   end
 
   # A READ BY ID IS NOT SCOPED BY ANYTHING. `search_read` carries the destination scope in its domain, but
-  # `read` returns whatever that id is in any company the API user can see -- and the API user in a shared
-  # Odoo can usually see several. So the row is checked against the profile before it is believed: a move in
-  # another company or another journal is not our move, whatever its id, and a mismatch is a disagreement for
-  # a person rather than something to work around.
+  # `read` returns whatever that id is in any company the API user can see. So the row is checked before it is
+  # believed, and in a company shared with sibling projects the check has two halves:
+  #
+  #   DESTINATION -- is it in the configured company and journal? A move elsewhere is not where we write.
+  #   OWNERSHIP   -- does its `ref` equal the stamp we expect? A move in the right company and the right
+  #                  journal may still be a SIBLING PROJECT'S move, so a caller that knows which stamp it is
+  #                  looking for passes it and a mismatch is a conflict. Company alone proves nothing here.
+  #
+  # `reference:` is omitted only where our stamp is not the record's ref by construction -- a credit note Odoo
+  # authored from our invoice gets Odoo's own "Reversal of: ..." ref -- and those callers assert ownership
+  # another way (Odoo::RefundExport checks `reversed_entry_id` against our own move id).
   #
   # Odoo returns a many2one as [id, "Display Name"], hence the Array(...).first on both sides.
-  def read_move(move_id)
+  def read_move(move_id, reference: nil)
     row = @client.read(model: 'account.move', ids: [move_id], fields: MOVE_FIELDS, context: @stamp.call_context).first
     raise Odoo::Error.new('RECORD_MISSING', reason: 'move_gone') if row.nil?
     raise Odoo::Error.new('CONFLICT', reason: 'move_outside_destination_scope') unless in_scope?(row)
+    raise Odoo::Error.new('CONFLICT', reason: 'move_stamp_mismatch') if reference.present? && row['ref'] != reference
 
     row
+  end
+
+  # The move's journal items, which is where attribution lives: `analytic_distribution` and `account_id` are
+  # per line, and account.move has no analytic field of its own. Read rather than assumed because Odoo
+  # computes a distribution on lines that were sent without one, and an
+  # `account.analytic.distribution.model` rule in the destination database can change the one we sent.
+  def read_move_lines(move_id)
+    # No `limit`: every line of the move is wanted, and Odoo::Client omits the argument entirely when it is
+    # nil rather than sending a zero, whose meaning differs between Odoo's own call sites.
+    @client.search_read(model: 'account.move.line', fields: Odoo::Attribution::LINE_FIELDS,
+                        context: @stamp.call_context, domain: [['move_id', '=', move_id]])
+  end
+
+  # Writes this project's attribution onto lines Odoo authored. Used for ONE case: a credit note that
+  # `reverse_moves` created without copying the source invoice's distribution. Confined to a DRAFT -- a posted
+  # move's journal items are a legal record and are reversed, never edited -- and confined to the revenue
+  # lines, so the receivable and the tax are untouched.
+  def apply_attribution(line_ids)
+    return if line_ids.blank?
+
+    @client.write(model: 'account.move.line', ids: Array(line_ids), values: @attribution.line_values,
+                  context: @stamp.call_context)
   end
 
   # A draft invoice can be deleted and leaves no accounting trace: it never had a sequence number, so there is
@@ -161,8 +216,15 @@ class Odoo::Accounting
     payment_id_from(action)
   end
 
+  # Checked against the destination for the same reason as a move: the id comes off a stored mapping, and a
+  # payment in another company or another journal is not the payment this integration registered.
   def read_payment(payment_id)
-    @client.read(model: 'account.payment', ids: [payment_id], fields: PAYMENT_FIELDS).first
+    row = @client.read(model: 'account.payment', ids: [payment_id], fields: PAYMENT_FIELDS,
+                       context: @stamp.call_context).first
+    return nil if row.nil?
+    raise Odoo::Error.new('CONFLICT', reason: 'payment_outside_destination_scope') unless payment_in_scope?(row)
+
+    row
   end
 
   # ---- credit notes
@@ -200,16 +262,30 @@ class Odoo::Accounting
 
   private
 
-  # `account_id` is absent on purpose -- see the header. `product_id` is included only when the profile names
-  # a default product, because a product this Odoo does not have would fail the whole invoice.
+  # THE ONE PLACE A REVENUE LINE IS BUILT, which is why the project attribution is merged in here: every
+  # document this integration creates -- invoice, partial credit note, capability probe -- goes through it, so
+  # there is no exporter that could write an unattributed line.
+  #
+  # A receivable or payable `account_id` is never passed, because Odoo's _compute_display_type would convert
+  # the line into a payment term. The `income_account` attribution mode does pass an `account_id`, which is
+  # legitimate for a product line and is why the capability probe refuses an account whose type is not income.
+  # `product_id` is included only when the profile names a default product, because a product this Odoo does
+  # not have would fail the whole invoice.
   def invoice_line(line)
     { 'name' => line[:name], 'quantity' => line.fetch(:quantity, 1), 'price_unit' => line[:price_unit],
-      'product_id' => @profile.default_product_id }.compact
+      'product_id' => @profile.default_product_id }.compact.merge(@attribution.line_values)
   end
 
+  # Where we write, not whose it is -- ownership is the stamp. Both journals are accepted because a payment
+  # lands in the payment journal while the invoice it pays lands in the sale journal.
   def in_scope?(row)
     Array(row['company_id']).first == @profile.company_id &&
       [@profile.journal_id, @profile.payment_journal_id].include?(Array(row['journal_id']).first)
+  end
+
+  def payment_in_scope?(row)
+    Array(row['company_id']).first == @profile.company_id &&
+      Array(row['journal_id']).first == @profile.payment_journal_id
   end
 
   def wizard_context(move_id)

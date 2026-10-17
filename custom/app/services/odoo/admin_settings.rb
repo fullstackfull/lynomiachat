@@ -23,13 +23,19 @@ class Odoo::AdminSettings
   # What an operator may set, and nothing else. A parameter nobody listed cannot reach the record, which is
   # the controller-boundary rule applied one layer in as well.
   PERMITTED = %i[name environment base_url database username company_id company_name journal_id journal_name
-                 payment_journal_id payment_journal_name analytic_account_id analytic_account_name
-                 default_product_id default_product_name post_invoices register_payments].freeze
+                 payment_journal_id payment_journal_name attribution_mode analytic_account_id
+                 analytic_account_name analytic_plan_id analytic_plan_name income_account_id
+                 income_account_name default_product_id default_product_name post_invoices
+                 register_payments].freeze
 
   # The subset that goes into an audit entry. Deliberately excludes `credentials` and every display label, so
   # the trail reads as the decisions rather than as a diff of the form.
+  # `attribution_mode`, `analytic_account_id` and `income_account_id` are here because changing any of them
+  # changes WHOSE revenue the next document is attributed to. That is the most consequential setting on this
+  # screen in a company shared with sibling projects, and a change to it must have a name against it.
   AUDITED_FIELDS = %w[name environment base_url database username company_id journal_id payment_journal_id
-                      analytic_account_id default_product_id post_invoices register_payments].freeze
+                      attribution_mode analytic_account_id income_account_id default_product_id post_invoices
+                      register_payments].freeze
 
   def initialize(profile, actor: nil)
     @profile = profile
@@ -50,9 +56,12 @@ class Odoo::AdminSettings
     @profile
   end
 
-  # ENABLING IS GATED ON PROOF, not on a tick. `may_post?` and the capability probe are what the brief's
-  # "a successful login is NOT sufficient proof" turns into code: a destination whose draft-creation probe has
-  # never passed cannot be switched on at all.
+  # ENABLING IS GATED ON PROOF, not on a tick. The capability probe is what "a successful login is NOT
+  # sufficient proof" turns into code: a destination whose draft-creation probe has never passed cannot be
+  # switched on at all. Since the probe's ATTRIBUTION check is required by name
+  # (Odoo::DestinationProfile#capability_proven?), an Odoo that cannot attribute this project's revenue cannot
+  # be enabled either -- which is the requirement that activation BLOCKS rather than exporting unattributed
+  # revenue into a shared company.
   def enable!
     raise Error, :not_ready unless @profile.status.in?(%i[ready_disabled active])
 

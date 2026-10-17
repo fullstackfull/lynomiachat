@@ -20,6 +20,17 @@ RSpec.describe Odoo::InvoiceExport do
       'journal_id' => [profile.journal_id, 'Sales'] }
   end
 
+  # The journal items as Odoo hands them back: one revenue line carrying this project's analytic account at
+  # 100%, and the receivable, which must NOT carry it. Attribution is read back rather than assumed, so every
+  # example needs an answer for it.
+  def odoo_lines(analytic: profile.analytic_account_id, share: 100.0)
+    [{ 'id' => 5001, 'display_type' => 'product', 'name' => 'Growth plan', 'balance' => -149.0,
+       'account_id' => [700, 'Revenue'],
+       'analytic_distribution' => analytic.nil? ? false : { analytic.to_s => share } },
+     { 'id' => 5002, 'display_type' => 'payment_term', 'name' => 'Receivable', 'balance' => 149.0,
+       'account_id' => [120, 'Debtors'], 'analytic_distribution' => false }]
+  end
+
   before do
     allow(source).to receive(:invoice).and_return(invoice)
     allow(source).to receive(:account_for_customer).and_return(account)
@@ -29,6 +40,7 @@ RSpec.describe Odoo::InvoiceExport do
     allow(accounting).to receive(:find_moves).and_return([])
     allow(accounting).to receive(:create_invoice).and_return(4242)
     allow(accounting).to receive(:read_move).and_return(odoo_move)
+    allow(accounting).to receive(:read_move_lines).and_return(odoo_lines)
     allow(accounting).to receive(:post_move).and_return(odoo_move(state: 'posted', name: 'INV/2026/0007'))
   end
 
@@ -88,6 +100,62 @@ RSpec.describe Odoo::InvoiceExport do
       allow(accounting).to receive(:find_moves).and_return([odoo_move, odoo_move])
 
       expect { export.call('in_test1') }.to raise_error(Odoo::Error, /CONFLICT/)
+    end
+  end
+
+  # THE SECOND GATE, and the one a company shared with sibling projects adds. Sending the attribution is not
+  # evidence that it landed: Odoo computes `analytic_distribution` where none was supplied, and an
+  # `account.analytic.distribution.model` rule in the destination database can replace the one we sent.
+  describe 'the attribution gate' do
+    let(:profile) { create(:odoo_destination_profile, :posting) }
+
+    it 'records what the document was attributed to, and that the attribution was confirmed by a read' do
+      result = export.call('in_test1')
+
+      expect(result.state).to eq(:synchronized)
+      expect(result.mapping.attribution_mode).to eq(Odoo::Attribution::ANALYTIC)
+      expect(result.mapping.odoo_analytic_account_id).to eq(profile.analytic_account_id)
+      expect(result.mapping.attribution_verified_at).to be_present
+    end
+
+    it 'refuses to post, and asks a person, when the revenue line came back unattributed' do
+      allow(accounting).to receive(:read_move_lines).and_return(odoo_lines(analytic: nil))
+
+      result = export.call('in_test1')
+
+      expect(result.state).to eq(:needs_review)
+      expect(result.reason).to eq('attribution_missing')
+      expect(accounting).not_to have_received(:post_move)
+      expect(result.mapping.attribution_verified_at).to be_nil
+    end
+
+    it 'refuses to post when the revenue line came back attributed to another project' do
+      allow(accounting).to receive(:read_move_lines).and_return(odoo_lines(analytic: 77))
+
+      result = export.call('in_test1')
+
+      expect(result.state).to eq(:needs_review)
+      expect(result.reason).to eq('attribution_foreign_analytic_account')
+      expect(accounting).not_to have_received(:post_move)
+    end
+
+    it 'refuses to post when only part of the line was attributed to this project' do
+      allow(accounting).to receive(:read_move_lines).and_return(odoo_lines(share: 60.0))
+
+      result = export.call('in_test1')
+
+      expect(result.state).to eq(:needs_review)
+      expect(result.reason).to eq('attribution_partial')
+      expect(accounting).not_to have_received(:post_move)
+    end
+
+    # The total gate runs FIRST, because a wrong amount is the more consequential of the two and an operator
+    # reading one reason should be reading the one that matters most.
+    it 'reports the total mismatch rather than the attribution when both are wrong' do
+      allow(accounting).to receive(:read_move).and_return(odoo_move(total: '999.0'))
+      allow(accounting).to receive(:read_move_lines).and_return(odoo_lines(analytic: nil))
+
+      expect(export.call('in_test1').reason).to eq('total_mismatch_with_stripe')
     end
   end
 

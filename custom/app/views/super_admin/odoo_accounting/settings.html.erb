@@ -66,24 +66,67 @@
 
     <h2 class="text-base font-semibold mb-1">Accounting destination</h2>
     <p class="text-sm text-slate-600 mb-4">
-      <strong>This is the isolation boundary.</strong> Every record this integration writes names this company
-      and this journal, and every lookup is scoped by them, which is what keeps Lynomia Chat's books apart from
-      every other business in the same Odoo database. Find the ids in Odoo under Accounting &rarr; Configuration.
-      Read-only confirmation of each is on the Diagnostics tab.
+      <strong>Where documents are written &mdash; your existing Odoo company.</strong> Nothing here creates a
+      company; enter the one you already use. In an Odoo where several unrelated projects share one legal
+      company, these ids say where a document lands and nothing about whose it is &mdash; that is the
+      attribution section below. Find the ids in Odoo under Accounting &rarr; Configuration. Read-only
+      confirmation of each is on the Diagnostics tab.
     </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <% [[:company_id, 'Company id (res.company)', true], [:journal_id, 'Sales journal id (account.journal, type sale)', true],
+      <% [[:company_id, 'Company id (res.company) &mdash; your existing company', true],
+          [:journal_id, 'Sales journal id (account.journal, type sale)', true],
           [:payment_journal_id, 'Payment journal id (bank or cash)', true],
-          [:analytic_account_id, 'Analytic account id (optional)', false],
           [:default_product_id, 'Default product id for invoice lines (optional)', false]].each do |field, label, required| %>
         <label class="block text-sm">
-          <span class="text-slate-600"><%= label %></span>
+          <span class="text-slate-600"><%= label.html_safe %></span>
           <%= form.number_field field, value: @profile&.public_send(field), required: required,
                                        class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
         </label>
       <% end %>
     </div>
+
+    <h2 class="text-base font-semibold mb-1">Project attribution</h2>
+    <p class="text-sm text-slate-600 mb-4">
+      <strong>This is the isolation that matters.</strong> The company above is shared with your other
+      projects, and Odoo's financial reports do not read the reference this integration stamps on each record.
+      So every Lynomia Chat revenue line carries an <strong>analytic distribution</strong>, 100% to the
+      analytic account you name here &mdash; which is how Odoo separates one project's profit and loss inside
+      one legal company. It is applied to revenue lines only, never to the receivable or the tax.
+      <strong>Synchronisation cannot be switched on until the capability probe has read this attribution back
+      out of a real draft invoice on your server.</strong>
+    </p>
+
+    <div class="mb-4">
+      <label class="block text-sm">
+        <span class="text-slate-600">Attribution mechanism</span>
+        <%= form.select :attribution_mode,
+                        [['Analytic account (recommended)', Odoo::Attribution::ANALYTIC],
+                         ['Dedicated income account (only if this Odoo cannot do analytic accounting)',
+                          Odoo::Attribution::INCOME_ACCOUNT]],
+                        { selected: @profile&.attribution_mode || Odoo::Attribution::ANALYTIC },
+                        class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+      </label>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+      <% [[:analytic_account_id, 'Analytic account id (account.analytic.account) &mdash; the Lynomia Chat project'],
+          [:analytic_plan_id, 'Analytic plan id (optional, for your own reference)'],
+          [:income_account_id, 'Dedicated income account id &mdash; only for the fallback mechanism']].each do |field, label| %>
+        <label class="block text-sm">
+          <span class="text-slate-600"><%= label.html_safe %></span>
+          <%= form.number_field field, value: @profile&.public_send(field),
+                                       class: 'mt-1 w-full border border-slate-200 rounded px-3 py-2' %>
+        </label>
+      <% end %>
+    </div>
+    <p class="text-sm text-slate-600 mb-6">
+      Current state:
+      <strong><%= (@profile&.attribution_state || :not_configured).to_s.humanize %></strong>.
+      The fallback segregates this project's revenue on its own profit-and-loss line rather than analytically,
+      which is a narrower guarantee &mdash; see the limitations note in <code>docs/odoo/05-limitations.md</code>.
+      Attribution is never skipped: if neither mechanism is configured and proven, nothing is exported.
+    </p>
 
     <h2 class="text-base font-semibold mb-1">What it is allowed to do</h2>
     <p class="text-sm text-slate-600 mb-4">

@@ -1,11 +1,24 @@
 # What this destination can actually do, established by asking it (docs/odoo/04-diagnostics.md).
 #
-# THE POINT OF THIS FILE is the brief's hardest requirement: "a successful login or Test Connection is NOT
-# sufficient proof that invoice creation and posting work." It is not, and the reasons are specific. A login
-# proves a key is valid. It does not prove the configured journal is a SALE journal, or that it belongs to the
-# configured company, or that the API user may write to account.move, or that this server's chart of accounts
-# and fiscal positions accept the line shape this adapter sends. Each of those is a separate question with its
-# own answer, so each is its own probe and each is reported separately.
+# THE POINT OF THIS FILE is the hardest requirement in the brief: "a successful login or Test Connection is
+# NOT sufficient proof that invoice creation and posting work." It is not, and the reasons are specific. A
+# login proves a key is valid. It does not prove the configured journal is a SALE journal, or that it belongs
+# to the configured company, or that the API user may write to account.move, or that this server's chart of
+# accounts and fiscal positions accept the line shape this adapter sends. Each of those is a separate question
+# with its own answer, so each is its own probe and each is reported separately.
+#
+# AND IT PROVES ATTRIBUTION, which in a company shared with sibling projects is the probe that matters most.
+# The destination holds ONE legal company running SEVERAL unrelated projects, so an invoice that posts
+# perfectly but carries no analytic distribution has put this project's revenue somewhere the owner cannot
+# tell apart from the others'. Two probes cover it:
+#
+#   `attribution_setup`  the cheap reads -- does account.move.line even HAVE analytic_distribution on this
+#                        server, does the configured analytic account exist, is it usable by this company.
+#   `attribution`        the verdict from the draft round trip: the attribution we SENT, read back off the
+#                        journal items Odoo actually stored. It never reports `skipped`, because
+#                        Odoo::DestinationProfile#capability_proven? requires it by name -- an Odoo that
+#                        cannot attribute this project's revenue BLOCKS activation rather than quietly
+#                        exporting unattributed revenue.
 #
 # ONE WRITE, AND IT IS UNDONE. The only honest proof that invoice creation works is to create an invoice, so
 # the probe creates a DRAFT, reads it back to confirm which company and journal it landed in, and deletes it.
@@ -24,6 +37,15 @@ class Odoo::Diagnostics
   SALE_JOURNAL_TYPE = 'sale'.freeze
   PAYMENT_JOURNAL_TYPES = %w[bank cash credit].freeze
   PROBE_LINE_LABEL = 'Lynomia Chat connection probe -- safe to ignore, this draft is deleted immediately'.freeze
+  # A NON-ZERO probe amount, so the round trip proves something about a line that carries money: Odoo stores an
+  # analytic distribution on a zero line too, but a zero line exercises neither the tax computation nor the
+  # revenue account, and attribution is only interesting on revenue. One unit of the company's currency, on a
+  # draft that is deleted in the same probe.
+  PROBE_LINE_AMOUNT = 1.0
+  # The account types Odoo treats as income. The `income_account` attribution mode refuses anything else,
+  # because a receivable or payable account on a product line makes Odoo's _compute_display_type convert the
+  # line into a payment term -- the invoice would still post, and its revenue would have vanished.
+  INCOME_ACCOUNT_TYPES = %w[income income_other].freeze
 
   def initialize(profile)
     @profile = profile
@@ -56,13 +78,17 @@ class Odoo::Diagnostics
 
   private
 
+  # Ordered cheapest first and WRITE SECOND TO LAST, so a misconfigured journal or analytic account is
+  # reported by its own probe rather than discovered by a failed write whose error would name the symptom
+  # instead of the cause. `attribution` comes last because it is a verdict on the write, not another call.
   def probes
     { 'model_shape' => -> { model_shape },
       'company' => -> { company },
       'sale_journal' => -> { journal(@profile.journal_id, [SALE_JOURNAL_TYPE]) },
       'payment_journal' => -> { journal(@profile.payment_journal_id, PAYMENT_JOURNAL_TYPES) },
-      'analytic_account' => -> { analytic_account },
-      'draft_create' => -> { draft_round_trip } }
+      'attribution_setup' => -> { attribution_setup },
+      'draft_create' => -> { round_trip },
+      Odoo::DestinationProfile::ATTRIBUTION_PROBE => -> { attribution_verdict } }
   end
 
   def client
@@ -113,13 +139,77 @@ class Odoo::Diagnostics
     { 'ok' => true, 'name' => row['name'], 'code' => row['code'], 'type' => row['type'] }
   end
 
-  # Skipped rather than failed when none is configured: analytic accounting is not present in every Odoo
-  # edition and version, so requiring one would make the integration unusable where there is nothing to pick.
-  def analytic_account
-    return { 'skipped' => true, 'reason' => 'not_configured' } if @profile.analytic_account_id.blank?
+  # NEVER SKIPPED. Attribution is not optional in a shared company: without it this project's revenue is
+  # indistinguishable from a sibling project's in the owner's own reports, which is the thing this integration
+  # exists to prevent.
+  def attribution_setup
+    return not_configured('attribution_not_configured') unless @profile.attribution_configured?
 
-    row = one('account.analytic.account', [['id', '=', @profile.analytic_account_id]], %w[id name company_id])
-    { 'ok' => true, 'name' => row['name'] }
+    @profile.attribution.analytic? ? analytic_setup : income_account_setup
+  end
+
+  # Two separate questions, because they fail for different reasons and an operator fixes them differently:
+  # the SERVER may not support analytic distribution at all, or the configured ACCOUNT may be wrong.
+  #
+  # An analytic account with `company_id` false is shared across every company and is usable here; one
+  # belonging to a different company is not, and Odoo would refuse the posting rather than the write, which is
+  # exactly the kind of late failure this probe exists to pull forward.
+  def analytic_setup
+    shape = client.fields_get(model: 'account.move.line', fields: %w[analytic_distribution])
+    return not_configured('analytic_distribution_unsupported') unless shape.is_a?(Hash) && shape.key?('analytic_distribution')
+
+    row = one('account.analytic.account', [['id', '=', @profile.analytic_account_id]],
+              %w[id name company_id plan_id])
+    # `company_id` false means the analytic account is SHARED across every company and is usable here. An id
+    # belonging to another company is not: Odoo's own _check_company_auto on account.analytic.line raises at
+    # POSTING time, which is exactly the late failure this probe exists to pull forward.
+    account_company = Array(row['company_id']).first
+    usable = account_company.blank? || account_company == @profile.company_id
+    return mismatch('analytic_account_company', Array(row['company_id']).last) unless usable
+
+    { 'ok' => true, 'mode' => Odoo::Attribution::ANALYTIC, 'account' => row['name'],
+      'plan_id' => Array(row['plan_id']).first, 'plan' => Array(row['plan_id']).last,
+      'shared_across_companies' => account_company.blank? }
+  end
+
+  # The configured fallback. It has to be an INCOME account the configured company can use, and the type check
+  # is the one that matters: a receivable or payable account would be accepted by `create` and then silently
+  # turn every revenue line into a payment term.
+  #
+  # THE COMPANY IS CHECKED BY THE SEARCH, not by reading a company field. account.account carries `company_id`
+  # up to Odoo 17 and `company_ids` from 18, so reading either by name breaks on half the versions this
+  # adapter supports. `one` searches with `allowed_company_ids` in the context instead, which is Odoo's own
+  # multi-company record rule: an account this company cannot use is not returned at all, and the probe
+  # reports NOT_FOUND.
+  def income_account_setup
+    row = one('account.account', [['id', '=', @profile.income_account_id]], %w[id name code account_type])
+    return mismatch('income_account_type', row['account_type']) unless INCOME_ACCOUNT_TYPES.include?(row['account_type'])
+
+    { 'ok' => true, 'mode' => Odoo::Attribution::INCOME_ACCOUNT, 'account' => row['name'], 'code' => row['code'],
+      'account_type' => row['account_type'] }
+  end
+
+  # THE VERDICT ON THE WRITE. It compares what Odoo stored on the draft's journal items against what this
+  # project's attribution should be -- which catches the three things no configuration read can: a
+  # distribution model in the destination database overwriting ours, our analytic account landing on the
+  # receivable or the tax line, and a revenue line reaching Odoo with no attribution at all.
+  def attribution_verdict
+    draft = round_trip
+    return { 'ok' => false, 'error' => { 'code' => 'NOT_CONFIGURED', 'reason' => 'draft_not_created' } } unless draft['ok']
+
+    verdict = draft['attribution']
+    return { 'ok' => true, 'mode' => @profile.attribution.mode } if verdict.is_a?(Hash) && verdict['ok']
+
+    { 'ok' => false, 'error' => { 'code' => 'INVALID_REQUEST', 'reason' => verdict.to_h['reason'].presence || 'attribution_not_verified' },
+      'found' => verdict.to_h['detail'] }.compact
+  end
+
+  # ONE WRITE, READ BY TWO PROBES. Memoised including its failure, so `attribution` reports on the same draft
+  # rather than creating a second one -- and so a server that refuses the write is not written to twice.
+  def round_trip
+    return @round_trip if defined?(@round_trip)
+
+    @round_trip = run { draft_round_trip }
   end
 
   # The one write, and its undoing. No partner: `partner_id` is not required to CREATE an account.move (Odoo
@@ -127,16 +217,20 @@ class Odoo::Diagnostics
   # zero-priced line, because a move with no line at all is refused by posting and this still proves the line
   # shape is accepted.
   def draft_round_trip
+    reference = Odoo::SourceStamp.new(@profile).reference(kind: 'probe', provider_object_id: SecureRandom.hex(6))
     draft = Odoo::Accounting::Draft.new(
-      reference: Odoo::SourceStamp.new(@profile).reference(kind: 'probe', provider_object_id: SecureRandom.hex(6)),
-      invoice_date: Date.current.to_s, currency_id: nil,
-      lines: [{ name: PROBE_LINE_LABEL, quantity: 1, price_unit: 0.0 }]
+      reference: reference, invoice_date: Date.current.to_s, currency_id: nil,
+      lines: [{ name: PROBE_LINE_LABEL, quantity: 1, price_unit: PROBE_LINE_AMOUNT }]
     )
     accounting = Odoo::Accounting.new(@profile, client: client)
     move_id = accounting.create_invoice(draft)
-    row = accounting.read_move(move_id)
+    # Read back by id AND by our own stamp: the stamp check is what proves the move we are looking at is the
+    # one we just wrote rather than a sibling project's move with the same id in a different company.
+    row = accounting.read_move(move_id, reference: reference)
+    verdict = @profile.attribution.verify(accounting.read_move_lines(move_id))
     accounting.unlink_draft_move(move_id)
-    { 'ok' => true, 'state' => row['state'], 'journal' => Array(row['journal_id']).last, 'removed' => true }
+    { 'ok' => true, 'state' => row['state'], 'journal' => Array(row['journal_id']).last, 'removed' => true,
+      'attribution' => { 'ok' => verdict.ok?, 'reason' => verdict.reason, 'detail' => verdict.detail }.compact }
   end
 
   def one(model, domain, fields)
@@ -148,6 +242,10 @@ class Odoo::Diagnostics
 
   def mismatch(reason, found)
     { 'ok' => false, 'error' => { 'code' => 'INVALID_REQUEST', 'reason' => reason }, 'found' => found }
+  end
+
+  def not_configured(reason)
+    { 'ok' => false, 'error' => { 'code' => 'NOT_CONFIGURED', 'reason' => reason } }
   end
 
   # fields_get returns a selection as an array of [value, label] pairs.

@@ -88,3 +88,55 @@ deliberate.
 `Odoo::Money` handles Stripe's zero-decimal (JPY and fifteen others) and three-decimal (KWD, BHD, JOD, OMR,
 TND) currencies from Stripe's own published lists, in `BigDecimal`. A currency on neither list has two
 decimals. The comparison tolerance is one minor unit, scaled per currency.
+
+## 11. One partner per project, not one per customer
+
+`res.partner` has no analytic distribution — attribution is a journal-item concept — so a partner cannot be
+"a Lynomia Chat partner" in Odoo's own data model. It is ours because its `ref` carries our stamp. The
+consequence: if a sibling project in the same company invoices the same real customer, that customer will
+exist twice in the company, once per project. That is **duplication, not leakage**, and the alternative is
+worse: matching an existing partner by name or email would merge a sibling project's customer ledger with
+ours, which is exactly what requirement 11 forbids. Merging the duplicates is an accounting decision for a
+person, in Odoo.
+
+## 12. An analytic tax line inflates this project's analytic total
+
+When a sales tax in the destination carries Odoo's `analytic` flag ("Include in Analytic Cost"), Odoo copies
+the base line's distribution onto the **tax** line itself. The project's analytic total then includes the tax
+as well as the revenue. This integration does not set that, cannot prevent it, and does not refuse the
+document for it: an externally written tax-line distribution does not even survive, because
+`analytic_distribution` is part of the key Odoo matches tax lines on, so a hand-edited tax line is deleted and
+re-added with Odoo's own value. The verification **reports** it (`tax_lines_carry_attribution`) and the
+Diagnostics page shows it. Whether a sales tax should be analytic is a configuration decision in the owner's
+own Odoo.
+
+## 13. The dedicated-income-account fallback is a narrower guarantee
+
+`attribution_mode = income_account` exists so that an Odoo which cannot do analytic accounting **blocks**
+rather than exporting unattributed revenue. It segregates this project's revenue onto its own line in the
+**general** ledger, which a profit-and-loss report separates by account. It does **not** give analytic
+reporting: no `account.analytic.line` rows are produced, so Odoo's analytic P&L, budgets and analytic
+dashboards will not see this project at all. And exclusivity of that account to this project is the operator's
+assertion — this integration validates that the account exists, is usable by the configured company and is an
+**income** account, and that every revenue line it writes carries it. It cannot validate that nothing else in
+the company posts to the same account. Prefer the analytic mode wherever the server supports it.
+
+## 14. A reversal Odoo auto-posted without attribution is reported, not corrected
+
+`reverse_moves` copies the source invoice's analytic distribution, because the field is `copy=True`. If it
+somehow does not, and the reversal is still a **draft**, this integration writes the distribution onto the
+reversal's revenue lines. If Odoo already auto-posted it — which it does for a reversal dated in the future,
+with `auto_post` `at_date` — the credit note is left as it is and the mapping goes to `needs_review`. A posted
+journal item is a legal record: it is reversed, never edited. Correcting it is an accounting decision for a
+person.
+
+## 15. Two Odoo preconditions this integration cannot check for you
+
+- **`analytic.project_plan`** (Odoo 17 and later). Posting any journal item that carries an analytic
+  distribution requires this system parameter to name a valid root analytic plan, or Odoo raises a `UserError`.
+  Reading `ir.config_parameter` usually needs rights the integration's API user does not have, so no probe is
+  attempted: the go-live sequence in [06-runbook.md](06-runbook.md) has the operator confirm it, and the first
+  invoice posted by hand would surface it anyway.
+- **External API availability on Odoo Online.** Odoo's own documentation states that External API access is
+  not available on the One App Free and Standard plans. A destination on one of those plans cannot be reached
+  at all, and the connection test will say so at the `authenticate` stage.

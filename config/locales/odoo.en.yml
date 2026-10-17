@@ -21,6 +21,10 @@ en:
               must_have_host: must include the Odoo server's hostname
               must_not_carry_credentials: must not contain a username or password; enter the API key in its own field
               invalid: is not a valid URL
+            attribution_mode:
+              inclusion: >-
+                must be either an analytic account or a dedicated income account. Revenue is never exported
+                unattributed, because this Odoo company is shared with other projects.
             credentials:
               encryption_not_configured: >-
                 cannot be stored because this installation has no Active Record encryption keys. Set
@@ -36,14 +40,17 @@ en:
           prove an invoice can be created or posted. Run the capability probe for that.
         connection_failed: Could not connect. The Diagnostics page says at which stage and why.
         capability_ok: >-
-          Capability probe passed: a draft invoice was created in the configured journal, read back and
-          deleted. Posting is still unproven — see the Diagnostics page.
+          Capability probe passed: a draft invoice was created in the configured journal, read back with this
+          project's attribution on its revenue line, and deleted. Posting is still unproven — see the
+          Diagnostics page.
         capability_failed: The capability probe failed. Each probe reports separately on the Diagnostics page.
         enabled: Synchronisation is on. New Stripe invoices will be exported from now.
         disabled: Synchronisation is off. Queued work is kept and stays blocked until it is turned back on.
         not_ready: >-
-          This destination is not ready. Finish the connection test, choose the company and journals, and run
-          the capability probe first.
+          This destination is not ready. Finish the connection test, choose the company and journals, name the
+          analytic account that identifies this project inside that company, and run the capability probe
+          first. Synchronisation cannot start until the probe has read this project's attribution back out of
+          a real draft invoice.
         stripe_not_configured: Stripe is not configured on this installation, so there are no invoices to read.
         import_queued:
           zero: Nothing new to import — every invoice in that window is already exported or has no matching customer.

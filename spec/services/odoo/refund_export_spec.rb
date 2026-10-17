@@ -19,9 +19,22 @@ RSpec.describe Odoo::RefundExport do
                                             amount_minor: 14_900, currency: 'usd')
   end
 
-  def credit_note(state: 'posted')
-    { 'id' => 5555, 'state' => state, 'name' => 'RINV/2026/0002',
+  # `reversed_entry_id` points at OUR invoice, which is how a credit note Odoo authored is tied to this
+  # integration: Odoo writes its own "Reversal of: ..." into `ref`, so our stamp is not there to match, and in
+  # a company shared with sibling projects the company and journal identify nothing.
+  def credit_note(state: 'posted', reversed: 4242, ref: nil)
+    { 'id' => 5555, 'state' => state, 'name' => 'RINV/2026/0002', 'ref' => ref,
+      'reversed_entry_id' => reversed.nil? ? false : [reversed, 'INV/2026/0007'],
       'company_id' => [profile.company_id, 'L'], 'journal_id' => [profile.journal_id, 'S'] }
+  end
+
+  # A credit note's journal items: the revenue reversal carries this project's analytic account, mirroring the
+  # invoice it credits. Odoo copies the source line's distribution onto a reversal because the mixin field is
+  # copy=True, so the happy path needs no repair -- but it is READ rather than trusted.
+  def credit_lines(analytic: profile.analytic_account_id)
+    [{ 'id' => 6001, 'display_type' => 'product', 'name' => 'Refund', 'balance' => 149.0,
+       'account_id' => [700, 'Revenue'],
+       'analytic_distribution' => analytic.nil? ? false : { analytic.to_s => 100.0 } }]
   end
 
   before do
@@ -29,6 +42,8 @@ RSpec.describe Odoo::RefundExport do
     allow(accounting).to receive(:reverse_move).and_return(5555)
     allow(accounting).to receive(:create_partial_credit_note).and_return(5555)
     allow(accounting).to receive(:read_move).and_return(credit_note)
+    allow(accounting).to receive(:read_move_lines).and_return(credit_lines)
+    allow(accounting).to receive(:apply_attribution)
     allow(accounting).to receive(:post_move).and_return(credit_note)
   end
 
@@ -76,6 +91,71 @@ RSpec.describe Odoo::RefundExport do
 
       expect(result.state).to eq(:needs_review)
       expect(result.reason).to eq('partial_credit_note_awaiting_reconciliation')
+    end
+  end
+
+  # REQUIREMENT: a credit note is attributed to the SAME project as the invoice it credits. The two cases get
+  # there differently -- Odoo copies the lines on a reversal, we author them on a partial -- so both are
+  # checked, and the reversal is repaired rather than trusted.
+  describe 'attribution carried onto the credit note' do
+    before { allow(source).to receive(:refund).and_return(stripe_refund(amount: 14_900)) }
+
+    it 'records the same project attribution as the invoice, confirmed by a read' do
+      result = export.call('rf_test1', invoice_mapping)
+
+      expect(result.mapping.odoo_analytic_account_id).to eq(profile.analytic_account_id)
+      expect(result.mapping.attribution_verified_at).to be_present
+      expect(accounting).not_to have_received(:apply_attribution)
+    end
+
+    # Odoo authored these lines. If the distribution did not come across and the reversal is still a draft,
+    # writing it on is correct: it is our own credit note for our own invoice, and a draft is not yet a legal
+    # record.
+    it 'writes the attribution onto a draft reversal that came back without it' do
+      allow(accounting).to receive(:read_move).and_return(credit_note(state: 'draft'))
+      # Two reads, not three: the repair reuses the lines from the first read to pick the revenue line ids, so
+      # the second read is the verification of what the write achieved.
+      allow(accounting).to receive(:read_move_lines).and_return(credit_lines(analytic: nil), credit_lines)
+
+      result = export.call('rf_test1', invoice_mapping)
+
+      expect(accounting).to have_received(:apply_attribution).with([6001])
+      expect(result.mapping.attribution_verified_at).to be_present
+    end
+
+    # A POSTED journal item is the legal record. It is reversed, never rewritten -- so this is reported rather
+    # than corrected.
+    it 'asks a person when a reversal Odoo already posted came back unattributed' do
+      allow(accounting).to receive(:read_move_lines).and_return(credit_lines(analytic: nil))
+
+      result = export.call('rf_test1', invoice_mapping)
+
+      expect(result.state).to eq(:needs_review)
+      expect(result.reason).to eq('attribution_missing')
+      expect(accounting).not_to have_received(:apply_attribution)
+    end
+
+    # OWNERSHIP, not company. Odoo writes its own "Reversal of: ..." into the credit note's ref, so the only
+    # exact link back to this integration is the id of the move it reverses.
+    it 'refuses a reversal that is not linked to our own invoice' do
+      allow(accounting).to receive(:read_move).and_return(credit_note(reversed: 99_999))
+
+      expect { export.call('rf_test1', invoice_mapping) }
+        .to raise_error(Odoo::Error) { |error| expect(error.reason).to eq('reversal_not_linked_to_our_invoice') }
+    end
+
+    context 'with a partial refund, whose lines this integration authors' do
+      before { allow(source).to receive(:refund).and_return(stripe_refund(amount: 5_000)) }
+
+      it 'checks the attribution BEFORE posting, so an unattributed credit note is never made permanent' do
+        allow(accounting).to receive(:read_move_lines).and_return(credit_lines(analytic: nil))
+
+        result = export.call('rf_test2', invoice_mapping)
+
+        expect(result.state).to eq(:needs_review)
+        expect(result.reason).to eq('attribution_missing')
+        expect(accounting).not_to have_received(:post_move)
+      end
     end
   end
 

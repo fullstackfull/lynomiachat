@@ -1,5 +1,5 @@
 <%#
-  One of the nine configuration and activation states, in the words an operator can act on.
+  One of the ten configuration and activation states, in the words an operator can act on.
   Odoo::DestinationProfile#status derives it; nothing is stored, so this badge cannot disagree with the record.
 %>
 <%
@@ -9,7 +9,10 @@
     connection_untested: ['Never tested', 'bg-amber-100 text-amber-800', 'Credentials are stored but have never been used.'],
     connection_failed: ['Connection failed', 'bg-red-100 text-red-800', 'The last connection test did not succeed.'],
     scope_incomplete: ['Scope incomplete', 'bg-amber-100 text-amber-800', 'The company and journals have not all been chosen.'],
-    capability_unproven: ['Capability unproven', 'bg-amber-100 text-amber-800', 'No draft invoice has ever been created and read back.'],
+    attribution_incomplete: ['Attribution not set', 'bg-amber-100 text-amber-800',
+                             'No analytic account (or dedicated income account) names this project, so revenue would land in the shared company unattributed.'],
+    capability_unproven: ['Capability unproven', 'bg-amber-100 text-amber-800',
+                          'No draft invoice has been created, read back and confirmed to carry this project\'s attribution.'],
     ready_disabled: ['Ready, switched off', 'bg-sky-100 text-sky-800', 'Everything checks out. Synchronisation is not running.'],
     active: ['Active', 'bg-green-100 text-green-800', 'New Stripe invoices are being exported.'],
     error: ['Error', 'bg-red-100 text-red-800', 'Synchronisation is refusing to run; the reason is below.']

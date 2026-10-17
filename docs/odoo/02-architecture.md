@@ -56,7 +56,7 @@ validation that refuses to persist without Active Record encryption keys.
 index on `(source_app, environment) WHERE sync_enabled`. Two enabled destinations would post every invoice
 twice, so the database refuses rather than a callback.
 
-**The nine states are derived, never stored** (`CONFIGURATION_FUNNEL`). A stored status is a second source of
+**The ten states are derived, never stored** (`CONFIGURATION_FUNNEL`). A stored status is a second source of
 truth that drifts from the columns it summarises, and every input is already a column. The funnel is ordered so
 the first check that fails names what an operator must do next:
 
@@ -95,8 +95,23 @@ domain = [['company_id', '=', 3], ['journal_id', '=', 11],
           ['move_type', '=', 'out_invoice'], ['ref', '=', stamp]]
 ```
 
-Scope plus stamp is the pair that cannot match another business's row, because another business's row is in
-another company.
+**THE COMPANY IS NOT THE BOUNDARY, AND AN EARLIER VERSION OF THIS DOCUMENT SAID IT WAS.** It claimed that
+"scope plus stamp cannot match another business's row, because another business's row is in another company."
+That is false for this installation. The destination Odoo holds **one** legal company and **several**
+unrelated projects run inside it: they share the company id, often the journal, and their customers share
+names and emails. Odoo offers no record-level isolation between them either — the only record rule on an
+analytic account is company-based, and `company_id` on one is not even required.
+
+So the division of labour is:
+
+| question | answered by | not answered by |
+|---|---|---|
+| is this record **ours**? | the exact stamp in `ref` | the company, the journal, a customer name, an email, an invoice number |
+| where does it get **written**? | the company and journal | — |
+| whose **revenue** is it, in Odoo's reports? | the analytic distribution on each revenue line ([08](08-project-attribution.md)) | the stamp, which Odoo's financial reports never read |
+
+`Odoo::SourceStamp#ownership_domain` is the only way to build a lookup, and it raises without a reference —
+so a scope-only search, which in one shared company returns every project's documents, cannot be written.
 
 **`allowed_company_ids` on every call.** It is the Odoo context key that decides which company a write lands
 in, and its first element is the active one. Passed together with an explicit `journal_id`, which pins
@@ -104,8 +119,10 @@ in, and its first element is the active one. Passed together with an explicit `j
 
 **A read by id is scoped by nothing.** `search_read` carries the domain; `read` returns whatever that id is in
 any company the API user can see — and in a shared Odoo that is usually several. So `Odoo::Accounting#read_move`
-checks the row it gets back against the profile and raises `CONFLICT` on a mismatch. A move in another company
-is not our move, whatever its id.
+checks the row it gets back against the profile and raises `CONFLICT` on a mismatch. In a shared company that
+check has two halves: the **destination** (is it in the configured company and journal?) and the **ownership**
+(does its `ref` equal the stamp we expect?). Callers that know the stamp pass it, because a move in the right
+company and the right journal may still be a sibling project's.
 
 **`res.partner` is the one model whose scope admits `company_id = false`**, deliberately: a partner with no
 company is shared across every company in that database, which is how most installations hold their customers.

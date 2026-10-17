@@ -11,13 +11,23 @@
 #   2. recover, if a previous attempt may have written    search Odoo by our stamp; adopt what is there
 #   3. create the DRAFT              never a posted move: Odoo refuses to create one, and so do we
 #   4. read it back and COMPARE TOTALS    the gate that keeps a wrong invoice from ever being posted
-#   5. post, only if the operator has enabled posting AND the totals agreed
+#   5. read its LINES and VERIFY THIS PROJECT'S ATTRIBUTION    the gate that keeps unattributed revenue out of
+#                                    a company shared with sibling projects
+#   6. post, only if the operator has enabled posting AND both gates passed
 #
-# STEP 4 IS THE IMPORTANT ONE. This integration writes into somebody else's chart of accounts, with their
-# fiscal positions, their tax mapping and their rounding. It cannot predict what Odoo will compute. So it
-# doesn't try: it creates the draft, asks Odoo what the total came to, and compares that against Stripe's own
-# total. A draft whose total does not match Stripe is left as a draft and marked for review. Nothing posts on
-# a number this integration cannot account for.
+# STEP 4. This integration writes into somebody else's chart of accounts, with their fiscal positions, their
+# tax mapping and their rounding. It cannot predict what Odoo will compute. So it doesn't try: it creates the
+# draft, asks Odoo what the total came to, and compares that against Stripe's own total. A draft whose total
+# does not match Stripe is left as a draft and marked for review. Nothing posts on a number this integration
+# cannot account for.
+#
+# STEP 5, for the same reason one layer along. The destination is ONE legal company running SEVERAL unrelated
+# projects, so a correctly-totalled invoice with no analytic distribution is this project's revenue dropped
+# into a pool the owner cannot split. Sending the attribution is not evidence it landed: Odoo computes
+# `analytic_distribution` where none was supplied, and an `account.analytic.distribution.model` rule in the
+# destination database can replace the one we sent. So the journal items are read back and checked, and a
+# draft whose attribution did not land -- or landed on another project's analytic account -- is left a draft
+# for a person. See Odoo::Attribution.
 #
 # WHAT IS NOT EXPORTED, and each is a deliberate refusal rather than a gap:
 #   * a zero-amount invoice. Stripe issues them for trials and 100%-discounted periods. There is no revenue to
@@ -37,6 +47,7 @@ class Odoo::InvoiceExport
     @source = source || Odoo::StripeSource.new
     @accounting = accounting || Odoo::Accounting.new(profile)
     @stamp = Odoo::SourceStamp.new(profile)
+    @attribution = Odoo::Attribution.new(profile)
   end
 
   def call(stripe_invoice_id)
@@ -80,7 +91,9 @@ class Odoo::InvoiceExport
   # anything, Odoo is asked whether it already holds a move carrying our stamp inside our scope. Finding one is
   # adopting our own earlier work, not adopting a stranger's record -- the stamp is ours and the scope is ours.
   def existing_move(mapping)
-    return @accounting.read_move(mapping.odoo_record_id) if mapping.odoo_record_id.present?
+    # The stamp is passed, so a stored id that points at a move which is NOT ours -- a sibling project's
+    # invoice in the same company and the same journal -- is a conflict rather than a document we adopt.
+    return @accounting.read_move(mapping.odoo_record_id, reference: mapping.source_reference) if mapping.odoo_record_id.present?
 
     rows = @accounting.find_moves(reference: mapping.source_reference, move_type: 'out_invoice')
     raise Odoo::Error.new('CONFLICT', reason: 'stamp_matches_several_moves') if rows.length > 1
@@ -94,7 +107,7 @@ class Odoo::InvoiceExport
       invoice_date: Time.zone.at(invoice.created).to_date.to_s, currency_id: @accounting.currency_id(invoice.currency),
       lines: lines_for(invoice)
     )
-    @accounting.read_move(@accounting.create_invoice(draft))
+    @accounting.read_move(@accounting.create_invoice(draft), reference: mapping.source_reference)
   end
 
   # The gate. Odoo's computed total against Stripe's, then post only if they agree and the operator has
@@ -102,11 +115,23 @@ class Odoo::InvoiceExport
   # for a destination that has never accepted a write.
   def settle(mapping, invoice, move)
     mapping.update!(odoo_record_id: move['id'], odoo_state: move['state'], odoo_payment_state: move['payment_state'],
-                    odoo_state_read_at: Time.current)
+                    odoo_state_read_at: Time.current, **@attribution.mapping_values)
     return review(mapping, 'total_mismatch_with_stripe') unless totals_agree?(invoice, move)
+
+    verdict = verify_attribution(mapping, move)
+    return review(mapping, verdict.reason) unless verdict.ok?
     return synchronized(mapping, move) unless @profile.may_post? && move['state'] == 'draft'
 
     synchronized(mapping, @accounting.post_move(move['id']))
+  end
+
+  # Reads the move's journal items and checks this project's attribution against them. `attribution_verified_at`
+  # is stamped only on a pass, so the partial index on unverified attribution lists exactly the documents that
+  # reached Odoo without it.
+  def verify_attribution(mapping, move)
+    verdict = @attribution.verify(@accounting.read_move_lines(move['id']))
+    mapping.update!(attribution_verified_at: verdict.ok? ? Time.current : nil)
+    verdict
   end
 
   # One minor unit of tolerance, to absorb the difference between Stripe's arithmetic and Odoo's. Anything

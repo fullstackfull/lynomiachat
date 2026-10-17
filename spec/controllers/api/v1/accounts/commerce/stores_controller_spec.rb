@@ -77,6 +77,83 @@ RSpec.describe 'Commerce stores API', type: :request do
     end
   end
 
+  # Store Syria connects by pasting the token its own admin issues for one store. The token names the store, so
+  # nothing the administrator types here says which store will be read.
+  describe 'POST /commerce/stores for Store Syria' do
+    let(:token) { "lsc_4_1_#{'a' * 64}" }
+    let(:storesyria_store) { 'https://storesyria.example.com/api/lynomia/commerce/v1/store' }
+    let(:params) { { provider: 'storesyria', base_url: 'https://storesyria.example.com', commerce_token: token } }
+
+    before do
+      allow(Resolv).to receive(:getaddresses).with('storesyria.example.com').and_return(['93.184.216.70'])
+      stub_request(:get, storesyria_store)
+        .to_return(status: 200, body: { external_store_id: 'storesyria.example.com:4', name: 'Damascus' }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+    end
+
+    it 'connects the store the token names, and never returns the token' do
+      post stores_path, headers: admin.create_new_auth_token, as: :json, params: params
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body).to include('provider' => 'storesyria', 'name' => 'Damascus', 'status' => 'active')
+      expect(response.body).not_to include('lsc_', 'commerce_token', 'credentials')
+      expect(account.commerce_stores.sole).to have_attributes(external_store_id: 'storesyria.example.com:4',
+                                                              credentials: { 'commerce_token' => token })
+    end
+
+    # The token is the only thing that decides which store is read, so a value that cannot be one is refused at the
+    # boundary rather than sent to the store and turned into a failed health check.
+    ['lsc_4_1_short', 'a' * 64, "lsc_4_1_#{'a' * 64}\r\nX-Evil: 1", nil].each do |bad|
+      it "refuses the token #{bad.inspect[0, 24]} without calling the store" do
+        post stores_path, headers: admin.create_new_auth_token, as: :json, params: params.merge(commerce_token: bad)
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(a_request(:get, storesyria_store)).not_to have_been_made
+        expect(Commerce::Store.count).to eq(0)
+      end
+    end
+
+    # The WooCommerce fields belong to a different provider's store, so they cannot stand in for the token.
+    it 'never takes WooCommerce keys for a Store Syria store' do
+      post stores_path, headers: admin.create_new_auth_token, as: :json, params: params
+      store = account.commerce_stores.sole
+
+      patch "#{stores_path}/#{store.id}", headers: admin.create_new_auth_token, as: :json,
+                                          params: { consumer_key: "ck_#{'a' * 40}", consumer_secret: "cs_#{'b' * 40}" }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(store.reload.credentials).to eq('commerce_token' => token)
+    end
+
+    # A token issued for store 9 pasted into store 4's connection would otherwise bind 9's customers and orders under
+    # 4's row. Rotation is the only path where this can happen, because a new connection has no identity to contradict.
+    it 'refuses a replacement token issued for a different store' do
+      post stores_path, headers: admin.create_new_auth_token, as: :json, params: params
+      store = account.commerce_stores.sole
+
+      stub_request(:get, storesyria_store)
+        .to_return(status: 200, body: { external_store_id: 'storesyria.example.com:9', name: 'Someone Else' }.to_json,
+                   headers: { 'Content-Type' => 'application/json' })
+      patch "#{stores_path}/#{store.id}", headers: admin.create_new_auth_token, as: :json,
+                                          params: { commerce_token: "lsc_9_1_#{'b' * 64}" }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to eq('error' => { 'code' => 'AUTH_INVALID' })
+      expect(store.reload.credentials).to eq('commerce_token' => token)
+    end
+
+    it 'replaces the token of the store it was issued for' do
+      post stores_path, headers: admin.create_new_auth_token, as: :json, params: params
+      store = account.commerce_stores.sole
+      rotated = "lsc_4_2_#{'c' * 64}"
+
+      patch "#{stores_path}/#{store.id}", headers: admin.create_new_auth_token, as: :json, params: { commerce_token: rotated }
+
+      expect(response).to have_http_status(:success)
+      expect(store.reload.credentials).to eq('commerce_token' => rotated)
+    end
+  end
+
   describe "the plan's store limit" do
     let(:plan) { BillingPlan.create!(name: 'Commerce', features: ['lynomia_commerce'], limits: { 'stores' => 1 }) }
 

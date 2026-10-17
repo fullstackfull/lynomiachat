@@ -9,6 +9,7 @@ import bulkActions from './bulkActions.json';
 import calls from './calls.json';
 import campaign from './campaign.json';
 import cannedMgmt from './cannedMgmt.json';
+import accountLink from './accountLink.json';
 import commerce from './commerce.json';
 import flowBuilder from './flowBuilder.json';
 import recipes from './recipes.json';
@@ -63,6 +64,7 @@ export default {
   ...calls,
   ...campaign,
   ...cannedMgmt,
+  ...accountLink,
   ...commerce,
   ...flowBuilder,
   ...recipes,

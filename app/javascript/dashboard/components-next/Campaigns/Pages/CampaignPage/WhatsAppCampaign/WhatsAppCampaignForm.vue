@@ -130,6 +130,17 @@ const selectedTemplate = computed(() => {
     ?.template;
 });
 
+// WHAT THE PREVIEW NEEDS OF THE TEMPLATE: enough to find it in the channel's synced list,
+// which is where the server reads its category from. A UTILITY template is transactional
+// and needs no marketing grant, so a preview that did not name the template counted this
+// campaign as promotional and showed a number smaller than the send reaches.
+const previewTemplateParams = computed(() => {
+  const template = selectedTemplate.value;
+  if (!template) return null;
+
+  return { name: template.name, language: template.language || 'en_US' };
+});
+
 const getErrorMessage = (field, errorKey) => {
   const baseKey = 'CAMPAIGN.WHATSAPP.CREATE.FORM';
   return v$.value[field].$error ? t(`${baseKey}.${errorKey}.ERROR`) : '';
@@ -183,11 +194,15 @@ const prepareCampaignDetails = () => {
   // Extract template content - this should be the template message body
   const templateContent = parserData?.renderedTemplate || '';
 
-  // Prepare template_params object with the same structure as used in contacts
+  // Prepare template_params object with the same structure as used in contacts.
+  // No `category`: the server reads the template's category from the channel's own synced
+  // list (Campaigns::Eligibility), because whether a campaign is transactional decides
+  // whether it needs marketing consent, and that is not the sender's to declare. This sent
+  // `currentTemplate?.category || 'UTILITY'`, so a form that had not resolved its template
+  // declared every campaign transactional.
   const templateParams = {
     name: currentTemplate?.name || '',
     namespace: currentTemplate?.namespace || '',
-    category: currentTemplate?.category || 'UTILITY',
     language: currentTemplate?.language || 'en_US',
     processed_params: parserData?.processedParams || {},
   };
@@ -281,6 +296,8 @@ watch(
       v-model:label-ids="state.selectedAudience"
       v-model:audience-ids="state.selectedSharedAudiences"
       :message="formErrors.audience"
+      :inbox-id="state.inboxId"
+      :template-params="previewTemplateParams"
       @create-audience="handleCreateAudience"
     />
 

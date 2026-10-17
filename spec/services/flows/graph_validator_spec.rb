@@ -9,6 +9,60 @@ RSpec.describe Flows::GraphValidator do
   let(:edge) { ->(source, handle, target) { { 'id' => "#{source}-#{handle}", 'source' => source, 'sourceHandle' => handle, 'target' => target } } }
   let(:codes) { ->(graph) { described_class.new(account, graph).errors.pluck(:code) } }
 
+  # THE NODE `data` ALLOW-LIST, which had no test anywhere in the repo until now.
+  #
+  # Flows::NodeTypes.data_keys declares exactly which keys each node type's `data` may carry, and
+  # Flows::NodeValidator#check_keys refuses anything else as `unknown_field`. It matters more in
+  # Phase 4 than it did before: a second editor -- Store Syria's native Automation Studio -- now
+  # builds node `data` from the catalogue and posts it here, so this allow-list is what stops a
+  # typo, a stale client or an injected key from being stored and silently ignored at runtime.
+  describe 'the node data allow-list' do
+    it 'refuses a key the node type does not declare, naming it' do
+      graph = { 'nodes' => [node.call('s', 'start'),
+                            node.call('hello', 'send_message', 'text' => 'Hi', 'sendAt' => '2026-01-01'),
+                            node.call('e', 'end')],
+                'edges' => [edge.call('s', 'next', 'hello'), edge.call('hello', 'next', 'e')] }
+
+      errors = described_class.new(account, graph).errors
+      unknown = errors.find { |error| error[:code] == 'unknown_field' }
+
+      expect(unknown).to include(node_id: 'hello')
+      expect(unknown[:detail]).to eq('sendAt')
+    end
+
+    it 'accepts every key the type does declare' do
+      graph = { 'nodes' => [node.call('s', 'start'),
+                            node.call('wait', 'delay', 'seconds' => 60),
+                            node.call('e', 'end')],
+                'edges' => [edge.call('s', 'next', 'wait'), edge.call('wait', 'next', 'e')] }
+
+      expect(codes.call(graph)).to eq([])
+    end
+
+    # The allow-list is per TYPE, so a key that is legitimate on one node is not thereby
+    # legitimate on another -- `text` belongs to send_message, never to delay.
+    it 'does not let a key valid on one node type ride in on another' do
+      graph = { 'nodes' => [node.call('s', 'start'),
+                            node.call('wait', 'delay', 'seconds' => 60, 'text' => 'hello'),
+                            node.call('e', 'end')],
+                'edges' => [edge.call('s', 'next', 'wait'), edge.call('wait', 'next', 'e')] }
+
+      expect(codes.call(graph)).to include('unknown_field')
+    end
+
+    # Saving a draft checks SHAPE only, so an unknown field can be parked in a draft and is
+    # caught at publish. That split is deliberate -- an editor must be able to save work in
+    # progress -- and Phase 4's Studio surfaces the difference rather than hiding it.
+    it 'is a publish-time refusal, not a save-time one' do
+      graph = { 'nodes' => [node.call('s', 'start'), node.call('hello', 'send_message', 'text' => 'Hi', 'sendAt' => 'x'),
+                            node.call('e', 'end')],
+                'edges' => [edge.call('s', 'next', 'hello'), edge.call('hello', 'next', 'e')] }
+
+      expect(described_class.new(account, graph).shape_errors).to eq([])
+      expect(codes.call(graph)).to include('unknown_field')
+    end
+  end
+
   it 'accepts a menu flow: buttons routed by option id, a question that loops back, handoff' do
     graph = { 'nodes' => [node.call('s', 'start'),
                           node.call('menu', 'buttons', 'text' => 'How can we help?',

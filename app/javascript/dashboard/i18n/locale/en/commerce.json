@@ -5,7 +5,8 @@
       "WOOCOMMERCE": "WooCommerce",
       "SALLA": "Salla",
       "ZID": "Zid",
-      "SHOPIFY": "Shopify"
+      "SHOPIFY": "Shopify",
+      "STORESYRIA": "Store Syria"
     },
     "PANEL": {
       "NO_STORES": "No store is connected yet.",
@@ -231,6 +232,7 @@
         "SALLA_HINT": "Install the {installationName} app from the Salla App Store. No keys to copy.",
         "ZID_HINT": "Authorize the {installationName} app on Zid. No keys to copy.",
         "SHOPIFY_HINT": "Authorize the {installationName} Commerce app on your Shopify store. No keys to copy.",
+        "STORESYRIA_HINT": "Connect with an integration token issued for your store in the Store Syria admin. {installationName} reads only; it never writes to the store.",
         "UNAVAILABLE": "Not available yet",
         "UNAVAILABLE_NOTE": "Platforms marked “Not available yet” aren’t offered on this workspace yet.",
         "DOCS": "What each platform can do once it is connected"
@@ -284,6 +286,21 @@
         "ACTIONS_TITLE": "Reconnect Shopify to enable order actions",
         "ACTIONS_DESCRIPTION": "Shopify will ask you to give the {installationName} Commerce app write access to orders, for cancellations and refunds. Until you approve it, the store stays read-only and keeps working.",
         "DOCS": "How to connect a Shopify store"
+      },
+      "STORESYRIA": {
+        "TITLE": "Add a Store Syria store",
+        "ROTATE_TITLE": "Replace the integration token",
+        "DESCRIPTION": "{installationName} reads customers, orders and abandoned carts from Store Syria with a token issued for one store. It never writes to the store.",
+        "STEPS": "Issue the token in Store Syria",
+        "STEP_1": "In Store Syria, open the Lynomia Chat integration for this store in the admin.",
+        "STEP_2": "Issue a commerce credential. It is shown once, and it stops any token issued before it from working.",
+        "STEP_3": "Paste it below, together with the store’s address.",
+        "TOKEN": "Integration token",
+        "TOKEN_HINT": "The token is encrypted and never shown again. Issuing a new one in Store Syria stops this one working.",
+        "CONNECT": "Test and connect",
+        "SAVE": "Test and save",
+        "PROVIDER_OFF": "Store Syria is turned off on this installation. The store is kept but not read.",
+        "DOCS": "How to issue the integration token"
       },
       "DISCONNECT_CONFIRM": {
         "TITLE": "Disconnect {name}?",

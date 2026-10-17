@@ -13,6 +13,21 @@ class Flows::TemplateValidator
     @errors = []
   end
 
+  # The inboxes a Send template node is checked against: the flow's own when it has any, and the account's
+  # WhatsApp inboxes when it has none, so a flow that is not connected yet can still name a template.
+  #
+  # A CLASS METHOD BECAUSE THE BUILDER ASKS THE SAME QUESTION. The flows API serves the templates a flow may
+  # send, and the set it offers must be the set this validator will accept -- two expressions of that rule
+  # would differ the first time one of them changed, and the merchant would find out at publish.
+  # `includes(:channel)` BECAUSE EVERY CALLER IMMEDIATELY READS THE CHANNEL. Flows::Template.sendable
+  # asks each one for its message_templates and ChannelCapabilities.for reads it to answer at all, so
+  # without this each candidate costs its own query -- paid on every draft save, because the builder's
+  # save response carries the sendable-template catalogue.
+  def self.candidates(account, inboxes)
+    inboxes = inboxes.any? ? inboxes : account.inboxes.includes(:channel).where(channel_type: 'Channel::Whatsapp').order(:id).to_a
+    inboxes.select { |inbox| Flows::ChannelCapabilities.for(inbox)&.dig(:template) }
+  end
+
   # [code, detail] pairs.
   def errors
     return [['template_required']] unless [name, language].all? { |value| value.is_a?(String) && value.present? }
@@ -30,10 +45,7 @@ class Flows::TemplateValidator
 
   def language = @data['language']
 
-  def candidates
-    inboxes = @inboxes.any? ? @inboxes : @account.inboxes.where(channel_type: 'Channel::Whatsapp').order(:id).to_a
-    inboxes.select { |inbox| Flows::ChannelCapabilities.for(inbox)&.dig(:template) }
-  end
+  def candidates = self.class.candidates(@account, @inboxes)
 
   # The inboxes that can send the template. Why the others cannot is reported for each connected inbox, or for every
   # candidate when none can.

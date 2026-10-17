@@ -24,7 +24,7 @@ RSpec.describe Flows::Nodes::SetAttribute do
   end
   let(:start) do
     lambda do |graph, text = 'hi'|
-      Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish!
+      Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish!
       message = create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, sender: contact, content: text)
       Flows::RunJob.perform_now(conversation.id, 'messages', message.id)
       FlowSession.find_by(conversation: conversation)

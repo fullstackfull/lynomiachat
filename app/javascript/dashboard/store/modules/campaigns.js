@@ -94,6 +94,19 @@ export const actions = {
       commit(types.SET_CAMPAIGN_UI_FLAG, { isUpdating: false });
     }
   },
+  // The server answers with the campaign in its new state, so the list is updated from the
+  // response rather than from an assumption about what cancelling does.
+  cancel: async ({ commit }, { id, reason } = {}) => {
+    commit(types.SET_CAMPAIGN_UI_FLAG, { isUpdating: true });
+    try {
+      const response = await CampaignsAPI.cancel(id, reason);
+      commit(types.EDIT_CAMPAIGN, response.data);
+    } catch (error) {
+      throw new Error(error);
+    } finally {
+      commit(types.SET_CAMPAIGN_UI_FLAG, { isUpdating: false });
+    }
+  },
   delete: async ({ commit }, id) => {
     commit(types.SET_CAMPAIGN_UI_FLAG, { isDeleting: true });
     try {

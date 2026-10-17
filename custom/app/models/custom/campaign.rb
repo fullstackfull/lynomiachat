@@ -12,5 +12,11 @@ module Custom::Campaign
 
   included do
     has_many :campaign_recipients, dependent: nil
+
+    # THE PARTNER INSTALLATION THIS CAMPAIGN CAME FROM, or nil for one created in Lynomia
+    # itself. Nil is what marks a campaign as not partner-originated, which is every campaign
+    # that existed before partner consent did -- so none of them changes meaning, and the
+    # partner checks at the send boundary are simply not reached for them.
+    belongs_to :commerce_store, class_name: 'Commerce::Store', optional: true
   end
 end

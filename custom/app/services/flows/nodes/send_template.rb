@@ -13,6 +13,9 @@ class Flows::Nodes::SendTemplate < Flows::Nodes::Base
     template, problem = sendable_template
     return refuse(problem) if problem
 
+    refusal = consent_refusal(template)
+    return refuse(refusal) if refusal
+
     params = processed_params(template)
     return refuse('template_param_missing') if params.nil?
 
@@ -21,6 +24,27 @@ class Flows::Nodes::SendTemplate < Flows::Nodes::Base
   end
 
   private
+
+  # WHAT THE SHOPPER AGREED TO, which this node did not ask at all.
+  #
+  # Its only template gate was `Flows::Template.problem`, whose `sendable?` excludes
+  # AUTHENTICATION and CSAT and allows MARKETING -- so a flow could send an approved
+  # marketing template to a shopper who had withdrawn marketing consent, on an inbound
+  # message of theirs, with nothing in the path having looked. Every other outbound
+  # surface in this system asks: the campaign senders through Campaigns::SendGuard, the
+  # automation template action through Commerce::MessagingEligibility.
+  #
+  # The class is Meta's, as it is everywhere else: UTILITY is transactional, and anything
+  # that cannot be established as UTILITY is promotional and needs a grant. A flow has no
+  # commerce trigger to read, so the template is the whole of the answer here.
+  #
+  # nil contact cannot happen on a conversation, but `refusal` answers
+  # :contact_unavailable for one anyway, which is the right refusal if it ever did.
+  def consent_refusal(template)
+    purpose = Campaigns::Eligibility::TRANSACTIONAL_CATEGORIES.include?(template['category'].to_s.upcase) ? :transactional : :promotional
+
+    Commerce::MessagingEligibility.refusal(conversation.contact, purpose)&.to_s
+  end
 
   def sendable_template
     inbox = conversation.inbox

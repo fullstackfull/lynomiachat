@@ -26,6 +26,7 @@ import FetchErrorState from 'dashboard/components-next/FetchErrorState.vue';
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
 import SMSCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/SMSCampaign/SMSCampaignDialog.vue';
 import ConfirmDeleteCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmDeleteCampaignDialog.vue';
+import ConfirmCancelCampaignDialog from 'dashboard/components-next/Campaigns/Pages/CampaignPage/ConfirmCancelCampaignDialog.vue';
 import SMSCampaignEmptyState from 'dashboard/components-next/Campaigns/EmptyState/SMSCampaignEmptyState.vue';
 
 const { t } = useI18n();
@@ -57,6 +58,7 @@ const hasFetchError = computed(() => uiFlags.value.hasError);
 const retryFetch = () => store.dispatch('campaigns/get');
 
 const confirmDeleteCampaignDialogRef = ref(null);
+const confirmCancelCampaignDialogRef = ref(null);
 
 const SMSCampaigns = computed(() => getters['campaigns/getSMSCampaigns'].value);
 
@@ -67,6 +69,13 @@ const hasNoSMSCampaigns = computed(
 const handleDelete = campaign => {
   selectedCampaign.value = campaign;
   confirmDeleteCampaignDialogRef.value.dialogRef.open();
+};
+
+// Stopping is terminal, so it is confirmed -- and it is not deleting: the recipient
+// snapshot stays, which is the whole reason a campaign is cancelled rather than removed.
+const handleCancel = campaign => {
+  selectedCampaign.value = campaign;
+  confirmCancelCampaignDialogRef.value.dialogRef.open();
 };
 
 // The same bridge WhatsApp has: an audience or a label named in the route opens the dialog with it chosen, and a
@@ -126,6 +135,7 @@ const handleCreateAudience = draft => {
       v-else-if="!hasNoSMSCampaigns"
       :campaigns="SMSCampaigns"
       @delete="handleDelete"
+      @cancel="handleCancel"
     />
     <SMSCampaignEmptyState
       v-else-if="!hasFetchError"
@@ -140,6 +150,10 @@ const handleCreateAudience = draft => {
       :initial-draft="initialDraft"
       @close="closeDialog"
       @create-audience="handleCreateAudience"
+    />
+    <ConfirmCancelCampaignDialog
+      ref="confirmCancelCampaignDialogRef"
+      :selected-campaign="selectedCampaign"
     />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"

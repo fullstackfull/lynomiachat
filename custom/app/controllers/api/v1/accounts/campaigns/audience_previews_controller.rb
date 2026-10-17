@@ -2,13 +2,76 @@
 # now, each contact once across its labels and shared audiences, counted on the server. The campaign resolves them again
 # when it is sent, so this is a count, never a list. Whoever may create campaigns may preview (CampaignPolicy).
 #
-#   POST /campaigns/audience_preview   audience: [{ type: 'Label' | 'Audience', id }]   →   { count }
+#   POST /campaigns/audience_preview
+#     audience: [{ type: 'Label' | 'Audience', id }]
+#     commerce_store_id: optional -- count as a campaign FOR THAT INSTALLATION would
+#   →   { count }
+#
+# THE STORE SCOPE IS PART OF THE QUESTION, NOT A FILTER ON THE ANSWER. A store-scoped campaign
+# reads its audience's Commerce aggregates against that installation's links only, so a
+# preview that omitted the store would answer a different question from the one the send
+# answers -- "more than three orders anywhere" instead of "more than three orders with us" --
+# and the merchant would be shown a number their campaign cannot reach. Previewing and sending
+# have to be the same query or the preview is decoration.
 class Api::V1::Accounts::Campaigns::AudiencePreviewsController < Api::V1::Accounts::BaseController
   def create
     authorize Campaign, :create?
-    campaign = Current.account.campaigns.new(campaign_type: :one_off, audience: params.permit(audience: [:type, :id]).require(:audience))
+    campaign = Current.account.campaigns.new(campaign_type: :one_off, commerce_store_id: scoped_store_id,
+                                             inbox_id: scoped_inbox_id, template_params: template_params,
+                                             audience: params.permit(audience: [:type, :id]).require(:audience))
     return render_could_not_create_error(I18n.t('errors.campaigns.audience_not_shared')) unless campaign.audiences_shared_in_account?
 
     render json: { count: campaign.audience_contacts.count }
+  # The filter exceptions are not globally rescued (request_exception_handler.rb handles
+  # RecordInvalid and the inbox limit only), so an invalid condition inside a saved audience
+  # -- or a store id that is not this account's -- would be a 500 rather than a 422. Rescued
+  # the same way Api::V1::Accounts::ContactsController#filter rescues them.
+  rescue CustomExceptions::CustomFilter::InvalidAttribute,
+         CustomExceptions::CustomFilter::InvalidOperator,
+         CustomExceptions::CustomFilter::InvalidQueryOperator,
+         CustomExceptions::CustomFilter::InvalidValue => e
+    render_could_not_create_error(e.message)
+  end
+
+  private
+
+  # THE INBOX AND THE TEMPLATE CATEGORY ARE PART OF THE QUESTION TOO, for a store-scoped
+  # campaign, and omitting them made the preview answer a different one from the send.
+  #
+  # A store-scoped campaign's audience is scoped by CHANNEL and by PURPOSE: a partner grant
+  # taken for WhatsApp does not authorise an SMS blast, and a UTILITY template is
+  # transactional and needs no marketing grant at all. The ephemeral campaign below used to
+  # carry neither, so `consent_channel` fell through to :sms for every preview and
+  # `purpose_for` returned :promotional for every preview. A WhatsApp campaign was previewed
+  # against SMS-scoped grants and a transactional one against a grant requirement its send
+  # does not have -- in both cases UNDER-counting, which is the safer direction and still
+  # the wrong number.
+  #
+  # Both are optional, because a caller previewing an audience rather than a specific
+  # campaign legitimately knows neither; the defaults are then exactly what they were.
+  def scoped_inbox_id
+    requested = params[:inbox_id].presence
+    return if requested.nil?
+
+    Current.account.inboxes.where(id: requested).pick(:id) ||
+      raise(CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'inbox_id'))
+  end
+
+  # Only the category is read (Campaigns::Eligibility.purpose_for), but the whole hash is
+  # accepted so the preview is given literally what the campaign will be created with.
+  def template_params
+    params[:template_params].is_a?(ActionController::Parameters) ? params[:template_params].permit!.to_h : nil
+  end
+
+  # Resolved through the ACCOUNT'S OWN stores rather than taken on trust: an id belonging to
+  # another tenant is refused here with a 422 rather than silently narrowing the count to
+  # zero. An empty preview reads as "nobody qualifies", which is the wrong thing to tell
+  # somebody whose real mistake was naming a store that is not theirs.
+  def scoped_store_id
+    requested = params[:commerce_store_id].presence
+    return if requested.nil?
+
+    Current.account.commerce_stores.where(id: requested).pick(:id) ||
+      raise(CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'commerce_store_id'))
   end
 end

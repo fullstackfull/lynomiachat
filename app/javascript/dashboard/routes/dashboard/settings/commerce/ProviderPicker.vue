@@ -51,6 +51,13 @@ const options = computed(() =>
         installationName: installationName.value,
       }),
     },
+    {
+      provider: 'storesyria',
+      icon: 'i-lucide-store',
+      hint: t('COMMERCE.SETTINGS.PICKER.STORESYRIA_HINT', {
+        installationName: installationName.value,
+      }),
+    },
   ].map(option => ({
     ...option,
     available: props.providers.includes(option.provider),

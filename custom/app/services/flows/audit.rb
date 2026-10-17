@@ -1,8 +1,9 @@
 # Named Lynomia Flow Builder audit events (docs/flow-builder/08-security-and-tenancy.md §audit), in Lynomia's audit
 # log, as Commerce's are. Never node transitions, message text or customer data.
 module Flows::Audit
-  ACTIONS = { 'flow.created' => 'create', 'flow.updated' => 'update', 'flow.published' => 'update', 'flow.disabled' => 'update',
-              'flow.deleted' => 'destroy', 'flow.execution.handed_off' => 'update', 'flow.execution.failed' => 'update' }.freeze
+  ACTIONS = { 'flow.created' => 'create', 'flow.duplicated' => 'create', 'flow.updated' => 'update',
+              'flow.published' => 'update', 'flow.disabled' => 'update', 'flow.deleted' => 'destroy',
+              'flow.execution.handed_off' => 'update', 'flow.execution.failed' => 'update' }.freeze
 
   def self.record(event, agent_bot, user: nil, changes: {})
     return if Flows::Simulator.active?

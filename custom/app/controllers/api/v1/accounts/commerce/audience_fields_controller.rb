@@ -11,7 +11,15 @@ class Api::V1::Accounts::Commerce::AudienceFieldsController < Api::V1::Accounts:
   def show
     links = ::Audience::CommerceCondition.counted_links(Current.account)
     render json: {
-      stores: ::Audience::CommerceCondition.counted_stores(Current.account).order(:created_at).map { |store| store.slice(:id, :name, :provider) },
+      # `external_store_id` IS PART OF THE CONTRACT, not incidental. A partner installation
+      # reading this list has to find which of these rows is ITSELF before it can ask for a
+      # store-scoped count, and the only fact it holds is its own id in its own platform --
+      # which is what this column stores. Matching on provider alone would be wrong: a
+      # merchant may connect two stores of one provider, and the second would silently
+      # answer for the first. It is not a secret: it is the asking account's own store's id
+      # in a platform that account already administers.
+      stores: ::Audience::CommerceCondition.counted_stores(Current.account).order(:created_at)
+                                           .map { |store| store.slice(:id, :name, :provider, :external_store_id) },
       currencies: ::Commerce::ContactMetric.where(commerce_customer_link_id: links.select(:id))
                                            .pluck(Arel.sql('DISTINCT jsonb_object_keys(spend)')).sort,
       unread_contacts: links.where.missing(:contact_metric).distinct.count(:contact_id)

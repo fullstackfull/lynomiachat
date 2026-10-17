@@ -12,7 +12,7 @@ RSpec.describe Flows::RunJob do
   let(:conversation) { create(:conversation, account: account, inbox: inbox, contact: contact, contact_inbox: contact_inbox) }
   let(:node) { ->(id, type, data = {}) { { 'id' => id, 'type' => type, 'position' => { 'x' => 0, 'y' => 0 }, 'data' => data } } }
   let(:edge) { ->(source, handle, target) { { 'id' => "#{source}-#{handle}", 'source' => source, 'sourceHandle' => handle, 'target' => target } } }
-  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish! } }
+  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish! } }
   let(:incoming) do
     ->(text) { create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, sender: contact, content: text) }
   end

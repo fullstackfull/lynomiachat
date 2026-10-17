@@ -62,6 +62,10 @@ const SCHEDULE_KEYS = {
   completed: 'SENT',
   processing: 'SENDING',
   blocked: 'MISSED',
+  // Without this a stopped campaign read "Sends <date>" -- the future tense on the one
+  // campaign that is certain never to send again. No date, because the scheduled time is
+  // not when it was stopped and a half-sent campaign was not stopped before sending either.
+  cancelled: 'CANCELLED',
 };
 
 const scheduleLabel = computed(() => {

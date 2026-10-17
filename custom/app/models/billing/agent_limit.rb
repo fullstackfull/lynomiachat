@@ -21,6 +21,7 @@ module Billing::AgentLimit
     limit = Billing::ResourceLimit.exceeded(account, :agents)
     return if limit.nil?
 
-    errors.add(:base, Billing::ResourceLimit.message(:agents, limit))
+    errors.add(:base, Billing::ResourceLimit.message(:agents, limit,
+                                                     Billing::Entitlements.limit_source(account, :agents)))
   end
 end

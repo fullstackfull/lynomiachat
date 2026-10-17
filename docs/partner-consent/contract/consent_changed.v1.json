@@ -1,0 +1,48 @@
+{
+  "contract": "consent_changed",
+  "version": 1,
+  "producer": "lynomia/custom/app/services/consents/change_feed.rb",
+  "consumer": "storesyria/packages/workdo/LynomiaChat/src/app/Http/Controllers/EventIngressController.php",
+  "samples": {
+    "native_withdrawal": {
+      "event": "consent_changed",
+      "origin": "lynomia_native",
+      "account": {
+        "id": 7001
+      },
+      "store": {
+        "provider": "storesyria",
+        "external_store_id": "merchant.example:4242"
+      },
+      "subject": {
+        "external_customer_id": "cust-77"
+      },
+      "purpose": "promotional",
+      "channel": "any",
+      "state": "withdrawn",
+      "source": "shopper_keyword",
+      "occurred_at": "2026-10-20T12:00:00Z",
+      "revision": 9001
+    },
+    "partner_grant": {
+      "event": "consent_changed",
+      "origin": "partner",
+      "account": {
+        "id": 7001
+      },
+      "store": {
+        "provider": "storesyria",
+        "external_store_id": "merchant.example:4242"
+      },
+      "subject": {
+        "external_customer_id": "cust-77"
+      },
+      "purpose": "promotional",
+      "channel": "whatsapp",
+      "state": "granted",
+      "source": "checkout_optin",
+      "occurred_at": "2026-10-20T13:00:00Z",
+      "revision": 10001
+    }
+  }
+}

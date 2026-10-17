@@ -112,6 +112,7 @@ export function useCommerceLabels() {
       salla: t('COMMERCE.PROVIDERS.SALLA'),
       zid: t('COMMERCE.PROVIDERS.ZID'),
       shopify: t('COMMERCE.PROVIDERS.SHOPIFY'),
+      storesyria: t('COMMERCE.PROVIDERS.STORESYRIA'),
     })[provider] || provider;
 
   const storeStatus = status =>

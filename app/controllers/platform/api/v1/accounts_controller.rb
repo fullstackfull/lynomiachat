@@ -1,9 +1,30 @@
 class Platform::Api::V1::AccountsController < PlatformController
+  # Optionally narrowed by custom attributes: ?custom_attributes[store_syria_store_id]=42
+  #
+  # WHY A FILTER AND NOT JUST A CLIENT-SIDE SCAN. An external platform recovers from a create whose answer was
+  # lost by asking "does the account I may have just made already exist?". Without a filter that question costs
+  # the app's entire account list on every recovery -- for an installation with thousands of linked stores,
+  # megabytes to find one row. The predicate is applied on top of the permissible scope, never instead of it,
+  # so it can only ever narrow what the app could already read and cannot be used to discover anything.
   def index
-    @resources = @platform_app.platform_app_permissibles
-                              .where(permissible_type: 'Account')
-                              .includes(:permissible)
-                              .map(&:permissible)
+    scope = @platform_app.platform_app_permissibles
+                         .where(permissible_type: 'Account')
+                         .includes(:permissible)
+
+    # filter_map, because a grant can outlive what it points at. Nothing destroys
+    # platform_app_permissibles when an Account is deleted -- Account has no association for them, and
+    # DELETE /platform/api/v1/accounts/:id only enqueues DeleteObjectJob -- so the row survives pointing at a
+    # dead id and `permissible` resolves to nil. Before this, those nils went straight into the view; with a
+    # filter reading custom_attributes off each one they would be a 500 on the recovery path that exists
+    # precisely to clean such things up.
+    # AND NEVER THE INSTALLATION'S OWN WORKSPACE (P6D). A partner holds a permissible on it --
+    # it has to, to send from it -- so without this it appears in the partner's account list
+    # like any merchant's, and the provisioning path that adopts an existing workspace by
+    # marker is one missing filter away from adopting it. It is addressed deliberately by id,
+    # through `show`, which is permissible-checked like everything else; it is not something
+    # a listing hands out.
+    @resources = scope.filter_map(&:permissible).reject(&:platform_owned?)
+    @resources = filter_by_custom_attributes(@resources)
   end
 
   def show; end
@@ -51,6 +72,24 @@ class Platform::Api::V1::AccountsController < PlatformController
 
   def feature_write_reason
     "Set through the Platform API by #{@platform_app.name.presence || "app ##{@platform_app.id}"}"
+  end
+
+  # Filtered in Ruby rather than in SQL. The set is already bounded by this app's permissibles and is loaded
+  # either way to be rendered, so a jsonb containment predicate would buy nothing here while adding a
+  # database-specific query to a controller that has none. Values are compared as strings because the query
+  # string has no types -- `?custom_attributes[store_syria_store_id]=42` arrives as "42" whether the stored
+  # value is the number 42 or the string.
+  def filter_by_custom_attributes(accounts)
+    filter = params[:custom_attributes]
+    return accounts if filter.blank?
+
+    filter = filter.permit!.to_h if filter.respond_to?(:permit!)
+    return accounts unless filter.is_a?(Hash)
+
+    accounts.select do |account|
+      attributes = account.custom_attributes || {}
+      filter.all? { |key, value| attributes[key.to_s].to_s == value.to_s }
+    end
   end
 
   def permitted_params

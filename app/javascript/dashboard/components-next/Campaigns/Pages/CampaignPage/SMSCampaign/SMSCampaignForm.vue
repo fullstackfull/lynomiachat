@@ -189,6 +189,7 @@ defineExpose({ handleSubmit, isSubmitDisabled });
       v-model:label-ids="state.selectedAudience"
       v-model:audience-ids="state.selectedSharedAudiences"
       :message="formErrors.audience"
+      :inbox-id="state.inboxId"
       @create-audience="handleCreateAudience"
     />
 

@@ -28,10 +28,35 @@ class Campaigns::RecipientSnapshot
   AUTHENTICATION_TEMPLATE_BLOCKED = 'Authentication template not allowed for this recipient'.freeze
   TEMPLATE_NOT_AVAILABLE = 'No approved template for this name and language'.freeze
 
-  SKIP_REASONS = [
+  # WHY A RECIPIENT WAS NOT MESSAGED FOR A CONSENT REASON, in the same closed vocabulary as
+  # the deliverability reasons above. Until these existed the analytics breakdown had no word
+  # for it, so a campaign that correctly refused to message people who had opted out looked
+  # identical to one where consent had never been checked -- the absence of rows read as
+  # "nobody was skipped" rather than "nobody was asked".
+  #
+  # FIXED STRINGS, keyed by the refusal codes Campaigns::SendGuard returns, because
+  # `error_message` is grouped directly by the skip breakdown: a reason that interpolated a
+  # contact's name or number would both explode that breakdown's cardinality and put recipient
+  # data into an analytics response.
+  CONSENT_REASONS = {
+    outbound_halted: 'Sending is paused',
+    campaign_cancelled: 'The campaign was cancelled',
+    send_quota_exceeded: 'This plan\'s message allowance for the period is used up',
+    installation_revoked: 'The store integration is not active',
+    contact_unavailable: 'Contact is blocked',
+    messaging_suppressed: 'The provider reported this number cannot receive',
+    partner_suppressed: 'The provider reported this number cannot receive',
+    consent_withdrawn: 'Customer opted out',
+    partner_consent_withdrawn: 'Customer opted out at this store',
+    promotional_consent_missing: 'No marketing consent on record',
+    partner_consent_missing: 'No marketing consent on record for this store',
+    partner_scope_mismatch: 'A customer of another of your stores'
+  }.freeze
+
+  SKIP_REASONS = ([
     NO_DESTINATION, AMBIGUOUS_DESTINATION, NO_TEMPLATE_PARAMS,
     BLANK_TEMPLATE_VARIABLES, AUTHENTICATION_TEMPLATE_BLOCKED, TEMPLATE_NOT_AVAILABLE
-  ].freeze
+  ] + CONSENT_REASONS.values).uniq.freeze
 
   # Everything one send's outcome consists of. Writing all of it every time is what makes a re-run replace the
   # previous outcome rather than blend with it.
@@ -65,6 +90,22 @@ class Campaigns::RecipientSnapshot
       contact, status: :failed, failed_at: Time.current, message_content: message_content,
                error_code: error_code, error_title: error_title, error_message: error_message
     )
+  end
+
+  # EVERYBODY STILL QUEUED WHEN A RUN STOPPED EARLY, IN ONE STATEMENT.
+  #
+  # A cancellation is a fact about the CAMPAIGN, identical for every remaining recipient, so
+  # the senders stop rather than walking the rest of the audience to refuse each one in turn
+  # -- a 100k campaign cancelled a minute in was writing ~99k skip rows and issuing ~200k
+  # queries to reach a conclusion it already had. The rows still have to say what happened,
+  # or the analytics page leaves them `queued` forever and reads as a run that never
+  # finished; one UPDATE says it for all of them.
+  #
+  # Scoped to `queued`, so it cannot overwrite an outcome the loop already recorded.
+  def abandon_queued(reason)
+    CampaignRecipient.where(campaign_id: @campaign.id, status: :queued)
+                     .update_all(status: CampaignRecipient.statuses[:skipped], # rubocop:disable Rails/SkipsModelValidations
+                                 error_message: reason, updated_at: Time.current)
   end
 
   # The audience as it stood when the run began, written before the first provider call.

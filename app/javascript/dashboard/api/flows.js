@@ -9,8 +9,14 @@ class FlowsAPI extends ApiClient {
     super('flows', { accountScoped: true });
   }
 
-  saveDraft(id, graph) {
-    return axios.put(`${this.url}/${id}/draft`, { graph });
+  // `lockVersion` is the draft's lock_version as this editor loaded it, and the server REQUIRES it:
+  // a save against a draft somebody else has since changed answers 409 with their graph rather than
+  // overwriting their work. Callers must pass the value from the flow they are editing.
+  saveDraft(id, graph, lockVersion) {
+    return axios.put(`${this.url}/${id}/draft`, {
+      graph,
+      lock_version: lockVersion,
+    });
   }
 
   publish(id) {

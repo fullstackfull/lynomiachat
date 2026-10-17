@@ -40,7 +40,10 @@ class Seeders::Reports::ReportDataSeeder
   END_DATE = Time.current
 
   def initialize(account:)
-    raise 'Account Seeding is not allowed.' unless ENV.fetch('ENABLE_ACCOUNT_SEEDING', !Rails.env.production?)
+    # ENV.fetch returns a STRING, and every non-empty String is truthy in Ruby, so
+    # ENABLE_ACCOUNT_SEEDING=false used to ENABLE seeding -- and this seeder's first act
+    # is destroy_all. Custom::SeedingPermission casts the value instead of trusting it.
+    raise Custom::SeedingPermission.refusal unless Custom::SeedingPermission.allowed?
 
     @account = account
     @teams = []

@@ -110,6 +110,8 @@ Rails.application.routes.draw do
           resources :canned_responses, only: [:index, :create, :update, :destroy]
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
+            # What a rule or a flow condition MAY say, so a client does not carry its own copy.
+            get :vocabulary, on: :collection
           end
           resources :macros, only: [:index, :create, :show, :update, :destroy] do
             post :execute, on: :member
@@ -120,6 +122,11 @@ Rails.application.routes.draw do
             # (custom/app/controllers/api/v1/accounts/campaigns/analytics_controller.rb), so these are not gated.
             get 'analytics/metrics', to: 'campaigns/analytics#metrics'
             get 'analytics/contacts', to: 'campaigns/analytics#contacts'
+            # Lynomia Campaigns (P5D): stopping a campaign that is running or due to run. A
+            # POST rather than a DELETE because the campaign and its results are KEPT -- a
+            # cancelled campaign is evidence of what was and was not sent, and deleting it
+            # would destroy the recipient snapshot an operator cancelled it in order to read.
+            post :cancel, on: :member
           end
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do
@@ -479,12 +486,43 @@ Rails.application.routes.draw do
           member do
             get :login
             post :token
+            # A bearer credential confined to one account and expiring on its own, for an
+            # integration that acts on a merchant's behalf server to server.
+            post :scoped_access_token
           end
         end
         resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
           delete :avatar, on: :member
         end
+        # One channel identity, one holder -- see Platform::Api::V1::ChannelClaimsController.
+        # Collection-only: a claim is addressed by what it IS (provider + identity), not by an id
+        # the caller would otherwise have to store and keep in step.
+        resources :channel_claims, only: [:index, :create] do
+          collection do
+            delete :destroy
+          end
+        end
         resources :accounts, only: [:index, :create, :show, :update, :destroy] do
+          # What this installation looks like from inside Lynomia, for the partner that owns
+          # it. Singular: one answer per installation, addressed by the account it is about.
+          resource :integration_health, only: [:show], controller: 'integration_health'
+          # A partner telling Lynomia that one of its installations was suspended, brought
+          # back or decommissioned on its own side. `update` rather than `create`: the action
+          # name is what PlatformController's authorization filters key on.
+          resource :installation_lifecycle, only: [:update], controller: 'installation_lifecycle'
+          # Ceilings an integration includes with its own product -- seats a merchant has already
+          # paid for once, on the other platform. Singular: a grant is addressed by its resource
+          # name, not by an id. See Platform::Api::V1::EntitlementGrantsController.
+          get 'entitlement_grants', to: 'entitlement_grants#index'
+          put 'entitlement_grants', to: 'entitlement_grants#update'
+          delete 'entitlement_grants', to: 'entitlement_grants#destroy'
+          # Consent a customer gave an approved external partner, reported by that partner.
+          # POST because each call is an EVENT rather than a desired state: two reports of one
+          # decision are the same event, and the response says whether it was applied, ignored
+          # as a duplicate, superseded, or refused because the customer had withdrawn.
+          # See Platform::Api::V1::PartnerConsentsController.
+          get 'partner_consents', to: 'partner_consents#index'
+          post 'partner_consents', to: 'partner_consents#create'
           resources :account_users, only: [:index, :create] do
             collection do
               delete :destroy
@@ -673,7 +711,9 @@ Rails.application.routes.draw do
   draw :whatsapp_templates
   draw :support
   draw :operations
+  draw :partner_integrations
   draw :documentation
   draw :platform_support
+  draw :integrations
   draw :marketing
 end

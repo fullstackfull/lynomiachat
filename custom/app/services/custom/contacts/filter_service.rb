@@ -64,6 +64,25 @@ module Custom::Contacts::FilterService
     return if @account.custom_attribute_definitions.contact_attribute.exists?(attribute_key: key)
     return Audience::ConversationCondition.new(key, account: @account, user: @user) unless commerce
 
-    Audience::CommerceCondition.new(key, account: @account) if @account.feature_enabled?('lynomia_commerce')
+    Audience::CommerceCondition.new(key, account: @account, store_id: scoped_store_id) if @account.feature_enabled?('lynomia_commerce')
+  end
+
+  # WHICH INSTALLATION'S HISTORY THE COMMERCE AGGREGATES ARE ABOUT, when the caller is asking
+  # on behalf of one. Absent, they are about every counted store, which is what they have
+  # always been and what an account's own contact filter still means.
+  #
+  # RESOLVED THROUGH THE ACCOUNT'S OWN COUNTED STORES, so an id belonging to another tenant --
+  # or to a disconnected store, or to a provider this installation does not offer -- is
+  # refused at the boundary with the filter's own 422 rather than quietly narrowing to
+  # nothing. A silent empty audience looks like "nobody qualifies", which is the wrong answer
+  # to give somebody who has just been told their campaign will reach no one.
+  def scoped_store_id
+    return @scoped_store_id if defined?(@scoped_store_id)
+
+    requested = @params[:commerce_store_id].presence
+    return @scoped_store_id = nil if requested.nil?
+
+    @scoped_store_id = Audience::CommerceCondition.counted_stores(@account).where(id: requested).pick(:id) ||
+                       raise(CustomExceptions::CustomFilter::InvalidValue.new(attribute_name: 'commerce_store_id'))
   end
 end

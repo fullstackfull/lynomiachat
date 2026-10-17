@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_27_000100) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -24,6 +24,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.string "token"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "account_id"
+    t.datetime "expires_at"
+    t.index ["owner_type", "owner_id", "account_id"], name: "index_access_tokens_on_owner_and_account", where: "(account_id IS NOT NULL)"
     t.index ["owner_type", "owner_id"], name: "index_access_tokens_on_owner_type_and_owner_id"
     t.index ["token"], name: "index_access_tokens_on_token", unique: true
   end
@@ -74,6 +77,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.jsonb "internal_attributes", default: {}, null: false
     t.jsonb "settings", default: {}
     t.bigint "feature_flags_ext_1", default: 0, null: false
+    t.boolean "platform_owned", default: false, null: false
+    t.index ["platform_owned"], name: "index_accounts_on_platform_owned", where: "platform_owned"
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -398,6 +403,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.index ["email"], name: "index_billing_trial_usages_on_email", unique: true
   end
 
+  create_table "billing_usage_counters", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "resource", limit: 40, null: false
+    t.date "period_start", null: false
+    t.bigint "used", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "resource", "period_start"], name: "index_billing_usage_counters_on_scope", unique: true
+  end
+
   create_table "billing_webhook_events", force: :cascade do |t|
     t.string "provider", default: "stripe", null: false
     t.string "provider_event_id", null: false
@@ -481,7 +496,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "campaign_type", default: 0, null: false
-    t.integer "campaign_status", default: 0, null: false
+    t.integer "campaign_status", default: 0, null: false, comment: "0 active, 1 completed, 2 processing, 3 blocked (capability unavailable), 4 cancelled (operator stopped it)"
     t.jsonb "audience", default: []
     t.datetime "scheduled_at", precision: nil
     t.boolean "trigger_only_during_business_hours", default: false
@@ -489,9 +504,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.datetime "started_at"
     t.datetime "completed_at"
     t.string "blocked_reason"
+    t.bigint "commerce_store_id"
     t.index ["account_id"], name: "index_campaigns_on_account_id"
     t.index ["campaign_status"], name: "index_campaigns_on_campaign_status"
     t.index ["campaign_type"], name: "index_campaigns_on_campaign_type"
+    t.index ["commerce_store_id"], name: "index_campaigns_on_commerce_store_id"
     t.index ["inbox_id"], name: "index_campaigns_on_inbox_id"
     t.index ["scheduled_at"], name: "index_campaigns_on_scheduled_at"
   end
@@ -727,6 +744,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.index ["page_id"], name: "index_channel_facebook_pages_on_page_id"
   end
 
+  create_table "channel_identity_claims", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.string "provider", limit: 32, null: false
+    t.string "identity", limit: 255, null: false
+    t.string "state", limit: 32, default: "active", null: false
+    t.string "external_owner_ref", limit: 128
+    t.datetime "released_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "state"], name: "index_channel_identity_claims_on_account_id_and_state"
+    t.index ["platform_app_id", "external_owner_ref"], name: "idx_on_platform_app_id_external_owner_ref_c66d755cf3"
+    t.index ["platform_app_id", "provider", "identity"], name: "index_channel_identity_claims_active_unique", unique: true, where: "((state)::text = 'active'::text)"
+  end
+
   create_table "channel_instagram", force: :cascade do |t|
     t.string "access_token", null: false
     t.datetime "expires_at", null: false
@@ -937,6 +969,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.index ["commerce_store_id", "contact_id"], name: "index_commerce_customer_links_on_store_and_contact", unique: true
     t.index ["confirmed_by_id"], name: "index_commerce_customer_links_on_confirmed_by_id"
     t.index ["contact_id"], name: "index_commerce_customer_links_on_contact_id"
+  end
+
+  create_table "commerce_messaging_consents", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.integer "purpose", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.datetime "decided_at", null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "revision", default: 0, null: false
+    t.index ["account_id", "state"], name: "index_commerce_messaging_consents_on_account_id_and_state"
+    t.index ["contact_id", "purpose"], name: "index_commerce_consents_on_contact_and_purpose", unique: true
   end
 
   create_table "commerce_store_health", force: :cascade do |t|
@@ -1348,6 +1395,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "agent_bot_id", "status"], name: "index_flow_sessions_on_account_id_and_agent_bot_id_and_status"
+    t.index ["agent_bot_id", "created_at"], name: "index_flow_sessions_on_agent_bot_id_and_created_at"
     t.index ["conversation_id", "created_at"], name: "index_flow_sessions_on_conversation_id_and_created_at"
     t.index ["conversation_id"], name: "index_flow_sessions_one_live", unique: true, where: "(status = ANY (ARRAY[0, 1]))"
     t.index ["flow_version_id"], name: "index_flow_sessions_on_flow_version_id"
@@ -1364,6 +1412,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.datetime "published_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "lock_version", default: 0, null: false
     t.index ["account_id"], name: "index_flow_versions_on_account_id"
     t.index ["agent_bot_id", "version"], name: "index_flow_versions_on_agent_bot_id_and_version", unique: true
     t.index ["agent_bot_id"], name: "index_flow_versions_one_draft", unique: true, where: "(status = 0)"
@@ -1652,6 +1701,78 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
     t.index ["resolved_at"], name: "index_operations_signals_on_recovered", order: :desc, where: "(resolved_at IS NOT NULL)"
     t.index ["support_ticket_id"], name: "index_operations_signals_on_support_ticket", where: "(support_ticket_id IS NOT NULL)"
     t.index ["suppressed_until"], name: "index_operations_signals_on_suppressed", where: "((resolved_at IS NULL) AND (suppressed_until IS NOT NULL))"
+  end
+
+  create_table "partner_consent_events", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "decision_ref", limit: 128, null: false
+    t.string "external_subject_id", limit: 128, null: false
+    t.integer "purpose", null: false
+    t.integer "channel", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.string "policy_version", limit: 40
+    t.datetime "captured_at", null: false
+    t.datetime "received_at", null: false
+    t.boolean "re_consent", default: false, null: false
+    t.string "outcome", limit: 32, null: false
+    t.jsonb "evidence", default: {}, null: false
+    t.bigint "recorded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "received_at"], name: "index_partner_consent_events_on_account_time"
+    t.index ["account_id"], name: "index_partner_consent_events_on_account_id"
+    t.index ["commerce_store_id", "contact_id", "purpose", "channel"], name: "index_partner_consent_events_on_scope"
+    t.index ["commerce_store_id", "decision_ref"], name: "index_partner_consent_events_idempotency", unique: true
+    t.index ["commerce_store_id"], name: "index_partner_consent_events_on_commerce_store_id"
+    t.index ["contact_id"], name: "index_partner_consent_events_on_contact_id"
+    t.index ["platform_app_id"], name: "index_partner_consent_events_on_platform_app_id"
+    t.index ["recorded_by_id"], name: "index_partner_consent_events_on_recorded_by_id"
+  end
+
+  create_table "partner_consents", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "commerce_store_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "external_subject_id", limit: 128, null: false
+    t.integer "purpose", null: false
+    t.integer "channel", null: false
+    t.integer "state", null: false
+    t.string "source", limit: 40, null: false
+    t.string "policy_version", limit: 40
+    t.datetime "captured_at", null: false
+    t.datetime "withdrawn_at"
+    t.jsonb "evidence", default: {}, null: false
+    t.bigint "recorded_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "revision"
+    t.string "decision_ref", limit: 128
+    t.index ["account_id", "state"], name: "index_partner_consents_on_account_and_state"
+    t.index ["account_id"], name: "index_partner_consents_on_account_id"
+    t.index ["commerce_store_id", "contact_id", "purpose", "channel"], name: "index_partner_consents_on_scope", unique: true
+    t.index ["commerce_store_id", "external_subject_id"], name: "index_partner_consents_on_store_and_subject"
+    t.index ["commerce_store_id"], name: "index_partner_consents_on_commerce_store_id"
+    t.index ["contact_id"], name: "index_partner_consents_on_contact_id"
+    t.index ["platform_app_id", "account_id"], name: "index_partner_consents_on_app_and_account"
+    t.index ["platform_app_id"], name: "index_partner_consents_on_platform_app_id"
+    t.index ["recorded_by_id"], name: "index_partner_consents_on_recorded_by_id"
+  end
+
+  create_table "platform_app_entitlement_grants", force: :cascade do |t|
+    t.bigint "platform_app_id", null: false
+    t.bigint "account_id", null: false
+    t.string "resource", limit: 32, null: false
+    t.integer "limit_value", null: false
+    t.string "external_ref", limit: 128
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "resource"], name: "idx_on_account_id_resource_39c49d0602"
+    t.index ["platform_app_id", "account_id", "resource"], name: "index_platform_app_grants_unique", unique: true
   end
 
   create_table "platform_app_permissibles", force: :cascade do |t|
@@ -2176,10 +2297,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
   add_foreign_key "billing_subscriptions", "accounts", on_delete: :cascade
   add_foreign_key "billing_subscriptions", "billing_plans", column: "plan_id"
   add_foreign_key "billing_subscriptions", "billing_plans", column: "scheduled_plan_id"
+  add_foreign_key "billing_usage_counters", "accounts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "accounts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
   add_foreign_key "campaign_recipients", "contacts", on_delete: :cascade
   add_foreign_key "campaign_recipients", "inboxes", on_delete: :cascade
+  add_foreign_key "campaigns", "commerce_stores"
   add_foreign_key "commerce_action_runs", "accounts", on_delete: :cascade
   add_foreign_key "commerce_action_runs", "commerce_stores", on_delete: :nullify
   add_foreign_key "commerce_action_runs", "contacts", on_delete: :nullify
@@ -2214,6 +2337,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_150000) do
   add_foreign_key "operations_signal_events", "operations_signals", on_delete: :cascade
   add_foreign_key "operations_signals", "accounts", on_delete: :cascade
   add_foreign_key "operations_signals", "support_tickets", on_delete: :nullify
+  add_foreign_key "partner_consent_events", "accounts", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "commerce_stores", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "contacts", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "platform_apps", on_delete: :cascade
+  add_foreign_key "partner_consent_events", "users", column: "recorded_by_id", on_delete: :nullify
+  add_foreign_key "partner_consents", "accounts", on_delete: :cascade
+  add_foreign_key "partner_consents", "commerce_stores", on_delete: :cascade
+  add_foreign_key "partner_consents", "contacts", on_delete: :cascade
+  add_foreign_key "partner_consents", "platform_apps", on_delete: :cascade
+  add_foreign_key "partner_consents", "users", column: "recorded_by_id", on_delete: :nullify
   add_foreign_key "platform_support_agents", "users", on_delete: :cascade
   add_foreign_key "platform_support_events", "platform_support_tickets", on_delete: :cascade
   add_foreign_key "platform_support_internal_notes", "platform_support_agents", column: "agent_id"

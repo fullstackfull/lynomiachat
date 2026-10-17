@@ -53,7 +53,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['edit', 'delete', 'analytics']);
+const emit = defineEmits(['edit', 'delete', 'analytics', 'cancel']);
 
 const { t } = useI18n();
 
@@ -62,6 +62,10 @@ const STATUS_PROCESSING = 'processing';
 // DECISION 6: a scheduled WhatsApp campaign that reached its send time while the capability was unavailable.
 // Without its own branch it fell through to "Scheduled" below, which is the silence the decision removes.
 const STATUS_BLOCKED = 'blocked';
+// Cancelled had no branch either, so it fell through to "Scheduled" in amber -- an operator
+// who had just stopped a half-sent campaign saw it described as waiting for its send time,
+// and `mark_processing!` refuses a cancelled campaign, so it waited there forever.
+const STATUS_CANCELLED = 'cancelled';
 
 const { formatMessage } = useMessageFormatter();
 
@@ -73,14 +77,37 @@ const ONE_OFF_TONES = {
   // `danger`, not the `warning` that scheduled falls through to: this campaign did not send and will not until
   // somebody acts, so it must not look like one that is merely waiting for its time.
   [STATUS_BLOCKED]: 'danger',
+  // `neutral`, not `danger`: nothing is wrong and nobody needs to act -- a person stopped
+  // this on purpose and it is finished, in the way a completed campaign is finished.
+  [STATUS_CANCELLED]: 'neutral',
 };
 
 const statusTone = computed(() => {
+  if (props.status === STATUS_CANCELLED) return ONE_OFF_TONES[STATUS_CANCELLED];
   if (props.isLiveChatType) return props.isEnabled ? 'success' : 'neutral';
   return ONE_OFF_TONES[props.status] || 'warning';
 });
 
+// WHEN THERE IS SOMETHING LEFT TO STOP. `Campaign#cancel!` refuses a completed or an
+// already-cancelled campaign and accepts everything else, so the button is offered for
+// exactly the states the server will act on. A live-chat campaign has its own reversible
+// switch and is left to it.
+const canCancel = computed(
+  () =>
+    !props.isLiveChatType &&
+    ![STATUS_COMPLETED, STATUS_CANCELLED].includes(props.status)
+);
+
 const campaignStatus = computed(() => {
+  // CANCELLED IS READ FIRST, AND FOR EVERY TYPE. An ongoing campaign reports enabled or
+  // disabled, which is a reversible switch -- and cancelling is not reversible, and now
+  // genuinely stops an ongoing campaign (Campaigns::CampaignConversationBuilder refuses
+  // it). Leaving the enabled/disabled reading in front of it told an operator the campaign
+  // was still on.
+  if (props.status === STATUS_CANCELLED) {
+    return t('CAMPAIGN.SMS.CARD.STATUS.CANCELLED');
+  }
+
   if (props.isLiveChatType) {
     return props.isEnabled
       ? t('CAMPAIGN.LIVE_CHAT.CARD.STATUS.ENABLED')
@@ -97,6 +124,10 @@ const campaignStatus = computed(() => {
 
   if (props.status === STATUS_BLOCKED) {
     return t('CAMPAIGN.SMS.CARD.STATUS.BLOCKED');
+  }
+
+  if (props.status === STATUS_CANCELLED) {
+    return t('CAMPAIGN.SMS.CARD.STATUS.CANCELLED');
   }
 
   return t('CAMPAIGN.SMS.CARD.STATUS.SCHEDULED');
@@ -190,6 +221,16 @@ const isMuted = computed(() => {
         icon="i-lucide-sliders-vertical"
         :aria-label="t('CAMPAIGN.CARD.EDIT')"
         @click="emit('edit')"
+      />
+      <Button
+        v-if="canCancel"
+        v-tooltip.top="t('CAMPAIGN.CARD.CANCEL')"
+        variant="faded"
+        color="amber"
+        size="sm"
+        icon="i-lucide-circle-stop"
+        :aria-label="t('CAMPAIGN.CARD.CANCEL')"
+        @click="emit('cancel')"
       />
       <Button
         v-tooltip.top="t('CAMPAIGN.CARD.DELETE')"

@@ -72,6 +72,20 @@ describe('ProviderPicker', () => {
     expect(wrapper.emitted('select')).toEqual([['shopify']]);
   });
 
+  it('offers Store Syria, which pastes a token rather than authorizing an app', async () => {
+    const wrapper = mountPicker(['woocommerce', 'storesyria']);
+
+    expect(wrapper.text()).toContain('Store Syria');
+    expect(wrapper.text()).toContain(
+      'Connect with an integration token issued for your store in the Store Syria admin.'
+    );
+    await wrapper
+      .find('[data-test-id="commerce-provider-storesyria"]')
+      .trigger('click');
+
+    expect(wrapper.emitted('select')).toEqual([['storesyria']]);
+  });
+
   it('lists every platform, and a platform the installation does not offer cannot be chosen', async () => {
     const wrapper = mountPicker(['woocommerce']);
     const salla = wrapper.find('[data-test-id="commerce-provider-salla"]');

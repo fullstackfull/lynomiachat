@@ -137,7 +137,8 @@ describe('flows Index', () => {
       name: 'Tracking copy',
       description: 'Finds orders',
     });
-    expect(FlowsAPI.saveDraft).toHaveBeenCalledWith(99, graph);
+    // A flow created a moment ago has no draft yet, so the first save carries 0.
+    expect(FlowsAPI.saveDraft).toHaveBeenCalledWith(99, graph, 0);
     expect(push).toHaveBeenCalledWith({
       name: 'settings_flows_builder',
       params: { flowId: 99 },

@@ -65,7 +65,8 @@ Three consequences are worth knowing before you plan around it.
 1. **Settings → Commerce → Add store.**
 2. Choose your platform. Each connects differently: a key for
    [WooCommerce](connect-woocommerce), an app installation for [Salla](connect-salla),
-   [Zid](connect-zid) and [Shopify](connect-shopify).
+   [Zid](connect-zid) and [Shopify](connect-shopify), and a store-bound integration token for
+   [Store Syria](connect-store-syria).
 3. Open a conversation from a customer of that store. The Commerce section matches them and reads their orders.
 
 ## Who can do what

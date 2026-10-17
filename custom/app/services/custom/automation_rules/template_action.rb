@@ -50,14 +50,54 @@ class Custom::AutomationRules::TemplateAction
   private
 
   # Every reason the send is refused, in the order an operator should read them: the rule's own configuration first,
-  # then the channel, then the template, then the contact.
+  # then the channel, then the template, then the contact -- and the contact's own decision last of all, because it
+  # is the only one of these that belongs to somebody other than the merchant.
   def refusal
     return 'inbox_not_in_account' if inbox.nil?
     return 'channel_not_whatsapp' unless inbox.channel.is_a?(Channel::Whatsapp)
     return 'conversation_inbox_mismatch' if @conversation.inbox_id != inbox.id
     return 'contact_unavailable' unless contact_available?
 
-    Flows::Template.problem(inbox, @config[:name], @config[:language])
+    Flows::Template.problem(inbox, @config[:name], @config[:language]) || consent_refusal
+  end
+
+  # WHAT THE SHOPPER AGREED TO, which is a different question from whether WhatsApp allows the send.
+  #
+  # TWO THINGS DECIDE THE CLASS AND BOTH HAVE A VETO. The trigger says what the message is ABOUT -- an order
+  # they placed is transactional, a cart they left is promotional -- and Meta's category says what the
+  # TEMPLATE is. Reading only the trigger meant an approved MARKETING template attached to an order trigger
+  # was treated as transactional and went to a shopper who had withdrawn marketing: `send_whatsapp_template`
+  # is offered on EVERY rule, and the editor's picker (AutomationActionWhatsappTemplateInput) offers every
+  # approved non-AUTHENTICATION template, so nothing upstream of here stopped that pairing being made.
+  #
+  # So transactional requires BOTH to agree, which is the same rule Campaigns::Eligibility applies to a
+  # campaign: anything that cannot be established as UTILITY is promotional. Commerce::MessagingEligibility
+  # still owns what each class means.
+  def consent_refusal
+    Commerce::MessagingEligibility.refusal(@conversation.contact, purpose)&.to_s
+  end
+
+  # nil is a real answer and is passed through: a rule that is not about commerce has no
+  # class, and Commerce::MessagingEligibility reads that as "only a decision somebody
+  # actually made can block" -- a STOP still stops it, but no grant is required.
+  #
+  # A MARKETING TEMPLATE OVERRIDES ALL OF THAT, because Meta requires opt-in for one
+  # whoever sends it and whatever the rule is about. So the trigger is only consulted once
+  # the template has been established as UTILITY; anything else -- MARKETING, a legacy
+  # category, a template this channel does not hold -- is promotional.
+  def purpose
+    return :promotional unless Campaigns::Eligibility::TRANSACTIONAL_CATEGORIES.include?(template_category)
+
+    Commerce::MessagingEligibility.purpose_for(@rule.event_name)
+  end
+
+  # Meta's own word for this template, from the channel's synced list -- the same lookup the campaign path and
+  # the recorded text use, so one template cannot be two classes depending on who asked.
+  def template_category
+    template = Whatsapp::ChannelTemplates.find(inbox.channel,
+                                               { 'name' => @config[:name].to_s, 'language' => @config[:language].to_s })
+
+    template&.fetch('category', nil).to_s.upcase
   end
 
   # Scoped to the rule's own account, so a rule can never name another account's inbox — and because the template

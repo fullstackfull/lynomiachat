@@ -41,9 +41,16 @@ module Billing::AccessGuard
     account = Current.account
     return unless Billing::ResourceLimit.reached?(account, :agents)
 
+    # THE SOURCE TRAVELS WITH THE LIMIT, here as well as in the validators. This pre-flight is
+    # what a merchant inviting a colleague from the dashboard actually hits -- it runs before the
+    # AccountUser validation that holds the lock -- so omitting the source here meant an
+    # integration-funded merchant was told to "Upgrade your plan" on the one path they take, and
+    # told to "Ask your provider" only on a path the UI reaches second. They have no Lynomia plan
+    # to upgrade; the number they need changed lives in their package on the other side.
     render json: {
       error: 'plan_limit_reached',
-      message: Billing::ResourceLimit.message(:agents, Billing::Entitlements.limit(account, :agents))
+      message: Billing::ResourceLimit.message(:agents, Billing::Entitlements.limit(account, :agents),
+                                              Billing::Entitlements.limit_source(account, :agents))
     }, status: :unprocessable_entity
   end
 

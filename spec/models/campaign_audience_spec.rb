@@ -18,7 +18,24 @@ RSpec.describe Campaign do
   let!(:tagged) { create(:contact, account: account, email: 'omar@mail.example', phone_number: '+966500000002') }
   let!(:other) { create(:contact, account: account, email: 'sara@mail.example', phone_number: '+966500000003') }
 
-  before { tagged.update_labels([label.title]) }
+  # EVERY CONTACT HERE HAS AGREED TO MARKETING, and that is setup rather than noise.
+  # `Campaigns::Eligibility` now filters `audience_contacts` by purpose, and a campaign with
+  # no provider template category is promotional -- which an SMS campaign never has. Without a
+  # grant the audience is correctly empty, so every example below about RESOLUTION would pass
+  # or fail for a reason that has nothing to do with resolution. The refusal itself is pinned
+  # in its own example rather than left to be inferred from these.
+  #
+  # Recorded through the service, not by inserting rows: a hand-built single-purpose row is
+  # not a shape the system ever produces, and a fixture that invents one tests nothing.
+  before do
+    tagged.update_labels([label.title])
+    [vip, tagged, other].each do |contact|
+      Commerce::MessagingConsents.record(
+        account: account, contact: contact,
+        decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant')
+      )
+    end
+  end
 
   describe 'validation' do
     it 'accepts the shared contact audiences of the account beside labels' do
@@ -49,11 +66,36 @@ RSpec.describe Campaign do
   end
 
   describe '#audience_contacts' do
+    # Upstream's own label resolution, unchanged, with the eligibility filter applied over it.
+    # The SQL is no longer identical to the bare label relation -- it cannot be, since the
+    # consent filter is part of this query now -- so what is asserted is that the label
+    # resolution is still upstream's rather than restated here.
     it 'is the label relation when the campaign lists labels only' do
       campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Label', id: label.id }])
 
-      expect(campaign.audience_contacts.to_sql).to eq(account.contacts.tagged_with([label.title], any: true).to_sql)
+      expect(campaign.audience_contacts.to_sql).to include('taggings')
       expect(campaign.audience_contacts).to contain_exactly(tagged)
+    end
+
+    # THE RULE THE SETUP ABOVE EXISTS TO KEEP OUT OF THE WAY, stated once on its own. An SMS
+    # campaign carries no provider template category, so it is promotional, and promotional is
+    # refused unless granted -- the absence of a decision is not a grant.
+    it 'selects nobody when the audience has not agreed to marketing' do
+      Commerce::MessagingConsent.delete_all
+      campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Label', id: label.id }])
+
+      expect(campaign.audience_contacts).to be_empty
+    end
+
+    # And the other half of the same rule: a withdrawal removes somebody a label still names.
+    it 'drops a contact who asked to stop, label or no label' do
+      Commerce::MessagingConsents.record(
+        account: account, contact: tagged,
+        decision: Commerce::MessagingConsents::Decision.new(state: :withdrawn, source: 'shopper_keyword')
+      )
+      campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Label', id: label.id }])
+
+      expect(campaign.audience_contacts).to be_empty
     end
 
     it 'is the union of labels and audiences, each contact once' do
@@ -74,6 +116,11 @@ RSpec.describe Campaign do
     it 'resolves audiences when asked, not when the campaign was created' do
       campaign = create(:campaign, account: account, inbox: sms_inbox, audience: [{ type: 'Audience', id: vips.id }])
       newcomer = create(:contact, account: account, email: 'noor@vip.example')
+      # Created after the `before` hook ran, so this one needs its own grant.
+      Commerce::MessagingConsents.record(
+        account: account, contact: newcomer,
+        decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant')
+      )
       vips.update!(query: { 'payload' => [{ 'attribute_key' => 'email', 'filter_operator' => 'contains', 'values' => ['noor'] }] })
 
       expect(campaign.audience_contacts).to contain_exactly(newcomer)

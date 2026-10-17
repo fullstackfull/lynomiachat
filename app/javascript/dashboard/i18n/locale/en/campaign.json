@@ -92,6 +92,7 @@
           "PROCESSING": "Processing",
           "COMPLETED": "Completed",
           "SCHEDULED": "Scheduled",
+          "CANCELLED": "Cancelled",
           "BLOCKED": "Not sent — channel unavailable"
         },
         "CAMPAIGN_DETAILS": {
@@ -329,15 +330,25 @@
     "CARD": {
       "EDIT": "Edit campaign",
       "DELETE": "Delete campaign",
+      "CANCEL": "Stop campaign",
       "COUNT": "{n} campaign | {n} campaigns",
       "SCHEDULE": {
         "SENDS": "Sends {date}",
         "SENDING": "Sending now",
         "SENT": "Sent {date}",
-        "MISSED": "Was due {date}"
+        "MISSED": "Was due {date}",
+        "CANCELLED": "Stopped"
       },
       "AUDIENCE": "{n} audience label | {n} audience labels",
       "CHANNEL": "Channel"
+    },
+    "CONFIRM_CANCEL": {
+      "TITLE": "Stop this campaign?",
+      "DESCRIPTION": "Messages already sent cannot be recalled. The campaign stops sending to everyone it has not reached yet, and its results stay available.",
+      "CONFIRM": "Stop campaign",
+      "DISMISS": "Keep sending",
+      "SUCCESS_MESSAGE": "Campaign stopped",
+      "ERROR_MESSAGE": "Could not stop the campaign"
     },
     "LOADING": "Loading campaigns"
   }

@@ -24,7 +24,8 @@ module Billing::InboxLimit
     limit = Billing::ResourceLimit.exceeded(account, :inboxes)
     return if limit.nil?
 
-    errors.add(:base, Billing::ResourceLimit.message(:inboxes, limit))
+    errors.add(:base, Billing::ResourceLimit.message(:inboxes, limit,
+                                                     Billing::Entitlements.limit_source(account, :inboxes)))
   end
 
   # The gap P10 named as the one real P11 dependency: nothing could stop an account connecting a channel its

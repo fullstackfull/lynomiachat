@@ -27,7 +27,7 @@ RSpec.describe Flows::Nodes::Choice do
       graph
     end
   end
-  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish! } }
+  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish! } }
   let(:incoming) do
     lambda do |text, reply_id = nil|
       attributes = reply_id ? { interactive_reply: { type: 'button_reply', id: reply_id, title: text } } : {}

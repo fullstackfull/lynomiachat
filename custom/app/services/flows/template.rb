@@ -13,6 +13,28 @@ module Flows::Template
   VARIABLE = /\{\{([^}]+)\}\}/
   COPY_CODE_MAX = 15 # Whatsapp::PopulateTemplateParametersService refuses longer codes
 
+  # THE TEMPLATES A BUILDER MAY OFFER, with the values each one takes.
+  #
+  # Served rather than derived client-side, because neither half is simple and both fail silently when they are
+  # wrong: whether a template may be sent is Meta's approval plus the dashboard composer's own exclusions
+  # (sendable? above), and which values it needs is parsed out of its components (slots below). A builder with
+  # its own copy would offer a template the validator refuses, and the merchant would find out at publish.
+  #
+  # Deduplicated by name and language ignoring case, which is how `find` matches them.
+  def self.sendable(inboxes)
+    inboxes.flat_map { |inbox| Array(inbox.channel.try(:message_templates)) }
+           .select { |template| approved?(template) && sendable?(template) }
+           .uniq { |template| [template['name'], template['language'].to_s.downcase] }
+           .map { |template| catalogue_entry(template) }
+  end
+
+  def self.approved?(template) = template['status'].to_s.casecmp?('approved')
+
+  def self.catalogue_entry(template)
+    { name: template['name'], language: template['language'], category: template['category'],
+      slots: slots(template).map { |section, key, kind| { section: section, key: key, kind: kind } } }
+  end
+
   def self.find(inbox, name, language)
     Array(inbox.channel.try(:message_templates)).find do |template|
       template['name'] == name && template['language'].to_s.casecmp?(language.to_s)

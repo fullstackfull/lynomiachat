@@ -220,6 +220,20 @@ en:
       recipient_delivery_restricted: 'WhatsApp refused this message for this recipient (%{reason}). Retrying would repeat the same refusal, so it is not offered. The restriction is Meta''s and lifts on its own.'
       authentication_template_requires_phone: 'Authentication templates require a WhatsApp phone number and cannot be sent to a BSUID-only contact.'
       template_category_required_for_bsuid: 'Template category could not be verified for this BSUID-only contact.'
+      consent:
+        # Why a template was not sent to this person. The reasons are Commerce::MessagingEligibility's
+        # own, said in the agent's words rather than as a symbol: an agent who sees "failed" with no
+        # reason retries, and a consent refusal does not change on a retry.
+        contact_unavailable: 'Not sent: this contact is blocked, so no message can be sent to them.'
+        consent_withdrawn: 'Not sent: this person asked not to be messaged. They can opt back in by replying START.'
+        messaging_suppressed: 'Not sent: the provider reports this number cannot receive messages, so sending is not available.'
+        promotional_consent_missing: 'Not sent: this is a marketing template and this person has not opted in to marketing. A utility template can still be sent.'
+        # P6E. The installation's own workspace may send operational notices only.
+        platform_promotional_refused: 'Not sent: the platform workspace may send operational templates only. Meta classifies this template as something else.'
+        platform_allowance_exhausted: 'Not sent: the platform workspace has used its message allowance for this period.'
+        # A setup error, not a state the product reaches on its own: the platform plan must set
+        # campaign_sends, and provisioning refuses one that does not. Somebody removed it afterwards.
+        platform_allowance_unset: 'Not sent: the platform workspace plan no longer sets a message allowance, so platform sending is not counted. An operator must restore it.'
       contact_info_request:
         unsupported_provider: 'Contact information requests are currently available only for WhatsApp Cloud inboxes.'
         phone_already_available: 'This contact already has a phone number.'
@@ -266,6 +280,9 @@ en:
     campaigns:
       audience_not_shared: A campaign's audience can only include the shared audiences of this account, on SMS and WhatsApp campaigns.
       unknown_recipient_status: "'%{status}' is not a recipient status. Allowed: %{allowed}."
+      cannot_cancel: This campaign has already finished sending, so there is nothing to cancel.
+      not_found: That campaign does not exist in this account.
+      store_not_in_account: That commerce store does not belong to this account.
     analytics:
       missing_date: "%{field} is required and must be a date in YYYY-MM-DD form."
       invalid_date: "%{field} must be a date in %{expected_format} form, got '%{value}'."
@@ -336,6 +353,19 @@ en:
         agents: Your plan allows up to %{limit} team members. Upgrade your plan to invite more.
         inboxes: Your plan allows up to %{limit} inboxes. Upgrade your plan to add more.
         stores: Your plan allows up to %{limit} connected stores. Upgrade your plan to connect more.
+        flows: Your plan allows up to %{limit} flows. Upgrade your plan to build more.
+        campaign_sends: Your plan allows %{limit} campaign messages this period. Upgrade your plan to send more.
+      # The same ceilings, when they came from a platform that BUNDLES this product rather than
+      # from a plan bought here. "Upgrade your plan" sends such a merchant to a page that cannot
+      # help them -- the seats are part of their package on the other platform, and that is where
+      # the number changes.
+      limit_reached_included:
+        generic: Your package includes up to %{limit} of these. Ask your provider to include more.
+        agents: Your package includes up to %{limit} team members. Ask your provider to include more.
+        inboxes: Your package includes up to %{limit} inboxes. Ask your provider to include more.
+        stores: Your package includes up to %{limit} connected stores. Ask your provider to include more.
+        flows: Your package includes up to %{limit} flows. Ask your provider to include more.
+        campaign_sends: Your package includes %{limit} campaign messages this period. Ask your provider to include more.
       channel_not_included: Your plan does not include the %{channel} channel. Upgrade your plan to connect it.
       subscription_inactive: This account does not have an active subscription.
       entitlement_required: Your plan does not include this feature.
@@ -817,6 +847,8 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    partner_integrations:
+      not_found: 'That integration no longer exists.'
     # The website's one sales setting. The console has no locale switch, so the field carries both of the names
     # the owner gave it -- `label` in English and `label_ar` in Arabic -- and shows them together rather than
     # guessing which language the operator reads.

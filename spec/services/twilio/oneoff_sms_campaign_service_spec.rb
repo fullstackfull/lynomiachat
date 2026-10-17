@@ -15,6 +15,21 @@ describe Twilio::OneoffSmsCampaignService do
   let(:twilio_client) { double }
   let(:twilio_messages) { double }
 
+  # An SMS blast carries no provider category, so Campaigns::Eligibility reads it as
+  # promotional and it reaches nobody without a recorded grant. These examples are about the
+  # sending mechanics rather than the consent rule, so the grant is recorded -- through the
+  # real writer -- for whoever the example just created. The refusal paths have their own
+  # coverage in spec/services/campaigns/eligibility_spec.rb.
+  def allow_marketing_to_everyone
+    account.contacts.find_each do |contact|
+      Commerce::MessagingConsents.record(
+        account: account, contact: contact,
+        decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant',
+                                                            purposes: ['promotional'])
+      )
+    end
+  end
+
   describe 'perform' do
     before do
       allow(Twilio::REST::Client).to receive(:new).and_return(twilio_client)
@@ -57,6 +72,7 @@ describe Twilio::OneoffSmsCampaignService do
         status_callback: 'http://localhost:3000/twilio/delivery_status'
       ).once
 
+      allow_marketing_to_everyone
       sms_campaign_service.perform
       expect(campaign.reload.completed?).to be true
     end
@@ -74,6 +90,7 @@ describe Twilio::OneoffSmsCampaignService do
         expect(campaign.reload.completed?).to be false
       end
 
+      allow_marketing_to_everyone
       sms_campaign_service.perform
 
       expect(campaign.reload.completed?).to be true
@@ -86,6 +103,7 @@ describe Twilio::OneoffSmsCampaignService do
       expect(Liquid::CampaignTemplateService).to receive(:new).with(campaign: campaign, contact: contact).and_call_original
       expect(twilio_messages).to receive(:create).once
 
+      allow_marketing_to_everyone
       sms_campaign_service.perform
     end
 
@@ -116,6 +134,7 @@ describe Twilio::OneoffSmsCampaignService do
         "[Twilio Campaign #{campaign.id}] Failed to send to contact_id=#{contact_error.id}: #{error.message}"
       )
 
+      allow_marketing_to_everyone
       sms_campaign_service.perform
       expect(campaign.reload.completed?).to be true
     end

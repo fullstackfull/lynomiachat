@@ -14,6 +14,10 @@ module AccessTokenAuthHelper
   def authenticate_access_token!
     ensure_access_token
     render_unauthorized('Invalid Access Token') && return if @access_token.blank?
+    # An expired token is not a different kind of failure to the caller, and must not be: telling
+    # "expired" apart from "never existed" says a given string was once real. Only tokens minted
+    # WITH an expiry can land here -- expires_at is nil on every token issued before it existed.
+    render_unauthorized('Invalid Access Token') && return if @access_token.expired?
 
     # NOTE: This ensures that current_user is set and available for the rest of the controller actions
     @resource = @access_token.owner

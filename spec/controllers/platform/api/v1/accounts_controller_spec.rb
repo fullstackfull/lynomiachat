@@ -111,6 +111,82 @@ RSpec.describe 'Platform Accounts API', type: :request do
         expect(json_response.size).to eq(2)
         expect(json_response.map { |acc| acc['name'] }).to include('Account A', 'Account B')
       end
+
+      # P6D. THE INSTALLATION'S OWN WORKSPACE IS NEVER LISTED, even though the partner holds a
+      # permissible on it -- it has to, to send from it. Without this it appears among the
+      # merchants, and the provisioning path that adopts an existing workspace by marker is
+      # one missing filter away from adopting it for a store. It is reachable deliberately by
+      # id through `show`, which is permissible-checked like everything else.
+      it 'never lists a platform-owned workspace among them' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get '/platform/api/v1/accounts', headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        names = response.parsed_body.map { |acc| acc['name'] }
+        expect(names).to contain_exactly('Account A', 'Account B')
+      end
+
+      it 'still answers for it when the partner asks by id' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get "/platform/api/v1/accounts/#{platform.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response).to have_http_status(:success)
+      end
+
+      # BLOCKER B5, FROM THE PRODUCER SIDE. A partner addresses its platform workspace by a
+      # configured id somebody typed. Without this field it cannot tell that id landed on its
+      # own workspace rather than on a merchant's -- and a partner sending from a merchant's
+      # workspace sends over that merchant's WhatsApp channel, with this installation's
+      # UTILITY-only gate not applying either, because that gate reads this same flag.
+      #
+      # Pinned here because removing the line from the jbuilder breaks the RECEIVER and
+      # nothing on this side: the consumer refuses every notice (correctly -- absent is "could
+      # not say", not "no"), and Lynomia's suite stays green while its partner has gone quiet.
+      it 'tells the partner whether the account it asked about is platform-owned' do
+        platform = create(:account, name: 'Store Syria Platform', platform_owned: true)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: platform)
+
+        get "/platform/api/v1/accounts/#{platform.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response.parsed_body).to include('platform_owned' => true)
+      end
+
+      it 'says so when the account the partner asked about is a merchant\'s' do
+        get "/platform/api/v1/accounts/#{account1.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response.parsed_body).to include('platform_owned' => false)
+      end
+
+      # THE OTHER HALF OF THE RECEIVER'S ANSWER, and it costs nothing because it was already
+      # true: an id that is not this app's comes back 401, not with somebody else's row. So of
+      # the two ways an operator mistypes the workspace id -- a merchant's account of ours, or
+      # an account that is not ours at all -- the flag catches the first and the permissible
+      # check catches the second.
+      it 'refuses an id this app holds no permissible on' do
+        stranger = create(:account, name: 'Somebody else')
+
+        get "/platform/api/v1/accounts/#{stranger.id}",
+            headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      # The flag is an OPERATOR's, not a tenant integration's. `permitted_params` omits it, so
+      # an app cannot mark its own workspace as the installation's -- which is the only thing
+      # that would make the field above worth nothing.
+      it 'refuses to let a partner set the flag on itself' do
+        patch "/platform/api/v1/accounts/#{account1.id}",
+              params: { platform_owned: true },
+              headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(account1.reload.platform_owned).to be(false)
+      end
     end
   end
 

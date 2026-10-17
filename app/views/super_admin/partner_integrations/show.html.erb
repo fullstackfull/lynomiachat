@@ -1,0 +1,55 @@
+<%#
+  Every partner integration on this installation (P6C).
+
+  The list answers one question -- which integration needs attention -- and links to the one
+  that does. Administrate's own Platform Apps screen still owns creating, destroying and
+  rotating an app; this adds the things it could never show.
+%>
+<% content_for(:title) do %>Partner Integrations<% end %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title" id="page-title">Partner Integrations</h1>
+</header>
+
+<section class="main-content__body">
+  <p class="text-sm text-slate-600 mb-6">
+    Integrations registered on this installation, what each one holds, and whether any of their
+    workspaces is reporting a problem. <strong>Read only.</strong> Creating or removing an
+    integration is on <%= link_to 'Platform Apps', super_admin_platform_apps_path, class: 'text-blue-700 underline' %>;
+    acting on a signal is in <%= link_to 'Operations', super_admin_operations_path, class: 'text-blue-700 underline' %>.
+  </p>
+
+  <% if @apps.empty? %>
+    <p class="text-sm text-slate-500">No integration is registered on this installation.</p>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="text-left text-slate-500 border-b">
+        <tr>
+          <th class="py-2">Integration</th>
+          <th class="py-2">Workspaces held</th>
+          <th class="py-2">Open issues</th>
+          <th class="py-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @apps.each do |row| %>
+          <tr class="border-b border-slate-100">
+            <td class="py-2 font-medium"><%= row[:app].name %></td>
+            <td class="py-2"><%= row[:accounts] %></td>
+            <td class="py-2">
+              <% if row[:open_signals].positive? %>
+                <span class="text-red-700 font-semibold"><%= row[:open_signals] %></span>
+              <% else %>
+                <span class="text-slate-400">none</span>
+              <% end %>
+            </td>
+            <td class="py-2 text-right">
+              <%= link_to 'Look', app_super_admin_partner_integrations_path(id: row[:app].id),
+                          class: 'text-blue-700 underline' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

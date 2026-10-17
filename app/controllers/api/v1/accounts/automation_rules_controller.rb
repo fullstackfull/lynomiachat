@@ -11,6 +11,23 @@ class Api::V1::Accounts::AutomationRulesController < Api::V1::Accounts::BaseCont
 
   def show; end
 
+  # THE CONDITION, TRIGGER AND ACTION VOCABULARIES, served rather than hardcoded by each client.
+  #
+  # Lynomia's own dashboard keeps these as JavaScript constants maintained beside the server's. That is
+  # workable for one client in one repository and is a trap for a second: the Store Syria Automation Studio
+  # copying them would offer an attribute the server rejects, or withhold one it accepts, and the merchant
+  # would find out when the rule refused to save. Automation::Vocabulary reads each half where it is defined --
+  # the same filter_keys.yml the condition validator uses, the account's own custom attributes, and this
+  # fork's audience and Commerce keys -- so there is one answer and no client can hold a stale one.
+  def vocabulary
+    render json: {
+      events: Automation::Vocabulary.events(Current.account),
+      actions: Automation::Vocabulary.actions(Current.account),
+      conditions: Automation::Vocabulary.conditions(Current.account),
+      condition_patterns: Automation::Vocabulary.patterns(Current.account)
+    }
+  end
+
   def create
     blobs, actions, error = validate_and_prepare_attachments(params[:actions])
     return render_could_not_create_error(error) if error

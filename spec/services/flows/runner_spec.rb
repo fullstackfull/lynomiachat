@@ -16,7 +16,7 @@ RSpec.describe Flows::Runner do
   let(:edge) do
     ->(source, target, handle = 'next') { { 'id' => "#{source}-#{handle}", 'source' => source, 'sourceHandle' => handle, 'target' => target } }
   end
-  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish! } }
+  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish! } }
   let(:say) do
     lambda do |text|
       message = create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, sender: contact, content: text)

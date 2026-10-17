@@ -942,6 +942,12 @@ const menuItems = computed(() => {
               icon: 'i-lucide-blocks',
               to: accountScopedRoute('settings_applications'),
             },
+            {
+              name: 'Settings Account Link',
+              label: t('SIDEBAR.ACCOUNT_LINK'),
+              icon: 'i-lucide-link',
+              to: accountScopedRoute('settings_integrations_account_link'),
+            },
           ],
         },
         {

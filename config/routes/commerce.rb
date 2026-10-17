@@ -9,6 +9,10 @@ namespace :api, defaults: { format: 'json' } do
           resources :stores, only: [:index, :create, :update, :destroy]
           resources :carts, only: [:index]
           resource :audience_fields, only: [:show]
+          # What a shopper agreed to receive. `:id` is a CONTACT id: the decision belongs to the
+          # person, not to a store, because a shopper who says stop means every store of this
+          # workspace rather than the one that happened to message them.
+          resources :consents, only: [:index, :show, :update, :destroy]
           resource :salla_connection, only: [:show, :create]
           resource :zid_connection, only: [:create]
           resource :shopify_connection, only: [:create]
@@ -48,6 +52,11 @@ post 'webhooks/salla', to: 'webhooks/salla#create'
 
 # The delivery URL of the webhooks Lynomia creates in a connected WooCommerce store
 post 'webhooks/woocommerce/:store_id', to: 'webhooks/woocommerce#create', constraints: { store_id: /\d+/ }
+
+# Store Syria commerce events. No store id in the path: Store Syria registers no webhook here
+# and so never learns Lynomia's row id, so a delivery names the store by the external id it
+# issues itself, in a header the signature covers.
+post 'webhooks/storesyria', to: 'webhooks/storesyria#create'
 
 # The OAuth callback URL of the Lynomia Zid app, and the target URL of each connected Zid store's webhooks
 get 'commerce/zid/callback', to: 'commerce/zid/callbacks#show'

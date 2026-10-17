@@ -16,8 +16,13 @@ import AudienceExplainer from 'dashboard/components-next/audience/AudienceExplai
 import { useContactFilterContext } from 'dashboard/components-next/filter/contactProvider';
 import { summariseAudience } from 'dashboard/helper/audienceSummary';
 
-defineProps({
+const props = defineProps({
   message: { type: String, default: '' },
+  // The channel the campaign will send on, and the template it will send -- the two things
+  // besides the audience that decide who it may reach. Both optional: the SMS form has no
+  // template, and neither form has an inbox until one is picked.
+  inboxId: { type: [Number, String], default: null },
+  templateParams: { type: Object, default: null },
 });
 
 // The page owns the trip to Contacts and back, because it is the page that has a draft to keep.
@@ -79,7 +84,11 @@ const audience = computed(() =>
 const fetchCount = debounce(async () => {
   try {
     const response = await run(signal =>
-      CampaignsAPI.audiencePreview(audience.value, { signal })
+      CampaignsAPI.audiencePreview(audience.value, {
+        signal,
+        inboxId: props.inboxId,
+        templateParams: props.templateParams,
+      })
     );
     if (response) count.value = response.data.count;
   } catch {
@@ -87,15 +96,32 @@ const fetchCount = debounce(async () => {
   }
 }, PREVIEW_DELAY_MS);
 
-watch(audience, entries => {
-  count.value = null;
-  countFailed.value = false;
-  if (entries.length) {
-    fetchCount();
-  } else {
+// The channel and the template change WHO the campaign can reach, not just what it says, so
+// the count is stale the moment either of them does.
+//
+// `immediate`, because the three entry paths that seed this form do all of their seeding
+// during setup: coming back from Contacts with a freshly built audience restores the draft's
+// inbox, template and audience before CampaignRecipients mounts, so none of the watched
+// sources ever changes and no request was ever issued. The section then read "Counting
+// matching contacts…" forever, on the one journey where the merchant most wants the number.
+//
+// `abort()` unconditionally, not only when the audience empties: the count is nulled here
+// precisely so a number computed for the previous question is not shown, and the in-flight
+// request still answers that question. `run` cancels the previous controller only when the
+// NEXT run starts, which is 300ms away behind the debounce -- long enough for a stale
+// response to land and write itself back over the null. With the template picker among the
+// sources that is not a resized audience but a different population: the transactional count
+// sitting under a marketing template, which promises more than the send reaches.
+watch(
+  [audience, () => props.inboxId, () => props.templateParams],
+  ([entries]) => {
+    count.value = null;
+    countFailed.value = false;
     abort();
-  }
-});
+    if (entries.length) fetchCount();
+  },
+  { immediate: true }
+);
 
 const countNote = computed(() => {
   if (!audience.value.length) return '';

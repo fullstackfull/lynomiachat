@@ -31,6 +31,13 @@ RSpec.describe 'Commerce abandoned carts API', type: :request do
     InstallationConfig.where(name: 'ZID_RECOVERY_ENABLED').first_or_initialize.update!(value: true, locked: false)
     GlobalConfig.clear_cache
     Redis::Alfred.scan_each(match: 'COMMERCE::V1::*') { |key| Redis::Alfred.delete(key) }
+    # P3E. Preparing a recovery message now needs the shopper's agreement to marketing; the
+    # eligibility rule itself is covered in its own spec and in the recovery service's, so it
+    # is granted here and these cases go on testing cart isolation, which is what they are for.
+    Commerce::MessagingConsents.record(
+      account: account, contact: contact,
+      decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'test', purposes: ['promotional'])
+    )
     stub_request(:get, %r{/abandoned-carts\?}).to_return(status: 200, body: { 'abandoned-carts' => carts }.to_json)
   end
 

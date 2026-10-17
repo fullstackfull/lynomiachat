@@ -101,7 +101,7 @@ const create = async () => {
       name: name.value.trim(),
       description: description.value.trim(),
     });
-    if (graph) await FlowsAPI.saveDraft(data.id, graph);
+    if (graph) await FlowsAPI.saveDraft(data.id, graph, 0);
     createDialogRef.value.close();
     openBuilder(data);
   } catch {
@@ -133,7 +133,7 @@ const createFromTemplate = async (flowTemplate, values) => {
         version: flowTemplate.version,
       }),
     });
-    await FlowsAPI.saveDraft(data.id, flowTemplate.build(values));
+    await FlowsAPI.saveDraft(data.id, flowTemplate.build(values), 0);
     templateDialogRef.value?.close();
     openBuilder(data);
   } catch {

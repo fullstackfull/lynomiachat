@@ -26,12 +26,42 @@ module Custom::Whatsapp::OneoffCampaignService
   # only thing lost is the pending count while the run is in progress.
   def process_audience
     seed_audience
-    super
+    cancelled = catch(:campaign_cancelled) { super and nil }
+    # A CANCELLATION STOPS THE RUN. Upstream's loop has no way out of its own -- `super` is
+    # `contacts.each { process_contact(_1) }` and `process_contact` cannot break its
+    # caller's loop -- so the refusal is thrown past it. `throw`/`catch` rather than an
+    # exception because stopping on purpose is not an error, and an exception here would
+    # look like the crashed-loop case the send guard's docblock describes, which strands
+    # the campaign in `processing`.
+    snapshot.abandon_queued(cancelled) if cancelled
   end
 
+  # THE FINAL ELIGIBILITY CHECK, here rather than where the audience was resolved.
+  #
+  # The audience was resolved when the scheduler dispatched this campaign and the snapshot was
+  # seeded before the loop began; both are records of who was ADDRESSED, not evidence that
+  # they still may be. Between then and now the shopper can reply STOP, an agent can block
+  # them, the provider can report the number dead, an operator can revoke the integration or
+  # throw the kill switch. This is the last moment any of that can be honoured, so it is
+  # asked here, per recipient, against live rows.
+  # `clear_to_send` rather than `refusal` + a separate `pace` call, because the throttle
+  # SLEEPS and the order matters: asking first and pacing second meant a withdrawal landing
+  # during the wait was read, found nothing to stop, and the message went out anyway. The gate
+  # paces inside itself and re-asks afterwards. See Campaigns::SendGuard.
   def process_contact(contact)
     @contact = contact
     @outcome = nil
+    refusal = Campaigns::SendGuard.clear_to_send(contact, campaign, :whatsapp)
+    if refusal
+      reason = Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(refusal)
+      record(:skipped, reason)
+      # Everyone left is refused for the same reason and `abandon_queued` says so for all of
+      # them in one statement; see `process_audience`.
+      throw :campaign_cancelled, reason if refusal == :campaign_cancelled
+
+      return nil
+    end
+
     super
     record(:skipped, unhooked_reason) if @outcome.nil?
   ensure
@@ -73,8 +103,45 @@ module Custom::Whatsapp::OneoffCampaignService
   # refusal means Meta, or the network, said no -- and that refusal is only reachable at all because
   # Custom::Channel::Whatsapp keeps the provider instance alive across the call. Neither means no provider call
   # was made: upstream found no approved template of that name and language, so nothing was attempted.
+  # THE PAID ALLOWANCE IS TAKEN HERE, which is the last line before the template goes to
+  # Meta -- not in `clear_to_send` above, where it started.
+  #
+  # That gate runs before every check upstream still makes: no reachable WhatsApp
+  # destination, no template params on the campaign, a Liquid variable that resolved to
+  # blank. A recipient refused by any of those is never handed to a provider, and charging a
+  # merchant's allowance for them contradicts the rule Billing::MeteredUsage states about
+  # itself -- that a unit is an ATTEMPT. An attempt is a provider call.
+  #
+  # AND THE TWO REFUSALS STILL BELOW THIS LINE ARE ASKED FIRST, because neither of them
+  # reaches Meta either. This previously spent the unit unconditionally here and defended it
+  # as "the only thing left is Meta's own answer", which was simply untrue: upstream's
+  # `return if name.blank?` comes from TemplateProcessorService resolving the template
+  # against `channel.message_templates`, and the authentication guard reads the same jsonb
+  # column. Both are offline.
+  #
+  # The cost of getting that wrong is not one unit. An unapproved, rejected, paused or
+  # language-mismatched template is a property of the CAMPAIGN, identical for every
+  # recipient, so a 5,000-contact audience on a plan of 1,000 consumed the merchant's whole
+  # period allowance, recorded 5,000 skips, sent nothing, and left every later campaign that
+  # period refused -- the exact "charged for messages that were never handed to a provider"
+  # this call site was moved down here to stop.
+  #
+  # Both are asked through the objects upstream itself uses -- the template lookup
+  # Campaigns::RenderedTemplateText has already performed for the text on the line above,
+  # and Whatsapp::AuthenticationTemplateGuard -- rather than restated, so there is no second
+  # copy of "which template is this" to keep in step. The guard is called directly instead
+  # of through `authentication_template_blocked?` because that override records an outcome,
+  # and upstream calls it again a moment later.
   def send_whatsapp_template_message(to:, template_params:)
-    text = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params).text
+    rendered = Campaigns::RenderedTemplateText.new(channel: channel, template_params: template_params)
+    text = rendered.text
+    quota = provider_call_expected?(to, template_params, rendered) ? Campaigns::SendGuard.spend(campaign) : nil
+    if quota
+      record(:skipped, Campaigns::RecipientSnapshot::CONSENT_REASONS.fetch(quota), message_content: text)
+
+      return nil
+    end
+
     source_id = super
     return source_id if @outcome.present?
 
@@ -87,6 +154,14 @@ module Custom::Whatsapp::OneoffCampaignService
     end
 
     source_id
+  end
+
+  # Whether upstream will actually call the provider for this recipient, or refuse it from the
+  # channel's own jsonb without a network call. See the note on the spend above.
+  def provider_call_expected?(recipient, params, rendered)
+    rendered.approved? &&
+      Whatsapp::AuthenticationTemplateGuard.new(channel: channel, recipient: recipient, template_params: params)
+                                           .error.nil?
   end
 
   # Upstream's two refusals are "Phone number and BSUID are missing" and "Multiple WhatsApp identities found;

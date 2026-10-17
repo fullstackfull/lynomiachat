@@ -166,6 +166,14 @@ RSpec.describe Campaigns::RecipientSnapshot do
       campaign.update!(template_params: {})
       contact = create(:contact, account: account, phone_number: '+96550000061')
       contact.update_labels([label.title])
+      # An empty template_params carries no provider category, so the campaign is promotional
+      # and would otherwise reach nobody. Granted so this example still exercises the
+      # missing-parameters skip it is named for.
+      Commerce::MessagingConsents.record(
+        account: account, contact: contact,
+        decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant',
+                                                            purposes: ['promotional'])
+      )
 
       Whatsapp::OneoffCampaignService.new(campaign: campaign).perform
 

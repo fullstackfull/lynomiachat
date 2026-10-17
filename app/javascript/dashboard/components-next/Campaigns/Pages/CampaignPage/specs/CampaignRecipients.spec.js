@@ -3,7 +3,11 @@ import { createStore } from 'vuex';
 import { createI18n } from 'vue-i18n';
 import campaign from 'dashboard/i18n/locale/en/campaign.json';
 import contactFilters from 'dashboard/i18n/locale/en/contactFilters.json';
+import CampaignsAPI from 'dashboard/api/campaigns';
 import CampaignRecipients from '../CampaignRecipients.vue';
+
+// The debounce the preview waits out before it asks the server.
+const PREVIEW_DELAY_MS = 300;
 
 vi.mock('dashboard/api/campaigns', () => ({
   default: {
@@ -42,8 +46,9 @@ const buildStore = ({ contactViews = [], isFetching = false } = {}) =>
     },
   });
 
-const mountRecipients = (storeOptions = {}) =>
+const mountRecipients = (storeOptions = {}, props = {}) =>
   mount(CampaignRecipients, {
+    props,
     global: {
       plugins: [
         createI18n({ legacy: false, locale: 'en', messages: { en } }),
@@ -124,6 +129,51 @@ describe('CampaignRecipients', () => {
     expect(options).toEqual([
       { value: 9, label: 'Kuwait buyers', description: 'Country is Kuwait' },
     ]);
+  });
+
+  // THE PREVIEW. Both examples below pin behaviour the fix to this component changed and
+  // nothing covered -- the gap an audit of the closure found rather than a run.
+  describe('the count', () => {
+    beforeEach(() => {
+      CampaignsAPI.audiencePreview.mockClear();
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // A form seeded from a draft does all of its seeding during setup -- coming back from
+    // Contacts restores the inbox, the template and the audience before this component
+    // mounts -- so no watched source ever changes afterwards. Without an immediate run the
+    // request was never issued and the section read "Counting matching contacts…" for ever,
+    // on the one journey where the merchant most wants the number.
+    it('counts an audience that was already there when it mounted', async () => {
+      mountRecipients({}, { labelIds: [1] });
+
+      await vi.advanceTimersByTimeAsync(PREVIEW_DELAY_MS);
+
+      expect(CampaignsAPI.audiencePreview).toHaveBeenCalledTimes(1);
+    });
+
+    // The count is nulled on every change precisely so a number computed for the previous
+    // question is not left on screen. An in-flight answer to that question undoes it: the
+    // next run cancels the previous controller, but that is 300ms away behind the debounce,
+    // which is long enough for the stale response to land and write itself back.
+    it('abandons an answer to the previous question when the channel changes', async () => {
+      CampaignsAPI.audiencePreview.mockImplementationOnce(
+        () => new Promise(() => {})
+      );
+      const wrapper = mountRecipients({}, { labelIds: [1], inboxId: 7 });
+      await vi.advanceTimersByTimeAsync(PREVIEW_DELAY_MS);
+
+      const { signal } = CampaignsAPI.audiencePreview.mock.calls[0][1];
+      expect(signal.aborted).toBe(false);
+
+      await wrapper.setProps({ inboxId: 8 });
+
+      expect(signal.aborted).toBe(true);
+    });
   });
 
   it('offers only shared filters, never somebody personal one', () => {

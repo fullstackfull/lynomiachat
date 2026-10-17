@@ -154,4 +154,59 @@ RSpec.describe 'Webhooks API', type: :request do
       end
     end
   end
+
+  # A RECEIVER MAY CHOOSE ITS SIGNING KEY, AND MAY NOT MOVE IT AFTERWARDS.
+  #
+  # Permitting :secret on every action, which is how this started, silently broke two controls
+  # that are both written against "this column cannot change once the row exists":
+  # Custom::Audit::Webhook audits only five configuration columns, so an update touching ONLY the
+  # secret writes NO audit row at all; and lib/webhooks/trigger.rb signs only when the secret is
+  # present, with nothing validating presence, so one PATCH with an empty string would unsign
+  # every future delivery for that webhook. Neither fails loudly. These pin the boundary instead.
+  describe 'the signing secret' do
+    it 'is accepted on create, so a receiver can derive its own key' do
+      post "/api/v1/accounts/#{account.id}/webhooks",
+           params: { webhook: { url: 'https://chosen.example/hook', subscriptions: ['conversation_created'],
+                                secret: 'receiver-derived-key' } },
+           headers: administrator.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(account.webhooks.find_by(url: 'https://chosen.example/hook').secret).to eq('receiver-derived-key')
+    end
+
+    it 'is generated when the caller does not choose one' do
+      post "/api/v1/accounts/#{account.id}/webhooks",
+           params: { webhook: { url: 'https://generated.example/hook', subscriptions: ['conversation_created'] } },
+           headers: administrator.create_new_auth_token, as: :json
+
+      expect(account.webhooks.find_by(url: 'https://generated.example/hook').secret).to be_present
+    end
+
+    # The one that matters: a delivery that stops being signed is not an error anywhere.
+    it 'cannot be blanked, or changed at all, by an update' do
+      original = webhook.secret
+      expect(original).to be_present
+
+      put "/api/v1/accounts/#{account.id}/webhooks/#{webhook.id}",
+          params: { webhook: { secret: '', name: 'Renamed' } },
+          headers: administrator.create_new_auth_token, as: :json
+
+      expect(response).to have_http_status(:success)
+      expect(webhook.reload.secret).to eq(original)
+      expect(webhook.name).to eq('Renamed')
+    end
+
+    # DISCLOSED TO THE ACCOUNT'S OWN ADMINISTRATORS, which is upstream behaviour and is pinned
+    # here because a receiver that DERIVES its key needs to know it. An administrator can read
+    # the key their own deliveries are signed with, so a per-receiver key is not optional: one
+    # global key would hand every administrator the means to forge deliveries for every other
+    # account. Deriving it per receiver confines that to their own.
+    it 'is readable by an administrator of the account that owns it' do
+      webhook
+      get "/api/v1/accounts/#{account.id}/webhooks",
+          headers: administrator.create_new_auth_token, as: :json
+
+      expect(response.body).to include(webhook.secret)
+    end
+  end
 end

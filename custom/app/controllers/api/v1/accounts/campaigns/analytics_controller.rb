@@ -23,8 +23,21 @@ class Api::V1::Accounts::Campaigns::AnalyticsController < Api::V1::Accounts::Bas
 
   private
 
+  # BY `display_id`, WHICH IS THE ONLY CAMPAIGN IDENTIFIER A CLIENT EVER HAS.
+  #
+  # `api/v1/models/_campaign.json.jbuilder` renders `json.id resource.display_id` and does
+  # not render the primary key at all, so every client -- the dashboard's own analytics page
+  # and the Store Syria campaigns page alike -- holds a display_id and calls it `id`. This
+  # looked the campaign up by PRIMARY KEY, so for any account past its first campaign the
+  # two numbers differ and the page showed a DIFFERENT campaign's delivery results under the
+  # name of the one the merchant opened, or 404'd.
+  #
+  # The specs could not see it because they passed `campaign.id` -- an identifier the API
+  # never hands out. Addressing by display_id also makes this consistent with every other
+  # campaign route, all of which resolve through CampaignsController#campaign's
+  # `find_by(display_id:)`.
   def fetch_campaign
-    @campaign = Current.account.campaigns.find(params[:campaign_id])
+    @campaign = Current.account.campaigns.find_by!(display_id: params[:campaign_id])
     authorize @campaign, :show?
   end
 

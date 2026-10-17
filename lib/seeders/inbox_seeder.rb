@@ -10,7 +10,10 @@
 
 class Seeders::InboxSeeder
   def initialize(account:, company_data:)
-    raise 'Inbox Seeding is not allowed in production.' unless ENV.fetch('ENABLE_ACCOUNT_SEEDING', !Rails.env.production?)
+    # ENV.fetch returns a STRING, and every non-empty String is truthy in Ruby, so
+    # ENABLE_ACCOUNT_SEEDING=false used to ENABLE seeding -- and this seeder's first act
+    # is destroy_all. Custom::SeedingPermission casts the value instead of trusting it.
+    raise Custom::SeedingPermission.refusal unless Custom::SeedingPermission.allowed?
 
     @account = account
     @company_data = company_data

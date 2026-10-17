@@ -1,4 +1,6 @@
 class Api::V1::AccountsController < Api::BaseController
+  # for sso_scope_permits? -- the account resolution here is bespoke, the scope check must not be
+  include EnsureCurrentAccountHelper
   include AuthHelper
 
   skip_before_action :authenticate_user!, :set_current_user, :handle_with_exception,
@@ -96,8 +98,14 @@ class Api::V1::AccountsController < Api::BaseController
     raise CustomExceptions::Account::InvalidParams.new({})
   end
 
+  # THIS CONTROLLER RESOLVES ITS OWN ACCOUNT and never runs EnsureCurrentAccountHelper, so the session scope
+  # has to be asked for here too. Without it a session restricted to one workspace could still read and
+  # update another through show/update/cache_keys/update_active_at -- the restriction would hold everywhere
+  # except on the account object itself.
   def fetch_account
     @account = current_user.accounts.find(params[:id])
+    return render_unauthorized(I18n.t('errors.account.not_authorized')) unless sso_scope_permits?(@account)
+
     @current_account_user = @account.account_users.find_by(user_id: current_user.id)
   end
 

@@ -12,8 +12,11 @@
 module Commerce::Switches
   ACTION_KEYS = { 'woocommerce' => 'WOOCOMMERCE_ACTIONS_ENABLED', 'salla' => 'SALLA_ACTIONS_ENABLED', 'zid' => 'ZID_ACTIONS_ENABLED',
                   'shopify' => 'SHOPIFY_COMMERCE_ACTIONS_ENABLED' }.freeze
-  RECOVERY_KEYS = { 'salla' => 'SALLA_RECOVERY_ENABLED', 'zid' => 'ZID_RECOVERY_ENABLED', 'shopify' => 'SHOPIFY_COMMERCE_RECOVERY_ENABLED' }.freeze
-  PRE_UAT = { actions: %w[salla zid shopify], recovery: %w[salla zid shopify] }.freeze
+  RECOVERY_KEYS = { 'salla' => 'SALLA_RECOVERY_ENABLED', 'zid' => 'ZID_RECOVERY_ENABLED', 'shopify' => 'SHOPIFY_COMMERCE_RECOVERY_ENABLED',
+                    'storesyria' => 'STORESYRIA_RECOVERY_ENABLED' }.freeze
+  # Store Syria has no ACTIONS key because it exposes no writes at all: its adapter answers
+  # supports_actions? false, which store_blocker checks before it reaches ACTION_KEYS.
+  PRE_UAT = { actions: %w[salla zid shopify], recovery: %w[salla zid shopify storesyria] }.freeze
   DEFAULT_RECOVERY_COOLDOWN_HOURS = 24
 
   def self.actions_enabled? = flag('COMMERCE_ACTIONS_ENABLED', default: true)

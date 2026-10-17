@@ -158,12 +158,21 @@ const save = async () => {
     const snapshot = graphSnapshot();
     const { data } = await FlowsAPI.saveDraft(
       flowId.value,
-      JSON.parse(snapshot)
+      JSON.parse(snapshot),
+      // What this editor loaded. Zero before the first save, which is what a draft created by
+      // that save starts at. The server refuses rather than overwriting if it has moved since.
+      flow.value?.draft?.lock_version ?? 0
     );
     apply(data);
     savedGraph.value = snapshot;
     return true;
   } catch (error) {
+    // SOMEBODY ELSE SAVED FIRST. Their graph comes back with the refusal; this editor keeps what
+    // the person was working on and tells them, rather than silently replacing either side.
+    if (error?.response?.status === 409) {
+      useAlert(t('FLOW_BUILDER.API.SAVE_CONFLICT'));
+      return false;
+    }
     errors.value = error?.response?.data?.errors || [];
     useAlert(t('FLOW_BUILDER.API.SAVE_ERROR'));
     return false;

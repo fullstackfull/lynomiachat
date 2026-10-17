@@ -3,6 +3,10 @@ class AutomationRulePolicy < ApplicationPolicy
     @account_user.administrator?
   end
 
+  def vocabulary?
+    @account_user.administrator?
+  end
+
   def create?
     @account_user.administrator?
   end

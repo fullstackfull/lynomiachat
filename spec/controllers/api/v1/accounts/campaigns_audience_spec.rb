@@ -118,6 +118,19 @@ RSpec.describe 'Campaigns API with shared audiences', type: :request do
       create(:contact, account: account, email: 'noor@mail.example', additional_attributes: { 'country_code' => 'SA' })
       create(:contact, account: account, email: 'ali@mail.example')
       create(:contact, account: create(:account), email: 'twin@vip.example', additional_attributes: { 'country_code' => 'SA' })
+
+      # The preview reports who the campaign can actually REACH, which is the point of
+      # resolving it through the same `audience_contacts` the senders use -- the number shown
+      # before a send and the number sent to cannot disagree. A preview carries no campaign and
+      # so no provider category, making it promotional; these contacts are granted so this
+      # example measures the deduplication it is named for.
+      account.contacts.find_each do |contact|
+        Commerce::MessagingConsents.record(
+          account: account, contact: contact,
+          decision: Commerce::MessagingConsents::Decision.new(state: :granted, source: 'merchant',
+                                                              purposes: ['promotional'])
+        )
+      end
     end
 
     it 'counts each contact once across labels and shared audiences, in the account only, calling nothing outside' do

@@ -77,3 +77,5 @@ class Whatsapp::SendOnWhatsappService < Base::SendOnChannelService
     end
   end
 end
+
+Whatsapp::SendOnWhatsappService.prepend_mod_with('Whatsapp::SendOnWhatsappService')

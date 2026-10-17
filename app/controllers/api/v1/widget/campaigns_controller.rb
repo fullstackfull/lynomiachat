@@ -8,6 +8,7 @@ class Api::V1::Widget::CampaignsController < Api::V1::Widget::BaseController
                      .inbox
                      .campaigns
                      .where(enabled: true, account_id: account.id)
+                     .where.not(campaign_status: :cancelled)
                      .includes(:sender)
                  else
                    []

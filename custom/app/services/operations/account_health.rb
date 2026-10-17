@@ -17,7 +17,10 @@ class Operations::AccountHealth
   end
 
   def call
-    accounts = Account.includes(:billing_subscription).order(:id).page(@page).per(@per_page)
+    # `tenant`: this page answers "which of our customers is in trouble", and the
+    # installation's own workspace among them is one more merchant an operator thinks
+    # they have (P6D).
+    accounts = Account.tenant.includes(:billing_subscription).order(:id).page(@page).per(@per_page)
     ids = accounts.map(&:id)
     data = aggregate(ids)
     { accounts: accounts, rows: accounts.map { |account| row_for(account, data) } }

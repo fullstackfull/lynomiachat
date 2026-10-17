@@ -1,0 +1,18 @@
+{
+  "contract": "audience_fields",
+  "version": 1,
+  "producer": "lynomia/custom/app/controllers/api/v1/accounts/commerce/audience_fields_controller.rb",
+  "consumer": "storesyria/packages/workdo/LynomiaChat/src/app/Http/Controllers/AudienceApiController.php",
+  "sample": {
+    "stores": [
+      {
+        "id": 5101,
+        "name": "Damascus Linens",
+        "provider": "storesyria",
+        "external_store_id": "merchant.example:4242"
+      }
+    ],
+    "currencies": [],
+    "unread_contacts": 1
+  }
+}

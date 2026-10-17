@@ -21,14 +21,15 @@ RSpec.describe Flows::Versions do
   end
 
   it 'publishes the draft, and edits a new draft without touching the published version' do
-    versions.save!(graph)
+    versions.save!(graph, lock_version: 0)
     published = versions.publish!
     expect(published).to have_attributes(status: 'published', version: 1, published_by: admin)
 
     next_draft = versions.draft
     expect(next_draft).to have_attributes(status: 'draft', version: 2)
     expect(next_draft.graph).to eq(graph)
-    versions.save!(graph.merge('nodes' => graph['nodes'].map { |node| node['id'] == 'hello' ? node.merge('data' => { 'text' => 'v2' }) : node }))
+    edited = graph.merge('nodes' => graph['nodes'].map { |node| node['id'] == 'hello' ? node.merge('data' => { 'text' => 'v2' }) : node })
+    versions.save!(edited, lock_version: 0)
     expect(published.reload.graph).to eq(graph)
 
     expect(versions.publish!.version).to eq(2)
@@ -36,8 +37,22 @@ RSpec.describe Flows::Versions do
     expect(bot.published_flow_version.version).to eq(2)
   end
 
+  # Found while building the Studio's lifecycle view: `create_draft` read only the PUBLISHED version,
+  # and disable! archives it -- so reopening a disabled flow handed the editor a blank starter and the
+  # next save wrote it over the draft.
+  it 'keeps the graph when a disabled flow is edited again' do
+    versions.save!(graph, lock_version: 0)
+    versions.publish!
+    versions.disable!
+
+    reopened = described_class.new(bot.reload, user: admin).draft
+
+    expect(reopened.graph).to eq(graph)
+    expect(reopened).to have_attributes(status: 'draft', version: 2)
+  end
+
   it 'never changes a published graph' do
-    versions.save!(graph)
+    versions.save!(graph, lock_version: 0)
     published = versions.publish!
 
     expect(published.update(graph: { 'nodes' => [], 'edges' => [] })).to be(false)
@@ -45,7 +60,7 @@ RSpec.describe Flows::Versions do
   end
 
   it 'refuses to publish an invalid graph, with errors per node' do
-    versions.save!(graph.merge('edges' => graph['edges'].first(1)))
+    versions.save!(graph.merge('edges' => graph['edges'].first(1)), lock_version: 0)
 
     expect { versions.publish! }.to raise_error(described_class::Invalid) { |error|
       expect(error.errors).to include(hash_including(code: 'unconnected_output', node_id: 'hello', detail: 'next'))
@@ -54,8 +69,9 @@ RSpec.describe Flows::Versions do
   end
 
   it 'refuses a malformed draft when saving' do
-    expect { versions.save!({ 'nodes' => 'x' }) }.to raise_error(described_class::Invalid)
-    expect { versions.save!(graph.merge('nodes' => graph['nodes'] + [{ 'id' => 'x', 'type' => 'eval', 'position' => { 'x' => 0, 'y' => 0 } }])) }
+    expect { versions.save!({ 'nodes' => 'x' }, lock_version: 0) }.to raise_error(described_class::Invalid)
+    unknown = graph.merge('nodes' => graph['nodes'] + [{ 'id' => 'x', 'type' => 'eval', 'position' => { 'x' => 0, 'y' => 0 } }])
+    expect { versions.save!(unknown, lock_version: 0) }
       .to raise_error(described_class::Invalid)
   end
 

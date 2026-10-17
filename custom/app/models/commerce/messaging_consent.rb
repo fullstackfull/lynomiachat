@@ -1,0 +1,62 @@
+# What a shopper has agreed to receive, and what they have refused.
+#
+# TWO CLASSES, BECAUSE THEY ARE NOT THE SAME QUESTION.
+#
+#   transactional  an update about an order this person placed: paid, shipped, delivered,
+#                  cancelled, refunded. They started the transaction, and the update is the
+#                  service they asked for, so it is allowed unless they said stop.
+#   promotional    an abandoned basket, a campaign, anything the shopper did not ask for. It
+#                  is refused unless they said yes.
+#
+# SO THE DEFAULTS ARE OPPOSITE, and that asymmetry is the whole point of the model. Treating
+# the two the same means either silencing parcel notifications nobody objected to, or
+# marketing at people who never agreed to it. Absence of a row therefore means "allowed" for
+# transactional and "not allowed" for promotional; see Commerce::MessagingEligibility, which
+# is the only place that reading is applied.
+#
+# WITHDRAWN AND SUPPRESSED BOTH BLOCK, AND THEY ARE NOT INTERCHANGEABLE. `withdrawn` is the
+# shopper's decision and only the shopper reverses it. `suppressed` is this system's: the
+# number is unreachable or the provider refused it, and an operator clears it once the cause
+# is fixed. Collapsing them into one state would let an operator overturn a person's opt-out
+# by clearing what looks like a delivery fault.
+class Commerce::MessagingConsent < ApplicationRecord
+  self.table_name = 'commerce_messaging_consents'
+
+  PURPOSES = { transactional: 0, promotional: 1 }.freeze
+  STATES = { granted: 0, withdrawn: 1, suppressed: 2 }.freeze
+
+  enum :purpose, PURPOSES
+  enum :state, STATES, prefix: :consent
+
+  belongs_to :account
+  belongs_to :contact
+
+  validates :source, presence: true, length: { maximum: 40 }
+  validates :decided_at, presence: true
+  validates :contact_id, uniqueness: { scope: :purpose }
+
+  # Blocks a send whoever decided it. A gate asks this, not which of the two it is.
+  def blocking? = consent_withdrawn? || consent_suppressed?
+
+  # THE NEXT REVISION, AND IT HAS TO OUTLIVE THE ROW.
+  #
+  # A partner's projector keeps the highest revision it has seen for a scope and drops
+  # anything at or below it. Counting on the row -- `revision + 1` -- is monotonic only
+  # while the row exists, and `MessagingConsents.clear_suppression` DESTROYS it: clearing a
+  # suppression is an ordinary merchant action, and the next decision for that scope then
+  # came from `find_or_initialize_by` on a fresh row whose revision was the column default,
+  # so it published 1. A partner holding 80 discarded it, and discarded every decision after
+  # it, until eighty more writes climbed back over the mark. Reconciliation could not repair
+  # it either: it reports the same number.
+  #
+  # So the counter is the TABLE's, not the row's. `nextval` on the primary key's own
+  # sequence is strictly increasing for the life of the installation, is ahead of every
+  # revision ever published (the backfill seeded them from `id`), costs one round trip, and
+  # does not roll back -- an aborted write burns a number rather than reusing one, which is
+  # the safe direction. A standalone sequence would have been the obvious object, but
+  # schema.rb does not dump one, so it would not exist after `db:schema:load`; this sequence
+  # exists wherever the table does.
+  def self.next_revision
+    connection.select_value("SELECT nextval(pg_get_serial_sequence('#{table_name}', 'id'))").to_i
+  end
+end

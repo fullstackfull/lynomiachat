@@ -61,11 +61,35 @@ class Campaigns::RecipientMetrics
       'read' => state_counter('read'),
       'failed' => counter('failed'),
       'skipped' => state_counter('skipped'),
-      'status_counts' => STATES.index_with { |state| state_counter(state) }
+      'status_counts' => STATES.index_with { |state| state_counter(state) },
+      'skip_reasons' => skip_reasons
     }
   end
 
   private
+
+  # WHY THE SKIPPED WERE SKIPPED, which is the half the counter cannot tell.
+  #
+  # "40 of 180 sent" reads as a failure and sends a merchant looking for a fault. "140 not
+  # sent: no marketing consent on record" is a different fact about a working system, and it
+  # is the one that tells them what to do next -- ask for consent, not call support.
+  #
+  # GROUPED ON `error_message` DIRECTLY, which is safe only because that column holds the
+  # FIXED strings from Campaigns::RecipientSnapshot::SKIP_REASONS for a skipped row and never
+  # anything derived from a contact. A reason carrying a phone number would both explode this
+  # breakdown's cardinality and put recipient data into an analytics response, which is why
+  # the senders are written to record a reason rather than a message.
+  #
+  # One extra query rather than another FILTER on the pass above: this one needs a GROUP BY
+  # and the counters do not, and a grouped query cannot answer both shapes at once.
+  def skip_reasons
+    recipients.where(status: CampaignRecipient.statuses[:skipped])
+              .where.not(error_message: nil)
+              .group(:error_message)
+              .count
+              .sort_by { |_reason, count| -count }
+              .to_h
+  end
 
   # `account_id` is not in the predicate. A campaign belongs to exactly one account and the controller resolved
   # this one inside `Current.account.campaigns` before reaching here, so the column adds no isolation -- and

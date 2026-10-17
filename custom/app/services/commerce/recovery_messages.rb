@@ -12,6 +12,8 @@
 #   - no recovery message for the cart was sent within the cooldown (Commerce::Switches.recovery_cooldown), unless an
 #     administrator overrides it for this one message
 #   - at most PREPARE_LIMIT preparations per agent per hour
+#   - the shopper has not refused promotional messages (Commerce::MessagingEligibility): a recovery message is
+#     marketing whoever presses Send, and an open service window is not an agreement to be pitched
 class Commerce::RecoveryMessages
   PREPARE_LIMIT = 30
   ACTION_TYPE = Commerce::ActionRun::RECOVERY_MESSAGE
@@ -44,6 +46,12 @@ class Commerce::RecoveryMessages
   def prepare(cart_id, override_cooldown: false)
     raise Commerce::Error, 'RECOVERY_DISABLED' unless Commerce::AbandonedCarts.offered?(@store)
     raise Commerce::Error.new('CANNOT_REPLY', reason: 'messaging_window') unless @conversation.can_reply?
+
+    # A recovery message is marketing whoever presses Send. An open service window means the shopper wrote to the
+    # merchant, not that they agreed to be pitched the basket they walked away from, so the promotional class
+    # applies here exactly as it does to the automated path.
+    consent = Commerce::MessagingEligibility.refusal(@conversation.contact, :promotional)
+    raise Commerce::Error.new('RECOVERY_DISABLED', reason: consent.to_s) if consent
 
     throttle!
     cart, match = Commerce::AbandonedCarts.new(store: @store, conversation: @conversation).fresh(cart_id.to_s)

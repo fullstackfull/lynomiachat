@@ -4,6 +4,30 @@ require 'rails_helper'
 # dashboard composer would (template_params, raw_template), and Chatwoot's WhatsApp path sends it.
 RSpec.describe Flows::Nodes::SendTemplate do
   let(:account) { create(:account).tap { |record| record.enable_features!('lynomia_flow_builder') } }
+  let(:edge) do
+    ->(source, target, handle = 'next') { { 'id' => "#{source}-#{handle}", 'source' => source, 'sourceHandle' => handle, 'target' => target } }
+  end
+  let(:order_update) do
+    { 'name' => 'order_update', 'language' => 'en',
+      'params' => { 'header' => { '1' => '{{flow.reply}}' }, 'body' => { '1' => '{{contact.name}}', '2' => '{{flow.reply}}', '3' => 'shipped' },
+                    'buttons' => [{ 'type' => 'url', 'parameter' => '{{flow.reply}}' }] } }
+  end
+  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph, lock_version: 0) }.publish! } }
+  let(:straight) do
+    lambda do |data|
+      publish.call('nodes' => [node.call('start', 'start'), node.call('tpl', 'send_template', data), node.call('end', 'end')],
+                   'edges' => [edge.call('start', 'tpl'), edge.call('tpl', 'end')])
+    end
+  end
+  let(:say) do
+    lambda do |text|
+      message = create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, sender: contact, content: text)
+      Flows::RunJob.perform_now(conversation.id, 'messages', message.id)
+      FlowSession.where(conversation: conversation).order(:id).last
+    end
+  end
+  let(:bot_messages) { -> { conversation.messages.outgoing.where(sender: bot, private: false).order(:id) } }
+  let(:graph_calls) { [] }
   let(:whatsapp) do
     templates =
       [
@@ -28,30 +52,25 @@ RSpec.describe Flows::Nodes::SendTemplate do
                           contact_inbox: create(:contact_inbox, contact: contact, inbox: inbox, source_id: '966500000007'))
   end
   let(:node) { ->(id, type, data = {}) { { 'id' => id, 'type' => type, 'position' => { 'x' => 0, 'y' => 0 }, 'data' => data } } }
-  let(:edge) do
-    ->(source, target, handle = 'next') { { 'id' => "#{source}-#{handle}", 'source' => source, 'sourceHandle' => handle, 'target' => target } }
+
+  # Methods rather than `let`s: these are actions an example takes, not values it reads,
+  # and this group is already at the memoised-helper limit.
+  def grant_marketing
+    decide(:granted, 'merchant', ['promotional'])
   end
-  let(:order_update) do
-    { 'name' => 'order_update', 'language' => 'en',
-      'params' => { 'header' => { '1' => '{{flow.reply}}' }, 'body' => { '1' => '{{contact.name}}', '2' => '{{flow.reply}}', '3' => 'shipped' },
-                    'buttons' => [{ 'type' => 'url', 'parameter' => '{{flow.reply}}' }] } }
+
+  def stop_everything
+    decide(:withdrawn, 'shopper_keyword', nil)
   end
-  let(:publish) { ->(graph) { Flows::Versions.new(bot).tap { |versions| versions.save!(graph) }.publish! } }
-  let(:straight) do
-    lambda do |data|
-      publish.call('nodes' => [node.call('start', 'start'), node.call('tpl', 'send_template', data), node.call('end', 'end')],
-                   'edges' => [edge.call('start', 'tpl'), edge.call('tpl', 'end')])
-    end
+
+  def decide(state, source, purposes)
+    decision = if purposes
+                 Commerce::MessagingConsents::Decision.new(state: state, source: source, purposes: purposes)
+               else
+                 Commerce::MessagingConsents::Decision.new(state: state, source: source)
+               end
+    Commerce::MessagingConsents.record(account: account, contact: contact, decision: decision)
   end
-  let(:say) do
-    lambda do |text|
-      message = create(:message, conversation: conversation, account: account, inbox: inbox, message_type: :incoming, sender: contact, content: text)
-      Flows::RunJob.perform_now(conversation.id, 'messages', message.id)
-      FlowSession.where(conversation: conversation).order(:id).last
-    end
-  end
-  let(:bot_messages) { -> { conversation.messages.outgoing.where(sender: bot, private: false).order(:id) } }
-  let(:graph_calls) { [] }
 
   before do
     AgentBotInbox.create!(inbox: inbox, agent_bot: bot)
@@ -86,12 +105,53 @@ RSpec.describe Flows::Nodes::SendTemplate do
   end
 
   it 'fills named parameters, and a customer reply never becomes a template' do
+    # `welcome_back` is MARKETING, so the node now asks for a marketing grant before it
+    # sends one. This example is about NAMED parameter filling, so the grant is given
+    # rather than letting a consent refusal decide it.
+    grant_marketing
+
     straight.call('name' => 'welcome_back', 'language' => 'AR', 'params' => { 'body' => { 'customer' => '{{flow.reply}}' } })
 
     say.call('{{account.name}} {% raw %}')
 
     expect(bot_messages.call.sole.additional_attributes.dig('template_params', 'processed_params'))
       .to eq('body' => { 'customer' => 'account.name  raw' })
+  end
+
+  # ============================================================ consent
+  #
+  # THE NODE DID NOT ASK. Its only template gate is `Flows::Template.problem`, whose
+  # `sendable?` excludes AUTHENTICATION and CSAT and allows MARKETING, so a published flow
+  # could send an approved marketing template to a shopper who had withdrawn marketing --
+  # triggered by an inbound message of their own -- with nothing in the path having looked.
+  # Every other outbound surface asks: the campaign senders through Campaigns::SendGuard,
+  # the automation action through Commerce::MessagingEligibility.
+  it 'refuses a MARKETING template to a shopper who never agreed to marketing' do
+    straight.call('name' => 'welcome_back', 'language' => 'AR', 'params' => { 'body' => { 'customer' => 'x' } })
+
+    say.call('hello')
+
+    expect(bot_messages.call).to be_empty
+  end
+
+  # A UTILITY template is transactional and needs no grant, which is the asymmetry the two
+  # classes exist for -- so the fix must not silence a flow that was never marketing.
+  it 'still sends a UTILITY template to a shopper who agreed to nothing' do
+    straight.call(order_update)
+
+    say.call('hello')
+
+    expect(bot_messages.call).not_to be_empty
+  end
+
+  # And a STOP stops both classes, because that is what the person meant.
+  it 'refuses even a UTILITY template once the shopper has said stop' do
+    stop_everything
+    straight.call(order_update)
+
+    say.call('hello')
+
+    expect(bot_messages.call).to be_empty
   end
 
   it 'goes out after the 24-hour window, where Chatwoot refuses free-form messages' do

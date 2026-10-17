@@ -16,6 +16,10 @@
 #   4. DEFAULT                      Today's behaviour. This is what every account gets while commercial
 #                                   enforcement is off, and it is why deploying this changes nothing.
 #
+# LIMITS HAVE ONE MORE LAYER THAN FEATURES, between the override and the plan: a ceiling an
+# INTEGRATION includes with its own product (PlatformAppEntitlementGrant). It sits below the
+# operator's override and composes with the plan by MAX rather than replacing it. See #limit.
+#
 # WHERE THE EFFECTIVE STATE LIVES, and why this is not a second system:
 # plan features are applied by writing them into the account's own feature flags (Billing::FeatureSync), and
 # that remains the single store of effective state -- every existing `feature_enabled?` check in the product
@@ -46,12 +50,63 @@ module Billing::Entitlements
     :default
   end
 
-  # nil means unlimited. An override wins; otherwise the plan's ceiling; otherwise no ceiling.
+  # nil means unlimited.
+  #
+  # PRECEDENCE, and why the middle step is a MAX rather than another override:
+  #
+  #   1. OPERATOR OVERRIDE   an explicit, audited, reasoned decision for this one account. It
+  #                          wins outright, which is the point of having it.
+  #   2. max(PLAN, INTEGRATION GRANT)
+  #   3. no ceiling
+  #
+  # An integration that includes seats with its own product (PlatformAppEntitlementGrant) is not
+  # an operator decision and must not be written into one -- a sync that follows an external plan
+  # would silently overwrite a deliberate grant, which is the hazard Billing::FeatureSync is
+  # documented as avoiding for features. So it is a separate layer, and it COMPOSES with the plan
+  # instead of replacing it.
+  #
+  # MAX, NOT SUM. A merchant with an independent Lynomia plan for 10 agents who also gets 5
+  # included through an integration has 10: adding them would be additive stacking of overlapping
+  # quotas, and taking the integration's number would downgrade rights they paid for separately.
+  # Either side being nil means unlimited, and unlimited wins.
   def limit(account, resource)
     override = override_for(account, :limit, resource)
     return override.limit_value if override
 
-    plan_for(account)&.limit_for(resource)
+    plan_limit = plan_for(account)&.limit_for(resource)
+    granted = PlatformAppEntitlementGrant.ceiling_for(account, resource)
+
+    return nil if plan_limit.nil? && granted.nil?
+    # An account with a grant but NO accessible subscription gets a real ceiling from the grant
+    # alone. That is what makes seats enforceable for an integration's merchants without giving
+    # them a Lynomia subscription -- and therefore without a second place they could be charged.
+    return granted if plan_limit.nil?
+    return plan_limit if granted.nil?
+
+    [plan_limit.to_i, granted.to_i].max
+  end
+
+  # WHICH LAYER PRODUCED THE CEILING. The brief for integration-included seats asks for effective
+  # limits "with source provenance", and a number on its own cannot say whether it came from a
+  # plan the merchant pays Lynomia for, a package their platform includes, or an operator's
+  # decision -- which is exactly what an operator needs to know before changing any of them.
+  def limit_source(account, resource)
+    return :override if override_for(account, :limit, resource)
+
+    plan_limit = plan_for(account)&.limit_for(resource)
+    granted = PlatformAppEntitlementGrant.ceiling_for(account, resource)
+
+    winning_limit_source(plan_limit, granted)
+  end
+
+  # Which of the two produced the effective number. A tie reads as :plan, because when they agree
+  # the plan is the older and more authoritative answer and the grant changes nothing.
+  def winning_limit_source(plan_limit, granted)
+    return :default if plan_limit.nil? && granted.nil?
+    return :integration if plan_limit.nil?
+    return :plan if granted.nil?
+
+    granted.to_i > plan_limit.to_i ? :integration : :plan
   end
 
   # A plan that names no channels denies none. That is the backward-compatible default every existing plan

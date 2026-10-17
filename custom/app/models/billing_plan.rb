@@ -6,7 +6,14 @@ class BillingPlan < ApplicationRecord
   # 2-decimal currencies only (price is stored in cents)
   CURRENCIES = %w[usd eur gbp sar aed try egp].freeze
   # stores: Lynomia Commerce stores an account keeps connected (Commerce::StoreConnection)
-  LIMIT_KEYS = %w[agents inboxes stores].freeze
+  # flows:  Flow Builder flows the account has (AgentBot `flow`), counted whether published or not --
+  #         an unpublished draft still occupies an editor, a name and a slot in the Studio's list.
+  # `campaign_sends` is METERED and the others are not: the first four count rows that exist,
+  # so deleting one gives it back, while a message sent is spent and the allowance refills
+  # when the billing period turns over. Billing::MeteredUsage owns that difference; it is in
+  # this list because the CEILING is a plan limit like any other and must be overridable,
+  # grantable and displayable by the same machinery.
+  LIMIT_KEYS = %w[agents inboxes stores flows campaign_sends].freeze
   FEATURES_FILE = Rails.root.join('config/features.yml')
   # System flags that must never be switched off by a plan
   SYSTEM_FEATURES = %w[chatwoot_v4 assignment_v2 report_rollup].freeze

@@ -70,6 +70,7 @@ export const DOC_ARTICLES = Object.freeze({
   commerceSalla: 'connect-salla',
   commerceZid: 'connect-zid',
   commerceShopify: 'connect-shopify',
+  commerceStoresyria: 'connect-store-syria',
   customer360: 'customer-360',
   // Commerce troubleshooting. One article per CLASS of refusal rather than one per code: the thirty entries in
   // Commerce::Error::CODES collapse into five distinct remedies, and five articles somebody will read beat

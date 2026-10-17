@@ -78,6 +78,12 @@ gem 'dotenv-rails', '>= 3.0.0'
 gem 'foreman'
 gem 'puma', '~> 7.2', '>= 7.2.1'
 gem 'vite_rails'
+# vite_ruby is held below 3.11.1 on purpose. 3.11.1 raised DEFAULT_PLUGIN_VERSION to "^5.2.5" while
+# package.json declares vite-plugin-ruby "^5.2.1", and ViteRuby::CompatibilityCheck reads the declared
+# range and raises ArgumentError at boot on the mismatch -- which aborts every rails/rake command, CI
+# included. 3.10.6 keeps "^5.2.0" and already carries the relaxed rack-proxy constraint (>= 0.6.1) that
+# GHSA-42qh-8mx8-7wqm needs. Lift this together with a vite-plugin-ruby bump in package.json.
+gem 'vite_ruby', '~> 3.10.6'
 # metrics on heroku
 gem 'barnes'
 

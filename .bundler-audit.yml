@@ -21,8 +21,12 @@ ignore:
   # is fixed, not re-suppressed: `rails` moved 7.2.3.1 -> 7.2.3.2, which carries its patch.
   # See docs/pre-deploy/00-security-audits.md.
   #
-  # NOTHING IS SUPPRESSED FOR RUBY_LLM. CVE-2026-67987, CVE-2026-67989 and CVE-2026-67991 are open against
-  # ruby_llm 1.15.0 and appear in audit output on purpose. Their only patched release is 2.0.0.rc1+, a major
-  # version that removes APIs this application calls. They are carried as OPEN SECURITY ADVISORY, with the
-  # measured reachability evidence, in docs/pre-deploy/00-security-audits.md. CVE-2026-67991 was suppressed
-  # here before; that entry was removed so that all three are visible to the same scan.
+  # NOTHING IS SUPPRESSED FOR RUBY_LLM, AND NOTHING NEEDS TO BE. CVE-2026-67987, CVE-2026-67989 and
+  # CVE-2026-67991 were open against ruby_llm 1.15.0 and appeared in audit output on purpose, because their
+  # only patched release was a major version that removes APIs this application calls. That upgrade has now
+  # been done -- ruby_llm 1.15.0 -> 2.0.0 and ai-agents 0.12.0 -> 0.13.0 -- and all three are closed. The
+  # suppression that once existed for CVE-2026-67991 was removed before the fix and was never restored.
+  # See docs/pre-deploy/06-security-remediation.md. GHSA-42qh-8mx8-7wqm (rack-proxy) is likewise fixed
+  # rather than suppressed, by rack-proxy 0.7.7 -> 2.0.1.
+  #
+  # No ignore entry has been added to this file for any of them.

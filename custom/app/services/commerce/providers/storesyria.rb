@@ -24,6 +24,17 @@ class Commerce::Providers::Storesyria < Commerce::Providers::Base
   API_PATH = '/api/lynomia/commerce/v1'.freeze
   ORDER_PAGE = 50
 
+  # THE SHAPE OF THE CREDENTIAL, DECLARED BY THE PROVIDER THAT CONSUMES IT. Store Syria mints
+  # lsc_{store}_{revocation version}_{hmac-sha256}. The store and the version travel in the clear
+  # because they are the lookup, not the secret; the hmac covers both, so the token cannot be
+  # edited to name another store or to resurrect a revoked version.
+  #
+  # It lives here rather than in a controller because TWO surfaces now accept this credential --
+  # the merchant pasting it into their own account, and a partner installing it server to server
+  # -- and a shape written out twice is a shape the two can drift apart on, accepting a value the
+  # other refuses.
+  TOKEN_FORMAT = /\Alsc_\d{1,19}_\d{1,19}_[0-9a-f]{64}\z/
+
   def self.enabled? = Commerce::Storesyria::Config.enabled?
 
   # Store Syria pushes commerce events from its own transactional outbox to POST

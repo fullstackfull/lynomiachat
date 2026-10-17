@@ -510,6 +510,12 @@ Rails.application.routes.draw do
           # back or decommissioned on its own side. `update` rather than `create`: the action
           # name is what PlatformController's authorization filters key on.
           resource :installation_lifecycle, only: [:update], controller: 'installation_lifecycle'
+          # A partner connecting its own store to one of its merchants' workspaces, server to
+          # server, so no merchant has to paste a commerce token into a form. `update` for the
+          # same reason as the line above -- the action name is what PlatformController's
+          # authorization filters key on -- and singular because the request names an end state
+          # for one store rather than creating a resource the caller then has to address.
+          resource :commerce_installation, only: [:update], controller: 'commerce_installations'
           # Ceilings an integration includes with its own product -- seats a merchant has already
           # paid for once, on the other platform. Singular: a grant is addressed by its resource
           # name, not by an id. See Platform::Api::V1::EntitlementGrantsController.

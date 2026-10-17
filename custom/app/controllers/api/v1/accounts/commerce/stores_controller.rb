@@ -14,10 +14,9 @@ class Api::V1::Accounts::Commerce::StoresController < Api::V1::Accounts::BaseCon
   # rather than a failed health check or a store saved with a credential that can never work.
   CREDENTIAL_FORMATS = {
     'woocommerce' => { consumer_key: /\Ack_[0-9a-f]{40}\z/, consumer_secret: /\Acs_[0-9a-f]{40}\z/ },
-    # Store Syria mints lsc_{store}_{revocation version}_{hmac-sha256}. The store and the version travel in the clear
-    # because they are the lookup, not the secret; the hmac covers both, so the token cannot be edited to name another
-    # store or to resurrect a revoked version.
-    'storesyria' => { commerce_token: /\Alsc_\d{1,19}_\d{1,19}_[0-9a-f]{64}\z/ }
+    # Store Syria's shape is declared by its own adapter, because the partner installation endpoint
+    # accepts the same credential and the two must not drift into accepting different things.
+    'storesyria' => { commerce_token: ::Commerce::Providers::Storesyria::TOKEN_FORMAT }
   }.freeze
   CREDENTIAL_KEYS = CREDENTIAL_FORMATS.values.flat_map(&:keys).freeze
 

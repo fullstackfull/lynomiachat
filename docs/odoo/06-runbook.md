@@ -184,7 +184,9 @@ that is Odoo's rule, not ours.
    table is altered. All five roll back cleanly.
 2. **Active Record encryption keys must be set** — `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`,
    `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY`, `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT`. Without them
-   a destination **cannot be saved at all**, by design: the credential is never stored in plaintext.
+   a destination **cannot be saved at all**, by design: the credential is never stored in plaintext. These are
+   the production keys and nothing in CI reads them; the `encryption-at-rest` job proves the mechanism against
+   keys it generates and throws away per run (`.github/workflows/run_encryption_spec.yml`).
 3. Add these Stripe event types to the webhook endpoint in your Stripe dashboard: `invoice.paid`,
    `invoice.finalized`, `invoice.payment_failed`, `invoice.voided`, `invoice.marked_uncollectible`,
    `charge.refunded`, `charge.dispute.created`. The endpoint is unchanged

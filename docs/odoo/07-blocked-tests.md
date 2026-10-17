@@ -81,11 +81,17 @@ every one is a question about how **that** server behaves, not about this code.
 
 ## What IS tested, without a server
 
-295 examples, 0 failures (the Odoo suite plus the schedule and credential gates it touches). In particular:
+303 examples, 0 failures (the Odoo suite plus the schedule and credential gates it touches, with Active
+Record encryption keys supplied from the environment). In particular:
 
 - the ten configuration states as an ordered funnel, and the DB-enforced one-enabled-destination rule;
 - the credential encrypted at rest, excluded from serialization, never rendered into the settings form, and
-  preserved when the field is submitted empty;
+  preserved when the field is submitted empty. The at-rest half is now a CI job of its own,
+  `.github/workflows/run_encryption_spec.yml`, because it could not be proven by `run_foss_spec.yml`: that
+  workflow sets no `ACTIVE_RECORD_ENCRYPTION_*` keys, so every example guarded by
+  `Chatwoot.encryption_configured?` reported **pending** there, and `run_mfa_spec.yml`, which does set them,
+  gates its job on `github.repository == 'chatwoot/chatwoot'`. The new job generates throwaway keys per run and
+  **fails if any of those examples reports pending**, since a skipped example is not a passing one;
 - the exact payloads the adapter sends — `move_type` set, no `name`, no `state`, no `account_id` on a product
   line, literal x2many triples, `allowed_company_ids` on every call, `payment_state` in no write;
 - the destination-scope AND stamp checks refusing a sibling project's move by id, in the same company and the
